@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	ServiceName = "VC-SERVICE"
+	ServiceName = "vc-service"
 	LogPrefix   = ServiceName + ": "
 )
 
