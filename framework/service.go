@@ -3,12 +3,12 @@ package framework
 
 import (
 	"context"
+	"github.com/dimfeld/httptreemux/v5"
 	"net/http"
 	"os"
 	"syscall"
 	"time"
 
-	"github.com/dimfeld/httptreemux/v5"
 	"github.com/google/uuid"
 )
 

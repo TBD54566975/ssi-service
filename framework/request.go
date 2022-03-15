@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/dimfeld/httptreemux/v5"
+	httptreemux "github.com/dimfeld/httptreemux/v5"
 	en "github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
 	validator "gopkg.in/go-playground/validator.v9"

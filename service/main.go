@@ -17,17 +17,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-// set this to the name of the service
-const SVC_NAME = "VC-SERVICE"
-const LOG_PREFIX = SVC_NAME + ": "
+const (
+	ServiceName = "VC-SERVICE"
+	LogPrefix   = ServiceName + ": "
+)
 
 func main() {
-	log := log.New(os.Stdout, LOG_PREFIX, log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
+	svcLog := log.New(os.Stdout, LogPrefix, log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
 
-	log.Println("Starting up")
+	svcLog.Println("Starting up")
 
-	if err := run(log); err != nil {
-		log.Println("main: error:", err)
+	if err := run(svcLog); err != nil {
+		svcLog.Println("main: error:", err)
 		os.Exit(1)
 	}
 }
@@ -48,10 +49,10 @@ func run(log *log.Logger) error {
 	cfg.Version.SVN = "2022.03.15"
 	cfg.Version.Desc = "TODO: include service description"
 
-	if err := conf.Parse(os.Args[1:], SVC_NAME, &cfg); err != nil {
+	if err := conf.Parse(os.Args[1:], ServiceName, &cfg); err != nil {
 		switch err {
 		case conf.ErrHelpWanted:
-			usage, err := conf.Usage(SVC_NAME, &cfg)
+			usage, err := conf.Usage(ServiceName, &cfg)
 			if err != nil {
 				return errors.Wrap(err, "parsing config")
 			}
@@ -60,7 +61,7 @@ func run(log *log.Logger) error {
 			return nil
 
 		case conf.ErrVersionWanted:
-			version, err := conf.VersionString(SVC_NAME, &cfg)
+			version, err := conf.VersionString(ServiceName, &cfg)
 			if err != nil {
 				return errors.Wrap(err, "generating cfg version")
 			}
