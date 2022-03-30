@@ -47,7 +47,7 @@ func run(log *log.Logger) error {
 	}
 
 	cfg.Version.SVN = "2022.03.15"
-	cfg.Version.Desc = "TODO: include service description"
+	cfg.Version.Desc = "The Verifiable Credentials Service"
 
 	if err := conf.Parse(os.Args[1:], ServiceName, &cfg); err != nil {
 		switch err {

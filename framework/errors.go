@@ -8,14 +8,14 @@ type FieldError struct {
 	Error string `json:"error"`
 }
 
-// ErrorResponse is the structure of response error paylods sent back to the requester
+// ErrorResponse is the structure of response error payloads sent back to the requester
 // when validation of a request payload fails.
 type ErrorResponse struct {
 	Error  string       `json:"error"`
 	Fields []FieldError `json:"fields,omitempty"`
 }
 
-// Error is used to pass an error during the request through the service with
+// SafeError is used to pass an error during the request through the service with
 // web specific context. 'Safe' here means that the error messages do not include
 // any sensitive information and can be sent straight back to the requester
 type SafeError struct {
