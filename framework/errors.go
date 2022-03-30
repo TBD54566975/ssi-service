@@ -52,12 +52,9 @@ func NewShutdownError(message string) error {
 	return &shutdown{message}
 }
 
-// isShutdown checks to see if the shutdown error is contained in
+// IsShutdown checks to see if the shutdown error is contained in
 // the specified error value.
 func IsShutdown(err error) bool {
-	if _, ok := errors.Cause(err).(*shutdown); ok {
-		return true
-	}
-
-	return false
+	_, ok := errors.Cause(err).(*shutdown)
+	return ok == true
 }

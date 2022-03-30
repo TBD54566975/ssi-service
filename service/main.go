@@ -93,7 +93,7 @@ func run(log *log.Logger) error {
 
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      handlers.API(cfg.Version.SVN, shutdown, log),
+		Handler:      handlers.API(shutdown, log),
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 	}

@@ -7,11 +7,11 @@ import (
 	"reflect"
 	"strings"
 
-	httptreemux "github.com/dimfeld/httptreemux/v5"
-	en "github.com/go-playground/locales/en"
+	"github.com/dimfeld/httptreemux/v5"
+	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
-	validator "gopkg.in/go-playground/validator.v9"
-	en_translations "gopkg.in/go-playground/validator.v9/translations/en"
+	"gopkg.in/go-playground/validator.v9"
+	entranslations "gopkg.in/go-playground/validator.v9/translations/en"
 )
 
 // validate holds the settings and caches for validating request payloads.
@@ -33,7 +33,7 @@ func init() {
 
 	// Register english error messages for validation errors.
 	lang, _ := translator.GetTranslator("en")
-	en_translations.RegisterDefaultTranslations(validate, lang)
+	_ = entranslations.RegisterDefaultTranslations(validate, lang)
 
 	// Use JSON tag names for errors instead of Go struct field names
 	validate.RegisterTagNameFunc(func(fld reflect.StructField) string {
@@ -51,7 +51,6 @@ func init() {
 func RouteParams(r *http.Request) map[string]string {
 	//! TODO: why am i passing context into here?
 	return httptreemux.ContextParams(r.Context())
-
 }
 
 // Decode reads an HTTP request body looking for a JSON document.
@@ -67,7 +66,7 @@ func Decode(r *http.Request, val interface{}) error {
 	}
 
 	if err := validate.Struct(val); err != nil {
-		verrors, ok := err.(validator.ValidationErrors)
+		vErrors, ok := err.(validator.ValidationErrors)
 		if !ok {
 			return err
 		}
@@ -78,10 +77,10 @@ func Decode(r *http.Request, val interface{}) error {
 		lang, _ := translator.GetTranslator("en")
 
 		var fieldErrors []FieldError
-		for _, verror := range verrors {
+		for _, vError := range vErrors {
 			fieldError := FieldError{
-				Field: verror.Field(),
-				Error: verror.Translate(lang),
+				Field: vError.Field(),
+				Error: vError.Translate(lang),
 			}
 
 			fieldErrors = append(fieldErrors, fieldError)

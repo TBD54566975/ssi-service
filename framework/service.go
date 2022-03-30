@@ -64,7 +64,7 @@ func (service *Service) Handle(method string, path string, handler Handler, mw .
 
 		ctx := context.WithValue(r.Context(), KeyRequestState, &requestState)
 
-		// onion the request through all of the registered middleware
+		// onion the request through all the registered middleware
 		if err := handler(ctx, w, r); err != nil {
 			service.SignalShutdown()
 			return
