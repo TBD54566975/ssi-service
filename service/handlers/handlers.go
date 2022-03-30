@@ -11,7 +11,7 @@ import (
 	"github.com/tbd54566975/vc-service/middleware"
 )
 
-func API(build string, shutdown chan os.Signal, log *log.Logger) *framework.Service {
+func API(shutdown chan os.Signal, log *log.Logger) *framework.Service {
 	service := framework.NewService(shutdown, middleware.Logger(log), middleware.Errors(log), middleware.Metrics(), middleware.Panics(log))
 
 	readiness := readiness{

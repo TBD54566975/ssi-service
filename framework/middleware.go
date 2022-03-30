@@ -10,7 +10,6 @@ type Middleware func(handler Handler) Handler
 // provided middlewares around the provided handler. Think of it like an onion.
 // Middlewares will execute in the order they are provided
 func wrapMiddleware(mw []Middleware, handler Handler) Handler {
-
 	// wrap the provided middlewares around the provided handler from
 	// back to front so that the order provided is the order of execution
 	for i := len(mw) - 1; i >= 0; i-- {

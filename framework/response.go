@@ -10,7 +10,6 @@ import (
 
 // Respond convert a Go value to JSON and sends it to the client.
 func Respond(ctx context.Context, w http.ResponseWriter, data interface{}, statusCode int) error {
-
 	// set the status code within the context's request state. Gracefully shutdown if
 	// the request state doesn't exist in the context
 	v, ok := ctx.Value(KeyRequestState).(*RequestState)
@@ -45,7 +44,6 @@ func Respond(ctx context.Context, w http.ResponseWriter, data interface{}, statu
 
 // TODO: add documentation
 func RespondError(ctx context.Context, w http.ResponseWriter, err error) error {
-
 	// if the cause of the error provided is a `SafeError`, construct an ErrorResponse
 	// using the contents of SafeError and send it back to the client
 	if webErr, ok := errors.Cause(err).(*SafeError); ok {
