@@ -26,13 +26,18 @@ var (
 
 // Build builds the library.
 func Build() error {
+	fmt.Println("Running packr...")
+	if err := Packr(); err != nil {
+		return err
+	}
 	fmt.Println("Building...")
-	return sh.Run(Go, "build", "./...")
+	return sh.Run(Go, "build", "-tags", "jwx_es256k", "./...")
 }
 
 // Clean deletes any build artifacts.
 func Clean() {
 	fmt.Println("Cleaning...")
+	PackrClean()
 	os.RemoveAll("bin")
 }
 
@@ -91,13 +96,8 @@ func (w *regexpWriter) Write(p []byte) (int, error) {
 	return n, err
 }
 
-func ensureGobin() error {
-	return installIfNotPresent("gobin", "github.com/myitcv/gobin")
-}
-
-func gobinRun(cmd string, args ...string) error {
-	return sh.Run(findOnPathOrGoPath("gobin"), append([]string{"-m", "-run", cmd},
-		args...)...)
+func runGo(cmd string, args ...string) error {
+	return sh.Run(findOnPathOrGoPath("go"), append([]string{"run", cmd}, args...)...)
 }
 
 // InstallIfNotPresent installs a go based tool (if not already installed)
@@ -159,16 +159,16 @@ func goPath() string {
 	return goPath
 }
 
-// Packr builds a binary using the packr2 tool https://github.com/gobuffalo/packr#building-a-binary
+// Packr builds a binary using the packr tool https://github.com/gobuffalo/packr#building-a-binary
 func Packr() error {
-	mg.Deps(ensureGobin)
-	return gobinRun("github.com/gobuffalo/packr/packr")
+	installIfNotPresent("go", "github.com/gobuffalo/packr/packr")
+	return runGo("github.com/gobuffalo/packr/packr")
 }
 
 // PackrClean removes all packr generated files https://github.com/gobuffalo/packr#cleaning-up
 func PackrClean() error {
-	mg.Deps(ensureGobin)
-	return gobinRun("github.com/gobuffalo/packr/packr", "clean")
+	installIfNotPresent("go", "github.com/gobuffalo/packr/packr")
+	return runGo("github.com/gobuffalo/packr/packr", "clean")
 }
 
 // CBT runs clean; build; test

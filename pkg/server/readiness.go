@@ -1,20 +1,19 @@
-package handlers
+package server
 
 import (
 	"context"
+	"github.com/tbd54566975/vc-service/pkg/server/framework"
 	"log"
 	"net/http"
-
-	"github.com/tbd54566975/vc-service/framework"
 )
 
-type readiness struct {
-	log *log.Logger
+type Readiness struct {
+	Log *log.Logger
 }
 
-// readiness handler runs a number of application specific checks to see if all the
+// Readiness handler runs a number of application specific checks to see if all the
 // relied upon services are healthy. Should return a 500 if not ready.
-func (_ readiness) handle(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (_ Readiness) handle(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	// TODO: add application specific checks (e.g. have we established a connection to the DB?)
 	status := struct {
 		Status string

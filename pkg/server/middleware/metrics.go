@@ -3,10 +3,9 @@ package middleware
 import (
 	"context"
 	"expvar"
+	"github.com/tbd54566975/vc-service/pkg/server/framework"
 	"net/http"
 	"runtime"
-
-	"github.com/tbd54566975/vc-service/framework"
 )
 
 // m contains global program counters

@@ -4,6 +4,7 @@ import (
 	"context"
 	"expvar"
 	"fmt"
+	"github.com/tbd54566975/vc-service/pkg/server"
 	"log"
 	"net/http"
 	"os"
@@ -11,14 +12,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tbd54566975/vc-service/service/handlers"
-
 	"github.com/ardanlabs/conf"
 	"github.com/pkg/errors"
 )
 
 const (
-	ServiceName = "vc-service"
+	ServiceName = "vc-server"
 	LogPrefix   = ServiceName + ": "
 )
 
@@ -93,7 +92,7 @@ func run(log *log.Logger) error {
 
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      handlers.API(shutdown, log),
+		Handler:      server.API(shutdown, log),
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 	}

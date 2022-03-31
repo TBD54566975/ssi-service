@@ -2,10 +2,10 @@ package middleware
 
 import (
 	"context"
+	"github.com/tbd54566975/vc-service/pkg/server/framework"
 	"log"
 	"net/http"
 
-	"github.com/tbd54566975/vc-service/framework"
 	"go.opentelemetry.io/otel/trace"
 )
 

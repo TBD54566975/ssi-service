@@ -1,6 +1,6 @@
 module github.com/tbd54566975/vc-service
 
-go 1.16
+go 1.17
 
 require (
 	github.com/ardanlabs/conf v1.4.0

@@ -47,7 +47,7 @@ func NewService(shutdown chan os.Signal, mw ...Middleware) *Service {
 }
 
 // Handle sets a handler function for a given HTTP method and path pair
-// to the service server mux.
+// to the server mux.
 func (service *Service) Handle(method string, path string, handler Handler, mw ...Middleware) {
 	// first wrap route specific middleware
 	handler = wrapMiddleware(mw, handler)
@@ -74,7 +74,7 @@ func (service *Service) Handle(method string, path string, handler Handler, mw .
 	service.ContextMux.Handle(method, path, h)
 }
 
-// SignalShutdown is used to gracefully shut down the service when an integrity
+// SignalShutdown is used to gracefully shut down the server when an integrity
 // issue is identified.
 func (service *Service) SignalShutdown() {
 	service.shutdown <- syscall.SIGTERM
