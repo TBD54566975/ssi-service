@@ -30,12 +30,11 @@ func main() {
 	// TODO(gabe) dependency injection and/or config-based service loading
 	didService, err := service.NewDIDService([]service.DIDMethod{service.KeyMethod}, nil)
 	if err != nil {
-		svcLog.Println("main: error:", err)
-		os.Exit(1)
+		svcLog.Fatalf("main: error:", err)
 	}
-	services := server.Services{
-		DIDService: *didService,
-	}
+
+	// add all services to be instantiated here
+	services := []service.Service{didService}
 
 	if err := run(svcLog, services); err != nil {
 		svcLog.Println("main: error:", err)
@@ -44,7 +43,7 @@ func main() {
 }
 
 // startup and shutdown logic
-func run(log *log.Logger, services server.Services) error {
+func run(log *log.Logger, services []service.Service) error {
 	var cfg struct {
 		conf.Version
 		Web struct {
@@ -103,7 +102,7 @@ func run(log *log.Logger, services server.Services) error {
 
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      server.API(services, shutdown, log),
+		Handler:      server.StartHTTPServices(services, shutdown, log),
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 	}
@@ -111,7 +110,7 @@ func run(log *log.Logger, services server.Services) error {
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		log.Printf("main: API server started and listening on -> %s", api.Addr)
+		log.Printf("main: StartHTTPServices server started and listening on -> %s", api.Addr)
 
 		serverErrors <- api.ListenAndServe()
 	}()

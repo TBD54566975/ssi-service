@@ -19,6 +19,14 @@ type DIDService struct {
 	storage  storage.DID
 }
 
+func (_ DIDService) Type() Type {
+	return DID
+}
+
+func (_ DIDService) Status() string {
+	return "ready"
+}
+
 // DIDServiceHandler describes the functionality of *all* possible DID services, regardless of method
 type DIDServiceHandler interface {
 	CreateDID() (*CreateDIDResponse, error)

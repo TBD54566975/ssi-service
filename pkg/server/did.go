@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/tbd54566975/vc-service/pkg/server/framework"
+	"github.com/tbd54566975/vc-service/pkg/service"
 	"net/http"
 )
 
@@ -12,11 +13,16 @@ const (
 	IDParam     = "id"
 )
 
+// DIDServiceHTTP represents the dependencies required to instantiate a DID-HTTP service
+type DIDServiceHTTP struct {
+	service.DIDService
+}
+
 type GetDIDMethodsResponse struct {
 	DIDMethods []string `json:"did_methods,omitempty"`
 }
 
-func GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (s DIDServiceHTTP) GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	status := struct {
 		Status string
 	}{
@@ -30,7 +36,7 @@ type CreateDIDByMethodResponse struct {
 	DID interface{} `json:"did,omitempty"`
 }
 
-func CreateDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s DIDServiceHTTP) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	method := getParam(ctx, MethodParam)
 	if method == nil {
 		return framework.NewRequestErrorMsg("create DID request missing method parameter", http.StatusBadRequest)
@@ -42,7 +48,7 @@ type GetDIDByMethodRequest struct {
 	DID interface{} `json:"did,omitempty"`
 }
 
-func GetDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s DIDServiceHTTP) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	method := getParam(ctx, MethodParam)
 	if method == nil {
 		return framework.NewRequestErrorMsg("create DID request missing method parameter", http.StatusBadRequest)
