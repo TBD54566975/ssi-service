@@ -67,6 +67,10 @@ func (vcs *Server) RegisterService(s service.Service) error {
 	return nil
 }
 
+func (vcs *Server) GetServices() []service.Service {
+	return vcs.services
+}
+
 // InstantiateAPI registers HTTP handlers for each service
 func (vcs *Server) InstantiateAPI(s service.Service) error {
 	handler, err := server.GetAPIHandlerForService(s.Type())

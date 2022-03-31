@@ -24,7 +24,7 @@ type API func(vcs *framework.Server, service service.Service) error
 
 var (
 	handlers = map[service.Type]API{
-		service.DID: DIDAPI,
+		service.DID: DecentralizedIdentityAPI,
 	}
 )
 
@@ -32,13 +32,9 @@ var (
 func StartHTTPServices(services []service.Service, shutdown chan os.Signal, log *log.Logger) *framework.Server {
 	vcs := framework.NewHTTPServer(shutdown, middleware.Logger(log), middleware.Errors(log), middleware.Metrics(), middleware.Panics(log))
 
-	readiness := Readiness{
-		Log: log,
-	}
-
-	// generic vcs-level handlers
+	// service-level handlers
 	vcs.Handle(http.MethodGet, "/health", health)
-	vcs.Handle(http.MethodGet, "/readiness", readiness.handle)
+	vcs.Handle(http.MethodGet, "/readiness", NewReadinessService(vcs, log).Statuses)
 
 	log.Printf("Starting [%d] HTTP handlers for services...\n", len(services))
 	for _, s := range services {
@@ -60,8 +56,8 @@ func GetAPIHandlerForService(serviceType service.Type) (API, error) {
 	return api, nil
 }
 
-// DIDAPI registers all HTTP handlers for the DID Service
-func DIDAPI(vcs *framework.Server, s service.Service) error {
+// DecentralizedIdentityAPI registers all HTTP handlers for the DID Service
+func DecentralizedIdentityAPI(vcs *framework.Server, s service.Service) error {
 	// DID handlers
 	if s.Type() != service.DID {
 		return fmt.Errorf("cannot intantiate DID API with service type: %s", s.Type())
