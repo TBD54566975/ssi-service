@@ -8,6 +8,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
+)
+
+const (
+	V1Prefix   = "/v1"
+	DIDsPrefix = "/dids"
 )
 
 func API(shutdown chan os.Signal, log *log.Logger) *framework.Service {
@@ -22,13 +28,11 @@ func API(shutdown chan os.Signal, log *log.Logger) *framework.Service {
 	service.Handle(http.MethodGet, "/readiness", readiness.handle)
 
 	// v1 handlers
-	v1Group := service.NewContextGroup("/v1")
 
 	// DID handlers
-	didGroup := v1Group.NewContextGroup("/dids")
-	didGroup.GET("/", nil)
-	didGroup.PUT("/:method", nil)
-	didGroup.GET("/:method/:id", nil)
+	service.Handle(http.MethodGet, path.Join(V1Prefix, DIDsPrefix), GetDIDMethods)
+	service.Handle(http.MethodPut, path.Join(V1Prefix, DIDsPrefix, "/:method"), CreateDIDByMethod)
+	service.Handle(http.MethodGet, path.Join(V1Prefix, DIDsPrefix, "/:method/:id"), GetDIDByMethod)
 
 	return service
 }

@@ -35,11 +35,8 @@ func Respond(ctx context.Context, w http.ResponseWriter, data interface{}, statu
 	w.WriteHeader(statusCode)
 
 	// send response payload to client
-	if _, err := w.Write(jsonData); err != nil {
-		return err
-	}
-
-	return nil
+	_, err = w.Write(jsonData)
+	return err
 }
 
 // TODO: add documentation
