@@ -5,6 +5,7 @@ import (
 	"expvar"
 	"fmt"
 	"github.com/tbd54566975/vc-service/pkg/server"
+	"github.com/tbd54566975/vc-service/pkg/service"
 	"log"
 	"net/http"
 	"os"
@@ -26,14 +27,24 @@ func main() {
 
 	svcLog.Println("Starting up")
 
-	if err := run(svcLog); err != nil {
+	// TODO(gabe) dependency injection and/or config-based service loading
+	didService, err := service.NewDIDService([]service.DIDMethod{service.KeyMethod}, nil)
+	if err != nil {
+		svcLog.Println("main: error:", err)
+		os.Exit(1)
+	}
+	services := server.Services{
+		DIDService: *didService,
+	}
+
+	if err := run(svcLog, services); err != nil {
 		svcLog.Println("main: error:", err)
 		os.Exit(1)
 	}
 }
 
 // startup and shutdown logic
-func run(log *log.Logger) error {
+func run(log *log.Logger, services server.Services) error {
 	var cfg struct {
 		conf.Version
 		Web struct {
@@ -92,7 +103,7 @@ func run(log *log.Logger) error {
 
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      server.API(shutdown, log),
+		Handler:      server.API(services, shutdown, log),
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 	}
