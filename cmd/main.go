@@ -4,8 +4,10 @@ import (
 	"context"
 	"expvar"
 	"fmt"
+	"github.com/tbd54566975/vc-service/internal/did"
 	"github.com/tbd54566975/vc-service/pkg/server"
 	"github.com/tbd54566975/vc-service/pkg/service"
+	"github.com/tbd54566975/vc-service/pkg/storage"
 	"log"
 	"net/http"
 	"os"
@@ -27,18 +29,14 @@ func main() {
 
 	svcLog.Println("Starting up")
 
-	// TODO(gabe) dependency injection and/or config-based service loading
-	didService, err := service.NewDIDService([]service.DIDMethod{service.KeyMethod}, nil)
+	// TODO(gabe) dependency injection and/or env-based service loading
+	services, err := instantiateServices()
 	if err != nil {
-		svcLog.Fatalf("main: error:", err)
+		svcLog.Fatalf("could not prepare instantiate services before beginning server: %s", err.Error())
 	}
 
-	// add all services to be instantiated here
-	services := []service.Service{didService}
-
 	if err := run(svcLog, services); err != nil {
-		svcLog.Println("main: error:", err)
-		os.Exit(1)
+		svcLog.Fatalf("main: error:", err)
 	}
 }
 
@@ -131,4 +129,21 @@ func run(log *log.Logger, services []service.Service) error {
 	}
 
 	return nil
+}
+
+// instantiateServices begins all instantiates and their dependencies
+func instantiateServices() ([]service.Service, error) {
+	bolt, err := storage.NewBoltDB()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate BoltDB")
+	}
+	boltDIDStorage, err := did.NewBoltDIDStorage(bolt)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate BoltDB DID storage")
+	}
+	didService, err := service.NewDIDService([]service.DIDMethod{service.KeyMethod}, boltDIDStorage)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate the DID service")
+	}
+	return []service.Service{didService}, nil
 }
