@@ -2,9 +2,10 @@ package service
 
 import (
 	"fmt"
+	"github.com/TBD54566975/did-sdk/crypto"
+	sdkdid "github.com/TBD54566975/did-sdk/did"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/vc-service/internal/did"
-	"github.com/tbd54566975/vc-service/pkg/storage"
 )
 
 type DIDMethod string
@@ -16,7 +17,7 @@ const (
 type DIDService struct {
 	// supported DID methods
 	handlers map[DIDMethod]DIDServiceHandler
-	storage  storage.DID
+	storage  did.Storage
 }
 
 func (d DIDService) Type() Type {
@@ -37,21 +38,28 @@ func (d DIDService) Status() Status {
 
 // DIDServiceHandler describes the functionality of *all* possible DID services, regardless of method
 type DIDServiceHandler interface {
-	CreateDID() (*CreateDIDResponse, error)
-	GetDID() (*GetDIDResponse, error)
+	CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error)
+	GetDID(id string) (*GetDIDResponse, error)
+}
+
+// CreateDIDRequest is the  SON-serializable request for creating a DID across DID methods
+type CreateDIDRequest struct {
+	KeyType crypto.KeyType `validate:"required"`
 }
 
 // CreateDIDResponse is the JSON-serializable response for creating a DID
 type CreateDIDResponse struct {
-	DID interface{}
+	DID sdkdid.DIDDocument `json:"did"`
+	// TODO(gabe) this is temporary, and should never be exposed like this!
+	PrivateKey string `json:"base58PrivateKey"`
 }
 
 // GetDIDResponse is the JSON-serializable response for getting a DID
 type GetDIDResponse struct {
-	DID interface{}
+	DID sdkdid.DIDDocument `json:"did"`
 }
 
-func NewDIDService(methods []DIDMethod, s storage.DID) (*DIDService, error) {
+func NewDIDService(methods []DIDMethod, s did.Storage) (*DIDService, error) {
 	service := DIDService{storage: s}
 	handlers := make(map[DIDMethod]DIDServiceHandler)
 	for _, m := range methods {
