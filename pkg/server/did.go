@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/tbd54566975/vc-service/pkg/server/framework"
-	"github.com/tbd54566975/vc-service/pkg/service"
+	"github.com/tbd54566975/vc-service/pkg/services/did"
 	"net/http"
 )
 
@@ -15,7 +15,7 @@ const (
 
 // DIDServiceHTTP represents the dependencies required to instantiate a DID-HTTP service
 type DIDServiceHTTP struct {
-	service.DIDService
+	did.Service
 }
 
 type GetDIDMethodsResponse struct {

@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"github.com/tbd54566975/vc-service/pkg/server"
 	"github.com/tbd54566975/vc-service/pkg/server/framework"
 	"log"
 	"net/http"
@@ -13,12 +14,12 @@ import (
 // errors (aka SafeError) that are used to respond to the requester in a
 // normalized way. Unexpected errors (status >= 500) are logged.
 func Errors(log *log.Logger) framework.Middleware {
-	mw := func(handler framework.Handler) framework.Handler {
+	mw := func(handler server.Handler) server.Handler {
 		wrapped := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			ctx, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("logger").Start(ctx, "business.middleware.errors")
 			defer span.End()
 
-			v, ok := ctx.Value(framework.KeyRequestState).(*framework.RequestState)
+			v, ok := ctx.Value(server.KeyRequestState).(*server.RequestState)
 			if !ok {
 				return framework.NewShutdownError("request state missing from context.")
 			}

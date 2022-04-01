@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"github.com/tbd54566975/vc-service/pkg/server"
 	"github.com/tbd54566975/vc-service/pkg/server/framework"
 	"log"
 	"net/http"
@@ -12,10 +13,10 @@ import (
 
 // Panics recovers from panics and converts the panic into an error
 func Panics(log *log.Logger) framework.Middleware {
-	mw := func(handler framework.Handler) framework.Handler {
+	mw := func(handler server.Handler) server.Handler {
 		wrapped := func(ctx context.Context, w http.ResponseWriter, r *http.Request) (err error) {
 
-			v, ok := ctx.Value(framework.KeyRequestState).(*framework.RequestState)
+			v, ok := ctx.Value(server.KeyRequestState).(*server.RequestState)
 			if !ok {
 				return framework.NewShutdownError("request state missing from context.")
 			}

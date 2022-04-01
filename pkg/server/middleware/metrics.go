@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"expvar"
+	"github.com/tbd54566975/vc-service/pkg/server"
 	"github.com/tbd54566975/vc-service/pkg/server/framework"
 	"net/http"
 	"runtime"
@@ -20,7 +21,7 @@ var m = struct {
 }
 
 func Metrics() framework.Middleware {
-	mw := func(handler framework.Handler) framework.Handler {
+	mw := func(handler server.Handler) server.Handler {
 		wrapped := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			err := handler(ctx, w, r)
 
