@@ -1,0 +1,5 @@
+package did
+
+func NewDIDStorage() {
+
+}

@@ -26,21 +26,13 @@ func (d DIDService) Type() Type {
 // Status is a self-reporting status for the DID service.
 // TODO(gabe) consider turning this into an eventing service with self-reporting status per-method
 func (d DIDService) Status() Status {
-	if d.storage == nil {
+	if d.storage == nil || len(d.handlers) == 0 {
 		return Status{
-			Status:  StatusError,
-			Message: "storage not loaded",
+			Status:  StatusNotReady,
+			Message: "storage not loaded and/or no DID methods loaded",
 		}
 	}
-	if len(d.handlers) == 0 {
-		return Status{
-			Status:  StatusInitializing,
-			Message: "no DID method handlers loaded yet",
-		}
-	}
-	return Status{
-		Status: StatusReady,
-	}
+	return Status{Status: StatusReady}
 }
 
 // DIDServiceHandler describes the functionality of *all* possible DID services, regardless of method
@@ -49,10 +41,12 @@ type DIDServiceHandler interface {
 	GetDID() (*GetDIDResponse, error)
 }
 
+// CreateDIDResponse is the JSON-serializable response for creating a DID
 type CreateDIDResponse struct {
 	DID interface{}
 }
 
+// GetDIDResponse is the JSON-serializable response for getting a DID
 type GetDIDResponse struct {
 	DID interface{}
 }

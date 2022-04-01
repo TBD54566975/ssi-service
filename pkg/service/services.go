@@ -2,6 +2,8 @@ package service
 
 type Type string
 
+// List of all services
+
 const (
 	DID Type = "did-service"
 )

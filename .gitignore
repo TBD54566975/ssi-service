@@ -20,3 +20,6 @@ vendor/
 
 # IDE
 .idea/
+
+# DB files
+*.db
