@@ -9,7 +9,7 @@ import (
 	"github.com/tbd54566975/vc-service/pkg/service/did/storage"
 )
 
-func NewKeyDIDHandler(s storage.Storage) (ServiceHandler, error) {
+func NewKeyDIDHandler(s storage.Storage) (MethodHandler, error) {
 	return &keyDIDHandler{storage: s}, nil
 }
 

@@ -21,13 +21,14 @@ const (
 
 type VerifiableCredentialsHTTPServer struct {
 	*framework.Server
+	*log.Logger
 }
 
-// StartHTTPServer does two things: instantiates all service and registers their HTTP bindings
-func StartHTTPServer(services []service.Service, shutdown chan os.Signal, log *log.Logger) (*VerifiableCredentialsHTTPServer, error) {
+// NewHTTPServer does two things: instantiates all service and registers their HTTP bindings
+func NewHTTPServer(services []service.Service, shutdown chan os.Signal, log *log.Logger) (*VerifiableCredentialsHTTPServer, error) {
 	// creates an HTTP server from the framework, and wrap it to extend it for the VCS
 	httpServer := framework.NewHTTPServer(shutdown, middleware.Logger(log), middleware.Errors(log), middleware.Metrics(), middleware.Panics(log))
-	vcsHTTP := VerifiableCredentialsHTTPServer{Server: httpServer}
+	vcsHTTP := VerifiableCredentialsHTTPServer{Server: httpServer, Logger: log}
 
 	// service-level handlers
 	httpServer.Handle(http.MethodGet, "/health", health)
@@ -62,7 +63,7 @@ func (server *VerifiableCredentialsHTTPServer) DecentralizedIdentityAPI(s servic
 	if s.Type() != service.DID {
 		return fmt.Errorf("cannot intantiate DID API with service type: %s", s.Type())
 	}
-	httpService := DIDServiceHTTP{Service: s.(did.Service)}
+	httpService := DIDServiceHTTP{Service: s.(did.Service), Logger: server.Logger}
 	handlerPath := V1Prefix + DIDsPrefix
 
 	server.Handle(http.MethodGet, handlerPath, httpService.GetDIDMethods)

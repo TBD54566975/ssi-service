@@ -16,7 +16,7 @@ const (
 
 type Service struct {
 	// supported DID methods
-	handlers map[Method]ServiceHandler
+	handlers map[Method]MethodHandler
 	storage  didstorage.Storage
 }
 
@@ -25,7 +25,6 @@ func (s Service) Type() service.Type {
 }
 
 // Status is a self-reporting status for the DID service.
-// TODO(gabe) consider turning this into an eventing service with self-reporting status per-method
 func (s Service) Status() service.Status {
 	if s.storage == nil || len(s.handlers) == 0 {
 		return service.Status{
@@ -36,7 +35,15 @@ func (s Service) Status() service.Status {
 	return service.Status{Status: service.StatusReady}
 }
 
-func (s Service) GetHandler(method Method) (ServiceHandler, error) {
+func (s Service) GetSupportedMethods() []Method {
+	var methods []Method
+	for method := range s.handlers {
+		methods = append(methods, method)
+	}
+	return methods
+}
+
+func (s Service) GetHandler(method Method) (MethodHandler, error) {
 	handler, ok := s.handlers[method]
 	if !ok {
 		return nil, fmt.Errorf("could not get handler for DID method: %s", method)
@@ -44,8 +51,8 @@ func (s Service) GetHandler(method Method) (ServiceHandler, error) {
 	return handler, nil
 }
 
-// ServiceHandler describes the functionality of *all* possible DID service, regardless of method
-type ServiceHandler interface {
+// MethodHandler describes the functionality of *all* possible DID service, regardless of method
+type MethodHandler interface {
 	CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error)
 	GetDID(id string) (*GetDIDResponse, error)
 }
@@ -57,7 +64,7 @@ func NewDIDService(methods []Method, s storage.ServiceStorage) (*Service, error)
 	}
 	svc := Service{storage: didStorage}
 
-	handlers := make(map[Method]ServiceHandler)
+	handlers := make(map[Method]MethodHandler)
 	for _, m := range methods {
 		if err := svc.instantiateHandlerForMethod(m); err != nil {
 			return nil, errors.Wrap(err, "could not instantiate DID svc")

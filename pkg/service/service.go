@@ -47,7 +47,7 @@ func NewVerifiableCredentialsService(shutdown chan os.Signal, log *log.Logger) (
 		return nil, errors.Wrap(err, "could not instantiate service")
 	}
 
-	httpServer, err := server.StartHTTPServer(services, shutdown, log)
+	httpServer, err := server.NewHTTPServer(services, shutdown, log)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate http http")
 	}
