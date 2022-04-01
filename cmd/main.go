@@ -4,10 +4,7 @@ import (
 	"context"
 	"expvar"
 	"fmt"
-	"github.com/tbd54566975/vc-service/internal/did"
 	"github.com/tbd54566975/vc-service/pkg/server"
-	"github.com/tbd54566975/vc-service/pkg/service"
-	"github.com/tbd54566975/vc-service/pkg/storage"
 	"log"
 	"net/http"
 	"os"
@@ -29,19 +26,13 @@ func main() {
 
 	svcLog.Println("Starting up")
 
-	// TODO(gabe) dependency injection and/or env-based service loading
-	services, err := instantiateServices()
-	if err != nil {
-		svcLog.Fatalf("could not prepare instantiate services before beginning server: %s", err.Error())
-	}
-
-	if err := run(svcLog, services); err != nil {
+	if err := run(svcLog); err != nil {
 		svcLog.Fatalf("main: error:", err)
 	}
 }
 
 // startup and shutdown logic
-func run(log *log.Logger, services []service.Service) error {
+func run(log *log.Logger) error {
 	var cfg struct {
 		conf.Version
 		Web struct {
@@ -98,9 +89,13 @@ func run(log *log.Logger, services []service.Service) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
+	services, err := server.StartServices(shutdown, log)
+	if err != nil {
+		log.Fatalf("could not start services: %", err.Error())
+	}
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      server.StartHTTPServices(services, shutdown, log),
+		Handler:      services,
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 	}
@@ -108,7 +103,7 @@ func run(log *log.Logger, services []service.Service) error {
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		log.Printf("main: StartHTTPServices server started and listening on -> %s", api.Addr)
+		log.Printf("main: StartServices server started and listening on -> %s", api.Addr)
 
 		serverErrors <- api.ListenAndServe()
 	}()
@@ -129,21 +124,4 @@ func run(log *log.Logger, services []service.Service) error {
 	}
 
 	return nil
-}
-
-// instantiateServices begins all instantiates and their dependencies
-func instantiateServices() ([]service.Service, error) {
-	bolt, err := storage.NewBoltDB()
-	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate BoltDB")
-	}
-	boltDIDStorage, err := did.NewBoltDIDStorage(bolt)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate BoltDB DID storage")
-	}
-	didService, err := service.NewDIDService([]service.DIDMethod{service.KeyMethod}, boltDIDStorage)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate the DID service")
-	}
-	return []service.Service{didService}, nil
 }

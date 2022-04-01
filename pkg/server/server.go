@@ -6,9 +6,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/dimfeld/httptreemux/v5"
+	"github.com/pkg/errors"
+	"github.com/tbd54566975/vc-service/internal/did"
 	"github.com/tbd54566975/vc-service/pkg/server/framework"
 	middleware "github.com/tbd54566975/vc-service/pkg/server/middleware"
 	"github.com/tbd54566975/vc-service/pkg/service"
+	"github.com/tbd54566975/vc-service/pkg/storage"
 	"log"
 	"net/http"
 	"os"
@@ -28,8 +31,30 @@ var (
 	}
 )
 
-// StartHTTPServices is the entrypoint for all HTTP-based services
-func StartHTTPServices(services []service.Service, shutdown chan os.Signal, log *log.Logger) *framework.Server {
+// TODO(gabe) make this configurable
+// instantiateServices begins all instantiates and their dependencies
+func instantiateServices() ([]service.Service, error) {
+	bolt, err := storage.NewBoltDB()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate BoltDB")
+	}
+	boltDIDStorage, err := did.NewBoltDIDStorage(bolt)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate BoltDB DID storage")
+	}
+	didService, err := service.NewDIDService([]service.DIDMethod{service.KeyMethod}, boltDIDStorage)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate the DID service")
+	}
+	return []service.Service{didService}, nil
+}
+
+// StartServices does two things: instantiates all services and registers their HTTP bindings
+func StartServices(shutdown chan os.Signal, log *log.Logger) (*framework.Server, error) {
+	services, err := instantiateServices()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate services")
+	}
 	vcs := framework.NewHTTPServer(shutdown, middleware.Logger(log), middleware.Errors(log), middleware.Metrics(), middleware.Panics(log))
 
 	// service-level handlers
@@ -45,7 +70,7 @@ func StartHTTPServices(services []service.Service, shutdown chan os.Signal, log 
 		log.Printf("Service<%s> HTTP handler started successfully\n", s.Type())
 	}
 
-	return vcs
+	return vcs, nil
 }
 
 func GetAPIHandlerForService(serviceType service.Type) (API, error) {
