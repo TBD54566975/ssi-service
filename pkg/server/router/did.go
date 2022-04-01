@@ -1,4 +1,4 @@
-package server
+package router
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"github.com/TBD54566975/did-sdk/crypto"
 	"github.com/tbd54566975/vc-service/pkg/server/framework"
 	"github.com/tbd54566975/vc-service/pkg/service/did"
+	svcframework "github.com/tbd54566975/vc-service/pkg/service/framework"
 	"log"
 	"net/http"
 )
@@ -15,17 +16,29 @@ const (
 	IDParam     = "id"
 )
 
-// DIDServiceHTTP represents the dependencies required to instantiate a DID-HTTP service
-type DIDServiceHTTP struct {
+// DIDRouter represents the dependencies required to instantiate a DID-HTTP service
+type DIDRouter struct {
 	did.Service
 	*log.Logger
+}
+
+// NewDIDRouter creates an HTP router for the DID Service
+func NewDIDRouter(s svcframework.Service, l *log.Logger) (*DIDRouter, error) {
+	didService, ok := s.(did.Service)
+	if !ok {
+		return nil, fmt.Errorf("could not create DID router with service type: %s", s.Type())
+	}
+	return &DIDRouter{
+		Service: didService,
+		Logger:  l,
+	}, nil
 }
 
 type GetDIDMethodsResponse struct {
 	DIDMethods []did.Method `json:"didMethods,omitempty"`
 }
 
-func (s DIDServiceHTTP) GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (s DIDRouter) GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	response := GetDIDMethodsResponse{DIDMethods: s.GetSupportedMethods()}
 	return framework.Respond(ctx, w, response, http.StatusOK)
 }
@@ -38,7 +51,7 @@ type CreateDIDByMethodResponse struct {
 	DID interface{} `json:"did,omitempty"`
 }
 
-func (s DIDServiceHTTP) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
 		errMsg := "create DID request missing method parameter"
@@ -76,7 +89,7 @@ type GetDIDByMethodRequest struct {
 	DID interface{} `json:"did,omitempty"`
 }
 
-func (s DIDServiceHTTP) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
 		errMsg := "create DID request missing method parameter"

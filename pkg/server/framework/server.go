@@ -27,7 +27,7 @@ type RequestState struct {
 type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
 
 // Server is the entrypoint into our application and what configures our context
-// object for each of our http handlers. Feel free to add any configuration
+// object for each of our http router. Feel free to add any configuration
 // data/logic on this Server struct.
 type Server struct {
 	*httptreemux.ContextMux

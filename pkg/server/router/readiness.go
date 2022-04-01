@@ -1,55 +1,55 @@
-package server
+package router
 
 import (
 	"context"
 	"fmt"
 	"github.com/tbd54566975/vc-service/pkg/server/framework"
-	"github.com/tbd54566975/vc-service/pkg/service"
+	svcframework "github.com/tbd54566975/vc-service/pkg/service/framework"
 	"log"
 	"net/http"
 )
 
-func readinessService(getter serviceGetter, log *log.Logger) readinessServiceHTTP {
-	return readinessServiceHTTP{
-		getter: getter,
+func Readiness(services []svcframework.Service, log *log.Logger) framework.Handler {
+	return readiness{
+		getter: servicesToGet{services},
 		log:    log,
-	}
+	}.ready
 }
 
-type readinessServiceHTTP struct {
+type readiness struct {
 	getter serviceGetter
 	log    *log.Logger
 }
 
 type readinessResponse struct {
-	Status          service.Status                  `json:"status"`
-	ServiceStatuses map[service.Type]service.Status `json:"serviceStatuses"`
+	Status          svcframework.Status                       `json:"status"`
+	ServiceStatuses map[svcframework.Type]svcframework.Status `json:"serviceStatuses"`
 }
 
 // ready runs a number of application specific checks to see if all the
 // relied upon service are healthy. Should return a 500 if not ready.
-func (r readinessServiceHTTP) ready(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (r readiness) ready(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	services := r.getter.getServices()
 	numServices := len(services)
 	readyServices := 0
-	statuses := make(map[service.Type]service.Status)
+	statuses := make(map[svcframework.Type]svcframework.Status)
 	for _, s := range services {
 		status := s.Status()
 		statuses[s.Type()] = status
-		if status.Status == service.StatusReady {
+		if status.Status == svcframework.StatusReady {
 			readyServices++
 		}
 	}
 
-	var status service.Status
+	var status svcframework.Status
 	if readyServices < numServices {
-		status = service.Status{
-			Status:  service.StatusNotReady,
+		status = svcframework.Status{
+			Status:  svcframework.StatusNotReady,
 			Message: fmt.Sprintf("out of [%d] service, [%d] are ready", numServices, readyServices),
 		}
 	} else {
-		status = service.Status{
-			Status:  service.StatusReady,
+		status = svcframework.Status{
+			Status:  svcframework.StatusReady,
 			Message: "all service ready",
 		}
 	}
@@ -63,13 +63,13 @@ func (r readinessServiceHTTP) ready(ctx context.Context, w http.ResponseWriter, 
 
 // serviceGetter is a dependency of this readiness handler to know which service are available in the server
 type serviceGetter interface {
-	getServices() []service.Service
+	getServices() []svcframework.Service
 }
 
 type servicesToGet struct {
-	services []service.Service
+	services []svcframework.Service
 }
 
-func (s servicesToGet) getServices() []service.Service {
+func (s servicesToGet) getServices() []svcframework.Service {
 	return s.services
 }

@@ -3,7 +3,7 @@ package framework
 // Middleware is a function that provides the ability to run some code before and/or
 // after a Handler. The motivation behind writing middleware functions is to
 // remove repeated or boilerplate code that is either not the direct concern
-// of a given handler OR code that seems to be repeated across many handlers.
+// of a given handler OR code that seems to be repeated across many router.
 type Middleware func(handler Handler) Handler
 
 // WrapMiddleware returns a new handler that is the result of wrapping all

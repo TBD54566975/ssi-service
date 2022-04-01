@@ -2,76 +2,41 @@ package service
 
 import (
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/vc-service/pkg/server"
 	"github.com/tbd54566975/vc-service/pkg/service/did"
+	"github.com/tbd54566975/vc-service/pkg/service/framework"
 	"github.com/tbd54566975/vc-service/pkg/storage"
 	"log"
-	"os"
 )
-
-type (
-	Type        string
-	StatusState string
-)
-
-const (
-	// List of all service
-
-	DID Type = "did-service"
-
-	StatusReady    StatusState = "ready"
-	StatusNotReady StatusState = "not ready"
-)
-
-// Status is for service reporting on their status
-type Status struct {
-	Status  StatusState
-	Message string
-}
-
-// Service is an interface each service must comply with to be registered and orchestrated by the http.
-type Service interface {
-	Type() Type
-	Status() Status
-}
 
 // VerifiableCredentialsService is the total representation of this service, including transports and business logic
 type VerifiableCredentialsService struct {
-	*server.VerifiableCredentialsHTTPServer
-	services []Service
+	services []framework.Service
 }
 
-func NewVerifiableCredentialsService(shutdown chan os.Signal, log *log.Logger) (*VerifiableCredentialsService, error) {
-	services, err := instantiateServices()
+func NewVerifiableCredentialsService(log *log.Logger) (*VerifiableCredentialsService, error) {
+	services, err := instantiateServices(log)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate service")
+		errMsg := "could not instantiate the verifiable credentials service"
+		log.Printf(errMsg)
+		return nil, errors.Wrap(err, errMsg)
 	}
-
-	httpServer, err := server.NewHTTPServer(services, shutdown, log)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate http http")
-	}
-
-	return &VerifiableCredentialsService{
-		VerifiableCredentialsHTTPServer: httpServer,
-		services:                        services,
-	}, nil
+	return &VerifiableCredentialsService{services: services}, nil
 }
 
-func (vcs *VerifiableCredentialsService) getServices() []Service {
+func (vcs *VerifiableCredentialsService) GetServices() []framework.Service {
 	return vcs.services
 }
 
 // TODO(gabe) make this configurable
 // instantiateServices begins all instantiates and their dependencies
-func instantiateServices() ([]Service, error) {
+func instantiateServices(log *log.Logger) ([]framework.Service, error) {
 	bolt, err := storage.NewBoltDB()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate BoltDB")
 	}
-	didService, err := did.NewDIDService([]did.Method{did.KeyMethod}, bolt)
+	didService, err := did.NewDIDService(log, []did.Method{did.KeyMethod}, bolt)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate the DID service")
 	}
-	return []Service{didService}, nil
+	return []framework.Service{didService}, nil
 }

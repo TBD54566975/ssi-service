@@ -3,9 +3,10 @@ package did
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/vc-service/pkg/service"
 	didstorage "github.com/tbd54566975/vc-service/pkg/service/did/storage"
+	"github.com/tbd54566975/vc-service/pkg/service/framework"
 	"github.com/tbd54566975/vc-service/pkg/storage"
+	"log"
 )
 
 type Method string
@@ -18,21 +19,22 @@ type Service struct {
 	// supported DID methods
 	handlers map[Method]MethodHandler
 	storage  didstorage.Storage
+	log      *log.Logger
 }
 
-func (s Service) Type() service.Type {
-	return service.DID
+func (s Service) Type() framework.Type {
+	return framework.DID
 }
 
 // Status is a self-reporting status for the DID service.
-func (s Service) Status() service.Status {
+func (s Service) Status() framework.Status {
 	if s.storage == nil || len(s.handlers) == 0 {
-		return service.Status{
-			Status:  service.StatusNotReady,
+		return framework.Status{
+			Status:  framework.StatusNotReady,
 			Message: "storage not loaded and/or no DID methods loaded",
 		}
 	}
-	return service.Status{Status: service.StatusReady}
+	return framework.Status{Status: framework.StatusReady}
 }
 
 func (s Service) GetSupportedMethods() []Method {
@@ -57,7 +59,7 @@ type MethodHandler interface {
 	GetDID(id string) (*GetDIDResponse, error)
 }
 
-func NewDIDService(methods []Method, s storage.ServiceStorage) (*Service, error) {
+func NewDIDService(log *log.Logger, methods []Method, s storage.ServiceStorage) (*Service, error) {
 	didStorage, err := didstorage.NewDIDStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate DID storage for DID service")
