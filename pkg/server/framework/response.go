@@ -3,7 +3,6 @@ package framework
 import (
 	"context"
 	"encoding/json"
-	"github.com/tbd54566975/vc-service/pkg/server"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -13,7 +12,7 @@ import (
 func Respond(ctx context.Context, w http.ResponseWriter, data interface{}, statusCode int) error {
 	// set the status code within the context's request state. Gracefully shutdown if
 	// the request state doesn't exist in the context
-	v, ok := ctx.Value(server.KeyRequestState).(*server.RequestState)
+	v, ok := ctx.Value(KeyRequestState).(*RequestState)
 	if !ok {
 		return NewShutdownError("Request state missing from context")
 	}

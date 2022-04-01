@@ -1,12 +1,12 @@
 // Package server is a minimal web framework.
-package server
+package framework
 
 import (
 	"context"
 	"fmt"
 	"github.com/dimfeld/httptreemux/v5"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/vc-service/pkg/server/framework"
+	"github.com/tbd54566975/vc-service/pkg/server"
 	"github.com/tbd54566975/vc-service/pkg/services"
 	"net/http"
 	"os"
@@ -36,12 +36,12 @@ type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) e
 type Server struct {
 	*httptreemux.ContextMux
 	shutdown chan os.Signal
-	mw       []framework.Middleware
+	mw       []Middleware
 	services []services.Service
 }
 
 // NewHTTPServer creates a Server that handles a set of routes for the application.
-func NewHTTPServer(shutdown chan os.Signal, mw ...framework.Middleware) *Server {
+func NewHTTPServer(shutdown chan os.Signal, mw ...Middleware) *Server {
 	return &Server{
 		ContextMux: httptreemux.NewContextMux(),
 		shutdown:   shutdown,
@@ -73,7 +73,7 @@ func (vcs *Server) GetServices() []services.Service {
 
 // InstantiateAPI registers HTTP handlers for each service
 func (vcs *Server) InstantiateAPI(s services.Service) error {
-	handler, err := GetAPIHandlerForService(s.Type())
+	handler, err := server.GetAPIHandlerForService(s.Type())
 	if err != nil {
 		return err
 	}
@@ -82,12 +82,12 @@ func (vcs *Server) InstantiateAPI(s services.Service) error {
 
 // Handle sets a handler function for a given HTTP method and path pair
 // to the server mux.
-func (vcs *Server) Handle(method string, path string, handler Handler, mw ...framework.Middleware) {
+func (vcs *Server) Handle(method string, path string, handler Handler, mw ...Middleware) {
 	// first wrap route specific middleware
-	handler = framework.WrapMiddleware(mw, handler)
+	handler = WrapMiddleware(mw, handler)
 
 	// then wrap app specific middleware
-	handler = framework.WrapMiddleware(vcs.mw, handler)
+	handler = WrapMiddleware(vcs.mw, handler)
 
 	// request handler function
 	h := func(w http.ResponseWriter, r *http.Request) {

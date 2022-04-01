@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"github.com/tbd54566975/vc-service/pkg/server"
 	"github.com/tbd54566975/vc-service/pkg/server/framework"
 	"log"
 	"net/http"
@@ -19,10 +18,10 @@ import (
 // 		TODO: add after example
 // TODO: make logging output configurable
 func Logger(log *log.Logger) framework.Middleware {
-	mw := func(handler server.Handler) server.Handler {
+	mw := func(handler framework.Handler) framework.Handler {
 
 		wrapped := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			v, ok := ctx.Value(server.KeyRequestState).(*server.RequestState)
+			v, ok := ctx.Value(framework.KeyRequestState).(*framework.RequestState)
 			if !ok {
 				return framework.NewShutdownError("Request state missing from context")
 			}

@@ -1,4 +1,4 @@
-package api
+package server
 
 import (
 	"context"
@@ -19,7 +19,7 @@ type DIDServiceHTTP struct {
 }
 
 type GetDIDMethodsResponse struct {
-	DIDMethods []string `json:"did_methods,omitempty"`
+	DIDMethods []string `json:"didMethods,omitempty"`
 }
 
 func (s DIDServiceHTTP) GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {

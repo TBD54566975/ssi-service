@@ -5,10 +5,10 @@ package server
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/vc-service/pkg/server/api"
+	"github.com/tbd54566975/vc-service/pkg/server/framework"
 	"github.com/tbd54566975/vc-service/pkg/server/middleware"
 	"github.com/tbd54566975/vc-service/pkg/services"
-	didsvc "github.com/tbd54566975/vc-service/pkg/services/did"
+	"github.com/tbd54566975/vc-service/pkg/services/did"
 	"github.com/tbd54566975/vc-service/pkg/storage"
 	"log"
 	"net/http"
@@ -21,7 +21,7 @@ const (
 	DIDsPrefix = "/dids"
 )
 
-type API func(vcs *Server, service services.Service) error
+type API func(vcs *framework.Server, service services.Service) error
 
 var (
 	handlers = map[services.Type]API{
@@ -30,19 +30,19 @@ var (
 )
 
 // StartServices does two things: instantiates all services and registers their HTTP bindings
-func StartServices(shutdown chan os.Signal, log *log.Logger) (*Server, error) {
-	svcs, err := instantiateServices()
+func StartServices(shutdown chan os.Signal, log *log.Logger) (*framework.Server, error) {
+	services, err := instantiateServices()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate services")
 	}
-	vcs := NewHTTPServer(shutdown, middleware.Logger(log), middleware.Errors(log), middleware.Metrics(), middleware.Panics(log))
+	vcs := framework.NewHTTPServer(shutdown, middleware.Logger(log), middleware.Errors(log), middleware.Metrics(), middleware.Panics(log))
 
 	// service-level handlers
-	vcs.Handle(http.MethodGet, "/health", api.Health)
-	vcs.Handle(http.MethodGet, "/readiness", api.NewReadinessService(vcs, log).Statuses)
+	vcs.Handle(http.MethodGet, "/health", Health)
+	vcs.Handle(http.MethodGet, "/readiness", NewReadinessService(vcs, log).Statuses)
 
-	log.Printf("Starting [%d] HTTP handlers for services...\n", len(svcs))
-	for _, s := range svcs {
+	log.Printf("Starting [%d] HTTP handlers for services...\n", len(services))
+	for _, s := range services {
 		if err := vcs.RegisterService(s); err != nil {
 			errMsg := fmt.Sprintf("unable to register service: %s", s.Type())
 			log.Fatalf(errMsg)
@@ -62,12 +62,12 @@ func GetAPIHandlerForService(serviceType services.Type) (API, error) {
 }
 
 // DecentralizedIdentityAPI registers all HTTP handlers for the DID Service
-func DecentralizedIdentityAPI(vcs *Server, s services.Service) error {
+func DecentralizedIdentityAPI(vcs *framework.Server, s services.Service) error {
 	// DID handlers
 	if s.Type() != services.DID {
 		return fmt.Errorf("cannot intantiate DID API with service type: %s", s.Type())
 	}
-	httpService := api.DIDServiceHTTP{Service: s.(didsvc.Service)}
+	httpService := DIDServiceHTTP{Service: s.(did.Service)}
 	handlerPath := V1Prefix + DIDsPrefix
 
 	vcs.Handle(http.MethodGet, handlerPath, httpService.GetDIDMethods)
@@ -83,7 +83,7 @@ func instantiateServices() ([]services.Service, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate BoltDB")
 	}
-	didService, err := didsvc.NewDIDService([]didsvc.Method{didsvc.KeyMethod}, bolt)
+	didService, err := did.NewDIDService([]did.Method{did.KeyMethod}, bolt)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate the DID service")
 	}

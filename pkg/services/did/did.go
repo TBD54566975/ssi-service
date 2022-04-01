@@ -36,6 +36,14 @@ func (s Service) Status() services.Status {
 	return services.Status{Status: services.StatusReady}
 }
 
+func (s Service) GetHandler(method Method) (ServiceHandler, error) {
+	handler, ok := s.handlers[method]
+	if !ok {
+		return nil, fmt.Errorf("could not get handler for DID method: %s", method)
+	}
+	return handler, nil
+}
+
 // ServiceHandler describes the functionality of *all* possible DID services, regardless of method
 type ServiceHandler interface {
 	CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error)
