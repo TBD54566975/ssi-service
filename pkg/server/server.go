@@ -7,7 +7,7 @@ import (
 	"github.com/dimfeld/httptreemux/v5"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/vc-service/pkg/server/framework"
-	"github.com/tbd54566975/vc-service/pkg/service"
+	"github.com/tbd54566975/vc-service/pkg/services"
 	"net/http"
 	"os"
 	"syscall"
@@ -37,7 +37,7 @@ type Server struct {
 	*httptreemux.ContextMux
 	shutdown chan os.Signal
 	mw       []framework.Middleware
-	services []service.Service
+	services []services.Service
 }
 
 // NewHTTPServer creates a Server that handles a set of routes for the application.
@@ -50,12 +50,12 @@ func NewHTTPServer(shutdown chan os.Signal, mw ...framework.Middleware) *Server 
 }
 
 // RegisterService associates a service with the service and registers its HTTP handler
-func (vcs *Server) RegisterService(s service.Service) error {
+func (vcs *Server) RegisterService(s services.Service) error {
 	if vcs == nil {
 		return errors.New("cannot register service on empty vcs")
 	}
 	if len(vcs.services) == 0 {
-		vcs.services = []service.Service{s}
+		vcs.services = []services.Service{s}
 	} else {
 		vcs.services = append(vcs.services, s)
 	}
@@ -67,12 +67,12 @@ func (vcs *Server) RegisterService(s service.Service) error {
 	return nil
 }
 
-func (vcs *Server) GetServices() []service.Service {
+func (vcs *Server) GetServices() []services.Service {
 	return vcs.services
 }
 
 // InstantiateAPI registers HTTP handlers for each service
-func (vcs *Server) InstantiateAPI(s service.Service) error {
+func (vcs *Server) InstantiateAPI(s services.Service) error {
 	handler, err := GetAPIHandlerForService(s.Type())
 	if err != nil {
 		return err

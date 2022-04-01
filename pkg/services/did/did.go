@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/vc-service/internal/did"
-	"github.com/tbd54566975/vc-service/pkg/service"
+	"github.com/tbd54566975/vc-service/pkg/services"
 )
 
 type Method string
@@ -19,20 +19,20 @@ type Service struct {
 	storage  did.Storage
 }
 
-func (s Service) Type() service.Type {
-	return service.DID
+func (s Service) Type() services.Type {
+	return services.DID
 }
 
 // Status is a self-reporting status for the DID service.
 // TODO(gabe) consider turning this into an eventing service with self-reporting status per-method
-func (s Service) Status() service.Status {
+func (s Service) Status() services.Status {
 	if s.storage == nil || len(s.handlers) == 0 {
-		return service.Status{
-			Status:  service.StatusNotReady,
+		return services.Status{
+			Status:  services.StatusNotReady,
 			Message: "storage not loaded and/or no DID methods loaded",
 		}
 	}
-	return service.Status{Status: service.StatusReady}
+	return services.Status{Status: services.StatusReady}
 }
 
 // ServiceHandler describes the functionality of *all* possible DID services, regardless of method

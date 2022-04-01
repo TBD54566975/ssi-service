@@ -1,4 +1,4 @@
-package server
+package api
 
 import (
 	"context"
@@ -37,7 +37,7 @@ type CreateDIDByMethodResponse struct {
 }
 
 func (s DIDServiceHTTP) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	method := getParam(ctx, MethodParam)
+	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
 		return framework.NewRequestErrorMsg("create DID request missing method parameter", http.StatusBadRequest)
 	}
@@ -49,11 +49,11 @@ type GetDIDByMethodRequest struct {
 }
 
 func (s DIDServiceHTTP) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	method := getParam(ctx, MethodParam)
+	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
 		return framework.NewRequestErrorMsg("create DID request missing method parameter", http.StatusBadRequest)
 	}
-	id := getParam(ctx, IDParam)
+	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := fmt.Sprintf("get DID request missing id parameter for method: %s", *method)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
