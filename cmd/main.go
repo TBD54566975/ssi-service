@@ -103,7 +103,7 @@ func run(log *log.Logger) error {
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		log.Printf("main: StartServices server started and listening on -> %s", api.Addr)
+		log.Printf("main: server started and listening on -> %s", api.Addr)
 
 		serverErrors <- api.ListenAndServe()
 	}()
@@ -112,7 +112,7 @@ func run(log *log.Logger) error {
 	case err := <-serverErrors:
 		return errors.Wrap(err, "server error")
 	case sig := <-shutdown:
-		log.Printf("main: Shutdown signal received -> %v", sig)
+		log.Printf("main: shutdown signal received -> %v", sig)
 
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
 		defer cancel()

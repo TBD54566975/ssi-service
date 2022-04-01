@@ -1,4 +1,4 @@
-// Package framework is a minimal web framework.
+// Package server is a minimal web framework.
 package server
 
 import (

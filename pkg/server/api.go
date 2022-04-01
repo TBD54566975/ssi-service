@@ -5,7 +5,6 @@ package server
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/vc-service/internal/did"
 	"github.com/tbd54566975/vc-service/pkg/server/api"
 	"github.com/tbd54566975/vc-service/pkg/server/middleware"
 	"github.com/tbd54566975/vc-service/pkg/services"
@@ -84,11 +83,7 @@ func instantiateServices() ([]services.Service, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate BoltDB")
 	}
-	boltDIDStorage, err := did.NewBoltDIDStorage(bolt)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate BoltDB DID storage")
-	}
-	didService, err := didsvc.NewDIDService([]didsvc.Method{didsvc.KeyMethod}, boltDIDStorage)
+	didService, err := didsvc.NewDIDService([]didsvc.Method{didsvc.KeyMethod}, bolt)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate the DID service")
 	}

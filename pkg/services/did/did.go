@@ -3,8 +3,9 @@ package did
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/vc-service/internal/did"
 	"github.com/tbd54566975/vc-service/pkg/services"
+	didstorage "github.com/tbd54566975/vc-service/pkg/services/did/storage"
+	"github.com/tbd54566975/vc-service/pkg/storage"
 )
 
 type Method string
@@ -16,7 +17,7 @@ const (
 type Service struct {
 	// supported DID methods
 	handlers map[Method]ServiceHandler
-	storage  Storage
+	storage  didstorage.Storage
 }
 
 func (s Service) Type() services.Type {
@@ -41,24 +42,27 @@ type ServiceHandler interface {
 	GetDID(id string) (*GetDIDResponse, error)
 }
 
-func NewDIDService(methods []Method, s Storage) (*Service, error) {
-	svc := Service{storage: s}
+func NewDIDService(methods []Method, s storage.ServiceStorage) (*Service, error) {
+	didStorage, err := didstorage.NewDIDStorage(s)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate DID storage for DID service")
+	}
+	svc := Service{storage: didStorage}
+
 	handlers := make(map[Method]ServiceHandler)
 	for _, m := range methods {
 		if err := svc.instantiateHandlerForMethod(m); err != nil {
 			return nil, errors.Wrap(err, "could not instantiate DID svc")
 		}
 	}
-	return &Service{
-		handlers: handlers,
-		storage:  s,
-	}, nil
+	svc.handlers = handlers
+	return &svc, nil
 }
 
 func (s *Service) instantiateHandlerForMethod(method Method) error {
 	switch method {
 	case KeyMethod:
-		handler, err := did.NewKeyDIDHandler(s.storage)
+		handler, err := NewKeyDIDHandler(s.storage)
 		if err != nil {
 			return fmt.Errorf("could not instnatiate did:%s handler", KeyMethod)
 		}
