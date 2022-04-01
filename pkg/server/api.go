@@ -30,24 +30,6 @@ var (
 	}
 )
 
-// TODO(gabe) make this configurable
-// instantiateServices begins all instantiates and their dependencies
-func instantiateServices() ([]services.Service, error) {
-	bolt, err := storage.NewBoltDB()
-	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate BoltDB")
-	}
-	boltDIDStorage, err := did.NewBoltDIDStorage(bolt)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate BoltDB DID storage")
-	}
-	didService, err := didsvc.NewDIDService([]didsvc.Method{didsvc.KeyMethod}, boltDIDStorage)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate the DID service")
-	}
-	return []services.Service{didService}, nil
-}
-
 // StartServices does two things: instantiates all services and registers their HTTP bindings
 func StartServices(shutdown chan os.Signal, log *log.Logger) (*Server, error) {
 	svcs, err := instantiateServices()
@@ -93,4 +75,22 @@ func DecentralizedIdentityAPI(vcs *Server, s services.Service) error {
 	vcs.Handle(http.MethodPut, path.Join(handlerPath, "/:method"), httpService.CreateDIDByMethod)
 	vcs.Handle(http.MethodGet, path.Join(handlerPath, "/:method/:id"), httpService.GetDIDByMethod)
 	return nil
+}
+
+// TODO(gabe) make this configurable
+// instantiateServices begins all instantiates and their dependencies
+func instantiateServices() ([]services.Service, error) {
+	bolt, err := storage.NewBoltDB()
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate BoltDB")
+	}
+	boltDIDStorage, err := did.NewBoltDIDStorage(bolt)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate BoltDB DID storage")
+	}
+	didService, err := didsvc.NewDIDService([]didsvc.Method{didsvc.KeyMethod}, boltDIDStorage)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate the DID service")
+	}
+	return []services.Service{didService}, nil
 }
