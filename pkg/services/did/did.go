@@ -16,7 +16,7 @@ const (
 type Service struct {
 	// supported DID methods
 	handlers map[Method]ServiceHandler
-	storage  did.Storage
+	storage  Storage
 }
 
 func (s Service) Type() services.Type {
@@ -41,7 +41,7 @@ type ServiceHandler interface {
 	GetDID(id string) (*GetDIDResponse, error)
 }
 
-func NewDIDService(methods []Method, s did.Storage) (*Service, error) {
+func NewDIDService(methods []Method, s Storage) (*Service, error) {
 	svc := Service{storage: s}
 	handlers := make(map[Method]ServiceHandler)
 	for _, m := range methods {

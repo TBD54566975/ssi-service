@@ -6,10 +6,10 @@ import (
 	"github.com/TBD54566975/did-sdk/did"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
-	did2 "github.com/tbd54566975/vc-service/pkg/services/did"
+	didsvc "github.com/tbd54566975/vc-service/pkg/services/did"
 )
 
-func NewKeyDIDHandler(s Storage) (did2.ServiceHandler, error) {
+func NewKeyDIDHandler(s Storage) (didsvc.ServiceHandler, error) {
 	return &keyDIDHandler{storage: s}, nil
 }
 
@@ -17,7 +17,7 @@ type keyDIDHandler struct {
 	storage Storage
 }
 
-func (h *keyDIDHandler) CreateDID(request did2.CreateDIDRequest) (*did2.CreateDIDResponse, error) {
+func (h *keyDIDHandler) CreateDID(request didsvc.CreateDIDRequest) (*didsvc.CreateDIDResponse, error) {
 	// create the DID
 	privKey, doc, err := did.GenerateDIDKey(request.KeyType)
 	if err != nil {
@@ -43,13 +43,13 @@ func (h *keyDIDHandler) CreateDID(request did2.CreateDIDRequest) (*did2.CreateDI
 		return nil, errors.Wrap(err, "could not store did:key value")
 	}
 
-	return &did2.CreateDIDResponse{
+	return &didsvc.CreateDIDResponse{
 		DID:        storedDID.DID,
 		PrivateKey: storedDID.PrivateKeyBase58,
 	}, nil
 }
 
-func (h *keyDIDHandler) GetDID(id string) (*did2.GetDIDResponse, error) {
+func (h *keyDIDHandler) GetDID(id string) (*didsvc.GetDIDResponse, error) {
 	gotDID, err := h.storage.GetDID(id)
 	if err != nil {
 		return nil, fmt.Errorf("error getting DID: %s", id)
@@ -57,7 +57,7 @@ func (h *keyDIDHandler) GetDID(id string) (*did2.GetDIDResponse, error) {
 	if gotDID == nil {
 		return nil, fmt.Errorf("DID with id<%s> could not be found", id)
 	}
-	return &did2.GetDIDResponse{
+	return &didsvc.GetDIDResponse{
 		DID: gotDID.DID,
 	}, nil
 }

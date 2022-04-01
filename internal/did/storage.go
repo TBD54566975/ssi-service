@@ -3,8 +3,8 @@ package did
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/TBD54566975/did-sdk/did"
 	"github.com/pkg/errors"
+	"github.com/tbd54566975/vc-service/pkg/services/did"
 	"github.com/tbd54566975/vc-service/pkg/storage"
 	"strings"
 )
@@ -20,18 +20,6 @@ var (
 	}
 )
 
-type StoredDID struct {
-	DID              did.DIDDocument
-	PrivateKeyBase58 string
-}
-
-type Storage interface {
-	StoreDID(did StoredDID) error
-	GetDID(id string) (*StoredDID, error)
-	GetDIDs(method string) ([]StoredDID, error)
-	DeleteDID(id string) error
-}
-
 type BoltDIDStorage struct {
 	db *storage.BoltDB
 }
@@ -43,7 +31,7 @@ func NewBoltDIDStorage(db *storage.BoltDB) (*BoltDIDStorage, error) {
 	return &BoltDIDStorage{db: db}, nil
 }
 
-func (b BoltDIDStorage) StoreDID(did StoredDID) error {
+func (b BoltDIDStorage) StoreDID(did did.StoredDID) error {
 	couldNotStoreDIDErr := fmt.Sprintf("could not store DID: %s", did.DID.ID)
 	namespace, err := getNamespaceForDID(did.DID.ID)
 	if err != nil {
@@ -56,7 +44,7 @@ func (b BoltDIDStorage) StoreDID(did StoredDID) error {
 	return b.db.Write(namespace, did.DID.ID, didBytes)
 }
 
-func (b BoltDIDStorage) GetDID(id string) (*StoredDID, error) {
+func (b BoltDIDStorage) GetDID(id string) (*did.StoredDID, error) {
 	couldNotGetDIDErr := fmt.Sprintf("could not get DID: %s", id)
 	namespace, err := getNamespaceForDID(id)
 	if err != nil {
@@ -69,7 +57,7 @@ func (b BoltDIDStorage) GetDID(id string) (*StoredDID, error) {
 	if len(docBytes) == 0 {
 		return nil, fmt.Errorf("DID not found: %s", id)
 	}
-	var stored StoredDID
+	var stored did.StoredDID
 	if err := json.Unmarshal(docBytes, &stored); err != nil {
 		return nil, errors.Wrapf(err, "could not ummarshal stored DID: %s", id)
 	}
@@ -77,7 +65,7 @@ func (b BoltDIDStorage) GetDID(id string) (*StoredDID, error) {
 }
 
 // GetDIDs attempts to get all DIDs for a given method. It will return those it can, even if it has trouble with some.
-func (b BoltDIDStorage) GetDIDs(method string) ([]StoredDID, error) {
+func (b BoltDIDStorage) GetDIDs(method string) ([]did.StoredDID, error) {
 	couldNotGetDIDsErr := fmt.Sprintf("could not get DIDs for method: %s", method)
 	namespace, err := getNamespaceForMethod(method)
 	if err != nil {
@@ -90,9 +78,9 @@ func (b BoltDIDStorage) GetDIDs(method string) ([]StoredDID, error) {
 	if len(gotDIDs) == 0 {
 		return nil, fmt.Errorf("no DIDs found for method: %s", method)
 	}
-	var stored []StoredDID
+	var stored []did.StoredDID
 	for _, didBytes := range gotDIDs {
-		var nextDID StoredDID
+		var nextDID did.StoredDID
 		if err := json.Unmarshal(didBytes, &nextDID); err == nil {
 			stored = append(stored, nextDID)
 		}

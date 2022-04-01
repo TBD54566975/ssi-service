@@ -50,7 +50,7 @@ func instantiateServices() ([]services.Service, error) {
 
 // StartServices does two things: instantiates all services and registers their HTTP bindings
 func StartServices(shutdown chan os.Signal, log *log.Logger) (*Server, error) {
-	services, err := instantiateServices()
+	svcs, err := instantiateServices()
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate services")
 	}
@@ -60,8 +60,8 @@ func StartServices(shutdown chan os.Signal, log *log.Logger) (*Server, error) {
 	vcs.Handle(http.MethodGet, "/health", api.Health)
 	vcs.Handle(http.MethodGet, "/readiness", api.NewReadinessService(vcs, log).Statuses)
 
-	log.Printf("Starting [%d] HTTP handlers for services...\n", len(services))
-	for _, s := range services {
+	log.Printf("Starting [%d] HTTP handlers for services...\n", len(svcs))
+	for _, s := range svcs {
 		if err := vcs.RegisterService(s); err != nil {
 			errMsg := fmt.Sprintf("unable to register service: %s", s.Type())
 			log.Fatalf(errMsg)
