@@ -3,16 +3,18 @@ package storage
 import (
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"os"
 	"testing"
 )
 
 func TestBoltDB(t *testing.T) {
-	db, err := NewBoltDB()
+	db, err := NewBoltDBWithFile("test.db")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, db)
 
 	t.Cleanup(func() {
 		_ = db.Close()
+		os.Remove("test.db")
 	})
 
 	// create a name space and a message in it

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
+	"strings"
 	"time"
 )
 
@@ -17,7 +18,11 @@ type BoltDB struct {
 
 // NewBoltDB instantiates a file-based storage instance for Bolt https://github.com/boltdb/bolt
 func NewBoltDB() (*BoltDB, error) {
-	db, err := bolt.Open(DBFile, 0600, &bolt.Options{Timeout: 1 * time.Second})
+	return NewBoltDBWithFile(DBFile)
+}
+
+func NewBoltDBWithFile(filePath string) (*BoltDB, error) {
+	db, err := bolt.Open(filePath, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		return nil, err
 	}
@@ -87,4 +92,9 @@ func (b *BoltDB) DeleteNamespace(namespace string) error {
 		}
 		return nil
 	})
+}
+
+// MakeNamespace takes a set of possible namespace values and combines them as a convention
+func MakeNamespace(ns ...string) string {
+	return strings.Join(ns, "-")
 }
