@@ -9,12 +9,12 @@ import (
 	didsvc "github.com/tbd54566975/vc-service/pkg/services/did"
 )
 
-func NewKeyDIDHandler(s Storage) (didsvc.ServiceHandler, error) {
+func NewKeyDIDHandler(s didsvc.Storage) (didsvc.ServiceHandler, error) {
 	return &keyDIDHandler{storage: s}, nil
 }
 
 type keyDIDHandler struct {
-	storage Storage
+	storage didsvc.Storage
 }
 
 func (h *keyDIDHandler) CreateDID(request didsvc.CreateDIDRequest) (*didsvc.CreateDIDResponse, error) {
@@ -35,7 +35,7 @@ func (h *keyDIDHandler) CreateDID(request didsvc.CreateDIDRequest) (*didsvc.Crea
 	}
 
 	// store it
-	storedDID := StoredDID{
+	storedDID := didsvc.StoredDID{
 		DID:              *expanded,
 		PrivateKeyBase58: privKeyBase58,
 	}
