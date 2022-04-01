@@ -1,13 +1,9 @@
-// Package server is a minimal web framework.
+// Package framework is a minimal web framework.
 package framework
 
 import (
 	"context"
-	"fmt"
 	"github.com/dimfeld/httptreemux/v5"
-	"github.com/pkg/errors"
-	"github.com/tbd54566975/vc-service/pkg/server"
-	"github.com/tbd54566975/vc-service/pkg/services"
 	"net/http"
 	"os"
 	"syscall"
@@ -37,7 +33,6 @@ type Server struct {
 	*httptreemux.ContextMux
 	shutdown chan os.Signal
 	mw       []Middleware
-	services []services.Service
 }
 
 // NewHTTPServer creates a Server that handles a set of routes for the application.
@@ -47,37 +42,6 @@ func NewHTTPServer(shutdown chan os.Signal, mw ...Middleware) *Server {
 		shutdown:   shutdown,
 		mw:         mw,
 	}
-}
-
-// RegisterService associates a service with the service and registers its HTTP handler
-func (vcs *Server) RegisterService(s services.Service) error {
-	if vcs == nil {
-		return errors.New("cannot register service on empty vcs")
-	}
-	if len(vcs.services) == 0 {
-		vcs.services = []services.Service{s}
-	} else {
-		vcs.services = append(vcs.services, s)
-	}
-
-	if err := vcs.InstantiateAPI(s); err != nil {
-		errMsg := fmt.Sprintf("unable to start service: %s", s.Type())
-		return errors.New(errMsg)
-	}
-	return nil
-}
-
-func (vcs *Server) GetServices() []services.Service {
-	return vcs.services
-}
-
-// InstantiateAPI registers HTTP handlers for each service
-func (vcs *Server) InstantiateAPI(s services.Service) error {
-	handler, err := server.GetAPIHandlerForService(s.Type())
-	if err != nil {
-		return err
-	}
-	return handler(vcs, s)
 }
 
 // Handle sets a handler function for a given HTTP method and path pair

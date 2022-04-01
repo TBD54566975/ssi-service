@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/tbd54566975/vc-service/pkg/server/framework"
-	"github.com/tbd54566975/vc-service/pkg/services/did"
+	"github.com/tbd54566975/vc-service/pkg/service/did"
 	"net/http"
 )
 

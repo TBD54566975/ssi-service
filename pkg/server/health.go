@@ -6,8 +6,8 @@ import (
 	"net/http"
 )
 
-// Health is a simple handler that always responds with a 200 OK
-func Health(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+// health is a simple handler that always responds with a 200 OK
+func health(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
 	status := struct {
 		Status string
 	}{

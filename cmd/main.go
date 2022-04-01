@@ -4,7 +4,7 @@ import (
 	"context"
 	"expvar"
 	"fmt"
-	"github.com/tbd54566975/vc-service/pkg/server"
+	"github.com/tbd54566975/vc-service/pkg/service"
 	"log"
 	"net/http"
 	"os"
@@ -89,13 +89,13 @@ func run(log *log.Logger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	services, err := server.StartServices(shutdown, log)
+	vcs, err := service.NewVerifiableCredentialsService(shutdown, log)
 	if err != nil {
-		log.Fatalf("could not start services: %", err.Error())
+		log.Fatalf("could not start service: %", err.Error())
 	}
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      services,
+		Handler:      vcs,
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 	}

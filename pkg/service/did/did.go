@@ -3,8 +3,8 @@ package did
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/vc-service/pkg/services"
-	didstorage "github.com/tbd54566975/vc-service/pkg/services/did/storage"
+	"github.com/tbd54566975/vc-service/pkg/service"
+	didstorage "github.com/tbd54566975/vc-service/pkg/service/did/storage"
 	"github.com/tbd54566975/vc-service/pkg/storage"
 )
 
@@ -20,20 +20,20 @@ type Service struct {
 	storage  didstorage.Storage
 }
 
-func (s Service) Type() services.Type {
-	return services.DID
+func (s Service) Type() service.Type {
+	return service.DID
 }
 
 // Status is a self-reporting status for the DID service.
 // TODO(gabe) consider turning this into an eventing service with self-reporting status per-method
-func (s Service) Status() services.Status {
+func (s Service) Status() service.Status {
 	if s.storage == nil || len(s.handlers) == 0 {
-		return services.Status{
-			Status:  services.StatusNotReady,
+		return service.Status{
+			Status:  service.StatusNotReady,
 			Message: "storage not loaded and/or no DID methods loaded",
 		}
 	}
-	return services.Status{Status: services.StatusReady}
+	return service.Status{Status: service.StatusReady}
 }
 
 func (s Service) GetHandler(method Method) (ServiceHandler, error) {
@@ -44,7 +44,7 @@ func (s Service) GetHandler(method Method) (ServiceHandler, error) {
 	return handler, nil
 }
 
-// ServiceHandler describes the functionality of *all* possible DID services, regardless of method
+// ServiceHandler describes the functionality of *all* possible DID service, regardless of method
 type ServiceHandler interface {
 	CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error)
 	GetDID(id string) (*GetDIDResponse, error)

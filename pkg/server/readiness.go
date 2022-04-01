@@ -4,64 +4,72 @@ import (
 	"context"
 	"fmt"
 	"github.com/tbd54566975/vc-service/pkg/server/framework"
-	"github.com/tbd54566975/vc-service/pkg/services"
+	"github.com/tbd54566975/vc-service/pkg/service"
 	"log"
 	"net/http"
 )
 
-// ServiceGetter is a dependency of this readiness handler to know which services are available in the server
-type ServiceGetter interface {
-	GetServices() []services.Service
-}
-
-func NewReadinessService(getter ServiceGetter, log *log.Logger) ReadinessServiceHTTP {
-	return ReadinessServiceHTTP{
+func readinessService(getter serviceGetter, log *log.Logger) readinessServiceHTTP {
+	return readinessServiceHTTP{
 		getter: getter,
 		log:    log,
 	}
 }
 
-type ReadinessServiceHTTP struct {
-	getter ServiceGetter
+type readinessServiceHTTP struct {
+	getter serviceGetter
 	log    *log.Logger
 }
 
-type ReadinessResponse struct {
-	Status          services.Status                   `json:"status"`
-	ServiceStatuses map[services.Type]services.Status `json:"serviceStatuses"`
+type readinessResponse struct {
+	Status          service.Status                  `json:"status"`
+	ServiceStatuses map[service.Type]service.Status `json:"serviceStatuses"`
 }
 
-// Statuses runs a number of application specific checks to see if all the
-// relied upon services are healthy. Should return a 500 if not ready.
-func (r ReadinessServiceHTTP) Statuses(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	svcs := r.getter.GetServices()
-	numServices := len(svcs)
+// ready runs a number of application specific checks to see if all the
+// relied upon service are healthy. Should return a 500 if not ready.
+func (r readinessServiceHTTP) ready(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	services := r.getter.getServices()
+	numServices := len(services)
 	readyServices := 0
-	statuses := make(map[services.Type]services.Status)
-	for _, s := range svcs {
+	statuses := make(map[service.Type]service.Status)
+	for _, s := range services {
 		status := s.Status()
 		statuses[s.Type()] = status
-		if status.Status == services.StatusReady {
+		if status.Status == service.StatusReady {
 			readyServices++
 		}
 	}
 
-	var status services.Status
+	var status service.Status
 	if readyServices < numServices {
-		status = services.Status{
-			Status:  services.StatusNotReady,
-			Message: fmt.Sprintf("out of [%d] services, [%d] are ready", numServices, readyServices),
+		status = service.Status{
+			Status:  service.StatusNotReady,
+			Message: fmt.Sprintf("out of [%d] service, [%d] are ready", numServices, readyServices),
 		}
 	} else {
-		status = services.Status{
-			Status:  services.StatusReady,
-			Message: "all services ready",
+		status = service.Status{
+			Status:  service.StatusReady,
+			Message: "all service ready",
 		}
 	}
-	response := ReadinessResponse{
+	response := readinessResponse{
 		Status:          status,
 		ServiceStatuses: statuses,
 	}
 
 	return framework.Respond(ctx, w, response, http.StatusOK)
+}
+
+// serviceGetter is a dependency of this readiness handler to know which service are available in the server
+type serviceGetter interface {
+	getServices() []service.Service
+}
+
+type servicesToGet struct {
+	services []service.Service
+}
+
+func (s servicesToGet) getServices() []service.Service {
+	return s.services
 }
