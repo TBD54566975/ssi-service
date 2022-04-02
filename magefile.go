@@ -47,7 +47,7 @@ func runTests(extraTestArgs ...string) error {
 	if mg.Verbose() {
 		args = append(args, "-v")
 	}
-	args = append(args, "-race", "-tags=jwx_es256k")
+	args = append(args, "-tags=jwx_es256k")
 	args = append(args, extraTestArgs...)
 	args = append(args, "./...")
 	testEnv := map[string]string{

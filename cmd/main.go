@@ -27,7 +27,7 @@ func main() {
 	svcLog.Println("Starting up")
 
 	if err := run(svcLog); err != nil {
-		svcLog.Fatalf("main: error:", err)
+		svcLog.Fatalf("main: error: %s", err.Error())
 	}
 }
 
@@ -91,7 +91,7 @@ func run(log *log.Logger) error {
 
 	ssiServer, err := server.NewSSIServer(shutdown, log)
 	if err != nil {
-		log.Fatalf("could not start http services: %", err.Error())
+		log.Fatalf("could not start http services: %s", err.Error())
 	}
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
