@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"context"
-	"github.com/tbd54566975/vc-service/pkg/server/framework"
+	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"log"
 	"net/http"
 	"time"

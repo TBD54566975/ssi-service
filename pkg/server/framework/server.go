@@ -46,12 +46,12 @@ func NewHTTPServer(shutdown chan os.Signal, mw ...Middleware) *Server {
 
 // Handle sets a handler function for a given HTTP method and path pair
 // to the server mux.
-func (vcs *Server) Handle(method string, path string, handler Handler, mw ...Middleware) {
+func (s *Server) Handle(method string, path string, handler Handler, mw ...Middleware) {
 	// first wrap route specific middleware
 	handler = WrapMiddleware(mw, handler)
 
 	// then wrap app specific middleware
-	handler = WrapMiddleware(vcs.mw, handler)
+	handler = WrapMiddleware(s.mw, handler)
 
 	// request handler function
 	h := func(w http.ResponseWriter, r *http.Request) {
@@ -64,16 +64,16 @@ func (vcs *Server) Handle(method string, path string, handler Handler, mw ...Mid
 
 		// onion the request through all the registered middleware
 		if err := handler(ctx, w, r); err != nil {
-			vcs.SignalShutdown()
+			s.SignalShutdown()
 			return
 		}
 	}
 
-	vcs.ContextMux.Handle(method, path, h)
+	s.ContextMux.Handle(method, path, h)
 }
 
 // SignalShutdown is used to gracefully shut down the server when an integrity
 // issue is identified.
-func (vcs *Server) SignalShutdown() {
-	vcs.shutdown <- syscall.SIGTERM
+func (s *Server) SignalShutdown() {
+	s.shutdown <- syscall.SIGTERM
 }

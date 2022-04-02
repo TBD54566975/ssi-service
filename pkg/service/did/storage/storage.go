@@ -3,7 +3,7 @@ package storage
 import (
 	"github.com/TBD54566975/did-sdk/did"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/vc-service/pkg/storage"
+	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 type StoredDID struct {

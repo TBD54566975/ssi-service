@@ -4,7 +4,7 @@ import (
 	"context"
 	"expvar"
 	"fmt"
-	"github.com/tbd54566975/vc-service/pkg/server"
+	"github.com/tbd54566975/ssi-service/pkg/server"
 	"log"
 	"net/http"
 	"os"
@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	ServiceName = "vc-server"
+	ServiceName = "ssi-server"
 	LogPrefix   = ServiceName + ": "
 )
 
@@ -89,13 +89,13 @@ func run(log *log.Logger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	vcs, err := server.NewHTTPServer(shutdown, log)
+	ssiServer, err := server.NewSSIServer(shutdown, log)
 	if err != nil {
 		log.Fatalf("could not start http services: %", err.Error())
 	}
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      vcs,
+		Handler:      ssiServer,
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 	}

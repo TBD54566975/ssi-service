@@ -5,12 +5,12 @@ package server
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/vc-service/pkg/server/framework"
-	svcframework "github.com/tbd54566975/vc-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/server/framework"
+	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 
-	"github.com/tbd54566975/vc-service/pkg/server/middleware"
-	"github.com/tbd54566975/vc-service/pkg/server/router"
-	"github.com/tbd54566975/vc-service/pkg/service"
+	"github.com/tbd54566975/ssi-service/pkg/server/middleware"
+	"github.com/tbd54566975/ssi-service/pkg/server/router"
+	"github.com/tbd54566975/ssi-service/pkg/service"
 	"log"
 	"net/http"
 	"os"
@@ -22,25 +22,25 @@ const (
 	DIDsPrefix = "/dids"
 )
 
-type VerifiableCredentialsHTTPServer struct {
+type SSIServer struct {
 	*framework.Server
-	*service.VerifiableCredentialsService
+	*service.SSIService
 	*log.Logger
 }
 
-// NewHTTPServer does two things: instantiates all service and registers their HTTP bindings
-func NewHTTPServer(shutdown chan os.Signal, log *log.Logger) (*VerifiableCredentialsHTTPServer, error) {
-	// creates an HTTP server from the framework, and wrap it to extend it for the VCS
+// NewSSIServer does two things: instantiates all service and registers their HTTP bindings
+func NewSSIServer(shutdown chan os.Signal, log *log.Logger) (*SSIServer, error) {
+	// creates an HTTP server from the framework, and wrap it to extend it for the SSIS
 	httpServer := framework.NewHTTPServer(shutdown, middleware.Logger(log), middleware.Errors(log), middleware.Metrics(), middleware.Panics(log))
-	vcs, err := service.NewVerifiableCredentialsService(log)
+	ssi, err := service.NewSSIService(log)
 	if err != nil {
 		return nil, err
 	}
-	services := vcs.GetServices()
-	server := VerifiableCredentialsHTTPServer{
-		Server:                       httpServer,
-		VerifiableCredentialsService: vcs,
-		Logger:                       log,
+	services := ssi.GetServices()
+	server := SSIServer{
+		Server:     httpServer,
+		SSIService: ssi,
+		Logger:     log,
 	}
 
 	// service-level routers
@@ -62,27 +62,27 @@ func NewHTTPServer(shutdown chan os.Signal, log *log.Logger) (*VerifiableCredent
 
 // instantiateRouter registers the HTTP router for a service with the HTTP server
 // NOTE: all service API router must be registered here
-func (server *VerifiableCredentialsHTTPServer) instantiateRouter(s svcframework.Service) error {
-	serviceType := s.Type()
+func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
+	serviceType := service.Type()
 	switch serviceType {
 	case svcframework.DID:
-		return server.DecentralizedIdentityAPI(s)
+		return s.DecentralizedIdentityAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
 }
 
 // DecentralizedIdentityAPI registers all HTTP router for the DID Service
-func (server *VerifiableCredentialsHTTPServer) DecentralizedIdentityAPI(s svcframework.Service) error {
-	didRouter, err := router.NewDIDRouter(s, server.Logger)
+func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) error {
+	didRouter, err := router.NewDIDRouter(service, s.Logger)
 	if err != nil {
 		return errors.Wrap(err, "could not create DID router")
 	}
 
 	handlerPath := V1Prefix + DIDsPrefix
 
-	server.Handle(http.MethodGet, handlerPath, didRouter.GetDIDMethods)
-	server.Handle(http.MethodPut, path.Join(handlerPath, "/:method"), didRouter.CreateDIDByMethod)
-	server.Handle(http.MethodGet, path.Join(handlerPath, "/:method/:id"), didRouter.GetDIDByMethod)
+	s.Handle(http.MethodGet, handlerPath, didRouter.GetDIDMethods)
+	s.Handle(http.MethodPut, path.Join(handlerPath, "/:method"), didRouter.CreateDIDByMethod)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method/:id"), didRouter.GetDIDByMethod)
 	return nil
 }

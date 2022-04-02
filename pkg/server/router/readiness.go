@@ -3,8 +3,8 @@ package router
 import (
 	"context"
 	"fmt"
-	"github.com/tbd54566975/vc-service/pkg/server/framework"
-	svcframework "github.com/tbd54566975/vc-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/server/framework"
+	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"log"
 	"net/http"
 )

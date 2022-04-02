@@ -6,7 +6,7 @@ import (
 	"github.com/TBD54566975/did-sdk/did"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/vc-service/pkg/service/did/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/did/storage"
 )
 
 func NewKeyDIDHandler(s storage.Storage) (MethodHandler, error) {

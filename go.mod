@@ -1,4 +1,4 @@
-module github.com/tbd54566975/vc-service
+module github.com/tbd54566975/ssi-service
 
 go 1.17
 

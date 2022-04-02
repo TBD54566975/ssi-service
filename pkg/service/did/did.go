@@ -3,9 +3,9 @@ package did
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	didstorage "github.com/tbd54566975/vc-service/pkg/service/did/storage"
-	"github.com/tbd54566975/vc-service/pkg/service/framework"
-	"github.com/tbd54566975/vc-service/pkg/storage"
+	didstorage "github.com/tbd54566975/ssi-service/pkg/service/did/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"log"
 )
 

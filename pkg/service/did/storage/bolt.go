@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/vc-service/pkg/storage"
+	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"strings"
 )
 

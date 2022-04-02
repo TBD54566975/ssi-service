@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	DBFile = "vc-service.db"
+	DBFile = "ssi-service.db"
 )
 
 type BoltDB struct {

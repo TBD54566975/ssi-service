@@ -3,7 +3,7 @@ package middleware
 import (
 	"context"
 	"expvar"
-	"github.com/tbd54566975/vc-service/pkg/server/framework"
+	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"net/http"
 	"runtime"
 )
