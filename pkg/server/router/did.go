@@ -24,12 +24,12 @@ type DIDRouter struct {
 
 // NewDIDRouter creates an HTP router for the DID Service
 func NewDIDRouter(s svcframework.Service, l *log.Logger) (*DIDRouter, error) {
-	didService, ok := s.(did.Service)
+	didService, ok := s.(*did.Service)
 	if !ok {
 		return nil, fmt.Errorf("could not create DID router with service type: %s", s.Type())
 	}
 	return &DIDRouter{
-		Service: didService,
+		Service: *didService,
 		Logger:  l,
 	}, nil
 }
@@ -61,7 +61,7 @@ func (s DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter,
 
 	var request CreateDIDByMethodRequest
 	if err := framework.Decode(r, &request); err != nil {
-		errMsg := "could not decode method request"
+		errMsg := "invalid create DID request"
 		s.Logger.Printf(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
@@ -75,9 +75,9 @@ func (s DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter,
 	}
 
 	// TODO(gabe) check if the key type is supported for the method, to tell whether this is a bad req or internal error
-	createDIDResponse, err := handler.CreateDID(did.CreateDIDRequest{KeyType: "nil"})
+	createDIDResponse, err := handler.CreateDID(did.CreateDIDRequest{KeyType: request.KeyType})
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, "nil")
+		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)
 		s.Logger.Printf(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
 	}

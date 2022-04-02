@@ -51,7 +51,7 @@ func NewSSIServer(shutdown chan os.Signal, log *log.Logger) (*SSIServer, error) 
 	log.Printf("Starting [%d] services...\n", len(services))
 	for _, s := range services {
 		if err := server.instantiateRouter(s); err != nil {
-			errMsg := fmt.Sprintf("unable to instaniate service: %s", s.Type())
+			errMsg := fmt.Sprintf("unable to instaniate service<%s>: %s", s.Type(), err.Error())
 			log.Fatalf(errMsg)
 		}
 		log.Printf("Service<%s> started successfully\n", s.Type())
