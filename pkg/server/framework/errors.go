@@ -15,7 +15,7 @@ type ErrorResponse struct {
 	Fields []FieldError `json:"fields,omitempty"`
 }
 
-// SafeError is used to pass an error during the request through the service with
+// SafeError is used to pass an error during the request through the server with
 // web specific context. 'Safe' here means that the error messages do not include
 // any sensitive information and can be sent straight back to the requester
 type SafeError struct {
@@ -25,18 +25,24 @@ type SafeError struct {
 }
 
 // SafeError implements the `error` interface. It uses the default message of the
-// wrapped error. This is what will be shown in a service's logs
+// wrapped error. This is what will be shown in a server's logs
 func (err *SafeError) Error() string {
 	return err.Err.Error()
 }
 
+// NewRequestErrorMsg turns a provided string into an error with an HTTP status code.
+// This function should be used when router encounter expected errors.
+func NewRequestErrorMsg(errMsg string, statusCode int) error {
+	return &SafeError{errors.New(errMsg), statusCode, nil}
+}
+
 // NewRequestError wraps a provided error with an HTTP status code. This function should be used
-// when handlers encounter expected errors.
+// when router encounter expected errors.
 func NewRequestError(err error, statusCode int) error {
 	return &SafeError{err, statusCode, nil}
 }
 
-// shutdown is a type used to help with graceful shutdown of a service.
+// shutdown is a type used to help with graceful shutdown of a server.
 type shutdown struct {
 	Message string
 }

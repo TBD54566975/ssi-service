@@ -26,34 +26,32 @@ type RequestState struct {
 // framework.
 type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
 
-// Service is the entrypoint into our application and what configures our context
-// object for each of our http handlers. Feel free to add any configuration
-// data/logic on this Service struct.
-type Service struct {
+// Server is the entrypoint into our application and what configures our context
+// object for each of our http router. Feel free to add any configuration
+// data/logic on this Server struct.
+type Server struct {
 	*httptreemux.ContextMux
 	shutdown chan os.Signal
 	mw       []Middleware
 }
 
-// NewService creates a Service that handles a set of routes for the application.
-func NewService(shutdown chan os.Signal, mw ...Middleware) *Service {
-	service := Service{
+// NewHTTPServer creates a Server that handles a set of routes for the application.
+func NewHTTPServer(shutdown chan os.Signal, mw ...Middleware) *Server {
+	return &Server{
 		ContextMux: httptreemux.NewContextMux(),
 		shutdown:   shutdown,
 		mw:         mw,
 	}
-
-	return &service
 }
 
 // Handle sets a handler function for a given HTTP method and path pair
-// to the service server mux.
-func (service *Service) Handle(method string, path string, handler Handler, mw ...Middleware) {
+// to the server mux.
+func (s *Server) Handle(method string, path string, handler Handler, mw ...Middleware) {
 	// first wrap route specific middleware
-	handler = wrapMiddleware(mw, handler)
+	handler = WrapMiddleware(mw, handler)
 
 	// then wrap app specific middleware
-	handler = wrapMiddleware(service.mw, handler)
+	handler = WrapMiddleware(s.mw, handler)
 
 	// request handler function
 	h := func(w http.ResponseWriter, r *http.Request) {
@@ -66,16 +64,16 @@ func (service *Service) Handle(method string, path string, handler Handler, mw .
 
 		// onion the request through all the registered middleware
 		if err := handler(ctx, w, r); err != nil {
-			service.SignalShutdown()
+			s.SignalShutdown()
 			return
 		}
 	}
 
-	service.ContextMux.Handle(method, path, h)
+	s.ContextMux.Handle(method, path, h)
 }
 
-// SignalShutdown is used to gracefully shut down the service when an integrity
+// SignalShutdown is used to gracefully shut down the server when an integrity
 // issue is identified.
-func (service *Service) SignalShutdown() {
-	service.shutdown <- syscall.SIGTERM
+func (s *Server) SignalShutdown() {
+	s.shutdown <- syscall.SIGTERM
 }

@@ -2,12 +2,12 @@ package middleware
 
 import (
 	"context"
+	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"log"
 	"net/http"
 	"runtime/debug"
 
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/vc-service/framework"
 )
 
 // Panics recovers from panics and converts the panic into an error

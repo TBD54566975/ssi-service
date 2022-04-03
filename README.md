@@ -1,21 +1,22 @@
-[![godoc](https://img.shields.io/badge/godoc-vc--service-blue)](https://pkg.go.dev/github.com/TBD54566975/vc-service)
+[![godoc](https://img.shields.io/badge/godoc-ssi--service-blue)](https://pkg.go.dev/github.com/TBD54566975/ssi-service)
 [![goversion](https://img.shields.io/badge/go_version-1.17.6-brightgreen)](https://golang.org/)
-[![license](https://img.shields.io/badge/license-Apache%202-black)](https://github.com/TBD54566975/vc-service/blob/main/LICENSE)
-[![issues](https://img.shields.io/github/issues/TBD54566975/vc-service)](https://github.com/TBD54566975/vc-service/issues)
+[![license](https://img.shields.io/badge/license-Apache%202-black)](https://github.com/TBD54566975/ssi-service/blob/main/LICENSE)
+[![issues](https://img.shields.io/github/issues/TBD54566975/ssi-service)](https://github.com/TBD54566975/ssi-service/issues)
 
-# vc-service
+# ssi-service
 
 ## Introduction
 
-The Verifiable Credentials Service (VCS) facilitates all things [Verifiable Credentials](https://www.w3.org/TR/vc-data-model)
--- in a box! The service is a part of a larger Decentralized Web Platform architecture which you can learn more about
-in our [collaboration repo](https://github.com/TBD54566975/collaboration). The VC Service is a RESTful web service that
-wraps the [did-sdk](https://github.com/TBD54566975/did-sdk). The core functionality of the VCS includes, 
+The Self Sovereign Identity Service (SSIS) facilitates all things relating to [DIDs](https://www.w3.org/TR/did-core/)
+and [Verifiable Credentials](https://www.w3.org/TR/vc-data-model) -- in a box! The service is a part of a larger 
+Decentralized Web Platform architecture which you can learn more about in our 
+[collaboration repo](https://github.com/TBD54566975/collaboration). The SSI Service is a RESTful web service that
+wraps the [did-sdk](https://github.com/TBD54566975/did-sdk). The core functionality of the SSIS includes, 
 but is not limited to: interacting with the standards around Verifiable Credentials, Credential Revocations, requesting
-Credentials, exchanging Credentials, data schemas for Credentials and other verifiable data, messaging using ID Hubs,
-and usage of Decentralized Identifiers. Using these core standards, the VCS enables robust functionality to facilitate
-all verifiable interactions such as creating, signing, issuing, curating, requesting, revoking, exchanging, validating, 
-verifying credentials in varying degrees of complexity.
+Credentials, exchanging Credentials, data schemas for Credentials and other verifiable data, messaging using 
+Decentralized Web Nodes, and usage of Decentralized Identifiers. Using these core standards, the SSIS enables robust
+functionality to facilitate all verifiable interactions such as creating, signing, issuing, curating, requesting, 
+revoking, exchanging, validating, verifying credentials in varying degrees of complexity.
 
 
 ## Deployment
@@ -43,7 +44,7 @@ to use the service, and much more!
 
 This project is fully open source, and we welcome contributions! For more information please see
 [CONTRIBUTING](CONTRIBUTING.md). Our current thinking about the development of the library is captured in
-[GitHub Issues](https://github.com/TBD54566975/vc-service/issues).
+[GitHub Issues](https://github.com/TBD54566975/ssi-service/issues).
 
 ## Project Resources
 

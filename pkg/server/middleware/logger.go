@@ -2,11 +2,10 @@ package middleware
 
 import (
 	"context"
+	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/tbd54566975/vc-service/framework"
 )
 
 // Logger logs request info before and after a handler runs.

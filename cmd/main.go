@@ -4,6 +4,7 @@ import (
 	"context"
 	"expvar"
 	"fmt"
+	"github.com/tbd54566975/ssi-service/pkg/server"
 	"log"
 	"net/http"
 	"os"
@@ -11,14 +12,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/tbd54566975/vc-service/service/handlers"
-
 	"github.com/ardanlabs/conf"
 	"github.com/pkg/errors"
 )
 
 const (
-	ServiceName = "vc-service"
+	ServiceName = "ssi-server"
 	LogPrefix   = ServiceName + ": "
 )
 
@@ -28,8 +27,7 @@ func main() {
 	svcLog.Println("Starting up")
 
 	if err := run(svcLog); err != nil {
-		svcLog.Println("main: error:", err)
-		os.Exit(1)
+		svcLog.Fatalf("main: error: %s", err.Error())
 	}
 }
 
@@ -91,9 +89,13 @@ func run(log *log.Logger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
+	ssiServer, err := server.NewSSIServer(shutdown, log)
+	if err != nil {
+		log.Fatalf("could not start http services: %s", err.Error())
+	}
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      handlers.API(shutdown, log),
+		Handler:      ssiServer,
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeout,
 	}
@@ -101,7 +103,7 @@ func run(log *log.Logger) error {
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		log.Printf("main: API server started and listening on -> %s", api.Addr)
+		log.Printf("main: server started and listening on -> %s", api.Addr)
 
 		serverErrors <- api.ListenAndServe()
 	}()
@@ -110,7 +112,7 @@ func run(log *log.Logger) error {
 	case err := <-serverErrors:
 		return errors.Wrap(err, "server error")
 	case sig := <-shutdown:
-		log.Printf("main: Shutdown signal received -> %v", sig)
+		log.Printf("main: shutdown signal received -> %v", sig)
 
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
 		defer cancel()
