@@ -36,6 +36,11 @@ func Clean() {
 	os.RemoveAll("bin")
 }
 
+// Run the service via docker-compose
+func Run() error {
+	return sh.Run("docker-compose", "--project-directory", "build", "up")
+}
+
 // Test runs unit tests without coverage.
 // The mage `-v` option will trigger a verbose output of the test
 func Test() error {
