@@ -8,6 +8,13 @@ import (
 	"log"
 )
 
+// Config TODO(gabe) per-service config
+type Config struct {
+	Logger      *log.Logger
+	Environment string `json:"environment,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
 // SSIService represents all services and their dependencies independent of transport
 type SSIService struct {
 	services []framework.Service
@@ -16,8 +23,8 @@ type SSIService struct {
 // NewSSIService creates a new instance of the SSIS which instantiates all services and their
 // dependencies independent of transport.
 // TODO(gabe) make service loading config-based
-func NewSSIService(log *log.Logger) (*SSIService, error) {
-	services, err := instantiateServices(log)
+func NewSSIService(config Config) (*SSIService, error) {
+	services, err := instantiateServices(config.Logger)
 	if err != nil {
 		errMsg := "could not instantiate the verifiable credentials service"
 		log.Printf(errMsg)

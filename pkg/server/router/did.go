@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -24,6 +25,9 @@ type DIDRouter struct {
 
 // NewDIDRouter creates an HTP router for the DID Service
 func NewDIDRouter(s svcframework.Service, l *log.Logger) (*DIDRouter, error) {
+	if s == nil {
+		return nil, errors.New("service cannot be nil")
+	}
 	didService, ok := s.(*did.Service)
 	if !ok {
 		return nil, fmt.Errorf("could not create DID router with service type: %s", s.Type())

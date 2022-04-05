@@ -29,10 +29,11 @@ type SSIServer struct {
 }
 
 // NewSSIServer does two things: instantiates all service and registers their HTTP bindings
-func NewSSIServer(shutdown chan os.Signal, log *log.Logger) (*SSIServer, error) {
+func NewSSIServer(shutdown chan os.Signal, config service.Config) (*SSIServer, error) {
 	// creates an HTTP server from the framework, and wrap it to extend it for the SSIS
-	httpServer := framework.NewHTTPServer(shutdown, middleware.Logger(log), middleware.Errors(log), middleware.Metrics(), middleware.Panics(log))
-	ssi, err := service.NewSSIService(log)
+	logger := config.Logger
+	httpServer := framework.NewHTTPServer(shutdown, middleware.Logger(logger), middleware.Errors(logger), middleware.Metrics(), middleware.Panics(logger))
+	ssi, err := service.NewSSIService(config)
 	if err != nil {
 		return nil, err
 	}
@@ -40,12 +41,12 @@ func NewSSIServer(shutdown chan os.Signal, log *log.Logger) (*SSIServer, error) 
 	server := SSIServer{
 		Server:     httpServer,
 		SSIService: ssi,
-		Logger:     log,
+		Logger:     logger,
 	}
 
 	// service-level routers
 	httpServer.Handle(http.MethodGet, "/health", router.Health)
-	httpServer.Handle(http.MethodGet, "/readiness", router.Readiness(services, log))
+	httpServer.Handle(http.MethodGet, "/readiness", router.Readiness(services, logger))
 
 	// start all services and their routers
 	log.Printf("Starting [%d] services...\n", len(services))

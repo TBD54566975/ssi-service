@@ -27,6 +27,7 @@ environments. It may be expanded to support multiple protocols and transports be
 ## What's Supported?
 
 - [x] [DID Management](https://www.w3.org/TR/did-core/)
+  - Using [did:key](https://w3c-ccg.github.io/did-method-key/)
 - [ ] [Verifiable Credential Schema](https://w3c-ccg.github.io/vc-json-schemas/v2/index.html) Management
 - [ ] [Verifiable Credential](https://www.w3.org/TR/vc-data-model) Issuance & Verification
 - [ ] Requesting, Receiving, and the Validation of Verifiable Claims using [Presentation Exchange](https://identity.foundation/presentation-exchange/)
