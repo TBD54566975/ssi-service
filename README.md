@@ -18,6 +18,7 @@ Decentralized Web Nodes, and usage of Decentralized Identifiers. Using these cor
 functionality to facilitate all verifiable interactions such as creating, signing, issuing, curating, requesting, 
 revoking, exchanging, validating, verifying credentials in varying degrees of complexity.
 
+![ssi-sdk](doc/ssi-service.png)
 
 ## Deployment
 
@@ -37,9 +38,10 @@ environments. It may be expanded to support multiple protocols and transports be
 
 ## Design Thinking
 
-The design of the service, at present, assumes it will be run by a single organization. Additional design work is needed
+The design of the service, at present, assumes it will be run by a single entity. Additional work is needed
 around authentication and authorization schemes to access the service and its functionalities, possible User Interfaces
-to use the service, and much more!
+to use the service, and much more! Please [open a discussion](https://github.com/TBD54566975/collaboration/discussions)
+if you are interested in helping shape the future of this project.
 
 ## Contributing
 
