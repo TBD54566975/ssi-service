@@ -6,12 +6,16 @@ import (
 	"net/http"
 )
 
+type GetHealthCheckResponse struct {
+	Status string `json:"status"`
+}
+
+const (
+	HealthOK string = "OK"
+)
+
 // Health is a simple handler that always responds with a 200 OK
 func Health(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
-	status := struct {
-		Status string
-	}{
-		Status: "OK",
-	}
+	status := GetHealthCheckResponse{Status: HealthOK}
 	return json.NewEncoder(w).Encode(status)
 }

@@ -3,13 +3,13 @@ package did
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/TBD54566975/did-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/pkg/service/did/storage"
 )
 
-func NewKeyDIDHandler(s storage.Storage) (MethodHandler, error) {
+func newKeyDIDHandler(s storage.Storage) (MethodHandler, error) {
 	return &keyDIDHandler{storage: s}, nil
 }
 

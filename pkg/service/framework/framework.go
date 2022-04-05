@@ -16,8 +16,8 @@ const (
 
 // Status is for service reporting on their status
 type Status struct {
-	Status  StatusState
-	Message string
+	Status  StatusState `json:"status,omitempty"`
+	Message string      `json:"message,omitempty"`
 }
 
 // Service is an interface each service must comply with to be registered and orchestrated by the http.

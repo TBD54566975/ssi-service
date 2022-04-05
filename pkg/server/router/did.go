@@ -3,7 +3,9 @@ package router
 import (
 	"context"
 	"fmt"
-	"github.com/TBD54566975/did-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -24,6 +26,9 @@ type DIDRouter struct {
 
 // NewDIDRouter creates an HTP router for the DID Service
 func NewDIDRouter(s svcframework.Service, l *log.Logger) (*DIDRouter, error) {
+	if s == nil {
+		return nil, errors.New("service cannot be nil")
+	}
 	didService, ok := s.(*did.Service)
 	if !ok {
 		return nil, fmt.Errorf("could not create DID router with service type: %s", s.Type())
@@ -39,7 +44,8 @@ type GetDIDMethodsResponse struct {
 }
 
 func (s DIDRouter) GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	response := GetDIDMethodsResponse{DIDMethods: s.GetSupportedMethods()}
+	methods := s.GetSupportedMethods()
+	response := GetDIDMethodsResponse{DIDMethods: methods}
 	return framework.Respond(ctx, w, response, http.StatusOK)
 }
 
@@ -48,7 +54,8 @@ type CreateDIDByMethodRequest struct {
 }
 
 type CreateDIDByMethodResponse struct {
-	DID interface{} `json:"did,omitempty"`
+	DID        didsdk.DIDDocument `json:"did,omitempty"`
+	PrivateKey string             `json:"privateKeyBase58,omitempty"`
 }
 
 func (s DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -82,17 +89,21 @@ func (s DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter,
 		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
 	}
 
-	return framework.Respond(ctx, w, *createDIDResponse, http.StatusOK)
+	resp := CreateDIDByMethodResponse{
+		DID:        createDIDResponse.DID,
+		PrivateKey: createDIDResponse.PrivateKey,
+	}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
-type GetDIDByMethodRequest struct {
-	DID interface{} `json:"did,omitempty"`
+type GetDIDByMethodResponse struct {
+	DID didsdk.DIDDocument `json:"did,omitempty"`
 }
 
-func (s DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (s DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
-		errMsg := "create DID request missing method parameter"
+		errMsg := "get DID by method request missing method parameter"
 		s.Logger.Printf(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
@@ -103,5 +114,22 @@ func (s DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, r 
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	return framework.Respond(ctx, w, nil, http.StatusOK)
+	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
+	handler, err := s.GetHandler(did.Method(*method))
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get handler for method<%s>", *method)
+		s.Logger.Printf(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	// TODO(gabe) differentiate between internal errors and not found DIDs
+	gotDID, err := handler.GetDID(*id)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get DID for method<%s> with id: %s", *method, *id)
+		s.Logger.Printf(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusNotFound)
+	}
+
+	resp := GetDIDByMethodResponse{DID: gotDID.DID}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
 }

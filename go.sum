@@ -39,8 +39,8 @@ cloud.google.com/go/storage v1.10.0/go.mod h1:FLPqc6j+Ki4BU591ie1oL6qBQGu2Bl/tZ9
 dmitri.shuralyov.com/gpu/mtl v0.0.0-20190408044501-666a987793e9/go.mod h1:H6x//7gZCb22OMCxBHrMx7a5I7Hp++hsVxbQ4BYO7hU=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
-github.com/TBD54566975/did-sdk v0.0.0-20220330042841-cde17eb1a120 h1:kJ7bubdIo3ZAEMP5/VVfbfL0IAibv6di7ylCn6gmqPg=
-github.com/TBD54566975/did-sdk v0.0.0-20220330042841-cde17eb1a120/go.mod h1:nEqNw1weS82onBxbkczwh1KoVl1IJYKibEi8jh1qSQw=
+github.com/TBD54566975/ssi-sdk v0.0.0-20220403173431-39ff8ebd3825 h1:IRup2wdgV5IvPZKx+XlCbJVDy28Pa60rxdA147NuE5I=
+github.com/TBD54566975/ssi-sdk v0.0.0-20220403173431-39ff8ebd3825/go.mod h1:6dpqc6LQ8EQVhZvrk1beTosnLqD5iR7jEorZHLpKUF0=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/ardanlabs/conf v1.4.0 h1:Nzi1Z5TBlwdNNYTSjfm26NL3C8kbVCZhEnJ7kiyONdY=
 github.com/ardanlabs/conf v1.4.0/go.mod h1:ILsMo9dMqYzCxDjDXTiwMI0IgxOJd0MOiucbQY2wlJw=

@@ -21,7 +21,7 @@ type readiness struct {
 	log    *log.Logger
 }
 
-type readinessResponse struct {
+type GetReadinessResponse struct {
 	Status          svcframework.Status                       `json:"status"`
 	ServiceStatuses map[svcframework.Type]svcframework.Status `json:"serviceStatuses"`
 }
@@ -53,7 +53,7 @@ func (r readiness) ready(ctx context.Context, w http.ResponseWriter, _ *http.Req
 			Message: "all service ready",
 		}
 	}
-	response := readinessResponse{
+	response := GetReadinessResponse{
 		Status:          status,
 		ServiceStatuses: statuses,
 	}

@@ -1,8 +1,8 @@
 package did
 
 import (
-	"github.com/TBD54566975/did-sdk/crypto"
-	sdkdid "github.com/TBD54566975/did-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/crypto"
+	sdkdid "github.com/TBD54566975/ssi-sdk/did"
 )
 
 // CreateDIDRequest is the  SON-serializable request for creating a DID across DID methods

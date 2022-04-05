@@ -22,30 +22,37 @@ const (
 	DIDsPrefix = "/dids"
 )
 
+// SSIServer exposes all dependencies needed to run a http server and all its services
 type SSIServer struct {
 	*framework.Server
 	*service.SSIService
-	*log.Logger
+	*service.Config
 }
 
 // NewSSIServer does two things: instantiates all service and registers their HTTP bindings
-func NewSSIServer(shutdown chan os.Signal, log *log.Logger) (*SSIServer, error) {
+func NewSSIServer(shutdown chan os.Signal, config service.Config) (*SSIServer, error) {
 	// creates an HTTP server from the framework, and wrap it to extend it for the SSIS
-	httpServer := framework.NewHTTPServer(shutdown, middleware.Logger(log), middleware.Errors(log), middleware.Metrics(), middleware.Panics(log))
-	ssi, err := service.NewSSIService(log)
+	logger := config.Logger
+	middlewares := []framework.Middleware{middleware.Logger(logger), middleware.Errors(logger), middleware.Metrics(), middleware.Panics(logger)}
+	httpServer := framework.NewHTTPServer(shutdown, middlewares...)
+	ssi, err := service.InstantiateSSIService(config)
 	if err != nil {
 		return nil, err
 	}
+
+	// get all instantiated services
 	services := ssi.GetServices()
-	server := SSIServer{
-		Server:     httpServer,
-		SSIService: ssi,
-		Logger:     log,
-	}
 
 	// service-level routers
 	httpServer.Handle(http.MethodGet, "/health", router.Health)
-	httpServer.Handle(http.MethodGet, "/readiness", router.Readiness(services, log))
+	httpServer.Handle(http.MethodGet, "/readiness", router.Readiness(services, logger))
+
+	// create the server instance to be returned
+	server := SSIServer{
+		Server:     httpServer,
+		SSIService: ssi,
+		Config:     &config,
+	}
 
 	// start all services and their routers
 	log.Printf("Starting [%d] services...\n", len(services))

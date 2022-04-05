@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/TBD54566975/did-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )

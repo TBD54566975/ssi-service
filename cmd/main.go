@@ -5,6 +5,7 @@ import (
 	"expvar"
 	"fmt"
 	"github.com/tbd54566975/ssi-service/pkg/server"
+	"github.com/tbd54566975/ssi-service/pkg/service"
 	"log"
 	"net/http"
 	"os"
@@ -24,28 +25,35 @@ const (
 func main() {
 	svcLog := log.New(os.Stdout, LogPrefix, log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
 
-	svcLog.Println("Starting up")
+	svcLog.Println("Starting up...")
 
 	if err := run(svcLog); err != nil {
 		svcLog.Fatalf("main: error: %s", err.Error())
 	}
 }
 
+type serverConfig struct {
+	conf.Version
+	Web *webConfig
+}
+
+type webConfig struct {
+	APIHost         string        `conf:"default:0.0.0.0:3000"`
+	DebugHost       string        `conf:"default:0.0.0.0:4000"`
+	ReadTimeout     time.Duration `conf:"default:5s"`
+	WriteTimeout    time.Duration `conf:"default:5s"`
+	ShutdownTimeout time.Duration `conf:"default:5s"`
+}
+
 // startup and shutdown logic
 func run(log *log.Logger) error {
-	var cfg struct {
-		conf.Version
-		Web struct {
-			APIHost         string        `conf:"default:0.0.0.0:3000"`
-			DebugHost       string        `conf:"default:0.0.0.0:4000"`
-			ReadTimeout     time.Duration `conf:"default:5s"`
-			WriteTimeout    time.Duration `conf:"default:5s"`
-			ShutdownTimeout time.Duration `conf:"default:5s"`
-		}
+	cfg := serverConfig{
+		Version: conf.Version{
+			SVN:  "2022.03.15",
+			Desc: "The Self Sovereign Identity Service",
+		},
+		Web: new(webConfig),
 	}
-
-	cfg.Version.SVN = "2022.03.15"
-	cfg.Version.Desc = "The Verifiable Credentials Service"
 
 	if err := conf.Parse(os.Args[1:], ServiceName, &cfg); err != nil {
 		switch err {
@@ -89,7 +97,8 @@ func run(log *log.Logger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	ssiServer, err := server.NewSSIServer(shutdown, log)
+	serviceConfig := service.Config{Logger: log}
+	ssiServer, err := server.NewSSIServer(shutdown, serviceConfig)
 	if err != nil {
 		log.Fatalf("could not start http services: %s", err.Error())
 	}

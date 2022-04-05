@@ -64,7 +64,11 @@ func NewDIDService(log *log.Logger, methods []Method, s storage.ServiceStorage) 
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate DID storage for DID service")
 	}
-	svc := Service{storage: didStorage, handlers: make(map[Method]MethodHandler)}
+	svc := Service{
+		storage:  didStorage,
+		handlers: make(map[Method]MethodHandler),
+		log:      log,
+	}
 
 	// instantiate all handlers for DID methods
 	for _, m := range methods {
@@ -78,7 +82,7 @@ func NewDIDService(log *log.Logger, methods []Method, s storage.ServiceStorage) 
 func (s *Service) instantiateHandlerForMethod(method Method) error {
 	switch method {
 	case KeyMethod:
-		handler, err := NewKeyDIDHandler(s.storage)
+		handler, err := newKeyDIDHandler(s.storage)
 		if err != nil {
 			return fmt.Errorf("could not instnatiate did:%s handler", KeyMethod)
 		}
