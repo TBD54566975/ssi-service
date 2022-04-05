@@ -22,8 +22,25 @@ revoking, exchanging, validating, verifying credentials in varying degrees of co
 
 ## Deployment
 
-The service will be packaged as a [Docker container](https://www.docker.com/), runnable in a wide variety of
-environments. It may be expanded to support multiple protocols and transports besides HTTP/REST.
+The service is packaged as a [Docker container](https://www.docker.com/), runnable in a wide variety of
+environments. [Docker Compose](https://docs.docker.com/compose/) is used for simplification and orchestration. To run
+the service, you can use the following command, which will start the service on port `8080`:
+
+```shell
+mage run
+```
+
+Or, you can run docker-compose yourself:
+
+```shell
+cd build && docker-compose up 
+```
+
+You should then be able to send requests as follows:
+```shell
+ ~ curl localhost:8080/health
+{"status":"OK"}
+```
 
 ## What's Supported?
 
