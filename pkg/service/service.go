@@ -20,10 +20,13 @@ type SSIService struct {
 	services []framework.Service
 }
 
-// NewSSIService creates a new instance of the SSIS which instantiates all services and their
+// InstantiateSSIService creates a new instance of the SSIS which instantiates all services and their
 // dependencies independent of transport.
 // TODO(gabe) make service loading config-based
-func NewSSIService(config Config) (*SSIService, error) {
+func InstantiateSSIService(config Config) (*SSIService, error) {
+	if config.Logger == nil {
+		return nil, errors.New("logger not initialized")
+	}
 	services, err := instantiateServices(config.Logger)
 	if err != nil {
 		errMsg := "could not instantiate the verifiable credentials service"

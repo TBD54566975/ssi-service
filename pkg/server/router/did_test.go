@@ -37,7 +37,8 @@ func TestDIDRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)
 
-		didService, err := did.NewDIDService(log.New(os.Stdout, "ssi-test", log.LstdFlags), []did.Method{did.KeyMethod}, bolt)
+		logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
+		didService, err := did.NewDIDService(logger, []did.Method{did.KeyMethod}, bolt)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didService)
 
