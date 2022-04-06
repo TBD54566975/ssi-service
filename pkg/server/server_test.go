@@ -25,66 +25,68 @@ import (
 	"time"
 )
 
-func TestAPI(t *testing.T) {
-
+func TestHealthCheckAPI(t *testing.T) {
 	// remove the db file after the test
 	t.Cleanup(func() {
 		_ = os.Remove(storage.DBFile)
 	})
 
-	t.Run("Test Health Check", func(tt *testing.T) {
-		shutdown := make(chan os.Signal, 1)
-		logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
-		server, err := NewSSIServer(shutdown, service.Config{Logger: logger})
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, server)
+	shutdown := make(chan os.Signal, 1)
+	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
+	server, err := NewSSIServer(shutdown, service.Config{Logger: logger})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, server)
 
-		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/health", nil)
-		w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/health", nil)
+	w := httptest.NewRecorder()
 
-		err = router.Health(context.TODO(), w, req)
-		assert.NoError(tt, err)
-		assert.Equal(tt, http.StatusOK, w.Result().StatusCode)
+	err = router.Health(context.TODO(), w, req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
-		var resp router.GetHealthCheckResponse
-		err = json.NewDecoder(w.Body).Decode(&resp)
-		assert.NoError(tt, err)
+	var resp router.GetHealthCheckResponse
+	err = json.NewDecoder(w.Body).Decode(&resp)
+	assert.NoError(t, err)
 
-		assert.Equal(tt, router.HealthOK, resp.Status)
+	assert.Equal(t, router.HealthOK, resp.Status)
+
+}
+
+func TestReadinessAPI(t *testing.T) {
+	// remove the db file after the test
+	t.Cleanup(func() {
+		_ = os.Remove(storage.DBFile)
 	})
 
-	t.Run("Test Readiness Check", func(tt *testing.T) {
-		shutdown := make(chan os.Signal, 1)
-		logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
-		server, err := NewSSIServer(shutdown, service.Config{Logger: logger})
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, server)
+	shutdown := make(chan os.Signal, 1)
+	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
+	server, err := NewSSIServer(shutdown, service.Config{Logger: logger})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, server)
 
-		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/readiness", nil)
-		w := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/readiness", nil)
+	w := httptest.NewRecorder()
 
-		handler := router.Readiness(nil, logger)
-		err = handler(newRequestContext(), w, req)
-		assert.NoError(tt, err)
-		assert.Equal(tt, http.StatusOK, w.Result().StatusCode)
+	handler := router.Readiness(nil, logger)
+	err = handler(newRequestContext(), w, req)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
-		var resp router.GetReadinessResponse
-		err = json.NewDecoder(w.Body).Decode(&resp)
-		assert.NoError(tt, err)
+	var resp router.GetReadinessResponse
+	err = json.NewDecoder(w.Body).Decode(&resp)
+	assert.NoError(t, err)
 
-		assert.Equal(tt, svcframework.StatusReady, resp.Status.Status)
-		assert.Len(tt, resp.ServiceStatuses, 0)
-	})
+	assert.Equal(t, svcframework.StatusReady, resp.Status.Status)
+	assert.Len(t, resp.ServiceStatuses, 0)
 }
 
 func TestDIDAPI(t *testing.T) {
-
-	// remove the db file after the test
-	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
-	})
-
 	t.Run("Test Get DID Methods", func(tt *testing.T) {
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = os.Remove(storage.DBFile)
+		})
+
 		didRouter := newDIDService(tt)
 
 		// get DID methods
@@ -104,6 +106,11 @@ func TestDIDAPI(t *testing.T) {
 	})
 
 	t.Run("Test Create DID By Method: Key", func(tt *testing.T) {
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = os.Remove(storage.DBFile)
+		})
+
 		didRouter := newDIDService(tt)
 
 		// create DID by method - key - missing body
@@ -118,7 +125,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "invalid create DID request")
 
 		// with body, bad key type
-		createDIDRequest := did.CreateDIDRequest{KeyType: "bad"}
+		createDIDRequest := router.CreateDIDByMethodRequest{KeyType: "bad"}
 		requestReader := newRequestValue(tt, createDIDRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", requestReader)
 		w = httptest.NewRecorder()
@@ -128,7 +135,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create DID for method<key> with key type: bad")
 
 		// with body, good key type
-		createDIDRequest = did.CreateDIDRequest{KeyType: crypto.Ed25519}
+		createDIDRequest = router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
 		requestReader = newRequestValue(tt, createDIDRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", requestReader)
 		w = httptest.NewRecorder()
@@ -144,6 +151,11 @@ func TestDIDAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get DID By Method", func(tt *testing.T) {
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = os.Remove(storage.DBFile)
+		})
+
 		didRouter := newDIDService(tt)
 
 		// get DID by method
@@ -157,7 +169,7 @@ func TestDIDAPI(t *testing.T) {
 		}
 		err := didRouter.GetDIDByMethod(newRequestContextWithParams(badParams), w, req)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not get handler for method<bad>")
+		assert.Contains(tt, err.Error(), "could not get DID for method<bad>")
 
 		// good method, bad id
 		badParams1 := map[string]string{
@@ -169,7 +181,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not get DID for method<key> with id: worse")
 
 		// store a DID
-		createDIDRequest := did.CreateDIDRequest{KeyType: crypto.Ed25519}
+		createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
 		requestReader := newRequestValue(tt, createDIDRequest)
 		params := map[string]string{"method": "key"}
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", requestReader)

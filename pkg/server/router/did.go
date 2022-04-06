@@ -77,7 +77,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 	createDIDRequest := did.CreateDIDRequest{Method: did.Method(*method), KeyType: request.KeyType}
 	createDIDResponse, err := dr.service.CreateDIDByMethod(createDIDRequest)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create DID for method<%dr> with key type: %dr", *method, request.KeyType)
+		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)
 		dr.logger.Printf(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
 	}
@@ -102,7 +102,7 @@ func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _
 	}
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
-		errMsg := fmt.Sprintf("get DID request missing id parameter for method: %dr", *method)
+		errMsg := fmt.Sprintf("get DID request missing id parameter for method: %s", *method)
 		dr.logger.Printf(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}

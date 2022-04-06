@@ -22,7 +22,7 @@ func NewBoltDB() (*BoltDB, error) {
 }
 
 func NewBoltDBWithFile(filePath string) (*BoltDB, error) {
-	db, err := bolt.Open(filePath, 0600, &bolt.Options{Timeout: 1 * time.Second})
+	db, err := bolt.Open(filePath, 0600, &bolt.Options{Timeout: 3 * time.Second})
 	if err != nil {
 		return nil, err
 	}

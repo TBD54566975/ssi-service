@@ -49,7 +49,7 @@ func TestDIDRouter(t *testing.T) {
 		// get unknown handler
 		_, err = didService.GetDIDByMethod(did.GetDIDRequest{Method: "bad"})
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not get handler for DID method: bad")
+		assert.Contains(tt, err.Error(), "could not get handler for method<bad>")
 
 		supported := didService.GetSupportedMethods()
 		assert.NotEmpty(tt, supported)

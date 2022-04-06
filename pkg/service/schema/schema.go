@@ -2,7 +2,6 @@ package schema
 
 import (
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	schemastorage "github.com/tbd54566975/ssi-service/pkg/service/schema/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -39,14 +38,14 @@ func NewSchemaService(logger *log.Logger, s storage.ServiceStorage) (*Service, e
 	}, nil
 }
 
-func (s Service) GetAllSchemas() (*router.GetAllSchemasResponse, error) {
+func (s Service) GetAllSchemas() (*GetAllSchemasResponse, error) {
 	return nil, nil
 }
 
-func (s Service) CreateSchema() error {
-	return nil
+func (s Service) CreateSchema() (*CreateSchemaResponse, error) {
+	return nil, nil
 }
 
-func (s Service) GetSchemaByID(id string) error {
-	return nil
+func (s Service) GetSchemaByID(request GetSchemaByIDRequest) (*GetSchemaByIDResponse, error) {
+	return nil, nil
 }

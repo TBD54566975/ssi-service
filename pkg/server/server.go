@@ -75,6 +75,8 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 	switch serviceType {
 	case svcframework.DID:
 		return s.DecentralizedIdentityAPI(service)
+	case svcframework.Schema:
+		return s.SchemaAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
