@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"strings"
 )
 
 const (
@@ -63,7 +63,7 @@ func (b BoltDIDStorage) GetDID(id string) (*StoredDID, error) {
 	return &stored, nil
 }
 
-// GetDIDs attempts to get all DIDs for a given method. It will return those it can, even if it has trouble with some.
+// GetDIDs attempts to get all DIDs for a given method. It will return those it can even if it has trouble with some.
 func (b BoltDIDStorage) GetDIDs(method string) ([]StoredDID, error) {
 	couldNotGetDIDsErr := fmt.Sprintf("could not get DIDs for method: %s", method)
 	namespace, err := getNamespaceForMethod(method)
@@ -93,11 +93,14 @@ func (b BoltDIDStorage) DeleteDID(id string) error {
 	if err != nil {
 		return errors.Wrap(err, couldNotGetDIDErr)
 	}
-	return b.db.Delete(namespace, id)
+	if err := b.db.Delete(namespace, id); err != nil {
+		return errors.Wrapf(err, "could not delete DID: %s", id)
+	}
+	return nil
 }
 
 func getNamespaceForDID(id string) (string, error) {
-	method, err := getMethod(id)
+	method, err := util.GetMethodForDID(id)
 	if err != nil {
 		return "", err
 	}
@@ -106,15 +109,6 @@ func getNamespaceForDID(id string) (string, error) {
 		return "", err
 	}
 	return namespace, nil
-}
-
-// getMethod gets a DID method from a did, the second part of the did (e.g. did:test:abcd, the method is 'test')
-func getMethod(did string) (string, error) {
-	split := strings.Split(did, ":")
-	if len(split) < 3 {
-		return "", fmt.Errorf("malformed did: %s", did)
-	}
-	return split[1], nil
 }
 
 func getNamespaceForMethod(method string) (string, error) {

@@ -4,6 +4,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"log"
 )
@@ -50,5 +51,9 @@ func instantiateServices(log *log.Logger) ([]framework.Service, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate the DID service")
 	}
-	return []framework.Service{didService}, nil
+	schemaService, err := schema.NewSchemaService(log, bolt)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate the DID service")
+	}
+	return []framework.Service{didService, schemaService}, nil
 }

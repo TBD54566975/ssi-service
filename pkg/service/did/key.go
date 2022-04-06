@@ -49,7 +49,8 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 	}, nil
 }
 
-func (h *keyDIDHandler) GetDID(id string) (*GetDIDResponse, error) {
+func (h *keyDIDHandler) GetDID(request GetDIDRequest) (*GetDIDResponse, error) {
+	id := request.ID
 	gotDID, err := h.storage.GetDID(id)
 	if err != nil {
 		return nil, fmt.Errorf("error getting DID: %s", id)

@@ -8,10 +8,11 @@ type (
 const (
 	// List of all service
 
-	DID Type = "did-service"
+	DID    Type = "did-service"
+	Schema Type = "schema-service"
 
 	StatusReady    StatusState = "ready"
-	StatusNotReady StatusState = "not ready"
+	StatusNotReady StatusState = "not_ready"
 )
 
 // Status is for service reporting on their status

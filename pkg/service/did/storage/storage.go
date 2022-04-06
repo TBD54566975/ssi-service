@@ -7,8 +7,8 @@ import (
 )
 
 type StoredDID struct {
-	DID              did.DIDDocument
-	PrivateKeyBase58 string
+	DID              did.DIDDocument `json:"did"`
+	PrivateKeyBase58 string          `json:"privateKeyBase58"`
 }
 
 type Storage interface {
