@@ -14,7 +14,7 @@ require (
 	github.com/mr-tron/base58 v1.1.3
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.7.1
-	go.opentelemetry.io/otel/trace v1.3.0
+	go.opentelemetry.io/otel/trace v1.6.3
 	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 	gopkg.in/go-playground/validator.v9 v9.31.0
 )
@@ -47,7 +47,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pquerna/cachecontrol v0.0.0-20180517163645-1555304b9b35 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	go.opentelemetry.io/otel v1.3.0 // indirect
+	go.opentelemetry.io/otel v1.6.3 // indirect
 	golang.org/x/sys v0.0.0-20220330033206-e17cdc41300f // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.6 // indirect
