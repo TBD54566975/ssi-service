@@ -13,7 +13,7 @@ require (
 	github.com/magefile/mage v1.13.0
 	github.com/mr-tron/base58 v1.1.3
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.7.1
 	go.opentelemetry.io/otel/trace v1.3.0
 	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 	gopkg.in/go-playground/validator.v9 v9.31.0
