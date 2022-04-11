@@ -42,8 +42,8 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/TBD54566975/ssi-sdk v0.0.0-20220403173431-39ff8ebd3825 h1:IRup2wdgV5IvPZKx+XlCbJVDy28Pa60rxdA147NuE5I=
 github.com/TBD54566975/ssi-sdk v0.0.0-20220403173431-39ff8ebd3825/go.mod h1:6dpqc6LQ8EQVhZvrk1beTosnLqD5iR7jEorZHLpKUF0=
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
-github.com/ardanlabs/conf v1.4.0 h1:Nzi1Z5TBlwdNNYTSjfm26NL3C8kbVCZhEnJ7kiyONdY=
-github.com/ardanlabs/conf v1.4.0/go.mod h1:ILsMo9dMqYzCxDjDXTiwMI0IgxOJd0MOiucbQY2wlJw=
+github.com/ardanlabs/conf v1.5.0 h1:5TwP6Wu9Xi07eLFEpiCUF3oQXh9UzHMDVnD3u/I5d5c=
+github.com/ardanlabs/conf v1.5.0/go.mod h1:ILsMo9dMqYzCxDjDXTiwMI0IgxOJd0MOiucbQY2wlJw=
 github.com/armon/circbuf v0.0.0-20150827004946-bbbad097214e/go.mod h1:3U/XgcO3hCbHZ8TKRvWD2dDTCfh9M9ya+I9JpbB7O8o=
 github.com/armon/consul-api v0.0.0-20180202201655-eb2c6b5be1b6/go.mod h1:grANhF5doyWs3UAsr3K4I6qtAmlQcZDesFNEHPZAzj8=
 github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da/go.mod h1:Q73ZrmVTwzkszR9V5SSuryQ31EELlFMUz1kKyl939pY=

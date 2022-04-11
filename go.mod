@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/TBD54566975/ssi-sdk v0.0.0-20220403173431-39ff8ebd3825
-	github.com/ardanlabs/conf v1.4.0
+	github.com/ardanlabs/conf v1.5.0
 	github.com/boltdb/bolt v1.3.1
 	github.com/dimfeld/httptreemux/v5 v5.4.0
 	github.com/go-playground/locales v0.14.0
