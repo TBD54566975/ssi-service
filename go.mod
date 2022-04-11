@@ -3,7 +3,8 @@ module github.com/tbd54566975/ssi-service
 go 1.17
 
 require (
-	github.com/ardanlabs/conf v1.4.0
+	github.com/TBD54566975/ssi-sdk v0.0.0-20220403173431-39ff8ebd3825
+	github.com/ardanlabs/conf v1.5.0
 	github.com/boltdb/bolt v1.3.1
 	github.com/dimfeld/httptreemux/v5 v5.4.0
 	github.com/go-playground/locales v0.14.0
@@ -16,7 +17,9 @@ require (
 	go.opentelemetry.io/otel/trace v1.3.0
 	golang.org/x/crypto v0.0.0-20220331220935-ae2d96664a29
 	gopkg.in/go-playground/validator.v9 v9.31.0
-	github.com/TBD54566975/ssi-sdk v0.0.0-20220403173431-39ff8ebd3825 // indirect
+)
+
+require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/go-playground/validator/v10 v10.10.0 // indirect
