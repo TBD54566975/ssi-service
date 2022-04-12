@@ -30,15 +30,20 @@ func NewSchemaRouter(s svcframework.Service, l *log.Logger) (*SchemaRouter, erro
 	}, nil
 }
 
-type GetAllSchemasResponse struct {
-	Schemas []schemalib.VCJSONSchema `json:"schemas,omitempty"`
-}
-
-func (sr SchemaRouter) GetAllSchemas(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return nil
+type CreateSchemaRequest struct {
+	DID    string                 `json:"did,omitempty"`
+	Schema schemalib.VCJSONSchema `json:"schema" validate:"required"`
 }
 
 func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+type GetSchemasResponse struct {
+	Schemas []schemalib.VCJSONSchema `json:"schemas,omitempty"`
+}
+
+func (sr SchemaRouter) GetSchemas(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 

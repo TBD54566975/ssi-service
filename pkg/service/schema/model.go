@@ -2,7 +2,7 @@ package schema
 
 import "github.com/TBD54566975/ssi-sdk/credential/schema"
 
-type GetAllSchemasResponse struct {
+type GetSchemasResponse struct {
 	Schemas []schema.VCJSONSchema `json:"schemas,omitempty"`
 }
 

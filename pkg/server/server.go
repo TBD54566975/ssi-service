@@ -106,8 +106,8 @@ func (s *SSIServer) SchemaAPI(service svcframework.Service) error {
 
 	handlerPath := V1Prefix + SchemasPrefix
 
-	s.Handle(http.MethodGet, handlerPath, schemaRouter.GetAllSchemas)
 	s.Handle(http.MethodPut, handlerPath, schemaRouter.CreateSchema)
+	s.Handle(http.MethodGet, handlerPath, schemaRouter.GetSchemas)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), schemaRouter.GetSchemaByID)
 	return nil
 }
