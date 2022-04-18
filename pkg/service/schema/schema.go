@@ -1,12 +1,17 @@
 package schema
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
+	schemalib "github.com/TBD54566975/ssi-sdk/schema"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	schemastorage "github.com/tbd54566975/ssi-service/pkg/service/schema/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"log"
+	"time"
 )
 
 type Service struct {
@@ -39,9 +44,34 @@ func NewSchemaService(logger *log.Logger, s storage.ServiceStorage) (*Service, e
 	}, nil
 }
 
-func (s Service) CreateSchema() (*CreateSchemaResponse, error) {
+// CreateSchema houses the main service logic for schema creation. It validates the input, and
+// produces a schema value that conforms with the VC JSON Schema specification.
+// TODO(gabe) support proof generation on schemas, versioning, and more
+func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaResponse, error) {
+	schemaBytes, err := json.Marshal(request.Schema)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not marshal schema in request")
+	}
+	if err := schemalib.IsValidJSONSchema(string(schemaBytes)); err != nil {
+		return nil, errors.Wrap(err, "provided value is not a valid JSON schema")
+	}
 
-	return nil, nil
+	schema := schema.VCJSONSchema{
+		Type:     VCJSONSchemaType,
+		Version:  Version1,
+		ID:       uuid.NewString(),
+		Name:     request.Name,
+		Author:   request.Author,
+		Authored: time.Now().Format(time.RFC3339),
+		Schema:   request.Schema,
+	}
+
+	storedSchema := schemastorage.StoredSchema{Schema: schema}
+	if err := s.storage.StoreSchema(storedSchema); err != nil {
+		return nil, errors.Wrap(err, "could not store schema")
+	}
+
+	return &CreateSchemaResponse{Schema: schema}, nil
 }
 
 func (s Service) GetSchemas() (*GetSchemasResponse, error) {
@@ -59,5 +89,12 @@ func (s Service) GetSchemas() (*GetSchemasResponse, error) {
 }
 
 func (s Service) GetSchemaByID(request GetSchemaByIDRequest) (*GetSchemaByIDResponse, error) {
-	return nil, nil
+	gotSchema, err := s.storage.GetSchema(request.ID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting Schema: %s", request.ID)
+	}
+	if gotSchema == nil {
+		return nil, fmt.Errorf("schema with id<%s> could not be found", request.ID)
+	}
+	return &GetSchemaByIDResponse{Schema: gotSchema.Schema}, nil
 }

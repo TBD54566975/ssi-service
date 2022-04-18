@@ -81,7 +81,7 @@ func TestReadinessAPI(t *testing.T) {
 }
 
 func TestDIDAPI(t *testing.T) {
-	t.Run("Test Get DID Methods", func(tt *testing.T) {
+	t.Run("Test Get Author Methods", func(tt *testing.T) {
 		// remove the db file after the test
 		tt.Cleanup(func() {
 			_ = os.Remove(storage.DBFile)
@@ -89,7 +89,7 @@ func TestDIDAPI(t *testing.T) {
 
 		didRouter := newDIDService(tt)
 
-		// get DID methods
+		// get Author methods
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids", nil)
 		w := httptest.NewRecorder()
 
@@ -105,7 +105,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Equal(tt, resp.DIDMethods[0], did.KeyMethod)
 	})
 
-	t.Run("Test Create DID By Method: Key", func(tt *testing.T) {
+	t.Run("Test Create Author By Method: Key", func(tt *testing.T) {
 		// remove the db file after the test
 		tt.Cleanup(func() {
 			_ = os.Remove(storage.DBFile)
@@ -113,7 +113,7 @@ func TestDIDAPI(t *testing.T) {
 
 		didRouter := newDIDService(tt)
 
-		// create DID by method - key - missing body
+		// create Author by method - key - missing body
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", nil)
 		w := httptest.NewRecorder()
 		params := map[string]string{
@@ -122,7 +122,7 @@ func TestDIDAPI(t *testing.T) {
 
 		err := didRouter.CreateDIDByMethod(newRequestContextWithParams(params), w, req)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create DID request")
+		assert.Contains(tt, err.Error(), "invalid create Author request")
 
 		// with body, bad key type
 		createDIDRequest := router.CreateDIDByMethodRequest{KeyType: "bad"}
@@ -132,7 +132,7 @@ func TestDIDAPI(t *testing.T) {
 
 		err = didRouter.CreateDIDByMethod(newRequestContextWithParams(params), w, req)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not create DID for method<key> with key type: bad")
+		assert.Contains(tt, err.Error(), "could not create Author for method<key> with key type: bad")
 
 		// with body, good key type
 		createDIDRequest = router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
@@ -150,7 +150,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Contains(tt, resp.DID.ID, did.KeyMethod)
 	})
 
-	t.Run("Test Get DID By Method", func(tt *testing.T) {
+	t.Run("Test Get Author By Method", func(tt *testing.T) {
 		// remove the db file after the test
 		tt.Cleanup(func() {
 			_ = os.Remove(storage.DBFile)
@@ -158,7 +158,7 @@ func TestDIDAPI(t *testing.T) {
 
 		didRouter := newDIDService(tt)
 
-		// get DID by method
+		// get Author by method
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/bad/worse", nil)
 		w := httptest.NewRecorder()
 
@@ -169,7 +169,7 @@ func TestDIDAPI(t *testing.T) {
 		}
 		err := didRouter.GetDIDByMethod(newRequestContextWithParams(badParams), w, req)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not get DID for method<bad>")
+		assert.Contains(tt, err.Error(), "could not get Author for method<bad>")
 
 		// good method, bad id
 		badParams1 := map[string]string{
@@ -178,9 +178,9 @@ func TestDIDAPI(t *testing.T) {
 		}
 		err = didRouter.GetDIDByMethod(newRequestContextWithParams(badParams1), w, req)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not get DID for method<key> with id: worse")
+		assert.Contains(tt, err.Error(), "could not get Author for method<key> with id: worse")
 
-		// store a DID
+		// store a Author
 		createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
 		requestReader := newRequestValue(tt, createDIDRequest)
 		params := map[string]string{"method": "key"}
@@ -216,7 +216,7 @@ func TestDIDAPI(t *testing.T) {
 }
 
 func newDIDService(t *testing.T) *router.DIDRouter {
-	// set up DID service
+	// set up Author service
 	bolt, err := storage.NewBoltDB()
 	require.NoError(t, err)
 	require.NotEmpty(t, bolt)

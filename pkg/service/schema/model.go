@@ -2,12 +2,19 @@ package schema
 
 import "github.com/TBD54566975/ssi-sdk/credential/schema"
 
+const (
+	// VCJSONSchemaType https://w3c-ccg.github.io/vc-json-schemas/v2/index.html#credential_schema_definition_metadata
+	VCJSONSchemaType string = "https://w3c-ccg.github.io/vc-json-schemas/schema/2.0/schema.json"
+	Version1         string = "1.0.0"
+)
+
 type GetSchemasResponse struct {
 	Schemas []schema.VCJSONSchema `json:"schemas,omitempty"`
 }
 
 type CreateSchemaRequest struct {
-	DID    string            `json:"did" validate:"required"`
+	Author string            `json:"author" validate:"required"`
+	Name   string            `json:"name" validate:"required"`
 	Schema schema.JSONSchema `json:"schema" validate:"required"`
 }
 

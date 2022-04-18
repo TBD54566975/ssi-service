@@ -49,11 +49,11 @@ func instantiateServices(log *log.Logger) ([]framework.Service, error) {
 	}
 	didService, err := did.NewDIDService(log, []did.Method{did.KeyMethod}, bolt)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate the DID service")
+		return nil, errors.Wrap(err, "could not instantiate the Author service")
 	}
 	schemaService, err := schema.NewSchemaService(log, bolt)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate the DID service")
+		return nil, errors.Wrap(err, "could not instantiate the Author service")
 	}
 	return []framework.Service{didService, schemaService}, nil
 }

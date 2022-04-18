@@ -29,10 +29,10 @@ func TestDIDRouter(t *testing.T) {
 		didRouter, err := NewDIDRouter(&testService{}, nil)
 		assert.Error(tt, err)
 		assert.Empty(tt, didRouter)
-		assert.Contains(tt, err.Error(), "could not create DID router with service type: test")
+		assert.Contains(tt, err.Error(), "could not create Author router with service type: test")
 	})
 
-	t.Run("DID Service Test", func(tt *testing.T) {
+	t.Run("Author Service Test", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)
@@ -66,7 +66,7 @@ func TestDIDRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createDIDResponse)
 
-		// check the DID is a did:key
+		// check the Author is a did:key
 		assert.Contains(tt, createDIDResponse.DID.ID, "did:key")
 
 		// get it back

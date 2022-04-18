@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// GetMethodForDID gets a DID method from a did, the second part of the did (e.g. did:test:abcd, the method is 'test')
+// GetMethodForDID gets a Author method from a did, the second part of the did (e.g. did:test:abcd, the method is 'test')
 func GetMethodForDID(did string) (string, error) {
 	split := strings.Split(did, ":")
 	if len(split) < 3 {

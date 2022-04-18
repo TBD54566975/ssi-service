@@ -18,20 +18,20 @@ const (
 	IDParam     = "id"
 )
 
-// DIDRouter represents the dependencies required to instantiate a DID-HTTP service
+// DIDRouter represents the dependencies required to instantiate a Author-HTTP service
 type DIDRouter struct {
 	service *did.Service
 	logger  *log.Logger
 }
 
-// NewDIDRouter creates an HTP router for the DID Service
+// NewDIDRouter creates an HTP router for the Author Service
 func NewDIDRouter(s svcframework.Service, l *log.Logger) (*DIDRouter, error) {
 	if s == nil {
 		return nil, errors.New("service cannot be nil")
 	}
 	didService, ok := s.(*did.Service)
 	if !ok {
-		return nil, fmt.Errorf("could not create DID router with service type: %s", s.Type())
+		return nil, fmt.Errorf("could not create Author router with service type: %s", s.Type())
 	}
 	return &DIDRouter{
 		service: didService,
@@ -61,15 +61,15 @@ type CreateDIDByMethodResponse struct {
 func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
-		errMsg := "create DID request missing method parameter"
+		errMsg := "create Author request missing method parameter"
 		dr.logger.Printf(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
 	var request CreateDIDByMethodRequest
 	if err := framework.Decode(r, &request); err != nil {
-		errMsg := "invalid create DID request"
-		dr.logger.Printf(errMsg)
+		errMsg := "invalid create Author request"
+		dr.logger.Printf(errors.Wrap(err, errMsg).Error())
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
@@ -77,7 +77,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 	createDIDRequest := did.CreateDIDRequest{Method: did.Method(*method), KeyType: request.KeyType}
 	createDIDResponse, err := dr.service.CreateDIDByMethod(createDIDRequest)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)
+		errMsg := fmt.Sprintf("could not create Author for method<%s> with key type: %s", *method, request.KeyType)
 		dr.logger.Printf(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
 	}
@@ -86,7 +86,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 		DID:        createDIDResponse.DID,
 		PrivateKey: createDIDResponse.PrivateKey,
 	}
-	return framework.Respond(ctx, w, resp, http.StatusOK)
+	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
 type GetDIDByMethodResponse struct {
@@ -96,13 +96,13 @@ type GetDIDByMethodResponse struct {
 func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
-		errMsg := "get DID by method request missing method parameter"
+		errMsg := "get Author by method request missing method parameter"
 		dr.logger.Printf(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
-		errMsg := fmt.Sprintf("get DID request missing id parameter for method: %s", *method)
+		errMsg := fmt.Sprintf("get Author request missing id parameter for method: %s", *method)
 		dr.logger.Printf(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
@@ -112,8 +112,8 @@ func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _
 	getDIDRequest := did.GetDIDRequest{Method: did.Method(*method), ID: *id}
 	gotDID, err := dr.service.GetDIDByMethod(getDIDRequest)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get DID for method<%s> with id: %s", *method, *id)
-		dr.logger.Printf(errMsg)
+		errMsg := fmt.Sprintf("could not get Author for method<%s> with id: %s", *method, *id)
+		dr.logger.Printf(errors.Wrap(err, errMsg).Error())
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
