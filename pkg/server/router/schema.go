@@ -45,8 +45,8 @@ type CreateSchemaResponse struct {
 func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreateSchemaRequest
 	if err := framework.Decode(r, &request); err != nil {
-		errMsg := "invalid create Author request"
-		sr.logger.Printf(errMsg)
+		errMsg := "invalid create DID request"
+		sr.logger.Printf(errors.Wrap(err, errMsg).Error())
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 

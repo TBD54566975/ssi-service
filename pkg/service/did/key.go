@@ -18,7 +18,7 @@ type keyDIDHandler struct {
 }
 
 func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error) {
-	// create the Author
+	// create the DID
 	privKey, doc, err := did.GenerateDIDKey(request.KeyType)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create did:key")
@@ -53,10 +53,10 @@ func (h *keyDIDHandler) GetDID(request GetDIDRequest) (*GetDIDResponse, error) {
 	id := request.ID
 	gotDID, err := h.storage.GetDID(id)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Author: %s", id)
+		return nil, fmt.Errorf("error getting DID: %s", id)
 	}
 	if gotDID == nil {
-		return nil, fmt.Errorf("Author with id<%s> could not be found", id)
+		return nil, fmt.Errorf("did with id<%s> could not be found", id)
 	}
 	return &GetDIDResponse{DID: gotDID.DID}, nil
 }

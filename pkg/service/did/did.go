@@ -16,7 +16,7 @@ const (
 )
 
 type Service struct {
-	// supported Author methods
+	// supported DID methods
 	handlers map[Method]MethodHandler
 	storage  didstorage.Storage
 	logger   *log.Logger
@@ -26,12 +26,12 @@ func (s Service) Type() framework.Type {
 	return framework.DID
 }
 
-// Status is a self-reporting status for the Author service.
+// Status is a self-reporting status for the DID service.
 func (s Service) Status() framework.Status {
 	if s.storage == nil || len(s.handlers) == 0 {
 		return framework.Status{
 			Status:  framework.StatusNotReady,
-			Message: "storage not loaded and/or no Author methods loaded",
+			Message: "storage not loaded and/or no DID methods loaded",
 		}
 	}
 	return framework.Status{Status: framework.StatusReady}
@@ -68,12 +68,12 @@ func (s Service) GetDIDByMethod(request GetDIDRequest) (*GetDIDResponse, error) 
 func (s Service) getHandler(method Method) (MethodHandler, error) {
 	handler, ok := s.handlers[method]
 	if !ok {
-		return nil, fmt.Errorf("could not get handler for Author method: %s", method)
+		return nil, fmt.Errorf("could not get handler for DID method: %s", method)
 	}
 	return handler, nil
 }
 
-// MethodHandler describes the functionality of *all* possible Author service, regardless of method
+// MethodHandler describes the functionality of *all* possible DID service, regardless of method
 type MethodHandler interface {
 	CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error)
 	GetDID(request GetDIDRequest) (*GetDIDResponse, error)
@@ -82,7 +82,7 @@ type MethodHandler interface {
 func NewDIDService(log *log.Logger, methods []Method, s storage.ServiceStorage) (*Service, error) {
 	didStorage, err := didstorage.NewDIDStorage(s)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate Author storage for the Author service")
+		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
 	}
 	svc := Service{
 		storage:  didStorage,
@@ -90,10 +90,10 @@ func NewDIDService(log *log.Logger, methods []Method, s storage.ServiceStorage) 
 		logger:   log,
 	}
 
-	// instantiate all handlers for Author methods
+	// instantiate all handlers for DID methods
 	for _, m := range methods {
 		if err := svc.instantiateHandlerForMethod(m); err != nil {
-			return nil, errors.Wrap(err, "could not instantiate Author svc")
+			return nil, errors.Wrap(err, "could not instantiate DID svc")
 		}
 	}
 	return &svc, nil
@@ -108,7 +108,7 @@ func (s *Service) instantiateHandlerForMethod(method Method) error {
 		}
 		s.handlers[method] = handler
 	default:
-		return fmt.Errorf("unsupported Author method: %s", method)
+		return fmt.Errorf("unsupported DID method: %s", method)
 	}
 	return nil
 }

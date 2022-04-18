@@ -31,7 +31,7 @@ func NewBoltDIDStorage(db *storage.BoltDB) (*BoltDIDStorage, error) {
 }
 
 func (b BoltDIDStorage) StoreDID(did StoredDID) error {
-	couldNotStoreDIDErr := fmt.Sprintf("could not store Author: %s", did.DID.ID)
+	couldNotStoreDIDErr := fmt.Sprintf("could not store DID: %s", did.DID.ID)
 	namespace, err := getNamespaceForDID(did.DID.ID)
 	if err != nil {
 		return errors.Wrap(err, couldNotStoreDIDErr)
@@ -44,7 +44,7 @@ func (b BoltDIDStorage) StoreDID(did StoredDID) error {
 }
 
 func (b BoltDIDStorage) GetDID(id string) (*StoredDID, error) {
-	couldNotGetDIDErr := fmt.Sprintf("could not get Author: %s", id)
+	couldNotGetDIDErr := fmt.Sprintf("could not get DID: %s", id)
 	namespace, err := getNamespaceForDID(id)
 	if err != nil {
 		return nil, errors.Wrap(err, couldNotGetDIDErr)
@@ -54,11 +54,11 @@ func (b BoltDIDStorage) GetDID(id string) (*StoredDID, error) {
 		return nil, errors.Wrap(err, couldNotGetDIDErr)
 	}
 	if len(docBytes) == 0 {
-		return nil, fmt.Errorf("Author not found: %s", id)
+		return nil, fmt.Errorf("did not found: %s", id)
 	}
 	var stored StoredDID
 	if err := json.Unmarshal(docBytes, &stored); err != nil {
-		return nil, errors.Wrapf(err, "could not ummarshal stored Author: %s", id)
+		return nil, errors.Wrapf(err, "could not ummarshal stored DID: %s", id)
 	}
 	return &stored, nil
 }
@@ -88,13 +88,13 @@ func (b BoltDIDStorage) GetDIDs(method string) ([]StoredDID, error) {
 }
 
 func (b BoltDIDStorage) DeleteDID(id string) error {
-	couldNotGetDIDErr := fmt.Sprintf("could not delete Author: %s", id)
+	couldNotGetDIDErr := fmt.Sprintf("could not delete DID: %s", id)
 	namespace, err := getNamespaceForDID(id)
 	if err != nil {
 		return errors.Wrap(err, couldNotGetDIDErr)
 	}
 	if err := b.db.Delete(namespace, id); err != nil {
-		return errors.Wrapf(err, "could not delete Author: %s", id)
+		return errors.Wrapf(err, "could not delete DID: %s", id)
 	}
 	return nil
 }
@@ -114,7 +114,7 @@ func getNamespaceForDID(id string) (string, error) {
 func getNamespaceForMethod(method string) (string, error) {
 	namespace, ok := didMethodToNamespace[method]
 	if !ok {
-		return "", fmt.Errorf("no namespace found for Author method: %s", method)
+		return "", fmt.Errorf("no namespace found for DID method: %s", method)
 	}
 	return namespace, nil
 }

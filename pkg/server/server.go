@@ -82,11 +82,11 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 	}
 }
 
-// DecentralizedIdentityAPI registers all HTTP router for the Author Service
+// DecentralizedIdentityAPI registers all HTTP router for the DID Service
 func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) error {
 	didRouter, err := router.NewDIDRouter(service, s.Logger)
 	if err != nil {
-		return errors.Wrap(err, "could not create Author router")
+		return errors.Wrap(err, "could not create DID router")
 	}
 
 	handlerPath := V1Prefix + DIDsPrefix

@@ -13,7 +13,7 @@ type StoredSchema struct {
 type Storage interface {
 	StoreSchema(schema StoredSchema) error
 	GetSchema(id string) (*StoredSchema, error)
-	// TODO(gabe) consider get schemas by author, or more advanced querying
+	// TODO(gabe) consider get schemas by DID, or more advanced querying
 	GetSchemas() ([]StoredSchema, error)
 	DeleteSchema(id string) error
 }

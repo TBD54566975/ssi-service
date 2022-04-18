@@ -18,7 +18,7 @@ type Storage interface {
 	DeleteDID(id string) error
 }
 
-// NewDIDStorage finds the Author storage impl for a given ServiceStorage value
+// NewDIDStorage finds the DID storage impl for a given ServiceStorage value
 func NewDIDStorage(s storage.ServiceStorage) (Storage, error) {
 	gotBolt, ok := s.(*storage.BoltDB)
 	if !ok {
@@ -26,7 +26,7 @@ func NewDIDStorage(s storage.ServiceStorage) (Storage, error) {
 	}
 	boltStorage, err := NewBoltDIDStorage(gotBolt)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate Author Bolt storage")
+		return nil, errors.Wrap(err, "could not instantiate DID Bolt storage")
 	}
 	return boltStorage, err
 }

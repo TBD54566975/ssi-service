@@ -9,7 +9,7 @@ type GetSupportedMethodsResponse struct {
 	Methods []Method `json:"methods"`
 }
 
-// CreateDIDRequest is the  SON-serializable request for creating a Author across Author methods
+// CreateDIDRequest is the JSON-serializable request for creating a DID across DID methods
 type CreateDIDRequest struct {
 	Method  Method         `json:"method" validate:"required"`
 	KeyType crypto.KeyType `validate:"required"`
