@@ -15,6 +15,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"io"
 	"log"
@@ -233,6 +234,30 @@ func newDIDService(t *testing.T) *router.DIDRouter {
 	require.NotEmpty(t, didRouter)
 
 	return didRouter
+}
+
+func TestSchemaAPI(t *testing.T) {
+
+}
+
+func newSchemaService(t *testing.T) *router.SchemaRouter {
+	// set up DID service
+	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
+
+	bolt, err := storage.NewBoltDB(logger)
+	require.NoError(t, err)
+	require.NotEmpty(t, bolt)
+
+	schemaService, err := schema.NewSchemaService(logger, bolt)
+	require.NoError(t, err)
+	require.NotEmpty(t, schemaService)
+
+	// create router for service
+	schemaRouter, err := router.NewSchemaRouter(schemaService, logger)
+	require.NoError(t, err)
+	require.NotEmpty(t, schemaRouter)
+
+	return schemaRouter
 }
 
 func newRequestValue(t *testing.T, data interface{}) io.Reader {
