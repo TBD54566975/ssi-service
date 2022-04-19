@@ -57,11 +57,51 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "error getting schema")
 
-		// create a bad schema
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Schema: map[string]interface{}{
-			"bad": "bad",
-		}})
+		// create a schema
+		simpleSchema := map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"foo": map[string]interface{}{
+					"type": "string",
+				},
+			},
+			"required":             []interface{}{"foo"},
+			"additionalProperties": false,
+		}
+		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
+		assert.NotEmpty(tt, createdSchema.ID)
+		assert.Equal(tt, "me", createdSchema.Schema.Author)
+		assert.Equal(tt, "simple schema", createdSchema.Schema.Name)
+
+		// get schema by ID
+		gotSchema, err := schemaService.GetSchemaByID(schema.GetSchemaByIDRequest{ID: createdSchema.ID})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, gotSchema)
+		assert.EqualValues(tt, createdSchema.Schema, gotSchema.Schema)
+
+		// get all schemas, expect one
+		gotSchemas, err = schemaService.GetSchemas()
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, gotSchemas.Schemas)
+		assert.Len(tt, gotSchemas.Schemas, 1)
+
+		// store another
+		createdSchema, err = schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema 2", Schema: simpleSchema})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
+		assert.NotEmpty(tt, createdSchema.ID)
+		assert.Equal(tt, "me", createdSchema.Schema.Author)
+		assert.Equal(tt, "simple schema 2", createdSchema.Schema.Name)
+
+		// get all schemas, expect two
+		gotSchemas, err = schemaService.GetSchemas()
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, gotSchemas.Schemas)
+		assert.Len(tt, gotSchemas.Schemas, 2)
+
+		// make sure their IDs are different
+		assert.True(tt, gotSchemas.Schemas[0].ID != gotSchemas.Schemas[1].ID)
 	})
 }

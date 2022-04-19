@@ -56,10 +56,11 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 		return nil, errors.Wrap(err, "provided value is not a valid JSON schema")
 	}
 
+	schemaID := uuid.NewString()
 	schema := schema.VCJSONSchema{
 		Type:     schema.VCJSONSchemaType,
 		Version:  Version1,
-		ID:       uuid.NewString(),
+		ID:       schemaID,
 		Name:     request.Name,
 		Author:   request.Author,
 		Authored: time.Now().Format(time.RFC3339),
@@ -71,7 +72,7 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 		return nil, errors.Wrap(err, "could not store schema")
 	}
 
-	return &CreateSchemaResponse{Schema: schema}, nil
+	return &CreateSchemaResponse{ID: schemaID, Schema: schema}, nil
 }
 
 func (s Service) GetSchemas() (*GetSchemasResponse, error) {

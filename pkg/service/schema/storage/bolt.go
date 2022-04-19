@@ -61,7 +61,7 @@ func (b BoltSchemaStorage) GetSchemas() ([]StoredSchema, error) {
 	var stored []StoredSchema
 	for _, schemaBytes := range gotSchemas {
 		var nextSchema StoredSchema
-		if err := json.Unmarshal(schemaBytes, &nextSchema); err != nil {
+		if err := json.Unmarshal(schemaBytes, &nextSchema); err == nil {
 			stored = append(stored, nextSchema)
 		}
 	}
