@@ -57,7 +57,7 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 	}
 
 	schema := schema.VCJSONSchema{
-		Type:     VCJSONSchemaType,
+		Type:     schema.VCJSONSchemaType,
 		Version:  Version1,
 		ID:       uuid.NewString(),
 		Name:     request.Name,

@@ -3,9 +3,7 @@ package schema
 import "github.com/TBD54566975/ssi-sdk/credential/schema"
 
 const (
-	// VCJSONSchemaType https://w3c-ccg.github.io/vc-json-schemas/v2/index.html#credential_schema_definition_metadata
-	VCJSONSchemaType string = "https://w3c-ccg.github.io/vc-json-schemas/schema/2.0/schema.json"
-	Version1         string = "1.0.0"
+	Version1 string = "1.0.0"
 )
 
 type GetSchemasResponse struct {
