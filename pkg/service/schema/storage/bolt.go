@@ -56,7 +56,7 @@ func (b BoltSchemaStorage) GetSchemas() ([]StoredSchema, error) {
 		return nil, errors.Wrap(err, "could not get all schemas")
 	}
 	if len(gotSchemas) == 0 {
-		return nil, errors.New("no schemas found")
+		return nil, nil
 	}
 	var stored []StoredSchema
 	for _, schemaBytes := range gotSchemas {

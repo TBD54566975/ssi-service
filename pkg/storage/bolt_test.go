@@ -3,12 +3,15 @@ package storage
 import (
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
+	"log"
 	"os"
 	"testing"
 )
 
 func TestBoltDB(t *testing.T) {
-	db, err := NewBoltDBWithFile("test.db")
+	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
+
+	db, err := NewBoltDBWithFile(logger, "test.db")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, db)
 
@@ -38,9 +41,9 @@ func TestBoltDB(t *testing.T) {
 	assert.EqualValues(t, players1, players1Result)
 
 	// get a value from a namespace that doesn't exist
-	_, err = db.Read("bad", "worse")
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "namespace<bad> does not exist")
+	res, err := db.Read("bad", "worse")
+	assert.NoError(t, err)
+	assert.Empty(t, res)
 
 	// get a value that doesn't exist in the namespace
 	noValue, err := db.Read(namespace, "Porsche")
@@ -88,7 +91,7 @@ func TestBoltDB(t *testing.T) {
 	err = db.DeleteNamespace(namespace)
 	assert.NoError(t, err)
 
-	_, err = db.Read(namespace, team1)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "namespace<F1> does not exist")
+	res, err = db.Read(namespace, team1)
+	assert.NoError(t, err)
+	assert.Empty(t, res)
 }

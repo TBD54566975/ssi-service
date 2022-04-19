@@ -91,7 +91,7 @@ func (s Service) GetSchemas() (*GetSchemasResponse, error) {
 func (s Service) GetSchemaByID(request GetSchemaByIDRequest) (*GetSchemaByIDResponse, error) {
 	gotSchema, err := s.storage.GetSchema(request.ID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting Schema: %s", request.ID)
+		return nil, fmt.Errorf("error getting schema: %s", request.ID)
 	}
 	if gotSchema == nil {
 		return nil, fmt.Errorf("schema with id<%s> could not be found", request.ID)

@@ -33,11 +33,12 @@ func TestDIDRouter(t *testing.T) {
 	})
 
 	t.Run("DID Service Test", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
+		logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
+
+		bolt, err := storage.NewBoltDB(logger)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)
 
-		logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
 		didService, err := did.NewDIDService(logger, []did.Method{did.KeyMethod}, bolt)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didService)

@@ -42,16 +42,16 @@ func (ssi *SSIService) GetServices() []framework.Service {
 }
 
 // instantiateServices begins all instantiates and their dependencies
-func instantiateServices(log *log.Logger) ([]framework.Service, error) {
-	bolt, err := storage.NewBoltDB()
+func instantiateServices(logger *log.Logger) ([]framework.Service, error) {
+	bolt, err := storage.NewBoltDB(logger)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate BoltDB")
 	}
-	didService, err := did.NewDIDService(log, []did.Method{did.KeyMethod}, bolt)
+	didService, err := did.NewDIDService(logger, []did.Method{did.KeyMethod}, bolt)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate the DID service")
 	}
-	schemaService, err := schema.NewSchemaService(log, bolt)
+	schemaService, err := schema.NewSchemaService(logger, bolt)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate the schema service")
 	}

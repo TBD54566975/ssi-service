@@ -217,11 +217,12 @@ func TestDIDAPI(t *testing.T) {
 
 func newDIDService(t *testing.T) *router.DIDRouter {
 	// set up DID service
-	bolt, err := storage.NewBoltDB()
+	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
+
+	bolt, err := storage.NewBoltDB(logger)
 	require.NoError(t, err)
 	require.NotEmpty(t, bolt)
 
-	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
 	didService, err := did.NewDIDService(logger, []did.Method{did.KeyMethod}, bolt)
 	require.NoError(t, err)
 	require.NotEmpty(t, didService)
