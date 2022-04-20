@@ -2,6 +2,7 @@
 [![goversion](https://img.shields.io/badge/go_version-1.17.6-brightgreen)](https://golang.org/)
 [![license](https://img.shields.io/badge/license-Apache%202-black)](https://github.com/TBD54566975/ssi-service/blob/main/LICENSE)
 [![issues](https://img.shields.io/github/issues/TBD54566975/ssi-service)](https://github.com/TBD54566975/ssi-service/issues)
+[![push](https://github.com/TBD54566975/ssi-service/workflows/ci/badge.svg?branch=main&event=push)]
 
 # ssi-service
 
@@ -19,6 +20,11 @@ functionality to facilitate all verifiable interactions such as creating, signin
 revoking, exchanging, validating, verifying credentials in varying degrees of complexity.
 
 ![ssi-sdk](doc/ssi-service.png)
+
+## Continuous Integration
+
+CI is managed via [GitHub Actions](https://github.com/TBD54566975/ssi-service/actions). Actions are triggered to run
+for each Pull Request, and on merge to `main`. You can run CI locally using a tool like [act](https://github.com/nektos/act).
 
 ## Deployment
 
