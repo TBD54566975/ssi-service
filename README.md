@@ -2,7 +2,7 @@
 [![goversion](https://img.shields.io/badge/go_version-1.17.6-brightgreen)](https://golang.org/)
 [![license](https://img.shields.io/badge/license-Apache%202-black)](https://github.com/TBD54566975/ssi-service/blob/main/LICENSE)
 [![issues](https://img.shields.io/github/issues/TBD54566975/ssi-service)](https://github.com/TBD54566975/ssi-service/issues)
-[![push](https://github.com/TBD54566975/ssi-service/workflows/ci/badge.svg?branch=main&event=push)]
+![push](https://github.com/TBD54566975/ssi-service/workflows/ssi-service-ci/badge.svg?branch=main&event=push)
 
 # ssi-service
 
@@ -53,7 +53,7 @@ You should then be able to send requests as follows:
 - [x] [DID Management](https://www.w3.org/TR/did-core/)
   - Using [did:key](https://w3c-ccg.github.io/did-method-key/)
 - [ ] [Verifiable Credential Schema](https://w3c-ccg.github.io/vc-json-schemas/v2/index.html) Management
-- [ ] [Verifiable Credential](https://www.w3.org/TR/vc-data-model) Issuance & Verification
+- [x] [Verifiable Credential](https://www.w3.org/TR/vc-data-model) Issuance & Verification
 - [ ] Requesting, Receiving, and the Validation of Verifiable Claims using [Presentation Exchange](https://identity.foundation/presentation-exchange/)
 - [ ] Applying for Verifiable Credentials using [Credential Manifest](https://identity.foundation/credential-manifest/)
 - [ ] Revocations of Verifiable Credentials using the [Status List 2021](https://w3c-ccg.github.io/vc-status-list-2021/)
