@@ -19,7 +19,7 @@ type Service struct {
 	// supported DID methods
 	handlers map[Method]MethodHandler
 	storage  didstorage.Storage
-	log      *log.Logger
+	logger   *log.Logger
 }
 
 func (s Service) Type() framework.Type {
@@ -37,15 +37,35 @@ func (s Service) Status() framework.Status {
 	return framework.Status{Status: framework.StatusReady}
 }
 
-func (s Service) GetSupportedMethods() []Method {
+func (s Service) GetSupportedMethods() GetSupportedMethodsResponse {
 	var methods []Method
 	for method := range s.handlers {
 		methods = append(methods, method)
 	}
-	return methods
+	return GetSupportedMethodsResponse{Methods: methods}
 }
 
-func (s Service) GetHandler(method Method) (MethodHandler, error) {
+func (s Service) CreateDIDByMethod(request CreateDIDRequest) (*CreateDIDResponse, error) {
+	handler, err := s.getHandler(request.Method)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get handler for method<%s>", request.Method)
+		s.logger.Printf(errMsg)
+		return nil, errors.New(errMsg)
+	}
+	return handler.CreateDID(request)
+}
+
+func (s Service) GetDIDByMethod(request GetDIDRequest) (*GetDIDResponse, error) {
+	handler, err := s.getHandler(request.Method)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get handler for method<%s>", request.Method)
+		s.logger.Printf(errMsg)
+		return nil, errors.New(errMsg)
+	}
+	return handler.GetDID(request)
+}
+
+func (s Service) getHandler(method Method) (MethodHandler, error) {
 	handler, ok := s.handlers[method]
 	if !ok {
 		return nil, fmt.Errorf("could not get handler for DID method: %s", method)
@@ -56,18 +76,18 @@ func (s Service) GetHandler(method Method) (MethodHandler, error) {
 // MethodHandler describes the functionality of *all* possible DID service, regardless of method
 type MethodHandler interface {
 	CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error)
-	GetDID(id string) (*GetDIDResponse, error)
+	GetDID(request GetDIDRequest) (*GetDIDResponse, error)
 }
 
 func NewDIDService(log *log.Logger, methods []Method, s storage.ServiceStorage) (*Service, error) {
 	didStorage, err := didstorage.NewDIDStorage(s)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate DID storage for DID service")
+		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
 	}
 	svc := Service{
 		storage:  didStorage,
 		handlers: make(map[Method]MethodHandler),
-		log:      log,
+		logger:   log,
 	}
 
 	// instantiate all handlers for DID methods

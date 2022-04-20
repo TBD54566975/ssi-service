@@ -49,17 +49,16 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 	}, nil
 }
 
-func (h *keyDIDHandler) GetDID(id string) (*GetDIDResponse, error) {
+func (h *keyDIDHandler) GetDID(request GetDIDRequest) (*GetDIDResponse, error) {
+	id := request.ID
 	gotDID, err := h.storage.GetDID(id)
 	if err != nil {
 		return nil, fmt.Errorf("error getting DID: %s", id)
 	}
 	if gotDID == nil {
-		return nil, fmt.Errorf("DID with id<%s> could not be found", id)
+		return nil, fmt.Errorf("did with id<%s> could not be found", id)
 	}
-	return &GetDIDResponse{
-		DID: gotDID.DID,
-	}, nil
+	return &GetDIDResponse{DID: gotDID.DID}, nil
 }
 
 func privateKeyToBase58(privKey interface{}) (string, error) {

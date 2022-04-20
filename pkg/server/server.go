@@ -18,8 +18,9 @@ import (
 )
 
 const (
-	V1Prefix   = "/v1"
-	DIDsPrefix = "/dids"
+	V1Prefix      = "/v1"
+	DIDsPrefix    = "/dids"
+	SchemasPrefix = "/schemas"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -74,6 +75,8 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 	switch serviceType {
 	case svcframework.DID:
 		return s.DecentralizedIdentityAPI(service)
+	case svcframework.Schema:
+		return s.SchemaAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
@@ -91,5 +94,20 @@ func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) error
 	s.Handle(http.MethodGet, handlerPath, didRouter.GetDIDMethods)
 	s.Handle(http.MethodPut, path.Join(handlerPath, "/:method"), didRouter.CreateDIDByMethod)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method/:id"), didRouter.GetDIDByMethod)
+	return nil
+}
+
+// SchemaAPI registers all HTTP router for the Schema Service
+func (s *SSIServer) SchemaAPI(service svcframework.Service) error {
+	schemaRouter, err := router.NewSchemaRouter(service, s.Logger)
+	if err != nil {
+		return errors.Wrap(err, "could not create Schema router")
+	}
+
+	handlerPath := V1Prefix + SchemasPrefix
+
+	s.Handle(http.MethodPut, handlerPath, schemaRouter.CreateSchema)
+	s.Handle(http.MethodGet, handlerPath, schemaRouter.GetSchemas)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), schemaRouter.GetSchemaByID)
 	return nil
 }

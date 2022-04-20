@@ -20,8 +20,8 @@ const (
 
 // DIDRouter represents the dependencies required to instantiate a DID-HTTP service
 type DIDRouter struct {
-	did.Service
-	*log.Logger
+	service *did.Service
+	logger  *log.Logger
 }
 
 // NewDIDRouter creates an HTP router for the DID Service
@@ -34,8 +34,8 @@ func NewDIDRouter(s svcframework.Service, l *log.Logger) (*DIDRouter, error) {
 		return nil, fmt.Errorf("could not create DID router with service type: %s", s.Type())
 	}
 	return &DIDRouter{
-		Service: *didService,
-		Logger:  l,
+		service: didService,
+		logger:  l,
 	}, nil
 }
 
@@ -43,9 +43,9 @@ type GetDIDMethodsResponse struct {
 	DIDMethods []did.Method `json:"didMethods,omitempty"`
 }
 
-func (s DIDRouter) GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	methods := s.GetSupportedMethods()
-	response := GetDIDMethodsResponse{DIDMethods: methods}
+func (dr DIDRouter) GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	methods := dr.service.GetSupportedMethods()
+	response := GetDIDMethodsResponse{DIDMethods: methods.Methods}
 	return framework.Respond(ctx, w, response, http.StatusOK)
 }
 
@@ -58,34 +58,27 @@ type CreateDIDByMethodResponse struct {
 	PrivateKey string             `json:"privateKeyBase58,omitempty"`
 }
 
-func (s DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
 		errMsg := "create DID request missing method parameter"
-		s.Logger.Printf(errMsg)
+		dr.logger.Printf(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
 	var request CreateDIDByMethodRequest
 	if err := framework.Decode(r, &request); err != nil {
 		errMsg := "invalid create DID request"
-		s.Logger.Printf(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
-	}
-
-	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
-	handler, err := s.GetHandler(did.Method(*method))
-	if err != nil {
-		errMsg := fmt.Sprintf("could not get handler for method<%s>", *method)
-		s.Logger.Printf(errMsg)
+		dr.logger.Printf(errors.Wrap(err, errMsg).Error())
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
 	// TODO(gabe) check if the key type is supported for the method, to tell whether this is a bad req or internal error
-	createDIDResponse, err := handler.CreateDID(did.CreateDIDRequest{KeyType: request.KeyType})
+	createDIDRequest := did.CreateDIDRequest{Method: did.Method(*method), KeyType: request.KeyType}
+	createDIDResponse, err := dr.service.CreateDIDByMethod(createDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)
-		s.Logger.Printf(errMsg)
+		dr.logger.Printf(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
 	}
 
@@ -93,41 +86,35 @@ func (s DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter,
 		DID:        createDIDResponse.DID,
 		PrivateKey: createDIDResponse.PrivateKey,
 	}
-	return framework.Respond(ctx, w, resp, http.StatusOK)
+	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
 type GetDIDByMethodResponse struct {
 	DID didsdk.DIDDocument `json:"did,omitempty"`
 }
 
-func (s DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
 		errMsg := "get DID by method request missing method parameter"
-		s.Logger.Printf(errMsg)
+		dr.logger.Printf(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := fmt.Sprintf("get DID request missing id parameter for method: %s", *method)
-		s.Logger.Printf(errMsg)
+		dr.logger.Printf(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
 	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
-	handler, err := s.GetHandler(did.Method(*method))
-	if err != nil {
-		errMsg := fmt.Sprintf("could not get handler for method<%s>", *method)
-		s.Logger.Printf(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
-	}
-
 	// TODO(gabe) differentiate between internal errors and not found DIDs
-	gotDID, err := handler.GetDID(*id)
+	getDIDRequest := did.GetDIDRequest{Method: did.Method(*method), ID: *id}
+	gotDID, err := dr.service.GetDIDByMethod(getDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get DID for method<%s> with id: %s", *method, *id)
-		s.Logger.Printf(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusNotFound)
+		dr.logger.Printf(errors.Wrap(err, errMsg).Error())
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
 	resp := GetDIDByMethodResponse{DID: gotDID.DID}

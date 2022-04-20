@@ -33,11 +33,12 @@ func TestDIDRouter(t *testing.T) {
 	})
 
 	t.Run("DID Service Test", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
+		logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
+
+		bolt, err := storage.NewBoltDB(logger)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)
 
-		logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
 		didService, err := did.NewDIDService(logger, []did.Method{did.KeyMethod}, bolt)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didService)
@@ -47,27 +48,22 @@ func TestDIDRouter(t *testing.T) {
 		assert.Equal(tt, framework.StatusReady, didService.Status().Status)
 
 		// get unknown handler
-		_, err = didService.GetHandler("bad")
+		_, err = didService.GetDIDByMethod(did.GetDIDRequest{Method: "bad"})
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not get handler for DID method: bad")
+		assert.Contains(tt, err.Error(), "could not get handler for method<bad>")
 
 		supported := didService.GetSupportedMethods()
 		assert.NotEmpty(tt, supported)
-		assert.Len(tt, supported, 1)
-		assert.Equal(tt, did.KeyMethod, supported[0])
-
-		// get known handler
-		keyHandler, err := didService.GetHandler(did.KeyMethod)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, keyHandler)
+		assert.Len(tt, supported.Methods, 1)
+		assert.Equal(tt, did.KeyMethod, supported.Methods[0])
 
 		// bad key type
-		_, err = keyHandler.CreateDID(did.CreateDIDRequest{KeyType: "bad"})
+		_, err = didService.CreateDIDByMethod(did.CreateDIDRequest{Method: did.KeyMethod, KeyType: "bad"})
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not create did:key")
 
 		// good key type
-		createDIDResponse, err := keyHandler.CreateDID(did.CreateDIDRequest{KeyType: crypto.Ed25519})
+		createDIDResponse, err := didService.CreateDIDByMethod(did.CreateDIDRequest{Method: did.KeyMethod, KeyType: crypto.Ed25519})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createDIDResponse)
 
@@ -75,7 +71,7 @@ func TestDIDRouter(t *testing.T) {
 		assert.Contains(tt, createDIDResponse.DID.ID, "did:key")
 
 		// get it back
-		getDIDResponse, err := keyHandler.GetDID(createDIDResponse.DID.ID)
+		getDIDResponse, err := didService.GetDIDByMethod(did.GetDIDRequest{Method: did.KeyMethod, ID: createDIDResponse.DID.ID})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getDIDResponse)
 
