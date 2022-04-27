@@ -4,6 +4,9 @@ import (
 	"context"
 	"expvar"
 	"fmt"
+	"github.com/ardanlabs/conf"
+	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server"
 	"github.com/tbd54566975/ssi-service/pkg/service"
 	"log"
@@ -11,10 +14,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
-
-	"github.com/ardanlabs/conf"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -32,27 +31,14 @@ func main() {
 	}
 }
 
-type serverConfig struct {
-	conf.Version
-	Web *webConfig
-}
-
-type webConfig struct {
-	APIHost         string        `conf:"default:0.0.0.0:3000"`
-	DebugHost       string        `conf:"default:0.0.0.0:4000"`
-	ReadTimeout     time.Duration `conf:"default:5s"`
-	WriteTimeout    time.Duration `conf:"default:5s"`
-	ShutdownTimeout time.Duration `conf:"default:5s"`
-}
-
 // startup and shutdown logic
 func run(log *log.Logger) error {
-	cfg := serverConfig{
+	cfg := config.SSIServiceConfig{
 		Version: conf.Version{
 			SVN:  "2022.03.15",
 			Desc: "The Self Sovereign Identity Service",
 		},
-		Web: new(webConfig),
+		Server: config.ServerConfig{},
 	}
 
 	if err := conf.Parse(os.Args[1:], ServiceName, &cfg); err != nil {
@@ -103,10 +89,10 @@ func run(log *log.Logger) error {
 		log.Fatalf("could not start http services: %s", err.Error())
 	}
 	api := http.Server{
-		Addr:         cfg.Web.APIHost,
+		Addr:         cfg.Server.APIHost,
 		Handler:      ssiServer,
-		ReadTimeout:  cfg.Web.ReadTimeout,
-		WriteTimeout: cfg.Web.WriteTimeout,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
 	}
 
 	serverErrors := make(chan error, 1)
@@ -123,7 +109,7 @@ func run(log *log.Logger) error {
 	case sig := <-shutdown:
 		log.Printf("main: shutdown signal received -> %v", sig)
 
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
 		defer cancel()
 
 		if err := api.Shutdown(ctx); err != nil {

@@ -2,7 +2,7 @@ package did
 
 import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
-	sdkdid "github.com/TBD54566975/ssi-sdk/did"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 )
 
 type GetSupportedMethodsResponse struct {
@@ -17,7 +17,7 @@ type CreateDIDRequest struct {
 
 // CreateDIDResponse is the JSON-serializable response for creating a DID
 type CreateDIDResponse struct {
-	DID sdkdid.DIDDocument `json:"did"`
+	DID didsdk.DIDDocument `json:"did"`
 	// TODO(gabe) this is temporary, and should never be exposed like this!
 	PrivateKey string `json:"base58PrivateKey"`
 }
@@ -29,5 +29,5 @@ type GetDIDRequest struct {
 
 // GetDIDResponse is the JSON-serializable response for getting a DID
 type GetDIDResponse struct {
-	DID sdkdid.DIDDocument `json:"did"`
+	DID didsdk.DIDDocument `json:"did"`
 }

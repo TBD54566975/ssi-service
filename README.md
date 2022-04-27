@@ -9,14 +9,14 @@
 ## Introduction
 
 The Self Sovereign Identity Service (SSIS) facilitates all things relating to [DIDs](https://www.w3.org/TR/did-core/)
-and [Verifiable Credentials](https://www.w3.org/TR/vc-data-model) -- in a box! The service is a part of a larger 
-Decentralized Web Platform architecture which you can learn more about in our 
+and [Verifiable Credentials](https://www.w3.org/TR/vc-data-model) -- in a box! The service is a part of a larger
+Decentralized Web Platform architecture which you can learn more about in our
 [collaboration repo](https://github.com/TBD54566975/collaboration). The SSI Service is a RESTful web service that
-wraps the [ssi-sdk](https://github.com/TBD54566975/ssi-sdk). The core functionality of the SSIS includes, 
+wraps the [ssi-sdk](https://github.com/TBD54566975/ssi-sdk). The core functionality of the SSIS includes,
 but is not limited to: interacting with the standards around Verifiable Credentials, Credential Revocations, requesting
-Credentials, exchanging Credentials, data schemas for Credentials and other verifiable data, messaging using 
+Credentials, exchanging Credentials, data schemas for Credentials and other verifiable data, messaging using
 Decentralized Web Nodes, and usage of Decentralized Identifiers. Using these core standards, the SSIS enables robust
-functionality to facilitate all verifiable interactions such as creating, signing, issuing, curating, requesting, 
+functionality to facilitate all verifiable interactions such as creating, signing, issuing, curating, requesting,
 revoking, exchanging, validating, verifying credentials in varying degrees of complexity.
 
 ![ssi-sdk](doc/ssi-service.png)
@@ -24,7 +24,24 @@ revoking, exchanging, validating, verifying credentials in varying degrees of co
 ## Continuous Integration
 
 CI is managed via [GitHub Actions](https://github.com/TBD54566975/ssi-service/actions). Actions are triggered to run
-for each Pull Request, and on merge to `main`. You can run CI locally using a tool like [act](https://github.com/nektos/act).
+for each Pull Request, and on merge to `main`. You can run CI locally using a tool
+like [act](https://github.com/nektos/act).
+
+## Build & Test
+
+This project uses [mage](https://magefile.org/), please view [CONTRIBUTING](CONTRIBUTING.md) for more information.
+
+After installing mage, you can build and test the SDK with the following commands:
+```
+mage build
+mage test
+```
+
+A utility is provided to run _clean, build, and test_ in sequence with:
+
+```
+mage cbt
+```
 
 ## Deployment
 
@@ -43,6 +60,7 @@ cd build && docker-compose up
 ```
 
 You should then be able to send requests as follows:
+
 ```shell
  ~ curl localhost:8080/health
 {"status":"OK"}
@@ -51,10 +69,11 @@ You should then be able to send requests as follows:
 ## What's Supported?
 
 - [x] [DID Management](https://www.w3.org/TR/did-core/)
-  - Using [did:key](https://w3c-ccg.github.io/did-method-key/)
-- [ ] [Verifiable Credential Schema](https://w3c-ccg.github.io/vc-json-schemas/v2/index.html) Management
-- [x] [Verifiable Credential](https://www.w3.org/TR/vc-data-model) Issuance & Verification
-- [ ] Requesting, Receiving, and the Validation of Verifiable Claims using [Presentation Exchange](https://identity.foundation/presentation-exchange/)
+    - Using [did:key](https://w3c-ccg.github.io/did-method-key/)
+- [x] [Verifiable Credential Schema](https://w3c-ccg.github.io/vc-json-schemas/v2/index.html) Management
+- [] [Verifiable Credential](https://www.w3.org/TR/vc-data-model) Issuance & Verification
+- [ ] Requesting, Receiving, and the Validation of Verifiable Claims
+  using [Presentation Exchange](https://identity.foundation/presentation-exchange/)
 - [ ] Applying for Verifiable Credentials using [Credential Manifest](https://identity.foundation/credential-manifest/)
 - [ ] Revocations of Verifiable Credentials using the [Status List 2021](https://w3c-ccg.github.io/vc-status-list-2021/)
 - [ ] [ID Hub](https://identity.foundation/identity-hub/spec/) Messaging
@@ -80,4 +99,5 @@ This project is fully open source, and we welcome contributions! For more inform
 | [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) | Expected behavior for project contributors, promoting a welcoming environment |
 | [CONTRIBUTING.md](./CONTRIBUTING.md)       | Developer guide to build, test, run, access CI, chat, discuss, file issues    |
 | [GOVERNANCE.md](./GOVERNANCE.md)           | Project governance                                                            |
+| [SECURITY.md](./SECRUTIY.md)               | Vulnerability and bug reporting                                               |
 | [LICENSE](./LICENSE)                       | Apache License, Version 2.0                                                   |

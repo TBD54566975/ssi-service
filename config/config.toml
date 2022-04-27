@@ -1,0 +1,13 @@
+title = "SSI Service Config"
+
+# http service configuration
+[server]
+
+[services]
+
+# must enable each service in addition to optional per-service config below
+enabled = ["did", "vc"]
+
+    [[services.did]]
+
+    [[services.vc]]
