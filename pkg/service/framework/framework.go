@@ -1,5 +1,7 @@
 package framework
 
+import "github.com/tbd54566975/ssi-service/config"
+
 type (
 	Type        string
 	StatusState string
@@ -8,8 +10,8 @@ type (
 const (
 	// List of all service
 
-	DID    Type = "did-service"
-	Schema Type = "schema-service"
+	DID    Type = "did"
+	Schema Type = "schema"
 
 	StatusReady    StatusState = "ready"
 	StatusNotReady StatusState = "not_ready"
@@ -25,4 +27,5 @@ type Status struct {
 type Service interface {
 	Type() Type
 	Status() Status
+	Config() config.ServiceConfig
 }

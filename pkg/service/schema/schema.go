@@ -7,6 +7,7 @@ import (
 	schemalib "github.com/TBD54566975/ssi-sdk/schema"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	schemastorage "github.com/tbd54566975/ssi-service/pkg/service/schema/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -17,6 +18,7 @@ import (
 type Service struct {
 	storage schemastorage.Storage
 	log     *log.Logger
+	config  config.ServiceConfig
 }
 
 func (s Service) Type() framework.Type {
@@ -31,6 +33,10 @@ func (s Service) Status() framework.Status {
 		}
 	}
 	return framework.Status{Status: framework.StatusReady}
+}
+
+func (s Service) Config() config.ServiceConfig {
+	return s.config
 }
 
 func NewSchemaService(logger *log.Logger, s storage.ServiceStorage) (*Service, error) {

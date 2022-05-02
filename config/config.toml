@@ -1,13 +1,29 @@
 title = "SSI Service Config"
 
+svn = "0.0.1"
+desc = "https://github.com/TBD54566975/ssi-service"
+
 # http service configuration
 [server]
+api_host = "0.0.0.0:3000"
+debug_host = "0.0.0.0:4000"
+
+# 5 seconds, time is in nanoseconds
+read_timeout = 5000000000
+write_timeout = 5000000000
+shutdown_timeout = 5000000000
 
 [services]
 
 # must enable each service in addition to optional per-service config below
-enabled = ["did", "vc"]
+enabled = ["did", "schema"]
 
-    [[services.did]]
+    # per-service configuration
 
-    [[services.vc]]
+    [services.did]
+    storage = "bolt"
+    #methods = ["key"]
+
+    [services.schema]
+    storage = "bolt"
+    dependent_services = ["did"]

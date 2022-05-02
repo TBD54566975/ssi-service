@@ -10,9 +10,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
-	"github.com/tbd54566975/ssi-service/pkg/service"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -34,7 +34,7 @@ func TestHealthCheckAPI(t *testing.T) {
 
 	shutdown := make(chan os.Signal, 1)
 	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
-	server, err := NewSSIServer(shutdown, service.Config{Logger: logger})
+	server, err := NewSSIServer(shutdown, config.SSIServiceConfig{Logger: logger})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, server)
 
@@ -61,7 +61,7 @@ func TestReadinessAPI(t *testing.T) {
 
 	shutdown := make(chan os.Signal, 1)
 	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
-	server, err := NewSSIServer(shutdown, service.Config{Logger: logger})
+	server, err := NewSSIServer(shutdown, config.SSIServiceConfig{Logger: logger})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, server)
 

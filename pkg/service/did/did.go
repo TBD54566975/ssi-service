@@ -3,6 +3,7 @@ package did
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/config"
 	didstorage "github.com/tbd54566975/ssi-service/pkg/service/did/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -20,6 +21,7 @@ type Service struct {
 	handlers map[Method]MethodHandler
 	storage  didstorage.Storage
 	logger   *log.Logger
+	config   config.ServiceConfig
 }
 
 func (s Service) Type() framework.Type {
@@ -35,6 +37,10 @@ func (s Service) Status() framework.Status {
 		}
 	}
 	return framework.Status{Status: framework.StatusReady}
+}
+
+func (s Service) Config() config.ServiceConfig {
+	return s.config
 }
 
 func (s Service) GetSupportedMethods() GetSupportedMethodsResponse {

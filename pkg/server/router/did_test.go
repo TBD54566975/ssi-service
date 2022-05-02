@@ -3,6 +3,7 @@ package router
 import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/stretchr/testify/assert"
+	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -88,4 +89,8 @@ func (s *testService) Type() framework.Type {
 
 func (s *testService) Status() framework.Status {
 	return framework.Status{Status: "ready"}
+}
+
+func (s *testService) Config() config.ServiceConfig {
+	return config.ServiceConfig{}
 }
