@@ -18,12 +18,11 @@ shutdown_timeout = 5000000000
 # must enable each service in addition to optional per-service config below
 enabled = ["did", "schema"]
 
-    # per-service configuration
+# per-service configuration
+[services.did]
+storage = "bolt"
+#methods = ["key"]
 
-    [services.did]
-    storage = "bolt"
-    #methods = ["key"]
-
-    [services.schema]
-    storage = "bolt"
-    dependent_services = ["did"]
+[services.schema]
+storage = "bolt"
+dependent_services = ["did"]

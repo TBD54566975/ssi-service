@@ -33,7 +33,7 @@ type ServerConfig struct {
 // ServicesConfig represents configurable properties for the components of the SSI Service
 type ServicesConfig struct {
 	EnabledServices []string `toml:"enabled"`
-	Config          map[string]ServiceConfig
+	Config          map[string]interface{}
 }
 
 // ServiceConfig represents configurable properties for a specific component of the SSI Service
