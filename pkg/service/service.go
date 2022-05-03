@@ -24,40 +24,30 @@ func InstantiateSSIService(logger *log.Logger, config config.ServicesConfig) (*S
 	if logger == nil {
 		return nil, errors.New("logger not initialized")
 	}
+	if err := validateServiceConfig(config); err != nil {
+		errMsg := fmt.Sprintf("could not instantiate SSI Service, invalid config: %s", err.Error())
+		log.Printf(errMsg)
+		return nil, errors.New(errMsg)
+	}
 	services, err := instantiateServices(logger, config)
 	if err != nil {
-		errMsg := "could not instantiate the verifiable credentials service"
+		errMsg := fmt.Sprintf("could not instantiate the verifiable credentials service: %s", err.Error())
 		log.Printf(errMsg)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, errors.New(errMsg)
 	}
 	return &SSIService{services: services}, nil
 }
 
 func validateServiceConfig(config config.ServicesConfig) error {
-	for svc, svcConfig := range config.Config {
-		if !IsServiceAvailable(svc) {
-			return fmt.Errorf("configured service<%s> not available", svc)
-		}
-		if !storage.IsStorageAvailable(svcConfig.Storage) {
-			return fmt.Errorf("configured storage<%s> not available", svc)
-		}
+	if !storage.IsStorageAvailable(config.StorageProvider) {
+		return fmt.Errorf("%s storage provider configured, but not available", config.StorageProvider)
 	}
-
-	// create an index of enabled services to cross-check for dependent services
-	seen := make(map[string]bool)
-	for _, s := range config.EnabledServices {
-		seen[s] = true
+	if config.DIDConfig.IsEmpty() {
+		return fmt.Errorf("%s no config provided", framework.DID)
 	}
-
-	// static configuration analysis to determine whether selected services and storage can be instantiated
-	for svc, svcConfig := range config.Config {
-		for _, dependent := range svcConfig.DependentServices {
-			if ok := seen[dependent]; !ok {
-				return fmt.Errorf("dependent service<%s> of <%s> not available", dependent, svc)
-			}
-		}
+	if config.SchemaConfig.IsEmpty() {
+		return fmt.Errorf("%s no config provided", framework.Schema)
 	}
-
 	return nil
 }
 
@@ -68,45 +58,19 @@ func (ssi *SSIService) GetServices() []framework.Service {
 
 // instantiateServices begins all instantiates and their dependencies
 func instantiateServices(logger *log.Logger, config config.ServicesConfig) ([]framework.Service, error) {
-	enabledIndex := make(map[string]bool)
-	for _, svc := range config.EnabledServices {
-		enabledIndex[svc] = true
-	}
-
-	// some services may have config but not be enabled, this is ok
-	//for svc, svcConfig := range config.Config {
-	//	if ok := enabledIndex[svc]; ok {
-	//
-	//	}
-	//}
-
-	bolt, err := storage.NewBoltDB(logger)
+	storageProvider, err := storage.NewStorage(storage.Storage(config.StorageProvider), logger)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate BoltDB")
+		return nil, errors.Wrapf(err, "could not instantiate storage provider: %s", config.StorageProvider)
 	}
-	didService, err := did.NewDIDService(logger, []did.Method{did.KeyMethod}, bolt)
+
+	didService, err := did.NewDIDService(logger, config.DIDConfig, storageProvider)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate the DID service")
 	}
-	schemaService, err := schema.NewSchemaService(logger, bolt)
+
+	schemaService, err := schema.NewSchemaService(logger, config.SchemaConfig, storageProvider)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate the schema service")
 	}
 	return []framework.Service{didService, schemaService}, nil
-}
-
-// AvailableServices returns the supported service providers
-func AvailableServices() []framework.Service {
-	return []framework.Service{framework.DID, framework.Schema}
-}
-
-// IsServiceAvailable determines whether a given service provider is available for instantiation
-func IsServiceAvailable(service string) bool {
-	all := AvailableServices()
-	for _, s := range all {
-		if service == s.Type() {
-			return true
-		}
-	}
-	return false
 }

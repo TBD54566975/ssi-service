@@ -1,7 +1,5 @@
 package framework
 
-import "github.com/tbd54566975/ssi-service/config"
-
 type (
 	Type        string
 	StatusState string
@@ -17,6 +15,10 @@ const (
 	StatusNotReady StatusState = "not_ready"
 )
 
+func (t Type) String() string {
+	return string(t)
+}
+
 // Status is for service reporting on their status
 type Status struct {
 	Status  StatusState `json:"status,omitempty"`
@@ -27,5 +29,4 @@ type Status struct {
 type Service interface {
 	Type() Type
 	Status() Status
-	Config() config.ServiceConfig
 }

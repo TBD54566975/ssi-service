@@ -40,7 +40,8 @@ func TestDIDRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)
 
-		didService, err := did.NewDIDService(logger, []did.Method{did.KeyMethod}, bolt)
+		serviceConfig := config.DIDServiceConfig{Methods: []string{string(did.KeyMethod)}}
+		didService, err := did.NewDIDService(logger, serviceConfig, bolt)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didService)
 
@@ -91,6 +92,6 @@ func (s *testService) Status() framework.Status {
 	return framework.Status{Status: "ready"}
 }
 
-func (s *testService) Config() config.ServiceConfig {
-	return config.ServiceConfig{}
+func (s *testService) Config() config.DIDServiceConfig {
+	return config.DIDServiceConfig{Methods: []string{string(did.KeyMethod)}}
 }

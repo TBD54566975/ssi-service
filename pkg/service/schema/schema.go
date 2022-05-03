@@ -18,7 +18,7 @@ import (
 type Service struct {
 	storage schemastorage.Storage
 	log     *log.Logger
-	config  config.ServiceConfig
+	config  config.SchemaServiceConfig
 }
 
 func (s Service) Type() framework.Type {
@@ -35,11 +35,11 @@ func (s Service) Status() framework.Status {
 	return framework.Status{Status: framework.StatusReady}
 }
 
-func (s Service) Config() config.ServiceConfig {
+func (s Service) Config() config.SchemaServiceConfig {
 	return s.config
 }
 
-func NewSchemaService(logger *log.Logger, s storage.ServiceStorage) (*Service, error) {
+func NewSchemaService(logger *log.Logger, config config.SchemaServiceConfig, s storage.ServiceStorage) (*Service, error) {
 	schemaStorage, err := schemastorage.NewSchemaStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate Schema storage for the Schema service")
@@ -47,6 +47,7 @@ func NewSchemaService(logger *log.Logger, s storage.ServiceStorage) (*Service, e
 	return &Service{
 		storage: schemaStorage,
 		log:     logger,
+		config:  config,
 	}, nil
 }
 
@@ -63,7 +64,7 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 	}
 
 	schemaID := uuid.NewString()
-	schema := schema.VCJSONSchema{
+	schemaValue := schema.VCJSONSchema{
 		Type:     schema.VCJSONSchemaType,
 		Version:  Version1,
 		ID:       schemaID,
@@ -73,12 +74,12 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 		Schema:   request.Schema,
 	}
 
-	storedSchema := schemastorage.StoredSchema{Schema: schema}
+	storedSchema := schemastorage.StoredSchema{Schema: schemaValue}
 	if err := s.storage.StoreSchema(storedSchema); err != nil {
 		return nil, errors.Wrap(err, "could not store schema")
 	}
 
-	return &CreateSchemaResponse{ID: schemaID, Schema: schema}, nil
+	return &CreateSchemaResponse{ID: schemaID, Schema: schemaValue}, nil
 }
 
 func (s Service) GetSchemas() (*GetSchemasResponse, error) {

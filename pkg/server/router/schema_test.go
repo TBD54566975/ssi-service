@@ -2,6 +2,7 @@ package router
 
 import (
 	"github.com/stretchr/testify/assert"
+	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -38,7 +39,8 @@ func TestSchemaRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)
 
-		schemaService, err := schema.NewSchemaService(logger, bolt)
+		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
+		schemaService, err := schema.NewSchemaService(logger, serviceConfig, bolt)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, schemaService)
 

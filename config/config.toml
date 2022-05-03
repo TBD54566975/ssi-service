@@ -14,15 +14,12 @@ write_timeout = 5000000000
 shutdown_timeout = 5000000000
 
 [services]
-
-# must enable each service in addition to optional per-service config below
-enabled = ["did", "schema"]
+storage = "bolt"
 
 # per-service configuration
 [services.did]
-storage = "bolt"
-#methods = ["key"]
+name = "did"
+methods = ["key"]
 
 [services.schema]
-storage = "bolt"
-dependent_services = ["did"]
+name = "schema"

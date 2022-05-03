@@ -30,7 +30,7 @@ func main() {
 
 // startup and shutdown logic
 func run(logger *log.Logger) error {
-	cfg, err := config.LoadConfig(config.DefaultConfigPath)
+	cfg, err := config.LoadConfig(logger, config.DefaultConfigPath)
 	if err != nil {
 		logger.Fatalf("could not instantiate config: %s", err.Error())
 	}

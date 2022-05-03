@@ -1,13 +1,15 @@
 package config
 
 import (
-	"fmt"
 	"github.com/stretchr/testify/assert"
+	"log"
+	"os"
 	"testing"
 )
 
 func TestConfig(t *testing.T) {
-	config, err := LoadConfig(DefaultConfigPath)
+	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
+	config, err := LoadConfig(logger, DefaultConfigPath)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, config)
 
@@ -17,7 +19,5 @@ func TestConfig(t *testing.T) {
 	assert.False(t, config.Server.APIHost == "")
 	assert.False(t, config.Server.DebugHost == "")
 
-	assert.NotZero(t, config.Services.EnabledServices)
-
-	fmt.Printf("%+v", config.Services)
+	assert.NotEmpty(t, config.Services.StorageProvider)
 }

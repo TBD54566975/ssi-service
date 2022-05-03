@@ -21,7 +21,7 @@ type Service struct {
 	handlers map[Method]MethodHandler
 	storage  didstorage.Storage
 	logger   *log.Logger
-	config   config.ServiceConfig
+	config   config.DIDServiceConfig
 }
 
 func (s Service) Type() framework.Type {
@@ -39,7 +39,7 @@ func (s Service) Status() framework.Status {
 	return framework.Status{Status: framework.StatusReady}
 }
 
-func (s Service) Config() config.ServiceConfig {
+func (s Service) Config() config.DIDServiceConfig {
 	return s.config
 }
 
@@ -85,7 +85,7 @@ type MethodHandler interface {
 	GetDID(request GetDIDRequest) (*GetDIDResponse, error)
 }
 
-func NewDIDService(log *log.Logger, methods []Method, s storage.ServiceStorage) (*Service, error) {
+func NewDIDService(log *log.Logger, config config.DIDServiceConfig, s storage.ServiceStorage) (*Service, error) {
 	didStorage, err := didstorage.NewDIDStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
@@ -97,8 +97,8 @@ func NewDIDService(log *log.Logger, methods []Method, s storage.ServiceStorage) 
 	}
 
 	// instantiate all handlers for DID methods
-	for _, m := range methods {
-		if err := svc.instantiateHandlerForMethod(m); err != nil {
+	for _, m := range config.Methods {
+		if err := svc.instantiateHandlerForMethod(Method(m)); err != nil {
 			return nil, errors.Wrap(err, "could not instantiate DID svc")
 		}
 	}
