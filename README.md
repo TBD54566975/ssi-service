@@ -21,11 +21,11 @@ revoking, exchanging, validating, verifying credentials in varying degrees of co
 
 ![ssi-sdk](doc/ssi-service.png)
 
-## Continuous Integration
+## Configuration
 
-CI is managed via [GitHub Actions](https://github.com/TBD54566975/ssi-service/actions). Actions are triggered to run
-for each Pull Request, and on merge to `main`. You can run CI locally using a tool
-like [act](https://github.com/nektos/act).
+Configuration is managed using a [TOML](https://toml.io/en/) [file](config/config.toml). There are sets of configuration
+values for the server (e.g. which port to listen on), the services (e.g. which database to use, and each service. Each 
+service may define specific configuration, such as which DID methods are enabled for the DID service.
 
 ## Build & Test
 
@@ -42,6 +42,12 @@ A utility is provided to run _clean, build, and test_ in sequence with:
 ```
 mage cbt
 ```
+
+## Continuous Integration
+
+CI is managed via [GitHub Actions](https://github.com/TBD54566975/ssi-service/actions). Actions are triggered to run
+for each Pull Request, and on merge to `main`. You can run CI locally using a tool
+like [act](https://github.com/nektos/act).
 
 ## Deployment
 
