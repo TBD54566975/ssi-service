@@ -10,9 +10,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
-	"github.com/tbd54566975/ssi-service/pkg/service"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -34,7 +34,9 @@ func TestHealthCheckAPI(t *testing.T) {
 
 	shutdown := make(chan os.Signal, 1)
 	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
-	server, err := NewSSIServer(shutdown, service.Config{Logger: logger})
+	serviceConfig, err := config.LoadConfig(logger, "")
+	assert.NoError(t, err)
+	server, err := NewSSIServer(shutdown, logger, *serviceConfig)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, server)
 
@@ -61,7 +63,10 @@ func TestReadinessAPI(t *testing.T) {
 
 	shutdown := make(chan os.Signal, 1)
 	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
-	server, err := NewSSIServer(shutdown, service.Config{Logger: logger})
+	serviceConfig, err := config.LoadConfig(logger, "")
+	assert.NoError(t, err)
+
+	server, err := NewSSIServer(shutdown, logger, *serviceConfig)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, server)
 
@@ -224,7 +229,8 @@ func newDIDService(t *testing.T) *router.DIDRouter {
 	require.NoError(t, err)
 	require.NotEmpty(t, bolt)
 
-	didService, err := did.NewDIDService(logger, []did.Method{did.KeyMethod}, bolt)
+	serviceConfig := config.DIDServiceConfig{Methods: []string{string(did.KeyMethod)}}
+	didService, err := did.NewDIDService(logger, serviceConfig, bolt)
 	require.NoError(t, err)
 	require.NotEmpty(t, didService)
 
@@ -381,7 +387,7 @@ func newSchemaService(t *testing.T) *router.SchemaRouter {
 	require.NoError(t, err)
 	require.NotEmpty(t, bolt)
 
-	schemaService, err := schema.NewSchemaService(logger, bolt)
+	schemaService, err := schema.NewSchemaService(logger, config.SchemaServiceConfig{}, bolt)
 	require.NoError(t, err)
 	require.NotEmpty(t, schemaService)
 

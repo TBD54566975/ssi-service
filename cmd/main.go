@@ -3,23 +3,19 @@ package main
 import (
 	"context"
 	"expvar"
-	"fmt"
+	"github.com/ardanlabs/conf"
+	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server"
-	"github.com/tbd54566975/ssi-service/pkg/service"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
-
-	"github.com/ardanlabs/conf"
-	"github.com/pkg/errors"
 )
 
 const (
-	ServiceName = "ssi-server"
-	LogPrefix   = ServiceName + ": "
+	LogPrefix = config.ServiceName + ": "
 )
 
 func main() {
@@ -32,64 +28,24 @@ func main() {
 	}
 }
 
-type serverConfig struct {
-	conf.Version
-	Web *webConfig
-}
-
-type webConfig struct {
-	APIHost         string        `conf:"default:0.0.0.0:3000"`
-	DebugHost       string        `conf:"default:0.0.0.0:4000"`
-	ReadTimeout     time.Duration `conf:"default:5s"`
-	WriteTimeout    time.Duration `conf:"default:5s"`
-	ShutdownTimeout time.Duration `conf:"default:5s"`
-}
-
 // startup and shutdown logic
-func run(log *log.Logger) error {
-	cfg := serverConfig{
-		Version: conf.Version{
-			SVN:  "2022.03.15",
-			Desc: "The Self Sovereign Identity Service",
-		},
-		Web: new(webConfig),
-	}
-
-	if err := conf.Parse(os.Args[1:], ServiceName, &cfg); err != nil {
-		switch err {
-		case conf.ErrHelpWanted:
-			usage, err := conf.Usage(ServiceName, &cfg)
-			if err != nil {
-				return errors.Wrap(err, "parsing config")
-			}
-			fmt.Println(usage)
-
-			return nil
-
-		case conf.ErrVersionWanted:
-			version, err := conf.VersionString(ServiceName, &cfg)
-			if err != nil {
-				return errors.Wrap(err, "generating cfg version")
-			}
-
-			fmt.Println(version)
-			return nil
-		}
-
-		return errors.Wrap(err, "parsing config")
+func run(logger *log.Logger) error {
+	cfg, err := config.LoadConfig(logger, config.DefaultConfigPath)
+	if err != nil {
+		logger.Fatalf("could not instantiate config: %s", err.Error())
 	}
 
 	expvar.NewString("build").Set(cfg.Version.SVN)
 
-	log.Printf("main: Started : Service initializing : version %q", cfg.Version.SVN)
-	defer log.Println("main: Completed")
+	logger.Printf("main: Started : Service initializing : version %q", cfg.Version.SVN)
+	defer logger.Println("main: Completed")
 
 	out, err := conf.String(&cfg)
 	if err != nil {
 		return errors.Wrap(err, "serializing config")
 	}
 
-	log.Printf("main: Config: \n%v\n", out)
+	logger.Printf("main: Config: \n%v\n", out)
 
 	// create a channel of buffer size 1 to handle shutdown.
 	// buffer's size is 1 in order to ignore any additional ctrl+c
@@ -97,22 +53,21 @@ func run(log *log.Logger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	serviceConfig := service.Config{Logger: log}
-	ssiServer, err := server.NewSSIServer(shutdown, serviceConfig)
+	ssiServer, err := server.NewSSIServer(shutdown, logger, *cfg)
 	if err != nil {
-		log.Fatalf("could not start http services: %s", err.Error())
+		logger.Fatalf("could not start http services: %s", err.Error())
 	}
 	api := http.Server{
-		Addr:         cfg.Web.APIHost,
+		Addr:         cfg.Server.APIHost,
 		Handler:      ssiServer,
-		ReadTimeout:  cfg.Web.ReadTimeout,
-		WriteTimeout: cfg.Web.WriteTimeout,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
 	}
 
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		log.Printf("main: server started and listening on -> %s", api.Addr)
+		logger.Printf("main: server started and listening on -> %s", api.Addr)
 
 		serverErrors <- api.ListenAndServe()
 	}()
@@ -121,9 +76,9 @@ func run(log *log.Logger) error {
 	case err := <-serverErrors:
 		return errors.Wrap(err, "server error")
 	case sig := <-shutdown:
-		log.Printf("main: shutdown signal received -> %v", sig)
+		logger.Printf("main: shutdown signal received -> %v", sig)
 
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.Web.ShutdownTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
 		defer cancel()
 
 		if err := api.Shutdown(ctx); err != nil {

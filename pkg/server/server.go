@@ -5,6 +5,7 @@ package server
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 
@@ -25,18 +26,18 @@ const (
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
 type SSIServer struct {
+	*log.Logger
 	*framework.Server
+	*config.ServerConfig
 	*service.SSIService
-	*service.Config
 }
 
 // NewSSIServer does two things: instantiates all service and registers their HTTP bindings
-func NewSSIServer(shutdown chan os.Signal, config service.Config) (*SSIServer, error) {
+func NewSSIServer(shutdown chan os.Signal, logger *log.Logger, config config.SSIServiceConfig) (*SSIServer, error) {
 	// creates an HTTP server from the framework, and wrap it to extend it for the SSIS
-	logger := config.Logger
 	middlewares := []framework.Middleware{middleware.Logger(logger), middleware.Errors(logger), middleware.Metrics(), middleware.Panics(logger)}
 	httpServer := framework.NewHTTPServer(shutdown, middlewares...)
-	ssi, err := service.InstantiateSSIService(config)
+	ssi, err := service.InstantiateSSIService(logger, config.Services)
 	if err != nil {
 		return nil, err
 	}
@@ -50,9 +51,10 @@ func NewSSIServer(shutdown chan os.Signal, config service.Config) (*SSIServer, e
 
 	// create the server instance to be returned
 	server := SSIServer{
-		Server:     httpServer,
-		SSIService: ssi,
-		Config:     &config,
+		Logger:       logger,
+		Server:       httpServer,
+		SSIService:   ssi,
+		ServerConfig: &config.Server,
 	}
 
 	// start all services and their routers

@@ -8,12 +8,16 @@ type (
 const (
 	// List of all service
 
-	DID    Type = "did-service"
-	Schema Type = "schema-service"
+	DID    Type = "did"
+	Schema Type = "schema"
 
 	StatusReady    StatusState = "ready"
 	StatusNotReady StatusState = "not_ready"
 )
+
+func (t Type) String() string {
+	return string(t)
+}
 
 // Status is for service reporting on their status
 type Status struct {
