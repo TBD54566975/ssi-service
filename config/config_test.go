@@ -6,7 +6,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	config, err := LoadConfig(DefaultConfigPath)
+	config, err := LoadConfig(ConfigFileName)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, config)
 
