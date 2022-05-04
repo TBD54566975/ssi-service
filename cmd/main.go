@@ -27,7 +27,7 @@ func init() {
 	logrus.SetOutput(os.Stdout)
 
 	// Only log the warning severity or above.
-	logrus.SetLevel(logrus.WarnLevel)
+	logrus.SetLevel(logrus.InfoLevel)
 }
 
 func main() {
@@ -50,7 +50,7 @@ func run() error {
 	logrus.Infof("main: Started : Service initializing : version %q", cfg.Version.SVN)
 	defer logrus.Info("main: Completed")
 
-	out, err := conf.String(&cfg)
+	out, err := conf.String(cfg)
 	if err != nil {
 		return errors.Wrap(err, "serializing config")
 	}

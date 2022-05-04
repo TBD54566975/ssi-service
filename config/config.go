@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	DefaultConfigPath = "config.toml"
+	DefaultConfigPath = "config/config.toml"
 	ServiceName       = "ssi-service"
 	ConfigExtension   = ".toml"
 )
