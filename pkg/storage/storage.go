@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"log"
 )
 
 type Storage string
@@ -22,10 +21,10 @@ type ServiceStorage interface {
 }
 
 // NewStorage creates a new storage provider based on the input
-func NewStorage(storageProvider Storage, logger *log.Logger) (ServiceStorage, error) {
+func NewStorage(storageProvider Storage) (ServiceStorage, error) {
 	switch storageProvider {
 	case Bolt:
-		return NewBoltDB(logger)
+		return NewBoltDB()
 	default:
 		return nil, fmt.Errorf("unsupported storage provider: %s", storageProvider)
 	}

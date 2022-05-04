@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
-	"log"
 	"net/http"
 	"time"
 )
@@ -17,7 +17,7 @@ import (
 // 		TODO: add after format
 // 		TODO: add after example
 // TODO: make logging output configurable
-func Logger(log *log.Logger) framework.Middleware {
+func Logger() framework.Middleware {
 	mw := func(handler framework.Handler) framework.Handler {
 
 		wrapped := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -26,14 +26,14 @@ func Logger(log *log.Logger) framework.Middleware {
 				return framework.NewShutdownError("Request state missing from context")
 			}
 
-			log.Printf("%s : started : %s %s -> %s",
+			logrus.Infof("%s : started : %s %s -> %s",
 				v.TraceID,
 				r.Method, r.URL.Path, r.RemoteAddr,
 			)
 
 			err := handler(ctx, w, r)
 
-			log.Printf("%s : completed : %s %s -> %s (%d) (%s)",
+			logrus.Infof("%s : completed : %s %s -> %s (%d) (%s)",
 				v.TraceID,
 				r.Method, r.URL.Path, r.RemoteAddr,
 				v.StatusCode, time.Since(v.Now),

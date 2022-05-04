@@ -5,8 +5,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"os/user"
@@ -104,7 +104,7 @@ func runGo(cmd string, args ...string) error {
 func installIfNotPresent(execName, goPackage string) error {
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 		return err
 	}
 	pathOfExec := findOnPathOrGoPath(execName)
@@ -149,7 +149,7 @@ func findOnPath(execName string) string {
 func goPath() string {
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 		return ""
 	}
 	goPath, goPathSet := os.LookupEnv("GOPATH")

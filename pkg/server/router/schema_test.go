@@ -6,7 +6,6 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"log"
 	"os"
 	"testing"
 )
@@ -19,28 +18,26 @@ func TestSchemaRouter(t *testing.T) {
 	})
 
 	t.Run("Nil Service", func(tt *testing.T) {
-		schemaRouter, err := NewSchemaRouter(nil, nil)
+		schemaRouter, err := NewSchemaRouter(nil)
 		assert.Error(tt, err)
 		assert.Empty(tt, schemaRouter)
 		assert.Contains(tt, err.Error(), "service cannot be nil")
 	})
 
 	t.Run("Bad Service", func(tt *testing.T) {
-		schemaRouter, err := NewSchemaRouter(&testService{}, nil)
+		schemaRouter, err := NewSchemaRouter(&testService{})
 		assert.Error(tt, err)
 		assert.Empty(tt, schemaRouter)
 		assert.Contains(tt, err.Error(), "could not create schema router with service type: test")
 	})
 
 	t.Run("Schema Service Test", func(tt *testing.T) {
-		logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
-
-		bolt, err := storage.NewBoltDB(logger)
+		bolt, err := storage.NewBoltDB()
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
-		schemaService, err := schema.NewSchemaService(logger, serviceConfig, bolt)
+		schemaService, err := schema.NewSchemaService(serviceConfig, bolt)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, schemaService)
 

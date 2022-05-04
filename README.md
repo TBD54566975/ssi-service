@@ -77,12 +77,12 @@ You should then be able to send requests as follows:
 - [x] [DID Management](https://www.w3.org/TR/did-core/)
     - Using [did:key](https://w3c-ccg.github.io/did-method-key/)
 - [x] [Verifiable Credential Schema](https://w3c-ccg.github.io/vc-json-schemas/v2/index.html) Management
-- [] [Verifiable Credential](https://www.w3.org/TR/vc-data-model) Issuance & Verification
+- [ ] [Verifiable Credential](https://www.w3.org/TR/vc-data-model) Issuance & Verification
 - [ ] Requesting, Receiving, and the Validation of Verifiable Claims
   using [Presentation Exchange](https://identity.foundation/presentation-exchange/)
 - [ ] Applying for Verifiable Credentials using [Credential Manifest](https://identity.foundation/credential-manifest/)
 - [ ] Revocations of Verifiable Credentials using the [Status List 2021](https://w3c-ccg.github.io/vc-status-list-2021/)
-- [ ] [ID Hub](https://identity.foundation/identity-hub/spec/) Messaging
+- [ ] [Decentralized Web Node](https://identity.foundation/decentralized-web-node/spec/) Messaging
 
 ## Design Thinking
 

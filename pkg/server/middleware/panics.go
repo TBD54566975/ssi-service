@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
-	"log"
 	"net/http"
 	"runtime/debug"
 
@@ -11,7 +11,7 @@ import (
 )
 
 // Panics recovers from panics and converts the panic into an error
-func Panics(log *log.Logger) framework.Middleware {
+func Panics() framework.Middleware {
 	mw := func(handler framework.Handler) framework.Handler {
 		wrapped := func(ctx context.Context, w http.ResponseWriter, r *http.Request) (err error) {
 
@@ -27,7 +27,7 @@ func Panics(log *log.Logger) framework.Middleware {
 					// log the stack trace for this panic'd goroutine
 					err = errors.Errorf("%s: \n%s", v.TraceID, debug.Stack())
 
-					log.Printf("%s: PANIC :\n%s", v.TraceID, debug.Stack())
+					logrus.Infof("%s: PANIC :\n%s", v.TraceID, debug.Stack())
 				}
 			}()
 

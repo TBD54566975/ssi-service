@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
-	"log"
+	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
 )
@@ -14,21 +14,20 @@ const (
 )
 
 type BoltDB struct {
-	logger *log.Logger
-	db     *bolt.DB
+	db *bolt.DB
 }
 
 // NewBoltDB instantiates a file-based storage instance for Bolt https://github.com/boltdb/bolt
-func NewBoltDB(logger *log.Logger) (*BoltDB, error) {
-	return NewBoltDBWithFile(logger, DBFile)
+func NewBoltDB() (*BoltDB, error) {
+	return NewBoltDBWithFile(DBFile)
 }
 
-func NewBoltDBWithFile(logger *log.Logger, filePath string) (*BoltDB, error) {
+func NewBoltDBWithFile(filePath string) (*BoltDB, error) {
 	db, err := bolt.Open(filePath, 0600, &bolt.Options{Timeout: 3 * time.Second})
 	if err != nil {
 		return nil, err
 	}
-	return &BoltDB{logger: logger, db: db}, nil
+	return &BoltDB{db: db}, nil
 }
 
 func (b *BoltDB) Close() error {
@@ -53,7 +52,7 @@ func (b *BoltDB) Read(namespace, key string) ([]byte, error) {
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
 		if bucket == nil {
-			b.logger.Printf("namespace<%s> does not exist", namespace)
+			logrus.Infof("namespace<%s> does not exist", namespace)
 			return nil
 		}
 		result = bucket.Get([]byte(key))
@@ -67,7 +66,7 @@ func (b *BoltDB) ReadAll(namespace string) (map[string][]byte, error) {
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
 		if bucket == nil {
-			b.logger.Printf("namespace<%s> does not exist", namespace)
+			logrus.Printf("namespace<%s> does not exist", namespace)
 			return nil
 		}
 		cursor := bucket.Cursor()
