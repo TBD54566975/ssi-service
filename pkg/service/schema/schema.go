@@ -7,17 +7,16 @@ import (
 	schemalib "github.com/TBD54566975/ssi-sdk/schema"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	schemastorage "github.com/tbd54566975/ssi-service/pkg/service/schema/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"log"
 	"time"
 )
 
 type Service struct {
 	storage schemastorage.Storage
-	log     *log.Logger
 	config  config.SchemaServiceConfig
 }
 
@@ -39,14 +38,13 @@ func (s Service) Config() config.SchemaServiceConfig {
 	return s.config
 }
 
-func NewSchemaService(logger *log.Logger, config config.SchemaServiceConfig, s storage.ServiceStorage) (*Service, error) {
+func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage) (*Service, error) {
 	schemaStorage, err := schemastorage.NewSchemaStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate Schema storage for the Schema service")
 	}
 	return &Service{
 		storage: schemaStorage,
-		log:     logger,
 		config:  config,
 	}, nil
 }
@@ -60,7 +58,9 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 		return nil, errors.Wrap(err, "could not marshal schema in request")
 	}
 	if err := schemalib.IsValidJSONSchema(string(schemaBytes)); err != nil {
-		return nil, errors.Wrap(err, "provided value is not a valid JSON schema")
+		err := errors.Wrap(err, "provided value is not a valid JSON schema")
+		logrus.WithError(err).Error()
+		return nil, err
 	}
 
 	schemaID := uuid.NewString()
@@ -76,7 +76,9 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 
 	storedSchema := schemastorage.StoredSchema{Schema: schemaValue}
 	if err := s.storage.StoreSchema(storedSchema); err != nil {
-		return nil, errors.Wrap(err, "could not store schema")
+		err := errors.Wrap(err, "could not store schema")
+		logrus.WithError(err).Error()
+		return nil, err
 	}
 
 	return &CreateSchemaResponse{ID: schemaID, Schema: schemaValue}, nil
@@ -99,10 +101,14 @@ func (s Service) GetSchemas() (*GetSchemasResponse, error) {
 func (s Service) GetSchemaByID(request GetSchemaByIDRequest) (*GetSchemaByIDResponse, error) {
 	gotSchema, err := s.storage.GetSchema(request.ID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting schema: %s", request.ID)
+		err := errors.Wrapf(err, "error getting schema: %s", request.ID)
+		logrus.WithError(err).Error()
+		return nil, err
 	}
 	if gotSchema == nil {
-		return nil, fmt.Errorf("schema with id<%s> could not be found", request.ID)
+		err := fmt.Errorf("schema with id<%s> could not be found", request.ID)
+		logrus.WithError(err).Error()
+		return nil, err
 	}
 	return &GetSchemaByIDResponse{Schema: gotSchema.Schema}, nil
 }

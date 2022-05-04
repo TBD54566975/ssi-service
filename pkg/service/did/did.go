@@ -3,11 +3,11 @@ package did
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
 	didstorage "github.com/tbd54566975/ssi-service/pkg/service/did/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"log"
 )
 
 type Method string
@@ -20,7 +20,6 @@ type Service struct {
 	// supported DID methods
 	handlers map[Method]MethodHandler
 	storage  didstorage.Storage
-	logger   *log.Logger
 	config   config.DIDServiceConfig
 }
 
@@ -55,7 +54,7 @@ func (s Service) CreateDIDByMethod(request CreateDIDRequest) (*CreateDIDResponse
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get handler for method<%s>", request.Method)
-		s.logger.Printf(errMsg)
+		logrus.WithError(err).Error(errMsg)
 		return nil, errors.New(errMsg)
 	}
 	return handler.CreateDID(request)
@@ -65,7 +64,7 @@ func (s Service) GetDIDByMethod(request GetDIDRequest) (*GetDIDResponse, error) 
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get handler for method<%s>", request.Method)
-		s.logger.Printf(errMsg)
+		logrus.WithError(err).Error(errMsg)
 		return nil, errors.New(errMsg)
 	}
 	return handler.GetDID(request)
@@ -74,7 +73,9 @@ func (s Service) GetDIDByMethod(request GetDIDRequest) (*GetDIDResponse, error) 
 func (s Service) getHandler(method Method) (MethodHandler, error) {
 	handler, ok := s.handlers[method]
 	if !ok {
-		return nil, fmt.Errorf("could not get handler for DID method: %s", method)
+		err := fmt.Errorf("could not get handler for DID method: %s", method)
+		logrus.WithError(err).Error()
+		return nil, err
 	}
 	return handler, nil
 }
@@ -85,7 +86,7 @@ type MethodHandler interface {
 	GetDID(request GetDIDRequest) (*GetDIDResponse, error)
 }
 
-func NewDIDService(log *log.Logger, config config.DIDServiceConfig, s storage.ServiceStorage) (*Service, error) {
+func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage) (*Service, error) {
 	didStorage, err := didstorage.NewDIDStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
@@ -93,13 +94,12 @@ func NewDIDService(log *log.Logger, config config.DIDServiceConfig, s storage.Se
 	svc := Service{
 		storage:  didStorage,
 		handlers: make(map[Method]MethodHandler),
-		logger:   log,
 	}
 
 	// instantiate all handlers for DID methods
 	for _, m := range config.Methods {
 		if err := svc.instantiateHandlerForMethod(Method(m)); err != nil {
-			return nil, errors.Wrap(err, "could not instantiate DID svc")
+			return nil, errors.Wrap(err, "could not instantiate DID service")
 		}
 	}
 	return &svc, nil
@@ -110,11 +110,15 @@ func (s *Service) instantiateHandlerForMethod(method Method) error {
 	case KeyMethod:
 		handler, err := newKeyDIDHandler(s.storage)
 		if err != nil {
-			return fmt.Errorf("could not instnatiate did:%s handler", KeyMethod)
+			err := fmt.Errorf("could not instnatiate did:%s handler", KeyMethod)
+			logrus.WithError(err).Error()
+			return err
 		}
 		s.handlers[method] = handler
 	default:
-		return fmt.Errorf("unsupported DID method: %s", method)
+		err := fmt.Errorf("unsupported DID method: %s", method)
+		logrus.WithError(err).Error()
+		return err
 	}
 	return nil
 }

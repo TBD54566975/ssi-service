@@ -5,7 +5,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/ardanlabs/conf"
 	"github.com/pkg/errors"
-	"log"
+	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -77,11 +77,11 @@ func (s *SchemaServiceConfig) IsEmpty() bool {
 
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
 // Before loading, defaults are applied on certain properties, which are overwritten if specified in the TOML file.
-func LoadConfig(logger *log.Logger, path string) (*SSIServiceConfig, error) {
+func LoadConfig(path string) (*SSIServiceConfig, error) {
 	// no path, load default config
 	defaultConfig := false
 	if path == "" {
-		logger.Printf("no config path provided, loading default config...")
+		logrus.Info("no config path provided, loading default config...")
 		defaultConfig = true
 	} else if filepath.Ext(path) != ConfigExtension {
 		return nil, fmt.Errorf("path<%s> did not match the expected TOML format", path)

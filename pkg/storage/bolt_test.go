@@ -3,15 +3,12 @@ package storage
 import (
 	"encoding/json"
 	"github.com/stretchr/testify/assert"
-	"log"
 	"os"
 	"testing"
 )
 
 func TestBoltDB(t *testing.T) {
-	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
-
-	db, err := NewBoltDBWithFile(logger, "test.db")
+	db, err := NewBoltDBWithFile("test.db")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, db)
 

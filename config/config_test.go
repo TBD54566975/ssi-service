@@ -2,14 +2,11 @@ package config
 
 import (
 	"github.com/stretchr/testify/assert"
-	"log"
-	"os"
 	"testing"
 )
 
 func TestConfig(t *testing.T) {
-	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
-	config, err := LoadConfig(logger, DefaultConfigPath)
+	config, err := LoadConfig(DefaultConfigPath)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, config)
 

@@ -18,7 +18,6 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -33,10 +32,9 @@ func TestHealthCheckAPI(t *testing.T) {
 	})
 
 	shutdown := make(chan os.Signal, 1)
-	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
-	serviceConfig, err := config.LoadConfig(logger, "")
+	serviceConfig, err := config.LoadConfig("")
 	assert.NoError(t, err)
-	server, err := NewSSIServer(shutdown, logger, *serviceConfig)
+	server, err := NewSSIServer(shutdown, *serviceConfig)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, server)
 
@@ -62,18 +60,17 @@ func TestReadinessAPI(t *testing.T) {
 	})
 
 	shutdown := make(chan os.Signal, 1)
-	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
-	serviceConfig, err := config.LoadConfig(logger, "")
+	serviceConfig, err := config.LoadConfig("")
 	assert.NoError(t, err)
 
-	server, err := NewSSIServer(shutdown, logger, *serviceConfig)
+	server, err := NewSSIServer(shutdown, *serviceConfig)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, server)
 
 	req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/readiness", nil)
 	w := httptest.NewRecorder()
 
-	handler := router.Readiness(nil, logger)
+	handler := router.Readiness(nil)
 	err = handler(newRequestContext(), w, req)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
@@ -223,19 +220,17 @@ func TestDIDAPI(t *testing.T) {
 
 func newDIDService(t *testing.T) *router.DIDRouter {
 	// set up DID service
-	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
-
-	bolt, err := storage.NewBoltDB(logger)
+	bolt, err := storage.NewBoltDB()
 	require.NoError(t, err)
 	require.NotEmpty(t, bolt)
 
 	serviceConfig := config.DIDServiceConfig{Methods: []string{string(did.KeyMethod)}}
-	didService, err := did.NewDIDService(logger, serviceConfig, bolt)
+	didService, err := did.NewDIDService(serviceConfig, bolt)
 	require.NoError(t, err)
 	require.NotEmpty(t, didService)
 
 	// create router for service
-	didRouter, err := router.NewDIDRouter(didService, logger)
+	didRouter, err := router.NewDIDRouter(didService)
 	require.NoError(t, err)
 	require.NotEmpty(t, didRouter)
 
@@ -381,18 +376,16 @@ func TestSchemaAPI(t *testing.T) {
 
 func newSchemaService(t *testing.T) *router.SchemaRouter {
 	// set up DID service
-	logger := log.New(os.Stdout, "ssi-test", log.LstdFlags)
-
-	bolt, err := storage.NewBoltDB(logger)
+	bolt, err := storage.NewBoltDB()
 	require.NoError(t, err)
 	require.NotEmpty(t, bolt)
 
-	schemaService, err := schema.NewSchemaService(logger, config.SchemaServiceConfig{}, bolt)
+	schemaService, err := schema.NewSchemaService(config.SchemaServiceConfig{}, bolt)
 	require.NoError(t, err)
 	require.NotEmpty(t, schemaService)
 
 	// create router for service
-	schemaRouter, err := router.NewSchemaRouter(schemaService, logger)
+	schemaRouter, err := router.NewSchemaRouter(schemaService)
 	require.NoError(t, err)
 	require.NotEmpty(t, schemaRouter)
 

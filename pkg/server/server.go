@@ -5,14 +5,13 @@ package server
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
-	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
-
 	"github.com/tbd54566975/ssi-service/pkg/server/middleware"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service"
-	"log"
+	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"net/http"
 	"os"
 	"path"
@@ -26,18 +25,17 @@ const (
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
 type SSIServer struct {
-	*log.Logger
 	*framework.Server
 	*config.ServerConfig
 	*service.SSIService
 }
 
 // NewSSIServer does two things: instantiates all service and registers their HTTP bindings
-func NewSSIServer(shutdown chan os.Signal, logger *log.Logger, config config.SSIServiceConfig) (*SSIServer, error) {
+func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSIServer, error) {
 	// creates an HTTP server from the framework, and wrap it to extend it for the SSIS
-	middlewares := []framework.Middleware{middleware.Logger(logger), middleware.Errors(logger), middleware.Metrics(), middleware.Panics(logger)}
+	middlewares := []framework.Middleware{middleware.Logger(), middleware.Errors(), middleware.Metrics(), middleware.Panics()}
 	httpServer := framework.NewHTTPServer(shutdown, middlewares...)
-	ssi, err := service.InstantiateSSIService(logger, config.Services)
+	ssi, err := service.InstantiateSSIService(config.Services)
 	if err != nil {
 		return nil, err
 	}
@@ -47,24 +45,23 @@ func NewSSIServer(shutdown chan os.Signal, logger *log.Logger, config config.SSI
 
 	// service-level routers
 	httpServer.Handle(http.MethodGet, "/health", router.Health)
-	httpServer.Handle(http.MethodGet, "/readiness", router.Readiness(services, logger))
+	httpServer.Handle(http.MethodGet, "/readiness", router.Readiness(services))
 
 	// create the server instance to be returned
 	server := SSIServer{
-		Logger:       logger,
 		Server:       httpServer,
 		SSIService:   ssi,
 		ServerConfig: &config.Server,
 	}
 
 	// start all services and their routers
-	log.Printf("Starting [%d] services...\n", len(services))
+	logrus.Infof("Starting [%d] services...\n", len(services))
 	for _, s := range services {
 		if err := server.instantiateRouter(s); err != nil {
-			errMsg := fmt.Sprintf("unable to instaniate service<%s>: %s", s.Type(), err.Error())
-			log.Fatalf(errMsg)
+			logrus.WithError(err).Fatalf("unable to instaniate service<%s>", s.Type())
+			return nil, err
 		}
-		log.Printf("Service<%s> started successfully\n", s.Type())
+		logrus.Infof("Service<%s> started successfully", s.Type())
 	}
 
 	return &server, nil
@@ -86,7 +83,7 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 
 // DecentralizedIdentityAPI registers all HTTP router for the DID Service
 func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) error {
-	didRouter, err := router.NewDIDRouter(service, s.Logger)
+	didRouter, err := router.NewDIDRouter(service)
 	if err != nil {
 		return errors.Wrap(err, "could not create DID router")
 	}
@@ -101,7 +98,7 @@ func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) error
 
 // SchemaAPI registers all HTTP router for the Schema Service
 func (s *SSIServer) SchemaAPI(service svcframework.Service) error {
-	schemaRouter, err := router.NewSchemaRouter(service, s.Logger)
+	schemaRouter, err := router.NewSchemaRouter(service)
 	if err != nil {
 		return errors.Wrap(err, "could not create Schema router")
 	}

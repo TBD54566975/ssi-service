@@ -5,9 +5,9 @@ import (
 	"expvar"
 	"github.com/ardanlabs/conf"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -18,34 +18,44 @@ const (
 	LogPrefix = config.ServiceName + ": "
 )
 
+func init() {
+	// Log as JSON instead of the default ASCII formatter.
+	logrus.SetFormatter(&logrus.JSONFormatter{})
+
+	// Output to stdout instead of the default stderr
+	// Can be any io.Writer, see below for File example
+	logrus.SetOutput(os.Stdout)
+
+	// Only log the warning severity or above.
+	logrus.SetLevel(logrus.WarnLevel)
+}
+
 func main() {
-	svcLog := log.New(os.Stdout, LogPrefix, log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
+	logrus.Info("Starting up...")
 
-	svcLog.Println("Starting up...")
-
-	if err := run(svcLog); err != nil {
-		svcLog.Fatalf("main: error: %s", err.Error())
+	if err := run(); err != nil {
+		logrus.Fatalf("main: error: %s", err.Error())
 	}
 }
 
 // startup and shutdown logic
-func run(logger *log.Logger) error {
-	cfg, err := config.LoadConfig(logger, config.DefaultConfigPath)
+func run() error {
+	cfg, err := config.LoadConfig(config.DefaultConfigPath)
 	if err != nil {
-		logger.Fatalf("could not instantiate config: %s", err.Error())
+		logrus.Fatalf("could not instantiate config: %s", err.Error())
 	}
 
 	expvar.NewString("build").Set(cfg.Version.SVN)
 
-	logger.Printf("main: Started : Service initializing : version %q", cfg.Version.SVN)
-	defer logger.Println("main: Completed")
+	logrus.Infof("main: Started : Service initializing : version %q", cfg.Version.SVN)
+	defer logrus.Info("main: Completed")
 
 	out, err := conf.String(&cfg)
 	if err != nil {
 		return errors.Wrap(err, "serializing config")
 	}
 
-	logger.Printf("main: Config: \n%v\n", out)
+	logrus.Infof("main: Config: \n%v\n", out)
 
 	// create a channel of buffer size 1 to handle shutdown.
 	// buffer's size is 1 in order to ignore any additional ctrl+c
@@ -53,9 +63,9 @@ func run(logger *log.Logger) error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	ssiServer, err := server.NewSSIServer(shutdown, logger, *cfg)
+	ssiServer, err := server.NewSSIServer(shutdown, *cfg)
 	if err != nil {
-		logger.Fatalf("could not start http services: %s", err.Error())
+		logrus.Fatalf("could not start http services: %s", err.Error())
 	}
 	api := http.Server{
 		Addr:         cfg.Server.APIHost,
@@ -67,7 +77,7 @@ func run(logger *log.Logger) error {
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		logger.Printf("main: server started and listening on -> %s", api.Addr)
+		logrus.Infof("main: server started and listening on -> %s", api.Addr)
 
 		serverErrors <- api.ListenAndServe()
 	}()
@@ -76,7 +86,7 @@ func run(logger *log.Logger) error {
 	case err := <-serverErrors:
 		return errors.Wrap(err, "server error")
 	case sig := <-shutdown:
-		logger.Printf("main: shutdown signal received -> %v", sig)
+		logrus.Infof("main: shutdown signal received -> %v", sig)
 
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
 		defer cancel()

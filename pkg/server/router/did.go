@@ -6,10 +6,10 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"log"
 	"net/http"
 )
 
@@ -21,11 +21,10 @@ const (
 // DIDRouter represents the dependencies required to instantiate a DID-HTTP service
 type DIDRouter struct {
 	service *did.Service
-	logger  *log.Logger
 }
 
 // NewDIDRouter creates an HTP router for the DID Service
-func NewDIDRouter(s svcframework.Service, l *log.Logger) (*DIDRouter, error) {
+func NewDIDRouter(s svcframework.Service) (*DIDRouter, error) {
 	if s == nil {
 		return nil, errors.New("service cannot be nil")
 	}
@@ -35,7 +34,6 @@ func NewDIDRouter(s svcframework.Service, l *log.Logger) (*DIDRouter, error) {
 	}
 	return &DIDRouter{
 		service: didService,
-		logger:  l,
 	}, nil
 }
 
@@ -62,14 +60,14 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
 		errMsg := "create DID request missing method parameter"
-		dr.logger.Printf(errMsg)
+		logrus.Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
 	var request CreateDIDByMethodRequest
 	if err := framework.Decode(r, &request); err != nil {
 		errMsg := "invalid create DID request"
-		dr.logger.Printf(errors.Wrap(err, errMsg).Error())
+		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
@@ -78,7 +76,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 	createDIDResponse, err := dr.service.CreateDIDByMethod(createDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)
-		dr.logger.Printf(errMsg)
+		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
 	}
 
@@ -97,13 +95,13 @@ func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
 		errMsg := "get DID by method request missing method parameter"
-		dr.logger.Printf(errMsg)
+		logrus.Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := fmt.Sprintf("get DID request missing id parameter for method: %s", *method)
-		dr.logger.Printf(errMsg)
+		logrus.Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
@@ -113,7 +111,7 @@ func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _
 	gotDID, err := dr.service.GetDIDByMethod(getDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get DID for method<%s> with id: %s", *method, *id)
-		dr.logger.Printf(errors.Wrap(err, errMsg).Error())
+		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 

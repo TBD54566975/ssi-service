@@ -5,8 +5,8 @@ package main
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"os/user"

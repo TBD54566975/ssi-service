@@ -5,20 +5,17 @@ import (
 	"fmt"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"log"
 	"net/http"
 )
 
-func Readiness(services []svcframework.Service, log *log.Logger) framework.Handler {
+func Readiness(services []svcframework.Service) framework.Handler {
 	return readiness{
 		getter: servicesToGet{services},
-		log:    log,
 	}.ready
 }
 
 type readiness struct {
 	getter serviceGetter
-	log    *log.Logger
 }
 
 type GetReadinessResponse struct {
