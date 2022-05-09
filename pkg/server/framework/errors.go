@@ -25,7 +25,7 @@ type SafeError struct {
 }
 
 // SafeError implements the `error` interface. It uses the default message of the
-// wrapped error. This is what will be shown in a server's log
+// wrapped error. This is what will be shown in a server's logs
 func (err *SafeError) Error() string {
 	return err.Err.Error()
 }
