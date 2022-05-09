@@ -32,6 +32,8 @@ type ServerConfig struct {
 	ReadTimeout     time.Duration `toml:"read_timeout" conf:"default:5s"`
 	WriteTimeout    time.Duration `toml:"write_timeout" conf:"default:5s"`
 	ShutdownTimeout time.Duration `toml:"shutdown_timeout" conf:"default:5s"`
+	LogLocation     string        `toml:"log_location"`
+	LogLevel        string        `toml:"log_level" conf:"default:debug"`
 }
 
 // ServicesConfig represents configurable properties for the components of the SSI Service
