@@ -8,8 +8,9 @@ type (
 const (
 	// List of all service
 
-	DID    Type = "did"
-	Schema Type = "schema"
+	DID        Type = "did"
+	Schema     Type = "schema"
+	Credential Type = "credential"
 
 	StatusReady    StatusState = "ready"
 	StatusNotReady StatusState = "not_ready"

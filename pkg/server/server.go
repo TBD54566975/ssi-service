@@ -18,9 +18,10 @@ import (
 )
 
 const (
-	V1Prefix      = "/v1"
-	DIDsPrefix    = "/dids"
-	SchemasPrefix = "/schemas"
+	V1Prefix          = "/v1"
+	DIDsPrefix        = "/dids"
+	SchemasPrefix     = "/schemas"
+	CredentialsPrefix = "/credentials"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -82,7 +83,7 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 }
 
 // DecentralizedIdentityAPI registers all HTTP router for the DID Service
-func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) error {
+func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) (err error) {
 	didRouter, err := router.NewDIDRouter(service)
 	if err != nil {
 		return errors.Wrap(err, "could not create DID router")
@@ -93,14 +94,14 @@ func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) error
 	s.Handle(http.MethodGet, handlerPath, didRouter.GetDIDMethods)
 	s.Handle(http.MethodPut, path.Join(handlerPath, "/:method"), didRouter.CreateDIDByMethod)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method/:id"), didRouter.GetDIDByMethod)
-	return nil
+	return
 }
 
 // SchemaAPI registers all HTTP router for the Schema Service
-func (s *SSIServer) SchemaAPI(service svcframework.Service) error {
+func (s *SSIServer) SchemaAPI(service svcframework.Service) (err error) {
 	schemaRouter, err := router.NewSchemaRouter(service)
 	if err != nil {
-		return errors.Wrap(err, "could not create Schema router")
+		return errors.Wrap(err, "could not create schema router")
 	}
 
 	handlerPath := V1Prefix + SchemasPrefix
@@ -108,5 +109,20 @@ func (s *SSIServer) SchemaAPI(service svcframework.Service) error {
 	s.Handle(http.MethodPut, handlerPath, schemaRouter.CreateSchema)
 	s.Handle(http.MethodGet, handlerPath, schemaRouter.GetSchemas)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), schemaRouter.GetSchemaByID)
-	return nil
+	return
+}
+
+func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
+	credRouter, err := router.NewCredentialRouter(service)
+	if err != nil {
+		return errors.Wrap(err, "could not create credential router")
+	}
+
+	handlerPath := V1Prefix + CredentialsPrefix
+
+	s.Handle(http.MethodPut, handlerPath, credRouter.CreateCredential)
+	s.Handle(http.MethodGet, handlerPath, credRouter.CreateCredential)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), credRouter.GetCredential)
+	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), credRouter.GetCredential)
+	return
 }

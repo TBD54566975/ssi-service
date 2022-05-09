@@ -78,6 +78,11 @@ func (s *SchemaServiceConfig) IsEmpty() bool {
 	return reflect.DeepEqual(s, &SchemaServiceConfig{})
 }
 
+type CredentialServiceConfig struct {
+	*BaseServiceConfig
+	// TODO(gabe) supported key and signature types
+}
+
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
 // Before loading, defaults are applied on certain properties, which are overwritten if specified in the TOML file.
 func LoadConfig(path string) (*SSIServiceConfig, error) {
