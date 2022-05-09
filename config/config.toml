@@ -13,6 +13,11 @@ read_timeout = 5000000000
 write_timeout = 5000000000
 shutdown_timeout = 5000000000
 
+log_location = "logs"
+# options: trace, debug, info, warning, error, fatal, panic
+log_level = "info"
+
+
 [services]
 storage = "bolt"
 

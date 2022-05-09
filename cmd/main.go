@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 const (
@@ -25,9 +26,6 @@ func init() {
 	// Output to stdout instead of the default stderr
 	// Can be any io.Writer, see below for File example
 	logrus.SetOutput(os.Stdout)
-
-	// Only log the warning severity or above.
-	logrus.SetLevel(logrus.InfoLevel)
 }
 
 func main() {
@@ -43,6 +41,26 @@ func run() error {
 	cfg, err := config.LoadConfig(config.DefaultConfigPath)
 	if err != nil {
 		logrus.Fatalf("could not instantiate config: %s", err.Error())
+	}
+
+	if cfg.Server.LogLevel != "" {
+		level, err := logrus.ParseLevel(cfg.Server.LogLevel)
+		if err != nil {
+			logrus.WithError(err).Errorf("could not parse log level<%s>, setting to info", cfg.Server.LogLevel)
+			logrus.SetLevel(logrus.InfoLevel)
+		} else {
+			logrus.SetLevel(level)
+		}
+	}
+	// set log config from config file
+	if cfg.Server.LogLocation != "" {
+		file, err := os.OpenFile(createLogFile(cfg.Server.LogLocation), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err == nil {
+			logrus.SetOutput(file)
+		} else {
+			logrus.Info("Failed to log to file, using default stdout")
+		}
+		defer file.Close()
 	}
 
 	expvar.NewString("build").Set(cfg.Version.SVN)
@@ -98,4 +116,8 @@ func run() error {
 	}
 
 	return nil
+}
+
+func createLogFile(location string) string {
+	return location + "/" + config.ServiceName + "-" + time.Now().Format(time.RFC3339) + ".log"
 }
