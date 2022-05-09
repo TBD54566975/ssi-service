@@ -46,7 +46,7 @@ func run() error {
 	if cfg.Server.LogLevel != "" {
 		level, err := logrus.ParseLevel(cfg.Server.LogLevel)
 		if err != nil {
-			logrus.WithError(err).Error("could not parse log level<%s>, setting to info", cfg.Server.LogLevel)
+			logrus.WithError(err).Errorf("could not parse log level<%s>, setting to info", cfg.Server.LogLevel)
 			logrus.SetLevel(logrus.InfoLevel)
 		} else {
 			logrus.SetLevel(level)
