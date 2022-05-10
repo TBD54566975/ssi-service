@@ -28,3 +28,27 @@ func (s Service) Status() framework.Status {
 func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
+
+func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCredentialResponse, error) {
+	return nil, nil
+}
+
+func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResponse, error) {
+	return nil, nil
+}
+
+func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*GetCredentialsResponse, error) {
+	return nil, nil
+}
+
+func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) (*GetCredentialsResponse, error) {
+	return nil, nil
+}
+
+func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*GetCredentialsResponse, error) {
+	return nil, nil
+}
+
+func (s Service) DeleteCredential(request DeleteCredentialRequest) error {
+	return nil
+}
