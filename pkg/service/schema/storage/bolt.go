@@ -1,8 +1,8 @@
 package storage
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/pkg/storage"

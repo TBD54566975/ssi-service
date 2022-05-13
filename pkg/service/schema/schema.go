@@ -1,10 +1,10 @@
 package schema
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	schemalib "github.com/TBD54566975/ssi-sdk/schema"
+	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"

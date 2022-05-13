@@ -7,11 +7,12 @@ import (
 )
 
 type StoredCredential struct {
-	Credential   *credential.VerifiableCredential `json:"credential"`
-	Issuer       string                           `json:"issuer"`
-	Subject      string                           `json:"subject"`
-	Schema       string                           `json:"schema"`
-	IssuanceDate string                           `json:"issuanceDate"`
+	ID           string                          `json:"id"`
+	Credential   credential.VerifiableCredential `json:"credential"`
+	Issuer       string                          `json:"issuer"`
+	Subject      string                          `json:"subject"`
+	Schema       string                          `json:"schema"`
+	IssuanceDate string                          `json:"issuanceDate"`
 }
 
 type Storage interface {

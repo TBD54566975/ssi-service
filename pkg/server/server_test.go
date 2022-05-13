@@ -3,10 +3,10 @@ package server
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/dimfeld/httptreemux/v5"
+	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
