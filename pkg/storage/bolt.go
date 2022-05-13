@@ -89,7 +89,7 @@ func (b *BoltDB) ReadAll(namespace string) (map[string][]byte, error) {
 		if bucket == nil {
 			errMsg := fmt.Sprintf("namespace<%s> does not exist", namespace)
 			logrus.Error(errMsg)
-			return errors.New(errMsg)
+			return nil
 		}
 		cursor := bucket.Cursor()
 		for k, v := cursor.First(); k != nil; k, v = cursor.Next() {
