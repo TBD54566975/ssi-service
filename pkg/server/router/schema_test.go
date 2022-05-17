@@ -31,7 +31,7 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create schema router with service type: test")
 	})
 
-	t.Run("Schema Service Test", func(tt *testing.T) {
+	t.Run("JSONSchema Service Test", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)

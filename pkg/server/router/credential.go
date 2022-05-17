@@ -49,12 +49,12 @@ type CreateCredentialRequest struct {
 
 func (c CreateCredentialRequest) ToServiceRequest() credential.CreateCredentialRequest {
 	return credential.CreateCredentialRequest{
-		Issuer:  c.Issuer,
-		Subject: c.Subject,
-		Context: c.Context,
-		Schema:  c.Schema,
-		Data:    c.Data,
-		Expiry:  c.Expiry,
+		Issuer:     c.Issuer,
+		Subject:    c.Subject,
+		Context:    c.Context,
+		JSONSchema: c.Schema,
+		Data:       c.Data,
+		Expiry:     c.Expiry,
 	}
 }
 
@@ -174,10 +174,6 @@ func (cr CredentialRouter) GetCredentialsBySchema(ctx context.Context, w http.Re
 		Credentials: gotCredentials.Credentials,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
-}
-
-type DeleteCredentialRequest struct {
-	ID string `json:"id" validate:"required"`
 }
 
 func (cr CredentialRouter) DeleteCredential(ctx context.Context, w http.ResponseWriter, r *http.Request) error {

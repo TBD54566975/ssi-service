@@ -41,7 +41,7 @@ func (s Service) Config() config.SchemaServiceConfig {
 func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage) (*Service, error) {
 	schemaStorage, err := schemastorage.NewSchemaStorage(s)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate Schema storage for the Schema service")
+		return nil, errors.Wrap(err, "could not instantiate JSONSchema storage for the JSONSchema service")
 	}
 	return &Service{
 		storage: schemaStorage,
@@ -50,7 +50,7 @@ func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorag
 }
 
 // CreateSchema houses the main service logic for schema creation. It validates the input, and
-// produces a schema value that conforms with the VC JSON Schema specification.
+// produces a schema value that conforms with the VC JSON JSONSchema specification.
 // TODO(gabe) support proof generation on schemas, versioning, and more
 func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaResponse, error) {
 	schemaBytes, err := json.Marshal(request.Schema)

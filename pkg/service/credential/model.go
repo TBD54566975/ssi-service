@@ -4,15 +4,19 @@ import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 )
 
+const (
+	CredentialSchemaType string = "JsonSchemaValidator2018"
+)
+
 type CreateCredentialRequest struct {
 	Issuer  string
 	Subject string
 	// A context is optional. If not present, we'll apply default, required context values.
 	Context string
 	// A schema is optional. If present, we'll attempt to look it up and validate the data against it.
-	Schema string
-	Data   map[string]interface{}
-	Expiry string
+	JSONSchema string
+	Data       map[string]interface{}
+	Expiry     string
 	// TODO(gabe) support more capabilities like signature type, format, status, and more.
 }
 

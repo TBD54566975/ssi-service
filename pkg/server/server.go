@@ -97,7 +97,7 @@ func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) (err 
 	return
 }
 
-// SchemaAPI registers all HTTP router for the Schema Service
+// SchemaAPI registers all HTTP router for the JSONSchema Service
 func (s *SSIServer) SchemaAPI(service svcframework.Service) (err error) {
 	schemaRouter, err := router.NewSchemaRouter(service)
 	if err != nil {
