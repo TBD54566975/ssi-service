@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -35,14 +34,11 @@ func (b BoltDIDStorage) StoreDID(did StoredDID) error {
 	couldNotStoreDIDErr := fmt.Sprintf("could not store DID: %s", did.DID.ID)
 	namespace, err := getNamespaceForDID(did.DID.ID)
 	if err != nil {
-		logrus.WithError(err).Error(couldNotStoreDIDErr)
-		return errors.Wrap(err, couldNotStoreDIDErr)
+		return util.LoggingErrorMsg(err, couldNotStoreDIDErr)
 	}
 	didBytes, err := json.Marshal(did)
 	if err != nil {
-		logrus.WithError(err).Error(couldNotStoreDIDErr)
-
-		return errors.Wrap(err, couldNotStoreDIDErr)
+		return util.LoggingErrorMsg(err, couldNotStoreDIDErr)
 	}
 	return b.db.Write(namespace, did.DID.ID, didBytes)
 }
@@ -51,24 +47,20 @@ func (b BoltDIDStorage) GetDID(id string) (*StoredDID, error) {
 	couldNotGetDIDErr := fmt.Sprintf("could not get DID: %s", id)
 	namespace, err := getNamespaceForDID(id)
 	if err != nil {
-		logrus.WithError(err).Error(couldNotGetDIDErr)
-		return nil, errors.Wrap(err, couldNotGetDIDErr)
+		return nil, util.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
 	docBytes, err := b.db.Read(namespace, id)
 	if err != nil {
-		logrus.WithError(err).Error(couldNotGetDIDErr)
-		return nil, errors.Wrap(err, couldNotGetDIDErr)
+		return nil, util.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
 	if len(docBytes) == 0 {
 		err := fmt.Errorf("did not found: %s", id)
-		logrus.WithError(err).Error("could not get did")
-		return nil, err
+		return nil, util.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
 	var stored StoredDID
 	if err := json.Unmarshal(docBytes, &stored); err != nil {
 		errMsg := fmt.Sprintf("could not ummarshal stored DID: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	return &stored, nil
 }
@@ -78,18 +70,15 @@ func (b BoltDIDStorage) GetDIDs(method string) ([]StoredDID, error) {
 	couldNotGetDIDsErr := fmt.Sprintf("could not get DIDs for method: %s", method)
 	namespace, err := getNamespaceForMethod(method)
 	if err != nil {
-		logrus.WithError(err).Error(couldNotGetDIDsErr)
-		return nil, errors.Wrap(err, couldNotGetDIDsErr)
+		return nil, util.LoggingErrorMsg(err, couldNotGetDIDsErr)
 	}
 	gotDIDs, err := b.db.ReadAll(namespace)
 	if err != nil {
-		logrus.WithError(err).Error(couldNotGetDIDsErr)
-		return nil, errors.Wrap(err, couldNotGetDIDsErr)
+		return nil, util.LoggingErrorMsg(err, couldNotGetDIDsErr)
 	}
 	if len(gotDIDs) == 0 {
 		err := fmt.Errorf("no DIDs found for method: %s", method)
-		logrus.WithError(err).Error("could not get stored DIDs")
-		return nil, err
+		return nil, util.LoggingErrorMsg(err, "could not get stored DIDs")
 	}
 	var stored []StoredDID
 	for _, didBytes := range gotDIDs {
@@ -105,13 +94,11 @@ func (b BoltDIDStorage) DeleteDID(id string) error {
 	couldNotGetDIDErr := fmt.Sprintf("could not delete DID: %s", id)
 	namespace, err := getNamespaceForDID(id)
 	if err != nil {
-		logrus.WithError(err).Error(couldNotGetDIDErr)
-		return errors.Wrap(err, couldNotGetDIDErr)
+		return util.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
 	if err := b.db.Delete(namespace, id); err != nil {
 		errMsg := fmt.Sprintf("could not delete DID: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return errors.Wrapf(err, errMsg)
+		return util.LoggingErrorMsg(err, errMsg)
 	}
 	return nil
 }
