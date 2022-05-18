@@ -45,8 +45,9 @@ type ServicesConfig struct {
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
 
-	DIDConfig    DIDServiceConfig    `toml:"did,omitempty"`
-	SchemaConfig SchemaServiceConfig `toml:"schema,omitempty"`
+	DIDConfig        DIDServiceConfig        `toml:"did,omitempty"`
+	SchemaConfig     SchemaServiceConfig     `toml:"schema,omitempty"`
+	CredentialConfig CredentialServiceConfig `toml:"credential,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service

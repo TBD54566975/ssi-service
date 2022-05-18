@@ -2,9 +2,9 @@ package service
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -21,15 +21,13 @@ type SSIService struct {
 // dependencies independent of transport.
 func InstantiateSSIService(config config.ServicesConfig) (*SSIService, error) {
 	if err := validateServiceConfig(config); err != nil {
-		err := errors.Wrapf(err, "could not instantiate SSI Service, invalid config")
-		logrus.WithError(err).Error()
-		return nil, err
+		errMsg := "could not instantiate SSI Service, invalid config"
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	services, err := instantiateServices(config)
 	if err != nil {
-		err := errors.Wrapf(err, "could not instantiate the verifiable credentials service")
-		logrus.WithError(err).Error()
-		return nil, err
+		errMsg := "could not instantiate the verifiable credentials service"
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	return &SSIService{services: services}, nil
 }
@@ -56,17 +54,27 @@ func (ssi *SSIService) GetServices() []framework.Service {
 func instantiateServices(config config.ServicesConfig) ([]framework.Service, error) {
 	storageProvider, err := storage.NewStorage(storage.Storage(config.StorageProvider))
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not instantiate storage provider: %s", config.StorageProvider)
+		errMsg := fmt.Sprintf("could not instantiate storage provider: %s", config.StorageProvider)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	didService, err := did.NewDIDService(config.DIDConfig, storageProvider)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate the DID service")
+		errMsg := "could not instantiate the DID service"
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	schemaService, err := schema.NewSchemaService(config.SchemaConfig, storageProvider)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate the schema service")
+		errMsg := "could not instantiate the schema service"
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
-	return []framework.Service{didService, schemaService}, nil
+
+	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider)
+	if err != nil {
+		errMsg := "could not instantiate the credential service"
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	return []framework.Service{didService, schemaService, credentialService}, nil
 }

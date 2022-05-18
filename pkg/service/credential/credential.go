@@ -3,11 +3,12 @@ package credential
 import (
 	"fmt"
 	"github.com/TBD54566975/ssi-sdk/credential"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	credstorage "github.com/tbd54566975/ssi-service/pkg/service/credential/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"time"
 )
 
@@ -34,6 +35,18 @@ func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
 
+func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage) (*Service, error) {
+	credentialStorage, err := credstorage.NewCredentialStorage(s)
+	if err != nil {
+		errMsg := "could not instantiate storage for the credential service"
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	return &Service{
+		storage: credentialStorage,
+		config:  config,
+	}, nil
+}
+
 func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCredentialResponse, error) {
 
 	logrus.Debugf("creating credential: %+v", request)
@@ -42,27 +55,30 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 
 	if err := builder.SetIssuer(request.Issuer); err != nil {
 		errMsg := fmt.Sprintf("could not build credential when setting issuer: %s", request.Issuer)
-		logrus.WithError(err).Errorf(errMsg)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	// check if there's a conflict with subject ID
 	if id, ok := request.Data[credential.VerifiableCredentialIDProperty]; ok && id != request.Subject {
 		errMsg := fmt.Sprintf("cannot set subject<%s>, data already contains a different ID value: %s", request.Subject, id)
 		logrus.Error(errMsg)
-		return nil, errors.New(errMsg)
+		return nil, util.LoggingNewError(errMsg)
 	}
 
 	// set subject value
 	subject := credential.CredentialSubject(request.Data)
 	subject[credential.VerifiableCredentialIDProperty] = request.Subject
 
+	if err := builder.SetCredentialSubject(subject); err != nil {
+		errMsg := fmt.Sprintf("could not set subject: %+v", subject)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
 	// if a context value exists, set it
 	if request.Context != "" {
 		if err := builder.AddContext(request.Context); err != nil {
 			errMsg := fmt.Sprintf("could not add context to credential: %s", request.Context)
-			logrus.WithError(err).Error(errMsg)
-			return nil, errors.Wrap(err, errMsg)
+			return nil, util.LoggingErrorMsg(err, errMsg)
 		}
 	}
 
@@ -74,8 +90,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		}
 		if err := builder.SetCredentialSchema(schema); err != nil {
 			errMsg := fmt.Sprintf("could not set JSON Schema for credential: %s", request.JSONSchema)
-			logrus.WithError(err).Error(errMsg)
-			return nil, errors.Wrap(err, errMsg)
+			return nil, util.LoggingErrorMsg(err, errMsg)
 		}
 	}
 
@@ -83,22 +98,19 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	if request.Expiry != "" {
 		if err := builder.SetExpirationDate(request.Expiry); err != nil {
 			errMsg := fmt.Sprintf("could not set expirty for credential: %s", request.Expiry)
-			logrus.WithError(err).Error(errMsg)
-			return nil, errors.Wrap(err, errMsg)
+			return nil, util.LoggingErrorMsg(err, errMsg)
 		}
 	}
 
 	if err := builder.SetIssuanceDate(time.Now().Format(time.RFC3339)); err != nil {
 		errMsg := fmt.Sprintf("could not set credential issuance date")
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	cred, err := builder.Build()
 	if err != nil {
 		errMsg := "could not build credential"
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	// store the credential
@@ -112,8 +124,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	}
 	if err := s.storage.StoreCredential(storageRequest); err != nil {
 		errMsg := "could not store credential"
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	// return the result
@@ -128,8 +139,7 @@ func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResp
 	gotCred, err := s.storage.GetCredential(request.ID)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential: %s", request.ID)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	response := GetCredentialResponse{Credential: gotCred.Credential}
@@ -143,8 +153,7 @@ func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*
 	gotCreds, err := s.storage.GetCredentialsByIssuer(request.Issuer)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential(s) for issuer: %s", request.Issuer)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	var creds []credential.VerifiableCredential
@@ -163,8 +172,7 @@ func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) 
 	gotCreds, err := s.storage.GetCredentialsBySubject(request.Subject)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential(s) for subject: %s", request.Subject)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	var creds []credential.VerifiableCredential
@@ -183,8 +191,7 @@ func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*
 	gotCreds, err := s.storage.GetCredentialsBySchema(request.Schema)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential(s) for schema: %s", request.Schema)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	var creds []credential.VerifiableCredential
@@ -202,8 +209,7 @@ func (s Service) DeleteCredential(request DeleteCredentialRequest) error {
 
 	if err := s.storage.DeleteCredential(request.ID); err != nil {
 		errMsg := fmt.Sprintf("could not delete credential with id: %s", request.ID)
-		logrus.WithError(err).Error(errMsg)
-		return errors.Wrap(err, errMsg)
+		return util.LoggingErrorMsg(err, errMsg)
 	}
 
 	return nil

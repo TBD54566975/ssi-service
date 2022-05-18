@@ -2,7 +2,7 @@ package storage
 
 import (
 	"github.com/TBD54566975/ssi-sdk/credential"
-	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -27,11 +27,11 @@ type Storage interface {
 func NewCredentialStorage(s storage.ServiceStorage) (Storage, error) {
 	gotBolt, ok := s.(*storage.BoltDB)
 	if !ok {
-		return nil, errors.New("unsupported storage type")
+		return nil, util.LoggingNewError("unsupported storage type")
 	}
 	boltStorage, err := NewBoltCredentialStorage(gotBolt)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate Credential Bolt storage")
+		return nil, util.LoggingErrorMsg(err, "could not instantiate credential bolt storage")
 	}
 	return boltStorage, err
 }

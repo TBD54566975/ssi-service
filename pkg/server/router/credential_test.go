@@ -1,13 +1,17 @@
 package router
 
 import (
+	"fmt"
+	credsdk "github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestCredentialRouter(t *testing.T) {
@@ -30,76 +34,122 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create credential router with service type: test")
 	})
 
-	t.Run("Schema Service Test", func(tt *testing.T) {
+	t.Run("Credential Service Test", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)
 
-		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
-		schemaService, err := schema.NewSchemaService(serviceConfig, bolt)
+		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+		credService, err := credential.NewCredentialService(serviceConfig, bolt)
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, schemaService)
+		assert.NotEmpty(tt, credService)
 
 		// check type and status
-		assert.Equal(tt, framework.Schema, schemaService.Type())
-		assert.Equal(tt, framework.StatusReady, schemaService.Status().Status)
+		assert.Equal(tt, framework.Credential, credService.Type())
+		assert.Equal(tt, framework.StatusReady, credService.Status().Status)
 
-		// get all schemas (none)
-		gotSchemas, err := schemaService.GetSchemas()
-		assert.NoError(tt, err)
-		assert.Empty(tt, gotSchemas)
-		assert.Equal(tt, 0, len(gotSchemas.Schemas))
-
-		// get schema that doesn't exist
-		_, err = schemaService.GetSchemaByID(schema.GetSchemaByIDRequest{ID: "bad"})
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "error getting schema")
-
-		// create a schema
-		simpleSchema := map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"foo": map[string]interface{}{
-					"type": "string",
-				},
+		// create a credential
+		issuer := "did:test:123"
+		subject := "did:test:345"
+		createdCred, err := credService.CreateCredential(credential.CreateCredentialRequest{
+			Issuer:  issuer,
+			Subject: subject,
+			Data: map[string]interface{}{
+				"firstName": "Satoshi",
+				"lastName":  "Nakamoto",
 			},
-			"required":             []interface{}{"foo"},
-			"additionalProperties": false,
-		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+			Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+		})
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, createdSchema)
-		assert.NotEmpty(tt, createdSchema.ID)
-		assert.Equal(tt, "me", createdSchema.Schema.Author)
-		assert.Equal(tt, "simple schema", createdSchema.Schema.Name)
+		assert.NotEmpty(tt, createdCred)
+		assert.NotEmpty(tt, createdCred.Credential)
 
-		// get schema by ID
-		gotSchema, err := schemaService.GetSchemaByID(schema.GetSchemaByIDRequest{ID: createdSchema.ID})
+		// make sure it has the right data
+		assert.Equal(tt, issuer, createdCred.Credential.Issuer)
+		assert.Equal(tt, subject, createdCred.Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
+		assert.Equal(tt, "Satoshi", createdCred.Credential.CredentialSubject["firstName"])
+		assert.Equal(tt, "Nakamoto", createdCred.Credential.CredentialSubject["lastName"])
+
+		// get it back
+		gotCred, err := credService.GetCredential(credential.GetCredentialRequest{ID: createdCred.Credential.ID})
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, gotSchema)
-		assert.EqualValues(tt, createdSchema.Schema, gotSchema.Schema)
+		assert.NotEmpty(tt, gotCred)
 
-		// get all schemas, expect one
-		gotSchemas, err = schemaService.GetSchemas()
+		// marshal to JSON and compare for object equality
+		createdBytes, err := json.Marshal(createdCred.Credential)
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, gotSchemas.Schemas)
-		assert.Len(tt, gotSchemas.Schemas, 1)
-
-		// store another
-		createdSchema, err = schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema 2", Schema: simpleSchema})
+		gotBytes, err := json.Marshal(gotCred.Credential)
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, createdSchema)
-		assert.NotEmpty(tt, createdSchema.ID)
-		assert.Equal(tt, "me", createdSchema.Schema.Author)
-		assert.Equal(tt, "simple schema 2", createdSchema.Schema.Name)
+		assert.Equal(tt, createdBytes, gotBytes)
 
-		// get all schemas, expect two
-		gotSchemas, err = schemaService.GetSchemas()
+		// get a cred that doesn't exist
+		_, err = credService.GetCredential(credential.GetCredentialRequest{ID: "bad"})
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "credential not found with id: bad")
+
+		// get by schema - no schema
+		bySchema, err := credService.GetCredentialsBySchema(credential.GetCredentialBySchemaRequest{Schema: ""})
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, gotSchemas.Schemas)
-		assert.Len(tt, gotSchemas.Schemas, 2)
+		assert.Len(tt, bySchema.Credentials, 1)
+		assert.Equal(tt, bySchema.Credentials[0].ID, createdCred.Credential.ID)
+		assert.EqualValues(tt, bySchema.Credentials[0].CredentialSchema, createdCred.Credential.CredentialSchema)
 
-		// make sure their IDs are different
-		assert.True(tt, gotSchemas.Schemas[0].ID != gotSchemas.Schemas[1].ID)
+		// get by subject
+		bySubject, err := credService.GetCredentialsBySubject(credential.GetCredentialBySubjectRequest{Subject: subject})
+		assert.NoError(tt, err)
+		assert.Len(tt, bySubject.Credentials, 1)
+		assert.Equal(tt, bySubject.Credentials[0].ID, createdCred.Credential.ID)
+		assert.Equal(tt, bySubject.Credentials[0].CredentialSubject[credsdk.VerifiableCredentialIDProperty], createdCred.Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
+
+		// get by issuer
+		byIssuer, err := credService.GetCredentialsByIssuer(credential.GetCredentialByIssuerRequest{Issuer: issuer})
+		assert.NoError(tt, err)
+		assert.Len(tt, byIssuer.Credentials, 1)
+		assert.Equal(tt, byIssuer.Credentials[0].ID, createdCred.Credential.ID)
+		assert.Equal(tt, byIssuer.Credentials[0].Issuer, createdCred.Credential.Issuer)
+
+		// create another cred with the same issuer, different subject, different schema
+		anotherCreatedCred, err := credService.CreateCredential(credential.CreateCredentialRequest{
+			Issuer:     issuer,
+			Subject:    "did:abcd:efghi",
+			JSONSchema: "https://test-schema.com",
+			Data: map[string]interface{}{
+				"email": "satoshi@nakamoto.com",
+			},
+			Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, anotherCreatedCred)
+
+		// get by issuer
+		byIssuer, err = credService.GetCredentialsByIssuer(credential.GetCredentialByIssuerRequest{Issuer: issuer})
+		assert.NoError(tt, err)
+		assert.Len(tt, byIssuer.Credentials, 2)
+
+		// make sure the schema and subject queries are consistent
+		bySchema, err = credService.GetCredentialsBySchema(credential.GetCredentialBySchemaRequest{Schema: ""})
+		assert.NoError(tt, err)
+		assert.Len(tt, bySchema.Credentials, 1)
+		assert.Equal(tt, bySchema.Credentials[0].ID, createdCred.Credential.ID)
+		assert.EqualValues(tt, bySchema.Credentials[0].CredentialSchema, createdCred.Credential.CredentialSchema)
+
+		bySubject, err = credService.GetCredentialsBySubject(credential.GetCredentialBySubjectRequest{Subject: subject})
+		assert.NoError(tt, err)
+		assert.Len(tt, bySubject.Credentials, 1)
+		assert.Equal(tt, bySubject.Credentials[0].ID, createdCred.Credential.ID)
+		assert.Equal(tt, bySubject.Credentials[0].CredentialSubject[credsdk.VerifiableCredentialIDProperty], createdCred.Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
+
+		// delete a cred that doesn't exist (no error since idempotent)
+		err = credService.DeleteCredential(credential.DeleteCredentialRequest{ID: "bad"})
+		assert.NoError(tt, err)
+
+		// delete a credential that does exist
+		err = credService.DeleteCredential(credential.DeleteCredentialRequest{ID: createdCred.Credential.ID})
+		assert.NoError(tt, err)
+
+		// get it back
+		_, err = credService.GetCredential(credential.GetCredentialRequest{ID: createdCred.Credential.ID})
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), fmt.Sprintf("credential not found with id: %s", createdCred.Credential.ID))
 	})
 }

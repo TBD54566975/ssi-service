@@ -28,3 +28,6 @@ methods = ["key"]
 
 [services.schema]
 name = "schema"
+
+[serivces.credential]
+name = "credential"

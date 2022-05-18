@@ -41,7 +41,9 @@ func (s Service) Config() config.SchemaServiceConfig {
 func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage) (*Service, error) {
 	schemaStorage, err := schemastorage.NewSchemaStorage(s)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate Schema storage for the JSONSchema service")
+		errMsg := "could not instantiate storage for the schema service"
+		logrus.WithError(err).Error("could not instantiate storage for the schema service")
+		return nil, errors.Wrap(err, errMsg)
 	}
 	return &Service{
 		storage: schemaStorage,
