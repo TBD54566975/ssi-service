@@ -10,25 +10,24 @@ import (
 	"testing"
 )
 
-func TestSchemaRouter(t *testing.T) {
-
+func TestCredentialRouter(t *testing.T) {
 	// remove the db file after the test
 	t.Cleanup(func() {
 		_ = os.Remove(storage.DBFile)
 	})
 
 	t.Run("Nil Service", func(tt *testing.T) {
-		schemaRouter, err := NewSchemaRouter(nil)
+		credRouter, err := NewCredentialRouter(nil)
 		assert.Error(tt, err)
-		assert.Empty(tt, schemaRouter)
+		assert.Empty(tt, credRouter)
 		assert.Contains(tt, err.Error(), "service cannot be nil")
 	})
 
 	t.Run("Bad Service", func(tt *testing.T) {
-		schemaRouter, err := NewSchemaRouter(&testService{})
+		credRouter, err := NewCredentialRouter(&testService{})
 		assert.Error(tt, err)
-		assert.Empty(tt, schemaRouter)
-		assert.Contains(tt, err.Error(), "could not create schema router with service type: test")
+		assert.Empty(tt, credRouter)
+		assert.Contains(tt, err.Error(), "could not create credential router with service type: test")
 	})
 
 	t.Run("Schema Service Test", func(tt *testing.T) {

@@ -70,7 +70,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	if request.JSONSchema != "" {
 		schema := credential.CredentialSchema{
 			ID:   request.JSONSchema,
-			Type: CredentialSchemaType,
+			Type: SchemaType,
 		}
 		if err := builder.SetCredentialSchema(schema); err != nil {
 			errMsg := fmt.Sprintf("could not set JSON Schema for credential: %s", request.JSONSchema)

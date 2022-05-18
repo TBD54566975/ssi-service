@@ -32,7 +32,7 @@ func (b BoltSchemaStorage) StoreSchema(schema StoredSchema) error {
 	}
 	schemaBytes, err := json.Marshal(schema)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not store JSONSchema: %s", id)
+		errMsg := fmt.Sprintf("could not store schema: %s", id)
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)
 	}

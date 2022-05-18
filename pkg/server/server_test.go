@@ -238,7 +238,7 @@ func newDIDService(t *testing.T) *router.DIDRouter {
 }
 
 func TestSchemaAPI(t *testing.T) {
-	t.Run("Test Create JSONSchema", func(tt *testing.T) {
+	t.Run("Test Create Schema", func(tt *testing.T) {
 		// remove the db file after the test
 		tt.Cleanup(func() {
 			_ = os.Remove(storage.DBFile)
@@ -282,7 +282,7 @@ func TestSchemaAPI(t *testing.T) {
 		assert.EqualValues(tt, schemaRequest.Schema, resp.Schema.Schema)
 	})
 
-	t.Run("Test Get JSONSchema/s", func(tt *testing.T) {
+	t.Run("Test Get Schemas", func(tt *testing.T) {
 		// remove the db file after the test
 		tt.Cleanup(func() {
 			_ = os.Remove(storage.DBFile)

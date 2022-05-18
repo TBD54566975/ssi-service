@@ -7,8 +7,9 @@ import (
 )
 
 type StoredDID struct {
-	DID              did.DIDDocument `json:"did"`
-	PrivateKeyBase58 string          `json:"privateKeyBase58"`
+	DID did.DIDDocument `json:"did"`
+	// TODO(gabe) split out key storage into a key store service encrypted with a service encryption key
+	PrivateKeyBase58 string `json:"privateKeyBase58"`
 }
 
 type Storage interface {

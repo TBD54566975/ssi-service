@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	CredentialSchemaType string = "JsonSchemaValidator2018"
+	SchemaType string = "JsonSchemaValidator2018"
 )
 
 type CreateCredentialRequest struct {
