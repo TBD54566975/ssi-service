@@ -4,9 +4,9 @@ package server
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/middleware"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
@@ -18,6 +18,8 @@ import (
 )
 
 const (
+	HealthPrefix      = "/health"
+	ReadinessPrefix   = "/readiness"
 	V1Prefix          = "/v1"
 	DIDsPrefix        = "/dids"
 	SchemasPrefix     = "/schemas"
@@ -45,8 +47,8 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 	services := ssi.GetServices()
 
 	// service-level routers
-	httpServer.Handle(http.MethodGet, "/health", router.Health)
-	httpServer.Handle(http.MethodGet, "/readiness", router.Readiness(services))
+	httpServer.Handle(http.MethodGet, HealthPrefix, router.Health)
+	httpServer.Handle(http.MethodGet, ReadinessPrefix, router.Readiness(services))
 
 	// create the server instance to be returned
 	server := SSIServer{
@@ -56,13 +58,13 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 	}
 
 	// start all services and their routers
-	logrus.Infof("Starting [%d] services...\n", len(services))
+	logrus.Infof("Starting [%d] service routers...\n", len(services))
 	for _, s := range services {
 		if err := server.instantiateRouter(s); err != nil {
-			logrus.WithError(err).Fatalf("unable to instaniate service<%s>", s.Type())
+			logrus.WithError(err).Fatalf("unable to instaniate service router<%s>", s.Type())
 			return nil, err
 		}
-		logrus.Infof("Service<%s> started successfully", s.Type())
+		logrus.Infof("Service router<%s> started successfully", s.Type())
 	}
 
 	return &server, nil
@@ -88,7 +90,7 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) (err error) {
 	didRouter, err := router.NewDIDRouter(service)
 	if err != nil {
-		return errors.Wrap(err, "could not create DID router")
+		return util.LoggingErrorMsg(err, "could not create DID router")
 	}
 
 	handlerPath := V1Prefix + DIDsPrefix
@@ -103,7 +105,7 @@ func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) (err 
 func (s *SSIServer) SchemaAPI(service svcframework.Service) (err error) {
 	schemaRouter, err := router.NewSchemaRouter(service)
 	if err != nil {
-		return errors.Wrap(err, "could not create schema router")
+		return util.LoggingErrorMsg(err, "could not create schema router")
 	}
 
 	handlerPath := V1Prefix + SchemasPrefix
@@ -117,7 +119,7 @@ func (s *SSIServer) SchemaAPI(service svcframework.Service) (err error) {
 func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
 	credRouter, err := router.NewCredentialRouter(service)
 	if err != nil {
-		return errors.Wrap(err, "could not create credential router")
+		return util.LoggingErrorMsg(err, "could not create credential router")
 	}
 
 	handlerPath := V1Prefix + CredentialsPrefix
