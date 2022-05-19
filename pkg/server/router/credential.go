@@ -113,66 +113,64 @@ type GetCredentialsResponse struct {
 	Credentials []credsdk.VerifiableCredential `json:"credentials"`
 }
 
-func (cr CredentialRouter) GetCredentialsByIssuer(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+// GetCredentials checks for the presence of a query parameter and calls the associated filtered get method
+func (cr CredentialRouter) GetCredentials(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	issuer := framework.GetParam(ctx, IssuerParam)
-	if issuer == nil {
-		errMsg := "cannot get credentials without issuer parameter"
-		logrus.Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
-	}
-
-	gotCredentials, err := cr.service.GetCredentialsByIssuer(credential.GetCredentialByIssuerRequest{Issuer: *issuer})
-	if err != nil {
-		errMsg := fmt.Sprintf("could not get credentials for issuer: %s", *issuer)
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
-	}
-
-	resp := GetCredentialsResponse{
-		Credentials: gotCredentials.Credentials,
-	}
-	return framework.Respond(ctx, w, resp, http.StatusOK)
-}
-
-func (cr CredentialRouter) GetCredentialsBySubject(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	subject := framework.GetParam(ctx, SubjectParam)
-	if subject == nil {
-		errMsg := "cannot get credentials without subject parameter"
-		logrus.Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
-	}
-
-	gotCredentials, err := cr.service.GetCredentialsBySubject(credential.GetCredentialBySubjectRequest{Subject: *subject})
-	if err != nil {
-		errMsg := fmt.Sprintf("could not get credentials for subject: %s", *subject)
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
-	}
-
-	resp := GetCredentialsResponse{
-		Credentials: gotCredentials.Credentials,
-	}
-	return framework.Respond(ctx, w, resp, http.StatusOK)
-}
-
-func (cr CredentialRouter) GetCredentialsBySchema(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	schema := framework.GetParam(ctx, SchemaParam)
-	if schema == nil {
-		errMsg := "cannot get credentials without schema parameter"
-		logrus.Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	subject := framework.GetParam(ctx, SubjectParam)
+
+	err := framework.NewRequestErrorMsg("must use one of the following query parameters: issuer, subject, schema", http.StatusBadRequest)
+
+	// check if there are multiple parameters set, which is not allowed
+	if (issuer != nil && subject != nil) || (issuer != nil && schema != nil) || (subject != nil && schema != nil) {
+		return err
 	}
 
-	gotCredentials, err := cr.service.GetCredentialsBySchema(credential.GetCredentialBySchemaRequest{Schema: *schema})
+	if issuer != nil {
+		return cr.getCredentialsByIssuer(*issuer, ctx, w, r)
+	}
+	if subject != nil {
+		return cr.getCredentialsBySubject(*subject, ctx, w, r)
+	}
+	if schema != nil {
+		return cr.getCredentialsBySchema(*schema, ctx, w, r)
+	}
+	return err
+}
+
+func (cr CredentialRouter) getCredentialsByIssuer(issuer string, ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	gotCredentials, err := cr.service.GetCredentialsByIssuer(credential.GetCredentialByIssuerRequest{Issuer: issuer})
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get credentials for schema: %s", *schema)
+		errMsg := fmt.Sprintf("could not get credentials for issuer: %s", issuer)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
 	}
 
-	resp := GetCredentialsResponse{
-		Credentials: gotCredentials.Credentials,
+	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
+
+func (cr CredentialRouter) getCredentialsBySubject(subject string, ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	gotCredentials, err := cr.service.GetCredentialsBySubject(credential.GetCredentialBySubjectRequest{Subject: subject})
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get credentials for subject: %s", subject)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
 	}
+
+	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
+
+func (cr CredentialRouter) getCredentialsBySchema(schema string, ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	gotCredentials, err := cr.service.GetCredentialsBySchema(credential.GetCredentialBySchemaRequest{Schema: schema})
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get credentials for schema: %s", schema)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
+	}
+
+	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 

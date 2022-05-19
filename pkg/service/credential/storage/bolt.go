@@ -94,8 +94,8 @@ func (b BoltCredentialStorage) GetCredentialsByIssuer(issuer string) ([]StoredCr
 		}
 	}
 	if len(issuerKeys) == 0 {
-		errMsg := fmt.Sprintf("no credentials found for issuer: %s", issuer)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		logrus.Warnf("no credentials found for issuer: %s", issuer)
+		return nil, nil
 	}
 
 	// now get each credential by key
@@ -138,8 +138,8 @@ func (b BoltCredentialStorage) GetCredentialsBySubject(subject string) ([]Stored
 		}
 	}
 	if len(subjectKeys) == 0 {
-		errMsg := fmt.Sprintf("no credentials found for subject: %s", subject)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		logrus.Warnf("no credentials found for subject: %s", subject)
+		return nil, nil
 	}
 
 	// now get each credential by key
@@ -183,8 +183,8 @@ func (b BoltCredentialStorage) GetCredentialsBySchema(schema string) ([]StoredCr
 		}
 	}
 	if len(schemaKeys) == 0 {
-		errMsg := fmt.Sprintf("no credentials found for schema: %s", schema)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		logrus.Warnf("no credentials found for schema: %s", schema)
+		return nil, nil
 	}
 
 	// now get each credential by key
