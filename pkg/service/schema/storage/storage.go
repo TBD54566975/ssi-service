@@ -26,7 +26,7 @@ func NewSchemaStorage(s storage.ServiceStorage) (Storage, error) {
 	}
 	boltStorage, err := NewBoltSchemaStorage(gotBolt)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate Schema Bolt storage")
+		return nil, errors.Wrap(err, "could not instantiate schema bolt storage")
 	}
 	return boltStorage, err
 }

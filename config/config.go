@@ -45,8 +45,9 @@ type ServicesConfig struct {
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
 
-	DIDConfig    DIDServiceConfig    `toml:"did,omitempty"`
-	SchemaConfig SchemaServiceConfig `toml:"schema,omitempty"`
+	DIDConfig        DIDServiceConfig        `toml:"did,omitempty"`
+	SchemaConfig     SchemaServiceConfig     `toml:"schema,omitempty"`
+	CredentialConfig CredentialServiceConfig `toml:"credential,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
@@ -76,6 +77,11 @@ func (s *SchemaServiceConfig) IsEmpty() bool {
 		return true
 	}
 	return reflect.DeepEqual(s, &SchemaServiceConfig{})
+}
+
+type CredentialServiceConfig struct {
+	*BaseServiceConfig
+	// TODO(gabe) supported key and signature types
 }
 
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.

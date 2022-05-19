@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
@@ -61,17 +62,56 @@ func (b *BoltDB) Read(namespace, key string) ([]byte, error) {
 	return result, err
 }
 
+// ReadPrefix does a prefix query within a namespace.
+func (b *BoltDB) ReadPrefix(namespace, prefix string) (map[string][]byte, error) {
+	result := make(map[string][]byte)
+	err := b.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(namespace))
+		if bucket == nil {
+			errMsg := fmt.Sprintf("namespace<%s> does not exist", namespace)
+			logrus.Error(errMsg)
+			return errors.New(errMsg)
+		}
+		cursor := bucket.Cursor()
+		prefix := []byte(prefix)
+		for k, v := cursor.Seek(prefix); k != nil && bytes.HasPrefix(k, prefix); k, v = cursor.Next() {
+			result[string(k)] = v
+		}
+		return nil
+	})
+	return result, err
+}
+
 func (b *BoltDB) ReadAll(namespace string) (map[string][]byte, error) {
 	result := make(map[string][]byte)
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
 		if bucket == nil {
-			logrus.Printf("namespace<%s> does not exist", namespace)
+			errMsg := fmt.Sprintf("namespace<%s> does not exist", namespace)
+			logrus.Error(errMsg)
 			return nil
 		}
 		cursor := bucket.Cursor()
 		for k, v := cursor.First(); k != nil; k, v = cursor.Next() {
 			result[string(k)] = v
+		}
+		return nil
+	})
+	return result, err
+}
+
+func (b *BoltDB) ReadAllKeys(namespace string) ([]string, error) {
+	var result []string
+	err := b.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(namespace))
+		if bucket == nil {
+			errMsg := fmt.Sprintf("namespace<%s> does not exist", namespace)
+			logrus.Error(errMsg)
+			return errors.New(errMsg)
+		}
+		cursor := bucket.Cursor()
+		for k, _ := cursor.First(); k != nil; k, _ = cursor.Next() {
+			result = append(result, string(k))
 		}
 		return nil
 	})

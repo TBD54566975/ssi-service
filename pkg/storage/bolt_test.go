@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"encoding/json"
+	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -91,4 +91,52 @@ func TestBoltDB(t *testing.T) {
 	res, err = db.Read(namespace, team1)
 	assert.NoError(t, err)
 	assert.Empty(t, res)
+}
+
+func TestBoltDBPrefixAndKeys(t *testing.T) {
+	db, err := NewBoltDBWithFile("test.db")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, db)
+
+	t.Cleanup(func() {
+		_ = db.Close()
+		os.Remove("test.db")
+	})
+
+	namespace := "blockchains"
+
+	// set up prefix read test
+
+	dummyData := []byte("dummy")
+	err = db.Write(namespace, "bitcoin-testnet", dummyData)
+	assert.NoError(t, err)
+
+	err = db.Write(namespace, "bitcoin-mainnet", dummyData)
+	assert.NoError(t, err)
+
+	err = db.Write(namespace, "tezos-testnet", dummyData)
+	assert.NoError(t, err)
+
+	err = db.Write(namespace, "tezos-mainnet", dummyData)
+	assert.NoError(t, err)
+
+	prefixValues, err := db.ReadPrefix(namespace, "bitcoin")
+	assert.NoError(t, err)
+	assert.Len(t, prefixValues, 2)
+
+	var keys []string
+	for k, _ := range prefixValues {
+		keys = append(keys, k)
+	}
+	assert.Contains(t, keys, "bitcoin-testnet")
+	assert.Contains(t, keys, "bitcoin-mainnet")
+
+	// read all keys
+	allKeys, err := db.ReadAllKeys(namespace)
+
+	assert.NoError(t, err)
+	assert.NotEmpty(t, allKeys)
+	assert.Len(t, allKeys, 4)
+	assert.Contains(t, allKeys, "bitcoin-mainnet")
+	assert.Contains(t, allKeys, "tezos-mainnet")
 }

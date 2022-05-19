@@ -4,9 +4,9 @@ package server
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/middleware"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
@@ -18,9 +18,12 @@ import (
 )
 
 const (
-	V1Prefix      = "/v1"
-	DIDsPrefix    = "/dids"
-	SchemasPrefix = "/schemas"
+	HealthPrefix      = "/health"
+	ReadinessPrefix   = "/readiness"
+	V1Prefix          = "/v1"
+	DIDsPrefix        = "/dids"
+	SchemasPrefix     = "/schemas"
+	CredentialsPrefix = "/credentials"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -44,8 +47,8 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 	services := ssi.GetServices()
 
 	// service-level routers
-	httpServer.Handle(http.MethodGet, "/health", router.Health)
-	httpServer.Handle(http.MethodGet, "/readiness", router.Readiness(services))
+	httpServer.Handle(http.MethodGet, HealthPrefix, router.Health)
+	httpServer.Handle(http.MethodGet, ReadinessPrefix, router.Readiness(services))
 
 	// create the server instance to be returned
 	server := SSIServer{
@@ -55,13 +58,13 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 	}
 
 	// start all services and their routers
-	logrus.Infof("Starting [%d] services...\n", len(services))
+	logrus.Infof("Starting [%d] service routers...\n", len(services))
 	for _, s := range services {
 		if err := server.instantiateRouter(s); err != nil {
-			logrus.WithError(err).Fatalf("unable to instaniate service<%s>", s.Type())
+			logrus.WithError(err).Fatalf("unable to instaniate service router<%s>", s.Type())
 			return nil, err
 		}
-		logrus.Infof("Service<%s> started successfully", s.Type())
+		logrus.Infof("Service router<%s> started successfully", s.Type())
 	}
 
 	return &server, nil
@@ -76,16 +79,18 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 		return s.DecentralizedIdentityAPI(service)
 	case svcframework.Schema:
 		return s.SchemaAPI(service)
+	case svcframework.Credential:
+		return s.CredentialAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
 }
 
 // DecentralizedIdentityAPI registers all HTTP router for the DID Service
-func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) error {
+func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) (err error) {
 	didRouter, err := router.NewDIDRouter(service)
 	if err != nil {
-		return errors.Wrap(err, "could not create DID router")
+		return util.LoggingErrorMsg(err, "could not create DID router")
 	}
 
 	handlerPath := V1Prefix + DIDsPrefix
@@ -93,14 +98,14 @@ func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) error
 	s.Handle(http.MethodGet, handlerPath, didRouter.GetDIDMethods)
 	s.Handle(http.MethodPut, path.Join(handlerPath, "/:method"), didRouter.CreateDIDByMethod)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method/:id"), didRouter.GetDIDByMethod)
-	return nil
+	return
 }
 
 // SchemaAPI registers all HTTP router for the Schema Service
-func (s *SSIServer) SchemaAPI(service svcframework.Service) error {
+func (s *SSIServer) SchemaAPI(service svcframework.Service) (err error) {
 	schemaRouter, err := router.NewSchemaRouter(service)
 	if err != nil {
-		return errors.Wrap(err, "could not create Schema router")
+		return util.LoggingErrorMsg(err, "could not create schema router")
 	}
 
 	handlerPath := V1Prefix + SchemasPrefix
@@ -108,5 +113,20 @@ func (s *SSIServer) SchemaAPI(service svcframework.Service) error {
 	s.Handle(http.MethodPut, handlerPath, schemaRouter.CreateSchema)
 	s.Handle(http.MethodGet, handlerPath, schemaRouter.GetSchemas)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), schemaRouter.GetSchemaByID)
-	return nil
+	return
+}
+
+func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
+	credRouter, err := router.NewCredentialRouter(service)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not create credential router")
+	}
+
+	handlerPath := V1Prefix + CredentialsPrefix
+
+	s.Handle(http.MethodPut, handlerPath, credRouter.CreateCredential)
+	s.Handle(http.MethodGet, handlerPath, credRouter.GetCredentials)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), credRouter.GetCredential)
+	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), credRouter.GetCredential)
+	return
 }

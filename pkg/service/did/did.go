@@ -3,8 +3,8 @@ package did
 import (
 	"fmt"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	didstorage "github.com/tbd54566975/ssi-service/pkg/service/did/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -54,8 +54,7 @@ func (s Service) CreateDIDByMethod(request CreateDIDRequest) (*CreateDIDResponse
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get handler for method<%s>", request.Method)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.New(errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	return handler.CreateDID(request)
 }
@@ -64,8 +63,7 @@ func (s Service) GetDIDByMethod(request GetDIDRequest) (*GetDIDResponse, error) 
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get handler for method<%s>", request.Method)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.New(errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	return handler.GetDID(request)
 }
@@ -74,8 +72,7 @@ func (s Service) getHandler(method Method) (MethodHandler, error) {
 	handler, ok := s.handlers[method]
 	if !ok {
 		err := fmt.Errorf("could not get handler for DID method: %s", method)
-		logrus.WithError(err).Error()
-		return nil, err
+		return nil, util.LoggingError(err)
 	}
 	return handler, nil
 }
@@ -111,14 +108,12 @@ func (s *Service) instantiateHandlerForMethod(method Method) error {
 		handler, err := newKeyDIDHandler(s.storage)
 		if err != nil {
 			err := fmt.Errorf("could not instnatiate did:%s handler", KeyMethod)
-			logrus.WithError(err).Error()
-			return err
+			return util.LoggingError(err)
 		}
 		s.handlers[method] = handler
 	default:
 		err := fmt.Errorf("unsupported DID method: %s", method)
-		logrus.WithError(err).Error()
-		return err
+		return util.LoggingError(err)
 	}
 	return nil
 }
