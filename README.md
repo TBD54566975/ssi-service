@@ -1,5 +1,5 @@
-[![godoc](https://img.shields.io/badge/godoc-ssi--service-blue)](https://pkg.go.dev/github.com/TBD54566975/ssi-service)
-[![goversion](https://img.shields.io/badge/go_version-1.17.6-brightgreen)](https://golang.org/)
+[![godoc](https://img.shields.io/badge/godoc-ssi--service-blue)](https://github.com/TBD54566975/ssi-service)
+[![goversion](https://img.shields.io/badge/go_version-1.17.6-brightgreen)](https://go.dev/)
 [![license](https://img.shields.io/badge/license-Apache%202-black)](https://github.com/TBD54566975/ssi-service/blob/main/LICENSE)
 [![issues](https://img.shields.io/github/issues/TBD54566975/ssi-service)](https://github.com/TBD54566975/ssi-service/issues)
 ![push](https://github.com/TBD54566975/ssi-service/workflows/ssi-service-ci/badge.svg?branch=main&event=push)
@@ -105,5 +105,5 @@ This project is fully open source, and we welcome contributions! For more inform
 | [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) | Expected behavior for project contributors, promoting a welcoming environment |
 | [CONTRIBUTING.md](./CONTRIBUTING.md)       | Developer guide to build, test, run, access CI, chat, discuss, file issues    |
 | [GOVERNANCE.md](./GOVERNANCE.md)           | Project governance                                                            |
-| [SECURITY.md](./SECRUTIY.md)               | Vulnerability and bug reporting                                               |
+| [SECURITY.md](./SECURITY.md)               | Vulnerability and bug reporting                                               |
 | [LICENSE](./LICENSE)                       | Apache License, Version 2.0                                                   |
