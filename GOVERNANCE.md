@@ -37,8 +37,8 @@ GC) votes to approve the change despite the opposition. Usually, involving the G
 
 See:
 
-* [List of maintainers - `MAINTAINERS.md`](./MAINTAINERS.md)
-* [Contribution Guide - `CONTRIBUTING.md`](./CONTRIBUTING.md)
+* [List of maintainers - `CODEOWNERS`](https://github.com/TBD54566975/ssi-service/blob/main/CODEOWNERS)
+* [Contribution Guide - `CONTRIBUTING.md`](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md)
 
 ### Maintainer activities
 

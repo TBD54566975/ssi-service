@@ -23,13 +23,13 @@ revoking, exchanging, validating, verifying credentials in varying degrees of co
 
 ## Configuration
 
-Configuration is managed using a [TOML](https://toml.io/en/) [file](config/config.toml). There are sets of configuration
+Configuration is managed using a [TOML](https://toml.io/en/) [file](https://github.com/TBD54566975/ssi-service/blob/main/config/config.toml). There are sets of configuration
 values for the server (e.g. which port to listen on), the services (e.g. which database to use, and each service. Each 
 service may define specific configuration, such as which DID methods are enabled for the DID service.
 
 ## Build & Test
 
-This project uses [mage](https://magefile.org/), please view [CONTRIBUTING](CONTRIBUTING.md) for more information.
+This project uses [mage](https://magefile.org/), please view [CONTRIBUTING](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md) for more information.
 
 After installing mage, you can build and test the SDK with the following commands:
 ```
@@ -94,16 +94,16 @@ if you are interested in helping shape the future of this project.
 ## Contributing
 
 This project is fully open source, and we welcome contributions! For more information please see
-[CONTRIBUTING](CONTRIBUTING.md). Our current thinking about the development of the library is captured in
+[CONTRIBUTING](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md). Our current thinking about the development of the library is captured in
 [GitHub Issues](https://github.com/TBD54566975/ssi-service/issues).
 
 ## Project Resources
 
 | Resource                                   | Description                                                                   |
 |--------------------------------------------|-------------------------------------------------------------------------------|
-| [CODEOWNERS](./CODEOWNERS)                 | Outlines the project lead(s)                                                  |
-| [CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md) | Expected behavior for project contributors, promoting a welcoming environment |
-| [CONTRIBUTING.md](./CONTRIBUTING.md)       | Developer guide to build, test, run, access CI, chat, discuss, file issues    |
-| [GOVERNANCE.md](./GOVERNANCE.md)           | Project governance                                                            |
-| [SECURITY.md](./SECURITY.md)               | Vulnerability and bug reporting                                               |
-| [LICENSE](./LICENSE)                       | Apache License, Version 2.0                                                   |
+| [CODEOWNERS](https://github.com/TBD54566975/ssi-service/blob/main/CODEOWNERS)                 | Outlines the project lead(s)                                                  |
+| [CODE_OF_CONDUCT.md](https://github.com/TBD54566975/ssi-service/blob/main/CODE_OF_CONDUCT.md) | Expected behavior for project contributors, promoting a welcoming environment |
+| [CONTRIBUTING.md](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md)       | Developer guide to build, test, run, access CI, chat, discuss, file issues    |
+| [GOVERNANCE.md](https://github.com/TBD54566975/ssi-service/blob/main/GOVERNANCE.md)           | Project governance                                                            |
+| [SECURITY.md](https://github.com/TBD54566975/ssi-service/blob/main/SECURITY.md)               | Vulnerability and bug reporting                                               |
+| [LICENSE](https://github.com/TBD54566975/ssi-service/blob/main/LICENSE)                       | Apache License, Version 2.0                                                   |
