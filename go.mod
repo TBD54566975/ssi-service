@@ -6,7 +6,6 @@ require (
 	github.com/BurntSushi/toml v1.1.0
 	github.com/TBD54566975/ssi-sdk v0.0.0-20220503194418-84cb3c5a9c3e
 	github.com/ardanlabs/conf v1.5.0
-	github.com/boltdb/bolt v1.3.1
 	github.com/dimfeld/httptreemux/v5 v5.4.0
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
@@ -17,6 +16,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.2
+	go.etcd.io/bbolt v1.3.6
 	go.opentelemetry.io/otel/trace v1.7.0
 	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
 	gopkg.in/go-playground/validator.v9 v9.31.0

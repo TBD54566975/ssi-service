@@ -3,11 +3,12 @@ package storage
 import (
 	"bytes"
 	"fmt"
-	"github.com/boltdb/bolt"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	bolt "go.etcd.io/bbolt"
 )
 
 const (
@@ -18,7 +19,7 @@ type BoltDB struct {
 	db *bolt.DB
 }
 
-// NewBoltDB instantiates a file-based storage instance for Bolt https://github.com/boltdb/bolt
+// NewBoltDB instantiates a file-based storage instance for Bolt https://github.com/etcd-io/bbolt
 func NewBoltDB() (*BoltDB, error) {
 	return NewBoltDBWithFile(DBFile)
 }
