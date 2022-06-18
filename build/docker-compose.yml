@@ -6,3 +6,12 @@ services:
       dockerfile: build/Dockerfile
     ports:
       - "8080:3000"
+  swagger-ui:
+    build:
+      context: ../
+      dockerfile: build/Dockerfile-swagger
+    ports:
+      - "8002:8080"
+    volumes:
+      - ../doc/openapi.yaml:/app/openapi.yaml
+    command: ["serve", "/app/openapi.yaml", "--no-open", "--port", "8080"]
