@@ -4,6 +4,10 @@ package server
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+	"path"
+
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -12,9 +16,6 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"net/http"
-	"os"
-	"path"
 )
 
 const (
@@ -127,6 +128,6 @@ func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodPut, handlerPath, credRouter.CreateCredential)
 	s.Handle(http.MethodGet, handlerPath, credRouter.GetCredentials)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), credRouter.GetCredential)
-	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), credRouter.GetCredential)
+	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), credRouter.DeleteCredential)
 	return
 }
