@@ -13,5 +13,5 @@ services:
     ports:
       - "8002:8080"
     volumes:
-      - ../doc/openapi.yaml:/app/openapi.yaml
-    command: ["serve", "/app/openapi.yaml", "--no-open", "--port", "8080"]
+      - ../docs/swagger.yaml:/app/swagger.yaml
+    command: ["serve", "/app/swagger.yaml", "--no-open", "--port", "8080"]
