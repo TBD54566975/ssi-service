@@ -3,16 +3,17 @@ package main
 import (
 	"context"
 	"expvar"
-	"github.com/ardanlabs/conf"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/config"
-	"github.com/tbd54566975/ssi-service/pkg/server"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/ardanlabs/conf"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/pkg/server"
 )
 
 const (
@@ -28,6 +29,19 @@ func init() {
 	logrus.SetOutput(os.Stdout)
 }
 
+// @title           Swagger Example API
+// @version         1.0
+// @description     This is a sample server celler server.
+// @termsOfService  http://swagger.io/terms/
+
+// @contact.name   API Support
+// @contact.url    http://www.swagger.io/support
+// @contact.email  support@swagger.io
+
+// @license.name  Apache 2.0
+// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8080
 func main() {
 	logrus.Info("Starting up...")
 
