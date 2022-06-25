@@ -3,9 +3,10 @@ package router
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"net/http"
 )
 
 func Readiness(services []svcframework.Service) framework.Handler {
@@ -23,8 +24,15 @@ type GetReadinessResponse struct {
 	ServiceStatuses map[svcframework.Type]svcframework.Status `json:"serviceStatuses"`
 }
 
-// ready runs a number of application specific checks to see if all the
-// relied upon service are healthy. Should return a 500 if not ready.
+// ShowAccount godoc
+// @Summary          Readiness
+// @Description      ready runs a number of application specific checks to see if all the
+// @Description      relied upon service are healthy. Should return a 500 if not ready.
+// @Tags             NewSSIServer
+// @Accept           json
+// @Produce          json
+// @Success          200  {string}  string  "OK"
+// @Router           /readiness [get]
 func (r readiness) ready(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	services := r.getter.getServices()
 	numServices := len(services)
