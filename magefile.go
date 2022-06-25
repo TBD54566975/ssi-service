@@ -5,7 +5,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
@@ -14,6 +13,8 @@ import (
 	"regexp"
 	"strings"
 	"syscall"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
@@ -46,6 +47,12 @@ func Run() error {
 func Test() error {
 	return runTests()
 }
+
+// Generate spec yaml based on annotation.
+func Spec() error {
+	return sh.Run("swag", "init", "-g", "cmd/main.go", "--pd", "--overridesFile",  "docs/.swaggo", "-ot", "yaml")
+}
+
 
 func runTests(extraTestArgs ...string) error {
 	args := []string{"test"}
