@@ -17,27 +17,18 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.2
-	github.com/swaggo/swag v1.8.3
 	go.opentelemetry.io/otel/trace v1.7.0
 	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
 	gopkg.in/go-playground/validator.v9 v9.31.0
 )
 
 require (
-	github.com/KyleBanks/depth v1.2.1 // indirect
-	github.com/PuerkitoBio/purell v1.1.1 // indirect
-	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
-	github.com/go-openapi/jsonpointer v0.19.5 // indirect
-	github.com/go-openapi/jsonreference v0.19.6 // indirect
-	github.com/go-openapi/spec v0.20.4 // indirect
-	github.com/go-openapi/swag v0.19.15 // indirect
 	github.com/go-playground/validator/v10 v10.11.0 // indirect
 	github.com/gobuffalo/logger v1.0.6 // indirect
 	github.com/gobuffalo/packd v1.0.1 // indirect
 	github.com/gobuffalo/packr/v2 v2.8.3 // indirect
-	github.com/josharian/intern v1.0.0 // indirect
 	github.com/karrick/godirwalk v1.16.1 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
@@ -46,7 +37,6 @@ require (
 	github.com/lestrrat-go/iter v1.0.1 // indirect
 	github.com/lestrrat-go/jwx v1.2.23 // indirect
 	github.com/lestrrat-go/option v1.0.0 // indirect
-	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/markbates/errx v1.1.0 // indirect
 	github.com/markbates/oncer v1.0.0 // indirect
 	github.com/markbates/safe v1.0.1 // indirect
@@ -62,12 +52,9 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.opentelemetry.io/otel v1.7.0 // indirect
-	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4 // indirect
 	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6 // indirect
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 // indirect
 	golang.org/x/text v0.3.7 // indirect
-	golang.org/x/tools v0.1.10 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
