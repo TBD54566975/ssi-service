@@ -41,17 +41,17 @@ type CreateSchemaResponse struct {
 	Schema schemalib.VCJSONSchema `json:"schema"`
 }
 
-// ShowAccount godoc
-// @Summary          Create Schema
-// @Description      Create schema
-// @Tags             SchemaAPI
-// @Accept           json
-// @Produce          json
-// @Param            request  body      CreateSchemaRequest  true  "request body"
-// @Success          201      {object}  CreateSchemaResponse
-// @Failure          400      {string}  string  "Bad request"
-// @Failure          500      {string}  string  "Internal server error"
-// @Router           /v1/schemas [put]
+// CreateSchema godoc
+// @Summary      Create Schema
+// @Description  Create schema
+// @Tags         SchemaAPI
+// @Accept       json
+// @Produce      json
+// @Param        request  body      CreateSchemaRequest  true  "request body"
+// @Success      201      {object}  CreateSchemaResponse
+// @Failure      400      {string}  string  "Bad request"
+// @Failure      500      {string}  string  "Internal server error"
+// @Router       /v1/schemas [put]
 func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreateSchemaRequest
 	if err := framework.Decode(r, &request); err != nil {
@@ -76,15 +76,15 @@ type GetSchemasResponse struct {
 	Schemas []schemalib.VCJSONSchema `json:"schemas,omitempty"`
 }
 
-// ShowAccount godoc
-// @Summary          Get Schemas
-// @Description      Get schemas
-// @Tags             SchemaAPI
-// @Accept           json
-// @Produce          json
-// @Success          200  {object}  GetSchemasResponse
-// @Failure          500  {string}  string  "Internal server error"
-// @Router           /v1/schemas [get]
+// GetSchemas godoc
+// @Summary      Get Schemas
+// @Description  Get schemas
+// @Tags         SchemaAPI
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  GetSchemasResponse
+// @Failure      500  {string}  string  "Internal server error"
+// @Router       /v1/schemas [get]
 func (sr SchemaRouter) GetSchemas(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	gotSchemas, err := sr.service.GetSchemas()
 	if err != nil {
@@ -100,16 +100,16 @@ type GetSchemaResponse struct {
 	Schema schemalib.VCJSONSchema `json:"schema,omitempty"`
 }
 
-// ShowAccount godoc
-// @Summary          Get Schema
-// @Description      Get schema by ID
-// @Tags             SchemaAPI
-// @Accept           json
-// @Produce          json
-// @Param            id   path      string  true  "ID"
-// @Success          200  {object}  GetSchemaResponse
-// @Failure          400  {string}  string  "Bad request"
-// @Router           /v1/schemas/{id} [get]
+// GetSchemaByID godoc
+// @Summary      Get Schema
+// @Description  Get schema by ID
+// @Tags         SchemaAPI
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "ID"
+// @Success      200  {object}  GetSchemaResponse
+// @Failure      400  {string}  string  "Bad request"
+// @Router       /v1/schemas/{id} [get]
 func (sr SchemaRouter) GetSchemaByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {

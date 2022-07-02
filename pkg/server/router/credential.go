@@ -63,17 +63,17 @@ type CreateCredentialResponse struct {
 	Credential credsdk.VerifiableCredential `json:"credential"`
 }
 
-// ShowAccount godoc
-// @Summary          Create Credential
-// @Description      Create credential
-// @Tags             CredentialAPI
-// @Accept           json
-// @Produce          json
-// @Param            request  body      CreateCredentialRequest  true  "request body"
-// @Success          201      {object}  CreateCredentialResponse
-// @Failure          400      {string}  string  "Bad request"
-// @Failure          500      {string}  string  "Internal server error"
-// @Router           /v1/credentials [put]
+// CreateCredential godoc
+// @Summary      Create Credential
+// @Description  Create credential
+// @Tags         CredentialAPI
+// @Accept       json
+// @Produce      json
+// @Param        request  body      CreateCredentialRequest  true  "request body"
+// @Success      201      {object}  CreateCredentialResponse
+// @Failure      400      {string}  string  "Bad request"
+// @Failure      500      {string}  string  "Internal server error"
+// @Router       /v1/credentials [put]
 func (cr CredentialRouter) CreateCredential(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreateCredentialRequest
 	if err := framework.Decode(r, &request); err != nil {
@@ -99,16 +99,16 @@ type GetCredentialResponse struct {
 	Credential credsdk.VerifiableCredential `json:"credential"`
 }
 
-// ShowAccount godoc
-// @Summary          Get Credential
-// @Description      Get credential by id
-// @Tags             CredentialAPI
-// @Accept           json
-// @Produce          json
-// @Param            id   path      string  true  "ID"
-// @Success          200  {object}  GetCredentialResponse
-// @Failure          400  {string}  string  "Bad request"
-// @Router           /v1/credentials/{id} [get]
+// GetCredential godoc
+// @Summary      Get Credential
+// @Description  Get credential by id
+// @Tags         CredentialAPI
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "ID"
+// @Success      200  {object}  GetCredentialResponse
+// @Failure      400  {string}  string  "Bad request"
+// @Router       /v1/credentials/{id} [get]
 func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -135,19 +135,19 @@ type GetCredentialsResponse struct {
 	Credentials []credsdk.VerifiableCredential `json:"credentials"`
 }
 
-// ShowAccount godoc
-// @Summary          Get Credentials
-// @Description      Checks for the presence of a query parameter and calls the associated filtered get method
-// @Tags             CredentialAPI
-// @Accept           json
-// @Produce          json
-// @Param            issuer   query     string  false  "string issuer"
-// @Param            schema   query     string  false  "string schema"
-// @Param            subject  query     string  false  "string subject"
-// @Success          200      {object}  GetCredentialsResponse
-// @Failure          400      {string}  string  "Bad request"
-// @Failure          500      {string}  string  "Internal server error"
-// @Router           /v1/credentials [get]
+// GetCredentials godoc
+// @Summary      Get Credentials
+// @Description  Checks for the presence of a query parameter and calls the associated filtered get method
+// @Tags         CredentialAPI
+// @Accept       json
+// @Produce      json
+// @Param        issuer   query     string  false  "string issuer"
+// @Param        schema   query     string  false  "string schema"
+// @Param        subject  query     string  false  "string subject"
+// @Success      200      {object}  GetCredentialsResponse
+// @Failure      400      {string}  string  "Bad request"
+// @Failure      500      {string}  string  "Internal server error"
+// @Router       /v1/credentials [get]
 func (cr CredentialRouter) GetCredentials(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	issuer := framework.GetParam(ctx, IssuerParam)
 	schema := framework.GetParam(ctx, SchemaParam)
@@ -208,17 +208,17 @@ func (cr CredentialRouter) getCredentialsBySchema(schema string, ctx context.Con
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
-// ShowAccount godoc
-// @Summary          Delete Credentials
-// @Description      Delete credential by ID
-// @Tags             CredentialAPI
-// @Accept           json
-// @Produce          json
-// @Param            id   path      string  true  "ID"
-// @Success          200  {string}  string  "OK"
-// @Failure          400  {string}  string  "Bad request"
-// @Failure          500  {string}  string  "Internal server error"
-// @Router           /v1/credentials/{id} [delete]
+// DeleteCredential godoc
+// @Summary      Delete Credentials
+// @Description  Delete credential by ID
+// @Tags         CredentialAPI
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "ID"
+// @Success      200  {string}  string  "OK"
+// @Failure      400  {string}  string  "Bad request"
+// @Failure      500  {string}  string  "Internal server error"
+// @Router       /v1/credentials/{id} [delete]
 func (cr CredentialRouter) DeleteCredential(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {

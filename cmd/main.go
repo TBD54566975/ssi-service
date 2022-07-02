@@ -29,19 +29,15 @@ func init() {
 	logrus.SetOutput(os.Stdout)
 }
 
-// @title           Swagger Example API
-// @version         1.0
-// @description     This is a sample server celler server.
-// @termsOfService  http://swagger.io/terms/
-
-// @contact.name   API Support
-// @contact.url    http://www.swagger.io/support
-// @contact.email  support@swagger.io
-
-// @license.name  Apache 2.0
-// @license.url   http://www.apache.org/licenses/LICENSE-2.0.html
-
-// @host      localhost:8080
+// @title          SSI Service API
+// @version        0.1
+// @description    https://github.com/TBD54566975/ssi-service
+// @contact.name   TBD
+// @contact.url    https://github.com/TBD54566975/ssi-service/issues
+// @contact.email  tbd-developer@squareup.com
+// @license.name   Apache 2.0
+// @license.url    http://www.apache.org/licenses/LICENSE-2.0.html
+// @host           localhost:8080
 func main() {
 	logrus.Info("Starting up...")
 
