@@ -10,13 +10,13 @@ require (
 	github.com/dimfeld/httptreemux/v5 v5.4.0
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
-	github.com/goccy/go-json v0.9.7
+	github.com/goccy/go-json v0.9.8
 	github.com/google/uuid v1.3.0
 	github.com/magefile/mage v1.13.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.0
 	go.opentelemetry.io/otel/trace v1.7.0
 	golang.org/x/crypto v0.0.0-20220427172511-eb4f295cb31f
 	gopkg.in/go-playground/validator.v9 v9.31.0
