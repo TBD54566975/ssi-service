@@ -9,16 +9,6 @@ definitions:
     - id
     - type
     type: object
-  credential.CredentialStatus:
-    properties:
-      id:
-        type: string
-      type:
-        type: string
-    required:
-    - id
-    - type
-    type: object
   credential.CredentialSubject:
     additionalProperties: true
     type: object
@@ -64,8 +54,7 @@ definitions:
         description: Either a string or set of strings
       credentialSchema:
         $ref: '#/definitions/credential.CredentialSchema'
-      credentialStatus:
-        $ref: '#/definitions/credential.CredentialStatus'
+      credentialStatus: {}
       credentialSubject:
         $ref: '#/definitions/credential.CredentialSubject'
         description: This is where the subject's ID *may* be present
@@ -100,6 +89,31 @@ definitions:
     - issuer
     - type
     type: object
+  cryptosuite.PublicKeyJWK:
+    properties:
+      alg:
+        type: string
+      crv:
+        type: string
+      e:
+        type: string
+      key_ops:
+        type: string
+      kid:
+        type: string
+      kty:
+        type: string
+      "n":
+        type: string
+      use:
+        type: string
+      x:
+        type: string
+      "y":
+        type: string
+    required:
+    - kty
+    type: object
   did.DIDDocument:
     properties:
       '@context': {}
@@ -131,8 +145,33 @@ definitions:
         items:
           $ref: '#/definitions/did.Service'
         type: array
+      verificationMethod:
+        items:
+          $ref: '#/definitions/did.VerificationMethod'
+        type: array
     type: object
   did.Service:
+    type: object
+  did.VerificationMethod:
+    properties:
+      controller:
+        type: string
+      id:
+        type: string
+      publicKeyBase58:
+        type: string
+      publicKeyJwk:
+        $ref: '#/definitions/cryptosuite.PublicKeyJWK'
+        description: must conform to https://datatracker.ietf.org/doc/html/rfc7517
+      publicKeyMultibase:
+        description: https://datatracker.ietf.org/doc/html/draft-multiformats-multibase-03
+        type: string
+      type:
+        type: string
+    required:
+    - controller
+    - id
+    - type
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialRequest:
     properties:
@@ -390,7 +429,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetHealthCheckResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse'
       summary: Health Check
       tags:
       - HealthCheck
@@ -541,7 +580,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDMethodsResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDMethodsResponse'
       summary: Get DID Methods
       tags:
       - DecentralizedIdentityAPI
@@ -556,7 +595,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -568,7 +607,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.CreateDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -591,7 +630,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -608,7 +647,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDByMethodResponse'
         "400":
           description: Bad request
           schema:

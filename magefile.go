@@ -48,11 +48,15 @@ func Test() error {
 	return runTests()
 }
 
-// Generate spec yaml based on annotation.
+// Spec generates an OpenAPI spec yaml based on code annotations.
 func Spec() error {
-	return sh.Run("swag", "init", "-g", "cmd/main.go", "--pd", "--overridesFile",  "docs/.swaggo", "-ot", "yaml")
+	swagCommand := "swag"
+	if err := installIfNotPresent(swagCommand, "github.com/swaggo/swag/cmd/swag@latest"); err != nil {
+		logrus.Fatal(err)
+		return err
+	}
+	return sh.Run(swagCommand, "init", "-g", "cmd/main.go", "--pd", "-ot", "yaml")
 }
-
 
 func runTests(extraTestArgs ...string) error {
 	args := []string{"test"}
@@ -116,9 +120,11 @@ func installIfNotPresent(execName, goPackage string) error {
 	}
 	pathOfExec := findOnPathOrGoPath(execName)
 	if len(pathOfExec) == 0 {
+		fmt.Printf("Attempting to go get %s\n", execName)
 		cmd := exec.Command(Go, "get", "-u", goPackage)
 		cmd.Dir = usr.HomeDir
 		if err := cmd.Start(); err != nil {
+			logrus.Fatal(err)
 			return err
 		}
 		return cmd.Wait()
