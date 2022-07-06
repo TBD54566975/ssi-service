@@ -2,6 +2,8 @@ package credential
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
@@ -9,7 +11,6 @@ import (
 	credstorage "github.com/tbd54566975/ssi-service/pkg/service/credential/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"time"
 )
 
 type Service struct {

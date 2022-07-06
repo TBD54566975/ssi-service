@@ -3,6 +3,8 @@ package router
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/pkg/errors"
@@ -10,7 +12,6 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"net/http"
 )
 
 const (
@@ -41,6 +42,14 @@ type GetDIDMethodsResponse struct {
 	DIDMethods []did.Method `json:"didMethods,omitempty"`
 }
 
+// GetDIDMethods godoc
+// @Summary      Get DID Methods
+// @Description  Get supported DID methods
+// @Tags         DecentralizedIdentityAPI
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  GetDIDMethodsResponse
+// @Router       /v1/dids [get]
 func (dr DIDRouter) GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	methods := dr.service.GetSupportedMethods()
 	response := GetDIDMethodsResponse{DIDMethods: methods.Methods}
@@ -56,6 +65,18 @@ type CreateDIDByMethodResponse struct {
 	PrivateKey string             `json:"privateKeyBase58,omitempty"`
 }
 
+// CreateDIDByMethod godoc
+// @Summary      Create DID
+// @Description  create DID by method
+// @Tags         DecentralizedIdentityAPI
+// @Accept       json
+// @Produce      json
+// @Param        request  body      CreateDIDByMethodRequest  true  "request body"
+// @Param        method   path      string                    true  "Method"
+// @Success      201      {object}  CreateDIDByMethodResponse
+// @Failure      400      {string}  string  "Bad request"
+// @Failure      500      {string}  string  "Internal server error"
+// @Router       /v1/dids/{method} [put]
 func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
@@ -91,6 +112,18 @@ type GetDIDByMethodResponse struct {
 	DID didsdk.DIDDocument `json:"did,omitempty"`
 }
 
+// GetDIDByMethod godoc
+// @Summary      Get DID
+// @Description  Get DID By Method
+// @Tags         DecentralizedIdentityAPI
+// @Accept       json
+// @Produce      json
+// @Param        request  body      CreateDIDByMethodRequest  true  "request body"
+// @Param        method   path      string                    true  "Method"
+// @Param        id       path      string                    true  "ID"
+// @Success      200      {object}  GetDIDByMethodResponse
+// @Failure      400      {string}  string  "Bad request"
+// @Router       /v1/dids/{method}/{id} [get]
 func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {

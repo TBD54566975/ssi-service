@@ -1,0 +1,731 @@
+definitions:
+  credential.CredentialSchema:
+    properties:
+      id:
+        type: string
+      type:
+        type: string
+    required:
+    - id
+    - type
+    type: object
+  credential.CredentialSubject:
+    additionalProperties: true
+    type: object
+  credential.Prohibition:
+    properties:
+      action:
+        items:
+          type: string
+        type: array
+      assignee:
+        type: string
+      assigner:
+        type: string
+      target:
+        type: string
+    type: object
+  credential.RefreshService:
+    properties:
+      id:
+        type: string
+      type:
+        type: string
+    required:
+    - id
+    - type
+    type: object
+  credential.TermsOfUse:
+    properties:
+      id:
+        type: string
+      profile:
+        type: string
+      prohibition:
+        items:
+          $ref: '#/definitions/credential.Prohibition'
+        type: array
+      type:
+        type: string
+    type: object
+  credential.VerifiableCredential:
+    properties:
+      '@context':
+        description: Either a string or set of strings
+      credentialSchema:
+        $ref: '#/definitions/credential.CredentialSchema'
+      credentialStatus: {}
+      credentialSubject:
+        $ref: '#/definitions/credential.CredentialSubject'
+        description: This is where the subject's ID *may* be present
+      evidence:
+        items: {}
+        type: array
+      expirationDate:
+        type: string
+      id:
+        type: string
+      issuanceDate:
+        description: https://www.w3.org/TR/xmlschema11-2/#dateTimes
+        type: string
+      issuer:
+        description: either a URI or an object containing an `id` property.
+      proof:
+        description: |-
+          For embedded proof support
+          Proof is a digital signature over a credential https://www.w3.org/TR/2021/REC-vc-data-model-20211109/#proofs-signatures
+      refreshService:
+        $ref: '#/definitions/credential.RefreshService'
+      termsOfUse:
+        items:
+          $ref: '#/definitions/credential.TermsOfUse'
+        type: array
+      type:
+        description: Either a string or a set of strings https://www.w3.org/TR/2021/REC-vc-data-model-20211109/#types
+    required:
+    - '@context'
+    - credentialSubject
+    - issuanceDate
+    - issuer
+    - type
+    type: object
+  cryptosuite.PublicKeyJWK:
+    properties:
+      alg:
+        type: string
+      crv:
+        type: string
+      e:
+        type: string
+      key_ops:
+        type: string
+      kid:
+        type: string
+      kty:
+        type: string
+      "n":
+        type: string
+      use:
+        type: string
+      x:
+        type: string
+      "y":
+        type: string
+    required:
+    - kty
+    type: object
+  did.DIDDocument:
+    properties:
+      '@context': {}
+      alsoKnownAs:
+        type: string
+      assertionMethod:
+        items: {}
+        type: array
+      authentication:
+        items: {}
+        type: array
+      capabilityDelegation:
+        items: {}
+        type: array
+      capabilityInvocation:
+        items: {}
+        type: array
+      controller:
+        type: string
+      id:
+        description: |-
+          As per https://www.w3.org/TR/did-core/#did-subject intermediate representations of DID Documents do not
+          require an ID property. The provided test vectors demonstrate IRs. As such, the property is optional.
+        type: string
+      keyAgreement:
+        items: {}
+        type: array
+      service:
+        items:
+          $ref: '#/definitions/did.Service'
+        type: array
+      verificationMethod:
+        items:
+          $ref: '#/definitions/did.VerificationMethod'
+        type: array
+    type: object
+  did.Service:
+    type: object
+  did.VerificationMethod:
+    properties:
+      controller:
+        type: string
+      id:
+        type: string
+      publicKeyBase58:
+        type: string
+      publicKeyJwk:
+        $ref: '#/definitions/cryptosuite.PublicKeyJWK'
+        description: must conform to https://datatracker.ietf.org/doc/html/rfc7517
+      publicKeyMultibase:
+        description: https://datatracker.ietf.org/doc/html/draft-multiformats-multibase-03
+        type: string
+      type:
+        type: string
+    required:
+    - controller
+    - id
+    - type
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialRequest:
+    properties:
+      '@context':
+        description: A context is optional. If not present, we'll apply default, required
+          context values.
+        type: string
+      data:
+        additionalProperties: true
+        type: object
+      expiry:
+        type: string
+      issuer:
+        type: string
+      schema:
+        description: A schema is optional. If present, we'll attempt to look it up
+          and validate the data against it.
+        type: string
+      subject:
+        type: string
+    required:
+    - data
+    - issuer
+    - subject
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialResponse:
+    properties:
+      credential:
+        $ref: '#/definitions/credential.VerifiableCredential'
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest:
+    properties:
+      keyType:
+        type: string
+    required:
+    - keyType
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodResponse:
+    properties:
+      did:
+        $ref: '#/definitions/did.DIDDocument'
+      privateKeyBase58:
+        type: string
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest:
+    properties:
+      author:
+        type: string
+      name:
+        type: string
+      schema:
+        $ref: '#/definitions/schema.JSONSchema'
+    required:
+    - author
+    - name
+    - schema
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaResponse:
+    properties:
+      id:
+        type: string
+      schema:
+        $ref: '#/definitions/schema.VCJSONSchema'
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialResponse:
+    properties:
+      credential:
+        $ref: '#/definitions/credential.VerifiableCredential'
+      id:
+        type: string
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialsResponse:
+    properties:
+      credentials:
+        items:
+          $ref: '#/definitions/credential.VerifiableCredential'
+        type: array
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse:
+    properties:
+      did:
+        $ref: '#/definitions/did.DIDDocument'
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDMethodsResponse:
+    properties:
+      didMethods:
+        items:
+          type: string
+        type: array
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse:
+    properties:
+      status:
+        type: string
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse:
+    properties:
+      schema:
+        $ref: '#/definitions/schema.VCJSONSchema'
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemasResponse:
+    properties:
+      schemas:
+        items:
+          $ref: '#/definitions/schema.VCJSONSchema'
+        type: array
+    type: object
+  pkg_server_router.CreateCredentialRequest:
+    properties:
+      '@context':
+        description: A context is optional. If not present, we'll apply default, required
+          context values.
+        type: string
+      data:
+        additionalProperties: true
+        type: object
+      expiry:
+        type: string
+      issuer:
+        type: string
+      schema:
+        description: A schema is optional. If present, we'll attempt to look it up
+          and validate the data against it.
+        type: string
+      subject:
+        type: string
+    required:
+    - data
+    - issuer
+    - subject
+    type: object
+  pkg_server_router.CreateCredentialResponse:
+    properties:
+      credential:
+        $ref: '#/definitions/credential.VerifiableCredential'
+    type: object
+  pkg_server_router.CreateDIDByMethodRequest:
+    properties:
+      keyType:
+        type: string
+    required:
+    - keyType
+    type: object
+  pkg_server_router.CreateDIDByMethodResponse:
+    properties:
+      did:
+        $ref: '#/definitions/did.DIDDocument'
+      privateKeyBase58:
+        type: string
+    type: object
+  pkg_server_router.CreateSchemaRequest:
+    properties:
+      author:
+        type: string
+      name:
+        type: string
+      schema:
+        $ref: '#/definitions/schema.JSONSchema'
+    required:
+    - author
+    - name
+    - schema
+    type: object
+  pkg_server_router.CreateSchemaResponse:
+    properties:
+      id:
+        type: string
+      schema:
+        $ref: '#/definitions/schema.VCJSONSchema'
+    type: object
+  pkg_server_router.GetCredentialResponse:
+    properties:
+      credential:
+        $ref: '#/definitions/credential.VerifiableCredential'
+      id:
+        type: string
+    type: object
+  pkg_server_router.GetCredentialsResponse:
+    properties:
+      credentials:
+        items:
+          $ref: '#/definitions/credential.VerifiableCredential'
+        type: array
+    type: object
+  pkg_server_router.GetDIDByMethodResponse:
+    properties:
+      did:
+        $ref: '#/definitions/did.DIDDocument'
+    type: object
+  pkg_server_router.GetDIDMethodsResponse:
+    properties:
+      didMethods:
+        items:
+          type: string
+        type: array
+    type: object
+  pkg_server_router.GetHealthCheckResponse:
+    properties:
+      status:
+        type: string
+    type: object
+  pkg_server_router.GetSchemaResponse:
+    properties:
+      schema:
+        $ref: '#/definitions/schema.VCJSONSchema'
+    type: object
+  pkg_server_router.GetSchemasResponse:
+    properties:
+      schemas:
+        items:
+          $ref: '#/definitions/schema.VCJSONSchema'
+        type: array
+    type: object
+  schema.JSONSchema:
+    additionalProperties: true
+    type: object
+  schema.VCJSONSchema:
+    properties:
+      author:
+        type: string
+      authored:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      schema:
+        $ref: '#/definitions/schema.JSONSchema'
+      type:
+        type: string
+      version:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: tbd-developer@squareup.com
+    name: TBD
+    url: https://github.com/TBD54566975/ssi-service/issues
+  description: https://github.com/TBD54566975/ssi-service
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: SSI Service API
+  version: "0.1"
+paths:
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Health is a simple handler that always responds with a 200 OK
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse'
+      summary: Health Check
+      tags:
+      - HealthCheck
+  /readiness:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        ready runs a number of application specific checks to see if all the
+        relied upon service are healthy. Should return a 500 if not ready.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Readiness
+      tags:
+      - Readiness
+  /v1/credentials:
+    get:
+      consumes:
+      - application/json
+      description: Checks for the presence of a query parameter and calls the associated
+        filtered get method
+      parameters:
+      - description: string issuer
+        in: query
+        name: issuer
+        type: string
+      - description: string schema
+        in: query
+        name: schema
+        type: string
+      - description: string subject
+        in: query
+        name: subject
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.GetCredentialsResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get Credentials
+      tags:
+      - CredentialAPI
+    put:
+      consumes:
+      - application/json
+      description: Create credential
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.CreateCredentialRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pkg_server_router.CreateCredentialResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create Credential
+      tags:
+      - CredentialAPI
+  /v1/credentials/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete credential by ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete Credentials
+      tags:
+      - CredentialAPI
+    get:
+      consumes:
+      - application/json
+      description: Get credential by id
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.GetCredentialResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Get Credential
+      tags:
+      - CredentialAPI
+  /v1/dids:
+    get:
+      consumes:
+      - application/json
+      description: Get supported DID methods
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.GetDIDMethodsResponse'
+      summary: Get DID Methods
+      tags:
+      - DecentralizedIdentityAPI
+  /v1/dids/{method}:
+    put:
+      consumes:
+      - application/json
+      description: create DID by method
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+      - description: Method
+        in: path
+        name: method
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pkg_server_router.CreateDIDByMethodResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create DID
+      tags:
+      - DecentralizedIdentityAPI
+  /v1/dids/{method}/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get DID By Method
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+      - description: Method
+        in: path
+        name: method
+        required: true
+        type: string
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.GetDIDByMethodResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Get DID
+      tags:
+      - DecentralizedIdentityAPI
+  /v1/schemas:
+    get:
+      consumes:
+      - application/json
+      description: Get schemas
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.GetSchemasResponse'
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get Schemas
+      tags:
+      - SchemaAPI
+    put:
+      consumes:
+      - application/json
+      description: Create schema
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.CreateSchemaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pkg_server_router.CreateSchemaResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create Schema
+      tags:
+      - SchemaAPI
+  /v1/schemas/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get schema by ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Get Schema
+      tags:
+      - SchemaAPI
+swagger: "2.0"
