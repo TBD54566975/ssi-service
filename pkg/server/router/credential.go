@@ -149,9 +149,9 @@ type GetCredentialsResponse struct {
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/credentials [get]
 func (cr CredentialRouter) GetCredentials(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	issuer := framework.GetParam(ctx, IssuerParam)
-	schema := framework.GetParam(ctx, SchemaParam)
-	subject := framework.GetParam(ctx, SubjectParam)
+	issuer := framework.GetQueryValue(r, IssuerParam)
+	schema := framework.GetQueryValue(r, SchemaParam)
+	subject := framework.GetQueryValue(r, SubjectParam)
 
 	err := framework.NewRequestErrorMsg("must use one of the following query parameters: issuer, subject, schema", http.StatusBadRequest)
 

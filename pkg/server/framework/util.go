@@ -2,6 +2,8 @@ package framework
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/dimfeld/httptreemux/v5"
 )
 
@@ -13,4 +15,13 @@ func GetParam(ctx context.Context, param string) *string {
 		return nil
 	}
 	return &method
+}
+
+// GetQueryValue is a utility to get a parameter value from the query string, nil if not found
+func GetQueryValue(r *http.Request, param string) *string {
+	v := r.URL.Query().Get(param)
+	if v == "" {
+		return nil
+	}
+	return &v
 }
