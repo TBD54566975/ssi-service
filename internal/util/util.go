@@ -2,9 +2,10 @@ package util
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"strings"
 )
 
 // GetMethodForDID gets a DID method from a did, the second part of the did (e.g. did:test:abcd, the method is 'test')
@@ -31,6 +32,12 @@ func LoggingNewError(msg string) error {
 
 // LoggingErrorMsg is a utility to combine logging an error, and returning and error with a message
 func LoggingErrorMsg(err error, msg string) error {
-	logrus.WithError(err).Error(msg)
+	logrus.WithError(err).Error(SanitizingLog(msg))
 	return errors.Wrap(err, msg)
+}
+
+// Sanitizing before it is logged
+func SanitizingLog(log string) string {
+	escapedLog := strings.Replace(log, "\n", "", -1)
+	return strings.Replace(escapedLog, "\r", "", -1)
 }

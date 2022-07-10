@@ -8,6 +8,7 @@ import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -175,7 +176,7 @@ func (cr CredentialRouter) GetCredentials(ctx context.Context, w http.ResponseWr
 func (cr CredentialRouter) getCredentialsByIssuer(issuer string, ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	gotCredentials, err := cr.service.GetCredentialsByIssuer(credential.GetCredentialByIssuerRequest{Issuer: issuer})
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get credentials for issuer: %s", issuer)
+		errMsg := fmt.Sprintf("could not get credentials for issuer: %s", util.SanitizingLog(issuer))
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
 	}
@@ -187,7 +188,7 @@ func (cr CredentialRouter) getCredentialsByIssuer(issuer string, ctx context.Con
 func (cr CredentialRouter) getCredentialsBySubject(subject string, ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	gotCredentials, err := cr.service.GetCredentialsBySubject(credential.GetCredentialBySubjectRequest{Subject: subject})
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get credentials for subject: %s", subject)
+		errMsg := fmt.Sprintf("could not get credentials for subject: %s", util.SanitizingLog(subject))
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
 	}
@@ -199,7 +200,7 @@ func (cr CredentialRouter) getCredentialsBySubject(subject string, ctx context.C
 func (cr CredentialRouter) getCredentialsBySchema(schema string, ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	gotCredentials, err := cr.service.GetCredentialsBySchema(credential.GetCredentialBySchemaRequest{Schema: schema})
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get credentials for schema: %s", schema)
+		errMsg := fmt.Sprintf("could not get credentials for schema: %s", util.SanitizingLog(schema))
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
 	}
