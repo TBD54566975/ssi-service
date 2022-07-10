@@ -4,6 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+	"time"
+
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/dimfeld/httptreemux/v5"
@@ -19,12 +26,6 @@ import (
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"io"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"testing"
-	"time"
 )
 
 func TestHealthCheckAPI(t *testing.T) {
@@ -532,8 +533,8 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// get credential by schema
-		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/credential", nil)
-		err = credService.GetCredentials(newRequestContextWithParams(map[string]string{"schema": schemaID}), w, req)
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?schema=%s", schemaID), nil)
+		err = credService.GetCredentials(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var getCredsResp router.GetCredentialsResponse
@@ -575,8 +576,8 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// get credential by issuer id
-		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/credential", nil)
-		err = credService.GetCredentials(newRequestContextWithParams(map[string]string{"issuer": issuerID}), w, req)
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?issuer=%s", issuerID), nil)
+		err = credService.GetCredentials(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var getCredsResp router.GetCredentialsResponse
@@ -618,8 +619,8 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// get credential by subject id
-		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/credential", nil)
-		err = credService.GetCredentials(newRequestContextWithParams(map[string]string{"subject": subjectID}), w, req)
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?subject=%s", subjectID), nil)
+		err = credService.GetCredentials(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var getCredsResp router.GetCredentialsResponse
