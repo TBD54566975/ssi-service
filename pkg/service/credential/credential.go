@@ -149,7 +149,7 @@ func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResp
 
 func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*GetCredentialsResponse, error) {
 
-	logrus.Debugf("getting credential(s) for issuer: %s", request.Issuer)
+	logrus.Debugf("getting credential(s) for issuer: %s", util.SanitizingLog(request.Issuer))
 
 	gotCreds, err := s.storage.GetCredentialsByIssuer(request.Issuer)
 	if err != nil {
@@ -168,7 +168,7 @@ func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*
 
 func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) (*GetCredentialsResponse, error) {
 
-	logrus.Debugf("getting credential(s) for subject: %s", request.Subject)
+	logrus.Debugf("getting credential(s) for subject: %s", util.SanitizingLog(request.Subject))
 
 	gotCreds, err := s.storage.GetCredentialsBySubject(request.Subject)
 	if err != nil {
@@ -187,7 +187,7 @@ func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) 
 
 func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*GetCredentialsResponse, error) {
 
-	logrus.Debugf("getting credential(s) for schema: %s", request.Schema)
+	logrus.Debugf("getting credential(s) for schema: %s", util.SanitizingLog(request.Schema))
 
 	gotCreds, err := s.storage.GetCredentialsBySchema(request.Schema)
 	if err != nil {

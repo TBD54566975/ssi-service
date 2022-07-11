@@ -2,12 +2,13 @@ package storage
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"strings"
 )
 
 const (
@@ -94,7 +95,7 @@ func (b BoltCredentialStorage) GetCredentialsByIssuer(issuer string) ([]StoredCr
 		}
 	}
 	if len(issuerKeys) == 0 {
-		logrus.Warnf("no credentials found for issuer: %s", issuer)
+		logrus.Warnf("no credentials found for issuer: %s", util.SanitizingLog(issuer))
 		return nil, nil
 	}
 
@@ -138,7 +139,7 @@ func (b BoltCredentialStorage) GetCredentialsBySubject(subject string) ([]Stored
 		}
 	}
 	if len(subjectKeys) == 0 {
-		logrus.Warnf("no credentials found for subject: %s", subject)
+		logrus.Warnf("no credentials found for subject: %s", util.SanitizingLog(subject))
 		return nil, nil
 	}
 
@@ -183,7 +184,7 @@ func (b BoltCredentialStorage) GetCredentialsBySchema(schema string) ([]StoredCr
 		}
 	}
 	if len(schemaKeys) == 0 {
-		logrus.Warnf("no credentials found for schema: %s", schema)
+		logrus.Warnf("no credentials found for schema: %s", util.SanitizingLog(schema))
 		return nil, nil
 	}
 
