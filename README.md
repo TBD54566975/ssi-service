@@ -88,7 +88,7 @@ You should then be able to send requests as follows:
 
 The design of the service, at present, assumes it will be run by a single entity. Additional work is needed
 around authentication and authorization schemes to access the service and its functionalities, possible User Interfaces
-to use the service, and much more! Please [open a discussion](https://github.com/TBD54566975/collaboration/discussions)
+to use the service, and much more! Please [open a discussion](https://forums.tbd.website/c/self-sovereign-identity-developers/7)
 if you are interested in helping shape the future of this project.
 
 ## Contributing
