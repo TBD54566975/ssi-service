@@ -3,11 +3,12 @@ package storage
 import (
 	"bytes"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/boltdb/bolt"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"strings"
-	"time"
 )
 
 const (
@@ -16,6 +17,10 @@ const (
 
 type BoltDB struct {
 	db *bolt.DB
+}
+
+func (b *BoltDB) Type() Storage {
+	return Bolt
 }
 
 // NewBoltDB instantiates a file-based storage instance for Bolt https://github.com/boltdb/bolt

@@ -9,6 +9,7 @@ import (
 	"path"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -129,5 +130,9 @@ func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodGet, handlerPath, credRouter.GetCredentials)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), credRouter.GetCredential)
 	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), credRouter.DeleteCredential)
+	return
+}
+
+func (s *SSIServer) KeyStoreAPI(service svcframework.Service) (err error) {
 	return
 }
