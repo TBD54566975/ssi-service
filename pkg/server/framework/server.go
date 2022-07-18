@@ -3,11 +3,14 @@ package framework
 
 import (
 	"context"
-	"github.com/dimfeld/httptreemux/v5"
 	"net/http"
 	"os"
 	"syscall"
 	"time"
+
+	"github.com/dimfeld/httptreemux/v5"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/google/uuid"
 )
@@ -15,6 +18,7 @@ import (
 type ctxKey int
 
 const KeyRequestState ctxKey = 1
+var tracer = otel.Tracer("SSI SERVICE")
 
 type RequestState struct {
 	TraceID    string
@@ -59,8 +63,19 @@ func (s *Server) Handle(method string, path string, handler Handler, mw ...Middl
 			TraceID: uuid.New().String(),
 			Now:     time.Now(),
 		}
-
 		ctx := context.WithValue(r.Context(), KeyRequestState, &requestState)
+
+		// init a span
+		ctx, span := tracer.Start(ctx, path)
+		span.SetAttributes(
+			attribute.String("method", method),
+			attribute.String("path", path),
+			attribute.String("host", r.Host),
+			attribute.String("prot", r.Proto),
+			attribute.String("body", StreamToString(r.Body)),
+		)
+
+		defer span.End()
 
 		// onion the request through all the registered middleware
 		if err := handler(ctx, w, r); err != nil {
