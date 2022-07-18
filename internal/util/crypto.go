@@ -25,8 +25,8 @@ const (
 	threads      = 4
 )
 
-// ChaCha20Poly1305Encrypt takes a 32 byte key and uses XChaCha20-Poly1305 to encrypt a piece of data
-func ChaCha20Poly1305Encrypt(key, data []byte) ([]byte, error) {
+// XChaCha20Poly1305Encrypt takes a 32 byte key and uses XChaCha20-Poly1305 to encrypt a piece of data
+func XChaCha20Poly1305Encrypt(key, data []byte) ([]byte, error) {
 	aead, err := chacha20poly1305.NewX(key)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create aead with provided key")
@@ -42,8 +42,8 @@ func ChaCha20Poly1305Encrypt(key, data []byte) ([]byte, error) {
 	return encrypted, nil
 }
 
-// ChaCha20Poly1305Decrypt takes a 32 byte key and uses XChaCha20-Poly1305 to decrypt a piece of data
-func ChaCha20Poly1305Decrypt(key, data []byte) ([]byte, error) {
+// XChaCha20Poly1305Decrypt takes a 32 byte key and uses XChaCha20-Poly1305 to decrypt a piece of data
+func XChaCha20Poly1305Decrypt(key, data []byte) ([]byte, error) {
 	aead, err := chacha20poly1305.NewX(key)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create aead with provided key")

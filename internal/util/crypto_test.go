@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/crypto/chacha20poly1305"
 )
 
 func TestArgon2(t *testing.T) {
@@ -30,18 +31,18 @@ func TestXChaCha20Poly1305(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, salt)
 
-	key, err := Argon2KeyGen(password, salt, 32)
+	key, err := Argon2KeyGen(password, salt, chacha20poly1305.KeySize)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, key)
 
 	// Encrypt a message
 	message := []byte("open sesame")
-	encrypted, err := ChaCha20Poly1305Encrypt(key, message)
+	encrypted, err := XChaCha20Poly1305Encrypt(key, message)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, encrypted)
 
 	// Decrypt the message
-	decrypted, err := ChaCha20Poly1305Decrypt(key, encrypted)
+	decrypted, err := XChaCha20Poly1305Decrypt(key, encrypted)
 	assert.NoError(t, err)
 	assert.Equal(t, message, decrypted)
 }

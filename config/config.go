@@ -88,9 +88,9 @@ type CredentialServiceConfig struct {
 
 type KeyStoreServiceConfig struct {
 	*BaseServiceConfig
-	// Key encryption key password. Used by a KDF whose key is used by a symmetric cypher for key encryption.
+	// Service key password. Used by a KDF whose key is used by a symmetric cypher for key encryption.
 	// The password is salted before usage.
-	KEKPassword string
+	ServiceKeyPassword string
 }
 
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
@@ -147,8 +147,8 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 				BaseServiceConfig: &BaseServiceConfig{Name: "credential"},
 			},
 			KeyStoreConfig: KeyStoreServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "keystore"},
-				KEKPassword:       "default-password",
+				BaseServiceConfig:  &BaseServiceConfig{Name: "keystore"},
+				ServiceKeyPassword: "default-password",
 			},
 		}
 	} else {
