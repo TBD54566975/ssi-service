@@ -29,7 +29,7 @@ type Storage interface {
 	GetKeyDetails(id string) (*KeyDetails, error)
 }
 
-func NewKeyStoreStorage(s storage.ServiceStorage) (Storage, error) {
+func NewKeyStoreStorage(s storage.ServiceStorage, kekPassword string) (Storage, error) {
 	switch s.Type() {
 	case storage.Bolt:
 		gotBolt, ok := s.(*storage.BoltDB)
@@ -37,7 +37,7 @@ func NewKeyStoreStorage(s storage.ServiceStorage) (Storage, error) {
 			errMsg := fmt.Sprintf("trouble instantiating : %s", s.Type())
 			return nil, util.LoggingNewError(errMsg)
 		}
-		boltStorage, err := NewBoltKeyStoreStorage(gotBolt)
+		boltStorage, err := NewBoltKeyStoreStorage(gotBolt, kekPassword)
 		if err != nil {
 			return nil, util.LoggingErrorMsg(err, "could not instantiate key store bolt storage")
 		}

@@ -37,7 +37,7 @@ func (s Service) Config() config.KeyStoreServiceConfig {
 }
 
 func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	keyStoreStorage, err := keystorestorage.NewKeyStoreStorage(s)
+	keyStoreStorage, err := keystorestorage.NewKeyStoreStorage(s, config.KEKPassword)
 	if err != nil {
 		errMsg := "could not instantiate storage for the keystore service"
 		return nil, util.LoggingErrorMsg(err, errMsg)

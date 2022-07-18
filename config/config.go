@@ -33,7 +33,7 @@ type ServerConfig struct {
 	ReadTimeout     time.Duration `toml:"read_timeout" conf:"default:5s"`
 	WriteTimeout    time.Duration `toml:"write_timeout" conf:"default:5s"`
 	ShutdownTimeout time.Duration `toml:"shutdown_timeout" conf:"default:5s"`
-	LogLocation     string        `toml:"log_location"`
+	LogLocation     string        `toml:"log_location" conf:"default:log"`
 	LogLevel        string        `toml:"log_level" conf:"default:debug"`
 }
 
@@ -88,7 +88,9 @@ type CredentialServiceConfig struct {
 
 type KeyStoreServiceConfig struct {
 	*BaseServiceConfig
-	// TODO(gabe) service key location
+	// Key encryption key password. Used by a KDF whose key is used by a symmetric cypher for key encryption.
+	// The password is salted before usage.
+	KEKPassword string
 }
 
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
@@ -146,6 +148,7 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 			},
 			KeyStoreConfig: KeyStoreServiceConfig{
 				BaseServiceConfig: &BaseServiceConfig{Name: "keystore"},
+				KEKPassword:       "default-password",
 			},
 		}
 	} else {
