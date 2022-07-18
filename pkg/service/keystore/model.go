@@ -7,7 +7,7 @@ type StoreKeyRequest struct {
 	Key        interface{}
 }
 
-type GetKeyRequest struct {
+type GetKeyDetailsRequest struct {
 	ID string
 }
 

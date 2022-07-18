@@ -1,8 +1,12 @@
 package storage
 
 import (
+	"fmt"
+
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -23,11 +27,38 @@ func NewBoltKeyStoreStorage(db *storage.BoltDB) (*BoltKeyStoreStorage, error) {
 }
 
 func (b BoltKeyStoreStorage) StoreKey(key StoredKey) error {
-	// TODO implement me
-	panic("implement me")
+	id := key.ID
+	if id == "" {
+		return util.LoggingNewError("could not store key without an ID")
+	}
+
+	keyBytes, err := json.Marshal(key)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not store key: %s", id)
+		return util.LoggingErrorMsg(err, errMsg)
+	}
+	return b.db.Write(namespace, id, keyBytes)
 }
 
 func (b BoltKeyStoreStorage) GetKeyDetails(id string) (*KeyDetails, error) {
-	// TODO implement me
-	panic("implement me")
+	storedKeyBytes, err := b.db.Read(namespace, id)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get key details for key: %s", id)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	if len(storedKeyBytes) == 0 {
+		err := fmt.Errorf("could not find key details for key: %s", id)
+		return nil, util.LoggingError(err)
+	}
+	var stored StoredKey
+	if err := json.Unmarshal(storedKeyBytes, &stored); err != nil {
+		errMsg := fmt.Sprintf("could not unmarshal stored key: %s", id)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	return &KeyDetails{
+		ID:         stored.ID,
+		Controller: stored.Controller,
+		KeyType:    stored.KeyType,
+		CreatedAt:  stored.CreatedAt,
+	}, nil
 }

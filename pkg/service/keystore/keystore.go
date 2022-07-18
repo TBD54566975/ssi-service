@@ -1,6 +1,8 @@
 package keystore
 
 import (
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -55,15 +57,15 @@ func (s Service) StoreKey(request StoreKeyRequest) error {
 		Controller: request.Controller,
 		KeyType:    request.Type,
 		Key:        request.Key,
+		CreatedAt:  time.Now().Format(time.RFC3339),
 	}
 	if err := s.storage.StoreKey(key); err != nil {
 		return errors.Wrapf(err, "could not store key: %s", request.ID)
 	}
-
 	return nil
 }
 
-func (s Service) GetKeyDetails(request GetKeyRequest) (*GetKeyDetailsResponse, error) {
+func (s Service) GetKeyDetails(request GetKeyDetailsRequest) (*GetKeyDetailsResponse, error) {
 
 	logrus.Debugf("getting key: %+v", request)
 
