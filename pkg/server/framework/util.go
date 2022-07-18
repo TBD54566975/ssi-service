@@ -1,9 +1,7 @@
 package framework
 
 import (
-	"bytes"
 	"context"
-	"io"
 	"net/http"
 
 	"github.com/dimfeld/httptreemux/v5"
@@ -26,11 +24,4 @@ func GetQueryValue(r *http.Request, param string) *string {
 		return nil
 	}
 	return &v
-}
-
-// Convert stream to string
-func StreamToString(stream io.Reader) string {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(stream)
-	return buf.String()
 }

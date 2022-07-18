@@ -14,12 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server"
-
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/jaeger"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 )
 
 const (
@@ -33,30 +27,6 @@ func init() {
 	// Output to stdout instead of the default stderr
 	// Can be any io.Writer, see below for File example
 	logrus.SetOutput(os.Stdout)
-}
-
-
-// tracerProvider returns an OpenTelemetry TracerProvider configured to use
-// the Jaeger exporter that will send spans to the provided url. The returned
-// TracerProvider will also use a Resource configured with all the information
-// about the application.
-func newTracerProvider() (*sdktrace.TracerProvider, error) {
-	// Create the Jaeger exporter
-	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(os.Getenv("JAEGER_HTTP_URL"))))
-	if err != nil {
-		return nil, err
-	}
-	tp := sdktrace.NewTracerProvider(
-		// Always be sure to batch in production.
-		sdktrace.WithBatcher(exp),
-		// Record information about this application in a Resource.
-		sdktrace.WithResource(resource.NewWithAttributes(
-			semconv.SchemaURL,
-			semconv.ServiceNameKey.String("SSI Service"),
-			semconv.ServiceVersionKey.String("0.1"),
-		)),
-	)
-	return tp, nil
 }
 
 // @title          SSI Service API
@@ -134,14 +104,6 @@ func run() error {
 
 	serverErrors := make(chan error, 1)
 
-	// Create a new tracer provider with a batch span processor and the given exporter.
-	tp, err := newTracerProvider()
-	if err != nil {
-		logrus.Fatalf("failed to initialize exporter: %s", err)
-	}
-
-	otel.SetTracerProvider(tp)
-
 	go func() {
 		logrus.Infof("main: server started and listening on -> %s", api.Addr)
 
@@ -156,9 +118,6 @@ func run() error {
 
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
 		defer cancel()
-		
-		// Handle shutdown properly so nothing leaks.
-		defer func() { _ = tp.Shutdown(ctx) }()
 
 		if err := api.Shutdown(ctx); err != nil {
 			api.Close()
