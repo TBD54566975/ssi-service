@@ -28,7 +28,7 @@ func GetQueryValue(r *http.Request, param string) *string {
 	return &v
 }
 
-// Convert stream to string
+// Convert stream to string.
 func StreamToString(stream io.Reader) string {
 	buf := new(bytes.Buffer)
 	buf.ReadFrom(stream)
