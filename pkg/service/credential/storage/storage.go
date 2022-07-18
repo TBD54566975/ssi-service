@@ -32,17 +32,16 @@ func NewCredentialStorage(s storage.ServiceStorage) (Storage, error) {
 	case storage.Bolt:
 		gotBolt, ok := s.(*storage.BoltDB)
 		if !ok {
-			errMsg := fmt.Sprintf("trouble instantiating : %s")
+			errMsg := fmt.Sprintf("trouble instantiating : %s", s.Type())
 			return nil, util.LoggingNewError(errMsg)
 		}
+		boltStorage, err := NewBoltCredentialStorage(gotBolt)
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not instantiate credential bolt storage")
+		}
+		return boltStorage, err
 	default:
 		errMsg := fmt.Errorf("unsupported storage type: %s", s.Type())
 		return nil, util.LoggingError(errMsg)
 	}
-
-	boltStorage, err := NewBoltCredentialStorage(gotBolt)
-	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not instantiate credential bolt storage")
-	}
-	return boltStorage, err
 }

@@ -1,8 +1,11 @@
 package storage
 
 import (
+	"fmt"
+
 	"github.com/TBD54566975/ssi-sdk/did"
-	"github.com/pkg/errors"
+
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -21,13 +24,20 @@ type Storage interface {
 
 // NewDIDStorage finds the DID storage impl for a given ServiceStorage value
 func NewDIDStorage(s storage.ServiceStorage) (Storage, error) {
-	gotBolt, ok := s.(*storage.BoltDB)
-	if !ok {
-		return nil, errors.New("unsupported storage type")
+	switch s.Type() {
+	case storage.Bolt:
+		gotBolt, ok := s.(*storage.BoltDB)
+		if !ok {
+			errMsg := fmt.Sprintf("trouble instantiating : %s", s.Type())
+			return nil, util.LoggingNewError(errMsg)
+		}
+		boltStorage, err := NewBoltDIDStorage(gotBolt)
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not instantiate credential bolt storage")
+		}
+		return boltStorage, err
+	default:
+		errMsg := fmt.Errorf("unsupported storage type: %s", s.Type())
+		return nil, util.LoggingError(errMsg)
 	}
-	boltStorage, err := NewBoltDIDStorage(gotBolt)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate DID Bolt storage")
-	}
-	return boltStorage, err
 }
