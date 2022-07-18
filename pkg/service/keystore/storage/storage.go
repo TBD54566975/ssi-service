@@ -1,11 +1,7 @@
 package storage
 
 import (
-	"encoding/base64"
 	"fmt"
-
-	"github.com/pkg/errors"
-	"golang.org/x/crypto/chacha20poly1305"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -38,12 +34,7 @@ type Storage interface {
 	GetKeyDetails(id string) (*KeyDetails, error)
 }
 
-func NewKeyStoreStorage(s storage.ServiceStorage, skPassword string) (Storage, error) {
-	serviceKey, err := generateServiceKey(skPassword)
-	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not generate service key")
-	}
-
+func NewKeyStoreStorage(s storage.ServiceStorage, serviceKey, serviceKeySalt string) (Storage, error) {
 	switch s.Type() {
 	case storage.Bolt:
 		gotBolt, ok := s.(*storage.BoltDB)
@@ -51,7 +42,10 @@ func NewKeyStoreStorage(s storage.ServiceStorage, skPassword string) (Storage, e
 			errMsg := fmt.Sprintf("trouble instantiating : %s", s.Type())
 			return nil, util.LoggingNewError(errMsg)
 		}
-		boltStorage, err := NewBoltKeyStoreStorage(gotBolt, *serviceKey)
+		boltStorage, err := NewBoltKeyStoreStorage(gotBolt, ServiceKey{
+			Key:  serviceKey,
+			Salt: serviceKeySalt,
+		})
 		if err != nil {
 			return nil, util.LoggingErrorMsg(err, "could not instantiate key store bolt storage")
 		}
@@ -60,23 +54,4 @@ func NewKeyStoreStorage(s storage.ServiceStorage, skPassword string) (Storage, e
 		errMsg := fmt.Errorf("unsupported storage type: %s", s.Type())
 		return nil, util.LoggingError(errMsg)
 	}
-}
-
-// generateServiceKey using argon2 for key derivation generate a service key and corresponding salt,
-// base66 encoding both values
-func generateServiceKey(skPassword string) (*ServiceKey, error) {
-	salt, err := util.GenerateSalt(util.Argon2SaltSize)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not generate salt for service key")
-	}
-	key, err := util.Argon2KeyGen(skPassword, salt, chacha20poly1305.KeySize)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not generate key for service key")
-	}
-
-	encoding := base64.StdEncoding
-	return &ServiceKey{
-		Key:  encoding.EncodeToString(key),
-		Salt: encoding.EncodeToString(salt),
-	}, nil
 }

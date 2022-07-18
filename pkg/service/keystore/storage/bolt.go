@@ -1,9 +1,9 @@
 package storage
 
 import (
-	"encoding/json"
 	"fmt"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -34,16 +34,28 @@ func NewBoltKeyStoreStorage(db *storage.BoltDB, key ServiceKey) (*BoltKeyStoreSt
 	return bolt, nil
 }
 
+// TODO(gabe): support more robust service key operations, including rotation, and caching
 func (b BoltKeyStoreStorage) storeServiceKey(key ServiceKey) error {
 	keyBytes, err := json.Marshal(key)
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not marshal service key")
 	}
-
 	if err := b.db.Write(namespace, skKey, keyBytes); err != nil {
 		return util.LoggingErrorMsg(err, "could store marshal service key")
 	}
 	return nil
+}
+
+func (b BoltKeyStoreStorage) getServiceKey() (*ServiceKey, error) {
+	skBytes, err := b.db.Read(namespace, skKey)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not retrieve service key")
+	}
+	var serviceKey ServiceKey
+	if err := json.Unmarshal(skBytes, &serviceKey); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not unmarshal service key")
+	}
+	return &serviceKey, nil
 }
 
 func (b BoltKeyStoreStorage) StoreKey(key StoredKey) error {

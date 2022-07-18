@@ -1,10 +1,13 @@
 package keystore
 
 import (
+	"encoding/base64"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/chacha20poly1305"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -37,11 +40,19 @@ func (s Service) Config() config.KeyStoreServiceConfig {
 }
 
 func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	keyStoreStorage, err := keystorestorage.NewKeyStoreStorage(s, config.ServiceKeyPassword)
+	// First, generate a service key
+	serviceKey, serviceKeySalt, err := GenerateServiceKey(config.ServiceKeyPassword)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not generate service key")
+	}
+
+	// Next, instantiate the key storage
+	keyStoreStorage, err := keystorestorage.NewKeyStoreStorage(s, serviceKey, serviceKeySalt)
 	if err != nil {
 		errMsg := "could not instantiate storage for the keystore service"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
+
 	return &Service{
 		storage: keyStoreStorage,
 		config:  config,
@@ -83,4 +94,49 @@ func (s Service) GetKeyDetails(request GetKeyDetailsRequest) (*GetKeyDetailsResp
 		Controller: gotKeyDetails.Controller,
 		CreatedAt:  gotKeyDetails.CreatedAt,
 	}, nil
+}
+
+// GenerateServiceKey using argon2 for key derivation generate a service key and corresponding salt,
+// base66 encoding both values.
+func GenerateServiceKey(skPassword string) (key, salt string, err error) {
+	saltBytes, err := util.GenerateSalt(util.Argon2SaltSize)
+	if err != nil {
+		return "", "", errors.Wrap(err, "could not generate salt for service key")
+	}
+
+	keyBytes, err := util.Argon2KeyGen(skPassword, saltBytes, chacha20poly1305.KeySize)
+	if err != nil {
+		return "", "", errors.Wrap(err, "could not generate key for service key")
+	}
+
+	encoding := base64.StdEncoding
+	key = encoding.EncodeToString(keyBytes)
+	salt = encoding.EncodeToString(saltBytes)
+	return
+}
+
+// EncryptKey encrypts another key with the service key, after marshaling it, using xchacha20-poly1305
+func EncryptKey(serviceKey []byte, key interface{}) ([]byte, error) {
+	keyBytes, err := json.Marshal(key)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not marshal key before encryption")
+	}
+	encryptedKey, err := util.XChaCha20Poly1305Encrypt(serviceKey, keyBytes)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not encrypt key with service key")
+	}
+	return encryptedKey, nil
+}
+
+// DecryptKey encrypts another key with the service key, after marshaling it, using xchacha20-poly1305
+func DecryptKey(serviceKey, encryptedKey []byte) (interface{}, error) {
+	decryptedKeyBytes, err := util.XChaCha20Poly1305Decrypt(serviceKey, encryptedKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not decrypt key with service key")
+	}
+	var decryptedKey interface{}
+	if err := json.Unmarshal(decryptedKeyBytes, &decryptedKey); err != nil {
+		return nil, errors.Wrap(err, "could not unmarshal key after encryption")
+	}
+	return decryptedKey, nil
 }
