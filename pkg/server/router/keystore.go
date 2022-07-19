@@ -50,6 +50,17 @@ func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) 
 	}, nil
 }
 
+// StoreKey godoc
+// @Summary      Store Key
+// @Description  Stores a key to be used by the service
+// @Tags         KeyStoreAPI
+// @Accept       json
+// @Produce      json
+// @Param        request  body      StoreKeyRequest  true  "request body"
+// @Success      201
+// @Failure      400      {string}  string  "Bad request"
+// @Failure      500      {string}  string  "Internal server error"
+// @Router       /v1/keys [put]
 func (ksr *KeyStoreRouter) StoreKey(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request StoreKeyRequest
 	if err := framework.Decode(r, &request); err != nil {
@@ -89,6 +100,16 @@ type GetKeyDetailsResponse struct {
 	CreatedAt  string         `json:"createdAt,omitempty"`
 }
 
+// GetKeyDetails godoc
+// @Summary      Get Details For Key
+// @Description  Get details about a stored key
+// @Tags         KeyStoreAPI
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "ID"
+// @Success      200  {object}  GetKeyDetailsResponse
+// @Failure      400  {string}  string  "Bad request"
+// @Router       /v1/keys/{id} [get]
 func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
