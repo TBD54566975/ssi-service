@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"time"
 
-	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/chacha20poly1305"
@@ -115,28 +114,20 @@ func GenerateServiceKey(skPassword string) (key, salt string, err error) {
 	return
 }
 
-// EncryptKey encrypts another key with the service key, after marshaling it, using xchacha20-poly1305
-func EncryptKey(serviceKey []byte, key interface{}) ([]byte, error) {
-	keyBytes, err := json.Marshal(key)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not marshal key before encryption")
-	}
-	encryptedKey, err := util.XChaCha20Poly1305Encrypt(serviceKey, keyBytes)
+// EncryptKey encrypts another key with the service key using xchacha20-poly1305
+func EncryptKey(serviceKey, key []byte) ([]byte, error) {
+	encryptedKey, err := util.XChaCha20Poly1305Encrypt(serviceKey, key)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not encrypt key with service key")
 	}
 	return encryptedKey, nil
 }
 
-// DecryptKey encrypts another key with the service key, after marshaling it, using xchacha20-poly1305
-func DecryptKey(serviceKey, encryptedKey []byte) (interface{}, error) {
-	decryptedKeyBytes, err := util.XChaCha20Poly1305Decrypt(serviceKey, encryptedKey)
+// DecryptKey encrypts another key with the service key using xchacha20-poly1305
+func DecryptKey(serviceKey, encryptedKey []byte) ([]byte, error) {
+	decryptedKey, err := util.XChaCha20Poly1305Decrypt(serviceKey, encryptedKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not decrypt key with service key")
-	}
-	var decryptedKey interface{}
-	if err := json.Unmarshal(decryptedKeyBytes, &decryptedKey); err != nil {
-		return nil, errors.Wrap(err, "could not unmarshal key after encryption")
 	}
 	return decryptedKey, nil
 }

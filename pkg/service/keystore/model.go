@@ -4,7 +4,7 @@ type StoreKeyRequest struct {
 	ID         string
 	Type       string
 	Controller string
-	Key        interface{}
+	Key        []byte
 }
 
 type GetKeyDetailsRequest struct {

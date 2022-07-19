@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -25,25 +26,27 @@ func NewKeyStoreRouter(s svcframework.Service) (*KeyStoreRouter, error) {
 	if !ok {
 		return nil, fmt.Errorf("could not create key store router with service type: %s", s.Type())
 	}
-	return &KeyStoreRouter{
-		service: keyStoreService,
-	}, nil
+	return &KeyStoreRouter{service: keyStoreService}, nil
 }
 
 type StoreKeyRequest struct {
-	ID         string      `json:"id" validate:"required"`
-	Type       string      `json:"type,omitempty" validate:"required"`
-	Controller string      `json:"controller,omitempty" validate:"required"`
-	Key        interface{} `json:"key,omitempty" validate:"required"`
+	ID               string `json:"id" validate:"required"`
+	Type             string `json:"type,omitempty" validate:"required"`
+	Controller       string `json:"controller,omitempty" validate:"required"`
+	Base58PrivateKey string `json:"base58PrivateKey,omitempty" validate:"required"`
 }
 
-func (sk StoreKeyRequest) ToServiceRequest() keystore.StoreKeyRequest {
-	return keystore.StoreKeyRequest{
+func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) {
+	privateKeyBytes, err := base58.Decode(sk.Base58PrivateKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not decode base58 private key")
+	}
+	return &keystore.StoreKeyRequest{
 		ID:         sk.ID,
 		Type:       sk.Type,
 		Controller: sk.Controller,
-		Key:        sk.Key,
-	}
+		Key:        privateKeyBytes,
+	}, nil
 }
 
 func (ksr *KeyStoreRouter) StoreKey(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -54,8 +57,14 @@ func (ksr *KeyStoreRouter) StoreKey(ctx context.Context, w http.ResponseWriter, 
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	req := request.ToServiceRequest()
-	if err := ksr.service.StoreKey(req); err != nil {
+	req, err := request.ToServiceRequest()
+	if err != nil {
+		errMsg := "could not process store key request"
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	if err := ksr.service.StoreKey(*req); err != nil {
 		errMsg := fmt.Sprintf("could not store key: %s", request.ID)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)

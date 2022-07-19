@@ -1,7 +1,7 @@
 github.com/BurntSushi/toml v1.1.0 h1:ksErzDEI1khOiGPgpwuI7x2ebx/uXQNw7xJpn9Eq1+I=
 github.com/BurntSushi/toml v1.1.0/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
-github.com/TBD54566975/ssi-sdk v0.0.0-20220705213209-17514605afb5 h1:UDTN4mYVOsFKH8yDs7kljkT4OMZIkmgGuDXOGrsZGq8=
-github.com/TBD54566975/ssi-sdk v0.0.0-20220705213209-17514605afb5/go.mod h1:VqKlHw4Oz1ncfavUamyO16VckHMz9APwiYd3GFc/Jgg=
+github.com/TBD54566975/ssi-sdk v0.0.0-20220719010135-e2fdcfb80e49 h1:BozkJ4jg1nZyTzBs/ltNq+KtTuveZDh48Ax85cVh0M4=
+github.com/TBD54566975/ssi-sdk v0.0.0-20220719010135-e2fdcfb80e49/go.mod h1:uWJkLbobBINP2QFVFL5kku5GtCmbmggzCHh8sTH5NYs=
 github.com/ardanlabs/conf v1.5.0 h1:5TwP6Wu9Xi07eLFEpiCUF3oQXh9UzHMDVnD3u/I5d5c=
 github.com/ardanlabs/conf v1.5.0/go.mod h1:ILsMo9dMqYzCxDjDXTiwMI0IgxOJd0MOiucbQY2wlJw=
 github.com/bits-and-blooms/bitset v1.2.2/go.mod h1:gIdJ4wp64HaoK2YrL1Q5/N7Y16edYb8uY+O0FJTyyDA=
@@ -30,8 +30,6 @@ github.com/go-playground/validator/v10 v10.11.0 h1:0W+xRM511GY47Yy3bZUbJVitCNg2B
 github.com/go-playground/validator/v10 v10.11.0/go.mod h1:i+3WkQ1FvaUjjxh1kSvIA4dMGDBiPU55YFDl0WbKdWU=
 github.com/goccy/go-json v0.9.7/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
 github.com/goccy/go-json v0.9.7/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
-github.com/goccy/go-json v0.9.8/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
-github.com/goccy/go-json v0.9.8/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
 github.com/goccy/go-json v0.9.10 h1:hCeNmprSNLB8B8vQKWl6DpuH0t60oEs+TAk9a7CScKc=
 github.com/goccy/go-json v0.9.10/go.mod h1:6MelG93GURQebXPDq3khkgXZkazVtN9CRI+MGFi0w8I=
 github.com/google/go-cmp v0.3.1/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=

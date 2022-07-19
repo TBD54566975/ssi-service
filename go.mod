@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/BurntSushi/toml v1.1.0
-	github.com/TBD54566975/ssi-sdk v0.0.0-20220705213209-17514605afb5
+	github.com/TBD54566975/ssi-sdk v0.0.0-20220719010135-e2fdcfb80e49
 	github.com/ardanlabs/conf v1.5.0
 	github.com/boltdb/bolt v1.3.1
 	github.com/dimfeld/httptreemux/v5 v5.4.0
