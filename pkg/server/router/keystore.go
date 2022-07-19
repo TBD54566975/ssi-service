@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -30,10 +31,10 @@ func NewKeyStoreRouter(s svcframework.Service) (*KeyStoreRouter, error) {
 }
 
 type StoreKeyRequest struct {
-	ID               string `json:"id" validate:"required"`
-	Type             string `json:"type,omitempty" validate:"required"`
-	Controller       string `json:"controller,omitempty" validate:"required"`
-	Base58PrivateKey string `json:"base58PrivateKey,omitempty" validate:"required"`
+	ID               string         `json:"id" validate:"required"`
+	Type             crypto.KeyType `json:"type,omitempty" validate:"required"`
+	Controller       string         `json:"controller,omitempty" validate:"required"`
+	Base58PrivateKey string         `json:"base58PrivateKey,omitempty" validate:"required"`
 }
 
 func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) {
@@ -57,6 +58,14 @@ func (ksr *KeyStoreRouter) StoreKey(ctx context.Context, w http.ResponseWriter, 
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
+	// check if the provided key type is supported. support entails being able to serialize/deserialize, in addition
+	// to facilitating signing/verification and encryption/decryption support.
+	if !crypto.IsSupportedKeyType(request.Type) {
+		errMsg := fmt.Sprintf("could not process store key request, unsupported key type: %s", request.Type)
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
 	req, err := request.ToServiceRequest()
 	if err != nil {
 		errMsg := "could not process store key request"
@@ -74,10 +83,10 @@ func (ksr *KeyStoreRouter) StoreKey(ctx context.Context, w http.ResponseWriter, 
 }
 
 type GetKeyDetailsResponse struct {
-	ID         string `json:"id,omitempty"`
-	Type       string `json:"type,omitempty"`
-	Controller string `json:"controller,omitempty"`
-	CreatedAt  string `json:"createdAt,omitempty"`
+	ID         string         `json:"id,omitempty"`
+	Type       crypto.KeyType `json:"type,omitempty"`
+	Controller string         `json:"controller,omitempty"`
+	CreatedAt  string         `json:"createdAt,omitempty"`
 }
 
 func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
