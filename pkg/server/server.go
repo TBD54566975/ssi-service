@@ -9,6 +9,7 @@ import (
 	"path"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -25,6 +26,7 @@ const (
 	DIDsPrefix        = "/dids"
 	SchemasPrefix     = "/schemas"
 	CredentialsPrefix = "/credentials"
+	KeyStorePrefix    = "/keys"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -82,6 +84,8 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 		return s.SchemaAPI(service)
 	case svcframework.Credential:
 		return s.CredentialAPI(service)
+	case svcframework.KeyStore:
+		return s.KeyStoreAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
@@ -129,5 +133,18 @@ func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodGet, handlerPath, credRouter.GetCredentials)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), credRouter.GetCredential)
 	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), credRouter.DeleteCredential)
+	return
+}
+
+func (s *SSIServer) KeyStoreAPI(service svcframework.Service) (err error) {
+	keyStoreRouter, err := router.NewKeyStoreRouter(service)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not create key store router")
+	}
+
+	handlerPath := V1Prefix + KeyStorePrefix
+
+	s.Handle(http.MethodPut, handlerPath, keyStoreRouter.StoreKey)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), keyStoreRouter.GetKeyDetails)
 	return
 }

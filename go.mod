@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/BurntSushi/toml v1.1.0
-	github.com/TBD54566975/ssi-sdk v0.0.0-20220705213209-17514605afb5
+	github.com/TBD54566975/ssi-sdk v0.0.0-20220719010135-e2fdcfb80e49
 	github.com/ardanlabs/conf v1.5.0
 	github.com/boltdb/bolt v1.3.1
 	github.com/dimfeld/httptreemux/v5 v5.4.0
@@ -46,7 +46,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	go.opentelemetry.io/otel v1.8.0 // indirect
-	golang.org/x/sys v0.0.0-20220704084225-05e143d24a9e // indirect
+	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8 // indirect
 	golang.org/x/term v0.0.0-20220526004731-065cf7ba2467 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect

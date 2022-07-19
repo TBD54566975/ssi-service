@@ -2,14 +2,15 @@ package config
 
 import (
 	"fmt"
-	"github.com/BurntSushi/toml"
-	"github.com/ardanlabs/conf"
-	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"reflect"
 	"time"
+
+	"github.com/BurntSushi/toml"
+	"github.com/ardanlabs/conf"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -32,7 +33,7 @@ type ServerConfig struct {
 	ReadTimeout     time.Duration `toml:"read_timeout" conf:"default:5s"`
 	WriteTimeout    time.Duration `toml:"write_timeout" conf:"default:5s"`
 	ShutdownTimeout time.Duration `toml:"shutdown_timeout" conf:"default:5s"`
-	LogLocation     string        `toml:"log_location"`
+	LogLocation     string        `toml:"log_location" conf:"default:log"`
 	LogLevel        string        `toml:"log_level" conf:"default:debug"`
 }
 
@@ -48,6 +49,7 @@ type ServicesConfig struct {
 	DIDConfig        DIDServiceConfig        `toml:"did,omitempty"`
 	SchemaConfig     SchemaServiceConfig     `toml:"schema,omitempty"`
 	CredentialConfig CredentialServiceConfig `toml:"credential,omitempty"`
+	KeyStoreConfig   KeyStoreServiceConfig   `toml:"keystore,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
@@ -82,6 +84,13 @@ func (s *SchemaServiceConfig) IsEmpty() bool {
 type CredentialServiceConfig struct {
 	*BaseServiceConfig
 	// TODO(gabe) supported key and signature types
+}
+
+type KeyStoreServiceConfig struct {
+	*BaseServiceConfig
+	// Service key password. Used by a KDF whose key is used by a symmetric cypher for key encryption.
+	// The password is salted before usage.
+	ServiceKeyPassword string
 }
 
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
@@ -133,6 +142,13 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 			},
 			SchemaConfig: SchemaServiceConfig{
 				BaseServiceConfig: &BaseServiceConfig{Name: "schema"},
+			},
+			CredentialConfig: CredentialServiceConfig{
+				BaseServiceConfig: &BaseServiceConfig{Name: "credential"},
+			},
+			KeyStoreConfig: KeyStoreServiceConfig{
+				BaseServiceConfig:  &BaseServiceConfig{Name: "keystore"},
+				ServiceKeyPassword: "default-password",
 			},
 		}
 	} else {

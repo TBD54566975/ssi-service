@@ -34,7 +34,7 @@ func Build() error {
 // Clean deletes any build artifacts.
 func Clean() {
 	fmt.Println("Cleaning...")
-	os.RemoveAll("bin")
+	_ = os.RemoveAll("bin")
 }
 
 // Run the service via docker-compose
