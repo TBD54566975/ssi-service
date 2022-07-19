@@ -69,14 +69,6 @@ func (ksr *KeyStoreRouter) StoreKey(ctx context.Context, w http.ResponseWriter, 
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	// check if the provided key type is supported. support entails being able to serialize/deserialize, in addition
-	// to facilitating signing/verification and encryption/decryption support.
-	if !crypto.IsSupportedKeyType(request.Type) {
-		errMsg := fmt.Sprintf("could not process store key request, unsupported key type: %s", request.Type)
-		logrus.Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
-	}
-
 	req, err := request.ToServiceRequest()
 	if err != nil {
 		errMsg := "could not process store key request"

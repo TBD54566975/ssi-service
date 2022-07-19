@@ -2,8 +2,10 @@ package keystore
 
 import (
 	"encoding/base64"
+	"fmt"
 	"time"
 
+	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/chacha20poly1305"
@@ -62,6 +64,13 @@ func (s Service) StoreKey(request StoreKeyRequest) error {
 
 	logrus.Debugf("storing key: %+v", request)
 
+	// check if the provided key type is supported. support entails being able to serialize/deserialize, in addition
+	// to facilitating signing/verification and encryption/decryption support.
+	if !crypto.IsSupportedKeyType(request.Type) {
+		errMsg := fmt.Sprintf("could not process store key request, unsupported key type: %s", request.Type)
+		return util.LoggingNewError(errMsg)
+	}
+
 	key := keystorestorage.StoredKey{
 		ID:         request.ID,
 		Controller: request.Controller,
@@ -70,7 +79,8 @@ func (s Service) StoreKey(request StoreKeyRequest) error {
 		CreatedAt:  time.Now().Format(time.RFC3339),
 	}
 	if err := s.storage.StoreKey(key); err != nil {
-		return errors.Wrapf(err, "could not store key: %s", request.ID)
+		err := errors.Wrapf(err, "could not store key: %s", request.ID)
+		return util.LoggingError(err)
 	}
 	return nil
 }
@@ -82,10 +92,12 @@ func (s Service) GetKeyDetails(request GetKeyDetailsRequest) (*GetKeyDetailsResp
 	id := request.ID
 	gotKeyDetails, err := s.storage.GetKeyDetails(id)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not get key details for key: %s", id)
+		err := errors.Wrapf(err, "could not get key details for key: %s", id)
+		return nil, util.LoggingError(err)
 	}
 	if gotKeyDetails == nil {
-		return nil, errors.Wrapf(err, "key with id<%s> could not be found", id)
+		err := errors.Wrapf(err, "key with id<%s> could not be found", id)
+		return nil, util.LoggingError(err)
 	}
 	return &GetKeyDetailsResponse{
 		ID:         gotKeyDetails.ID,
@@ -100,12 +112,14 @@ func (s Service) GetKeyDetails(request GetKeyDetailsRequest) (*GetKeyDetailsResp
 func GenerateServiceKey(skPassword string) (key, salt string, err error) {
 	saltBytes, err := util.GenerateSalt(util.Argon2SaltSize)
 	if err != nil {
-		return "", "", errors.Wrap(err, "could not generate salt for service key")
+		err := errors.Wrap(err, "could not generate salt for service key")
+		return "", "", util.LoggingError(err)
 	}
 
 	keyBytes, err := util.Argon2KeyGen(skPassword, saltBytes, chacha20poly1305.KeySize)
 	if err != nil {
-		return "", "", errors.Wrap(err, "could not generate key for service key")
+		err := errors.Wrap(err, "could not generate key for service key")
+		return "", "", util.LoggingError(err)
 	}
 
 	encoding := base64.StdEncoding
