@@ -2,10 +2,13 @@ package did
 
 import (
 	"fmt"
+
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/did/storage"
 )
 
@@ -18,6 +21,9 @@ type keyDIDHandler struct {
 }
 
 func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error) {
+
+	logrus.Debugf("creating DID: %+v", request)
+
 	// create the DID
 	privKey, doc, err := did.GenerateDIDKey(request.KeyType)
 	if err != nil {
@@ -50,6 +56,9 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 }
 
 func (h *keyDIDHandler) GetDID(request GetDIDRequest) (*GetDIDResponse, error) {
+
+	logrus.Debugf("getting DID: %+v", request)
+
 	id := request.ID
 	gotDID, err := h.storage.GetDID(id)
 	if err != nil {

@@ -1,8 +1,11 @@
 package storage
 
 import (
+	"fmt"
+
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
-	"github.com/pkg/errors"
+
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -20,13 +23,20 @@ type Storage interface {
 
 // NewSchemaStorage finds the schema storage impl for a given ServiceStorage value
 func NewSchemaStorage(s storage.ServiceStorage) (Storage, error) {
-	gotBolt, ok := s.(*storage.BoltDB)
-	if !ok {
-		return nil, errors.New("unsupported storage type")
+	switch s.Type() {
+	case storage.Bolt:
+		gotBolt, ok := s.(*storage.BoltDB)
+		if !ok {
+			errMsg := fmt.Sprintf("trouble instantiating : %s", s.Type())
+			return nil, util.LoggingNewError(errMsg)
+		}
+		boltStorage, err := NewBoltSchemaStorage(gotBolt)
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not instantiate schema bolt storage")
+		}
+		return boltStorage, err
+	default:
+		errMsg := fmt.Errorf("unsupported storage type: %s", s.Type())
+		return nil, util.LoggingError(errMsg)
 	}
-	boltStorage, err := NewBoltSchemaStorage(gotBolt)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate schema bolt storage")
-	}
-	return boltStorage, err
 }

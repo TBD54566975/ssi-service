@@ -267,6 +267,17 @@ definitions:
       status:
         type: string
     type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetKeyDetailsResponse:
+    properties:
+      controller:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      type:
+        type: string
+    type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse:
     properties:
       schema:
@@ -278,6 +289,22 @@ definitions:
         items:
           $ref: '#/definitions/schema.VCJSONSchema'
         type: array
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest:
+    properties:
+      base58PrivateKey:
+        type: string
+      controller:
+        type: string
+      id:
+        type: string
+      type:
+        type: string
+    required:
+    - base58PrivateKey
+    - controller
+    - id
+    - type
     type: object
   pkg_server_router.CreateCredentialRequest:
     properties:
@@ -373,6 +400,17 @@ definitions:
       status:
         type: string
     type: object
+  pkg_server_router.GetKeyDetailsResponse:
+    properties:
+      controller:
+        type: string
+      createdAt:
+        type: string
+      id:
+        type: string
+      type:
+        type: string
+    type: object
   pkg_server_router.GetSchemaResponse:
     properties:
       schema:
@@ -384,6 +422,22 @@ definitions:
         items:
           $ref: '#/definitions/schema.VCJSONSchema'
         type: array
+    type: object
+  pkg_server_router.StoreKeyRequest:
+    properties:
+      base58PrivateKey:
+        type: string
+      controller:
+        type: string
+      id:
+        type: string
+      type:
+        type: string
+    required:
+    - base58PrivateKey
+    - controller
+    - id
+    - type
     type: object
   schema.JSONSchema:
     additionalProperties: true
@@ -429,7 +483,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse'
+            $ref: '#/definitions/pkg_server_router.GetHealthCheckResponse'
       summary: Health Check
       tags:
       - HealthCheck
@@ -580,7 +634,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDMethodsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDMethodsResponse'
       summary: Get DID Methods
       tags:
       - DecentralizedIdentityAPI
@@ -595,7 +649,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -607,7 +661,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateDIDByMethodResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -630,7 +684,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -647,7 +701,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDByMethodResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -655,6 +709,59 @@ paths:
       summary: Get DID
       tags:
       - DecentralizedIdentityAPI
+  /v1/keys:
+    put:
+      consumes:
+      - application/json
+      description: Stores a key to be used by the service
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ""
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Store Key
+      tags:
+      - KeyStoreAPI
+  /v1/keys/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get details about a stored key
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetKeyDetailsResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Get Details For Key
+      tags:
+      - KeyStoreAPI
   /v1/schemas:
     get:
       consumes:

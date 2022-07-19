@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
@@ -26,7 +27,7 @@ func InstantiateSSIService(config config.ServicesConfig) (*SSIService, error) {
 	}
 	services, err := instantiateServices(config)
 	if err != nil {
-		errMsg := "could not instantiate the verifiable credentials service"
+		errMsg := "could not instantiate the ssi service"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	return &SSIService{services: services}, nil

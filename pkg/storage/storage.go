@@ -12,6 +12,7 @@ const (
 
 // ServiceStorage describes the api for storage independent of DB providers
 type ServiceStorage interface {
+	Type() Storage
 	Close() error
 	Write(namespace, key string, value []byte) error
 	Read(namespace, key string) ([]byte, error)

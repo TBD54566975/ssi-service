@@ -32,12 +32,13 @@ func LoggingNewError(msg string) error {
 
 // LoggingErrorMsg is a utility to combine logging an error, and returning and error with a message
 func LoggingErrorMsg(err error, msg string) error {
-	logrus.WithError(err).Error(SanitizingLog(msg))
+	logrus.WithError(err).Error(SanitizeLog(msg))
 	return errors.Wrap(err, msg)
 }
 
-// Sanitizing before it is logged
-func SanitizingLog(log string) string {
+// SanitizeLog prevents certain classes of injection attacks before logging
+// https://codeql.github.com/codeql-query-help/go/go-log-injection/
+func SanitizeLog(log string) string {
 	escapedLog := strings.Replace(log, "\n", "", -1)
 	return strings.Replace(escapedLog, "\r", "", -1)
 }
