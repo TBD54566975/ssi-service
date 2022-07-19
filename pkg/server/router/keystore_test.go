@@ -59,7 +59,7 @@ func TestKeyStoreRouter(t *testing.T) {
 			Key:        []byte("bad"),
 		})
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not process store key request, unsupported key type: bad")
+		assert.Contains(tt, err.Error(), "unsupported key type: bad")
 
 		// store a valid key
 		_, privKey, err := crypto.GenerateKeyByKeyType(crypto.Ed25519)

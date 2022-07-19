@@ -16,14 +16,17 @@ import (
 	"github.com/dimfeld/httptreemux/v5"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
+	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -88,18 +91,21 @@ func TestReadinessAPI(t *testing.T) {
 
 func TestDIDAPI(t *testing.T) {
 	t.Run("Test Get DID Methods", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
 		// remove the db file after the test
 		tt.Cleanup(func() {
+			_ = bolt.Close()
 			_ = os.Remove(storage.DBFile)
 		})
 
-		didService := newDIDService(tt)
+		didService := newDIDService(tt, bolt)
 
 		// get DID methods
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids", nil)
 		w := httptest.NewRecorder()
 
-		err := didService.GetDIDMethods(newRequestContext(), w, req)
+		err = didService.GetDIDMethods(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 		assert.Equal(tt, http.StatusOK, w.Result().StatusCode)
 
@@ -112,12 +118,15 @@ func TestDIDAPI(t *testing.T) {
 	})
 
 	t.Run("Test Create DID By Method: Key", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
 		// remove the db file after the test
 		tt.Cleanup(func() {
+			_ = bolt.Close()
 			_ = os.Remove(storage.DBFile)
 		})
 
-		didService := newDIDService(tt)
+		didService := newDIDService(tt, bolt)
 
 		// create DID by method - key - missing body
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", nil)
@@ -126,7 +135,7 @@ func TestDIDAPI(t *testing.T) {
 			"method": "key",
 		}
 
-		err := didService.CreateDIDByMethod(newRequestContextWithParams(params), w, req)
+		err = didService.CreateDIDByMethod(newRequestContextWithParams(params), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid create DID request")
 
@@ -157,12 +166,15 @@ func TestDIDAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get DID By Method", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
 		// remove the db file after the test
 		tt.Cleanup(func() {
+			_ = bolt.Close()
 			_ = os.Remove(storage.DBFile)
 		})
 
-		didService := newDIDService(tt)
+		didService := newDIDService(tt, bolt)
 
 		// get DID by method
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/bad/worse", nil)
@@ -173,7 +185,7 @@ func TestDIDAPI(t *testing.T) {
 			"method": "bad",
 			"id":     "worse",
 		}
-		err := didService.GetDIDByMethod(newRequestContextWithParams(badParams), w, req)
+		err = didService.GetDIDByMethod(newRequestContextWithParams(badParams), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not get DID for method<bad>")
 
@@ -221,12 +233,7 @@ func TestDIDAPI(t *testing.T) {
 	})
 }
 
-func newDIDService(t *testing.T) *router.DIDRouter {
-	// set up DID service
-	bolt, err := storage.NewBoltDB()
-	require.NoError(t, err)
-	require.NotEmpty(t, bolt)
-
+func newDIDService(t *testing.T, bolt *storage.BoltDB) *router.DIDRouter {
 	serviceConfig := config.DIDServiceConfig{Methods: []string{string(did.KeyMethod)}}
 	didService, err := did.NewDIDService(serviceConfig, bolt)
 	require.NoError(t, err)
@@ -242,12 +249,15 @@ func newDIDService(t *testing.T) *router.DIDRouter {
 
 func TestSchemaAPI(t *testing.T) {
 	t.Run("Test Create Schema", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
 		// remove the db file after the test
 		tt.Cleanup(func() {
+			_ = bolt.Close()
 			_ = os.Remove(storage.DBFile)
 		})
 
-		schemaService := newSchemaService(tt)
+		schemaService := newSchemaService(tt, bolt)
 
 		simpleSchema := map[string]interface{}{
 			"type": "object",
@@ -264,7 +274,7 @@ func TestSchemaAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		w := httptest.NewRecorder()
 
-		err := schemaService.CreateSchema(newRequestContext(), w, req)
+		err = schemaService.CreateSchema(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid create schema request")
 
@@ -286,17 +296,20 @@ func TestSchemaAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Schemas", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
 		// remove the db file after the test
 		tt.Cleanup(func() {
+			_ = bolt.Close()
 			_ = os.Remove(storage.DBFile)
 		})
 
-		schemaService := newSchemaService(tt)
+		schemaService := newSchemaService(tt, bolt)
 
 		// get schema that doesn't exist
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas/bad", nil)
-		err := schemaService.GetSchemaByID(newRequestContext(), w, req)
+		err = schemaService.GetSchemaByID(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "cannot get schema without ID parameter")
 
@@ -377,12 +390,7 @@ func TestSchemaAPI(t *testing.T) {
 	})
 }
 
-func newSchemaService(t *testing.T) *router.SchemaRouter {
-	// set up schema service
-	bolt, err := storage.NewBoltDB()
-	require.NoError(t, err)
-	require.NotEmpty(t, bolt)
-
+func newSchemaService(t *testing.T, bolt *storage.BoltDB) *router.SchemaRouter {
 	schemaService, err := schema.NewSchemaService(config.SchemaServiceConfig{}, bolt)
 	require.NoError(t, err)
 	require.NotEmpty(t, schemaService)
@@ -397,12 +405,15 @@ func newSchemaService(t *testing.T) *router.SchemaRouter {
 
 func TestCredentialAPI(t *testing.T) {
 	t.Run("Test Create Credential", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
 		// remove the db file after the test
 		tt.Cleanup(func() {
+			_ = bolt.Close()
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt)
+		credService := newCredentialService(tt, bolt)
 
 		// missing required field: data
 		badCredRequest := router.CreateCredentialRequest{
@@ -414,7 +425,7 @@ func TestCredentialAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", badRequestValue)
 		w := httptest.NewRecorder()
 
-		err := credService.CreateCredential(newRequestContext(), w, req)
+		err = credService.CreateCredential(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid create credential request")
 
@@ -445,18 +456,21 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Credential By ID", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
 		// remove the db file after the test
 		tt.Cleanup(func() {
+			_ = bolt.Close()
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt)
+		credService := newCredentialService(tt, bolt)
 
 		w := httptest.NewRecorder()
 
 		// get a cred that doesn't exit
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/credentials/bad", nil)
-		err := credService.GetCredential(newRequestContext(), w, req)
+		err = credService.GetCredential(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "cannot get credential without ID parameter")
 
@@ -503,12 +517,15 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Credential By Schema", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
 		// remove the db file after the test
 		tt.Cleanup(func() {
+			_ = bolt.Close()
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt)
+		credService := newCredentialService(tt, bolt)
 
 		w := httptest.NewRecorder()
 
@@ -525,12 +542,14 @@ func TestCredentialAPI(t *testing.T) {
 		}
 		requestValue := newRequestValue(tt, createCredRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
-		err := credService.CreateCredential(newRequestContext(), w, req)
+		err = credService.CreateCredential(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
+
+		w.Flush()
 
 		// get credential by schema
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?schema=%s", schemaID), nil)
@@ -547,12 +566,15 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Credential By Issuer", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
 		// remove the db file after the test
 		tt.Cleanup(func() {
+			_ = bolt.Close()
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt)
+		credService := newCredentialService(tt, bolt)
 
 		w := httptest.NewRecorder()
 
@@ -568,12 +590,14 @@ func TestCredentialAPI(t *testing.T) {
 		}
 		requestValue := newRequestValue(tt, createCredRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
-		err := credService.CreateCredential(newRequestContext(), w, req)
+		err = credService.CreateCredential(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
+
+		w.Flush()
 
 		// get credential by issuer id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?issuer=%s", issuerID), nil)
@@ -590,12 +614,15 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Credential By Subject", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
 		// remove the db file after the test
 		tt.Cleanup(func() {
+			_ = bolt.Close()
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt)
+		credService := newCredentialService(tt, bolt)
 
 		w := httptest.NewRecorder()
 
@@ -611,7 +638,7 @@ func TestCredentialAPI(t *testing.T) {
 		}
 		requestValue := newRequestValue(tt, createCredRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
-		err := credService.CreateCredential(newRequestContext(), w, req)
+		err = credService.CreateCredential(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var resp router.CreateCredentialResponse
@@ -633,7 +660,15 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Delete Credential", func(tt *testing.T) {
-		credService := newCredentialService(tt)
+		bolt, err := storage.NewBoltDB()
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		credService := newCredentialService(tt, bolt)
 
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  "did:abc:123",
@@ -647,12 +682,14 @@ func TestCredentialAPI(t *testing.T) {
 		requestValue := newRequestValue(tt, createCredRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		w := httptest.NewRecorder()
-		err := credService.CreateCredential(newRequestContext(), w, req)
+		err = credService.CreateCredential(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
+
+		w.Flush()
 
 		// get credential by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", resp.Credential.ID), nil)
@@ -665,10 +702,14 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, getCredResp)
 		assert.Equal(tt, resp.Credential.ID, getCredResp.ID)
 
+		w.Flush()
+
 		// delete it
 		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", resp.Credential.ID), nil)
 		err = credService.DeleteCredential(newRequestContextWithParams(map[string]string{"id": resp.Credential.ID}), w, req)
 		assert.NoError(tt, err)
+
+		w.Flush()
 
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", resp.Credential.ID), nil)
@@ -678,12 +719,7 @@ func TestCredentialAPI(t *testing.T) {
 	})
 }
 
-func newCredentialService(t *testing.T) *router.CredentialRouter {
-	// set up credential service
-	bolt, err := storage.NewBoltDB()
-	require.NoError(t, err)
-	require.NotEmpty(t, bolt)
-
+func newCredentialService(t *testing.T, bolt *storage.BoltDB) *router.CredentialRouter {
 	credentialService, err := credential.NewCredentialService(config.CredentialServiceConfig{}, bolt)
 	require.NoError(t, err)
 	require.NotEmpty(t, credentialService)
@@ -694,6 +730,119 @@ func newCredentialService(t *testing.T) *router.CredentialRouter {
 	require.NotEmpty(t, credentialRouter)
 
 	return credentialRouter
+}
+
+func TestKeyStoreAPI(t *testing.T) {
+	t.Run("Test Store Key", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		keyStoreService := newKeyStoreService(tt, bolt)
+		w := httptest.NewRecorder()
+
+		// bad key type
+		badKeyStoreRequest := router.StoreKeyRequest{
+			ID:               "test-kid",
+			Type:             "bad",
+			Controller:       "me",
+			Base58PrivateKey: "bad",
+		}
+		badRequestValue := newRequestValue(tt, badKeyStoreRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", badRequestValue)
+		err = keyStoreService.StoreKey(newRequestContext(), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "could not store key: test-kid, unsupported key type: bad")
+
+		// reset the http recorder
+		w.Flush()
+
+		// store a valid key
+		_, privKey, err := crypto.GenerateKeyByKeyType(crypto.Ed25519)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, privKey)
+
+		privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
+		assert.NoError(tt, err)
+
+		// good request
+		storeKeyRequest := router.StoreKeyRequest{
+			ID:               "did:test:me#key-1",
+			Type:             crypto.Ed25519,
+			Controller:       "did:test:me",
+			Base58PrivateKey: base58.Encode(privKeyBytes),
+		}
+		requestValue := newRequestValue(tt, storeKeyRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
+		err = keyStoreService.StoreKey(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+	})
+
+	t.Run("Test Get Key Details", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		keyStoreService := newKeyStoreService(tt, bolt)
+		w := httptest.NewRecorder()
+
+		// store a valid key
+		_, privKey, err := crypto.GenerateKeyByKeyType(crypto.Ed25519)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, privKey)
+
+		privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
+		assert.NoError(tt, err)
+
+		// good request
+		keyID := "did:test:me#key-2"
+		controller := "did:test:me"
+		storeKeyRequest := router.StoreKeyRequest{
+			ID:               keyID,
+			Type:             crypto.Ed25519,
+			Controller:       controller,
+			Base58PrivateKey: base58.Encode(privKeyBytes),
+		}
+		requestValue := newRequestValue(tt, storeKeyRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
+		err = keyStoreService.StoreKey(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		// get it back
+		getRecorder := httptest.NewRecorder()
+		getReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/keys/%s", keyID), nil)
+		err = keyStoreService.GetKeyDetails(newRequestContextWithParams(map[string]string{"id": keyID}), getRecorder, getReq)
+		assert.NoError(tt, err)
+
+		var resp router.GetKeyDetailsResponse
+		err = json.NewDecoder(getRecorder.Body).Decode(&resp)
+		assert.NoError(tt, err)
+		assert.Equal(tt, keyID, resp.ID)
+		assert.Equal(tt, controller, resp.Controller)
+		assert.Equal(tt, crypto.Ed25519, resp.Type)
+	})
+}
+
+func newKeyStoreService(t *testing.T, bolt *storage.BoltDB) *router.KeyStoreRouter {
+	serviceConfig := config.KeyStoreServiceConfig{ServiceKeyPassword: "test-password"}
+	keyStoreService, err := keystore.NewKeyStoreService(serviceConfig, bolt)
+	require.NoError(t, err)
+	require.NotEmpty(t, keyStoreService)
+
+	// create router for service
+	keyStoreRouter, err := router.NewKeyStoreRouter(keyStoreService)
+	require.NoError(t, err)
+	require.NotEmpty(t, keyStoreRouter)
+
+	return keyStoreRouter
 }
 
 func newRequestValue(t *testing.T, data interface{}) io.Reader {

@@ -77,7 +77,7 @@ func (ksr *KeyStoreRouter) StoreKey(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	if err := ksr.service.StoreKey(*req); err != nil {
-		errMsg := fmt.Sprintf("could not store key: %s", request.ID)
+		errMsg := fmt.Sprintf("could not store key: %s, %s", request.ID, err.Error())
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
 	}

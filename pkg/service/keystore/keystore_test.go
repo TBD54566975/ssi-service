@@ -1,10 +1,10 @@
 package keystore
 
 import (
-	"encoding/base64"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,7 +24,7 @@ func TestEncryptDecryptAllKeyTypes(t *testing.T) {
 	skPassword := "test-password"
 	serviceKeyEncoded, _, err := GenerateServiceKey(skPassword)
 	assert.NoError(t, err)
-	serviceKey, err := base64.StdEncoding.DecodeString(serviceKeyEncoded)
+	serviceKey, err := base58.Decode(serviceKeyEncoded)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, serviceKey)
 
