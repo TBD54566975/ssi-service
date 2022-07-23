@@ -29,4 +29,7 @@ jobs:
       run: mage build
 
     - name: Test
-      run: mage test
+      run: mage CITest
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v2
