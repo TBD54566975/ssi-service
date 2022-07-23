@@ -51,7 +51,7 @@ func Test() error {
 // CITest runs unit tests with coverage as a part of CI.
 // The mage `-v` option will trigger a verbose output of the test
 func CITest() error {
-	return ciTests()
+	return runCITests()
 }
 
 // Spec generates an OpenAPI spec yaml based on code annotations.
@@ -64,7 +64,7 @@ func Spec() error {
 	return sh.Run(swagCommand, "init", "-g", "cmd/main.go", "--pd", "-ot", "yaml")
 }
 
-func ciTests(extraTestArgs ...string) error {
+func runCITests(extraTestArgs ...string) error {
 	args := []string{"test"}
 	if mg.Verbose() {
 		args = append(args, "-v")
