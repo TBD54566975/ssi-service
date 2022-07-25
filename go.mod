@@ -3,7 +3,7 @@ module github.com/tbd54566975/ssi-service
 go 1.17
 
 require (
-	github.com/BurntSushi/toml v1.1.0
+	github.com/BurntSushi/toml v1.2.0
 	github.com/TBD54566975/ssi-sdk v0.0.0-20220719010135-e2fdcfb80e49
 	github.com/ardanlabs/conf v1.5.0
 	github.com/boltdb/bolt v1.3.1
@@ -15,7 +15,7 @@ require (
 	github.com/magefile/mage v1.13.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/pkg/errors v0.9.1
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.0
 	go.opentelemetry.io/otel/exporters/jaeger v1.8.0
 	go.opentelemetry.io/otel/trace v1.8.0

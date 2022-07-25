@@ -34,7 +34,7 @@ func Build() error {
 // Clean deletes any build artifacts.
 func Clean() {
 	fmt.Println("Cleaning...")
-	_ = os.RemoveAll("bin")
+	os.RemoveAll("bin")
 }
 
 // Run the service via docker-compose
@@ -48,6 +48,12 @@ func Test() error {
 	return runTests()
 }
 
+// CITest runs unit tests with coverage as a part of CI.
+// The mage `-v` option will trigger a verbose output of the test
+func CITest() error {
+	return runCITests()
+}
+
 // Spec generates an OpenAPI spec yaml based on code annotations.
 func Spec() error {
 	swagCommand := "swag"
@@ -57,6 +63,27 @@ func Spec() error {
 	}
 	return sh.Run(swagCommand, "init", "-g", "cmd/main.go", "--pd", "-ot", "yaml")
 }
+
+func runCITests(extraTestArgs ...string) error {
+	args := []string{"test"}
+	if mg.Verbose() {
+		args = append(args, "-v")
+	}
+	args = append(args, "-tags=jwx_es256k")
+	args = append(args, "-covermode=atomic")
+	args = append(args, "-coverprofile=coverage.out")
+	args = append(args, extraTestArgs...)
+	args = append(args, "./...")
+	testEnv := map[string]string{
+		"CGO_ENABLED": "1",
+		"GO111MODULE": "on",
+	}
+	writer := ColorizeTestStdout()
+	fmt.Printf("%+v", args)
+	_, err := sh.Exec(testEnv, writer, os.Stderr, Go, args...)
+	return err
+}
+
 
 func runTests(extraTestArgs ...string) error {
 	args := []string{"test"}
