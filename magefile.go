@@ -69,6 +69,7 @@ func runCITests(extraTestArgs ...string) error {
 	if mg.Verbose() {
 		args = append(args, "-v")
 	}
+    args = append(args, "-race")
 	args = append(args, "-tags=jwx_es256k")
 	args = append(args, "-covermode=atomic")
 	args = append(args, "-coverprofile=coverage.out")
