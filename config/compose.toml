@@ -1,12 +1,14 @@
 title = "SSI Service Config"
 
 svn = "0.0.1"
-desc = "Default configuration to be used while running the service as a single go process."
+desc = "Configuration to be used while running the servicd with docker compose."
 
 # http service configuration
 [server]
 api_host = "0.0.0.0:3000"
 debug_host = "0.0.0.0:4000"
+jager_host = "http://jaeger:14268/api/traces"
+jager_enabled = true
 
 # 5 seconds, time is in nanoseconds
 read_timeout = 5000000000
@@ -15,7 +17,7 @@ shutdown_timeout = 5000000000
 
 log_location = "logs"
 # options: trace, debug, info, warning, error, fatal, panic
-log_level = "debug"
+log_level = "info"
 
 [services]
 storage = "bolt"

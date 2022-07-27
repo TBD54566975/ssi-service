@@ -2,10 +2,11 @@ package framework
 
 import (
 	"errors"
-	"github.com/goccy/go-json"
 	"net/http"
 	"reflect"
 	"strings"
+
+	"github.com/goccy/go-json"
 
 	"github.com/dimfeld/httptreemux/v5"
 	"github.com/go-playground/locales/en"
@@ -49,7 +50,7 @@ func init() {
 // RouteParams returns a map of route params and their respective values.
 // e.g. route: /users/:id  request: /users/1 map: :id -> 1
 func RouteParams(r *http.Request) map[string]string {
-	//! TODO: why am i passing context into here?
+	// ! TODO: why am i passing context into here?
 	return httptreemux.ContextParams(r.Context())
 }
 
@@ -71,9 +72,8 @@ func Decode(r *http.Request, val interface{}) error {
 			return err
 		}
 
-		// lang is the language used for error messages.
-		//* use value of "Accept-Language" header when more than one
-		//* language is supported
+		// lang is the language used for error messages
+		// use value of "Accept-Language" header when more than one language is supported
 		lang, _ := translator.GetTranslator("en")
 
 		var fieldErrors []FieldError

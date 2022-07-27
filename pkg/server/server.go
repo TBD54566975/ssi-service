@@ -39,8 +39,13 @@ type SSIServer struct {
 // NewSSIServer does two things: instantiates all service and registers their HTTP bindings
 func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSIServer, error) {
 	// creates an HTTP server from the framework, and wrap it to extend it for the SSIS
-	middlewares := []framework.Middleware{middleware.Logger(), middleware.Errors(), middleware.Metrics(), middleware.Panics()}
-	httpServer := framework.NewHTTPServer(shutdown, middlewares...)
+	middlewares := []framework.Middleware{
+		middleware.Logger(),
+		middleware.Errors(),
+		middleware.Metrics(),
+		middleware.Panics(),
+	}
+	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares...)
 	ssi, err := service.InstantiateSSIService(config.Services)
 	if err != nil {
 		return nil, err

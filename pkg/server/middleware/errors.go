@@ -2,9 +2,12 @@ package middleware
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 
 	"go.opentelemetry.io/otel/trace"
 )
@@ -15,7 +18,8 @@ import (
 func Errors() framework.Middleware {
 	mw := func(handler framework.Handler) framework.Handler {
 		wrapped := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			ctx, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("logger").Start(ctx, "business.middleware.errors")
+			tracer := trace.SpanFromContext(ctx).TracerProvider().Tracer(config.ServiceName)
+			ctx, span := tracer.Start(ctx, "service.middleware.errors")
 			defer span.End()
 
 			v, ok := ctx.Value(framework.KeyRequestState).(*framework.RequestState)

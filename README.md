@@ -23,15 +23,19 @@ revoking, exchanging, validating, verifying credentials in varying degrees of co
 
 ## Configuration
 
-Configuration is managed using a [TOML](https://toml.io/en/) [file](https://github.com/TBD54566975/ssi-service/blob/main/config/config.toml). There are sets of configuration
-values for the server (e.g. which port to listen on), the services (e.g. which database to use, and each service. Each 
-service may define specific configuration, such as which DID methods are enabled for the DID service.
+Configuration is managed using
+a [TOML](https://toml.io/en/) [file](https://github.com/TBD54566975/ssi-service/blob/main/config/config.toml). There are
+sets of configuration values for the server (e.g. which port to listen on), the services (e.g. which database to use),
+and each service. Each service may define specific configuration, such as which DID methods are enabled for the DID
+service.
 
 ## Build & Test
 
-This project uses [mage](https://magefile.org/), please view [CONTRIBUTING](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md) for more information.
+This project uses [mage](https://magefile.org/), please
+view [CONTRIBUTING](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md) for more information.
 
 After installing mage, you can build and test the SDK with the following commands:
+
 ```
 mage build
 mage test
@@ -67,8 +71,10 @@ cd build && docker-compose up
 
 You should then be able to send requests as follows:
 
+Note: port 3000 is used by default. If you're running via docker compose, the port will be `8000`.
+
 ```shell
- ~ curl localhost:8080/health
+ ~ curl localhost:3000/health
 {"status":"OK"}
 ```
 
@@ -88,13 +94,15 @@ You should then be able to send requests as follows:
 
 The design of the service, at present, assumes it will be run by a single entity. Additional work is needed
 around authentication and authorization schemes to access the service and its functionalities, possible User Interfaces
-to use the service, and much more! Please [open a discussion](https://forums.tbd.website/c/self-sovereign-identity-developers/7)
+to use the service, and much more!
+Please [open a discussion](https://forums.tbd.website/c/self-sovereign-identity-developers/7)
 if you are interested in helping shape the future of this project.
 
 ## Contributing
 
 This project is fully open source, and we welcome contributions! For more information please see
-[CONTRIBUTING](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md). Our current thinking about the development of the library is captured in
+[CONTRIBUTING](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md). Our current thinking about the
+development of the library is captured in
 [GitHub Issues](https://github.com/TBD54566975/ssi-service/issues).
 
 ## Project Resources
