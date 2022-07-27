@@ -9,16 +9,24 @@ import (
 	"time"
 
 	"github.com/dimfeld/httptreemux/v5"
+	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/google/uuid"
+
+	"github.com/tbd54566975/ssi-service/config"
 )
 
-type ctxKey int
+type (
+	ctxKey int
+)
 
-const KeyRequestState ctxKey = 1
-var tracer = otel.Tracer("SSI SERVICE")
+const (
+	KeyRequestState ctxKey = 1
+	serviceName            = "ssi-service"
+)
 
 type RequestState struct {
 	TraceID    string
@@ -35,14 +43,20 @@ type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) e
 // data/logic on this Server struct.
 type Server struct {
 	*httptreemux.ContextMux
+	tracer   trace.Tracer
 	shutdown chan os.Signal
 	mw       []Middleware
 }
 
 // NewHTTPServer creates a Server that handles a set of routes for the application.
-func NewHTTPServer(shutdown chan os.Signal, mw ...Middleware) *Server {
+func NewHTTPServer(config config.ServerConfig, shutdown chan os.Signal, mw ...Middleware) *Server {
+	var tracer trace.Tracer
+	if config.JagerEnabled {
+		tracer = otel.Tracer(serviceName)
+	}
 	return &Server{
 		ContextMux: httptreemux.NewContextMux(),
+		tracer:     tracer,
 		shutdown:   shutdown,
 		mw:         mw,
 	}
@@ -65,17 +79,26 @@ func (s *Server) Handle(method string, path string, handler Handler, mw ...Middl
 		}
 		ctx := context.WithValue(r.Context(), KeyRequestState, &requestState)
 
-		// init a span
-		ctx, span := tracer.Start(ctx, path)
-		span.SetAttributes(
-			attribute.String("method", method),
-			attribute.String("path", path),
-			attribute.String("host", r.Host),
-			attribute.String("prot", r.Proto),
-			attribute.String("body", StreamToString(r.Body)),
-		)
+		// init a span, but only if the tracer is initialized
+		if s.tracer != nil {
+			var span trace.Span
+			ctx, span = s.tracer.Start(ctx, path)
+			body, err := PeekRequestBody(r.Body)
+			if err != nil {
+				// log the error and continue the trace with an empty body value
+				logrus.Errorf("failed to read request body during tracing: %v", err)
+			}
+			span.SetAttributes(
+				attribute.String("method", method),
+				attribute.String("path", path),
+				attribute.String("host", r.Host),
+				attribute.String("user-agent", r.UserAgent()),
+				attribute.String("proto", r.Proto),
+				attribute.String("body", body),
+			)
 
-		defer span.End()
+			defer span.End()
+		}
 
 		// onion the request through all the registered middleware
 		if err := handler(ctx, w, r); err != nil {

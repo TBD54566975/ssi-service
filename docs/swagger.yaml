@@ -459,7 +459,7 @@ definitions:
       version:
         type: string
     type: object
-host: localhost:8080
+host: localhost:3000
 info:
   contact:
     email: tbd-developer@squareup.com

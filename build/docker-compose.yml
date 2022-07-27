@@ -10,6 +10,8 @@ services:
       - JAEGER_HTTP_URL=http://jaeger:14268/api/traces
     depends_on:
       - jaeger
+    volumes:
+      - ../config/compose.toml:/app/config/config.toml
   swagger-ui:
     build:
       context: ../

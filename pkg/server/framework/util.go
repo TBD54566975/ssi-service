@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/dimfeld/httptreemux/v5"
+	"github.com/pkg/errors"
 )
 
 // GetParam is a utility to get a path parameter from context, nil if not found
@@ -28,9 +30,18 @@ func GetQueryValue(r *http.Request, param string) *string {
 	return &v
 }
 
-// Convert stream to string.
-func StreamToString(stream io.Reader) string {
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(stream)
-	return buf.String()
+// PeekRequestBody reads a request's body without emptying the buffer
+func PeekRequestBody(body io.ReadCloser) (string, error) {
+	var buf bytes.Buffer
+	tee := io.TeeReader(body, &buf)
+	bodyBytes, err := ioutil.ReadAll(tee)
+	if err != nil {
+		return "", errors.Wrap(err, "could not ready request body")
+	}
+	return string(bodyBytes), nil
+}
+
+func peekBuffer(buf *bytes.Buffer, b []byte) (int, error) {
+	copiedBuffer := bytes.NewBuffer(buf.Bytes())
+	return copiedBuffer.Read(b)
 }
