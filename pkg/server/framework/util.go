@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/dimfeld/httptreemux/v5"
@@ -31,14 +30,14 @@ func GetQueryValue(r *http.Request, param string) *string {
 }
 
 // PeekRequestBody reads a request's body without emptying the buffer
-func PeekRequestBody(body io.ReadCloser) (string, error) {
-	var buf bytes.Buffer
-	tee := io.TeeReader(body, &buf)
-	bodyBytes, err := ioutil.ReadAll(tee)
+func PeekRequestBody(r *http.Request) (string, error) {
+	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
 		return "", errors.Wrap(err, "could not ready request body")
 	}
-	return string(bodyBytes), nil
+	result := string(bodyBytes)
+	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+	return result, nil
 }
 
 func peekBuffer(buf *bytes.Buffer, b []byte) (int, error) {
