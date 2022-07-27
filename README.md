@@ -71,7 +71,7 @@ cd build && docker-compose up
 
 You should then be able to send requests as follows:
 
-Note: port 3000 is used by default. If you're running via docker compose, the port will be `8000`.
+Note: port 3000 is used by default, specified in `config.toml`, for the SSI Service process. If you're running via `mage run` or docker compose, the port to access will be `8080`.
 
 ```shell
  ~ curl localhost:3000/health
