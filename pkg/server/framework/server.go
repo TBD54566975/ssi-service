@@ -83,7 +83,7 @@ func (s *Server) Handle(method string, path string, handler Handler, mw ...Middl
 		if s.tracer != nil {
 			var span trace.Span
 			ctx, span = s.tracer.Start(ctx, path)
-			body, err := PeekRequestBody(r.Body)
+			body, err := PeekRequestBody(r)
 			if err != nil {
 				// log the error and continue the trace with an empty body value
 				logrus.Errorf("failed to read request body during tracing: %v", err)
