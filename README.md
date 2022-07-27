@@ -74,7 +74,7 @@ You should then be able to send requests as follows:
 Note: port 3000 is used by default, specified in `config.toml`, for the SSI Service process. If you're running via `mage run` or docker compose, the port to access will be `8080`.
 
 ```shell
- ~ curl localhost:8080/health
+ ~ curl localhost:3000/health
 {"status":"OK"}
 ```
 
