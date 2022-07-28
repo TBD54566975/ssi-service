@@ -23,6 +23,8 @@ require (
 	gopkg.in/go-playground/validator.v9 v9.31.0
 )
 
+require go.etcd.io/bbolt v1.3.6 // indirect
+
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
