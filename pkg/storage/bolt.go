@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/boltdb/bolt"
+	bolt "go.etcd.io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
