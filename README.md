@@ -69,14 +69,47 @@ Or, you can run docker-compose yourself:
 cd build && docker-compose up 
 ```
 
+### Health and Readiness Checks
+
 You should then be able to send requests as follows:
 
 Note: port 3000 is used by default, specified in `config.toml`, for the SSI Service process. If you're running via `mage run` or docker compose, the port to access will be `8080`.
+
+The command below will give you a health check, if the status is OK then you are up.
 
 ```shell
  ~ curl localhost:3000/health
 {"status":"OK"}
 ```
+
+The command below will tell if you all the services (credential, did, and schema) are up and ready.
+```aidl
+~ curl localhost:8080/readiness
+{
+    "status": {
+        "status": "ready",
+        "message": "all service ready"
+    },
+    "serviceStatuses": {
+        "credential": {
+            "status": "ready"
+        },
+        "did": {
+            "status": "ready"
+        },
+        "schema": {
+            "status": "ready"
+        }
+    }
+}
+```
+
+## REST Endpoints
+
+You can find more rest endpoints by checking out the swagger docs at:
+http://localhost:8002/docs
+
+Note: Your port by differ, the range of the ports for swagger are between 8002 and 8080.
 
 ## What's Supported?
 
