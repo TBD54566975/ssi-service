@@ -37,9 +37,21 @@ func Clean() {
 	os.RemoveAll("bin")
 }
 
-// Run the service via docker-compose
+// CleanRun removes Docker container, network, and image artifacts.
+func CleanRun() error {
+	if err := isDockerReady(); err != nil {
+		return err
+	}
+	fmt.Println("Cleaning containers...")
+	return sh.Run("docker-compose", "--project-directory", "build", "down", "--rmi", "local")
+}
+
+// Run the service via docker-compose.
 func Run() error {
-	return sh.Run("docker-compose", "--project-directory", "build", "up")
+	if err := isDockerReady(); err != nil {
+		return err
+	}
+	return sh.Run("docker-compose", "--project-directory", "build", "up", "--build")
 }
 
 // Test runs unit tests without coverage.
@@ -84,7 +96,6 @@ func runCITests(extraTestArgs ...string) error {
 	_, err := sh.Exec(testEnv, writer, os.Stderr, Go, args...)
 	return err
 }
-
 
 func runTests(extraTestArgs ...string) error {
 	args := []string{"test"}
@@ -161,6 +172,15 @@ func installIfNotPresent(execName, goPackage string) error {
 	return nil
 }
 
+// Check to see if Docker is running.
+func isDockerReady() error {
+	err := sh.Run("docker", "ps")
+	if !sh.CmdRan(err) {
+		return fmt.Errorf("could not run docker: %w", err)
+	}
+	return nil
+}
+
 func findOnPathOrGoPath(execName string) string {
 	if p := findOnPath(execName); p != "" {
 		return p
@@ -201,7 +221,7 @@ func goPath() string {
 	return goPath
 }
 
-// CBT runs clean; build; test
+// CBT runs clean; build; test.
 func CBT() error {
 	Clean()
 	if err := Build(); err != nil {
