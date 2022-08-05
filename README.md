@@ -66,7 +66,7 @@ mage run
 Or, you can run docker-compose yourself:
 
 ```shell
-cd build && docker-compose up 
+cd build && docker-compose up --build
 ```
 
 ### Health and Readiness Checks
