@@ -66,20 +66,20 @@ func (ksr *KeyStoreRouter) StoreKey(ctx context.Context, w http.ResponseWriter, 
 	if err := framework.Decode(r, &request); err != nil {
 		errMsg := "invalid store key request"
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
 	req, err := request.ToServiceRequest()
 	if err != nil {
 		errMsg := "could not process store key request"
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
 	if err := ksr.service.StoreKey(*req); err != nil {
 		errMsg := fmt.Sprintf("could not store key: %s, %s", request.ID, err.Error())
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	return framework.Respond(ctx, w, nil, http.StatusCreated)
@@ -114,7 +114,7 @@ func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWri
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get key details for id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
 	resp := GetKeyDetailsResponse{

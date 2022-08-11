@@ -57,7 +57,7 @@ func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, 
 	if err := framework.Decode(r, &request); err != nil {
 		errMsg := "invalid create schema request"
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
 	req := schema.CreateSchemaRequest{Author: request.Author, Name: request.Name, Schema: request.Schema}
@@ -65,7 +65,7 @@ func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, 
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create schema with authoring DID: %s", request.Author)
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := CreateSchemaResponse{ID: createSchemaResponse.ID, Schema: createSchemaResponse.Schema}
@@ -90,7 +90,7 @@ func (sr SchemaRouter) GetSchemas(ctx context.Context, w http.ResponseWriter, r 
 	if err != nil {
 		errMsg := "could not get schemas"
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusInternalServerError)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 	resp := GetSchemasResponse{Schemas: gotSchemas.Schemas}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
@@ -123,7 +123,7 @@ func (sr SchemaRouter) GetSchemaByID(ctx context.Context, w http.ResponseWriter,
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get schema with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
 	resp := GetSchemaResponse{Schema: gotSchema.Schema}
