@@ -9,7 +9,7 @@ require (
 	github.com/dimfeld/httptreemux/v5 v5.4.0
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
-	github.com/goccy/go-json v0.9.10
+	github.com/goccy/go-json v0.9.11
 	github.com/google/uuid v1.3.0
 	github.com/magefile/mage v1.13.0
 	github.com/mr-tron/base58 v1.2.0
