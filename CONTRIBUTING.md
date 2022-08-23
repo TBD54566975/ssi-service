@@ -28,11 +28,11 @@ $> go version
 go version go1.17.6 darwin/amd64
 ```
 
-If you do not have go, we recommend installing it by:
+If you do not have go, we recommend installing it by following the instructions on the [Go website](https://go.dev/doc/install).
 
 #### MacOS
 
-##### Homebrew
+For Mac, we recommend using [Homebrew](https://brew.sh/).
 
 ```
 $> brew install go
@@ -40,7 +40,7 @@ $> brew install go
 
 ### Mage
 
-The build is run by Mage.
+The build is run by [Mage](https://magefile.org/). Instructions for installation can be found on the Mage site.
 
 You may verify your `mage` installation via the terminal:
 
@@ -54,7 +54,7 @@ built with: go1.17.6
 
 #### MacOS
 
-##### Homebrew
+For Mac, we recommend using [Homebrew](https://brew.sh/).
 
 ```
 $> brew install mage
