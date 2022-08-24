@@ -11,8 +11,8 @@
 The Self Sovereign Identity Service (SSIS) facilitates all things relating to [DIDs](https://www.w3.org/TR/did-core/)
 and [Verifiable Credentials](https://www.w3.org/TR/vc-data-model) -- in a box! The service is a part of a larger
 Decentralized Web Platform architecture which you can learn more about in our
-[collaboration repo](https://github.com/TBD54566975/collaboration). The SSI Service is a RESTful web service that
-wraps the [ssi-sdk](https://github.com/TBD54566975/ssi-sdk). The core functionality of the SSIS includes,
+[collaboration repo](https://github.com/TBD54566975/collaboration). The SSI Service is a HTTP-API driven web service
+that wraps the [ssi-sdk](https://github.com/TBD54566975/ssi-sdk). The core functionality of the SSIS includes,
 but is not limited to: interacting with the standards around Verifiable Credentials, Credential Revocations, requesting
 Credentials, exchanging Credentials, data schemas for Credentials and other verifiable data, messaging using
 Decentralized Web Nodes, and usage of Decentralized Identifiers. Using these core standards, the SSIS enables robust
@@ -87,7 +87,7 @@ The command below will give you a health check, if the status is OK then you are
 
 The command below will tell if you all the services (credential, did, and schema) are up and ready.
 
-```aidl
+```bash
 ~ curl localhost:8080/readiness
 {
     "status": {
@@ -108,17 +108,25 @@ The command below will tell if you all the services (credential, did, and schema
 }
 ```
 
-## REST Endpoints
+## HTTP Endpoints
 
-You can find more rest endpoints by checking out the swagger docs at:
-http://localhost:8002/doc
+You can find more HTTP endpoints by checking out the swagger docs at: `http://localhost:8002/doc`
 
-Note: Your port by differ, the range of the ports for swagger are between 8002 and 8080.
+Note: Your port by differ, the range of the ports for swagger are between `8002` and `8080`.
+
+## Vision, Features, and Development
+
+The vision for the project is laid out in [this document](doc/VISION.md).
+
+The project follows a proposal-based improvement format called [SIPs, outlined here.](sip/README.md).
+
+Please [open a discussion](https://forums.tbd.website/c/self-sovereign-identity-developers/7)
+or [issue](https://github.com/TBD54566975/ssi-service/issues) if you are interested in helping shape the future of the
+project.
 
 ## What's Supported?
 
-- [x] [DID Management](https://www.w3.org/TR/did-core/)
-    - Using [did:key](https://w3c-ccg.github.io/did-method-key/)
+- [x] [DID Management](https://www.w3.org/TR/did-core/) - Using [did:key](https://w3c-ccg.github.io/did-method-key/)
 - [x] [Verifiable Credential Schema](https://w3c-ccg.github.io/vc-json-schemas/v2/index.html) Management
 - [ ] [Verifiable Credential](https://www.w3.org/TR/vc-data-model) Issuance & Verification
 - [ ] Requesting, Receiving, and the Validation of Verifiable Claims
@@ -127,31 +135,16 @@ Note: Your port by differ, the range of the ports for swagger are between 8002 a
 - [ ] Revocations of Verifiable Credentials using the [Status List 2021](https://w3c-ccg.github.io/vc-status-list-2021/)
 - [ ] [Decentralized Web Node](https://identity.foundation/decentralized-web-node/spec/) Messaging
 
-## Design Thinking
-
-The vision for the project is laid out in [this document](doc/VISION.md).
-
-The design of the service, at present, assumes it will be run by a single entity. With the assumption that
-authentication and authorization schemes are handled outside the service.
-
-Please [open a discussion](https://forums.tbd.website/c/self-sovereign-identity-developers/7)
-if you are interested in helping shape the future of this project.
-
-## Contributing
-
-This project is fully open source, and we welcome contributions! For more information please see
-[CONTRIBUTING](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md). Our current thinking about the
-development of the library is captured in [GitHub Issues](https://github.com/TBD54566975/ssi-service/issues).
-
 ## Project Resources
 
-| Resource                                                                                      | Description                                                                   |
-|-----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| [VISION](https://github.com/TBD54566975/ssi-sdk/blob/main/doc/VISION.md)                      | Outlines the project vision                                                   |
-| [VERSIONING](https://github.com/TBD54566975/ssi-sdk/blob/main/doc/VERSIONING.md)              | Project versioning strategy                                                   |
-| [CODEOWNERS](https://github.com/TBD54566975/ssi-service/blob/main/CODEOWNERS)                 | Outlines the project lead(s)                                                  |
-| [CODE_OF_CONDUCT.md](https://github.com/TBD54566975/ssi-service/blob/main/CODE_OF_CONDUCT.md) | Expected behavior for project contributors, promoting a welcoming environment |
-| [CONTRIBUTING.md](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md)       | Developer guide to build, test, run, access CI, chat, discuss, file issues    |
-| [GOVERNANCE.md](https://github.com/TBD54566975/ssi-service/blob/main/GOVERNANCE.md)           | Project governance                                                            |
-| [SECURITY.md](https://github.com/TBD54566975/ssi-service/blob/main/SECURITY.md)               | Vulnerability and bug reporting                                               |
-| [LICENSE](https://github.com/TBD54566975/ssi-service/blob/main/LICENSE)                       | Apache License, Version 2.0                                                   |
+| Resource                                                                                   | Description                                                                   |
+|--------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| [VISION](https://github.com/TBD54566975/ssi-sdk/blob/main/doc/VISION.md)                   | Outlines the project vision                                                   |
+| [SIPs](sip/README.md)                                                                      | Proposals for improving the SSI Service                                       |
+| [VERSIONING](https://github.com/TBD54566975/ssi-sdk/blob/main/doc/VERSIONING.md)           | Project versioning strategy                                                   |
+| [CODEOWNERS](https://github.com/TBD54566975/ssi-service/blob/main/CODEOWNERS)              | Outlines the project lead(s)                                                  |
+| [CODE_OF_CONDUCT](https://github.com/TBD54566975/ssi-service/blob/main/CODE_OF_CONDUCT.md) | Expected behavior for project contributors, promoting a welcoming environment |
+| [CONTRIBUTING](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md)       | Developer guide to build, test, run, access CI, chat, discuss, file issues    |
+| [GOVERNANCE](https://github.com/TBD54566975/ssi-service/blob/main/GOVERNANCE.md)           | Project governance                                                            |
+| [SECURITY](https://github.com/TBD54566975/ssi-service/blob/main/SECURITY.md)               | Vulnerability and bug reporting                                               |
+| [LICENSE](https://github.com/TBD54566975/ssi-service/blob/main/LICENSE)                    | Apache License, Version 2.0                                                   |
