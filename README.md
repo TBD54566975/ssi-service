@@ -19,6 +19,8 @@ Decentralized Web Nodes, and usage of Decentralized Identifiers. Using these cor
 functionality to facilitate all verifiable interactions such as creating, signing, issuing, curating, requesting,
 revoking, exchanging, validating, verifying credentials in varying degrees of complexity.
 
+For more information, see the [vision document](doc/VISION.md).
+
 ![ssi-sdk](doc/ssi-service.png)
 
 ## Configuration
@@ -73,7 +75,8 @@ cd build && docker-compose up --build
 
 You should then be able to send requests as follows:
 
-Note: port 3000 is used by default, specified in `config.toml`, for the SSI Service process. If you're running via `mage run` or docker compose, the port to access will be `8080`.
+Note: port 3000 is used by default, specified in `config.toml`, for the SSI Service process. If you're running
+via `mage run` or docker compose, the port to access will be `8080`.
 
 The command below will give you a health check, if the status is OK then you are up.
 
@@ -83,6 +86,7 @@ The command below will give you a health check, if the status is OK then you are
 ```
 
 The command below will tell if you all the services (credential, did, and schema) are up and ready.
+
 ```aidl
 ~ curl localhost:8080/readiness
 {
@@ -107,7 +111,7 @@ The command below will tell if you all the services (credential, did, and schema
 ## REST Endpoints
 
 You can find more rest endpoints by checking out the swagger docs at:
-http://localhost:8002/docs
+http://localhost:8002/doc
 
 Note: Your port by differ, the range of the ports for swagger are between 8002 and 8080.
 
@@ -125,9 +129,11 @@ Note: Your port by differ, the range of the ports for swagger are between 8002 a
 
 ## Design Thinking
 
-The design of the service, at present, assumes it will be run by a single entity. Additional work is needed
-around authentication and authorization schemes to access the service and its functionalities, possible User Interfaces
-to use the service, and much more!
+The vision for the project is laid out in [this document](doc/VISION.md).
+
+The design of the service, at present, assumes it will be run by a single entity. With the assumption that
+authentication and authorization schemes are handled outside the service.
+
 Please [open a discussion](https://forums.tbd.website/c/self-sovereign-identity-developers/7)
 if you are interested in helping shape the future of this project.
 
@@ -135,13 +141,14 @@ if you are interested in helping shape the future of this project.
 
 This project is fully open source, and we welcome contributions! For more information please see
 [CONTRIBUTING](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md). Our current thinking about the
-development of the library is captured in
-[GitHub Issues](https://github.com/TBD54566975/ssi-service/issues).
+development of the library is captured in [GitHub Issues](https://github.com/TBD54566975/ssi-service/issues).
 
 ## Project Resources
 
-| Resource                                   | Description                                                                   |
-|--------------------------------------------|-------------------------------------------------------------------------------|
+| Resource                                                                                      | Description                                                                   |
+|-----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| [VISION](https://github.com/TBD54566975/ssi-sdk/blob/main/doc/VISION.md)                      | Outlines the project vision                                                   |
+| [VERSIONING](https://github.com/TBD54566975/ssi-sdk/blob/main/doc/VERSIONING.md)              | Project versioning strategy                                                   |
 | [CODEOWNERS](https://github.com/TBD54566975/ssi-service/blob/main/CODEOWNERS)                 | Outlines the project lead(s)                                                  |
 | [CODE_OF_CONDUCT.md](https://github.com/TBD54566975/ssi-service/blob/main/CODE_OF_CONDUCT.md) | Expected behavior for project contributors, promoting a welcoming environment |
 | [CONTRIBUTING.md](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md)       | Developer guide to build, test, run, access CI, chat, discuss, file issues    |
