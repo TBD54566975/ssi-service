@@ -12,8 +12,7 @@ The Self Sovereign Identity Service (SSIS) facilitates all things relating to [D
 and [Verifiable Credentials](https://www.w3.org/TR/vc-data-model) -- in a box! The service is a part of a larger
 Decentralized Web Platform architecture which you can learn more about in our
 [collaboration repo](https://github.com/TBD54566975/collaboration). The SSI Service is a HTTP-API driven web service
-that
-wraps the [ssi-sdk](https://github.com/TBD54566975/ssi-sdk). The core functionality of the SSIS includes,
+that wraps the [ssi-sdk](https://github.com/TBD54566975/ssi-sdk). The core functionality of the SSIS includes,
 but is not limited to: interacting with the standards around Verifiable Credentials, Credential Revocations, requesting
 Credentials, exchanging Credentials, data schemas for Credentials and other verifiable data, messaging using
 Decentralized Web Nodes, and usage of Decentralized Identifiers. Using these core standards, the SSIS enables robust
