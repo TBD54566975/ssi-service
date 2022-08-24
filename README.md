@@ -21,7 +21,7 @@ revoking, exchanging, validating, verifying credentials in varying degrees of co
 
 For more information, see the [vision document](doc/VISION.md).
 
-![ssi-sdk](doc/ssi-service.png)
+![ssi-service](doc/ssi-service.png)
 
 ## Configuration
 
@@ -139,9 +139,9 @@ project.
 
 | Resource                                                                                   | Description                                                                   |
 |--------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| [VISION](https://github.com/TBD54566975/ssi-sdk/blob/main/doc/VISION.md)                   | Outlines the project vision                                                   |
+| [VISION](https://github.com/TBD54566975/ssi-service/blob/main/doc/VISION.md)                   | Outlines the project vision                                                   |
 | [SIPs](sip/README.md)                                                                      | Proposals for improving the SSI Service                                       |
-| [VERSIONING](https://github.com/TBD54566975/ssi-sdk/blob/main/doc/VERSIONING.md)           | Project versioning strategy                                                   |
+| [VERSIONING](https://github.com/TBD54566975/ssi-service/blob/main/doc/VERSIONING.md)           | Project versioning strategy                                                   |
 | [CODEOWNERS](https://github.com/TBD54566975/ssi-service/blob/main/CODEOWNERS)              | Outlines the project lead(s)                                                  |
 | [CODE_OF_CONDUCT](https://github.com/TBD54566975/ssi-service/blob/main/CODE_OF_CONDUCT.md) | Expected behavior for project contributors, promoting a welcoming environment |
 | [CONTRIBUTING](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md)       | Developer guide to build, test, run, access CI, chat, discuss, file issues    |
