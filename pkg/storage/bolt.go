@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	bolt "go.etcd.io/bbolt"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	bolt "go.etcd.io/bbolt"
 )
 
 const (
