@@ -19,7 +19,7 @@ services:
     ports:
       - "8002:8080"
     volumes:
-      - ../docs/swagger.yaml:/app/swagger.yaml
+      - ../doc/swagger.yaml:/app/swagger.yaml
     command: ["serve", "/app/swagger.yaml", "--no-open", "--port", "8080"]
   jaeger:
     image: jaegertracing/all-in-one:latest
