@@ -26,6 +26,7 @@ const (
 	DIDsPrefix        = "/dids"
 	SchemasPrefix     = "/schemas"
 	CredentialsPrefix = "/credentials"
+	ManifestsPrefix   = "/manifests"
 	KeyStorePrefix    = "/keys"
 )
 
@@ -91,6 +92,8 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 		return s.CredentialAPI(service)
 	case svcframework.KeyStore:
 		return s.KeyStoreAPI(service)
+	case svcframework.Manifest:
+		return s.ManifestAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
@@ -153,3 +156,31 @@ func (s *SSIServer) KeyStoreAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), keyStoreRouter.GetKeyDetails)
 	return
 }
+
+func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
+	manifestRouter, err := router.NewManifestRouter(service)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not create manifest router")
+	}
+
+	handlerPath := V1Prefix + ManifestsPrefix
+
+	s.Handle(http.MethodPut, handlerPath, manifestRouter.CreateManifest)
+	s.Handle(http.MethodGet, handlerPath, manifestRouter.GetManifests)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), manifestRouter.GetManifest)
+	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), manifestRouter.DeleteManifest)
+	return
+}
+
+//func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
+//	keyStoreRouter, err := router.(service)
+//	if err != nil {
+//		return util.LoggingErrorMsg(err, "could not create key store router")
+//	}
+//
+//	handlerPath := V1Prefix + KeyStorePrefix
+//
+//	s.Handle(http.MethodPut, handlerPath, keyStoreRouter.StoreKey)
+//	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), keyStoreRouter.GetKeyDetails)
+//	return
+//}

@@ -12,6 +12,7 @@ const (
 	Schema     Type = "schema"
 	Credential Type = "credential"
 	KeyStore   Type = "keystore"
+	Manifest   Type = "manifest"
 
 	StatusReady    StatusState = "ready"
 	StatusNotReady StatusState = "not_ready"
