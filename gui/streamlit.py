@@ -6,14 +6,12 @@ import json
 st.title('DID and Verifiable Credentials')
 
 
-
-
 #
 # Show health and readitness in the sidebar
 #
 
-health = requests.get('http://localhost:8080/health').json()
-readiness = requests.get('http://localhost:8080/readiness').json()
+health = requests.get('http://web:3000/health').json()
+readiness = requests.get('http://web:3000/readiness').json()
 ready = readiness['status']['status']
 
 with st.sidebar:
@@ -42,7 +40,7 @@ if 'did' not in st.session_state:
 
     if st.radio("Make or load a DID", ["Create new DID", "Use existing DID"]) == "Create new DID":
         if st.button("Create new DID"):
-            did = requests.put('http://localhost:8080/v1/dids/key', data=json.dumps({"keyType":"Ed25519"})).json()            
+            did = requests.put('http://web:3000/v1/dids/key', data=json.dumps({"keyType":"Ed25519"})).json()            
             st.session_state.did = did
             st.experimental_rerun()
         else: 
@@ -51,7 +49,7 @@ if 'did' not in st.session_state:
     else:    
         key = st.text_input("", "did:example:1234")
         if st.button("Lookup DID"):
-            did = requests.get('http://localhost:8080/v1/dids/key/' + key).json()
+            did = requests.get('http://web:3000/v1/dids/key/' + key).json()
             st.session_state.did = did
             st.experimental_rerun()
         else:
@@ -111,5 +109,5 @@ if st.button("Issue Verifiable Credential"):
         "Data": json.loads(data),
         "Expiry": str(expiry) + "T00:00:00+00:00"
     }
-    vc  = requests.put('http://localhost:8080/v1/credentials', data=json.dumps(payload)).json()
+    vc  = requests.put('http://web:3000/v1/credentials', data=json.dumps(payload)).json()
     st.write(vc)

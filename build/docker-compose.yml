@@ -21,6 +21,14 @@ services:
     volumes:
       - ../doc/swagger.yaml:/app/swagger.yaml
     command: ["serve", "/app/swagger.yaml", "--no-open", "--port", "8080"]
+  gui:
+    build:
+      context: ../
+      dockerfile: build/Dockerfile-gui
+    ports:
+      - "8081:8501"
+    depends_on:
+      - web
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
