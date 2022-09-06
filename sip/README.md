@@ -27,8 +27,8 @@ the [template](sips/sip_template.md), add it to the table below, and open up a p
 
 # SIPs
 
-| SIP   | Description                | DRI                                            | Status   | Date of Status  |
-|-------|----------------------------|------------------------------------------------|----------|-----------------|
-| [SIP-1](sips/sip_1/sip_1.md) | SIP Purpose and Guidelines | [Gabe Cohen](https://github.com/decentralgabe) | Accepted | August 24, 2022 |
-| [SIP-2](sips/sip_2/sip_2.md) | Credential Issuance Flow   | [Neal Roessler](https://github.com/nitro-neal) | Draft    | August 25, 2022 |
+| SIP                           | Description                | DRI                                            | Status   | Date of Status  |
+|-------------------------------|----------------------------|------------------------------------------------|----------|-----------------|
+| [SIP-1](sips/sip_1/README.md) | SIP Purpose and Guidelines | [Gabe Cohen](https://github.com/decentralgabe) | Accepted | August 24, 2022 |
+| [SIP-2](sips/sip_2/README.md) | Credential Issuance Flow   | [Neal Roessler](https://github.com/nitro-neal) | Draft    | August 25, 2022 |
 

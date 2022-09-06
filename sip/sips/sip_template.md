@@ -14,6 +14,8 @@
 
 **Updated:** *May 6, 2022*
 
+**Discussion**: *Link to a [forum post](https://forums.tbd.website/c/self-sovereign-identity-developers/7)*
+
 # Abstract
 
 *2-3 sentence technical summary of the proposal.*
