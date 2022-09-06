@@ -14,6 +14,8 @@
 
 **Updated: August** *24, 2022*
 
+**Discussion:** https://forums.tbd.website/t/sip-2-discussion-credential-issuance-flow/125
+
 # Abstract
 
 The process described here is the full flow and interaction of Credential Manifests, Credential Applications, and Credential Responses in context of how the ssi service will handle these entities. The user will fill out a Credential Application against an existing Credential Manifest and then receive a Credential Response object. This can be accomplished in a synchronous or asynchronous form.
