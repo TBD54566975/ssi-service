@@ -12,20 +12,28 @@ st.title('DID and Verifiable Credentials')
 # Show health and readitness in the sidebar
 #
 
-health = requests.get('http://localhost:8080/health')
-status = health.json()['status']
-readiness = requests.get('http://localhost:8080/readiness')
-ready = readiness.json()['status']['status']
+health = requests.get('http://localhost:8080/health').json()
+readiness = requests.get('http://localhost:8080/readiness').json()
+ready = readiness['status']['status']
 
 with st.sidebar:
-    if status == "OK" and ready == "ready":
-        st.success("service: " + str(health.json()['status']))
-        with st.expander("show service details", expanded=False):
-            st.write(readiness.json())
+
+    with st.expander("Service detail"):
+        st.write(health)
+        st.write(readiness)
+
+    if health['status'] == "OK" and ready == "ready":
+        st.success("service: " + health['status'])
     else:
         st.error("service: " + str(health.json()['status']))
-        st.write(readiness.json())
-        st.stop()    
+        st.write(readiness)
+
+
+    for state in readiness['serviceStatuses']:
+        if readiness['serviceStatuses'][state]['status'] == "ready":
+            st.success(state + ": " + readiness['serviceStatuses'][state]['status'])
+        else:            
+            st.error(readiness['serviceStatuses'][state]['status'])
 
 
 
