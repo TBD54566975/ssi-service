@@ -171,16 +171,3 @@ func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), manifestRouter.DeleteManifest)
 	return
 }
-
-//func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
-//	keyStoreRouter, err := router.(service)
-//	if err != nil {
-//		return util.LoggingErrorMsg(err, "could not create key store router")
-//	}
-//
-//	handlerPath := V1Prefix + KeyStorePrefix
-//
-//	s.Handle(http.MethodPut, handlerPath, keyStoreRouter.StoreKey)
-//	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), keyStoreRouter.GetKeyDetails)
-//	return
-//}

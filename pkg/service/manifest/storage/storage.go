@@ -9,7 +9,9 @@ import (
 )
 
 type StoredManifest struct {
+	ID       string                      `json:"id"`
 	Manifest manifest.CredentialManifest `json:"manifest"`
+	Issuer   string                      `json:"issuer"`
 }
 
 type Storage interface {

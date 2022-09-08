@@ -4,15 +4,12 @@ import (
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 )
 
-const (
-	SchemaType string = "JsonSchemaValidator2018"
-)
-
 type CreateManifestRequest struct {
 	Issuer string
 	// A context is optional. If not present, we'll apply default, required context values.
-	Context           string
-	OutputDescriptors map[string]interface{}
+	Context                string
+	OutputDescriptors      []map[string]interface{}
+	PresentationDefinition map[string]interface{}
 }
 
 type CreateManifestResponse struct {

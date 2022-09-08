@@ -34,30 +34,32 @@ func NewManifestRouter(s svcframework.Service) (*ManifestRouter, error) {
 type CreateManifestRequest struct {
 	Issuer string `json:"issuer" validate:"required"`
 	// A context is optional. If not present, we'll apply default, required context values.
-	Context string                 `json:"@context"`
-	Data    map[string]interface{} `json:"data" validate:"required"`
+	Context                string                   `json:"@context"`
+	OutputDescriptors      []map[string]interface{} `json:"outputDescriptors" validate:"required"`
+	PresentationDefinition map[string]interface{}   `json:"presentationDefinition" validate:"required"`
 }
 
 func (c CreateManifestRequest) ToServiceRequest() manifest.CreateManifestRequest {
 	return manifest.CreateManifestRequest{
-		Issuer:            c.Issuer,
-		Context:           c.Context,
-		OutputDescriptors: c.Data,
+		Issuer:                 c.Issuer,
+		Context:                c.Context,
+		OutputDescriptors:      c.OutputDescriptors,
+		PresentationDefinition: c.PresentationDefinition,
 	}
 }
 
 type CreateManifestResponse struct {
-	manifest manifestsdk.CredentialManifest `json:"manifest"`
+	Manifest manifestsdk.CredentialManifest `json:"manifest"`
 }
 
 // CreateManifest godoc
 // @Summary      Create manifest
 // @Description  Create manifest
-// @Tags         manifestAPI
+// @Tags         ManifestAPI
 // @Accept       json
 // @Produce      json
-// @Param        request  body      CreatemanifestRequest  true  "request body"
-// @Success      201      {object}  CreatemanifestResponse
+// @Param        request  body      CreateManifestRequest  true  "request body"
+// @Success      201      {object}  CreateManifestResponse
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests [put]
@@ -77,23 +79,24 @@ func (cr ManifestRouter) CreateManifest(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := CreateManifestResponse{manifest: createManifestResponse.Manifest}
+	resp := CreateManifestResponse{Manifest: createManifestResponse.Manifest}
+
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
 type GetManifestResponse struct {
 	ID       string                         `json:"id"`
-	manifest manifestsdk.CredentialManifest `json:"manifest"`
+	Manifest manifestsdk.CredentialManifest `json:"manifest"`
 }
 
 // GetManifest godoc
 // @Summary      Get manifest
 // @Description  Get manifest by id
-// @Tags         manifestAPI
+// @Tags         ManifestAPI
 // @Accept       json
 // @Produce      json
 // @Param        id   path      string  true  "ID"
-// @Success      200  {object}  GetmanifestResponse
+// @Success      200  {object}  GetManifestResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/manifests/{id} [get]
 func (cr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -113,58 +116,48 @@ func (cr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter,
 
 	resp := GetManifestResponse{
 		ID:       gotManifest.Manifest.ID,
-		manifest: gotManifest.Manifest,
+		Manifest: gotManifest.Manifest,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
-type GetmanifestsResponse struct {
-	manifests []manifestsdk.CredentialManifest `json:"manifests"`
+type GetManifestsResponse struct {
+	Manifests []manifestsdk.CredentialManifest `json:"manifests"`
 }
 
 // GetManifests godoc
 // @Summary      Get manifests
 // @Description  Checks for the presence of a query parameter and calls the associated filtered get method
-// @Tags         manifestAPI
+// @Tags         ManifestAPI
 // @Accept       json
 // @Produce      json
 // @Param        issuer   query     string  false  "string issuer"
 // @Param        schema   query     string  false  "string schema"
 // @Param        subject  query     string  false  "string subject"
-// @Success      200      {object}  GetmanifestsResponse
+// @Success      200      {object}  GetManifestsResponse
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests [get]
 func (cr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	//issuer := framework.GetQueryValue(r, IssuerParam)
-	//
-	//err := framework.NewRequestErrorMsg("must use one of the following query parameters: issuer, subject, schema", http.StatusBadRequest)
+	gotManifests, err := cr.service.GetManifests()
 
-	return cr.GetManifests(ctx, w, r)
-	//if issuer != nil {
-	//	return cr.get(*issuer, ctx, w, r)
-	//} else {
-	//	return cr.GetManifests(ctx, w, r)
-	//}
-	//return err
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get manifests")
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	resp := GetManifestsResponse{
+		Manifests: gotManifests.Manifests,
+	}
+
+	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
-//func (cr ManifestRouter) getManifestsByIssuer(issuer string, ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-//	gotManifests, err := cr.service.GetManifestsByIssuer(manifest.GetManifestByIssuerRequest{Issuer: issuer})
-//	if err != nil {
-//		errMsg := fmt.Sprintf("could not get manifests for issuer: %s", util.SanitizeLog(issuer))
-//		logrus.WithError(err).Error(errMsg)
-//		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
-//	}
-//
-//	resp := GetmanifestsResponse{manifests: gotmanifests.manifests}
-//	return framework.Respond(ctx, w, resp, http.StatusOK)
-//}
-
-// Deletemanifest godoc
+// DeleteManifest godoc
 // @Summary      Delete manifests
 // @Description  Delete manifest by ID
-// @Tags         manifestAPI
+// @Tags         ManifestAPI
 // @Accept       json
 // @Produce      json
 // @Param        id   path      string  true  "ID"
