@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -28,6 +27,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -883,7 +883,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.Equal(tt, resp.Manifest.ID, getManifestResp.ID)
 	})
 
-	t.Run("Test Get Credentials", func(tt *testing.T) {
+	t.Run("Test Get Manifests", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 
 		// remove the db file after the test
@@ -934,7 +934,7 @@ func TestManifestAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 
-		// get credential by subject id
+		// get manifest by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests"), nil)
 		err = manifestService.GetManifests(newRequestContext(), w, req)
 		assert.NoError(tt, err)
