@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +14,7 @@ import (
 	"time"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
+	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/dimfeld/httptreemux/v5"
 	"github.com/goccy/go-json"
@@ -27,6 +30,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -309,7 +313,7 @@ func TestSchemaAPI(t *testing.T) {
 		// get schema that doesn't exist
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas/bad", nil)
-		err = schemaService.GetSchemaByID(newRequestContext(), w, req)
+		err = schemaService.GetSchema(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "cannot get schema without ID parameter")
 
@@ -318,7 +322,7 @@ func TestSchemaAPI(t *testing.T) {
 
 		// get schema with invalid id
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas/bad", nil)
-		err = schemaService.GetSchemaByID(newRequestContextWithParams(map[string]string{"id": "bad"}), w, req)
+		err = schemaService.GetSchema(newRequestContextWithParams(map[string]string{"id": "bad"}), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not get schema with id: bad")
 
@@ -367,7 +371,7 @@ func TestSchemaAPI(t *testing.T) {
 
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", createResp.ID), nil)
-		err = schemaService.GetSchemaByID(newRequestContextWithParams(map[string]string{"id": createResp.ID}), w, req)
+		err = schemaService.GetSchema(newRequestContextWithParams(map[string]string{"id": createResp.ID}), w, req)
 		assert.NoError(tt, err)
 
 		var gotSchemaResp router.GetSchemaResponse
@@ -732,6 +736,242 @@ func newCredentialService(t *testing.T, bolt *storage.BoltDB) *router.Credential
 	return credentialRouter
 }
 
+func TestManifestAPI(t *testing.T) {
+	t.Run("Test Create Manifest", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		manifestService := newManifestService(tt, bolt)
+
+		// missing required field: OutputDescriptors
+		badManifestRequest := router.CreateManifestRequest{
+			Issuer: "did:abc:123",
+		}
+
+		badRequestValue := newRequestValue(tt, badManifestRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", badRequestValue)
+		w := httptest.NewRecorder()
+
+		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "invalid create manifest request")
+
+		// reset the http recorder
+		w.Flush()
+
+		// good request
+		createManifestRequest := router.CreateManifestRequest{
+			Issuer:  "did:abc:123",
+			Context: "context123",
+			PresentationDefinition: exchange.PresentationDefinition{
+				ID: "pres-def-id",
+				InputDescriptors: []exchange.InputDescriptor{
+					{
+						ID: "test-id",
+						Constraints: &exchange.Constraints{
+							Fields: []exchange.Field{
+								{
+									Path: []string{".vc.id"},
+								},
+							},
+						},
+					},
+				},
+			},
+			OutputDescriptors: []manifestsdk.OutputDescriptor{
+				{
+					ID:          "id1",
+					Schema:      "https://test.com/schema",
+					Name:        "good ID",
+					Description: "it's all good",
+				},
+				{
+					ID:          "id2",
+					Schema:      "https://test.com/schema",
+					Name:        "good ID",
+					Description: "it's all good",
+				},
+			},
+		}
+
+		requestValue := newRequestValue(tt, createManifestRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
+		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateManifestResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, resp.Manifest)
+		assert.Equal(tt, resp.Manifest.Issuer.ID, "did:abc:123")
+	})
+
+	t.Run("Test Get Manifest By ID", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		manifestService := newManifestService(tt, bolt)
+
+		w := httptest.NewRecorder()
+
+		// get a manifest that doesn't exit
+		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/bad", nil)
+		err = manifestService.GetManifest(newRequestContext(), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "cannot get manifest without ID parameter")
+
+		// reset recorder between calls
+		w.Flush()
+
+		// get a manifest with an invalid id parameter
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/bad", nil)
+		err = manifestService.GetManifest(newRequestContextWithParams(map[string]string{"id": "bad"}), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "could not get manifest with id: bad")
+
+		// reset recorder between calls
+		w.Flush()
+
+		// good request
+		createManifestRequest := getValidManifestRequest()
+
+		requestValue := newRequestValue(tt, createManifestRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
+		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateManifestResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		// get manifest by id
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
+		err = manifestService.GetManifest(newRequestContextWithParams(map[string]string{"id": resp.Manifest.ID}), w, req)
+		assert.NoError(tt, err)
+
+		var getManifestResp router.GetManifestResponse
+		err = json.NewDecoder(w.Body).Decode(&getManifestResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, getManifestResp)
+		assert.Equal(tt, resp.Manifest.ID, getManifestResp.ID)
+	})
+
+	t.Run("Test Get Manifests", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		manifestService := newManifestService(tt, bolt)
+
+		w := httptest.NewRecorder()
+
+		// good request
+		createManifestRequest := getValidManifestRequest()
+
+		requestValue := newRequestValue(tt, createManifestRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
+		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateManifestResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		// get manifest by id
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests"), nil)
+		err = manifestService.GetManifests(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var getManifestsResp router.GetManifestsResponse
+		err = json.NewDecoder(w.Body).Decode(&getManifestsResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, getManifestsResp)
+		assert.Len(tt, getManifestsResp.Manifests, 1)
+		assert.Equal(tt, resp.Manifest.ID, getManifestsResp.Manifests[0].ID)
+	})
+
+	t.Run("Test Delete Manifest", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		manifestService := newManifestService(tt, bolt)
+
+		// good request
+		createManifestRequest := getValidManifestRequest()
+
+		requestValue := newRequestValue(tt, createManifestRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
+		w := httptest.NewRecorder()
+		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateManifestResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		w.Flush()
+
+		// get credential by id
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
+		err = manifestService.GetManifest(newRequestContextWithParams(map[string]string{"id": resp.Manifest.ID}), w, req)
+		assert.NoError(tt, err)
+
+		var getManifestResp router.GetCredentialResponse
+		err = json.NewDecoder(w.Body).Decode(&getManifestResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, getManifestResp)
+		assert.Equal(tt, resp.Manifest.ID, getManifestResp.ID)
+
+		w.Flush()
+
+		// delete it
+		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
+		err = manifestService.DeleteManifest(newRequestContextWithParams(map[string]string{"id": resp.Manifest.ID}), w, req)
+		assert.NoError(tt, err)
+
+		w.Flush()
+
+		// get it back
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
+		err = manifestService.GetManifest(newRequestContextWithParams(map[string]string{"id": resp.Manifest.ID}), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), fmt.Sprintf("could not get manifest with id: %s", resp.Manifest.ID))
+	})
+}
+
+func newManifestService(t *testing.T, bolt *storage.BoltDB) *router.ManifestRouter {
+	manifestService, err := manifest.NewManifestService(config.ManifestServiceConfig{}, bolt)
+	require.NoError(t, err)
+	require.NotEmpty(t, manifestService)
+
+	// create router for service
+	manifestRouter, err := router.NewManifestRouter(manifestService)
+	require.NoError(t, err)
+	require.NotEmpty(t, manifestRouter)
+
+	return manifestRouter
+}
+
 func TestKeyStoreAPI(t *testing.T) {
 	t.Run("Test Store Key", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
@@ -869,4 +1109,42 @@ func newRequestContextWithParams(params map[string]string) context.Context {
 		StatusCode: 1,
 	})
 	return httptreemux.AddParamsToContext(ctx, params)
+}
+
+func getValidManifestRequest() router.CreateManifestRequest {
+	createManifestRequest := router.CreateManifestRequest{
+		Issuer:  "did:abc:123",
+		Context: "context123",
+		PresentationDefinition: exchange.PresentationDefinition{
+			ID: "pres-def-id",
+			InputDescriptors: []exchange.InputDescriptor{
+				{
+					ID: "test-id",
+					Constraints: &exchange.Constraints{
+						Fields: []exchange.Field{
+							{
+								Path: []string{".vc.id"},
+							},
+						},
+					},
+				},
+			},
+		},
+		OutputDescriptors: []manifestsdk.OutputDescriptor{
+			{
+				ID:          "id1",
+				Schema:      "https://test.com/schema",
+				Name:        "good ID",
+				Description: "it's all good",
+			},
+			{
+				ID:          "id2",
+				Schema:      "https://test.com/schema",
+				Name:        "good ID",
+				Description: "it's all good",
+			},
+		},
+	}
+
+	return createManifestRequest
 }

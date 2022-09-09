@@ -52,6 +52,7 @@ type ServicesConfig struct {
 	SchemaConfig     SchemaServiceConfig     `toml:"schema,omitempty"`
 	CredentialConfig CredentialServiceConfig `toml:"credential,omitempty"`
 	KeyStoreConfig   KeyStoreServiceConfig   `toml:"keystore,omitempty"`
+	ManifestConfig   ManifestServiceConfig   `toml:"manifest,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
@@ -86,6 +87,10 @@ func (s *SchemaServiceConfig) IsEmpty() bool {
 type CredentialServiceConfig struct {
 	*BaseServiceConfig
 	// TODO(gabe) supported key and signature types
+}
+
+type ManifestServiceConfig struct {
+	*BaseServiceConfig
 }
 
 type KeyStoreServiceConfig struct {
