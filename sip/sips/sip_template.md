@@ -1,18 +1,15 @@
 # SIP Template
 
-**SIP:** *1*
-
-**Title:** *SIP Title*
-
-**Author(s):** *Satoshi Nakamoto (@satoshi)*
-
-**Comments URI:** *a link to a GitHub issue, pull request, or forum post for discussion*
-
-**Status:** *Draft*
-
-**Created:** *May 5, 2022*
-
-**Updated:** *May 6, 2022*
+```yaml
+SIP: 1
+Title: SIP Title
+Author(s): Satoshi Nakamoto (@satoshi)
+Comments URI: Link to a GitHub issue, pull request, or forum post for discussion
+Status: Draft
+Created: May 5, 2022
+Updated: May 6, 2022
+Discussion: Link to a forum post e.g. https://forums.tbd.website/c/self-sovereign-identity-developers/7
+```
 
 # Abstract
 
@@ -37,6 +34,10 @@
 ---
 
 # Considerations
+
+## Alternatives
+
+*What alternatives were considered? What are their pros/cons?*
 
 ## Tradeoffs
 
