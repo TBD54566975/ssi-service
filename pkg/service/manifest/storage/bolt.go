@@ -24,7 +24,6 @@ func NewBoltManifestStorage(db *storage.BoltDB) (*BoltManifestStorage, error) {
 }
 
 func (b BoltManifestStorage) StoreManifest(manifest StoredManifest) error {
-	//id := manifest.Schema.ID
 	id := manifest.Manifest.ID
 	if id == "" {
 		err := errors.New("could not store manifest without an ID")
@@ -63,21 +62,21 @@ func (b BoltManifestStorage) GetManifest(id string) (*StoredManifest, error) {
 
 // GetManifests attempts to get all stored manifests. It will return those it can even if it has trouble with some.
 func (b BoltManifestStorage) GetManifests() ([]StoredManifest, error) {
-	gotmanifests, err := b.db.ReadAll(namespace)
+	gotManifests, err := b.db.ReadAll(namespace)
 	if err != nil {
 		errMsg := "could not get all manifests"
 		logrus.WithError(err).Error(errMsg)
 		return nil, errors.Wrap(err, errMsg)
 	}
-	if len(gotmanifests) == 0 {
+	if len(gotManifests) == 0 {
 		logrus.Info("no manifests to get")
 		return nil, nil
 	}
 	var stored []StoredManifest
-	for _, manifestBytes := range gotmanifests {
-		var nextmanifest StoredManifest
-		if err := json.Unmarshal(manifestBytes, &nextmanifest); err == nil {
-			stored = append(stored, nextmanifest)
+	for _, manifestBytes := range gotManifests {
+		var nextManifest StoredManifest
+		if err := json.Unmarshal(manifestBytes, &nextManifest); err == nil {
+			stored = append(stored, nextManifest)
 		}
 	}
 	return stored, nil

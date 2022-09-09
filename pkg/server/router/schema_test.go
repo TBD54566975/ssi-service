@@ -52,7 +52,7 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Equal(tt, 0, len(gotSchemas.Schemas))
 
 		// get schema that doesn't exist
-		_, err = schemaService.GetSchemaByID(schema.GetSchemaByIDRequest{ID: "bad"})
+		_, err = schemaService.GetSchema(schema.GetSchemaRequest{ID: "bad"})
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "error getting schema")
 
@@ -75,7 +75,7 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Equal(tt, "simple schema", createdSchema.Schema.Name)
 
 		// get schema by ID
-		gotSchema, err := schemaService.GetSchemaByID(schema.GetSchemaByIDRequest{ID: createdSchema.ID})
+		gotSchema, err := schemaService.GetSchema(schema.GetSchemaRequest{ID: createdSchema.ID})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, gotSchema)
 		assert.EqualValues(tt, createdSchema.Schema, gotSchema.Schema)

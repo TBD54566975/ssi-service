@@ -125,7 +125,7 @@ func (s *SSIServer) SchemaAPI(service svcframework.Service) (err error) {
 
 	s.Handle(http.MethodPut, handlerPath, schemaRouter.CreateSchema)
 	s.Handle(http.MethodGet, handlerPath, schemaRouter.GetSchemas)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), schemaRouter.GetSchemaByID)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), schemaRouter.GetSchema)
 	return
 }
 

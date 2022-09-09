@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +14,7 @@ import (
 	"time"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
+	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/dimfeld/httptreemux/v5"
 	"github.com/goccy/go-json"
@@ -310,7 +313,7 @@ func TestSchemaAPI(t *testing.T) {
 		// get schema that doesn't exist
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas/bad", nil)
-		err = schemaService.GetSchemaByID(newRequestContext(), w, req)
+		err = schemaService.GetSchema(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "cannot get schema without ID parameter")
 
@@ -319,7 +322,7 @@ func TestSchemaAPI(t *testing.T) {
 
 		// get schema with invalid id
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas/bad", nil)
-		err = schemaService.GetSchemaByID(newRequestContextWithParams(map[string]string{"id": "bad"}), w, req)
+		err = schemaService.GetSchema(newRequestContextWithParams(map[string]string{"id": "bad"}), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not get schema with id: bad")
 
@@ -368,7 +371,7 @@ func TestSchemaAPI(t *testing.T) {
 
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", createResp.ID), nil)
-		err = schemaService.GetSchemaByID(newRequestContextWithParams(map[string]string{"id": createResp.ID}), w, req)
+		err = schemaService.GetSchema(newRequestContextWithParams(map[string]string{"id": createResp.ID}), w, req)
 		assert.NoError(tt, err)
 
 		var gotSchemaResp router.GetSchemaResponse
@@ -761,34 +764,41 @@ func TestManifestAPI(t *testing.T) {
 		// reset the http recorder
 		w.Flush()
 
-		pathArray := []string{"path1"}
-		fieldsArray := []map[string]interface{}{}
-		fieldsArray = append(fieldsArray, map[string]interface{}{"path": pathArray})
-		constraintsObj := map[string]interface{}{"fields": fieldsArray}
-
 		// good request
 		createManifestRequest := router.CreateManifestRequest{
 			Issuer:  "did:abc:123",
 			Context: "context123",
-			PresentationDefinition: map[string]interface{}{
-				"id":                "test",
-				"input_descriptors": []map[string]interface{}{constraintsObj},
+			PresentationDefinition: exchange.PresentationDefinition{
+				ID: "pres-def-id",
+				InputDescriptors: []exchange.InputDescriptor{
+					{
+						ID: "test-id",
+						Constraints: &exchange.Constraints{
+							Fields: []exchange.Field{
+								{
+									Path: []string{".vc.id"},
+								},
+							},
+						},
+					},
+				},
 			},
-			OutputDescriptors: []map[string]interface{}{
+			OutputDescriptors: []manifestsdk.OutputDescriptor{
 				{
-					"id":          "od1",
-					"schema":      "https://test.com/schema",
-					"name":        "good ID",
-					"description": "it's all good",
+					ID:          "id1",
+					Schema:      "https://test.com/schema",
+					Name:        "good ID",
+					Description: "it's all good",
 				},
 				{
-					"id":          "od2",
-					"schema":      "https://test.com/schema",
-					"name":        "good ID",
-					"description": "it's all good",
+					ID:          "id2",
+					Schema:      "https://test.com/schema",
+					Name:        "good ID",
+					Description: "it's all good",
 				},
 			},
 		}
+
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		err = manifestService.CreateManifest(newRequestContext(), w, req)
@@ -833,34 +843,8 @@ func TestManifestAPI(t *testing.T) {
 		// reset recorder between calls
 		w.Flush()
 
-		pathArray := []string{"path1"}
-		fieldsArray := []map[string]interface{}{}
-		fieldsArray = append(fieldsArray, map[string]interface{}{"path": pathArray})
-		constraintsObj := map[string]interface{}{"fields": fieldsArray}
-
 		// good request
-		createManifestRequest := router.CreateManifestRequest{
-			Issuer:  "did:abc:123",
-			Context: "context123",
-			PresentationDefinition: map[string]interface{}{
-				"id":                "test",
-				"input_descriptors": []map[string]interface{}{constraintsObj},
-			},
-			OutputDescriptors: []map[string]interface{}{
-				{
-					"id":          "od1",
-					"schema":      "https://test.com/schema",
-					"name":        "good ID",
-					"description": "it's all good",
-				},
-				{
-					"id":          "od2",
-					"schema":      "https://test.com/schema",
-					"name":        "good ID",
-					"description": "it's all good",
-				},
-			},
-		}
+		createManifestRequest := getValidManifestRequest()
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -896,34 +880,8 @@ func TestManifestAPI(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		pathArray := []string{"path1"}
-		fieldsArray := []map[string]interface{}{}
-		fieldsArray = append(fieldsArray, map[string]interface{}{"path": pathArray})
-		constraintsObj := map[string]interface{}{"fields": fieldsArray}
-
 		// good request
-		createManifestRequest := router.CreateManifestRequest{
-			Issuer:  "did:abc:123",
-			Context: "context123",
-			PresentationDefinition: map[string]interface{}{
-				"id":                "test",
-				"input_descriptors": []map[string]interface{}{constraintsObj},
-			},
-			OutputDescriptors: []map[string]interface{}{
-				{
-					"id":          "od1",
-					"schema":      "https://test.com/schema",
-					"name":        "good ID",
-					"description": "it's all good",
-				},
-				{
-					"id":          "od2",
-					"schema":      "https://test.com/schema",
-					"name":        "good ID",
-					"description": "it's all good",
-				},
-			},
-		}
+		createManifestRequest := getValidManifestRequest()
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -958,34 +916,8 @@ func TestManifestAPI(t *testing.T) {
 
 		manifestService := newManifestService(tt, bolt)
 
-		pathArray := []string{"path1"}
-		fieldsArray := []map[string]interface{}{}
-		fieldsArray = append(fieldsArray, map[string]interface{}{"path": pathArray})
-		constraintsObj := map[string]interface{}{"fields": fieldsArray}
-
 		// good request
-		createManifestRequest := router.CreateManifestRequest{
-			Issuer:  "did:abc:123",
-			Context: "context123",
-			PresentationDefinition: map[string]interface{}{
-				"id":                "test",
-				"input_descriptors": []map[string]interface{}{constraintsObj},
-			},
-			OutputDescriptors: []map[string]interface{}{
-				{
-					"id":          "od1",
-					"schema":      "https://test.com/schema",
-					"name":        "good ID",
-					"description": "it's all good",
-				},
-				{
-					"id":          "od2",
-					"schema":      "https://test.com/schema",
-					"name":        "good ID",
-					"description": "it's all good",
-				},
-			},
-		}
+		createManifestRequest := getValidManifestRequest()
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -1177,4 +1109,42 @@ func newRequestContextWithParams(params map[string]string) context.Context {
 		StatusCode: 1,
 	})
 	return httptreemux.AddParamsToContext(ctx, params)
+}
+
+func getValidManifestRequest() router.CreateManifestRequest {
+	createManifestRequest := router.CreateManifestRequest{
+		Issuer:  "did:abc:123",
+		Context: "context123",
+		PresentationDefinition: exchange.PresentationDefinition{
+			ID: "pres-def-id",
+			InputDescriptors: []exchange.InputDescriptor{
+				{
+					ID: "test-id",
+					Constraints: &exchange.Constraints{
+						Fields: []exchange.Field{
+							{
+								Path: []string{".vc.id"},
+							},
+						},
+					},
+				},
+			},
+		},
+		OutputDescriptors: []manifestsdk.OutputDescriptor{
+			{
+				ID:          "id1",
+				Schema:      "https://test.com/schema",
+				Name:        "good ID",
+				Description: "it's all good",
+			},
+			{
+				ID:          "id2",
+				Schema:      "https://test.com/schema",
+				Name:        "good ID",
+				Description: "it's all good",
+			},
+		},
+	}
+
+	return createManifestRequest
 }

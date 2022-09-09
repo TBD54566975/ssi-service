@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 )
 
@@ -8,8 +9,8 @@ type CreateManifestRequest struct {
 	Issuer string
 	// A context is optional. If not present, we'll apply default, required context values.
 	Context                string
-	OutputDescriptors      []map[string]interface{}
-	PresentationDefinition map[string]interface{}
+	OutputDescriptors      []manifestsdk.OutputDescriptor
+	PresentationDefinition exchange.PresentationDefinition
 }
 
 type CreateManifestResponse struct {

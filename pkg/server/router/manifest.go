@@ -3,6 +3,7 @@ package router
 import (
 	"context"
 	"fmt"
+	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"net/http"
@@ -34,9 +35,9 @@ func NewManifestRouter(s svcframework.Service) (*ManifestRouter, error) {
 type CreateManifestRequest struct {
 	Issuer string `json:"issuer" validate:"required"`
 	// A context is optional. If not present, we'll apply default, required context values.
-	Context                string                   `json:"@context"`
-	OutputDescriptors      []map[string]interface{} `json:"outputDescriptors" validate:"required"`
-	PresentationDefinition map[string]interface{}   `json:"presentationDefinition" validate:"required"`
+	Context                string                          `json:"@context"`
+	OutputDescriptors      []manifestsdk.OutputDescriptor  `json:"outputDescriptors" validate:"required"`
+	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition" validate:"required"`
 }
 
 func (c CreateManifestRequest) ToServiceRequest() manifest.CreateManifestRequest {
@@ -63,7 +64,7 @@ type CreateManifestResponse struct {
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests [put]
-func (cr ManifestRouter) CreateManifest(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) CreateManifest(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreateManifestRequest
 	if err := framework.Decode(r, &request); err != nil {
 		errMsg := "invalid create manifest request"
@@ -72,7 +73,7 @@ func (cr ManifestRouter) CreateManifest(ctx context.Context, w http.ResponseWrit
 	}
 
 	req := request.ToServiceRequest()
-	createManifestResponse, err := cr.service.CreateManifest(req)
+	createManifestResponse, err := mr.service.CreateManifest(req)
 	if err != nil {
 		errMsg := "could not create manifest"
 		logrus.WithError(err).Error(errMsg)
@@ -99,7 +100,7 @@ type GetManifestResponse struct {
 // @Success      200  {object}  GetManifestResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/manifests/{id} [get]
-func (cr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get manifest without ID parameter"
@@ -107,7 +108,7 @@ func (cr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter,
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotManifest, err := cr.service.GetManifest(manifest.GetManifestRequest{ID: *id})
+	gotManifest, err := mr.service.GetManifest(manifest.GetManifestRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get manifest with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -138,8 +139,8 @@ type GetManifestsResponse struct {
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests [get]
-func (cr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	gotManifests, err := cr.service.GetManifests()
+func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	gotManifests, err := mr.service.GetManifests()
 
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get manifests")
@@ -165,7 +166,7 @@ func (cr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/manifests/{id} [delete]
-func (cr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot delete manifest without ID parameter"
@@ -173,7 +174,7 @@ func (cr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := cr.service.DeleteManifest(manifest.DeleteManifestRequest{ID: *id}); err != nil {
+	if err := mr.service.DeleteManifest(manifest.DeleteManifestRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete manifest with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)

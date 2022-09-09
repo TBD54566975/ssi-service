@@ -1,6 +1,8 @@
 package router
 
 import (
+	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/stretchr/testify/assert"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -44,38 +46,50 @@ func TestManifestRouter(t *testing.T) {
 		assert.Equal(tt, framework.Manifest, manifestService.Type())
 		assert.Equal(tt, framework.StatusReady, manifestService.Status().Status)
 
-		pathArray := []string{"path1"}
-		fieldsArray := []map[string]interface{}{}
-		fieldsArray = append(fieldsArray, map[string]interface{}{"path": pathArray})
-		constraintsObj := map[string]interface{}{"fields": fieldsArray}
-
 		// good request
-		createManifestRequest := manifest.CreateManifestRequest{
-			Issuer:  "did:abc:123",
-			Context: "context123",
-			PresentationDefinition: map[string]interface{}{
-				"id":                "test",
-				"input_descriptors": []map[string]interface{}{constraintsObj},
-			},
-			OutputDescriptors: []map[string]interface{}{
-				{
-					"id":          "od1",
-					"schema":      "https://test.com/schema",
-					"name":        "good ID",
-					"description": "it's all good",
-				},
-				{
-					"id":          "od2",
-					"schema":      "https://test.com/schema",
-					"name":        "good ID",
-					"description": "it's all good",
-				},
-			},
-		}
+		createManifestRequest := getValidManifestRequest()
 
 		createdManifest, err := manifestService.CreateManifest(createManifestRequest)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
 		assert.NotEmpty(tt, createdManifest.Manifest)
 	})
+}
+
+func getValidManifestRequest() manifest.CreateManifestRequest {
+	createManifestRequest := manifest.CreateManifestRequest{
+		Issuer:  "did:abc:123",
+		Context: "context123",
+		PresentationDefinition: exchange.PresentationDefinition{
+			ID: "pres-def-id",
+			InputDescriptors: []exchange.InputDescriptor{
+				{
+					ID: "test-id",
+					Constraints: &exchange.Constraints{
+						Fields: []exchange.Field{
+							{
+								Path: []string{".vc.id"},
+							},
+						},
+					},
+				},
+			},
+		},
+		OutputDescriptors: []manifestsdk.OutputDescriptor{
+			{
+				ID:          "id1",
+				Schema:      "https://test.com/schema",
+				Name:        "good ID",
+				Description: "it's all good",
+			},
+			{
+				ID:          "id2",
+				Schema:      "https://test.com/schema",
+				Name:        "good ID",
+				Description: "it's all good",
+			},
+		},
+	}
+
+	return createManifestRequest
 }
