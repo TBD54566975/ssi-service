@@ -1,18 +1,20 @@
 # SIP Template
 
-**SIP:** 3
+```yaml
+SIP: 3
 
-**Title:** Signing & Verificaiton
+Title: Signing & Verification
 
-**Author(s):** Gabe Cohen ([@decentralgabe](https://github.com/decentralgabe))
+Author(s): Gabe Cohen @decentralgabe
 
-**Comments URI:** 
+Comments URI:
 
-**Status:** *Draft*
+Status: Draft
 
-**Created:** *August 31, 2022*
+Created: September 12, 2022
 
-**Updated:** *August 31, 2022*
+Updated: September 12, 2022
+```
 
 # Abstract
 
