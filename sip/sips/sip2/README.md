@@ -1,17 +1,18 @@
 # SIP 2 Credential Issuance Flow
 
+
 ```yaml
 SIP: 2
 
-Title: SIP 2 Credential* Issuance Flow
+Title: Credential Issuance Flow
 
 Author(s): Neal Roessler, Gabe Cohen
 
-Comments URI**: https://forums.tbd.website/t/sip-2-discussion-credential-issuance-flow/125
+Comments URI: https://forums.tbd.website/t/sip-2-discussion-credential-issuance-flow/125
 
 Status**: Accepted
 
-Created: August** 23, 2022
+Created: August 23, 2022
 
 Updated: September 12, 2022
 ```
@@ -91,26 +92,26 @@ The high level route structure will be under manifests:
           "https://identity.foundation/credential-manifest/"
       ],
       "id": "868edb2f-2251-4575-a9e4-6009a8a903fa",
-			"spec_version": "https://identity.foundation/credential-manifest/spec/v1.0.0/",
-			"manifest_id": "25a42469-395a-4230-961d-e65c164d8e41",
-			"format": {
-			  "ldp_vc": {
-			    "proof_type": [
-			      "JsonWebSignature2020",
-				    "EcdsaSecp256k1Signature2019"
-			    ]
-			  }
-			},
+            "spec_version": "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+            "manifest_id": "25a42469-395a-4230-961d-e65c164d8e41",
+            "format": {
+              "ldp_vc": {
+                "proof_type": [
+                  "JsonWebSignature2020",
+                    "EcdsaSecp256k1Signature2019"
+                ]
+              }
+            },
       "presentation_submission": [
-				"id": "a30e3b91-fb77-4d22-95fa-871689c322e2",
-		    "definition_id": "32f54163-7166-48f1-93d8-ff217bdb0653",
-		    "descriptor_map": [
-		      {
-		        "id": "input_1",
-		        "format": "jwt_vc",
-		        "path": "$.verifiableCredential[0]"
-		      }
-	      ]
+                "id": "a30e3b91-fb77-4d22-95fa-871689c322e2",
+            "definition_id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+            "descriptor_map": [
+              {
+                "id": "input_1",
+                "format": "jwt_vc",
+                "path": "$.verifiableCredential[0]"
+              }
+          ]
       ]
   }
 }
@@ -120,11 +121,11 @@ The high level route structure will be under manifests:
         
 ```jsx
 {
-	"status" : "success"
+    "status" : "success"
     "id": "534eacd0-5f0a-469d-82ef-d0f64e098c45",
     "response": {
-		...
-		...
+        ...
+        ...
    }
 }
 ```
@@ -138,8 +139,8 @@ The high level route structure will be under manifests:
         
 ```jsx
 {
-	"status" : "error"
-	"reason" : "No manifests id exists for application request"
+    "status" : "error"
+    "reason" : "No manifests id exists for application request"
 }
 ```
         
@@ -164,17 +165,17 @@ The high level route structure will be under manifests:
 ```jsx
     {
       "response": {
-    		  "id": "a30e3b91-fb77-4d22-95fa-871689c322e2",
-    		  "spec_version": "https://identity.foundation/credential-manifest/spec/v1.0.0/",
-    		  "manifest_id": "32f54163-7166-48f1-93d8-ff217bdb0653",
-    		  "application_id": "b6385066-147c-49d0-9783-261a2154b1fd",
-    		  "descriptor_map": [
-    		    {
-    		      "id": "banking_output_2",
-    		      "format": "jwt_vc",
-    		      "path": "$.verifiableCredential[0]"
-    		    }
-    		  ]
+              "id": "a30e3b91-fb77-4d22-95fa-871689c322e2",
+              "spec_version": "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+              "manifest_id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+              "application_id": "b6385066-147c-49d0-9783-261a2154b1fd",
+              "descriptor_map": [
+                {
+                  "id": "banking_output_2",
+                  "format": "jwt_vc",
+                  "path": "$.verifiableCredential[0]"
+                }
+              ]
         }
     }
 ```
