@@ -1,20 +1,21 @@
 # SIP 2 Credential Issuance Flow
 
-**SIP: *2***
 
-**Title:** *SIP 2 Credential* Issuance Flow
+```yaml
+SIP: 2
 
-**Author(s):** *Neal Roessler, Gabe Cohen*
+Title: Credential Issuance Flow
 
-**Comments URI**: *a link to a GitHub issue, pull request, or forum post for discussion*
+Author(s): Neal Roessler, Gabe Cohen
 
-**Status**: *Draft*
+Comments URI: https://forums.tbd.website/t/sip-2-discussion-credential-issuance-flow/125
 
-**Created: August** *23, 2022*
+Status**: Accepted
 
-**Updated: August** *24, 2022*
+Created: August 23, 2022
 
-**Discussion:** https://forums.tbd.website/t/sip-2-discussion-credential-issuance-flow/125
+Updated: September 12, 2022
+```
 
 # Abstract
 
@@ -28,11 +29,11 @@ Credential Manifest Spec is a required pre-read: [https://identity.foundation/cr
 
 High level definitions of objects are here:
 
-The [*Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest) i*s a common data format for describing the inputs a Subject must provide to an Issuer for subsequent evaluation and issuance of the credential or credentials indicated in the Credential Manifest. There must be a formal process to create and receive a credential manifest.
+The *[Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest)* is a common data format for describing the inputs a Subject must provide to an Issuer for subsequent evaluation and issuance of the credential or credentials indicated in the Credential Manifest. There must be a formal process to create and receive a credential manifest.
 
-*[Credential Applications](https://identity.foundation/credential-manifest/#term:credential-application)* are JSON objects embedded within target claim negotiation formats that pass information from the [Holder](https://identity.foundation/credential-manifest/#term:holder)  to the [Issuer](https://identity.foundation/credential-manifest/#term:issuer).
+*[Credential Applications](https://identity.foundation/credential-manifest/#term:credential-application)* are JSON objects embedded within target claim negotiation formats that pass information from the *[Holder](https://identity.foundation/credential-manifest/#term:holder)* to the *[Issuer](https://identity.foundation/credential-manifest/#term:issuer)*.
 
-[Credential Responses](https://identity.foundation/credential-manifest/#term:credential-fulfillments) are objects embedded within target [Claim](https://identity.foundation/credential-manifest/#term:claim) negotiation formats that express how the outputs presented as proofs to a [Holder](https://identity.foundation/credential-manifest/#term:holder) are provided in accordance with the outputs specified in a [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest).
+[Credential Responses](https://identity.foundation/credential-manifest/#term:credential-fulfillments) are objects embedded within target [Claim](https://identity.foundation/credential-manifest/#term:claim) negotiation formats that express how the outputs presented as proofs to a [Holder](https://identity.foundation/credential-manifest/#term:holder) are provided in accordance with the outputs specified in a [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest).
 
 *What are the pre-requisites that need to be true for this work to succeed?*
 
@@ -69,79 +70,79 @@ The high level route structure will be under manifests:
 
 `{{baseUrl}}/v1/manifests/...`
 
-![Untitled](doc/toplevel.png)
+![Untitled](assets/toplevel.png)
 
-### **Credential Applications** API R**outes**
+### **Credential Applications** API **Routes**
 
-![Untitled](doc/application.png)
+![Untitled](assets/application.png)
 
 - PUT `{{baseUrl}}/v1/manifests/applications`
     - Apply for credentials by submitting a Credential Application that are has linkings to a Credential Manifest. This function will return a response object that could contain the Response Request, or a response request ID that one can later query to receive.
         - **Input -** Will be a Credential Application
-            - The object **MUST** contain an `id` property.
-            - The object **MUST** contain a `spec_version` property.
-            - The object **MUST** contain a `manifest_id` property.
-            - The **MUST** have a `format`property if the related [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest) specifies a `format`property
-            - The [Credential Application](https://identity.foundation/credential-manifest/#term:credential-application) object **MUST** contain a `presentation_submission` property IF the related [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest) contains a `presentation_definition`
+            - The object **MUST** contain an `id` property.
+            - The object **MUST** contain a `spec_version` property.
+            - The object **MUST** contain a `manifest_id` property.
+            - The **MUST** have a `format`property if the related [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest) specifies a `format`property
+            - The [Credential Application](https://identity.foundation/credential-manifest/#term:credential-application) object **MUST** contain a `presentation_submission` property IF the related [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest) contains a `presentation_definition`
         
-        ```jsx
-        {
-          "application": {
-              "@context": [
-                  "https://identity.foundation/credential-manifest/"
-              ],
-              "id": "868edb2f-2251-4575-a9e4-6009a8a903fa",
-        			"spec_version": "https://identity.foundation/credential-manifest/spec/v1.0.0/",
-        			"manifest_id": "25a42469-395a-4230-961d-e65c164d8e41",
-        			"format": {
-        			  "ldp_vc": {
-        			    "proof_type": [
-        			      "JsonWebSignature2020",
-        				    "EcdsaSecp256k1Signature2019"
-        			    ]
-        			  }
-        			},
-              "presentation_submission": [
-        				"id": "a30e3b91-fb77-4d22-95fa-871689c322e2",
-        		    "definition_id": "32f54163-7166-48f1-93d8-ff217bdb0653",
-        		    "descriptor_map": [
-        		      {
-        		        "id": "input_1",
-        		        "format": "jwt_vc",
-        		        "path": "$.verifiableCredential[0]"
-        		      }
-        	      ]
-              ]
-          }
-        }
-        ```
+```jsx
+{
+  "application": {
+      "@context": [
+          "https://identity.foundation/credential-manifest/"
+      ],
+      "id": "868edb2f-2251-4575-a9e4-6009a8a903fa",
+            "spec_version": "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+            "manifest_id": "25a42469-395a-4230-961d-e65c164d8e41",
+            "format": {
+              "ldp_vc": {
+                "proof_type": [
+                  "JsonWebSignature2020",
+                    "EcdsaSecp256k1Signature2019"
+                ]
+              }
+            },
+      "presentation_submission": [
+                "id": "a30e3b91-fb77-4d22-95fa-871689c322e2",
+            "definition_id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+            "descriptor_map": [
+              {
+                "id": "input_1",
+                "format": "jwt_vc",
+                "path": "$.verifiableCredential[0]"
+              }
+          ]
+      ]
+  }
+}
+```
         
         - **Response** - Will give response object with status error, pending, or success
         
-        ```jsx
-        {
-        	"status" : "success"
-          "id": "534eacd0-5f0a-469d-82ef-d0f64e098c45",
-          "response": {
-        		...
-        		...
-          }
-        }
-        ```
+```jsx
+{
+    "status" : "success"
+    "id": "534eacd0-5f0a-469d-82ef-d0f64e098c45",
+    "response": {
+        ...
+        ...
+   }
+}
+```
         
-        ```jsx
-        {
-        	"status" : "pending"
-          "id": "534eacd0-5f0a-469d-82ef-d0f64e098c45"
-        }
-        ```
+```jsx
+{
+    "status" : "pending"
+    "id": "534eacd0-5f0a-469d-82ef-d0f64e098c45"
+}
+```
         
-        ```jsx
-        {
-        	"status" : "error"
-        	"reason" : "No manifests id exists for application request"
-        }
-        ```
+```jsx
+{
+    "status" : "error"
+    "reason" : "No manifests id exists for application request"
+}
+```
         
     - GET `{{baseUrl}}/v1/manifests/applications`
         - Returns a list of all applications
@@ -154,31 +155,30 @@ The high level route structure will be under manifests:
 
 ### **Credential** Responses **API** R**outes**
 
-![Untitled](doc/response.png)
+![Untitled](assets/response.png)
 
-- Credential Responses are objects embedded within target [Claim](https://identity.foundation/credential-manifest/#term:claim) negotiation formats that express how the outputs presented as proofs to a [Holder](https://identity.foundation/credential-manifest/#term:holder) are provided in accordance with the outputs specified in a [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest)
-    - The object **MUST** contain an `id` property.
-    - The object **MUST** contain a `spec_version` property, and its value **MUST** be a valid spec URI according to the rules set in the [versioning section](https://identity.foundation/credential-manifest/#versioning).
-    - The object **MUST** contain a `manifest_id` property. The value of this property **MUST** be the `id` value of a valid [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest).
+- Credential Responses are objects embedded within target [Claim](https://identity.foundation/credential-manifest/#term:claim) negotiation formats that express how the outputs presented as proofs to a [Holder](https://identity.foundation/credential-manifest/#term:holder) are provided in accordance with the outputs specified in a [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest)
+    - The object **MUST** contain an `id` property.
+    - The object **MUST** contain a `spec_version` property, and its value **MUST** be a valid spec URI according to the rules set in the [versioning section](https://identity.foundation/credential-manifest/#versioning).
+    - The object **MUST** contain a `manifest_id` property. The value of this property **MUST** be the `id` value of a valid [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest).
     
-    ```jsx
+```jsx
     {
       "response": {
-    		  "id": "a30e3b91-fb77-4d22-95fa-871689c322e2",
-    		  "spec_version": "https://identity.foundation/credential-manifest/spec/v1.0.0/",
-    		  "manifest_id": "32f54163-7166-48f1-93d8-ff217bdb0653",
-    		  "application_id": "b6385066-147c-49d0-9783-261a2154b1fd",
-    		  "descriptor_map": [
-    		    {
-    		      "id": "banking_output_2",
-    		      "format": "jwt_vc",
-    		      "path": "$.verifiableCredential[0]"
-    		    }
-    		  ]
-    		}
-      }
+              "id": "a30e3b91-fb77-4d22-95fa-871689c322e2",
+              "spec_version": "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+              "manifest_id": "32f54163-7166-48f1-93d8-ff217bdb0653",
+              "application_id": "b6385066-147c-49d0-9783-261a2154b1fd",
+              "descriptor_map": [
+                {
+                  "id": "banking_output_2",
+                  "format": "jwt_vc",
+                  "path": "$.verifiableCredential[0]"
+                }
+              ]
+        }
     }
-    ```
+```
     
 - GET `{{baseUrl}}/v1/manifests/responses`
     - Returns a list of all responses
@@ -189,20 +189,20 @@ The high level route structure will be under manifests:
 - DEL `{{baseUrl}}/v1/manifests/responses/:id`
     - Deletes a responses by the id provided
 
-### **Credential Manifests** API R**outes**
+### **Credential Manifests** API **Routes**
 
-![Untitled](doc/manifest.png)
+![Untitled](assets/manifest.png)
 
 - Create, Read and Delete Manifests
     - Creates a manifest and verifies that it has at least the minimum requirements
-        - *Credential Manifests* are JSON objects composed as follows:
-        - The object **MUST** contain an `id` property
-        - The object **MUST** contain an `issuer`property
-        - The object **MUST** contain an `output_descriptors` property
-        - The object **MAY** include a `format`property
-        - The object **MAY** contain a `presentation_definition`object
+        - *Credential Manifests* are JSON objects composed as follows:
+        - The object **MUST** contain an `id` property
+        - The object **MUST** contain an `issuer` property
+        - The object **MUST** contain an `output_descriptors` property
+        - The object **MAY** include a `format` property
+        - The object **MAY** contain a `presentation_definition` object
         
-        ```jsx
+```jsx
         {
           "manifest": {
               "@context": [
@@ -218,7 +218,8 @@ The high level route structure will be under manifests:
               ]
           }
         }
-        ```
+```
+
         
     - PUT `{{baseUrl}}/v1/manifests`
     - GET `{{baseUrl}}/v1/manifests`
@@ -285,12 +286,12 @@ Rollout would be similar to how the other pieces of ssi service have been deploy
 
 *Enumeration of content links used in this document*
 
-The *Credential Manifest i*s a common data format for describing the inputs a Subject must provide to an Issuer for subsequent evaluation and issuance of the credential or credentials indicated in the Credential Manifest. There must be a formal process to create and receive a credential manifest.
+The *Credential Manifest* is a common data format for describing the inputs a Subject must provide to an Issuer for subsequent evaluation and issuance of the credential or credentials indicated in the Credential Manifest. There must be a formal process to create and receive a credential manifest.
 
-*Credential Applications* are JSON objects embedded within target claim negotiation formats that pass information from the [Holder](https://identity.foundation/credential-manifest/#term:holder)  to the [Issuer](https://identity.foundation/credential-manifest/#term:issuer).
+*Credential Applications* are JSON objects embedded within target claim negotiation formats that pass information from the [Holder](https://identity.foundation/credential-manifest/#term:holder) to the[Issuer](https://identity.foundation/credential-manifest/#term:issuer).
 
-[Credential Fulfillments](https://identity.foundation/credential-manifest/#term:credential-fulfillments) (Responses) are objects embedded within target [Claim](https://identity.foundation/credential-manifest/#term:claim) negotiation formats that express how the outputs presented as proofs to a [Holder](https://identity.foundation/credential-manifest/#term:holder) are provided in accordance with the outputs specified in a [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest).
+[Credential Fulfillments](https://identity.foundation/credential-manifest/#term:credential-fulfillments) (Responses) are objects embedded within target [Claim](https://identity.foundation/credential-manifest/#term:claim) negotiation formats that express how the outputs presented as proofs to a [Holder](https://identity.foundation/credential-manifest/#term:holder) are provided in accordance with the outputs specified in a [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest).
 
-*Credential Manifest in DFI* - [https://identity.foundation/credential-manifest/#credential-manifest](https://identity.foundation/credential-manifest/#credential-manifest)
+*Credential Manifest in DIF* - [https://identity.foundation/credential-manifest/#credential-manifest](https://identity.foundation/credential-manifest/#credential-manifest)
 
 *Credential Manifest in SSI-SDK* [https://github.com/TBD54566975/ssi-sdk/tree/main/credential/manifest](https://github.com/TBD54566975/ssi-sdk/tree/main/credential/manifest)
