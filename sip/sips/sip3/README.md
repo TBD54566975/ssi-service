@@ -89,7 +89,7 @@ Key operations can be performed by adding a KeyAccess dependency on services whi
 
 The diagram below illustrates the flow:
 
-![Key Access][assets/key-access.png]
+![Key Access](assets/key-access.png)
 
 Notably, Key Access is not a new service, but a new set of APIs that _optionally depends on_ a _KeyStore_ and _is depended on_ by any service that requires Key Access.
 

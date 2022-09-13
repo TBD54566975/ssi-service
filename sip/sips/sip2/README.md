@@ -236,31 +236,21 @@ The high level route structure will be under manifests:
 
 ## Tradeoffs
 
-*What is lost with this approach? What is gained?*
-
 This approach keeps it simple and consistent with the other objects in the SSI Service. The base minimum create read and delete operations are in place and a user can go through a full flow of receiving a Credential Response
 
 ## Failure Modes & Mitigations
-
-*What can go wrong and why? How can it be mitigated?*
 
 If an application was approved but the connection is disconnected a user can still receive the Credential Response by querying for existing Credential Responses. All steps can be done in an asynchronous way.
 
 ## Dependencies
 
-*What dependencies exist between this and other pieces of work?* 
-
-SSI-SDK implementing the Credential Manifest, Credential Application, and Credential Response objects to spec and validation between these objects
+SSI-SDK implementing the Credential Manifest, Credential Application, and Credential Response objects to spec and validation between these objects.
 
 ## Future Work
 
-*What work comes next/what does this enable?*
-
-Eventually there can be updating to existing objects and also adding or removing components such as dynamically changing the `output_descriptors `of an existing credential manifest
+Eventually there can be updating to existing objects and also adding or removing components such as dynamically changing the `output_descriptors` of an existing credential manifest
 
 ## Security & Privacy
-
-*What security and/or privacy implications are relevant to the proposed change?*
 
 Letting the user post an open ended manifest or applications could open up to attacks on the service. To mitigate we should have strong validity checks and check max length and validate every field. 
 
@@ -270,13 +260,9 @@ Letting the user post an open ended manifest or applications could open up to at
 
 ## Success Criteria
 
-*How will this work be tested? How will we know it was successful?*
-
 A full unit test and integration test suit will be implemented with this change along with example use case implementation
 
 ## Rollout
-
-*How is this work rolled out? What is the timeline? What type of version bump would this change result in? Would it deprecate existing functionality?*
 
 Rollout would be similar to how the other pieces of ssi service have been deployed by creating a pull request from a branch and merging it in after proper scrutiny 
 
@@ -284,14 +270,12 @@ Rollout would be similar to how the other pieces of ssi service have been deploy
 
 # References
 
-*Enumeration of content links used in this document*
-
 The *Credential Manifest* is a common data format for describing the inputs a Subject must provide to an Issuer for subsequent evaluation and issuance of the credential or credentials indicated in the Credential Manifest. There must be a formal process to create and receive a credential manifest.
 
-*Credential Applications* are JSON objects embedded within target claim negotiation formats that pass information from the [Holder](https://identity.foundation/credential-manifest/#term:holder) to the[Issuer](https://identity.foundation/credential-manifest/#term:issuer).
+*Credential Applications* are JSON objects embedded within target claim negotiation formats that pass information from the [Holder](https://identity.foundation/credential-manifest/#term:holder) to the [Issuer](https://identity.foundation/credential-manifest/#term:issuer).
 
 [Credential Fulfillments](https://identity.foundation/credential-manifest/#term:credential-fulfillments) (Responses) are objects embedded within target [Claim](https://identity.foundation/credential-manifest/#term:claim) negotiation formats that express how the outputs presented as proofs to a [Holder](https://identity.foundation/credential-manifest/#term:holder) are provided in accordance with the outputs specified in a [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest).
 
 *Credential Manifest in DIF* - [https://identity.foundation/credential-manifest/#credential-manifest](https://identity.foundation/credential-manifest/#credential-manifest)
 
-*Credential Manifest in SSI-SDK* [https://github.com/TBD54566975/ssi-sdk/tree/main/credential/manifest](https://github.com/TBD54566975/ssi-sdk/tree/main/credential/manifest)
+*Credential Manifest in SSI-SDK* – [https://github.com/TBD54566975/ssi-sdk/tree/main/credential/manifest](https://github.com/TBD54566975/ssi-sdk/tree/main/credential/manifest)
