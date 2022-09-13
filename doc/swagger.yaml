@@ -162,9 +162,9 @@ definitions:
         type: string
       publicKeyJwk:
         $ref: '#/definitions/cryptosuite.PublicKeyJWK'
-        description: must conform to https://datatracker.ietf.org/doc/html/rfc7517
+        description: must conform to https://datatracker.ietf.org/assets/html/rfc7517
       publicKeyMultibase:
-        description: https://datatracker.ietf.org/doc/html/draft-multiformats-multibase-03
+        description: https://datatracker.ietf.org/assets/html/draft-multiformats-multibase-03
         type: string
       type:
         type: string

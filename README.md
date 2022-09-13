@@ -19,9 +19,9 @@ Decentralized Web Nodes, and usage of Decentralized Identifiers. Using these cor
 functionality to facilitate all verifiable interactions such as creating, signing, issuing, curating, requesting,
 revoking, exchanging, validating, verifying credentials in varying degrees of complexity.
 
-For more information, see the [vision document](doc/VISION.md).
+For more information, see the [vision document](assets/VISION.md).
 
-![ssi-service](doc/ssi-service.png)
+![ssi-service](assets/ssi-service.png)
 
 ## Configuration
 
@@ -116,7 +116,7 @@ Note: Your port by differ, the range of the ports for swagger are between `8002`
 
 ## Vision, Features, and Development
 
-The vision for the project is laid out in [this document](doc/VISION.md).
+The vision for the project is laid out in [this document](assets/VISION.md).
 
 The project follows a proposal-based improvement format called [SIPs, outlined here.](sip/README.md).
 
@@ -139,9 +139,9 @@ project.
 
 | Resource                                                                                   | Description                                                                   |
 |--------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| [VISION](https://github.com/TBD54566975/ssi-service/blob/main/doc/VISION.md)                   | Outlines the project vision                                                   |
+| [VISION](https://github.com/TBD54566975/ssi-service/blob/main/assets/VISION.md)                   | Outlines the project vision                                                   |
 | [SIPs](sip/README.md)                                                                      | Proposals for improving the SSI Service                                       |
-| [VERSIONING](https://github.com/TBD54566975/ssi-service/blob/main/doc/VERSIONING.md)           | Project versioning strategy                                                   |
+| [VERSIONING](https://github.com/TBD54566975/ssi-service/blob/main/assets/VERSIONING.md)           | Project versioning strategy                                                   |
 | [CODEOWNERS](https://github.com/TBD54566975/ssi-service/blob/main/CODEOWNERS)              | Outlines the project lead(s)                                                  |
 | [CODE_OF_CONDUCT](https://github.com/TBD54566975/ssi-service/blob/main/CODE_OF_CONDUCT.md) | Expected behavior for project contributors, promoting a welcoming environment |
 | [CONTRIBUTING](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md)       | Developer guide to build, test, run, access CI, chat, discuss, file issues    |

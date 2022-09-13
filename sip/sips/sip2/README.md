@@ -70,11 +70,11 @@ The high level route structure will be under manifests:
 
 `{{baseUrl}}/v1/manifests/...`
 
-![Untitled](doc/toplevel.png)
+![Untitled](assets/toplevel.png)
 
 ### **Credential Applications** API **Routes**
 
-![Untitled](doc/application.png)
+![Untitled](assets/application.png)
 
 - PUT `{{baseUrl}}/v1/manifests/applications`
     - Apply for credentials by submitting a Credential Application that are has linkings to a Credential Manifest. This function will return a response object that could contain the Response Request, or a response request ID that one can later query to receive.
@@ -155,7 +155,7 @@ The high level route structure will be under manifests:
 
 ### **Credential** Responses **API** R**outes**
 
-![Untitled](doc/response.png)
+![Untitled](assets/response.png)
 
 - Credential Responses are objects embedded within target [Claim](https://identity.foundation/credential-manifest/#term:claim) negotiation formats that express how the outputs presented as proofs to a [Holder](https://identity.foundation/credential-manifest/#term:holder) are provided in accordance with the outputs specified in a [Credential Manifest](https://identity.foundation/credential-manifest/#term:credential-manifest)
     - The object **MUST** contain an `id` property.
@@ -191,7 +191,7 @@ The high level route structure will be under manifests:
 
 ### **Credential Manifests** API **Routes**
 
-![Untitled](doc/manifest.png)
+![Untitled](assets/manifest.png)
 
 - Create, Read and Delete Manifests
     - Creates a manifest and verifies that it has at least the minimum requirements

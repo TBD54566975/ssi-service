@@ -14,7 +14,7 @@ This guide is for you.
 
 | Requirement | Tested Version | Installation Instructions                             |
 |-------------|----------------|-------------------------------------------------------|
-| Go          | 1.17.6         | [go.dev](https://go.dev/doc/tutorial/compile-install) |
+| Go          | 1.17.6         | [go.dev](https://go.dev/assets/tutorial/compile-install) |
 | Mage        | 1.12.1         | [magefile.org](https://magefile.org/)                 |
 
 ### Go
@@ -28,7 +28,7 @@ $> go version
 go version go1.17.6 darwin/amd64
 ```
 
-If you do not have go, we recommend installing it by following the instructions on the [Go website](https://go.dev/doc/install).
+If you do not have go, we recommend installing it by following the instructions on the [Go website](https://go.dev/assets/install).
 
 #### MacOS
 
