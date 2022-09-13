@@ -25,5 +25,6 @@ func (s *testService) Config() config.ServicesConfig {
 		SchemaConfig:     config.SchemaServiceConfig{},
 		CredentialConfig: config.CredentialServiceConfig{},
 		KeyStoreConfig:   config.KeyStoreServiceConfig{},
+		ManifestConfig:   config.ManifestServiceConfig{},
 	}
 }

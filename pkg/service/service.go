@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -77,5 +78,11 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	return []framework.Service{didService, schemaService, credentialService}, nil
+	manifestService, err := manifest.NewManifestService(config.ManifestConfig, storageProvider)
+	if err != nil {
+		errMsg := "could not instantiate the manifest service"
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	return []framework.Service{didService, schemaService, credentialService, manifestService}, nil
 }

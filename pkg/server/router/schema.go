@@ -100,7 +100,7 @@ type GetSchemaResponse struct {
 	Schema schemalib.VCJSONSchema `json:"schema,omitempty"`
 }
 
-// GetSchemaByID godoc
+// GetSchema godoc
 // @Summary      Get Schema
 // @Description  Get schema by ID
 // @Tags         SchemaAPI
@@ -110,7 +110,7 @@ type GetSchemaResponse struct {
 // @Success      200  {object}  GetSchemaResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/schemas/{id} [get]
-func (sr SchemaRouter) GetSchemaByID(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (sr SchemaRouter) GetSchema(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get schema without ID parameter"
@@ -119,7 +119,7 @@ func (sr SchemaRouter) GetSchemaByID(ctx context.Context, w http.ResponseWriter,
 	}
 
 	// TODO(gabe) differentiate between internal errors and not found schemas
-	gotSchema, err := sr.service.GetSchemaByID(schema.GetSchemaByIDRequest{ID: *id})
+	gotSchema, err := sr.service.GetSchema(schema.GetSchemaRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get schema with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)

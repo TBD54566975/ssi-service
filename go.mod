@@ -24,6 +24,8 @@ require (
 
 require go.etcd.io/bbolt v1.3.6
 
+require github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852 // indirect
+
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
