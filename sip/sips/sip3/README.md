@@ -3,17 +3,17 @@
 ```yaml
 SIP: 3
 
-Title: Key Access: Signing & Verification
+Title: Key Access, Signing & Verification
 
 Author(s): Gabe Cohen @decentralgabe
 
-Comments URI:
+Comments URI: https://forums.tbd.website/t/sip-3-discussion-key-access-signing-verification/133
 
 Status: Draft
 
 Created: September 12, 2022
 
-Updated: September 12, 2022
+Updated: September 13, 2022
 ```
 
 # Abstract
@@ -106,9 +106,7 @@ The API for the Key Access service is provided in-process for services in the SS
 type SigningConfig struct {
 	// Added with this SIP (e.g. did:example:abcd#key-1)
 	SigningKey string `json:"signingKey" validate:"required"`
-
-	// one of the following
-	JWT *string `json:"jwt,omitempty`
+	// Where the value is either "JWT" or an LD Signature Suite such as "JsonWebSignature2020"
 	SignatureType `json:"signatureType" validate:"required"`
 }
 ```
@@ -118,7 +116,7 @@ type CreateCredentialRequest struct {
 	// (e.g. did:example:abcd)
 	Issuer  string `json:"issuer" validate:"required"`
 	// Added with this SIP (e.g. did:example:abcd#key-1)
-	SigningKey string `json:"signingKey" validate:"required"`
+	SigningConfig SigningConfig `json:"signingConfig" validate:"required"`
 	Subject string `json:"subject" validate:"required"`
 	Context string `json:"@context"`
 	Schema string                 `json:"schema"`
@@ -132,25 +130,32 @@ type CreateCredentialRequest struct {
 Request body as follows:
 
 ```go
+// must have one of the following fields
 type VerifyCredentialRequest struct {
 	// JSON representation of a credential
-	Credential  string `json:"issuer" validate:"required"`
-	// Added with this SIP (e.g. did:example:abcd#key-1)
-	SigningKey string `json:"signingKey" validate:"required"`
-	Subject string `json:"subject" validate:"required"`
-	Context string `json:"@context"`
-	Schema string                 `json:"schema"`
-	Data   map[string]interface{} `json:"data" validate:"required"`
-	Expiry string                 `json:"expiry"`
+	Credential  *string `json:"issuer"`
+
+	// JWT representation of a credential
+	JWT *string `json:"jwt"`
+}
+```
+
+with a response as follows:
+
+```go
+type VerifyCredentialResponse struct {
+	// binary verified or not
+	VerificationResult bool `json:"verificationResult" validate:"required"`
+	// optional explanation of verification result
+	VerificationReason string `json:"verificationReason,omitempty`
 }
 ```
 
 _Note: this eliminates the possibility of creating a key without a signature._
 
-**Schemas**:
+**Similar updates will be made to all services that can utilize signing and verification. Examples omitted for brevity**.
 
-### Other
-
+### Other Ideas
 
 **Key Store**
 
@@ -167,7 +172,7 @@ type StoreKeyRequest struct {
 }
 ```
 
-**Tomorrow**
+**Tomorrow?**
 
 Adding aliases increases querying complexity. It is also possible that multiple aliases could conflict.
 
@@ -199,16 +204,16 @@ New APIs:
 
 ```go
 type SignRequest struct {
-
+	Data string `json:"data" validate:"required"`
+	SigningConfig `json:"signingConfig" validate:"required"`
 }
 ```
 
-
-**Response Types**:
+**Response**:
 
 ```go
 type SignResponse struct {
-
+	SignedData string `json:"data"`
 }
 ```
 
@@ -218,15 +223,34 @@ type SignResponse struct {
 
 **Request Body**:
 
-**Response Types**:
+```go
+// Must have a piece of JSON data or a JWT to verify and specify a key ID
+type VerifyRequest struct {
+	Data *string `json:"data,omitempty"`
+	JWT *string `json:"jwt,omitempty"`
+	VerificationKey `json:"keyId" validate:"required"`
+}
+```
 
+This endpoint relies on keys the service already knows about. A future enhancement could work with externally referenced keys.
+
+**Response**:
+
+```go
+type VerifyResponse struct {
+	// binary verified or not
+	VerificationResult bool `json:"verificationResult" validate:"required"`
+	// optional explanation of verification result
+	VerificationReason string `json:"verificationReason,omitempty`
+}
+```
 ---
 
 # Considerations
 
 ## Tradeoffs
 
-Providing multiple signing options increases the flexiblity and possible utility of the service, but can make it a bit tougher on implementers: should they use LD or JWTs? It's likely many consumers will need both at some point in time. We don't have a clear way to make "smart defaults". Examples can help here.
+Providing multiple signing options increases the flexiblity and possible utility of the service, but can make it a bit tougher on implementers: should they use LD or JWTs? It's likely many consumers will need both at some point in time. We don't have a clear way to make "smart defaults". Examples can help here. It may also be worth considering separating out APIs for JWT and non-JWT signing options. It can be confusing to support both with the same APIs. Suggestions for how to approach this are welcome.
 
 Separating KeyAccess from KeyStorage is an intentional design. The concerns for operations using keys and storing/access keys are different! This increases the overhead of the service and forces clear boundaries on functionality. It would be possible to combine both, but I believe it's better to have more purpose-specific APIs than larger groupings of functionality that do it all. It's possible this approach is more trouble than worth. If so, we can refactor with a future SIP. 
 
