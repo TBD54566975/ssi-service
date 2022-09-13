@@ -20,14 +20,15 @@ import (
 )
 
 const (
-	HealthPrefix      = "/health"
-	ReadinessPrefix   = "/readiness"
-	V1Prefix          = "/v1"
-	DIDsPrefix        = "/dids"
-	SchemasPrefix     = "/schemas"
-	CredentialsPrefix = "/credentials"
-	ManifestsPrefix   = "/manifests"
-	KeyStorePrefix    = "/keys"
+	HealthPrefix       = "/health"
+	ReadinessPrefix    = "/readiness"
+	V1Prefix           = "/v1"
+	DIDsPrefix         = "/dids"
+	SchemasPrefix      = "/schemas"
+	CredentialsPrefix  = "/credentials"
+	ManifestsPrefix    = "/manifests"
+	ApplicationsPrefix = "/applications"
+	KeyStorePrefix     = "/keys"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -163,11 +164,17 @@ func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
 		return util.LoggingErrorMsg(err, "could not create manifest router")
 	}
 
-	handlerPath := V1Prefix + ManifestsPrefix
+	manifestHandlerPath := V1Prefix + ManifestsPrefix
+	applicationsHandlerPath := V1Prefix + ManifestsPrefix + ApplicationsPrefix
 
-	s.Handle(http.MethodPut, handlerPath, manifestRouter.CreateManifest)
-	s.Handle(http.MethodGet, handlerPath, manifestRouter.GetManifests)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), manifestRouter.GetManifest)
-	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), manifestRouter.DeleteManifest)
+	s.Handle(http.MethodPut, manifestHandlerPath, manifestRouter.CreateManifest)
+	s.Handle(http.MethodGet, manifestHandlerPath, manifestRouter.GetManifests)
+	s.Handle(http.MethodGet, path.Join(manifestHandlerPath, "/:id"), manifestRouter.GetManifest)
+	s.Handle(http.MethodDelete, path.Join(manifestHandlerPath, "/:id"), manifestRouter.DeleteManifest)
+
+	s.Handle(http.MethodPut, applicationsHandlerPath, manifestRouter.CreateApplication)
+	s.Handle(http.MethodGet, applicationsHandlerPath, manifestRouter.GetApplications)
+	s.Handle(http.MethodGet, path.Join(applicationsHandlerPath, "/:id"), manifestRouter.GetApplication)
+	s.Handle(http.MethodDelete, path.Join(applicationsHandlerPath, "/:id"), manifestRouter.DeleteApplication)
 	return
 }

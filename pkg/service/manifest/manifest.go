@@ -49,6 +49,7 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 	}, nil
 }
 
+// Manifests
 func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestResponse, error) {
 	logrus.Debugf("creating manifest: %+v", request)
 
@@ -158,6 +159,139 @@ func (s Service) DeleteManifest(request DeleteManifestRequest) error {
 
 	if err := s.storage.DeleteManifest(request.ID); err != nil {
 		errMsg := fmt.Sprintf("could not delete manifest with id: %s", request.ID)
+		return util.LoggingErrorMsg(err, errMsg)
+	}
+
+	return nil
+}
+
+// TODO: (Neal) Add entire validation framework in place of these validation checks
+func isValidApplication(s Service, request CreateApplicationRequest, ps exchange.PresentationSubmission) error {
+
+	gotManifest, err := s.storage.GetManifest(request.ManifestID)
+
+	if err != nil {
+		return util.LoggingErrorMsg(err, "problem with retrieving manifest during application validation")
+	}
+
+	if gotManifest == nil {
+		return util.LoggingNewError(fmt.Sprintf("application is not valid. A manifest does not exist with id: %s", request.ManifestID))
+	}
+
+	inputDescriptors := gotManifest.Manifest.PresentationDefinition.InputDescriptors
+	inputDescriptorIds := map[string]bool{}
+
+	for _, inputDescriptor := range inputDescriptors {
+		inputDescriptorIds[inputDescriptor.ID] = true
+	}
+
+	for _, submissionDescriptor := range ps.DescriptorMap {
+		if inputDescriptorIds[submissionDescriptor.ID] != true {
+			return util.LoggingNewError("application is not valid. The submission descriptor ids do not match the input descriptor ids")
+		}
+	}
+
+	return nil
+}
+
+// Applications
+func (s Service) CreateApplication(request CreateApplicationRequest) (*CreateApplicationResponse, error) {
+
+	// parse OutputDescriptors
+	psJsonString, err := json.Marshal(request.PresentationSubmission)
+	if err != nil {
+		errMsg := "could not marshal request presentation submission"
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	ps := exchange.PresentationSubmission{}
+	err = json.Unmarshal(psJsonString, &ps)
+	if err != nil {
+		errMsg := "could not unmarshal presentation submission"
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	// validate
+	if err := isValidApplication(s, request, ps); err != nil {
+		errMsg := fmt.Sprintf("could not validate application")
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	// build credential application
+	builder := manifest.NewCredentialApplicationBuilder(request.ManifestID)
+
+	// TODO: (Neal) Add dynamic claim formats
+	if err := builder.SetApplicationClaimFormat(exchange.ClaimFormat{
+		JWT: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
+	}); err != nil {
+		errMsg := fmt.Sprintf("could not build application when setting claim format")
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	builder.SetPresentationSubmission(ps)
+
+	credApp, err := builder.Build()
+	if err != nil {
+		errMsg := "could not build application"
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	// store the application
+	storageRequest := manifeststorage.StoredApplication{
+		ID:          credApp.Application.ID,
+		Application: *credApp,
+		ManifestID:  request.ManifestID,
+	}
+
+	if err := s.storage.StoreApplication(storageRequest); err != nil {
+		errMsg := "could not store application"
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	// return the result
+	response := CreateApplicationResponse{Application: *credApp}
+	return &response, nil
+}
+
+func (s Service) GetApplication(request GetApplicationRequest) (*GetApplicationResponse, error) {
+
+	logrus.Debugf("getting application: %s", request.ID)
+
+	gotCred, err := s.storage.GetApplication(request.ID)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get application: %s", request.ID)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	response := GetApplicationResponse{Application: gotCred.Application}
+	return &response, nil
+}
+
+func (s Service) GetApplications() (*GetApplicationsResponse, error) {
+
+	logrus.Debugf("getting application(s)")
+
+	gotCreds, err := s.storage.GetApplications()
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get application(s)")
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	var apps []manifest.CredentialApplication
+	for _, cred := range gotCreds {
+		apps = append(apps, cred.Application)
+	}
+
+	response := GetApplicationsResponse{Applications: apps}
+	return &response, nil
+}
+
+func (s Service) DeleteApplication(request DeleteApplicationRequest) error {
+
+	logrus.Debugf("deleting application: %s", request.ID)
+
+	if err := s.storage.DeleteApplication(request.ID); err != nil {
+		errMsg := fmt.Sprintf("could not delete application with id: %s", request.ID)
 		return util.LoggingErrorMsg(err, errMsg)
 	}
 

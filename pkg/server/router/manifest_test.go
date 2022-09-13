@@ -46,14 +46,23 @@ func TestManifestRouter(t *testing.T) {
 		assert.Equal(tt, framework.Manifest, manifestService.Type())
 		assert.Equal(tt, framework.StatusReady, manifestService.Status().Status)
 
-		// good request
+		// good manifest request
 		createManifestRequest := getValidManifestRequest()
 
 		createdManifest, err := manifestService.CreateManifest(createManifestRequest)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
 		assert.NotEmpty(tt, createdManifest.Manifest)
+
+		// good application request
+		createApplicationRequest := getValidApplicationRequest(createdManifest.Manifest.ID, createManifestRequest.PresentationDefinition.InputDescriptors[0].ID)
+
+		createdApplication, err := manifestService.CreateApplication(createApplicationRequest)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdManifest)
+		assert.NotEmpty(tt, createdApplication.Application.Application.ID)
 	})
+
 }
 
 func getValidManifestRequest() manifest.CreateManifestRequest {
@@ -92,4 +101,25 @@ func getValidManifestRequest() manifest.CreateManifestRequest {
 	}
 
 	return createManifestRequest
+}
+
+func getValidApplicationRequest(manifestId string, submissionDescriptorId string) manifest.CreateApplicationRequest {
+
+	createApplicationRequest := manifest.CreateApplicationRequest{
+
+		ManifestID: manifestId,
+		PresentationSubmission: exchange.PresentationSubmission{
+			ID:           "psid",
+			DefinitionID: "definitionId",
+			DescriptorMap: []exchange.SubmissionDescriptor{
+				{
+					ID:     submissionDescriptorId,
+					Format: "jwt",
+					Path:   "path",
+				},
+			},
+		},
+	}
+
+	return createApplicationRequest
 }

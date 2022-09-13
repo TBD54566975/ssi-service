@@ -765,39 +765,7 @@ func TestManifestAPI(t *testing.T) {
 		w.Flush()
 
 		// good request
-		createManifestRequest := router.CreateManifestRequest{
-			Issuer:  "did:abc:123",
-			Context: "context123",
-			PresentationDefinition: exchange.PresentationDefinition{
-				ID: "pres-def-id",
-				InputDescriptors: []exchange.InputDescriptor{
-					{
-						ID: "test-id",
-						Constraints: &exchange.Constraints{
-							Fields: []exchange.Field{
-								{
-									Path: []string{".vc.id"},
-								},
-							},
-						},
-					},
-				},
-			},
-			OutputDescriptors: []manifestsdk.OutputDescriptor{
-				{
-					ID:          "id1",
-					Schema:      "https://test.com/schema",
-					Name:        "good ID",
-					Description: "it's all good",
-				},
-				{
-					ID:          "id2",
-					Schema:      "https://test.com/schema",
-					Name:        "good ID",
-					Description: "it's all good",
-				},
-			},
-		}
+		createManifestRequest := getValidManifestRequest()
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -956,6 +924,202 @@ func TestManifestAPI(t *testing.T) {
 		err = manifestService.GetManifest(newRequestContextWithParams(map[string]string{"id": resp.Manifest.ID}), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), fmt.Sprintf("could not get manifest with id: %s", resp.Manifest.ID))
+	})
+
+	t.Run("Test Create Application", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		manifestService := newManifestService(tt, bolt)
+
+		// missing required field: OutputDescriptors
+		badManifestRequest := router.CreateApplicationRequest{
+			ManifestID: "id123",
+		}
+
+		badRequestValue := newRequestValue(tt, badManifestRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", badRequestValue)
+		w := httptest.NewRecorder()
+
+		err = manifestService.CreateApplication(newRequestContext(), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "invalid create application request")
+
+		// reset the http recorder
+		w.Flush()
+
+		// good request
+		createManifestRequest := getValidManifestRequest()
+
+		requestValue := newRequestValue(tt, createManifestRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
+		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateManifestResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, resp.Manifest)
+		assert.Equal(tt, resp.Manifest.Issuer.ID, "did:abc:123")
+
+		// good application request
+		createApplicationRequest := getValidApplicationRequest(resp.Manifest.ID, resp.Manifest.PresentationDefinition.InputDescriptors[0].ID)
+
+		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
+		err = manifestService.CreateApplication(newRequestContext(), w, req)
+
+		var appResp router.CreateApplicationResponse
+		err = json.NewDecoder(w.Body).Decode(&appResp)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, appResp.Application)
+		assert.Equal(tt, appResp.Application.Application.ManifestID, resp.Manifest.ID)
+
+	})
+
+	t.Run("Test Get Application By ID and Get Applications", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		manifestService := newManifestService(tt, bolt)
+
+		w := httptest.NewRecorder()
+
+		// get a application that doesn't exit
+		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications/bad", nil)
+		err = manifestService.GetApplication(newRequestContext(), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "cannot get application without ID parameter")
+
+		// reset recorder between calls
+		w.Flush()
+
+		// good manifest request
+		createManifestRequest := getValidManifestRequest()
+
+		requestValue := newRequestValue(tt, createManifestRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
+		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateManifestResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		// good application request
+		createApplicationRequest := getValidApplicationRequest(resp.Manifest.ID, resp.Manifest.PresentationDefinition.InputDescriptors[0].ID)
+
+		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
+		err = manifestService.CreateApplication(newRequestContext(), w, req)
+
+		var appResp router.CreateApplicationResponse
+		err = json.NewDecoder(w.Body).Decode(&appResp)
+		assert.NoError(tt, err)
+
+		// get application by id
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/applications/%s", appResp.Application.Application.ID), nil)
+		err = manifestService.GetApplication(newRequestContextWithParams(map[string]string{"id": appResp.Application.Application.ID}), w, req)
+		assert.NoError(tt, err)
+
+		var getApplicationResp router.GetApplicationResponse
+		err = json.NewDecoder(w.Body).Decode(&getApplicationResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, getApplicationResp)
+		assert.Equal(tt, resp.Manifest.ID, getApplicationResp.Application.Application.ManifestID)
+
+		// good application request #2
+		createApplicationRequest = getValidApplicationRequest(resp.Manifest.ID, resp.Manifest.PresentationDefinition.InputDescriptors[0].ID)
+
+		applicationRequestValue = newRequestValue(tt, createApplicationRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
+		err = manifestService.CreateApplication(newRequestContext(), w, req)
+
+		var appRespTwo router.CreateApplicationResponse
+		err = json.NewDecoder(w.Body).Decode(&appRespTwo)
+		assert.NoError(tt, err)
+
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
+		err = manifestService.GetApplications(newRequestContext(), w, req)
+
+		var getApplicationsResp router.GetApplicationsResponse
+		err = json.NewDecoder(w.Body).Decode(&getApplicationsResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, getApplicationsResp)
+
+		assert.Len(tt, getApplicationsResp.Applications, 2)
+	})
+
+	t.Run("Test Delete Application", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		manifestService := newManifestService(tt, bolt)
+
+		// good manifest request
+		createManifestRequest := getValidManifestRequest()
+
+		requestValue := newRequestValue(tt, createManifestRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
+		w := httptest.NewRecorder()
+		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateManifestResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		// good application request
+		createApplicationRequest := getValidApplicationRequest(resp.Manifest.ID, resp.Manifest.PresentationDefinition.InputDescriptors[0].ID)
+
+		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
+		err = manifestService.CreateApplication(newRequestContext(), w, req)
+
+		var appResp router.CreateApplicationResponse
+		err = json.NewDecoder(w.Body).Decode(&appResp)
+		assert.NoError(tt, err)
+
+		// get the application
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/applications/%s", appResp.Application.Application.ID), nil)
+		err = manifestService.GetApplication(newRequestContextWithParams(map[string]string{"id": appResp.Application.Application.ID}), w, req)
+		assert.NoError(tt, err)
+
+		var getApplicationResp router.GetApplicationResponse
+		err = json.NewDecoder(w.Body).Decode(&getApplicationResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, getApplicationResp)
+		assert.Equal(tt, resp.Manifest.ID, getApplicationResp.Application.Application.ManifestID)
+
+		// delete the application
+		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/manifests/applications/%s", getApplicationResp.Application.Application.ID), nil)
+		err = manifestService.DeleteApplication(newRequestContextWithParams(map[string]string{"id": getApplicationResp.Application.Application.ID}), w, req)
+		assert.NoError(tt, err)
+
+		w.Flush()
+
+		// get it back
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/applications/%s", appResp.Application.Application.ID), nil)
+		err = manifestService.GetApplication(newRequestContextWithParams(map[string]string{"id": appResp.Application.Application.ID}), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), fmt.Sprintf("could not get application with id: %s", appResp.Application.Application.ID))
 	})
 }
 
@@ -1147,4 +1311,25 @@ func getValidManifestRequest() router.CreateManifestRequest {
 	}
 
 	return createManifestRequest
+}
+
+func getValidApplicationRequest(manifestId string, submissionDescriptorId string) router.CreateApplicationRequest {
+
+	createApplicationRequest := router.CreateApplicationRequest{
+
+		ManifestID: manifestId,
+		PresentationSubmission: exchange.PresentationSubmission{
+			ID:           "psid",
+			DefinitionID: "definitionId",
+			DescriptorMap: []exchange.SubmissionDescriptor{
+				{
+					ID:     submissionDescriptorId,
+					Format: "jwt",
+					Path:   "path",
+				},
+			},
+		},
+	}
+
+	return createApplicationRequest
 }

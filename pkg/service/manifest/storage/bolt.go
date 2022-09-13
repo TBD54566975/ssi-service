@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	namespace = "manifest"
+	manifestNamespace    = "manifest"
+	applicationNamespace = "application"
 )
 
 type BoltManifestStorage struct {
@@ -36,11 +37,11 @@ func (b BoltManifestStorage) StoreManifest(manifest StoredManifest) error {
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)
 	}
-	return b.db.Write(namespace, id, manifestBytes)
+	return b.db.Write(manifestNamespace, id, manifestBytes)
 }
 
 func (b BoltManifestStorage) GetManifest(id string) (*StoredManifest, error) {
-	manifestBytes, err := b.db.Read(namespace, id)
+	manifestBytes, err := b.db.Read(manifestNamespace, id)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get manifest: %s", id)
 		logrus.WithError(err).Error(errMsg)
@@ -62,7 +63,7 @@ func (b BoltManifestStorage) GetManifest(id string) (*StoredManifest, error) {
 
 // GetManifests attempts to get all stored manifests. It will return those it can even if it has trouble with some.
 func (b BoltManifestStorage) GetManifests() ([]StoredManifest, error) {
-	gotManifests, err := b.db.ReadAll(namespace)
+	gotManifests, err := b.db.ReadAll(manifestNamespace)
 	if err != nil {
 		errMsg := "could not get all manifests"
 		logrus.WithError(err).Error(errMsg)
@@ -83,8 +84,76 @@ func (b BoltManifestStorage) GetManifests() ([]StoredManifest, error) {
 }
 
 func (b BoltManifestStorage) DeleteManifest(id string) error {
-	if err := b.db.Delete(namespace, id); err != nil {
+	if err := b.db.Delete(manifestNamespace, id); err != nil {
 		errMsg := fmt.Sprintf("could not delete manifest: %s", id)
+		logrus.WithError(err).Error(errMsg)
+		return errors.Wrapf(err, errMsg)
+	}
+	return nil
+}
+
+func (b BoltManifestStorage) StoreApplication(application StoredApplication) error {
+	id := application.Application.Application.ID
+	if id == "" {
+		err := errors.New("could not store application without an ID")
+		logrus.WithError(err).Error()
+		return err
+	}
+	applicationBytes, err := json.Marshal(application)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not store application: %s", id)
+		logrus.WithError(err).Error(errMsg)
+		return errors.Wrapf(err, errMsg)
+	}
+	return b.db.Write(applicationNamespace, id, applicationBytes)
+}
+
+func (b BoltManifestStorage) GetApplication(id string) (*StoredApplication, error) {
+	applicationBytes, err := b.db.Read(applicationNamespace, id)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get application: %s", id)
+		logrus.WithError(err).Error(errMsg)
+		return nil, errors.Wrapf(err, errMsg)
+	}
+	if len(applicationBytes) == 0 {
+		err := fmt.Errorf("application not found with id: %s", id)
+		logrus.WithError(err).Error("could not get application from storage")
+		return nil, err
+	}
+	var stored StoredApplication
+	if err := json.Unmarshal(applicationBytes, &stored); err != nil {
+		errMsg := fmt.Sprintf("could not unmarshal stored application: %s", id)
+		logrus.WithError(err).Error(errMsg)
+		return nil, errors.Wrapf(err, errMsg)
+	}
+	return &stored, nil
+}
+
+// GetApplications attempts to get all stored applications. It will return those it can even if it has trouble with some.
+func (b BoltManifestStorage) GetApplications() ([]StoredApplication, error) {
+	gotApplications, err := b.db.ReadAll(applicationNamespace)
+	if err != nil {
+		errMsg := "could not get all applications"
+		logrus.WithError(err).Error(errMsg)
+		return nil, errors.Wrap(err, errMsg)
+	}
+	if len(gotApplications) == 0 {
+		logrus.Info("no applications to get")
+		return nil, nil
+	}
+	var stored []StoredApplication
+	for _, applicationBytes := range gotApplications {
+		var nextapplication StoredApplication
+		if err := json.Unmarshal(applicationBytes, &nextapplication); err == nil {
+			stored = append(stored, nextapplication)
+		}
+	}
+	return stored, nil
+}
+
+func (b BoltManifestStorage) DeleteApplication(id string) error {
+	if err := b.db.Delete(applicationNamespace, id); err != nil {
+		errMsg := fmt.Sprintf("could not delete application: %s", id)
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)
 	}
