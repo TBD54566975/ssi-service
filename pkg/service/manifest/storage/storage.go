@@ -17,22 +17,33 @@ type StoredManifest struct {
 type StoredApplication struct {
 	ID          string                         `json:"id"`
 	Application manifest.CredentialApplication `json:"application"`
-	ManifestID  string                         `json:"manifest_id"`
-	Format      string                         `json:"format"`
+	ManifestID  string                         `json:"manifestId"`
+}
+
+type StoredResponse struct {
+	ID         string                      `json:"id"`
+	Response   manifest.CredentialResponse `json:"response"`
+	ManifestID string                      `json:"manifestId"`
 }
 
 type Storage interface {
-	// Manifest
+	// Credential Manifest
 	StoreManifest(manifest StoredManifest) error
 	GetManifest(id string) (*StoredManifest, error)
 	GetManifests() ([]StoredManifest, error)
 	DeleteManifest(id string) error
 
-	// Application
+	// Credential Application
 	StoreApplication(application StoredApplication) error
 	GetApplication(id string) (*StoredApplication, error)
 	GetApplications() ([]StoredApplication, error)
 	DeleteApplication(id string) error
+
+	// Credential Response
+	StoreResponse(response StoredResponse) error
+	GetResponse(id string) (*StoredResponse, error)
+	GetResponses() ([]StoredResponse, error)
+	DeleteResponse(id string) error
 }
 
 // NewManifestStorage finds the manifest storage impl for a given ServiceStorage value

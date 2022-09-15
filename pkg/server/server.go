@@ -28,6 +28,7 @@ const (
 	CredentialsPrefix  = "/credentials"
 	ManifestsPrefix    = "/manifests"
 	ApplicationsPrefix = "/applications"
+	ResponsesPrefix    = "/responses"
 	KeyStorePrefix     = "/keys"
 )
 
@@ -166,15 +167,20 @@ func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
 
 	manifestHandlerPath := V1Prefix + ManifestsPrefix
 	applicationsHandlerPath := V1Prefix + ManifestsPrefix + ApplicationsPrefix
+	responsesHandlerPath := V1Prefix + ManifestsPrefix + ResponsesPrefix
 
 	s.Handle(http.MethodPut, manifestHandlerPath, manifestRouter.CreateManifest)
 	s.Handle(http.MethodGet, manifestHandlerPath, manifestRouter.GetManifests)
 	s.Handle(http.MethodGet, path.Join(manifestHandlerPath, "/:id"), manifestRouter.GetManifest)
 	s.Handle(http.MethodDelete, path.Join(manifestHandlerPath, "/:id"), manifestRouter.DeleteManifest)
 
-	s.Handle(http.MethodPut, applicationsHandlerPath, manifestRouter.CreateApplication)
+	s.Handle(http.MethodPut, applicationsHandlerPath, manifestRouter.SubmitApplication)
 	s.Handle(http.MethodGet, applicationsHandlerPath, manifestRouter.GetApplications)
 	s.Handle(http.MethodGet, path.Join(applicationsHandlerPath, "/:id"), manifestRouter.GetApplication)
 	s.Handle(http.MethodDelete, path.Join(applicationsHandlerPath, "/:id"), manifestRouter.DeleteApplication)
+
+	s.Handle(http.MethodGet, responsesHandlerPath, manifestRouter.GetResponses)
+	s.Handle(http.MethodGet, path.Join(responsesHandlerPath, "/:id"), manifestRouter.GetResponse)
+	s.Handle(http.MethodDelete, path.Join(responsesHandlerPath, "/:id"), manifestRouter.DeleteResponse)
 	return
 }

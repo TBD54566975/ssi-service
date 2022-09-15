@@ -11,6 +11,7 @@ import (
 const (
 	manifestNamespace    = "manifest"
 	applicationNamespace = "application"
+	responseNamespace    = "response"
 )
 
 type BoltManifestStorage struct {
@@ -93,7 +94,7 @@ func (b BoltManifestStorage) DeleteManifest(id string) error {
 }
 
 func (b BoltManifestStorage) StoreApplication(application StoredApplication) error {
-	id := application.Application.Application.ID
+	id := application.Application.ID
 	if id == "" {
 		err := errors.New("could not store application without an ID")
 		logrus.WithError(err).Error()
@@ -143,9 +144,9 @@ func (b BoltManifestStorage) GetApplications() ([]StoredApplication, error) {
 	}
 	var stored []StoredApplication
 	for _, applicationBytes := range gotApplications {
-		var nextapplication StoredApplication
-		if err := json.Unmarshal(applicationBytes, &nextapplication); err == nil {
-			stored = append(stored, nextapplication)
+		var nextApplication StoredApplication
+		if err := json.Unmarshal(applicationBytes, &nextApplication); err == nil {
+			stored = append(stored, nextApplication)
 		}
 	}
 	return stored, nil
@@ -154,6 +155,74 @@ func (b BoltManifestStorage) GetApplications() ([]StoredApplication, error) {
 func (b BoltManifestStorage) DeleteApplication(id string) error {
 	if err := b.db.Delete(applicationNamespace, id); err != nil {
 		errMsg := fmt.Sprintf("could not delete application: %s", id)
+		logrus.WithError(err).Error(errMsg)
+		return errors.Wrapf(err, errMsg)
+	}
+	return nil
+}
+
+func (b BoltManifestStorage) StoreResponse(response StoredResponse) error {
+	id := response.Response.ID
+	if id == "" {
+		err := errors.New("could not store response without an ID")
+		logrus.WithError(err).Error()
+		return err
+	}
+	responseBytes, err := json.Marshal(response)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not store response: %s", id)
+		logrus.WithError(err).Error(errMsg)
+		return errors.Wrapf(err, errMsg)
+	}
+	return b.db.Write(responseNamespace, id, responseBytes)
+}
+
+func (b BoltManifestStorage) GetResponse(id string) (*StoredResponse, error) {
+	responseBytes, err := b.db.Read(responseNamespace, id)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get response: %s", id)
+		logrus.WithError(err).Error(errMsg)
+		return nil, errors.Wrapf(err, errMsg)
+	}
+	if len(responseBytes) == 0 {
+		err := fmt.Errorf("response not found with id: %s", id)
+		logrus.WithError(err).Error("could not get response from storage")
+		return nil, err
+	}
+	var stored StoredResponse
+	if err := json.Unmarshal(responseBytes, &stored); err != nil {
+		errMsg := fmt.Sprintf("could not unmarshal stored response: %s", id)
+		logrus.WithError(err).Error(errMsg)
+		return nil, errors.Wrapf(err, errMsg)
+	}
+	return &stored, nil
+}
+
+// GetResponses attempts to get all stored responses. It will return those it can even if it has trouble with some.
+func (b BoltManifestStorage) GetResponses() ([]StoredResponse, error) {
+	gotResponses, err := b.db.ReadAll(responseNamespace)
+	if err != nil {
+		errMsg := "could not get all responses"
+		logrus.WithError(err).Error(errMsg)
+		return nil, errors.Wrap(err, errMsg)
+	}
+	if len(gotResponses) == 0 {
+		logrus.Info("no responses to get")
+		return nil, nil
+	}
+	var stored []StoredResponse
+	for _, responseBytes := range gotResponses {
+		var nextResponse StoredResponse
+		if err := json.Unmarshal(responseBytes, &nextResponse); err == nil {
+			stored = append(stored, nextResponse)
+		}
+	}
+	return stored, nil
+}
+
+func (b BoltManifestStorage) DeleteResponse(id string) error {
+	if err := b.db.Delete(responseNamespace, id); err != nil {
+		errMsg := fmt.Sprintf("could not delete response: %s", id)
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)
 	}
