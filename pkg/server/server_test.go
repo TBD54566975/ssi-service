@@ -1335,11 +1335,11 @@ func getValidManifestRequest() router.CreateManifestRequest {
 	return createManifestRequest
 }
 
-func getValidApplicationRequest(manifestId string, submissionDescriptorId string) router.SubmitApplicationRequest {
+func getValidApplicationRequest(manifestID string, submissionDescriptorId string) router.SubmitApplicationRequest {
 
 	createApplicationRequest := router.SubmitApplicationRequest{
 
-		ManifestID:   manifestId,
+		ManifestID:   manifestID,
 		RequesterDID: "did:user:123",
 		PresentationSubmission: exchange.PresentationSubmission{
 			ID:           "psid",

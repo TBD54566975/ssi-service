@@ -103,11 +103,11 @@ func getValidManifestRequest() manifest.CreateManifestRequest {
 	return createManifestRequest
 }
 
-func getValidApplicationRequest(manifestId string, submissionDescriptorId string) manifest.SubmitApplicationRequest {
+func getValidApplicationRequest(manifestID string, submissionDescriptorId string) manifest.SubmitApplicationRequest {
 
 	createApplicationRequest := manifest.SubmitApplicationRequest{
 
-		ManifestID:   manifestId,
+		ManifestID:   manifestID,
 		RequesterDID: "did:user:123",
 		PresentationSubmission: exchange.PresentationSubmission{
 			ID:           "psid",
