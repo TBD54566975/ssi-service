@@ -38,6 +38,7 @@ type DeleteManifestRequest struct {
 // Application
 type SubmitApplicationRequest struct {
 	ManifestID             string
+	RequesterDID           string
 	PresentationSubmission exchangesdk.PresentationSubmission
 }
 

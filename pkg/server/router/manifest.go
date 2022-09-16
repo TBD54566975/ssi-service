@@ -184,13 +184,15 @@ func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWrit
 
 type SubmitApplicationRequest struct {
 	ManifestID             string                              `json:"manifestId" validate:"required"`
+	RequesterDID           string                              `json:"requesterDid" validate:"required"`
 	PresentationSubmission exchangensdk.PresentationSubmission `json:"presentationSubmission" validate:"required"`
 }
 
 func (sar SubmitApplicationRequest) ToServiceRequest() manifest.SubmitApplicationRequest {
 	return manifest.SubmitApplicationRequest{
-		PresentationSubmission: sar.PresentationSubmission,
 		ManifestID:             sar.ManifestID,
+		RequesterDID:           sar.RequesterDID,
+		PresentationSubmission: sar.PresentationSubmission,
 	}
 }
 

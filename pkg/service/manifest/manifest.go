@@ -289,7 +289,7 @@ func (s Service) SubmitApplication(request SubmitApplicationRequest) (*SubmitApp
 		credentialBuilder := credential.NewVerifiableCredentialBuilder()
 		credentialBuilder.SetIssuer(gotManifest.Manifest.Issuer.ID)
 		credentialBuilder.SetCredentialSubject(map[string]interface{}{
-			"id": credApp.ID, // TODO: Needs to be DID of the application submitter.
+			"id": request.RequesterDID,
 		})
 		credentialBuilder.SetIssuanceDate(time.Now().Format(time.RFC3339))
 
@@ -303,7 +303,7 @@ func (s Service) SubmitApplication(request SubmitApplicationRequest) (*SubmitApp
 			ID:           cred.ID,
 			Credential:   *cred,
 			Issuer:       gotManifest.Manifest.Issuer.ID,
-			Subject:      credApp.ID, // TODO: Needs to be DID of the application submitter.
+			Subject:      request.RequesterDID,
 			Schema:       od.Schema,
 			IssuanceDate: time.Now().Format(time.RFC3339),
 		}

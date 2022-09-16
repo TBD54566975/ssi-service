@@ -107,7 +107,8 @@ func getValidApplicationRequest(manifestId string, submissionDescriptorId string
 
 	createApplicationRequest := manifest.SubmitApplicationRequest{
 
-		ManifestID: manifestId,
+		ManifestID:   manifestId,
+		RequesterDID: "did:user:123",
 		PresentationSubmission: exchange.PresentationSubmission{
 			ID:           "psid",
 			DefinitionID: "definitionId",

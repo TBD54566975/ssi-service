@@ -1339,7 +1339,8 @@ func getValidApplicationRequest(manifestId string, submissionDescriptorId string
 
 	createApplicationRequest := router.SubmitApplicationRequest{
 
-		ManifestID: manifestId,
+		ManifestID:   manifestId,
+		RequesterDID: "did:user:123",
 		PresentationSubmission: exchange.PresentationSubmission{
 			ID:           "psid",
 			DefinitionID: "definitionId",
