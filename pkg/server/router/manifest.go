@@ -35,9 +35,7 @@ func NewManifestRouter(s svcframework.Service) (*ManifestRouter, error) {
 }
 
 type CreateManifestRequest struct {
-	Issuer string `json:"issuer" validate:"required"`
-	// A context is optional. If not present, we'll apply default, required context values.
-	Context                string                          `json:"@context"`
+	Issuer                 string                          `json:"issuer" validate:"required"`
 	OutputDescriptors      []manifestsdk.OutputDescriptor  `json:"outputDescriptors" validate:"required"`
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition" validate:"required"`
 }
@@ -45,7 +43,6 @@ type CreateManifestRequest struct {
 func (c CreateManifestRequest) ToServiceRequest() manifest.CreateManifestRequest {
 	return manifest.CreateManifestRequest{
 		Issuer:                 c.Issuer,
-		Context:                c.Context,
 		OutputDescriptors:      c.OutputDescriptors,
 		PresentationDefinition: c.PresentationDefinition,
 	}

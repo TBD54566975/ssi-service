@@ -1300,8 +1300,7 @@ func newRequestContextWithParams(params map[string]string) context.Context {
 
 func getValidManifestRequest() router.CreateManifestRequest {
 	createManifestRequest := router.CreateManifestRequest{
-		Issuer:  "did:abc:123",
-		Context: "context123",
+		Issuer: "did:abc:123",
 		PresentationDefinition: exchange.PresentationDefinition{
 			ID: "pres-def-id",
 			InputDescriptors: []exchange.InputDescriptor{
