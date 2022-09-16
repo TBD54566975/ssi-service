@@ -190,10 +190,10 @@ type SubmitApplicationRequest struct {
 	PresentationSubmission exchangensdk.PresentationSubmission `json:"presentationSubmission" validate:"required"`
 }
 
-func (c SubmitApplicationRequest) ToServiceRequest() manifest.SubmitApplicationRequest {
+func (sar SubmitApplicationRequest) ToServiceRequest() manifest.SubmitApplicationRequest {
 	return manifest.SubmitApplicationRequest{
-		PresentationSubmission: c.PresentationSubmission,
-		ManifestID:             c.ManifestID,
+		PresentationSubmission: sar.PresentationSubmission,
+		ManifestID:             sar.ManifestID,
 	}
 }
 

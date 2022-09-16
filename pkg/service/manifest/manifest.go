@@ -79,7 +79,7 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	// TODO: (Neal) Add dynamic claim formats
+	// TODO: (Neal) Add dynamic claim formats https://github.com/TBD54566975/ssi-service/issues/96
 	if err := builder.SetClaimFormat(exchange.ClaimFormat{
 		JWT: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 	}); err != nil {
