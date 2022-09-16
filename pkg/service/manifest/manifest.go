@@ -1,12 +1,9 @@
 package manifest
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/TBD54566975/ssi-sdk/credential"
-	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
-	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -71,63 +68,17 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestResponse, error) {
 	logrus.Debugf("creating manifest: %+v", request)
 
-	builder := manifest.NewCredentialManifestBuilder()
-	issuer := manifest.Issuer{ID: request.Issuer, Name: request.Issuer}
-
-	if err := builder.SetIssuer(issuer); err != nil {
-		errMsg := fmt.Sprintf("could not build manifest when setting issuer: %s", request.Issuer)
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	// TODO: (Neal) Add dynamic claim formats https://github.com/TBD54566975/ssi-service/issues/96
-	if err := builder.SetClaimFormat(exchange.ClaimFormat{
-		JWT: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
-	}); err != nil {
-		errMsg := fmt.Sprintf("could not build manifest when setting claim format")
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	// parse OutputDescriptors
-	odJSONBytes, err := json.Marshal(request.OutputDescriptors)
-	if err != nil {
-		errMsg := "could not marshal request output descriptors"
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	var od []manifest.OutputDescriptor
-	if err = json.Unmarshal(odJSONBytes, &od); err != nil {
-		errMsg := "could not unmarshal output descriptors"
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	builder.SetOutputDescriptors(od)
-
-	// parse PresentationDefinition
-	pdJSONBytes, err := json.Marshal(request.PresentationDefinition)
-	if err != nil {
-		errMsg := "could not marshal request presentation definition"
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	var pd exchange.PresentationDefinition
-	if err = json.Unmarshal(pdJSONBytes, &pd); err != nil {
-		errMsg := "could not unmarshal presentation definition"
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	builder.SetPresentationDefinition(pd)
-
-	mfst, err := builder.Build()
-	if err != nil {
-		errMsg := "could not build manifest"
+	mfst := request.Manifest
+	if err := mfst.IsValid(); err != nil {
+		errMsg := "manifest is not valid"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	// store the manifest
 	storageRequest := manifeststorage.StoredManifest{
 		ID:       mfst.ID,
-		Manifest: *mfst,
-		Issuer:   request.Issuer,
+		Manifest: mfst,
+		Issuer:   mfst.Issuer.ID,
 	}
 
 	if err := s.manifestStorage.StoreManifest(storageRequest); err != nil {
@@ -136,7 +87,7 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 	}
 
 	// return the result
-	response := CreateManifestResponse{Manifest: *mfst}
+	response := CreateManifestResponse{Manifest: mfst}
 	return &response, nil
 }
 
@@ -183,9 +134,9 @@ func (s Service) DeleteManifest(request DeleteManifestRequest) error {
 }
 
 // TODO: (Neal) Add entire validation framework in place of these validation checks - https://github.com/TBD54566975/ssi-service/issues/95
-func isValidApplication(gotManifest *manifeststorage.StoredManifest, request SubmitApplicationRequest, ps exchange.PresentationSubmission) error {
+func isValidApplication(gotManifest *manifeststorage.StoredManifest, application manifest.CredentialApplication) error {
 	if gotManifest == nil {
-		return util.LoggingNewError(fmt.Sprintf("application is not valid. A manifest does not exist with id: %s", request.ManifestID))
+		return util.LoggingNewError(fmt.Sprintf("application is not valid. A manifest does not exist with id: %s", application.ManifestID))
 	}
 
 	inputDescriptors := gotManifest.Manifest.PresentationDefinition.InputDescriptors
@@ -194,7 +145,7 @@ func isValidApplication(gotManifest *manifeststorage.StoredManifest, request Sub
 		inputDescriptorIDs[inputDescriptor.ID] = true
 	}
 
-	for _, submissionDescriptor := range ps.DescriptorMap {
+	for _, submissionDescriptor := range application.PresentationSubmission.DescriptorMap {
 		if inputDescriptorIDs[submissionDescriptor.ID] != true {
 			return util.LoggingNewError("application is not valid. The submission descriptor ids do not match the input descriptor ids")
 		}
@@ -204,55 +155,29 @@ func isValidApplication(gotManifest *manifeststorage.StoredManifest, request Sub
 }
 
 func (s Service) SubmitApplication(request SubmitApplicationRequest) (*SubmitApplicationResponse, error) {
+	credApp := request.Application
 
-	gotManifest, err := s.manifestStorage.GetManifest(request.ManifestID)
+	if err := credApp.IsValid(); err != nil {
+		errMsg := "application is not valid"
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	gotManifest, err := s.manifestStorage.GetManifest(credApp.ManifestID)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "problem with retrieving manifest during application validation")
 	}
 
-	// parse OutputDescriptors
-	psJSONBytes, err := json.Marshal(request.PresentationSubmission)
-	if err != nil {
-		errMsg := "could not marshal request presentation submission"
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	var ps exchange.PresentationSubmission
-	if err = json.Unmarshal(psJSONBytes, &ps); err != nil {
-		errMsg := "could not unmarshal presentation submission"
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
 	// validate
-	if err := isValidApplication(gotManifest, request, ps); err != nil {
+	if err := isValidApplication(gotManifest, credApp); err != nil {
 		errMsg := fmt.Sprintf("could not validate application")
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	// build credential application
-	builder := manifest.NewCredentialApplicationBuilder(request.ManifestID)
-
-	// TODO: (Neal) Add dynamic claim formats
-	if err := builder.SetApplicationClaimFormat(exchange.ClaimFormat{
-		JWT: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
-	}); err != nil {
-		errMsg := fmt.Sprintf("could not build application when setting claim format")
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	builder.SetPresentationSubmission(ps)
-
-	credApp, err := builder.Build()
-	if err != nil {
-		errMsg := "could not build application"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	// store the application
 	storageRequest := manifeststorage.StoredApplication{
 		ID:          credApp.ID,
-		Application: *credApp,
-		ManifestID:  request.ManifestID,
+		Application: credApp,
+		ManifestID:  request.Application.ManifestID,
 	}
 
 	if err := s.manifestStorage.StoreApplication(storageRequest); err != nil {
@@ -261,7 +186,7 @@ func (s Service) SubmitApplication(request SubmitApplicationRequest) (*SubmitApp
 	}
 
 	// build the credential response
-	responseBuilder := manifest.NewCredentialResponseBuilder(request.ManifestID)
+	responseBuilder := manifest.NewCredentialResponseBuilder(request.Application.ManifestID)
 	responseBuilder.SetApplicationID(credApp.ID)
 	responseBuilder.SetFulfillment(credApp.PresentationSubmission.DescriptorMap)
 
@@ -275,7 +200,7 @@ func (s Service) SubmitApplication(request SubmitApplicationRequest) (*SubmitApp
 	responseStorageRequest := manifeststorage.StoredResponse{
 		ID:         credRes.ID,
 		Response:   *credRes,
-		ManifestID: request.ManifestID,
+		ManifestID: request.Application.ManifestID,
 	}
 
 	var creds []credential.VerifiableCredential

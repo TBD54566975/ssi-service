@@ -748,10 +748,8 @@ func TestManifestAPI(t *testing.T) {
 
 		manifestService := newManifestService(tt, bolt)
 
-		// missing required field: OutputDescriptors
-		badManifestRequest := router.CreateManifestRequest{
-			Issuer: "did:abc:123",
-		}
+		// missing required field: Manifest
+		badManifestRequest := router.CreateManifestRequest{}
 
 		badRequestValue := newRequestValue(tt, badManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", badRequestValue)
@@ -937,9 +935,9 @@ func TestManifestAPI(t *testing.T) {
 
 		manifestService := newManifestService(tt, bolt)
 
-		// missing required field: OutputDescriptors
+		// missing required field: Application
 		badManifestRequest := router.SubmitApplicationRequest{
-			ManifestID: "id123",
+			RequesterDID: "id123",
 		}
 
 		badRequestValue := newRequestValue(tt, badManifestRequest)
@@ -1298,36 +1296,42 @@ func newRequestContextWithParams(params map[string]string) context.Context {
 	return httptreemux.AddParamsToContext(ctx, params)
 }
 
-func getValidManifestRequest() router.CreateManifestRequest {
-	createManifestRequest := router.CreateManifestRequest{
-		Issuer: "did:abc:123",
-		PresentationDefinition: exchange.PresentationDefinition{
-			ID: "pres-def-id",
-			InputDescriptors: []exchange.InputDescriptor{
-				{
-					ID: "test-id",
-					Constraints: &exchange.Constraints{
-						Fields: []exchange.Field{
-							{
-								Path: []string{".vc.id"},
+func getValidManifestRequest() manifest.CreateManifestRequest {
+	createManifestRequest := manifest.CreateManifestRequest{
+		Manifest: manifestsdk.CredentialManifest{
+			ID:          "WA-DL-CLASS-A",
+			SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+			Issuer: manifestsdk.Issuer{
+				ID: "did:abc:123",
+			},
+			PresentationDefinition: &exchange.PresentationDefinition{
+				ID: "pres-def-id",
+				InputDescriptors: []exchange.InputDescriptor{
+					{
+						ID: "test-id",
+						Constraints: &exchange.Constraints{
+							Fields: []exchange.Field{
+								{
+									Path: []string{".vc.id"},
+								},
 							},
 						},
 					},
 				},
 			},
-		},
-		OutputDescriptors: []manifestsdk.OutputDescriptor{
-			{
-				ID:          "id1",
-				Schema:      "https://test.com/schema",
-				Name:        "good ID",
-				Description: "it's all good",
-			},
-			{
-				ID:          "id2",
-				Schema:      "https://test.com/schema",
-				Name:        "good ID",
-				Description: "it's all good",
+			OutputDescriptors: []manifestsdk.OutputDescriptor{
+				{
+					ID:          "id1",
+					Schema:      "https://test.com/schema",
+					Name:        "good ID",
+					Description: "it's all good",
+				},
+				{
+					ID:          "id2",
+					Schema:      "https://test.com/schema",
+					Name:        "good ID",
+					Description: "it's all good",
+				},
 			},
 		},
 	}
@@ -1335,13 +1339,16 @@ func getValidManifestRequest() router.CreateManifestRequest {
 	return createManifestRequest
 }
 
-func getValidApplicationRequest(manifestID string, submissionDescriptorId string) router.SubmitApplicationRequest {
+func getValidApplicationRequest(manifestID string, submissionDescriptorId string) manifest.SubmitApplicationRequest {
 
-	createApplicationRequest := router.SubmitApplicationRequest{
-
-		ManifestID:   manifestID,
-		RequesterDID: "did:user:123",
-		PresentationSubmission: exchange.PresentationSubmission{
+	createApplication := manifestsdk.CredentialApplication{
+		ID:          uuid.New().String(),
+		SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+		ManifestID:  manifestID,
+		Format: &exchange.ClaimFormat{
+			JWT: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
+		},
+		PresentationSubmission: &exchange.PresentationSubmission{
 			ID:           "psid",
 			DefinitionID: "definitionId",
 			DescriptorMap: []exchange.SubmissionDescriptor{
@@ -1352,6 +1359,11 @@ func getValidApplicationRequest(manifestID string, submissionDescriptorId string
 				},
 			},
 		},
+	}
+
+	createApplicationRequest := manifest.SubmitApplicationRequest{
+		Application:  createApplication,
+		RequesterDID: "did:user:123",
 	}
 
 	return createApplicationRequest

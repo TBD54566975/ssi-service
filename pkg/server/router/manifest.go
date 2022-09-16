@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/TBD54566975/ssi-sdk/credential"
-	"github.com/TBD54566975/ssi-sdk/credential/exchange"
-	exchangensdk "github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"net/http"
@@ -35,16 +33,12 @@ func NewManifestRouter(s svcframework.Service) (*ManifestRouter, error) {
 }
 
 type CreateManifestRequest struct {
-	Issuer                 string                          `json:"issuer" validate:"required"`
-	OutputDescriptors      []manifestsdk.OutputDescriptor  `json:"outputDescriptors" validate:"required"`
-	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition" validate:"required"`
+	Manifest manifestsdk.CredentialManifest `json:"manifest" validate:"required"`
 }
 
 func (c CreateManifestRequest) ToServiceRequest() manifest.CreateManifestRequest {
 	return manifest.CreateManifestRequest{
-		Issuer:                 c.Issuer,
-		OutputDescriptors:      c.OutputDescriptors,
-		PresentationDefinition: c.PresentationDefinition,
+		Manifest: c.Manifest,
 	}
 }
 
@@ -183,16 +177,15 @@ func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWrit
 }
 
 type SubmitApplicationRequest struct {
-	ManifestID             string                              `json:"manifestId" validate:"required"`
-	RequesterDID           string                              `json:"requesterDid" validate:"required"`
-	PresentationSubmission exchangensdk.PresentationSubmission `json:"presentationSubmission" validate:"required"`
+	Application manifestsdk.CredentialApplication `json:"application" validate:"required"`
+	// Once we have JWT signed wrapper that can get the did this can be removed
+	RequesterDID string `json:"requesterDid" validate:"required"`
 }
 
 func (sar SubmitApplicationRequest) ToServiceRequest() manifest.SubmitApplicationRequest {
 	return manifest.SubmitApplicationRequest{
-		ManifestID:             sar.ManifestID,
-		RequesterDID:           sar.RequesterDID,
-		PresentationSubmission: sar.PresentationSubmission,
+		Application:  sar.Application,
+		RequesterDID: sar.RequesterDID,
 	}
 }
 

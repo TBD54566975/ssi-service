@@ -3,6 +3,8 @@ package router
 import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -55,7 +57,7 @@ func TestManifestRouter(t *testing.T) {
 		assert.NotEmpty(tt, createdManifest.Manifest)
 
 		// good application request
-		createApplicationRequest := getValidApplicationRequest(createdManifest.Manifest.ID, createManifestRequest.PresentationDefinition.InputDescriptors[0].ID)
+		createApplicationRequest := getValidApplicationRequest(createdManifest.Manifest.ID, createManifestRequest.Manifest.PresentationDefinition.InputDescriptors[0].ID)
 
 		createdApplication, err := manifestService.SubmitApplication(createApplicationRequest)
 		assert.NoError(tt, err)
@@ -67,35 +69,40 @@ func TestManifestRouter(t *testing.T) {
 
 func getValidManifestRequest() manifest.CreateManifestRequest {
 	createManifestRequest := manifest.CreateManifestRequest{
-		Issuer:  "did:abc:123",
-		Context: "context123",
-		PresentationDefinition: exchange.PresentationDefinition{
-			ID: "pres-def-id",
-			InputDescriptors: []exchange.InputDescriptor{
-				{
-					ID: "test-id",
-					Constraints: &exchange.Constraints{
-						Fields: []exchange.Field{
-							{
-								Path: []string{".vc.id"},
+		Manifest: manifestsdk.CredentialManifest{
+			ID:          "WA-DL-CLASS-A",
+			SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+			Issuer: manifestsdk.Issuer{
+				ID: "did:abc:123",
+			},
+			PresentationDefinition: &exchange.PresentationDefinition{
+				ID: "pres-def-id",
+				InputDescriptors: []exchange.InputDescriptor{
+					{
+						ID: "test-id",
+						Constraints: &exchange.Constraints{
+							Fields: []exchange.Field{
+								{
+									Path: []string{".vc.id"},
+								},
 							},
 						},
 					},
 				},
 			},
-		},
-		OutputDescriptors: []manifestsdk.OutputDescriptor{
-			{
-				ID:          "id1",
-				Schema:      "https://test.com/schema",
-				Name:        "good ID",
-				Description: "it's all good",
-			},
-			{
-				ID:          "id2",
-				Schema:      "https://test.com/schema",
-				Name:        "good ID",
-				Description: "it's all good",
+			OutputDescriptors: []manifestsdk.OutputDescriptor{
+				{
+					ID:          "id1",
+					Schema:      "https://test.com/schema",
+					Name:        "good ID",
+					Description: "it's all good",
+				},
+				{
+					ID:          "id2",
+					Schema:      "https://test.com/schema",
+					Name:        "good ID",
+					Description: "it's all good",
+				},
 			},
 		},
 	}
@@ -105,11 +112,14 @@ func getValidManifestRequest() manifest.CreateManifestRequest {
 
 func getValidApplicationRequest(manifestID string, submissionDescriptorId string) manifest.SubmitApplicationRequest {
 
-	createApplicationRequest := manifest.SubmitApplicationRequest{
-
-		ManifestID:   manifestID,
-		RequesterDID: "did:user:123",
-		PresentationSubmission: exchange.PresentationSubmission{
+	createApplication := manifestsdk.CredentialApplication{
+		ID:          uuid.New().String(),
+		SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+		ManifestID:  manifestID,
+		Format: &exchange.ClaimFormat{
+			JWT: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
+		},
+		PresentationSubmission: &exchange.PresentationSubmission{
 			ID:           "psid",
 			DefinitionID: "definitionId",
 			DescriptorMap: []exchange.SubmissionDescriptor{
@@ -120,6 +130,11 @@ func getValidApplicationRequest(manifestID string, submissionDescriptorId string
 				},
 			},
 		},
+	}
+
+	createApplicationRequest := manifest.SubmitApplicationRequest{
+		Application:  createApplication,
+		RequesterDID: "did:user:123",
 	}
 
 	return createApplicationRequest

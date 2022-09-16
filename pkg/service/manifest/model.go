@@ -2,17 +2,12 @@ package manifest
 
 import (
 	"github.com/TBD54566975/ssi-sdk/credential"
-	exchangesdk "github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 )
 
 // Manifest
 type CreateManifestRequest struct {
-	Issuer string
-	// A context is optional. If not present, we'll apply default, required context values.
-	Context                string
-	OutputDescriptors      []manifestsdk.OutputDescriptor
-	PresentationDefinition exchangesdk.PresentationDefinition
+	Manifest manifestsdk.CredentialManifest
 }
 
 type CreateManifestResponse struct {
@@ -37,9 +32,8 @@ type DeleteManifestRequest struct {
 
 // Application
 type SubmitApplicationRequest struct {
-	ManifestID             string
-	RequesterDID           string
-	PresentationSubmission exchangesdk.PresentationSubmission
+	Application  manifestsdk.CredentialApplication
+	RequesterDID string
 }
 
 type SubmitApplicationResponse struct {
