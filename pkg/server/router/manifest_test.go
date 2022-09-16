@@ -55,12 +55,12 @@ func TestManifestRouter(t *testing.T) {
 		assert.NotEmpty(tt, createdManifest.Manifest)
 
 		// good application request
-		//createApplicationRequest := getValidApplicationRequest(createdManifest.Manifest.ID, createManifestRequest.PresentationDefinition.InputDescriptors[0].ID)
-		//
-		//createdApplication, err := manifestService.SubmitApplication(createApplicationRequest)
-		//assert.NoError(tt, err)
-		//assert.NotEmpty(tt, createdManifest)
-		//assert.NotEmpty(tt, createdApplication.Response.ID)
+		createApplicationRequest := getValidApplicationRequest(createdManifest.Manifest.ID, createManifestRequest.PresentationDefinition.InputDescriptors[0].ID)
+
+		createdApplication, err := manifestService.SubmitApplication(createApplicationRequest)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdManifest)
+		assert.NotEmpty(tt, createdApplication.Response.ID)
 	})
 
 }

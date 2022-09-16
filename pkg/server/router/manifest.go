@@ -198,8 +198,8 @@ func (c SubmitApplicationRequest) ToServiceRequest() manifest.SubmitApplicationR
 }
 
 type SubmitApplicationResponse struct {
-	Response   manifestsdk.CredentialResponse  `json:"response"`
-	Credential credential.VerifiableCredential `json:"credential"`
+	Response    manifestsdk.CredentialResponse    `json:"response"`
+	Credentials []credential.VerifiableCredential `json:"credentials"`
 }
 
 // SubmitApplication godoc
@@ -229,7 +229,7 @@ func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := SubmitApplicationResponse{Response: submitApplicationResponse.Response, Credential: submitApplicationResponse.Credential}
+	resp := SubmitApplicationResponse{Response: submitApplicationResponse.Response, Credentials: submitApplicationResponse.Credential}
 
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
@@ -281,9 +281,6 @@ type GetApplicationsResponse struct {
 // @Tags         ApplicationAPI
 // @Accept       json
 // @Produce      json
-// @Param        issuer   query     string  false  "string issuer"
-// @Param        schema   query     string  false  "string schema"
-// @Param        subject  query     string  false  "string subject"
 // @Success      200      {object}  GetApplicationsResponse
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
@@ -379,9 +376,6 @@ type GetResponsesResponse struct {
 // @Tags         ResponseAPI
 // @Accept       json
 // @Produce      json
-// @Param        issuer   query     string  false  "string issuer"
-// @Param        schema   query     string  false  "string schema"
-// @Param        subject  query     string  false  "string subject"
 // @Success      200      {object}  GetResponsesResponse
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"

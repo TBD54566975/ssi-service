@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	credentialstorage "github.com/tbd54566975/ssi-service/pkg/service/credential/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	manifeststorage "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -17,8 +18,9 @@ import (
 )
 
 type Service struct {
-	storage manifeststorage.Storage
-	config  config.ManifestServiceConfig
+	manifestStorage   manifeststorage.Storage
+	credentialStorage credentialstorage.Storage
+	config            config.ManifestServiceConfig
 }
 
 func (s Service) Type() framework.Type {
@@ -26,12 +28,20 @@ func (s Service) Type() framework.Type {
 }
 
 func (s Service) Status() framework.Status {
-	if s.storage == nil {
+	if s.manifestStorage == nil {
 		return framework.Status{
 			Status:  framework.StatusNotReady,
-			Message: "no storage",
+			Message: "no manifestStorage",
 		}
 	}
+
+	if s.credentialStorage == nil {
+		return framework.Status{
+			Status:  framework.StatusNotReady,
+			Message: "no credentialStorage",
+		}
+	}
+
 	return framework.Status{Status: framework.StatusReady}
 }
 
@@ -42,12 +52,19 @@ func (s Service) Config() config.ManifestServiceConfig {
 func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage) (*Service, error) {
 	manifestStorage, err := manifeststorage.NewManifestStorage(s)
 	if err != nil {
-		errMsg := "could not instantiate storage for the manifest service"
+		errMsg := "could not instantiate manifestStorage for the manifest service"
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	credentialStorage, err := credentialstorage.NewCredentialStorage(s)
+	if err != nil {
+		errMsg := "could not instantiate credentialStorage for the manifest service"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	return &Service{
-		storage: manifestStorage,
-		config:  config,
+		manifestStorage:   manifestStorage,
+		credentialStorage: credentialStorage,
+		config:            config,
 	}, nil
 }
 
@@ -113,7 +130,7 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 		Issuer:   request.Issuer,
 	}
 
-	if err := s.storage.StoreManifest(storageRequest); err != nil {
+	if err := s.manifestStorage.StoreManifest(storageRequest); err != nil {
 		errMsg := "could not store manifest"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
@@ -127,7 +144,7 @@ func (s Service) GetManifest(request GetManifestRequest) (*GetManifestResponse, 
 
 	logrus.Debugf("getting manifest: %s", request.ID)
 
-	gotManifest, err := s.storage.GetManifest(request.ID)
+	gotManifest, err := s.manifestStorage.GetManifest(request.ID)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get manifest: %s", request.ID)
 		return nil, util.LoggingErrorMsg(err, errMsg)
@@ -138,7 +155,7 @@ func (s Service) GetManifest(request GetManifestRequest) (*GetManifestResponse, 
 }
 
 func (s Service) GetManifests() (*GetManifestsResponse, error) {
-	gotManifests, err := s.storage.GetManifests()
+	gotManifests, err := s.manifestStorage.GetManifests()
 
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get manifests(s)")
@@ -157,7 +174,7 @@ func (s Service) DeleteManifest(request DeleteManifestRequest) error {
 
 	logrus.Debugf("deleting manifest: %s", request.ID)
 
-	if err := s.storage.DeleteManifest(request.ID); err != nil {
+	if err := s.manifestStorage.DeleteManifest(request.ID); err != nil {
 		errMsg := fmt.Sprintf("could not delete manifest with id: %s", request.ID)
 		return util.LoggingErrorMsg(err, errMsg)
 	}
@@ -188,7 +205,7 @@ func isValidApplication(gotManifest *manifeststorage.StoredManifest, request Sub
 
 func (s Service) SubmitApplication(request SubmitApplicationRequest) (*SubmitApplicationResponse, error) {
 
-	gotManifest, err := s.storage.GetManifest(request.ManifestID)
+	gotManifest, err := s.manifestStorage.GetManifest(request.ManifestID)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "problem with retrieving manifest during application validation")
 	}
@@ -238,7 +255,7 @@ func (s Service) SubmitApplication(request SubmitApplicationRequest) (*SubmitApp
 		ManifestID:  request.ManifestID,
 	}
 
-	if err := s.storage.StoreApplication(storageRequest); err != nil {
+	if err := s.manifestStorage.StoreApplication(storageRequest); err != nil {
 		errMsg := "could not store application"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
@@ -261,29 +278,45 @@ func (s Service) SubmitApplication(request SubmitApplicationRequest) (*SubmitApp
 		ManifestID: request.ManifestID,
 	}
 
-	if err := s.storage.StoreResponse(responseStorageRequest); err != nil {
-		errMsg := "could not store response"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+	var creds []credential.VerifiableCredential
+	for _, od := range gotManifest.Manifest.OutputDescriptors {
+
+		if err := s.manifestStorage.StoreResponse(responseStorageRequest); err != nil {
+			errMsg := "could not store response"
+			return nil, util.LoggingErrorMsg(err, errMsg)
+		}
+
+		credentialBuilder := credential.NewVerifiableCredentialBuilder()
+		credentialBuilder.SetIssuer(gotManifest.Manifest.Issuer.ID)
+		credentialBuilder.SetCredentialSubject(map[string]interface{}{
+			"id": credApp.ID, // TODO: Needs to be DID of the application submitter.
+		})
+		credentialBuilder.SetIssuanceDate(time.Now().Format(time.RFC3339))
+
+		cred, err := credentialBuilder.Build()
+		if err != nil {
+			errMsg := "could not build credential"
+			return nil, util.LoggingErrorMsg(err, errMsg)
+		}
+
+		credentialStorageRequest := credentialstorage.StoredCredential{
+			ID:           cred.ID,
+			Credential:   *cred,
+			Issuer:       gotManifest.Manifest.Issuer.ID,
+			Subject:      credApp.ID, // TODO: Needs to be DID of the application submitter.
+			Schema:       od.Schema,
+			IssuanceDate: time.Now().Format(time.RFC3339),
+		}
+
+		if err := s.credentialStorage.StoreCredential(credentialStorageRequest); err != nil {
+			errMsg := "could not store credential"
+			return nil, util.LoggingErrorMsg(err, errMsg)
+		}
+
+		creds = append(creds, *cred)
 	}
 
-	credentialBuilder := credential.NewVerifiableCredentialBuilder()
-	credentialBuilder.SetIssuer(gotManifest.Issuer)
-	credentialBuilder.SetCredentialSubject(map[string]interface{}{
-		"id":      "test-vc-id",
-		"company": "Block",
-		"website": "https://block.xyz",
-	})
-	credentialBuilder.SetIssuanceDate(time.Now().Format(time.RFC3339))
-
-	cred, err := credentialBuilder.Build()
-	if err != nil {
-		errMsg := "could not build credential"
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	// TODO: Store the credential?
-
-	response := SubmitApplicationResponse{Response: *credRes, Credential: *cred}
+	response := SubmitApplicationResponse{Response: *credRes, Credential: creds}
 	return &response, nil
 }
 
@@ -291,7 +324,7 @@ func (s Service) GetApplication(request GetApplicationRequest) (*GetApplicationR
 
 	logrus.Debugf("getting application: %s", request.ID)
 
-	gotApp, err := s.storage.GetApplication(request.ID)
+	gotApp, err := s.manifestStorage.GetApplication(request.ID)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get application: %s", request.ID)
 		return nil, util.LoggingErrorMsg(err, errMsg)
@@ -305,7 +338,7 @@ func (s Service) GetApplications() (*GetApplicationsResponse, error) {
 
 	logrus.Debugf("getting application(s)")
 
-	gotApps, err := s.storage.GetApplications()
+	gotApps, err := s.manifestStorage.GetApplications()
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get application(s)")
 		return nil, util.LoggingErrorMsg(err, errMsg)
@@ -324,7 +357,7 @@ func (s Service) DeleteApplication(request DeleteApplicationRequest) error {
 
 	logrus.Debugf("deleting application: %s", request.ID)
 
-	if err := s.storage.DeleteApplication(request.ID); err != nil {
+	if err := s.manifestStorage.DeleteApplication(request.ID); err != nil {
 		errMsg := fmt.Sprintf("could not delete application with id: %s", request.ID)
 		return util.LoggingErrorMsg(err, errMsg)
 	}
@@ -336,7 +369,7 @@ func (s Service) GetResponse(request GetResponseRequest) (*GetResponseResponse, 
 
 	logrus.Debugf("getting response: %s", request.ID)
 
-	gotResponse, err := s.storage.GetResponse(request.ID)
+	gotResponse, err := s.manifestStorage.GetResponse(request.ID)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get response: %s", request.ID)
 		return nil, util.LoggingErrorMsg(err, errMsg)
@@ -350,7 +383,7 @@ func (s Service) GetResponses() (*GetResponsesResponse, error) {
 
 	logrus.Debugf("getting response(s)")
 
-	gotResponses, err := s.storage.GetResponses()
+	gotResponses, err := s.manifestStorage.GetResponses()
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get response(s)")
 		return nil, util.LoggingErrorMsg(err, errMsg)
@@ -369,7 +402,7 @@ func (s Service) DeleteResponse(request DeleteResponseRequest) error {
 
 	logrus.Debugf("deleting response: %s", request.ID)
 
-	if err := s.storage.DeleteResponse(request.ID); err != nil {
+	if err := s.manifestStorage.DeleteResponse(request.ID); err != nil {
 		errMsg := fmt.Sprintf("could not delete response with id: %s", request.ID)
 		return util.LoggingErrorMsg(err, errMsg)
 	}

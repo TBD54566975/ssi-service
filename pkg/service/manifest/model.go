@@ -43,7 +43,7 @@ type SubmitApplicationRequest struct {
 
 type SubmitApplicationResponse struct {
 	Response   manifestsdk.CredentialResponse
-	Credential credential.VerifiableCredential
+	Credential []credential.VerifiableCredential
 }
 
 type GetApplicationRequest struct {
