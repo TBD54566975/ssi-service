@@ -1,6 +1,6 @@
 module github.com/tbd54566975/ssi-service
 
-go 1.17
+go 1.19
 
 require (
 	github.com/BurntSushi/toml v1.2.0
@@ -20,13 +20,8 @@ require (
 	go.opentelemetry.io/otel/trace v1.9.0
 	golang.org/x/crypto v0.0.0-20220829220503-c86fa9a7ed90
 	gopkg.in/go-playground/validator.v9 v9.31.0
-)
-
-require go.etcd.io/bbolt v1.3.6
-
-require github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852 // indirect
-
-require (
+ 	go.etcd.io/bbolt v1.3.6
+ 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
