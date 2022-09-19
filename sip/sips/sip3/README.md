@@ -9,11 +9,11 @@ Author(s): Gabe Cohen @decentralgabe
 
 Comments URI: https://forums.tbd.website/t/sip-3-discussion-key-access-signing-verification/133
 
-Status: Draft
+Status: Accepted
 
 Created: September 12, 2022
 
-Updated: September 13, 2022
+Updated: September 14, 2022
 ```
 
 # Abstract
@@ -105,7 +105,7 @@ The API for the Key Access service is provided in-process for services in the SS
 ```go
 type SigningConfig struct {
 	// Added with this SIP (e.g. did:example:abcd#key-1)
-	SigningKey string `json:"signingKey" validate:"required"`
+	KeyID string `json:"kid" validate:"required"`
 	// Where the value is either "JWT" or an LD Signature Suite such as "JsonWebSignature2020"
 	SignatureType string `json:"signatureType" validate:"required"`
 }
@@ -133,7 +133,7 @@ Request body as follows:
 // must have one of the following fields
 type VerifyCredentialRequest struct {
 	// JSON representation of a credential
-	Credential  *string `json:"issuer"`
+	Credential  *string `json:"credential"`
 
 	// JWT representation of a credential
 	JWT *string `json:"jwt"`
