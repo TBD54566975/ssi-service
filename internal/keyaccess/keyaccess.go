@@ -1,9 +1,5 @@
 package keyaccess
 
-import (
-	"github.com/TBD54566975/ssi-sdk/cryptosuite"
-)
-
 type SigningConfig struct {
 	// e.g. did:example:abcd#key-1
 	SigningKey string `json:"signingKey" validate:"required"`
@@ -24,7 +20,6 @@ type KeyAccess interface {
 type JWKKeyAccess struct{}
 
 func (jwk *JWKKeyAccess) Sign(config SigningConfig, payload []byte) ([]byte, error) {
-	cryptosuite.NewJSONWebKeySigner()
 	return nil, nil
 }
 
