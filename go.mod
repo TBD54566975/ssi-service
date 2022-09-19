@@ -11,7 +11,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/goccy/go-json v0.9.11
 	github.com/google/uuid v1.3.0
-	github.com/magefile/mage v1.13.0
+	github.com/magefile/mage v1.14.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
