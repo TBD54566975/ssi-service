@@ -50,11 +50,11 @@ func TestJWKKeyAccessSignVerify(t *testing.T) {
 		data := map[string]interface{}{
 			"test": "test",
 		}
-		tokenBytes, err := ka.Sign(data)
+		token, err := ka.Sign(data)
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, tokenBytes)
+		assert.NotEmpty(tt, token)
 
-		err = ka.Verify(string(tokenBytes))
+		err = ka.Verify(*token)
 		assert.NoError(tt, err)
 	})
 
@@ -79,7 +79,7 @@ func TestJWKKeyAccessSignVerify(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, ka)
 
-		err = ka.Verify("")
+		err = ka.Verify(JWKToken{})
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "token cannot be empty")
 	})
@@ -101,7 +101,7 @@ func TestJWKKeyAccessSignVerifyCredentials(t *testing.T) {
 		assert.NotEmpty(tt, signedCred)
 
 		// verify
-		verifiedCred, err := ka.VerifyVerifiableCredential(string(signedCred))
+		verifiedCred, err := ka.VerifyVerifiableCredential(*signedCred)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, verifiedCred)
 
@@ -136,7 +136,7 @@ func TestJWKKeyAccessSignVerifyCredentials(t *testing.T) {
 		assert.NotEmpty(tt, ka)
 
 		// verify
-		_, err = ka.VerifyVerifiableCredential("bad")
+		_, err = ka.VerifyVerifiableCredential(JWKToken{"bad"})
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not verify JWT and its signature")
 	})
@@ -158,7 +158,7 @@ func TestJWKKeyAccessSignVerifyPresentations(t *testing.T) {
 		assert.NotEmpty(tt, signedPres)
 
 		// verify
-		verifiedPres, err := ka.VerifyVerifiablePresentation(string(signedPres))
+		verifiedPres, err := ka.VerifyVerifiablePresentation(*signedPres)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, verifiedPres)
 
@@ -193,7 +193,7 @@ func TestJWKKeyAccessSignVerifyPresentations(t *testing.T) {
 		assert.NotEmpty(tt, ka)
 
 		// verify
-		_, err = ka.VerifyVerifiablePresentation("bad")
+		_, err = ka.VerifyVerifiablePresentation(JWKToken{"bad"})
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not verify JWT and its signature")
 	})
