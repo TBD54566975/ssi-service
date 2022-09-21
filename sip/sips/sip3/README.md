@@ -107,7 +107,7 @@ type SigningConfig struct {
 	// Added with this SIP (e.g. did:example:abcd#key-1)
 	KeyID string `json:"kid" validate:"required"`
 	// Where the value is either "JWT" or an LD Signature Suite such as "JsonWebSignature2020"
-	SignatureType `json:"signatureType" validate:"required"`
+	SignatureType string `json:"signatureType" validate:"required"`
 }
 ```
 
