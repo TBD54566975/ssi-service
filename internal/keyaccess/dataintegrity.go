@@ -9,9 +9,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// TODO(gabe) handle signing for Data Integrity as well
+// TODO(gabe) integrate signing for Data Integrity as well in https://github.com/TBD54566975/ssi-service/issues/105
 
-// DataIntegrityKeyAccess TODO to be handled in https://github.com/TBD54566975/ssi-service/issues/105
+// DataIntegrityKeyAccess represents a key access object for data integrity using the JsonWebSignature2020 suite:
+// https://w3c.github.io/vc-jws-2020/
 type DataIntegrityKeyAccess struct {
 	cryptosuite.JSONWebKeySigner
 	cryptosuite.JSONWebKeyVerifier
@@ -46,7 +47,7 @@ func NewDataIntegrityKeyAccess(kid string, key gocrypto.PrivateKey) (*DataIntegr
 	}, nil
 }
 
-func (ka *DataIntegrityKeyAccess) Sign(payload cryptosuite.Provable) ([]byte, error) {
+func (ka DataIntegrityKeyAccess) Sign(payload cryptosuite.Provable) ([]byte, error) {
 	if payload == nil {
 		return nil, errors.New("payload cannot be nil")
 	}
@@ -60,7 +61,7 @@ func (ka *DataIntegrityKeyAccess) Sign(payload cryptosuite.Provable) ([]byte, er
 	return signedJSONBytes, nil
 }
 
-func (ka *DataIntegrityKeyAccess) Verify(payload cryptosuite.Provable) error {
+func (ka DataIntegrityKeyAccess) Verify(payload cryptosuite.Provable) error {
 	if payload == nil {
 		return errors.New("payload cannot be nil")
 	}
