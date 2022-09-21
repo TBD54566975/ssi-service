@@ -21,6 +21,12 @@ type DataIntegrityKeyAccess struct {
 // NewDataIntegrityKeyAccess creates a new DataIntegrityKeyAccess object from a key id and private key, generating both
 // JSON Web Key Signer and Verifier objects.
 func NewDataIntegrityKeyAccess(kid string, key gocrypto.PrivateKey) (*DataIntegrityKeyAccess, error) {
+	if kid == "" {
+		return nil, errors.New("kid cannot be empty")
+	}
+	if key == nil {
+		return nil, errors.New("key cannot be nil")
+	}
 	publicKeyJWK, privateKeyJWK, err := crypto.PrivateKeyToPrivateKeyJWK(key)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not convert private key to JWK: %s", kid)
@@ -41,6 +47,9 @@ func NewDataIntegrityKeyAccess(kid string, key gocrypto.PrivateKey) (*DataIntegr
 }
 
 func (ka *DataIntegrityKeyAccess) Sign(payload cryptosuite.Provable) ([]byte, error) {
+	if payload == nil {
+		return nil, errors.New("payload cannot be nil")
+	}
 	if err := ka.CryptoSuite.Sign(&ka.JSONWebKeySigner, payload); err != nil {
 		return nil, errors.Wrap(err, "could not sign payload")
 	}
@@ -52,6 +61,9 @@ func (ka *DataIntegrityKeyAccess) Sign(payload cryptosuite.Provable) ([]byte, er
 }
 
 func (ka *DataIntegrityKeyAccess) Verify(payload cryptosuite.Provable) error {
+	if payload == nil {
+		return errors.New("payload cannot be nil")
+	}
 	if err := ka.CryptoSuite.Verify(&ka.JSONWebKeyVerifier, payload); err != nil {
 		return errors.Wrap(err, "could not verify payload")
 	}
