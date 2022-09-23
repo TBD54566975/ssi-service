@@ -63,7 +63,6 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	// check if there's a conflict with subject ID
 	if id, ok := request.Data[credential.VerifiableCredentialIDProperty]; ok && id != request.Subject {
 		errMsg := fmt.Sprintf("cannot set subject<%s>, data already contains a different ID value: %s", request.Subject, id)
-		logrus.Error(errMsg)
 		return nil, util.LoggingNewError(errMsg)
 	}
 

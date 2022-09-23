@@ -4,6 +4,8 @@ github.com/TBD54566975/ssi-sdk v0.0.1-alpha.0.20220919021815-57be087eca80 h1:1HB
 github.com/TBD54566975/ssi-sdk v0.0.1-alpha.0.20220919021815-57be087eca80/go.mod h1:ZUcjj/CHvtmz48c9GapcbavlTRsN9JZ9pKdT+co/EvY=
 github.com/TBD54566975/ssi-sdk v0.0.1-alpha.0.20220920154030-cbf6b4665a6d h1:NW/9Qg2Z+Yhh6PtzgV/cFwgNz7Sgng3E25IYQiUV34c=
 github.com/TBD54566975/ssi-sdk v0.0.1-alpha.0.20220920154030-cbf6b4665a6d/go.mod h1:jkbaZT2qU+g6weOHpjPdxuHdmfOApdT8CQg41GEyZhA=
+github.com/TBD54566975/ssi-sdk v0.0.1-alpha.0.20220921215642-f749c4d89b8b h1:0IJJPN8qBGEINcNheyMN/VztIj/Wu9OLzoaEdwfKMWM=
+github.com/TBD54566975/ssi-sdk v0.0.1-alpha.0.20220921215642-f749c4d89b8b/go.mod h1:jkbaZT2qU+g6weOHpjPdxuHdmfOApdT8CQg41GEyZhA=
 github.com/ardanlabs/conf v1.5.0 h1:5TwP6Wu9Xi07eLFEpiCUF3oQXh9UzHMDVnD3u/I5d5c=
 github.com/ardanlabs/conf v1.5.0/go.mod h1:ILsMo9dMqYzCxDjDXTiwMI0IgxOJd0MOiucbQY2wlJw=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=

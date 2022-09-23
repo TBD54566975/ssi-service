@@ -57,11 +57,11 @@ func XChaCha20Poly1305Decrypt(key, data []byte) ([]byte, error) {
 	nonce, ciphertext := data[:aead.NonceSize()], data[aead.NonceSize():]
 
 	// Decrypt the message and check it wasn't tampered with.
-	decyrpted, err := aead.Open(nil, nonce, ciphertext, nil)
+	decrypted, err := aead.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not decrypt data")
 	}
-	return decyrpted, nil
+	return decrypted, nil
 }
 
 // Argon2KeyGen returns an encoded string generation of a key generated using the go crypto argon2 impl
