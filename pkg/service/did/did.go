@@ -2,7 +2,9 @@ package did
 
 import (
 	"fmt"
+
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	didstorage "github.com/tbd54566975/ssi-service/pkg/service/did/storage"
@@ -23,12 +25,12 @@ type Service struct {
 	config   config.DIDServiceConfig
 }
 
-func (s Service) Type() framework.Type {
+func (s *Service) Type() framework.Type {
 	return framework.DID
 }
 
 // Status is a self-reporting status for the DID service.
-func (s Service) Status() framework.Status {
+func (s *Service) Status() framework.Status {
 	if s.storage == nil || len(s.handlers) == 0 {
 		return framework.Status{
 			Status:  framework.StatusNotReady,
@@ -38,11 +40,11 @@ func (s Service) Status() framework.Status {
 	return framework.Status{Status: framework.StatusReady}
 }
 
-func (s Service) Config() config.DIDServiceConfig {
+func (s *Service) Config() config.DIDServiceConfig {
 	return s.config
 }
 
-func (s Service) GetSupportedMethods() GetSupportedMethodsResponse {
+func (s *Service) GetSupportedMethods() GetSupportedMethodsResponse {
 	var methods []Method
 	for method := range s.handlers {
 		methods = append(methods, method)
@@ -50,7 +52,7 @@ func (s Service) GetSupportedMethods() GetSupportedMethodsResponse {
 	return GetSupportedMethodsResponse{Methods: methods}
 }
 
-func (s Service) CreateDIDByMethod(request CreateDIDRequest) (*CreateDIDResponse, error) {
+func (s *Service) CreateDIDByMethod(request CreateDIDRequest) (*CreateDIDResponse, error) {
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get handler for method<%s>", request.Method)
@@ -59,7 +61,7 @@ func (s Service) CreateDIDByMethod(request CreateDIDRequest) (*CreateDIDResponse
 	return handler.CreateDID(request)
 }
 
-func (s Service) GetDIDByMethod(request GetDIDRequest) (*GetDIDResponse, error) {
+func (s *Service) GetDIDByMethod(request GetDIDRequest) (*GetDIDResponse, error) {
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get handler for method<%s>", request.Method)
@@ -68,7 +70,7 @@ func (s Service) GetDIDByMethod(request GetDIDRequest) (*GetDIDResponse, error) 
 	return handler.GetDID(request)
 }
 
-func (s Service) getHandler(method Method) (MethodHandler, error) {
+func (s *Service) getHandler(method Method) (MethodHandler, error) {
 	handler, ok := s.handlers[method]
 	if !ok {
 		err := fmt.Errorf("could not get handler for DID method: %s", method)
