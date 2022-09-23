@@ -85,6 +85,29 @@ func (s Service) StoreKey(request StoreKeyRequest) error {
 	return nil
 }
 
+func (s Service) GetKey(request GetKeyRequest) (*GetKeyResponse, error) {
+
+	logrus.Debugf("getting key: %+v", request)
+
+	id := request.ID
+	gotKey, err := s.storage.GetKey(id)
+	if err != nil {
+		err := errors.Wrapf(err, "could not get key for key: %s", id)
+		return nil, util.LoggingError(err)
+	}
+	if gotKey == nil {
+		err := errors.Wrapf(err, "key with id<%s> could not be found", id)
+		return nil, util.LoggingError(err)
+	}
+	return &GetKeyResponse{
+		ID:         gotKey.ID,
+		Type:       gotKey.KeyType,
+		Controller: gotKey.Controller,
+		Key:        gotKey.Key,
+		CreatedAt:  gotKey.CreatedAt,
+	}, nil
+}
+
 func (s Service) GetKeyDetails(request GetKeyDetailsRequest) (*GetKeyDetailsResponse, error) {
 
 	logrus.Debugf("getting key: %+v", request)
