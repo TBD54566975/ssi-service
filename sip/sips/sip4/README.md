@@ -6,7 +6,7 @@
 
 **Author(s):** *Neal Roessler*
 
-**Comments URI**: *a link to a GitHub issue, pull request, or forum post for discussion*
+**Comments URI**: https://forums.tbd.website/t/sip-4-discussion-dwn-message-processing/137
 
 **Status**: *Draft*
 
