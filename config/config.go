@@ -48,10 +48,10 @@ type ServicesConfig struct {
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
 
+	KeyStoreConfig   KeyStoreServiceConfig   `toml:"keystore,omitempty"`
 	DIDConfig        DIDServiceConfig        `toml:"did,omitempty"`
 	SchemaConfig     SchemaServiceConfig     `toml:"schema,omitempty"`
 	CredentialConfig CredentialServiceConfig `toml:"credential,omitempty"`
-	KeyStoreConfig   KeyStoreServiceConfig   `toml:"keystore,omitempty"`
 	ManifestConfig   ManifestServiceConfig   `toml:"manifest,omitempty"`
 }
 
@@ -59,6 +59,20 @@ type ServicesConfig struct {
 // Can be wrapped and extended for any specific service config
 type BaseServiceConfig struct {
 	Name string `toml:"name"`
+}
+
+type KeyStoreServiceConfig struct {
+	*BaseServiceConfig
+	// Service key password. Used by a KDF whose key is used by a symmetric cypher for key encryption.
+	// The password is salted before usage.
+	ServiceKeyPassword string `toml:"password"`
+}
+
+func (k *KeyStoreServiceConfig) IsEmpty() bool {
+	if k == nil {
+		return true
+	}
+	return reflect.DeepEqual(k, &KeyStoreServiceConfig{})
 }
 
 type DIDServiceConfig struct {
@@ -89,15 +103,22 @@ type CredentialServiceConfig struct {
 	// TODO(gabe) supported key and signature types
 }
 
+func (c *CredentialServiceConfig) IsEmpty() bool {
+	if c == nil {
+		return true
+	}
+	return reflect.DeepEqual(c, &CredentialServiceConfig{})
+}
+
 type ManifestServiceConfig struct {
 	*BaseServiceConfig
 }
 
-type KeyStoreServiceConfig struct {
-	*BaseServiceConfig
-	// Service key password. Used by a KDF whose key is used by a symmetric cypher for key encryption.
-	// The password is salted before usage.
-	ServiceKeyPassword string
+func (m *ManifestServiceConfig) IsEmpty() bool {
+	if m == nil {
+		return true
+	}
+	return reflect.DeepEqual(m, &ManifestServiceConfig{})
 }
 
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
@@ -143,6 +164,10 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 	if defaultConfig {
 		config.Services = ServicesConfig{
 			StorageProvider: "bolt",
+			KeyStoreConfig: KeyStoreServiceConfig{
+				BaseServiceConfig:  &BaseServiceConfig{Name: "keystore"},
+				ServiceKeyPassword: "default-password",
+			},
 			DIDConfig: DIDServiceConfig{
 				BaseServiceConfig: &BaseServiceConfig{Name: "did"},
 				Methods:           []string{"key"},
@@ -153,9 +178,8 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 			CredentialConfig: CredentialServiceConfig{
 				BaseServiceConfig: &BaseServiceConfig{Name: "credential"},
 			},
-			KeyStoreConfig: KeyStoreServiceConfig{
-				BaseServiceConfig:  &BaseServiceConfig{Name: "keystore"},
-				ServiceKeyPassword: "default-password",
+			ManifestConfig: ManifestServiceConfig{
+				BaseServiceConfig: &BaseServiceConfig{Name: "manifest"},
 			},
 		}
 	} else {
