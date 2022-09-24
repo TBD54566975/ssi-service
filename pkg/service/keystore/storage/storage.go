@@ -1,6 +1,7 @@
 package storage
 
 import (
+	gocrypto "crypto"
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -11,11 +12,11 @@ import (
 
 // StoredKey represents a common data model to store data on all key types
 type StoredKey struct {
-	ID         string         `json:"id"`
-	Controller string         `json:"controller"`
-	KeyType    crypto.KeyType `json:"keyType"`
-	Key        []byte         `json:"key"`
-	CreatedAt  string         `json:"createdAt"`
+	ID         string              `json:"id"`
+	Controller string              `json:"controller"`
+	KeyType    crypto.KeyType      `json:"keyType"`
+	Key        gocrypto.PrivateKey `json:"key"`
+	CreatedAt  string              `json:"createdAt"`
 }
 
 // KeyDetails represents a common data model to get information about a key, without revealing the key itself

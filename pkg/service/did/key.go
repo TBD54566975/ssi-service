@@ -10,14 +10,16 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/did/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func newKeyDIDHandler(s storage.Storage) (MethodHandler, error) {
-	return &keyDIDHandler{storage: s}, nil
+func newKeyDIDHandler(s storage.Storage, ks *keystore.Service) (MethodHandler, error) {
+	return &keyDIDHandler{storage: s, keyStore: ks}, nil
 }
 
 type keyDIDHandler struct {
-	storage storage.Storage
+	storage  storage.Storage
+	keyStore *keystore.Service
 }
 
 func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error) {
@@ -29,10 +31,6 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create did:key")
 	}
-	privKeyBase58, err := privateKeyToBase58(privKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not encode private key as base58")
-	}
 
 	// expand it to the full doc for storage
 	expanded, err := doc.Expand()
@@ -40,18 +38,35 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 		return nil, errors.Wrap(err, "error generating did:key document")
 	}
 
-	// store it
+	// store metadata in DID storage
+	id := doc.ToString()
 	storedDID := storage.StoredDID{
-		DID:              *expanded,
-		PrivateKeyBase58: privKeyBase58,
+		ID:  id,
+		DID: *expanded,
 	}
 	if err := h.storage.StoreDID(storedDID); err != nil {
 		return nil, errors.Wrap(err, "could not store did:key value")
 	}
 
+	// store private key in key storage
+	keyStoreRequest := keystore.StoreKeyRequest{
+		ID:         id,
+		Type:       request.KeyType,
+		Controller: id,
+		Key:        privKey,
+	}
+	if err := h.keyStore.StoreKey(keyStoreRequest); err != nil {
+		return nil, errors.Wrap(err, "could not store did:key private key")
+	}
+
+	privKeyBase58, err := privateKeyToBase58(privKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not encode private key as base58")
+	}
+
 	return &CreateDIDResponse{
 		DID:        storedDID.DID,
-		PrivateKey: storedDID.PrivateKeyBase58,
+		PrivateKey: privKeyBase58,
 	}, nil
 }
 

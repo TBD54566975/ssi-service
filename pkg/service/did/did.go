@@ -24,6 +24,8 @@ type Service struct {
 	handlers map[Method]MethodHandler
 	storage  didstorage.Storage
 	config   config.DIDServiceConfig
+
+	// external dependencies
 	keyStore *keystore.Service
 }
 
@@ -56,7 +58,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 func (s *Service) instantiateHandlerForMethod(method Method) error {
 	switch method {
 	case KeyMethod:
-		handler, err := newKeyDIDHandler(s.storage)
+		handler, err := newKeyDIDHandler(s.storage, s.keyStore)
 		if err != nil {
 			err := fmt.Errorf("could not instnatiate did:%s handler", KeyMethod)
 			return util.LoggingError(err)
