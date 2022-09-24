@@ -60,7 +60,6 @@ func TestHealthCheckAPI(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, router.HealthOK, resp.Status)
-
 }
 
 func TestReadinessAPI(t *testing.T) {
@@ -103,7 +102,8 @@ func TestDIDAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		didService := newDIDService(tt, bolt)
+		_, keyStoreService := newKeyStore(tt, bolt)
+		didService := newDIDRouter(tt, bolt, keyStoreService)
 
 		// get DID methods
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids", nil)
@@ -130,7 +130,8 @@ func TestDIDAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		didService := newDIDService(tt, bolt)
+		_, keyStoreService := newKeyStore(tt, bolt)
+		didService := newDIDRouter(tt, bolt, keyStoreService)
 
 		// create DID by method - key - missing body
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", nil)
@@ -178,7 +179,8 @@ func TestDIDAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		didService := newDIDService(tt, bolt)
+		_, keyStore := newKeyStore(tt, bolt)
+		didService := newDIDRouter(tt, bolt, keyStore)
 
 		// get DID by method
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/bad/worse", nil)
@@ -237,9 +239,9 @@ func TestDIDAPI(t *testing.T) {
 	})
 }
 
-func newDIDService(t *testing.T, bolt *storage.BoltDB) *router.DIDRouter {
+func newDIDRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *router.DIDRouter {
 	serviceConfig := config.DIDServiceConfig{Methods: []string{string(did.KeyMethod)}}
-	didService, err := did.NewDIDService(serviceConfig, bolt)
+	didService, err := did.NewDIDService(serviceConfig, bolt, keyStore)
 	require.NoError(t, err)
 	require.NotEmpty(t, didService)
 
@@ -261,7 +263,7 @@ func TestSchemaAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		schemaService := newSchemaService(tt, bolt)
+		schemaService := newSchemaRouter(tt, bolt)
 
 		simpleSchema := map[string]interface{}{
 			"type": "object",
@@ -308,7 +310,7 @@ func TestSchemaAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		schemaService := newSchemaService(tt, bolt)
+		schemaService := newSchemaRouter(tt, bolt)
 
 		// get schema that doesn't exist
 		w := httptest.NewRecorder()
@@ -394,7 +396,7 @@ func TestSchemaAPI(t *testing.T) {
 	})
 }
 
-func newSchemaService(t *testing.T, bolt *storage.BoltDB) *router.SchemaRouter {
+func newSchemaRouter(t *testing.T, bolt *storage.BoltDB) *router.SchemaRouter {
 	schemaService, err := schema.NewSchemaService(config.SchemaServiceConfig{}, bolt)
 	require.NoError(t, err)
 	require.NotEmpty(t, schemaService)
@@ -417,7 +419,7 @@ func TestCredentialAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt, bolt)
+		credService := newCredentialRouter(tt, bolt)
 
 		// missing required field: data
 		badCredRequest := router.CreateCredentialRequest{
@@ -468,7 +470,7 @@ func TestCredentialAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt, bolt)
+		credService := newCredentialRouter(tt, bolt)
 
 		w := httptest.NewRecorder()
 
@@ -529,7 +531,7 @@ func TestCredentialAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt, bolt)
+		credService := newCredentialRouter(tt, bolt)
 
 		w := httptest.NewRecorder()
 
@@ -578,7 +580,7 @@ func TestCredentialAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt, bolt)
+		credService := newCredentialRouter(tt, bolt)
 
 		w := httptest.NewRecorder()
 
@@ -626,7 +628,7 @@ func TestCredentialAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt, bolt)
+		credService := newCredentialRouter(tt, bolt)
 
 		w := httptest.NewRecorder()
 
@@ -672,7 +674,7 @@ func TestCredentialAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt, bolt)
+		credService := newCredentialRouter(tt, bolt)
 
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  "did:abc:123",
@@ -723,7 +725,7 @@ func TestCredentialAPI(t *testing.T) {
 	})
 }
 
-func newCredentialService(t *testing.T, bolt *storage.BoltDB) *router.CredentialRouter {
+func newCredentialRouter(t *testing.T, bolt *storage.BoltDB) *router.CredentialRouter {
 	credentialService, err := credential.NewCredentialService(config.CredentialServiceConfig{}, bolt)
 	require.NoError(t, err)
 	require.NotEmpty(t, credentialService)
@@ -746,7 +748,7 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
+		manifestService := newManifestRouter(tt, bolt)
 
 		// missing required field: Manifest
 		badManifestRequest := router.CreateManifestRequest{}
@@ -787,7 +789,7 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
+		manifestService := newManifestRouter(tt, bolt)
 
 		w := httptest.NewRecorder()
 
@@ -842,7 +844,7 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
+		manifestService := newManifestRouter(tt, bolt)
 
 		w := httptest.NewRecorder()
 
@@ -880,7 +882,7 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
+		manifestService := newManifestRouter(tt, bolt)
 
 		// good request
 		createManifestRequest := getValidManifestRequest()
@@ -933,7 +935,7 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
+		manifestService := newManifestRouter(tt, bolt)
 
 		// missing required field: Application
 		badManifestRequest := router.SubmitApplicationRequest{
@@ -991,7 +993,7 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
+		manifestService := newManifestRouter(tt, bolt)
 
 		w := httptest.NewRecorder()
 
@@ -1081,7 +1083,7 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
+		manifestService := newManifestRouter(tt, bolt)
 
 		// good manifest request
 		createManifestRequest := getValidManifestRequest()
@@ -1144,7 +1146,7 @@ func TestManifestAPI(t *testing.T) {
 	})
 }
 
-func newManifestService(t *testing.T, bolt *storage.BoltDB) *router.ManifestRouter {
+func newManifestRouter(t *testing.T, bolt *storage.BoltDB) *router.ManifestRouter {
 	manifestService, err := manifest.NewManifestService(config.ManifestServiceConfig{}, bolt)
 	require.NoError(t, err)
 	require.NotEmpty(t, manifestService)
@@ -1167,7 +1169,7 @@ func TestKeyStoreAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		keyStoreService := newKeyStoreService(tt, bolt)
+		keyStoreRouter, _ := newKeyStore(tt, bolt)
 		w := httptest.NewRecorder()
 
 		// bad key type
@@ -1179,7 +1181,7 @@ func TestKeyStoreAPI(t *testing.T) {
 		}
 		badRequestValue := newRequestValue(tt, badKeyStoreRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", badRequestValue)
-		err = keyStoreService.StoreKey(newRequestContext(), w, req)
+		err = keyStoreRouter.StoreKey(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not store key: test-kid, unsupported key type: bad")
 
@@ -1203,7 +1205,7 @@ func TestKeyStoreAPI(t *testing.T) {
 		}
 		requestValue := newRequestValue(tt, storeKeyRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
-		err = keyStoreService.StoreKey(newRequestContext(), w, req)
+		err = keyStoreRouter.StoreKey(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 	})
 
@@ -1216,7 +1218,7 @@ func TestKeyStoreAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		keyStoreService := newKeyStoreService(tt, bolt)
+		keyStoreService, _ := newKeyStore(tt, bolt)
 		w := httptest.NewRecorder()
 
 		// store a valid key
@@ -1256,7 +1258,7 @@ func TestKeyStoreAPI(t *testing.T) {
 	})
 }
 
-func newKeyStoreService(t *testing.T, bolt *storage.BoltDB) *router.KeyStoreRouter {
+func newKeyStore(t *testing.T, bolt *storage.BoltDB) (*router.KeyStoreRouter, *keystore.Service) {
 	serviceConfig := config.KeyStoreServiceConfig{ServiceKeyPassword: "test-password"}
 	keyStoreService, err := keystore.NewKeyStoreService(serviceConfig, bolt)
 	require.NoError(t, err)
@@ -1267,7 +1269,7 @@ func newKeyStoreService(t *testing.T, bolt *storage.BoltDB) *router.KeyStoreRout
 	require.NoError(t, err)
 	require.NotEmpty(t, keyStoreRouter)
 
-	return keyStoreRouter
+	return keyStoreRouter, keyStoreService
 }
 
 func newRequestValue(t *testing.T, data interface{}) io.Reader {

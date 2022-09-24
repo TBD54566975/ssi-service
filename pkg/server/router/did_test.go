@@ -6,10 +6,12 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -35,12 +37,13 @@ func TestDIDRouter(t *testing.T) {
 	})
 
 	t.Run("DID Service Test", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
+		db, err := storage.NewBoltDB()
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, bolt)
+		assert.NotEmpty(tt, db)
 
+		keyStoreService := testKeyStoreService(tt, db)
 		serviceConfig := config.DIDServiceConfig{Methods: []string{string(did.KeyMethod)}}
-		didService, err := did.NewDIDService(serviceConfig, bolt)
+		didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didService)
 
@@ -79,4 +82,13 @@ func TestDIDRouter(t *testing.T) {
 		// make sure it's the same value
 		assert.Equal(tt, createDIDResponse.DID.ID, getDIDResponse.DID.ID)
 	})
+}
+
+func testKeyStoreService(t *testing.T, db *storage.BoltDB) *keystore.Service {
+	serviceConfig := config.KeyStoreServiceConfig{ServiceKeyPassword: "test-password"}
+	// create a keystore service
+	keystoreService, err := keystore.NewKeyStoreService(serviceConfig, db)
+	require.NoError(t, err)
+	require.NotEmpty(t, keystoreService)
+	return keystoreService
 }

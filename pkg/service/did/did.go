@@ -9,6 +9,7 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 	didstorage "github.com/tbd54566975/ssi-service/pkg/service/did/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -23,6 +24,49 @@ type Service struct {
 	handlers map[Method]MethodHandler
 	storage  didstorage.Storage
 	config   config.DIDServiceConfig
+	keyStore *keystore.Service
+}
+
+// MethodHandler describes the functionality of *all* possible DID service, regardless of method
+type MethodHandler interface {
+	CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error)
+	GetDID(request GetDIDRequest) (*GetDIDResponse, error)
+}
+
+func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
+	didStorage, err := didstorage.NewDIDStorage(s)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
+	}
+	svc := Service{
+		storage:  didStorage,
+		handlers: make(map[Method]MethodHandler),
+		keyStore: keyStore,
+	}
+
+	// instantiate all handlers for DID methods
+	for _, m := range config.Methods {
+		if err := svc.instantiateHandlerForMethod(Method(m)); err != nil {
+			return nil, errors.Wrap(err, "could not instantiate DID service")
+		}
+	}
+	return &svc, nil
+}
+
+func (s *Service) instantiateHandlerForMethod(method Method) error {
+	switch method {
+	case KeyMethod:
+		handler, err := newKeyDIDHandler(s.storage)
+		if err != nil {
+			err := fmt.Errorf("could not instnatiate did:%s handler", KeyMethod)
+			return util.LoggingError(err)
+		}
+		s.handlers[method] = handler
+	default:
+		err := fmt.Errorf("unsupported DID method: %s", method)
+		return util.LoggingError(err)
+	}
+	return nil
 }
 
 func (s *Service) Type() framework.Type {
@@ -77,45 +121,4 @@ func (s *Service) getHandler(method Method) (MethodHandler, error) {
 		return nil, util.LoggingError(err)
 	}
 	return handler, nil
-}
-
-// MethodHandler describes the functionality of *all* possible DID service, regardless of method
-type MethodHandler interface {
-	CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error)
-	GetDID(request GetDIDRequest) (*GetDIDResponse, error)
-}
-
-func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	didStorage, err := didstorage.NewDIDStorage(s)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
-	}
-	svc := Service{
-		storage:  didStorage,
-		handlers: make(map[Method]MethodHandler),
-	}
-
-	// instantiate all handlers for DID methods
-	for _, m := range config.Methods {
-		if err := svc.instantiateHandlerForMethod(Method(m)); err != nil {
-			return nil, errors.Wrap(err, "could not instantiate DID service")
-		}
-	}
-	return &svc, nil
-}
-
-func (s *Service) instantiateHandlerForMethod(method Method) error {
-	switch method {
-	case KeyMethod:
-		handler, err := newKeyDIDHandler(s.storage)
-		if err != nil {
-			err := fmt.Errorf("could not instnatiate did:%s handler", KeyMethod)
-			return util.LoggingError(err)
-		}
-		s.handlers[method] = handler
-	default:
-		err := fmt.Errorf("unsupported DID method: %s", method)
-		return util.LoggingError(err)
-	}
-	return nil
 }
