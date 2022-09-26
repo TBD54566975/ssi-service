@@ -17,16 +17,16 @@ func TestDWNRouter(t *testing.T) {
 	})
 
 	t.Run("Nil Service", func(tt *testing.T) {
-		manifestRouter, err := NewDWNRouter(nil)
+		dwnRouter, err := NewDWNRouter(nil)
 		assert.Error(tt, err)
-		assert.Empty(tt, manifestRouter)
+		assert.Empty(tt, dwnRouter)
 		assert.Contains(tt, err.Error(), "service cannot be nil")
 	})
 
 	t.Run("Bad Service", func(tt *testing.T) {
-		manifestRouter, err := NewDWNRouter(&testService{})
+		dwnRouter, err := NewDWNRouter(&testService{})
 		assert.Error(tt, err)
-		assert.Empty(tt, manifestRouter)
+		assert.Empty(tt, dwnRouter)
 		assert.Contains(tt, err.Error(), "could not create dwn router with service type: test")
 	})
 
@@ -36,13 +36,13 @@ func TestDWNRouter(t *testing.T) {
 		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.DWNServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "dwn"}}
-		manifestService, err := dwn.NewDWNService(serviceConfig, bolt)
+		dwnService, err := dwn.NewDWNService(serviceConfig, bolt)
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, manifestService)
+		assert.NotEmpty(tt, dwnService)
 
 		// check type and status
-		assert.Equal(tt, framework.DWN, manifestService.Type())
-		assert.Equal(tt, framework.StatusReady, manifestService.Status().Status)
+		assert.Equal(tt, framework.DWN, dwnService.Type())
+		assert.Equal(tt, framework.StatusReady, dwnService.Status().Status)
 	})
 
 }
