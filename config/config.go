@@ -53,6 +53,7 @@ type ServicesConfig struct {
 	CredentialConfig CredentialServiceConfig `toml:"credential,omitempty"`
 	KeyStoreConfig   KeyStoreServiceConfig   `toml:"keystore,omitempty"`
 	ManifestConfig   ManifestServiceConfig   `toml:"manifest,omitempty"`
+	DWNConfig        DWNServiceConfig        `toml:"dwn,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
@@ -91,6 +92,11 @@ type CredentialServiceConfig struct {
 
 type ManifestServiceConfig struct {
 	*BaseServiceConfig
+}
+
+type DWNServiceConfig struct {
+	*BaseServiceConfig
+	DWNEndpoint string `toml:"dwn_endpoint"`
 }
 
 type KeyStoreServiceConfig struct {
@@ -156,6 +162,10 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 			KeyStoreConfig: KeyStoreServiceConfig{
 				BaseServiceConfig:  &BaseServiceConfig{Name: "keystore"},
 				ServiceKeyPassword: "default-password",
+			},
+			DWNConfig: DWNServiceConfig{
+				BaseServiceConfig: &BaseServiceConfig{Name: "dwn"},
+				DWNEndpoint:       "http://localhost:4321",
 			},
 		}
 	} else {
