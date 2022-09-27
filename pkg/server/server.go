@@ -30,6 +30,7 @@ const (
 	ApplicationsPrefix = "/applications"
 	ResponsesPrefix    = "/responses"
 	KeyStorePrefix     = "/keys"
+	DWNPrefix          = "/dwn"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -96,6 +97,8 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 		return s.KeyStoreAPI(service)
 	case svcframework.Manifest:
 		return s.ManifestAPI(service)
+	case svcframework.DWN:
+		return s.DWNAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
@@ -170,6 +173,7 @@ func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
 	responsesHandlerPath := V1Prefix + ManifestsPrefix + ResponsesPrefix
 
 	s.Handle(http.MethodPut, manifestHandlerPath, manifestRouter.CreateManifest)
+
 	s.Handle(http.MethodGet, manifestHandlerPath, manifestRouter.GetManifests)
 	s.Handle(http.MethodGet, path.Join(manifestHandlerPath, "/:id"), manifestRouter.GetManifest)
 	s.Handle(http.MethodDelete, path.Join(manifestHandlerPath, "/:id"), manifestRouter.DeleteManifest)
@@ -182,5 +186,17 @@ func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodGet, responsesHandlerPath, manifestRouter.GetResponses)
 	s.Handle(http.MethodGet, path.Join(responsesHandlerPath, "/:id"), manifestRouter.GetResponse)
 	s.Handle(http.MethodDelete, path.Join(responsesHandlerPath, "/:id"), manifestRouter.DeleteResponse)
+	return
+}
+
+func (s *SSIServer) DWNAPI(service svcframework.Service) (err error) {
+	dwnRouter, err := router.NewDWNRouter(service)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not create dwn router")
+	}
+
+	dwnPath := V1Prefix + DWNPrefix + ManifestsPrefix
+
+	s.Handle(http.MethodPut, dwnPath, dwnRouter.PublishManifest)
 	return
 }
