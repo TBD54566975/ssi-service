@@ -11,12 +11,16 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 	credstorage "github.com/tbd54566975/ssi-service/pkg/service/credential/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 type Service struct {
 	storage credstorage.Storage
 	config  config.CredentialServiceConfig
+
+	// external dependencies
+	keyStore *keystore.Service
 }
 
 func (s Service) Type() framework.Type {
@@ -37,15 +41,16 @@ func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
 
-func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage) (*Service, error) {
+func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
 	credentialStorage, err := credstorage.NewCredentialStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate storage for the credential service"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	return &Service{
-		storage: credentialStorage,
-		config:  config,
+		storage:  credentialStorage,
+		config:   config,
+		keyStore: keyStore,
 	}, nil
 }
 
