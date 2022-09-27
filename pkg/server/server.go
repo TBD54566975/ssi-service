@@ -98,7 +98,7 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 	case svcframework.Manifest:
 		return s.ManifestAPI(service)
 	case svcframework.DWN:
-		return s.DWNApi(service)
+		return s.DWNAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
@@ -189,7 +189,7 @@ func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
 	return
 }
 
-func (s *SSIServer) DWNApi(service svcframework.Service) (err error) {
+func (s *SSIServer) DWNAPI(service svcframework.Service) (err error) {
 	dwnRouter, err := router.NewDWNRouter(service)
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not create dwn router")

@@ -47,17 +47,13 @@ func NewDWNService(config config.DWNServiceConfig, s storage.ServiceStorage) (*S
 	}, nil
 }
 
-func (s Service) PublishManifest(request DWNPublishManifestRequest) (*DWNPublishManifestResponse, error) {
-	logrus.Debugf("publishing manifest to dwn: %+v", request)
+func (s Service) GetManifest(request DWNPublishManifestRequest) (*DWNPublishManifestResponse, error) {
+	logrus.Debugf("getting manifest: %s", request.ManifestID)
 
 	gotManifest, err := s.manifestStorage.GetManifest(request.ManifestID)
-
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, fmt.Sprintf("problem retrieving manifest with id %v", request.ManifestID))
-	}
-
-	if gotManifest == nil {
-		return nil, util.LoggingErrorMsg(err, fmt.Sprintf("manifest with id %v not found", request.ManifestID))
+		errMsg := fmt.Sprintf("could not get manifest: %s", request.ManifestID)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	response := DWNPublishManifestResponse{Manifest: gotManifest.Manifest}

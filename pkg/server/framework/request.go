@@ -1,7 +1,6 @@
 package framework
 
 import (
-	"bytes"
 	"errors"
 	"net/http"
 	"reflect"
@@ -95,21 +94,4 @@ func Decode(r *http.Request, val interface{}) error {
 	}
 
 	return nil
-}
-
-// Post does a post request with data to provided endpoint
-func Post(endpoint string, data interface{}) (*http.Response, error) {
-	// convert response payload to json
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := http.Post(endpoint, "application/json", bytes.NewBuffer(jsonData))
-
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
 }

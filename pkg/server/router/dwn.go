@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	dwnpkg "github.com/tbd54566975/ssi-service/pkg/dwn"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 )
@@ -32,10 +33,6 @@ func NewDWNRouter(s svcframework.Service) (*DWNRouter, error) {
 	}, nil
 }
 
-type DWNPostRequest struct {
-	Manifest manifest.CredentialManifest `json:"manifest" validate:"required"`
-}
-
 type PublishManifestRequest struct {
 	ManifestID string `json:"manifestId" validate:"required"`
 }
@@ -47,9 +44,8 @@ func (req PublishManifestRequest) ToServiceRequest() dwn.DWNPublishManifestReque
 }
 
 type PublishManifestResponse struct {
-	Manifest     manifest.CredentialManifest `json:"manifest" validate:"required"`
-	Published    bool                        `json:"published" validate:"required"`
-	ErrorMessage string                      `json:"errorMessage" validate:"required"`
+	Manifest    manifest.CredentialManifest       `json:"manifest" validate:"required"`
+	DWNResponse dwnpkg.DWNPublishManifestResponse `json:"dwnResponse" validate:"required"`
 }
 
 // PublishManifest godoc
@@ -79,25 +75,22 @@ func (dwnr DWNRouter) PublishManifest(ctx context.Context, w http.ResponseWriter
 	}
 
 	req := request.ToServiceRequest()
-	publishManifestResponse, err := dwnr.service.PublishManifest(req)
+	publishManifestResponse, err := dwnr.service.GetManifest(req)
 
-	if err != nil {
-		errMsg := "could not publish manifest to dwn"
+	if err != nil || &publishManifestResponse.Manifest == nil {
+		errMsg := "could not retrieve manifest"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	dwnReq := DWNPostRequest{Manifest: publishManifestResponse.Manifest}
-	dwnResp, err := framework.Post(dwnr.service.Config().DWNEndpoint, dwnReq)
+	dwnResp, err := dwnpkg.PublishManifest(dwnr.service.Config().DWNEndpoint, publishManifestResponse.Manifest)
 
-	if err != nil || dwnResp == nil {
-		errMsg := "problem with publishing manifest to downstream dwn"
+	if err != nil {
+		errMsg := "could not publish manifest to DWN"
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	status := dwnResp.StatusCode >= 200 && dwnResp.StatusCode < 300
-	resp := PublishManifestResponse{Manifest: publishManifestResponse.Manifest, Published: status}
-
+	resp := PublishManifestResponse{Manifest: publishManifestResponse.Manifest, DWNResponse: *dwnResp}
 	return framework.Respond(ctx, w, resp, http.StatusAccepted)
 }

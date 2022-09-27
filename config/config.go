@@ -164,7 +164,7 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 				ServiceKeyPassword: "default-password",
 			},
 			DWNConfig: DWNServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "did"},
+				BaseServiceConfig: &BaseServiceConfig{Name: "dwn"},
 				DWNEndpoint:       "http://localhost:4321",
 			},
 		}
