@@ -60,15 +60,14 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 }
 
 func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestResponse, error) {
-	logrus.Debugf("creating m: %+v", request)
+	logrus.Debugf("creating manifest: %+v", request)
 
 	m := request.Manifest
 	if err := m.IsValid(); err != nil {
-		errMsg := "m is not valid"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "manifest is not valid")
 	}
 
-	// store the m
+	// store the manifest
 	storageRequest := manifeststorage.StoredManifest{
 		ID:       m.ID,
 		Manifest: m,
@@ -76,7 +75,7 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 	}
 
 	if err := s.manifestStorage.StoreManifest(storageRequest); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not store m")
+		return nil, util.LoggingErrorMsg(err, "could not store manifest")
 	}
 
 	// return the result
@@ -102,8 +101,7 @@ func (s Service) GetManifests() (*GetManifestsResponse, error) {
 	gotManifests, err := s.manifestStorage.GetManifests()
 
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get manifests(s)")
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not get manifests(s)")
 	}
 
 	var manifests []manifest.CredentialManifest
@@ -151,8 +149,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	credApp := request.Application
 
 	if err := credApp.IsValid(); err != nil {
-		errMsg := "application is not valid"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "application is not valid")
 	}
 
 	gotManifest, err := s.manifestStorage.GetManifest(credApp.ManifestID)
@@ -162,8 +159,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 
 	// validate
 	if err := isValidApplication(gotManifest, credApp); err != nil {
-		errMsg := fmt.Sprintf("could not validate application")
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not validate application")
 	}
 
 	// store the application
@@ -195,12 +191,12 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 			Data: map[string]interface{}{},
 		}
 
-		createdResponse, err := s.credential.CreateCredential(credentialRequest)
+		credentialResponse, err := s.credential.CreateCredential(credentialRequest)
 		if err != nil {
 			return nil, util.LoggingErrorMsg(err, "could not create credential")
 		}
 
-		creds = append(creds, createdResponse.Credential)
+		creds = append(creds, credentialResponse.Credential)
 	}
 
 	var descriptors []exchange.SubmissionDescriptor
@@ -256,8 +252,7 @@ func (s Service) GetApplications() (*GetApplicationsResponse, error) {
 
 	gotApps, err := s.manifestStorage.GetApplications()
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get application(s)")
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not get application(s)")
 	}
 
 	var apps []manifest.CredentialApplication
@@ -301,8 +296,7 @@ func (s Service) GetResponses() (*GetResponsesResponse, error) {
 
 	gotResponses, err := s.manifestStorage.GetResponses()
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get response(s)")
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not get response(s)")
 	}
 
 	var responses []manifest.CredentialResponse

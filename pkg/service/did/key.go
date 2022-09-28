@@ -48,6 +48,12 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 		return nil, errors.Wrap(err, "could not store did:key value")
 	}
 
+	// convert to a serialized format for return to the client
+	privKeyBase58, err := privateKeyToBase58(privKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not encode private key as base58")
+	}
+
 	// store private key in key storage
 	keyStoreRequest := keystore.StoreKeyRequest{
 		ID:         id,
@@ -55,13 +61,9 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 		Controller: id,
 		Key:        privKey,
 	}
+
 	if err := h.keyStore.StoreKey(keyStoreRequest); err != nil {
 		return nil, errors.Wrap(err, "could not store did:key private key")
-	}
-
-	privKeyBase58, err := privateKeyToBase58(privKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not encode private key as base58")
 	}
 
 	return &CreateDIDResponse{
