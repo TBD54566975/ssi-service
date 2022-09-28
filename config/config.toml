@@ -32,7 +32,7 @@ methods = ["key"]
 [services.schema]
 name = "schema"
 
-[serivces.credential]
+[services.credential]
 name = "credential"
 
 [services.manifest]

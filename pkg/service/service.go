@@ -7,6 +7,7 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
+	"github.com/tbd54566975/ssi-service/pkg/service/dwn"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
@@ -95,5 +96,11 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the manifest service")
 	}
 
-	return []framework.Service{keyStoreService, didService, schemaService, credentialService, manifestService}, nil
+	dwnService, err := dwn.NewDWNService(config.DWNConfig, storageProvider)
+	if err != nil {
+		errMsg := "could not instantiate the dwn service"
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	return []framework.Service{keyStoreService, didService, schemaService, credentialService, manifestService, dwnService}, nil
 }

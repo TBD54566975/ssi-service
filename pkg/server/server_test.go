@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/tbd54566975/ssi-service/pkg/service/dwn"
+
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -1178,6 +1181,58 @@ func newManifestRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Se
 	require.NotEmpty(t, manifestRouter)
 
 	return manifestRouter
+}
+
+func TestDWNAPI(t *testing.T) {
+	t.Run("Test DWN Publish Manifest", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		dwnService := newDWNService(tt, bolt)
+
+		manifestService := newManifestService(tt, bolt)
+
+		w := httptest.NewRecorder()
+
+		// good request
+		createManifestRequest := getValidManifestRequest()
+
+		requestValue := newRequestValue(tt, createManifestRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
+		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateManifestResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		w = httptest.NewRecorder()
+
+		dwnRequest := router.PublishManifestRequest{ManifestID: "WA-DL-CLASS-A"}
+		dwnRequestValue := newRequestValue(tt, dwnRequest)
+		dwnReq := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dwn/manifests", dwnRequestValue)
+		err = dwnService.PublishManifest(newRequestContext(), w, dwnReq)
+
+		assert.Error(tt, err)
+		assert.ErrorContains(tt, err, "unsupported protocol scheme")
+	})
+}
+func newDWNService(t *testing.T, bolt *storage.BoltDB) *router.DWNRouter {
+	dwnService, err := dwn.NewDWNService(config.DWNServiceConfig{DWNEndpoint: "test-endpoint"}, bolt)
+	require.NoError(t, err)
+	require.NotEmpty(t, dwnService)
+
+	// create router for service
+	dwnRouter, err := router.NewDWNRouter(dwnService)
+	require.NoError(t, err)
+	require.NotEmpty(t, dwnRouter)
+
+	return dwnRouter
 }
 
 func TestKeyStoreAPI(t *testing.T) {
