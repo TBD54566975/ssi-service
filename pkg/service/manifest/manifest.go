@@ -2,22 +2,28 @@ package manifest
 
 import (
 	"fmt"
-	"github.com/TBD54566975/ssi-sdk/credential"
+
+	credsdk "github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
-	credentialstorage "github.com/tbd54566975/ssi-service/pkg/service/credential/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	manifeststorage "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"time"
 )
 
 type Service struct {
-	manifestStorage   manifeststorage.Storage
-	credentialStorage credentialstorage.Storage
-	config            config.ManifestServiceConfig
+	manifestStorage manifeststorage.Storage
+	config          config.ManifestServiceConfig
+
+	// external dependencies
+	credential *credential.Service
+	keyStore   *keystore.Service
 }
 
 func (s Service) Type() framework.Type {
@@ -28,14 +34,7 @@ func (s Service) Status() framework.Status {
 	if s.manifestStorage == nil {
 		return framework.Status{
 			Status:  framework.StatusNotReady,
-			Message: "no manifestStorage",
-		}
-	}
-
-	if s.credentialStorage == nil {
-		return framework.Status{
-			Status:  framework.StatusNotReady,
-			Message: "no credentialStorage",
+			Message: "no manifest storage",
 		}
 	}
 
@@ -46,48 +45,41 @@ func (s Service) Config() config.ManifestServiceConfig {
 	return s.config
 }
 
-func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage) (*Service, error) {
+func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, credential *credential.Service) (*Service, error) {
 	manifestStorage, err := manifeststorage.NewManifestStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate manifestStorage for the manifest service"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
-
-	credentialStorage, err := credentialstorage.NewCredentialStorage(s)
-	if err != nil {
-		errMsg := "could not instantiate credentialStorage for the manifest service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
 	return &Service{
-		manifestStorage:   manifestStorage,
-		credentialStorage: credentialStorage,
-		config:            config,
+		manifestStorage: manifestStorage,
+		config:          config,
+		keyStore:        keyStore,
+		credential:      credential,
 	}, nil
 }
 
 func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestResponse, error) {
 	logrus.Debugf("creating manifest: %+v", request)
 
-	mfst := request.Manifest
-	if err := mfst.IsValid(); err != nil {
-		errMsg := "manifest is not valid"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+	m := request.Manifest
+	if err := m.IsValid(); err != nil {
+		return nil, util.LoggingErrorMsg(err, "manifest is not valid")
 	}
 
 	// store the manifest
 	storageRequest := manifeststorage.StoredManifest{
-		ID:       mfst.ID,
-		Manifest: mfst,
-		Issuer:   mfst.Issuer.ID,
+		ID:       m.ID,
+		Manifest: m,
+		Issuer:   m.Issuer.ID,
 	}
 
 	if err := s.manifestStorage.StoreManifest(storageRequest); err != nil {
-		errMsg := "could not store manifest"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not store manifest")
 	}
 
 	// return the result
-	response := CreateManifestResponse{Manifest: mfst}
+	response := CreateManifestResponse{Manifest: m}
 	return &response, nil
 }
 
@@ -109,13 +101,12 @@ func (s Service) GetManifests() (*GetManifestsResponse, error) {
 	gotManifests, err := s.manifestStorage.GetManifests()
 
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get manifests(s)")
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not get manifests(s)")
 	}
 
 	var manifests []manifest.CredentialManifest
-	for _, manifest := range gotManifests {
-		manifests = append(manifests, manifest.Manifest)
+	for _, m := range gotManifests {
+		manifests = append(manifests, m.Manifest)
 	}
 	response := GetManifestsResponse{Manifests: manifests}
 	return &response, nil
@@ -154,12 +145,11 @@ func isValidApplication(gotManifest *manifeststorage.StoredManifest, application
 	return nil
 }
 
-func (s Service) SubmitApplication(request SubmitApplicationRequest) (*SubmitApplicationResponse, error) {
+func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) (*SubmitApplicationResponse, error) {
 	credApp := request.Application
 
 	if err := credApp.IsValid(); err != nil {
-		errMsg := "application is not valid"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "application is not valid")
 	}
 
 	gotManifest, err := s.manifestStorage.GetManifest(credApp.ManifestID)
@@ -169,8 +159,7 @@ func (s Service) SubmitApplication(request SubmitApplicationRequest) (*SubmitApp
 
 	// validate
 	if err := isValidApplication(gotManifest, credApp); err != nil {
-		errMsg := fmt.Sprintf("could not validate application")
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not validate application")
 	}
 
 	// store the application
@@ -186,59 +175,57 @@ func (s Service) SubmitApplication(request SubmitApplicationRequest) (*SubmitApp
 	}
 
 	// build the credential response
+	// TODO(gabe) need to check if this can be fulfilled and conditionally return success/denial
 	responseBuilder := manifest.NewCredentialResponseBuilder(request.Application.ManifestID)
-	responseBuilder.SetApplicationID(credApp.ID)
-	responseBuilder.SetFulfillment(credApp.PresentationSubmission.DescriptorMap)
-
-	credRes, err := responseBuilder.Build()
-	if err != nil {
-		errMsg := "could not build response"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+	if err := responseBuilder.SetApplicationID(credApp.ID); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not fulfill credential application: could not set application id")
 	}
 
-	// store the response
-	responseStorageRequest := manifeststorage.StoredResponse{
+	var creds []credsdk.VerifiableCredential
+	for _, od := range gotManifest.Manifest.OutputDescriptors {
+		credentialRequest := credential.CreateCredentialRequest{
+			Issuer:     gotManifest.Manifest.Issuer.ID,
+			Subject:    request.RequesterDID,
+			JSONSchema: od.Schema,
+			// TODO(gabe) need to add in data here to match the request + schema
+			Data: map[string]interface{}{},
+		}
+
+		credentialResponse, err := s.credential.CreateCredential(credentialRequest)
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not create credential")
+		}
+
+		creds = append(creds, credentialResponse.Credential)
+	}
+
+	var descriptors []exchange.SubmissionDescriptor
+	for i, cred := range creds {
+		// TODO(gabe) build this correctly based on the generated credential format and envelope type
+		descriptors = append(descriptors, exchange.SubmissionDescriptor{
+			ID:     cred.ID,
+			Format: string(exchange.JWTVC),
+			Path:   fmt.Sprintf("$.verifiableCredential[%d]", i),
+		})
+	}
+
+	// set the information for the fulfilled credentials in the response
+	if err := responseBuilder.SetFulfillment(descriptors); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not fulfill credential application: could not set fulfillment")
+	}
+	credRes, err := responseBuilder.Build()
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not build response")
+	}
+
+	// store the response we've generated
+	storeResponseRequest := manifeststorage.StoredResponse{
 		ID:         credRes.ID,
 		Response:   *credRes,
 		ManifestID: request.Application.ManifestID,
 	}
-
-	var creds []credential.VerifiableCredential
-	for _, od := range gotManifest.Manifest.OutputDescriptors {
-
-		if err := s.manifestStorage.StoreResponse(responseStorageRequest); err != nil {
-			errMsg := "could not store response"
-			return nil, util.LoggingErrorMsg(err, errMsg)
-		}
-
-		credentialBuilder := credential.NewVerifiableCredentialBuilder()
-		credentialBuilder.SetIssuer(gotManifest.Manifest.Issuer.ID)
-		credentialBuilder.SetCredentialSubject(map[string]interface{}{
-			"id": request.RequesterDID,
-		})
-		credentialBuilder.SetIssuanceDate(time.Now().Format(time.RFC3339))
-
-		cred, err := credentialBuilder.Build()
-		if err != nil {
-			errMsg := "could not build credential"
-			return nil, util.LoggingErrorMsg(err, errMsg)
-		}
-
-		credentialStorageRequest := credentialstorage.StoredCredential{
-			ID:           cred.ID,
-			Credential:   *cred,
-			Issuer:       gotManifest.Manifest.Issuer.ID,
-			Subject:      request.RequesterDID,
-			Schema:       od.Schema,
-			IssuanceDate: time.Now().Format(time.RFC3339),
-		}
-
-		if err := s.credentialStorage.StoreCredential(credentialStorageRequest); err != nil {
-			errMsg := "could not store credential"
-			return nil, util.LoggingErrorMsg(err, errMsg)
-		}
-
-		creds = append(creds, *cred)
+	if err := s.manifestStorage.StoreResponse(storeResponseRequest); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not store manifest response")
 	}
 
 	response := SubmitApplicationResponse{Response: *credRes, Credential: creds}
@@ -265,8 +252,7 @@ func (s Service) GetApplications() (*GetApplicationsResponse, error) {
 
 	gotApps, err := s.manifestStorage.GetApplications()
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get application(s)")
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not get application(s)")
 	}
 
 	var apps []manifest.CredentialApplication
@@ -310,8 +296,7 @@ func (s Service) GetResponses() (*GetResponsesResponse, error) {
 
 	gotResponses, err := s.manifestStorage.GetResponses()
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get response(s)")
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not get response(s)")
 	}
 
 	var responses []manifest.CredentialResponse

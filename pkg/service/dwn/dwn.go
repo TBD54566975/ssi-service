@@ -2,10 +2,13 @@ package dwn
 
 import (
 	"fmt"
+
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	manifeststorage "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -13,6 +16,9 @@ import (
 type Service struct {
 	config          config.DWNServiceConfig
 	manifestStorage manifeststorage.Storage
+
+	// external dependencies
+	keyStore *keystore.Service
 }
 
 func (s Service) Type() framework.Type {
@@ -34,7 +40,7 @@ func (s Service) Config() config.DWNServiceConfig {
 	return s.config
 }
 
-func NewDWNService(config config.DWNServiceConfig, s storage.ServiceStorage) (*Service, error) {
+func NewDWNService(config config.DWNServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
 	manifestStorage, err := manifeststorage.NewManifestStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate manifestStorage for the dwn service"
@@ -44,6 +50,7 @@ func NewDWNService(config config.DWNServiceConfig, s storage.ServiceStorage) (*S
 	return &Service{
 		config:          config,
 		manifestStorage: manifestStorage,
+		keyStore:        keyStore,
 	}, nil
 }
 

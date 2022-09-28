@@ -9,6 +9,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/dwn"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -39,11 +40,23 @@ func validateServiceConfig(config config.ServicesConfig) error {
 	if !storage.IsStorageAvailable(config.StorageProvider) {
 		return fmt.Errorf("%s storage provider configured, but not available", config.StorageProvider)
 	}
+	if config.KeyStoreConfig.IsEmpty() {
+		return fmt.Errorf("%s no config provided", framework.KeyStore)
+	}
 	if config.DIDConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.DID)
 	}
 	if config.SchemaConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.Schema)
+	}
+	if config.CredentialConfig.IsEmpty() {
+		return fmt.Errorf("%s no config provided", framework.Credential)
+	}
+	if config.ManifestConfig.IsEmpty() {
+		return fmt.Errorf("%s no config provided", framework.Manifest)
+	}
+	if config.DWNConfig.IsEmpty() {
+		return fmt.Errorf("%s no config provided", framework.DWN)
 	}
 	return nil
 }
@@ -61,35 +74,35 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	didService, err := did.NewDIDService(config.DIDConfig, storageProvider)
+	keyStoreService, err := keystore.NewKeyStoreService(config.KeyStoreConfig, storageProvider)
 	if err != nil {
-		errMsg := "could not instantiate the DID service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not instantiate keystore service")
 	}
 
-	schemaService, err := schema.NewSchemaService(config.SchemaConfig, storageProvider)
+	didService, err := did.NewDIDService(config.DIDConfig, storageProvider, keyStoreService)
 	if err != nil {
-		errMsg := "could not instantiate the schema service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not instantiate the DID service")
 	}
 
-	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider)
+	schemaService, err := schema.NewSchemaService(config.SchemaConfig, storageProvider, keyStoreService)
 	if err != nil {
-		errMsg := "could not instantiate the credential service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not instantiate the schema service")
 	}
 
-	manifestService, err := manifest.NewManifestService(config.ManifestConfig, storageProvider)
+	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider, keyStoreService)
 	if err != nil {
-		errMsg := "could not instantiate the manifest service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not instantiate the credential service")
 	}
 
-	dwnService, err := dwn.NewDWNService(config.DWNConfig, storageProvider)
+	manifestService, err := manifest.NewManifestService(config.ManifestConfig, storageProvider, keyStoreService, credentialService)
 	if err != nil {
-		errMsg := "could not instantiate the dwn service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not instantiate the manifest service")
 	}
 
-	return []framework.Service{didService, schemaService, credentialService, manifestService, dwnService}, nil
+	dwnService, err := dwn.NewDWNService(config.DWNConfig, storageProvider, keyStoreService)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate the dwn service")
+	}
+
+	return []framework.Service{keyStoreService, didService, schemaService, credentialService, manifestService, dwnService}, nil
 }

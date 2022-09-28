@@ -1,13 +1,15 @@
 package router
 
 import (
+	"os"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/dwn"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"os"
-	"testing"
 )
 
 func TestDWNRouter(t *testing.T) {
@@ -36,7 +38,8 @@ func TestDWNRouter(t *testing.T) {
 		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.DWNServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "dwn"}}
-		dwnService, err := dwn.NewDWNService(serviceConfig, bolt)
+		keyStore := testKeyStoreService(t, bolt)
+		dwnService, err := dwn.NewDWNService(serviceConfig, bolt, keyStore)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, dwnService)
 

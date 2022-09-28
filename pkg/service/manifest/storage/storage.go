@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -27,19 +28,26 @@ type StoredResponse struct {
 }
 
 type Storage interface {
-	// Credential Manifest
+	CredentialManifestStorage
+	CredentialApplicationStorage
+	CredentialResponseStorage
+}
+
+type CredentialManifestStorage interface {
 	StoreManifest(manifest StoredManifest) error
 	GetManifest(id string) (*StoredManifest, error)
 	GetManifests() ([]StoredManifest, error)
 	DeleteManifest(id string) error
+}
 
-	// Credential Application
+type CredentialApplicationStorage interface {
 	StoreApplication(application StoredApplication) error
 	GetApplication(id string) (*StoredApplication, error)
 	GetApplications() ([]StoredApplication, error)
 	DeleteApplication(id string) error
+}
 
-	// Credential Response
+type CredentialResponseStorage interface {
 	StoreResponse(response StoredResponse) error
 	GetResponse(id string) (*StoredResponse, error)
 	GetResponses() ([]StoredResponse, error)

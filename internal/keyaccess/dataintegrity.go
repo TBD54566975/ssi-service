@@ -47,7 +47,13 @@ func NewDataIntegrityKeyAccess(kid string, key gocrypto.PrivateKey) (*DataIntegr
 	}, nil
 }
 
-func (ka DataIntegrityKeyAccess) Sign(payload cryptosuite.Provable) ([]byte, error) {
+// DataIntegrityJSON represents a response from a DataIntegrityKeyAccess.Sign() call represented
+// as a serialized JSON object
+type DataIntegrityJSON struct {
+	Data []byte `json:"data" validate:"required"`
+}
+
+func (ka DataIntegrityKeyAccess) Sign(payload cryptosuite.Provable) (*DataIntegrityJSON, error) {
 	if payload == nil {
 		return nil, errors.New("payload cannot be nil")
 	}
@@ -58,7 +64,7 @@ func (ka DataIntegrityKeyAccess) Sign(payload cryptosuite.Provable) ([]byte, err
 	if err != nil {
 		return nil, errors.Wrap(err, "could not marshal signed payload")
 	}
-	return signedJSONBytes, nil
+	return &DataIntegrityJSON{Data: signedJSONBytes}, nil
 }
 
 func (ka DataIntegrityKeyAccess) Verify(payload cryptosuite.Provable) error {

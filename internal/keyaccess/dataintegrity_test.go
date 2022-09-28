@@ -53,7 +53,7 @@ func TestDataIntegrityKeyAccessSignVerify(t *testing.T) {
 		assert.NotEmpty(tt, signedCred)
 
 		var cred credential.VerifiableCredential
-		err = json.Unmarshal(signedCred, &cred)
+		err = json.Unmarshal(signedCred.Data, &cred)
 		assert.NoError(tt, err)
 
 		// verify
@@ -104,7 +104,7 @@ func TestDataIntegrityKeyAccessSignVerify(t *testing.T) {
 		assert.NotEmpty(tt, signedPres)
 
 		var pres credential.VerifiablePresentation
-		err = json.Unmarshal(signedPres, &pres)
+		err = json.Unmarshal(signedPres.Data, &pres)
 		assert.NoError(tt, err)
 
 		// verify
