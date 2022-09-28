@@ -2,8 +2,10 @@ package storage
 
 import (
 	"fmt"
+
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -31,8 +33,8 @@ func NewBoltDIDStorage(db *storage.BoltDB) (*BoltDIDStorage, error) {
 }
 
 func (b BoltDIDStorage) StoreDID(did StoredDID) error {
-	couldNotStoreDIDErr := fmt.Sprintf("could not store DID: %s", did.DID.ID)
-	namespace, err := getNamespaceForDID(did.DID.ID)
+	couldNotStoreDIDErr := fmt.Sprintf("could not store DID: %s", did.ID)
+	namespace, err := getNamespaceForDID(did.ID)
 	if err != nil {
 		return util.LoggingErrorMsg(err, couldNotStoreDIDErr)
 	}
@@ -40,7 +42,7 @@ func (b BoltDIDStorage) StoreDID(did StoredDID) error {
 	if err != nil {
 		return util.LoggingErrorMsg(err, couldNotStoreDIDErr)
 	}
-	return b.db.Write(namespace, did.DID.ID, didBytes)
+	return b.db.Write(namespace, did.ID, didBytes)
 }
 
 func (b BoltDIDStorage) GetDID(id string) (*StoredDID, error) {

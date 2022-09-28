@@ -1,6 +1,7 @@
 package storage
 
 import (
+	gocrypto "crypto"
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -11,11 +12,11 @@ import (
 
 // StoredKey represents a common data model to store data on all key types
 type StoredKey struct {
-	ID         string         `json:"id"`
-	Controller string         `json:"controller"`
-	KeyType    crypto.KeyType `json:"keyType"`
-	Key        []byte         `json:"key"`
-	CreatedAt  string         `json:"createdAt"`
+	ID         string              `json:"id"`
+	Controller string              `json:"controller"`
+	KeyType    crypto.KeyType      `json:"keyType"`
+	Key        gocrypto.PrivateKey `json:"key"`
+	CreatedAt  string              `json:"createdAt"`
 }
 
 // KeyDetails represents a common data model to get information about a key, without revealing the key itself
@@ -27,12 +28,13 @@ type KeyDetails struct {
 }
 
 type ServiceKey struct {
-	Key  string
-	Salt string
+	Base58Key  string
+	Base58Salt string
 }
 
 type Storage interface {
 	StoreKey(key StoredKey) error
+	GetKey(id string) (*StoredKey, error)
 	GetKeyDetails(id string) (*KeyDetails, error)
 }
 
@@ -45,8 +47,8 @@ func NewKeyStoreStorage(s storage.ServiceStorage, serviceKey, serviceKeySalt str
 			return nil, util.LoggingNewError(errMsg)
 		}
 		boltStorage, err := NewBoltKeyStoreStorage(gotBolt, ServiceKey{
-			Key:  serviceKey,
-			Salt: serviceKeySalt,
+			Base58Key:  serviceKey,
+			Base58Salt: serviceKeySalt,
 		})
 		if err != nil {
 			return nil, util.LoggingErrorMsg(err, "could not instantiate key store bolt storage")

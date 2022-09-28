@@ -3,10 +3,12 @@ package router
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/TBD54566975/ssi-sdk/credential"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
-	"net/http"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -214,7 +216,7 @@ func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseW
 	}
 
 	req := request.ToServiceRequest()
-	submitApplicationResponse, err := mr.service.SubmitApplication(req)
+	submitApplicationResponse, err := mr.service.ProcessApplicationSubmission(req)
 	if err != nil {
 		errMsg := "could not submit application"
 		logrus.WithError(err).Error(errMsg)

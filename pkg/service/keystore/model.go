@@ -1,6 +1,8 @@
 package keystore
 
 import (
+	gocrypto "crypto"
+
 	"github.com/TBD54566975/ssi-sdk/crypto"
 )
 
@@ -8,7 +10,19 @@ type StoreKeyRequest struct {
 	ID         string
 	Type       crypto.KeyType
 	Controller string
-	Key        []byte
+	Key        gocrypto.PrivateKey
+}
+
+type GetKeyRequest struct {
+	ID string
+}
+
+type GetKeyResponse struct {
+	ID         string
+	Type       crypto.KeyType
+	Controller string
+	CreatedAt  string
+	Key        gocrypto.PrivateKey
 }
 
 type GetKeyDetailsRequest struct {

@@ -1,17 +1,19 @@
 package router
 
 import (
+	"os"
+	"testing"
+
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"os"
-	"testing"
 )
 
 func TestManifestRouter(t *testing.T) {
@@ -40,7 +42,9 @@ func TestManifestRouter(t *testing.T) {
 		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
-		manifestService, err := manifest.NewManifestService(serviceConfig, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		testCredentialService := testCredentialService(tt, bolt, keyStoreService)
+		manifestService, err := manifest.NewManifestService(serviceConfig, bolt, keyStoreService, testCredentialService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, manifestService)
 
@@ -59,7 +63,7 @@ func TestManifestRouter(t *testing.T) {
 		// good application request
 		createApplicationRequest := getValidApplicationRequest(createdManifest.Manifest.ID, createManifestRequest.Manifest.PresentationDefinition.InputDescriptors[0].ID)
 
-		createdApplication, err := manifestService.SubmitApplication(createApplicationRequest)
+		createdApplication, err := manifestService.ProcessApplicationSubmission(createApplicationRequest)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
 		assert.NotEmpty(tt, createdApplication.Response.ID)
@@ -111,7 +115,6 @@ func getValidManifestRequest() manifest.CreateManifestRequest {
 }
 
 func getValidApplicationRequest(manifestID string, submissionDescriptorId string) manifest.SubmitApplicationRequest {
-
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",

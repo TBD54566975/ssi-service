@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/TBD54566975/ssi-sdk/credential/exchange"
-	"github.com/tbd54566975/ssi-service/pkg/service/dwn"
-
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+
+	"github.com/tbd54566975/ssi-service/pkg/service/dwn"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
@@ -61,7 +62,6 @@ func TestHealthCheckAPI(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, router.HealthOK, resp.Status)
-
 }
 
 func TestReadinessAPI(t *testing.T) {
@@ -104,7 +104,8 @@ func TestDIDAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		didService := newDIDService(tt, bolt)
+		_, keyStoreService := newKeyStore(tt, bolt)
+		didService := testDIDRouter(tt, bolt, keyStoreService)
 
 		// get DID methods
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids", nil)
@@ -131,7 +132,8 @@ func TestDIDAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		didService := newDIDService(tt, bolt)
+		_, keyStoreService := newKeyStore(tt, bolt)
+		didService := testDIDRouter(tt, bolt, keyStoreService)
 
 		// create DID by method - key - missing body
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", nil)
@@ -179,7 +181,8 @@ func TestDIDAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		didService := newDIDService(tt, bolt)
+		_, keyStore := newKeyStore(tt, bolt)
+		didService := testDIDRouter(tt, bolt, keyStore)
 
 		// get DID by method
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/bad/worse", nil)
@@ -238,20 +241,6 @@ func TestDIDAPI(t *testing.T) {
 	})
 }
 
-func newDIDService(t *testing.T, bolt *storage.BoltDB) *router.DIDRouter {
-	serviceConfig := config.DIDServiceConfig{Methods: []string{string(did.KeyMethod)}}
-	didService, err := did.NewDIDService(serviceConfig, bolt)
-	require.NoError(t, err)
-	require.NotEmpty(t, didService)
-
-	// create router for service
-	didRouter, err := router.NewDIDRouter(didService)
-	require.NoError(t, err)
-	require.NotEmpty(t, didRouter)
-
-	return didRouter
-}
-
 func TestSchemaAPI(t *testing.T) {
 	t.Run("Test Create Schema", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
@@ -262,7 +251,8 @@ func TestSchemaAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		schemaService := newSchemaService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		schemaService := testSchemaRouter(tt, bolt, keyStoreService)
 
 		simpleSchema := map[string]interface{}{
 			"type": "object",
@@ -309,7 +299,8 @@ func TestSchemaAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		schemaService := newSchemaService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		schemaService := testSchemaRouter(tt, bolt, keyStoreService)
 
 		// get schema that doesn't exist
 		w := httptest.NewRecorder()
@@ -395,19 +386,6 @@ func TestSchemaAPI(t *testing.T) {
 	})
 }
 
-func newSchemaService(t *testing.T, bolt *storage.BoltDB) *router.SchemaRouter {
-	schemaService, err := schema.NewSchemaService(config.SchemaServiceConfig{}, bolt)
-	require.NoError(t, err)
-	require.NotEmpty(t, schemaService)
-
-	// create router for service
-	schemaRouter, err := router.NewSchemaRouter(schemaService)
-	require.NoError(t, err)
-	require.NotEmpty(t, schemaRouter)
-
-	return schemaRouter
-}
-
 func TestCredentialAPI(t *testing.T) {
 	t.Run("Test Create Credential", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
@@ -418,7 +396,8 @@ func TestCredentialAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credService := testCredentialRouter(tt, bolt, keyStoreService)
 
 		// missing required field: data
 		badCredRequest := router.CreateCredentialRequest{
@@ -469,7 +448,8 @@ func TestCredentialAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credService := testCredentialRouter(tt, bolt, keyStoreService)
 
 		w := httptest.NewRecorder()
 
@@ -530,7 +510,8 @@ func TestCredentialAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credService := testCredentialRouter(tt, bolt, keyStoreService)
 
 		w := httptest.NewRecorder()
 
@@ -579,7 +560,8 @@ func TestCredentialAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credService := testCredentialRouter(tt, bolt, keyStoreService)
 
 		w := httptest.NewRecorder()
 
@@ -627,7 +609,8 @@ func TestCredentialAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credService := testCredentialRouter(tt, bolt, keyStoreService)
 
 		w := httptest.NewRecorder()
 
@@ -673,7 +656,8 @@ func TestCredentialAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		credService := newCredentialService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credService := testCredentialRouter(tt, bolt, keyStoreService)
 
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  "did:abc:123",
@@ -724,19 +708,6 @@ func TestCredentialAPI(t *testing.T) {
 	})
 }
 
-func newCredentialService(t *testing.T, bolt *storage.BoltDB) *router.CredentialRouter {
-	credentialService, err := credential.NewCredentialService(config.CredentialServiceConfig{}, bolt)
-	require.NoError(t, err)
-	require.NotEmpty(t, credentialService)
-
-	// create router for service
-	credentialRouter, err := router.NewCredentialRouter(credentialService)
-	require.NoError(t, err)
-	require.NotEmpty(t, credentialRouter)
-
-	return credentialRouter
-}
-
 func TestManifestAPI(t *testing.T) {
 	t.Run("Test Create Manifest", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
@@ -747,7 +718,9 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
 
 		// missing required field: Manifest
 		badManifestRequest := router.CreateManifestRequest{}
@@ -756,7 +729,7 @@ func TestManifestAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", badRequestValue)
 		w := httptest.NewRecorder()
 
-		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid create manifest request")
 
@@ -768,7 +741,7 @@ func TestManifestAPI(t *testing.T) {
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
-		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var resp router.CreateManifestResponse
@@ -788,13 +761,15 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
 
 		w := httptest.NewRecorder()
 
 		// get a manifest that doesn't exit
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/bad", nil)
-		err = manifestService.GetManifest(newRequestContext(), w, req)
+		err = manifestRouter.GetManifest(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "cannot get manifest without ID parameter")
 
@@ -803,7 +778,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// get a manifest with an invalid id parameter
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/bad", nil)
-		err = manifestService.GetManifest(newRequestContextWithParams(map[string]string{"id": "bad"}), w, req)
+		err = manifestRouter.GetManifest(newRequestContextWithParams(map[string]string{"id": "bad"}), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not get manifest with id: bad")
 
@@ -815,7 +790,7 @@ func TestManifestAPI(t *testing.T) {
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
-		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var resp router.CreateManifestResponse
@@ -824,7 +799,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// get manifest by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
-		err = manifestService.GetManifest(newRequestContextWithParams(map[string]string{"id": resp.Manifest.ID}), w, req)
+		err = manifestRouter.GetManifest(newRequestContextWithParams(map[string]string{"id": resp.Manifest.ID}), w, req)
 		assert.NoError(tt, err)
 
 		var getManifestResp router.GetManifestResponse
@@ -843,7 +818,9 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
 
 		w := httptest.NewRecorder()
 
@@ -852,7 +829,7 @@ func TestManifestAPI(t *testing.T) {
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
-		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var resp router.CreateManifestResponse
@@ -861,7 +838,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// get manifest by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests"), nil)
-		err = manifestService.GetManifests(newRequestContext(), w, req)
+		err = manifestRouter.GetManifests(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var getManifestsResp router.GetManifestsResponse
@@ -881,7 +858,9 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
 
 		// good request
 		createManifestRequest := getValidManifestRequest()
@@ -889,7 +868,7 @@ func TestManifestAPI(t *testing.T) {
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		w := httptest.NewRecorder()
-		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var resp router.CreateManifestResponse
@@ -900,7 +879,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// get credential by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
-		err = manifestService.GetManifest(newRequestContextWithParams(map[string]string{"id": resp.Manifest.ID}), w, req)
+		err = manifestRouter.GetManifest(newRequestContextWithParams(map[string]string{"id": resp.Manifest.ID}), w, req)
 		assert.NoError(tt, err)
 
 		var getManifestResp router.GetCredentialResponse
@@ -913,14 +892,14 @@ func TestManifestAPI(t *testing.T) {
 
 		// delete it
 		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
-		err = manifestService.DeleteManifest(newRequestContextWithParams(map[string]string{"id": resp.Manifest.ID}), w, req)
+		err = manifestRouter.DeleteManifest(newRequestContextWithParams(map[string]string{"id": resp.Manifest.ID}), w, req)
 		assert.NoError(tt, err)
 
 		w.Flush()
 
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
-		err = manifestService.GetManifest(newRequestContextWithParams(map[string]string{"id": resp.Manifest.ID}), w, req)
+		err = manifestRouter.GetManifest(newRequestContextWithParams(map[string]string{"id": resp.Manifest.ID}), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), fmt.Sprintf("could not get manifest with id: %s", resp.Manifest.ID))
 	})
@@ -934,7 +913,9 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
 
 		// missing required field: Application
 		badManifestRequest := router.SubmitApplicationRequest{
@@ -945,7 +926,7 @@ func TestManifestAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", badRequestValue)
 		w := httptest.NewRecorder()
 
-		err = manifestService.SubmitApplication(newRequestContext(), w, req)
+		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid submit application request")
 
@@ -957,7 +938,7 @@ func TestManifestAPI(t *testing.T) {
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
-		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var resp router.CreateManifestResponse
@@ -972,7 +953,7 @@ func TestManifestAPI(t *testing.T) {
 
 		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
-		err = manifestService.SubmitApplication(newRequestContext(), w, req)
+		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 
 		var appResp router.SubmitApplicationResponse
 		err = json.NewDecoder(w.Body).Decode(&appResp)
@@ -992,13 +973,14 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
-
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
 		w := httptest.NewRecorder()
 
 		// get a application that doesn't exit
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications/bad", nil)
-		err = manifestService.GetApplication(newRequestContext(), w, req)
+		err = manifestRouter.GetApplication(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "cannot get application without ID parameter")
 
@@ -1010,7 +992,7 @@ func TestManifestAPI(t *testing.T) {
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
-		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var resp router.CreateManifestResponse
@@ -1022,7 +1004,7 @@ func TestManifestAPI(t *testing.T) {
 
 		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
-		err = manifestService.SubmitApplication(newRequestContext(), w, req)
+		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 
 		var appResp router.SubmitApplicationResponse
 		err = json.NewDecoder(w.Body).Decode(&appResp)
@@ -1030,7 +1012,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// get response by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/responses/%s", appResp.Response.ID), nil)
-		err = manifestService.GetResponse(newRequestContextWithParams(map[string]string{"id": appResp.Response.ID}), w, req)
+		err = manifestRouter.GetResponse(newRequestContextWithParams(map[string]string{"id": appResp.Response.ID}), w, req)
 		assert.NoError(tt, err)
 
 		var getResponseResponse router.GetResponseResponse
@@ -1041,7 +1023,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// get all responses
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/responses", nil)
-		err = manifestService.GetResponses(newRequestContext(), w, req)
+		err = manifestRouter.GetResponses(newRequestContext(), w, req)
 
 		var getResponsesResp router.GetResponsesResponse
 		err = json.NewDecoder(w.Body).Decode(&getResponsesResp)
@@ -1052,7 +1034,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// get all applications
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
-		err = manifestService.GetApplications(newRequestContext(), w, req)
+		err = manifestRouter.GetApplications(newRequestContext(), w, req)
 
 		var getApplicationsResp router.GetApplicationsResponse
 		err = json.NewDecoder(w.Body).Decode(&getApplicationsResp)
@@ -1063,7 +1045,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// get application by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/applications/%s", getApplicationsResp.Applications[0].ID), nil)
-		err = manifestService.GetApplication(newRequestContextWithParams(map[string]string{"id": getApplicationsResp.Applications[0].ID}), w, req)
+		err = manifestRouter.GetApplication(newRequestContextWithParams(map[string]string{"id": getApplicationsResp.Applications[0].ID}), w, req)
 		assert.NoError(tt, err)
 
 		var getApplicationResponse router.GetApplicationResponse
@@ -1082,7 +1064,9 @@ func TestManifestAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		manifestService := newManifestService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
 
 		// good manifest request
 		createManifestRequest := getValidManifestRequest()
@@ -1090,7 +1074,7 @@ func TestManifestAPI(t *testing.T) {
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		w := httptest.NewRecorder()
-		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var resp router.CreateManifestResponse
@@ -1102,7 +1086,7 @@ func TestManifestAPI(t *testing.T) {
 
 		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
-		err = manifestService.SubmitApplication(newRequestContext(), w, req)
+		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 
 		var appResp router.SubmitApplicationResponse
 		err = json.NewDecoder(w.Body).Decode(&appResp)
@@ -1110,7 +1094,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// get all applications
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
-		err = manifestService.GetApplications(newRequestContext(), w, req)
+		err = manifestRouter.GetApplications(newRequestContext(), w, req)
 
 		var getApplicationsResp router.GetApplicationsResponse
 		err = json.NewDecoder(w.Body).Decode(&getApplicationsResp)
@@ -1121,7 +1105,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// get the application
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/applications/%s", getApplicationsResp.Applications[0].ID), nil)
-		err = manifestService.GetApplication(newRequestContextWithParams(map[string]string{"id": getApplicationsResp.Applications[0].ID}), w, req)
+		err = manifestRouter.GetApplication(newRequestContextWithParams(map[string]string{"id": getApplicationsResp.Applications[0].ID}), w, req)
 		assert.NoError(tt, err)
 
 		var getApplicationResp router.GetApplicationResponse
@@ -1132,30 +1116,17 @@ func TestManifestAPI(t *testing.T) {
 
 		// delete the application
 		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/manifests/applications/%s", getApplicationResp.Application.ID), nil)
-		err = manifestService.DeleteApplication(newRequestContextWithParams(map[string]string{"id": getApplicationResp.Application.ID}), w, req)
+		err = manifestRouter.DeleteApplication(newRequestContextWithParams(map[string]string{"id": getApplicationResp.Application.ID}), w, req)
 		assert.NoError(tt, err)
 
 		w.Flush()
 
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/applications/%s", appResp.Response.ID), nil)
-		err = manifestService.GetApplication(newRequestContextWithParams(map[string]string{"id": appResp.Response.ID}), w, req)
+		err = manifestRouter.GetApplication(newRequestContextWithParams(map[string]string{"id": appResp.Response.ID}), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), fmt.Sprintf("could not get application with id: %s", appResp.Response.ID))
 	})
-}
-
-func newManifestService(t *testing.T, bolt *storage.BoltDB) *router.ManifestRouter {
-	manifestService, err := manifest.NewManifestService(config.ManifestServiceConfig{}, bolt)
-	require.NoError(t, err)
-	require.NotEmpty(t, manifestService)
-
-	// create router for service
-	manifestRouter, err := router.NewManifestRouter(manifestService)
-	require.NoError(t, err)
-	require.NotEmpty(t, manifestRouter)
-
-	return manifestRouter
 }
 
 func TestDWNAPI(t *testing.T) {
@@ -1168,9 +1139,10 @@ func TestDWNAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		dwnService := newDWNService(tt, bolt)
-
-		manifestService := newManifestService(tt, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		dwnService := testDWNRouter(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		manifestService := testManifestRouter(tt, bolt, keyStoreService, credentialService)
 
 		w := httptest.NewRecorder()
 
@@ -1197,18 +1169,6 @@ func TestDWNAPI(t *testing.T) {
 		assert.ErrorContains(tt, err, "unsupported protocol scheme")
 	})
 }
-func newDWNService(t *testing.T, bolt *storage.BoltDB) *router.DWNRouter {
-	dwnService, err := dwn.NewDWNService(config.DWNServiceConfig{DWNEndpoint: "test-endpoint"}, bolt)
-	require.NoError(t, err)
-	require.NotEmpty(t, dwnService)
-
-	// create router for service
-	dwnRouter, err := router.NewDWNRouter(dwnService)
-	require.NoError(t, err)
-	require.NotEmpty(t, dwnRouter)
-
-	return dwnRouter
-}
 
 func TestKeyStoreAPI(t *testing.T) {
 	t.Run("Test Store Key", func(tt *testing.T) {
@@ -1220,7 +1180,7 @@ func TestKeyStoreAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		keyStoreService := newKeyStoreService(tt, bolt)
+		keyStoreRouter, _ := newKeyStore(tt, bolt)
 		w := httptest.NewRecorder()
 
 		// bad key type
@@ -1232,7 +1192,7 @@ func TestKeyStoreAPI(t *testing.T) {
 		}
 		badRequestValue := newRequestValue(tt, badKeyStoreRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", badRequestValue)
-		err = keyStoreService.StoreKey(newRequestContext(), w, req)
+		err = keyStoreRouter.StoreKey(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not store key: test-kid, unsupported key type: bad")
 
@@ -1256,7 +1216,7 @@ func TestKeyStoreAPI(t *testing.T) {
 		}
 		requestValue := newRequestValue(tt, storeKeyRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
-		err = keyStoreService.StoreKey(newRequestContext(), w, req)
+		err = keyStoreRouter.StoreKey(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 	})
 
@@ -1269,7 +1229,7 @@ func TestKeyStoreAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		keyStoreService := newKeyStoreService(tt, bolt)
+		keyStoreService, _ := newKeyStore(tt, bolt)
 		w := httptest.NewRecorder()
 
 		// store a valid key
@@ -1307,20 +1267,6 @@ func TestKeyStoreAPI(t *testing.T) {
 		assert.Equal(tt, controller, resp.Controller)
 		assert.Equal(tt, crypto.Ed25519, resp.Type)
 	})
-}
-
-func newKeyStoreService(t *testing.T, bolt *storage.BoltDB) *router.KeyStoreRouter {
-	serviceConfig := config.KeyStoreServiceConfig{ServiceKeyPassword: "test-password"}
-	keyStoreService, err := keystore.NewKeyStoreService(serviceConfig, bolt)
-	require.NoError(t, err)
-	require.NotEmpty(t, keyStoreService)
-
-	// create router for service
-	keyStoreRouter, err := router.NewKeyStoreRouter(keyStoreService)
-	require.NoError(t, err)
-	require.NotEmpty(t, keyStoreRouter)
-
-	return keyStoreRouter
 }
 
 func newRequestValue(t *testing.T, data interface{}) io.Reader {
@@ -1393,7 +1339,6 @@ func getValidManifestRequest() manifest.CreateManifestRequest {
 }
 
 func getValidApplicationRequest(manifestID string, submissionDescriptorId string) manifest.SubmitApplicationRequest {
-
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
@@ -1420,4 +1365,122 @@ func getValidApplicationRequest(manifestID string, submissionDescriptorId string
 	}
 
 	return createApplicationRequest
+}
+
+func newKeyStore(t *testing.T, bolt *storage.BoltDB) (*router.KeyStoreRouter, *keystore.Service) {
+	keyStoreService := testKeyStoreService(t, bolt)
+
+	// create router for service
+	keyStoreRouter, err := router.NewKeyStoreRouter(keyStoreService)
+	require.NoError(t, err)
+	require.NotEmpty(t, keyStoreRouter)
+
+	return keyStoreRouter, keyStoreService
+}
+
+func testKeyStoreService(t *testing.T, db *storage.BoltDB) *keystore.Service {
+	serviceConfig := config.KeyStoreServiceConfig{
+		BaseServiceConfig:  &config.BaseServiceConfig{Name: "test-keystore"},
+		ServiceKeyPassword: "test-password",
+	}
+
+	// create a keystore service
+	keystoreService, err := keystore.NewKeyStoreService(serviceConfig, db)
+	require.NoError(t, err)
+	require.NotEmpty(t, keystoreService)
+	return keystoreService
+}
+
+func testDIDService(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *did.Service {
+	serviceConfig := config.DIDServiceConfig{
+		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-did"},
+		Methods:           []string{"key"},
+	}
+
+	// create a did service
+	didService, err := did.NewDIDService(serviceConfig, bolt, keyStore)
+	require.NoError(t, err)
+	require.NotEmpty(t, didService)
+	return didService
+}
+
+func testDIDRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *router.DIDRouter {
+	didService := testDIDService(t, bolt, keyStore)
+
+	// create router for service
+	didRouter, err := router.NewDIDRouter(didService)
+	require.NoError(t, err)
+	require.NotEmpty(t, didRouter)
+	return didRouter
+}
+
+func testSchemaService(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *schema.Service {
+	schemaService, err := schema.NewSchemaService(config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-schema"}}, bolt, keyStore)
+	require.NoError(t, err)
+	require.NotEmpty(t, schemaService)
+	return schemaService
+}
+
+func testSchemaRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *router.SchemaRouter {
+	schemaService := testSchemaService(t, bolt, keyStore)
+
+	// create router for service
+	schemaRouter, err := router.NewSchemaRouter(schemaService)
+	require.NoError(t, err)
+	require.NotEmpty(t, schemaRouter)
+	return schemaRouter
+}
+
+func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service) *credential.Service {
+	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+
+	// create a credential service
+	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore)
+	require.NoError(t, err)
+	require.NotEmpty(t, credentialService)
+	return credentialService
+}
+
+func testCredentialRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *router.CredentialRouter {
+	credentialService := testCredentialService(t, bolt, keyStore)
+
+	// create router for service
+	credentialRouter, err := router.NewCredentialRouter(credentialService)
+	require.NoError(t, err)
+	require.NotEmpty(t, credentialRouter)
+
+	return credentialRouter
+}
+
+func testManifestService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, credential *credential.Service) *manifest.Service {
+	serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
+	// create a manifest service
+	manifestService, err := manifest.NewManifestService(serviceConfig, db, keyStore, credential)
+	require.NoError(t, err)
+	require.NotEmpty(t, manifestService)
+	return manifestService
+}
+
+func testManifestRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service, credential *credential.Service) *router.ManifestRouter {
+	manifestService := testManifestService(t, bolt, keyStore, credential)
+
+	// create router for service
+	manifestRouter, err := router.NewManifestRouter(manifestService)
+	require.NoError(t, err)
+	require.NotEmpty(t, manifestRouter)
+
+	return manifestRouter
+}
+
+func testDWNRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *router.DWNRouter {
+	dwnService, err := dwn.NewDWNService(config.DWNServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-dwn"}, DWNEndpoint: "test-endpoint"}, bolt, keyStore)
+	require.NoError(t, err)
+	require.NotEmpty(t, dwnService)
+
+	// create router for service
+	dwnRouter, err := router.NewDWNRouter(dwnService)
+	require.NoError(t, err)
+	require.NotEmpty(t, dwnRouter)
+
+	return dwnRouter
 }

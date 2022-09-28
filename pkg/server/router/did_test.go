@@ -35,12 +35,13 @@ func TestDIDRouter(t *testing.T) {
 	})
 
 	t.Run("DID Service Test", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
+		db, err := storage.NewBoltDB()
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, bolt)
+		assert.NotEmpty(tt, db)
 
+		keyStoreService := testKeyStoreService(tt, db)
 		serviceConfig := config.DIDServiceConfig{Methods: []string{string(did.KeyMethod)}}
-		didService, err := did.NewDIDService(serviceConfig, bolt)
+		didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didService)
 

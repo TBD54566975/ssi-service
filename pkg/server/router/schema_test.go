@@ -1,13 +1,15 @@
 package router
 
 import (
+	"os"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"os"
-	"testing"
 )
 
 func TestSchemaRouter(t *testing.T) {
@@ -37,7 +39,8 @@ func TestSchemaRouter(t *testing.T) {
 		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
-		schemaService, err := schema.NewSchemaService(serviceConfig, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, schemaService)
 

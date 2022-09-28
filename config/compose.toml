@@ -23,6 +23,10 @@ log_level = "info"
 storage = "bolt"
 
 # per-service configuration
+[services.keystore]
+name = "keystore"
+password = "default-password"
+
 [services.did]
 name = "did"
 methods = ["key"]
@@ -32,6 +36,9 @@ name = "schema"
 
 [services.credential]
 name = "credential"
+
+[services.manifest]
+name = "manifest"
 
 [services.dwn]
 name = "dwn"
