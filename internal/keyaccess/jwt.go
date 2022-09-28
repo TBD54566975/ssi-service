@@ -30,11 +30,11 @@ func NewJWKKeyAccess(kid string, key gocrypto.PrivateKey) (*JWKKeyAccess, error)
 	}
 	signer, err := crypto.NewJWTSigner(kid, gotJWK)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not create JWK Base58Key Access object for kid: %s, error creating signer", kid)
+		return nil, errors.Wrapf(err, "could not create JWK Key Access object for kid: %s, error creating signer", kid)
 	}
 	verifier, err := signer.ToVerifier()
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not create JWK Base58Key Access object for kid: %s, error creating verifier", kid)
+		return nil, errors.Wrapf(err, "could not create JWK Key Access object for kid: %s, error creating verifier", kid)
 	}
 	return &JWKKeyAccess{
 		JWTSigner:   *signer,

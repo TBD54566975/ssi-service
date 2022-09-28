@@ -11,7 +11,7 @@ import (
 )
 
 func TestCreateJWKKeyAccess(t *testing.T) {
-	t.Run("Create a Base58Key Access object - Happy Path", func(tt *testing.T) {
+	t.Run("Create a Key Access object - Happy Path", func(tt *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		kid := "test-kid"
 		assert.NoError(tt, err)
@@ -20,7 +20,7 @@ func TestCreateJWKKeyAccess(t *testing.T) {
 		assert.NotEmpty(tt, ka)
 	})
 
-	t.Run("Create a Base58Key Access object - Bad Base58Key", func(tt *testing.T) {
+	t.Run("Create a Key Access object - Bad Key", func(tt *testing.T) {
 		kid := "test-kid"
 		ka, err := NewJWKKeyAccess(kid, nil)
 		assert.Error(tt, err)
@@ -28,7 +28,7 @@ func TestCreateJWKKeyAccess(t *testing.T) {
 		assert.Empty(tt, ka)
 	})
 
-	t.Run("Create a Base58Key Access object - No KID", func(tt *testing.T) {
+	t.Run("Create a Key Access object - No KID", func(tt *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		assert.NoError(tt, err)
 		ka, err := NewJWKKeyAccess("", privKey)

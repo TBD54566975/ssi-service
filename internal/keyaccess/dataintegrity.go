@@ -20,7 +20,7 @@ type DataIntegrityKeyAccess struct {
 }
 
 // NewDataIntegrityKeyAccess creates a new DataIntegrityKeyAccess object from a key id and private key, generating both
-// JSON Web Base58Key Signer and Verifier objects.
+// JSON Web Key Signer and Verifier objects.
 func NewDataIntegrityKeyAccess(kid string, key gocrypto.PrivateKey) (*DataIntegrityKeyAccess, error) {
 	if kid == "" {
 		return nil, errors.New("kid cannot be empty")

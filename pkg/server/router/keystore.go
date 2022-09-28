@@ -51,7 +51,7 @@ func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) 
 }
 
 // StoreKey godoc
-// @Summary      Store Base58Key
+// @Summary      Store Key
 // @Description  Stores a key to be used by the service
 // @Tags         KeyStoreAPI
 // @Accept       json
@@ -93,7 +93,7 @@ type GetKeyDetailsResponse struct {
 }
 
 // GetKeyDetails godoc
-// @Summary      Get Details For Base58Key
+// @Summary      Get Details For Key
 // @Description  Get details about a stored key
 // @Tags         KeyStoreAPI
 // @Accept       json
