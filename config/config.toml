@@ -37,3 +37,7 @@ name = "credential"
 
 [services.manifest]
 name = "manifest"
+
+[services.dwn]
+name = "dwn"
+dwn_endpoint = "http://localhost:4321"
