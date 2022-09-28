@@ -55,6 +55,9 @@ func validateServiceConfig(config config.ServicesConfig) error {
 	if config.ManifestConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.Manifest)
 	}
+	if config.DWNConfig.IsEmpty() {
+		return fmt.Errorf("%s no config provided", framework.DWN)
+	}
 	return nil
 }
 
@@ -96,10 +99,9 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the manifest service")
 	}
 
-	dwnService, err := dwn.NewDWNService(config.DWNConfig, storageProvider)
+	dwnService, err := dwn.NewDWNService(config.DWNConfig, storageProvider, keyStoreService)
 	if err != nil {
-		errMsg := "could not instantiate the dwn service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not instantiate the dwn service")
 	}
 
 	return []framework.Service{keyStoreService, didService, schemaService, credentialService, manifestService, dwnService}, nil

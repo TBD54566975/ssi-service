@@ -1139,8 +1139,8 @@ func TestDWNAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		dwnService := testDWNRouter(tt, bolt)
 		keyStoreService := testKeyStoreService(tt, bolt)
+		dwnService := testDWNRouter(tt, bolt, keyStoreService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		manifestService := testManifestRouter(tt, bolt, keyStoreService, credentialService)
 
@@ -1472,8 +1472,8 @@ func testManifestRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.S
 	return manifestRouter
 }
 
-func testDWNRouter(t *testing.T, bolt *storage.BoltDB) *router.DWNRouter {
-	dwnService, err := dwn.NewDWNService(config.DWNServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-dwn"}, DWNEndpoint: "test-endpoint"}, bolt)
+func testDWNRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *router.DWNRouter {
+	dwnService, err := dwn.NewDWNService(config.DWNServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-dwn"}, DWNEndpoint: "test-endpoint"}, bolt, keyStore)
 	require.NoError(t, err)
 	require.NotEmpty(t, dwnService)
 
