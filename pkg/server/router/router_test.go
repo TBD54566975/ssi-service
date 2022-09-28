@@ -21,10 +21,10 @@ func (s *testService) Status() framework.Status {
 func (s *testService) Config() config.ServicesConfig {
 	return config.ServicesConfig{
 		StorageProvider:  "bolt",
+		KeyStoreConfig:   config.KeyStoreServiceConfig{ServiceKeyPassword: "test-password"},
 		DIDConfig:        config.DIDServiceConfig{Methods: []string{string(did.KeyMethod)}},
 		SchemaConfig:     config.SchemaServiceConfig{},
 		CredentialConfig: config.CredentialServiceConfig{},
-		KeyStoreConfig:   config.KeyStoreServiceConfig{},
 		ManifestConfig:   config.ManifestServiceConfig{},
 	}
 }

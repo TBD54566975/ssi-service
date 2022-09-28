@@ -119,9 +119,6 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	// sign the credential
-	// keyaccess.NewJWKKeyAccess()
-
 	// store the credential
 	storageRequest := credstorage.StoredCredential{
 		ID:           cred.ID,

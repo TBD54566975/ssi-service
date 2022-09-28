@@ -80,17 +80,17 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the DID service")
 	}
 
-	schemaService, err := schema.NewSchemaService(config.SchemaConfig, storageProvider)
+	schemaService, err := schema.NewSchemaService(config.SchemaConfig, storageProvider, keyStoreService)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the schema service")
 	}
 
-	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider)
+	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider, keyStoreService)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the credential service")
 	}
 
-	manifestService, err := manifest.NewManifestService(config.ManifestConfig, storageProvider)
+	manifestService, err := manifest.NewManifestService(config.ManifestConfig, storageProvider, keyStoreService, credentialService)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the manifest service")
 	}

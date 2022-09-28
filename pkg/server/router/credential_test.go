@@ -2,16 +2,18 @@ package router
 
 import (
 	"fmt"
+	"os"
+	"testing"
+	"time"
+
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"os"
-	"testing"
-	"time"
 )
 
 func TestCredentialRouter(t *testing.T) {
@@ -40,7 +42,8 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
-		credService, err := credential.NewCredentialService(serviceConfig, bolt)
+		keyStoreService := testKeyStoreService(tt, bolt)
+		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, credService)
 

@@ -2,22 +2,28 @@ package schema
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	schemalib "github.com/TBD54566975/ssi-sdk/schema"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	schemastorage "github.com/tbd54566975/ssi-service/pkg/service/schema/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"time"
 )
 
 type Service struct {
 	storage schemastorage.Storage
 	config  config.SchemaServiceConfig
+
+	// external dependencies
+	keyStore *keystore.Service
 }
 
 func (s Service) Type() framework.Type {
@@ -38,15 +44,16 @@ func (s Service) Config() config.SchemaServiceConfig {
 	return s.config
 }
 
-func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage) (*Service, error) {
+func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
 	schemaStorage, err := schemastorage.NewSchemaStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate storage for the schema service"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	return &Service{
-		storage: schemaStorage,
-		config:  config,
+		storage:  schemaStorage,
+		config:   config,
+		keyStore: keyStore,
 	}, nil
 }
 
