@@ -33,6 +33,7 @@ type Service struct {
 type MethodHandler interface {
 	CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error)
 	GetDID(request GetDIDRequest) (*GetDIDResponse, error)
+	GetDIDs(method Method) (*GetDIDsResponse, error)
 }
 
 func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
@@ -114,6 +115,16 @@ func (s *Service) GetDIDByMethod(request GetDIDRequest) (*GetDIDResponse, error)
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	return handler.GetDID(request)
+}
+
+func (s *Service) GetDIDsByMethod(request GetDIDsRequest) (*GetDIDsResponse, error) {
+	method := request.Method
+	handler, err := s.getHandler(method)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get handler for method<%s>", method)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	return handler.GetDIDs(method)
 }
 
 func (s *Service) getHandler(method Method) (MethodHandler, error) {

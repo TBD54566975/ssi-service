@@ -79,5 +79,26 @@ func TestDIDRouter(t *testing.T) {
 
 		// make sure it's the same value
 		assert.Equal(tt, createDIDResponse.DID.ID, getDIDResponse.DID.ID)
+
+		// create a second DID
+		createDIDResponse2, err := didService.CreateDIDByMethod(did.CreateDIDRequest{Method: did.KeyMethod, KeyType: crypto.Ed25519})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createDIDResponse2)
+
+		// get all DIDs back
+		getDIDsResponse, err := didService.GetDIDsByMethod(did.GetDIDsRequest{Method: did.KeyMethod})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, getDIDsResponse)
+		assert.Len(tt, getDIDsResponse.DIDs, 2)
+
+		knownDIDs := map[string]bool{createDIDResponse.DID.ID: true, createDIDResponse2.DID.ID: true}
+		for _, did := range getDIDsResponse.DIDs {
+			if _, ok := knownDIDs[did.ID]; !ok {
+				tt.Error("got unknown DID")
+			} else {
+				delete(knownDIDs, did.ID)
+			}
+		}
+		assert.Len(tt, knownDIDs, 0)
 	})
 }

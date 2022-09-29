@@ -115,6 +115,7 @@ func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) (err 
 
 	s.Handle(http.MethodGet, handlerPath, didRouter.GetDIDMethods)
 	s.Handle(http.MethodPut, path.Join(handlerPath, "/:method"), didRouter.CreateDIDByMethod)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method"), didRouter.GetDIDsByMethod)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method/:id"), didRouter.GetDIDByMethod)
 	return
 }
