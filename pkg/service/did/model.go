@@ -31,3 +31,12 @@ type GetDIDRequest struct {
 type GetDIDResponse struct {
 	DID didsdk.DIDDocument `json:"did"`
 }
+
+type GetDIDsRequest struct {
+	Method Method `json:"method" validate:"required"`
+}
+
+// GetDIDsResponse is the JSON-serializable response for getting all DIDs for a given method
+type GetDIDsResponse struct {
+	DIDs []didsdk.DIDDocument `json:"dids"`
+}
