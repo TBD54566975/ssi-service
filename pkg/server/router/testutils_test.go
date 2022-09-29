@@ -8,6 +8,7 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -27,4 +28,13 @@ func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.
 	require.NoError(t, err)
 	require.NotEmpty(t, credentialService)
 	return credentialService
+}
+
+func testManifestService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, credential *credential.Service) *manifest.Service {
+	serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
+	// create a manifest service
+	manifestService, err := manifest.NewManifestService(serviceConfig, db, keyStore, credential)
+	require.NoError(t, err)
+	require.NotEmpty(t, manifestService)
+	return manifestService
 }
