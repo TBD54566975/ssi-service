@@ -1,7 +1,7 @@
 package credential
 
 import (
-	credsdk "github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/tbd54566975/ssi-service/internal/credential"
 )
 
 const (
@@ -20,8 +20,10 @@ type CreateCredentialRequest struct {
 	// TODO(gabe) support more capabilities like signature type, format, status, and more.
 }
 
+// CreateCredentialResponse holds a resulting credential from credential creation, which is an XOR type:
+// containing either a Data Integrity Proofed credential or a VC-JWT representation.
 type CreateCredentialResponse struct {
-	Credential credsdk.VerifiableCredential
+	credential.CredentialContainer
 }
 
 type GetCredentialRequest struct {
@@ -29,7 +31,7 @@ type GetCredentialRequest struct {
 }
 
 type GetCredentialResponse struct {
-	Credential credsdk.VerifiableCredential
+	credential.CredentialContainer
 }
 
 type GetCredentialByIssuerRequest struct {
@@ -45,7 +47,7 @@ type GetCredentialBySchemaRequest struct {
 }
 
 type GetCredentialsResponse struct {
-	Credentials []credsdk.VerifiableCredential
+	credential.CredentialsContainer
 }
 
 type DeleteCredentialRequest struct {

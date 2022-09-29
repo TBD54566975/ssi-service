@@ -6,6 +6,7 @@ import (
 )
 
 // Manifest
+
 type CreateManifestRequest struct {
 	Manifest manifestsdk.CredentialManifest
 }
@@ -31,6 +32,7 @@ type DeleteManifestRequest struct {
 }
 
 // Application
+
 type SubmitApplicationRequest struct {
 	Application  manifestsdk.CredentialApplication
 	RequesterDID string
@@ -58,6 +60,7 @@ type DeleteApplicationRequest struct {
 }
 
 // Response
+
 type GetResponseRequest struct {
 	ID string
 }

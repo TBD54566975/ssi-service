@@ -5,9 +5,12 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
+	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	credstorage "github.com/tbd54566975/ssi-service/pkg/service/credential/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -119,23 +122,43 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	// store the credential
-	storageRequest := credstorage.StoredCredential{
-		ID:           cred.ID,
-		Credential:   *cred,
-		Issuer:       request.Issuer,
-		Subject:      request.Subject,
-		Schema:       request.JSONSchema,
-		IssuanceDate: cred.IssuanceDate,
+	// TODO(gabe) support Data Integrity creds too https://github.com/TBD54566975/ssi-service/issues/105
+	// sign the credential
+	credJWT, err := s.signCredentialJWT(request.Issuer, *cred)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not sign credential")
 	}
+
+	// store the credential
+	storageRequest := credstorage.StoreCredentialRequest{CredentialContainer: credmodel.CredentialContainer{CredentialJWT: credJWT}}
 	if err := s.storage.StoreCredential(storageRequest); err != nil {
 		errMsg := "could not store credential"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	// return the result
-	response := CreateCredentialResponse{Credential: *cred}
+	response := CreateCredentialResponse{credmodel.CredentialContainer{CredentialJWT: credJWT}}
 	return &response, nil
+}
+
+// signCredentialJWT signs a credential and returns it as a vc-jwt
+func (s Service) signCredentialJWT(issuer string, cred credential.VerifiableCredential) (*string, error) {
+	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: issuer})
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get key for signing credential with key<%s>", issuer)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not create key access for signing credential with key<%s>", issuer)
+		return nil, errors.Wrap(err, errMsg)
+	}
+	credToken, err := keyAccess.SignVerifiableCredential(cred)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not sign credential with key<%s>", issuer)
+		return nil, errors.Wrap(err, errMsg)
+	}
+	return &credToken.Token, nil
 }
 
 func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResponse, error) {
@@ -147,8 +170,18 @@ func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResp
 		errMsg := fmt.Sprintf("could not get credential: %s", request.ID)
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
+	if !gotCred.IsValid() {
+		errMsg := fmt.Sprintf("credential returned is not valid: %s", request.ID)
+		return nil, util.LoggingNewError(errMsg)
+	}
+	var response GetCredentialResponse
+	if gotCred.HasDataIntegrityCredential() {
+		response = GetCredentialResponse{credmodel.CredentialContainer{Credential: gotCred.Credential}}
+	}
+	if gotCred.HasJWTCredential() {
+		response = GetCredentialResponse{credmodel.CredentialContainer{CredentialJWT: gotCred.CredentialJWT}}
+	}
 
-	response := GetCredentialResponse{Credential: gotCred.Credential}
 	return &response, nil
 }
 
@@ -163,11 +196,17 @@ func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*
 	}
 
 	var creds []credential.VerifiableCredential
+	var credJWTs []string
 	for _, cred := range gotCreds {
-		creds = append(creds, cred.Credential)
+		if cred.HasDataIntegrityCredential() {
+			creds = append(creds, *cred.Credential)
+		}
+		if cred.HasJWTCredential() {
+			credJWTs = append(credJWTs, *cred.CredentialJWT)
+		}
 	}
 
-	response := GetCredentialsResponse{Credentials: creds}
+	response := GetCredentialsResponse{credmodel.CredentialsContainer{Credentials: creds, CredentialJWTs: credJWTs}}
 	return &response, nil
 }
 
@@ -182,11 +221,17 @@ func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) 
 	}
 
 	var creds []credential.VerifiableCredential
+	var credJWTs []string
 	for _, cred := range gotCreds {
-		creds = append(creds, cred.Credential)
+		if cred.HasDataIntegrityCredential() {
+			creds = append(creds, *cred.Credential)
+		}
+		if cred.HasJWTCredential() {
+			credJWTs = append(credJWTs, *cred.CredentialJWT)
+		}
 	}
 
-	response := GetCredentialsResponse{Credentials: creds}
+	response := GetCredentialsResponse{credmodel.CredentialsContainer{Credentials: creds, CredentialJWTs: credJWTs}}
 	return &response, nil
 }
 
@@ -201,11 +246,17 @@ func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*
 	}
 
 	var creds []credential.VerifiableCredential
+	var credJWTs []string
 	for _, cred := range gotCreds {
-		creds = append(creds, cred.Credential)
+		if cred.HasDataIntegrityCredential() {
+			creds = append(creds, *cred.Credential)
+		}
+		if cred.HasJWTCredential() {
+			credJWTs = append(credJWTs, *cred.CredentialJWT)
+		}
 	}
 
-	response := GetCredentialsResponse{Credentials: creds}
+	response := GetCredentialsResponse{credmodel.CredentialsContainer{Credentials: creds, CredentialJWTs: credJWTs}}
 	return &response, nil
 }
 
