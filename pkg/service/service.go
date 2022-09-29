@@ -99,7 +99,7 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the manifest service")
 	}
 
-	dwnService, err := dwn.NewDWNService(config.DWNConfig, storageProvider, keyStoreService)
+	dwnService, err := dwn.NewDWNService(config.DWNConfig, storageProvider, keyStoreService, manifestService)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the dwn service")
 	}

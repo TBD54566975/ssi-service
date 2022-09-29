@@ -104,7 +104,7 @@ func TestDIDAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		_, keyStoreService := newKeyStore(tt, bolt)
+		_, keyStoreService := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStoreService)
 
 		// get DID methods
@@ -132,7 +132,7 @@ func TestDIDAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		_, keyStoreService := newKeyStore(tt, bolt)
+		_, keyStoreService := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStoreService)
 
 		// create DID by method - key - missing body
@@ -181,7 +181,7 @@ func TestDIDAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		_, keyStore := newKeyStore(tt, bolt)
+		_, keyStore := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStore)
 
 		// get DID by method
@@ -720,7 +720,7 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
-		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// missing required field: Manifest
 		badManifestRequest := router.CreateManifestRequest{}
@@ -763,7 +763,7 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
-		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		w := httptest.NewRecorder()
 
@@ -820,7 +820,7 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
-		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		w := httptest.NewRecorder()
 
@@ -860,7 +860,7 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
-		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// good request
 		createManifestRequest := getValidManifestRequest()
@@ -915,7 +915,7 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
-		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// missing required field: Application
 		badManifestRequest := router.SubmitApplicationRequest{
@@ -975,7 +975,7 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
-		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 		w := httptest.NewRecorder()
 
 		// get a application that doesn't exit
@@ -1066,7 +1066,7 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
-		manifestRouter := testManifestRouter(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// good manifest request
 		createManifestRequest := getValidManifestRequest()
@@ -1140,9 +1140,9 @@ func TestDWNAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		dwnService := testDWNRouter(tt, bolt, keyStoreService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
-		manifestService := testManifestRouter(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, manifestService := testManifest(tt, bolt, keyStoreService, credentialService)
+		dwnService := testDWNRouter(tt, bolt, keyStoreService, manifestService)
 
 		w := httptest.NewRecorder()
 
@@ -1151,7 +1151,7 @@ func TestDWNAPI(t *testing.T) {
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
-		err = manifestService.CreateManifest(newRequestContext(), w, req)
+		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
 		var resp router.CreateManifestResponse
@@ -1180,7 +1180,7 @@ func TestKeyStoreAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		keyStoreRouter, _ := newKeyStore(tt, bolt)
+		keyStoreRouter, _ := testKeyStore(tt, bolt)
 		w := httptest.NewRecorder()
 
 		// bad key type
@@ -1229,7 +1229,7 @@ func TestKeyStoreAPI(t *testing.T) {
 			_ = os.Remove(storage.DBFile)
 		})
 
-		keyStoreService, _ := newKeyStore(tt, bolt)
+		keyStoreService, _ := testKeyStore(tt, bolt)
 		w := httptest.NewRecorder()
 
 		// store a valid key
@@ -1367,7 +1367,7 @@ func getValidApplicationRequest(manifestID string, submissionDescriptorId string
 	return createApplicationRequest
 }
 
-func newKeyStore(t *testing.T, bolt *storage.BoltDB) (*router.KeyStoreRouter, *keystore.Service) {
+func testKeyStore(t *testing.T, bolt *storage.BoltDB) (*router.KeyStoreRouter, *keystore.Service) {
 	keyStoreService := testKeyStoreService(t, bolt)
 
 	// create router for service
@@ -1452,28 +1452,23 @@ func testCredentialRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore
 	return credentialRouter
 }
 
-func testManifestService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, credential *credential.Service) *manifest.Service {
+func testManifest(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, credential *credential.Service) (*router.ManifestRouter, *manifest.Service) {
 	serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
 	// create a manifest service
 	manifestService, err := manifest.NewManifestService(serviceConfig, db, keyStore, credential)
 	require.NoError(t, err)
 	require.NotEmpty(t, manifestService)
-	return manifestService
-}
-
-func testManifestRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service, credential *credential.Service) *router.ManifestRouter {
-	manifestService := testManifestService(t, bolt, keyStore, credential)
 
 	// create router for service
 	manifestRouter, err := router.NewManifestRouter(manifestService)
 	require.NoError(t, err)
 	require.NotEmpty(t, manifestRouter)
 
-	return manifestRouter
+	return manifestRouter, manifestService
 }
 
-func testDWNRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *router.DWNRouter {
-	dwnService, err := dwn.NewDWNService(config.DWNServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-dwn"}, DWNEndpoint: "test-endpoint"}, bolt, keyStore)
+func testDWNRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service, manifest *manifest.Service) *router.DWNRouter {
+	dwnService, err := dwn.NewDWNService(config.DWNServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-dwn"}, DWNEndpoint: "test-endpoint"}, bolt, keyStore, manifest)
 	require.NoError(t, err)
 	require.NotEmpty(t, dwnService)
 
