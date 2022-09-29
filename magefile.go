@@ -73,7 +73,7 @@ func Spec() error {
 		logrus.Fatal(err)
 		return err
 	}
-	return sh.Run(swagCommand, "init", "-g", "cmd/main.go", "--pd", "-o", "docs", "-ot", "yaml")
+	return sh.Run(swagCommand, "init", "-g", "cmd/main.go", "--pd", "-o", "doc", "-ot", "yaml")
 }
 
 func runCITests(extraTestArgs ...string) error {
