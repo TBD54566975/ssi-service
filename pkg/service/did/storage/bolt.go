@@ -5,6 +5,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -79,8 +80,8 @@ func (b BoltDIDStorage) GetDIDs(method string) ([]StoredDID, error) {
 		return nil, util.LoggingErrorMsg(err, couldNotGetDIDsErr)
 	}
 	if len(gotDIDs) == 0 {
-		err := fmt.Errorf("no DIDs found for method: %s", method)
-		return nil, util.LoggingErrorMsg(err, "could not get stored DIDs")
+		logrus.Infof("no DIDs found for method: %s", method)
+		return nil, nil
 	}
 	var stored []StoredDID
 	for _, didBytes := range gotDIDs {

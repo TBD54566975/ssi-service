@@ -87,6 +87,21 @@ func (h *keyDIDHandler) GetDID(request GetDIDRequest) (*GetDIDResponse, error) {
 	return &GetDIDResponse{DID: gotDID.DID}, nil
 }
 
+func (h *keyDIDHandler) GetDIDs(method Method) (*GetDIDsResponse, error) {
+
+	logrus.Debugf("getting DIDs for method: %s", method)
+
+	gotDIDs, err := h.storage.GetDIDs(string(method))
+	if err != nil {
+		return nil, fmt.Errorf("error getting DIDs for method: %s", method)
+	}
+	var dids []did.DIDDocument
+	for _, did := range gotDIDs {
+		dids = append(dids, did.DID)
+	}
+	return &GetDIDsResponse{DIDs: dids}, nil
+}
+
 func privateKeyToBase58(privKey interface{}) (string, error) {
 	if haveBytes, ok := privKey.([]byte); ok {
 		return base58.Encode(haveBytes), nil

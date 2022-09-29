@@ -152,3 +152,39 @@ func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _
 	resp := GetDIDByMethodResponse{DID: gotDID.DID}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
+
+type GetDIDsByMethodResponse struct {
+	DIDs []didsdk.DIDDocument `json:"dids,omitempty"`
+}
+
+// GetDIDsByMethod godoc
+// @Summary      Get DIDs
+// @Description  Get DIDs by method
+// @Tags         DecentralizedIdentityAPI
+// @Accept       json
+// @Produce      json
+// @Param        method   path      string                    true  "Method"
+// @Success      200      {object}  GetDIDsByMethodResponse
+// @Failure      400      {string}  string  "Bad request"
+// @Router       /v1/dids/{method} [get]
+func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	method := framework.GetParam(ctx, MethodParam)
+	if method == nil {
+		errMsg := "get DIDs by method request missing method parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
+	// TODO(gabe) differentiate between internal errors and not found DIDs
+	getDIDsRequest := did.GetDIDsRequest{Method: did.Method(*method)}
+	gotDIDs, err := dr.service.GetDIDsByMethod(getDIDsRequest)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get DIDs for method: %s", *method)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	resp := GetDIDsByMethodResponse{DIDs: gotDIDs.DIDs}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
