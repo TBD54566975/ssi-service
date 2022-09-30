@@ -3,12 +3,12 @@ package manifest
 import (
 	"fmt"
 
-	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
+	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -181,7 +181,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 		return nil, util.LoggingErrorMsg(err, "could not fulfill credential application: could not set application id")
 	}
 
-	var creds []credsdk.VerifiableCredential
+	var creds []cred.CredentialContainer
 	for _, od := range gotManifest.Manifest.OutputDescriptors {
 		credentialRequest := credential.CreateCredentialRequest{
 			Issuer:     gotManifest.Manifest.Issuer.ID,
@@ -196,15 +196,22 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 			return nil, util.LoggingErrorMsg(err, "could not create credential")
 		}
 
-		creds = append(creds, credentialResponse.Credential)
+		creds = append(creds, credentialResponse.CredentialContainer)
 	}
 
+	// build descriptor map based on credential type
 	var descriptors []exchange.SubmissionDescriptor
-	for i, cred := range creds {
-		// TODO(gabe) build this correctly based on the generated credential format and envelope type
+	for i, c := range creds {
+		var format string
+		if c.HasDataIntegrityCredential() {
+			format = string(exchange.LDPVC)
+		}
+		if c.HasJWTCredential() {
+			format = string(exchange.JWTVC)
+		}
 		descriptors = append(descriptors, exchange.SubmissionDescriptor{
-			ID:     cred.ID,
-			Format: string(exchange.JWTVC),
+			ID:     c.ID,
+			Format: format,
 			Path:   fmt.Sprintf("$.verifiableCredential[%d]", i),
 		})
 	}

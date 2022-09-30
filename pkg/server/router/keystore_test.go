@@ -34,7 +34,7 @@ func TestKeyStoreRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create key store router with service type: test")
 	})
 
-	t.Run("Key Store Service Test", func(tt *testing.T) {
+	t.Run("Base58Key Store Service Test", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)

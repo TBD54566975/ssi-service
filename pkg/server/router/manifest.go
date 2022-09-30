@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/TBD54566975/ssi-sdk/credential"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
@@ -192,8 +191,9 @@ func (sar SubmitApplicationRequest) ToServiceRequest() manifest.SubmitApplicatio
 }
 
 type SubmitApplicationResponse struct {
-	Response    manifestsdk.CredentialResponse    `json:"response"`
-	Credentials []credential.VerifiableCredential `json:"credentials"`
+	Response manifestsdk.CredentialResponse `json:"credential_response"`
+	// this is an interface type to union Data Integrity and JWT style VCs
+	Credentials []interface{} `json:"verifiableCredential"`
 }
 
 // SubmitApplication godoc
@@ -223,7 +223,16 @@ func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := SubmitApplicationResponse{Response: submitApplicationResponse.Response, Credentials: submitApplicationResponse.Credential}
+	var credentials []interface{}
+	for _, container := range submitApplicationResponse.Credential {
+		if container.HasDataIntegrityCredential() {
+			credentials = append(credentials, *container.Credential)
+		}
+		if container.HasJWTCredential() {
+			credentials = append(credentials, *container.CredentialJWT)
+		}
+	}
+	resp := SubmitApplicationResponse{Response: submitApplicationResponse.Response, Credentials: credentials}
 
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }

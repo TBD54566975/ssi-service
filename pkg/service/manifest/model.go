@@ -1,8 +1,9 @@
 package manifest
 
 import (
-	"github.com/TBD54566975/ssi-sdk/credential"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+
+	cred "github.com/tbd54566975/ssi-service/internal/credential"
 )
 
 // Manifest
@@ -40,7 +41,7 @@ type SubmitApplicationRequest struct {
 
 type SubmitApplicationResponse struct {
 	Response   manifestsdk.CredentialResponse
-	Credential []credential.VerifiableCredential
+	Credential []cred.CredentialContainer
 }
 
 type GetApplicationRequest struct {

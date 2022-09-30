@@ -123,7 +123,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Equal(tt, resp.DIDMethods[0], did.KeyMethod)
 	})
 
-	t.Run("Test Create DID By Method: Key", func(tt *testing.T) {
+	t.Run("Test Create DID By Method: Base58Key", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 
 		// remove the db file after the test
@@ -309,7 +309,7 @@ func TestDIDAPI(t *testing.T) {
 
 		err = didService.CreateDIDByMethod(newRequestContextWithParams(params), w, req)
 		assert.NoError(tt, err)
-		
+
 		var createdDID2 router.CreateDIDByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&createdDID2)
 		assert.NoError(tt, err)
@@ -1269,7 +1269,7 @@ func TestDWNAPI(t *testing.T) {
 }
 
 func TestKeyStoreAPI(t *testing.T) {
-	t.Run("Test Store Key", func(tt *testing.T) {
+	t.Run("Test Store Base58Key", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 
 		// remove the db file after the test
@@ -1318,7 +1318,7 @@ func TestKeyStoreAPI(t *testing.T) {
 		assert.NoError(tt, err)
 	})
 
-	t.Run("Test Get Key Details", func(tt *testing.T) {
+	t.Run("Test Get Base58Key Details", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 
 		// remove the db file after the test

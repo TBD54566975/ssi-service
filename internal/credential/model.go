@@ -6,6 +6,8 @@ import (
 
 // CredentialContainer acts as a mutually exclusive abstraction over both possible credential representations
 type CredentialContainer struct {
+	// Credential ID
+	ID            string
 	Credential    *credential.VerifiableCredential
 	CredentialJWT *string
 }

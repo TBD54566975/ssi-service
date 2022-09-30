@@ -1,11 +1,15 @@
 package keystore
 
 import (
+	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestGenerateServiceKey(t *testing.T) {
@@ -83,4 +87,43 @@ func TestEncryptDecryptAllKeyTypes(t *testing.T) {
 			assert.EqualValues(t, privKey, privKeyReconstructed)
 		})
 	}
+}
+
+func TestStoreAndGetKey(t *testing.T) {
+	bolt, err := storage.NewBoltDB()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, bolt)
+	// remove the db file after the test
+	t.Cleanup(func() {
+		_ = bolt.Close()
+		_ = os.Remove(storage.DBFile)
+	})
+
+	storage, err := NewKeyStoreService(
+		config.KeyStoreServiceConfig{
+			BaseServiceConfig: &config.BaseServiceConfig{
+				Name: "test-keystore",
+			},
+			ServiceKeyPassword: "test-password",
+		},
+		bolt)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, storage)
+
+	// store the key
+	_, privKey, err := crypto.GenerateEd25519Key()
+	err = storage.StoreKey(StoreKeyRequest{
+		ID:         "test-id",
+		Type:       crypto.Ed25519,
+		Controller: "test-controller",
+		Key:        privKey,
+	})
+	assert.NoError(t, err)
+
+	// get it back
+	keyResponse, err := storage.GetKey(GetKeyRequest{ID: "test-id"})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, keyResponse)
+
+	assert.EqualValues(t, privKey, keyResponse.Key)
 }
