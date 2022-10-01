@@ -66,15 +66,12 @@ func TestKeyStoreRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, privKey)
 
-		privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
-		assert.NoError(tt, err)
-
 		keyID := "did:test:me#key-1"
 		err = keyStoreService.StoreKey(keystore.StoreKeyRequest{
 			ID:         keyID,
 			Type:       crypto.Ed25519,
 			Controller: "did:test:me",
-			Key:        privKeyBytes,
+			Key:        privKey,
 		})
 		assert.NoError(tt, err)
 
