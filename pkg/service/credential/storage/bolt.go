@@ -46,7 +46,7 @@ func (b BoltCredentialStorage) StoreCredential(request StoreCredentialRequest) e
 		return util.LoggingErrorMsg(err, errMsg)
 	}
 	// TODO(gabe) conflict checking?
-	return b.db.Write(namespace, storedCredential.CredentialID, storedCredBytes)
+	return b.db.Write(namespace, storedCredential.ID, storedCredBytes)
 }
 
 // buildStoredCredential generically parses a store credential request and returns the object to be stored
@@ -71,17 +71,24 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 	}
 
 	credID := cred.ID
+	// Note: we assume the issuer is always a string for now
 	issuer := cred.Issuer.(string)
 	subject := cred.CredentialSubject.GetID()
-	schema := cred.CredentialSchema.ID
-	return &StoredCredential{
-		ID:           createPrefixKey(credID, issuer, subject, schema),
-		CredentialID: credID,
-		Issuer:       issuer,
-		Subject:      subject,
-		Schema:       schema,
-		IssuanceDate: cred.IssuanceDate,
-	}, nil
+
+	// schema is not a required field, so we must do this check
+	schema := ""
+	if cred.CredentialSchema != nil {
+		schema = cred.CredentialSchema.ID
+	}
+
+	// set remaining credential properties
+	storedCred.ID = createPrefixKey(credID, issuer, subject, schema)
+	storedCred.CredentialID = credID
+	storedCred.Issuer = issuer
+	storedCred.Subject = subject
+	storedCred.Schema = schema
+	storedCred.IssuanceDate = cred.IssuanceDate
+	return &storedCred, nil
 }
 
 func (b BoltCredentialStorage) GetCredential(id string) (*StoredCredential, error) {

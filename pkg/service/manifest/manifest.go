@@ -124,27 +124,6 @@ func (s Service) DeleteManifest(request DeleteManifestRequest) error {
 	return nil
 }
 
-// TODO: (Neal) Add entire validation framework in place of these validation checks - https://github.com/TBD54566975/ssi-service/issues/95
-func isValidApplication(gotManifest *manifeststorage.StoredManifest, application manifest.CredentialApplication) error {
-	if gotManifest == nil {
-		return util.LoggingNewError(fmt.Sprintf("application is not valid. A manifest does not exist with id: %s", application.ManifestID))
-	}
-
-	inputDescriptors := gotManifest.Manifest.PresentationDefinition.InputDescriptors
-	inputDescriptorIDs := make(map[string]bool)
-	for _, inputDescriptor := range inputDescriptors {
-		inputDescriptorIDs[inputDescriptor.ID] = true
-	}
-
-	for _, submissionDescriptor := range application.PresentationSubmission.DescriptorMap {
-		if inputDescriptorIDs[submissionDescriptor.ID] != true {
-			return util.LoggingNewError("application is not valid. The submission descriptor ids do not match the input descriptor ids")
-		}
-	}
-
-	return nil
-}
-
 func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) (*SubmitApplicationResponse, error) {
 	credApp := request.Application
 
@@ -237,6 +216,27 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 
 	response := SubmitApplicationResponse{Response: *credRes, Credential: creds}
 	return &response, nil
+}
+
+// TODO: (Neal) Add entire validation framework in place of these validation checks - https://github.com/TBD54566975/ssi-service/issues/95
+func isValidApplication(gotManifest *manifeststorage.StoredManifest, application manifest.CredentialApplication) error {
+	if gotManifest == nil {
+		return util.LoggingNewError(fmt.Sprintf("application is not valid. A manifest does not exist with id: %s", application.ManifestID))
+	}
+
+	inputDescriptors := gotManifest.Manifest.PresentationDefinition.InputDescriptors
+	inputDescriptorIDs := make(map[string]bool)
+	for _, inputDescriptor := range inputDescriptors {
+		inputDescriptorIDs[inputDescriptor.ID] = true
+	}
+
+	for _, submissionDescriptor := range application.PresentationSubmission.DescriptorMap {
+		if inputDescriptorIDs[submissionDescriptor.ID] != true {
+			return util.LoggingNewError("application is not valid. The submission descriptor ids do not match the input descriptor ids")
+		}
+	}
+
+	return nil
 }
 
 func (s Service) GetApplication(request GetApplicationRequest) (*GetApplicationResponse, error) {

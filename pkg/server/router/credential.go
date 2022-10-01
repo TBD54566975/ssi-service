@@ -93,7 +93,7 @@ func (cr CredentialRouter) CreateCredential(ctx context.Context, w http.Response
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := CreateCredentialResponse{Credential: createCredentialResponse.Credential}
+	resp := CreateCredentialResponse{Credential: createCredentialResponse.Credential, CredentialJWT: createCredentialResponse.CredentialJWT}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
@@ -129,8 +129,9 @@ func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWri
 	}
 
 	resp := GetCredentialResponse{
-		ID:         gotCredential.Credential.ID,
-		Credential: gotCredential.Credential,
+		ID:            gotCredential.ID,
+		Credential:    gotCredential.Credential,
+		CredentialJWT: gotCredential.CredentialJWT,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
@@ -185,7 +186,7 @@ func (cr CredentialRouter) getCredentialsByIssuer(issuer string, ctx context.Con
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
+	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials, CredentialJWTs: gotCredentials.CredentialJWTs}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
@@ -197,7 +198,7 @@ func (cr CredentialRouter) getCredentialsBySubject(subject string, ctx context.C
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
+	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials, CredentialJWTs: gotCredentials.CredentialJWTs}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
@@ -209,7 +210,7 @@ func (cr CredentialRouter) getCredentialsBySchema(schema string, ctx context.Con
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
+	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials, CredentialJWTs: gotCredentials.CredentialJWTs}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
