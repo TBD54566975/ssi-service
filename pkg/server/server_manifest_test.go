@@ -7,10 +7,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
+	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -26,6 +28,7 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// missing required field: Manifest
@@ -42,8 +45,18 @@ func TestManifestAPI(t *testing.T) {
 		// reset the http recorder
 		w.Flush()
 
+		// create an issuer
+		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  did.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDIDDoc)
+
+		issuerDID := issuerDIDDoc.DID.ID
+
 		// good request
-		createManifestRequest := getValidManifestRequest()
+		createManifestRequest := getValidManifestRequest(issuerDID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -55,7 +68,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		assert.NotEmpty(tt, resp.Manifest)
-		assert.Equal(tt, resp.Manifest.Issuer.ID, "did:abc:123")
+		assert.Equal(tt, resp.Manifest.Issuer.ID, issuerDID)
 	})
 
 	t.Run("Test Get Manifest By ID", func(tt *testing.T) {
@@ -69,6 +82,7 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		w := httptest.NewRecorder()
@@ -91,8 +105,16 @@ func TestManifestAPI(t *testing.T) {
 		// reset recorder between calls
 		w.Flush()
 
+		// create an issuer
+		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  did.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDIDDoc)
+
 		// good request
-		createManifestRequest := getValidManifestRequest()
+		createManifestRequest := getValidManifestRequest(issuerDIDDoc.DID.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -126,12 +148,21 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		w := httptest.NewRecorder()
 
+		// create an issuer
+		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  did.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDIDDoc)
+
 		// good request
-		createManifestRequest := getValidManifestRequest()
+		createManifestRequest := getValidManifestRequest(issuerDIDDoc.DID.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -166,10 +197,20 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
+		// create an issuer
+		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  did.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDIDDoc)
+
 		// good request
-		createManifestRequest := getValidManifestRequest()
+
+		createManifestRequest := getValidManifestRequest(issuerDIDDoc.DID.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -221,11 +262,13 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
+
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// missing required field: Application
 		badManifestRequest := router.SubmitApplicationRequest{
-			RequesterDID: "id123",
+			ApplicantDID: "did:example:abcd",
 		}
 
 		badRequestValue := newRequestValue(tt, badManifestRequest)
@@ -239,8 +282,19 @@ func TestManifestAPI(t *testing.T) {
 		// reset the http recorder
 		w.Flush()
 
+		// create an issuer
+		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  did.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDIDDoc)
+
+		issuerDID := issuerDIDDoc.DID.ID
+		applicantDID := "did:example:abcd"
+
 		// good request
-		createManifestRequest := getValidManifestRequest()
+		createManifestRequest := getValidManifestRequest(issuerDID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -252,10 +306,10 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		assert.NotEmpty(tt, resp.Manifest)
-		assert.Equal(tt, resp.Manifest.Issuer.ID, "did:abc:123")
+		assert.Equal(tt, resp.Manifest.Issuer.ID, issuerDID)
 
 		// good application request
-		createApplicationRequest := getValidApplicationRequest(resp.Manifest.ID, resp.Manifest.PresentationDefinition.InputDescriptors[0].ID)
+		createApplicationRequest := getValidApplicationRequest(applicantDID, resp.Manifest.ID, resp.Manifest.PresentationDefinition.InputDescriptors[0].ID)
 
 		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
@@ -281,6 +335,7 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 		w := httptest.NewRecorder()
 
@@ -293,8 +348,19 @@ func TestManifestAPI(t *testing.T) {
 		// reset recorder between calls
 		w.Flush()
 
+		// create an issuer
+		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  did.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDIDDoc)
+
+		issuerDID := issuerDIDDoc.DID.ID
+		applicantDID := "did:example:abcd"
+
 		// good manifest request
-		createManifestRequest := getValidManifestRequest()
+		createManifestRequest := getValidManifestRequest(issuerDID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -306,7 +372,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// good application request
-		createApplicationRequest := getValidApplicationRequest(resp.Manifest.ID, resp.Manifest.PresentationDefinition.InputDescriptors[0].ID)
+		createApplicationRequest := getValidApplicationRequest(applicantDID, resp.Manifest.ID, resp.Manifest.PresentationDefinition.InputDescriptors[0].ID)
 
 		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
@@ -372,10 +438,22 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
+		// create an issuer
+		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  did.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDIDDoc)
+
+		issuerDID := issuerDIDDoc.DID.ID
+		applicantDID := "did:example:abcd"
+
 		// good manifest request
-		createManifestRequest := getValidManifestRequest()
+		createManifestRequest := getValidManifestRequest(issuerDID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -388,7 +466,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// good application request
-		createApplicationRequest := getValidApplicationRequest(resp.Manifest.ID, resp.Manifest.PresentationDefinition.InputDescriptors[0].ID)
+		createApplicationRequest := getValidApplicationRequest(applicantDID, resp.Manifest.ID, resp.Manifest.PresentationDefinition.InputDescriptors[0].ID)
 
 		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)

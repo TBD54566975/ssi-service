@@ -180,13 +180,13 @@ func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWrit
 type SubmitApplicationRequest struct {
 	Application manifestsdk.CredentialApplication `json:"application" validate:"required"`
 	// Once we have JWT signed wrapper that can get the did this can be removed
-	RequesterDID string `json:"requesterDid" validate:"required"`
+	ApplicantDID string `json:"applicantDid" validate:"required"`
 }
 
 func (sar SubmitApplicationRequest) ToServiceRequest() manifest.SubmitApplicationRequest {
 	return manifest.SubmitApplicationRequest{
 		Application:  sar.Application,
-		RequesterDID: sar.RequesterDID,
+		ApplicantDID: sar.ApplicantDID,
 	}
 }
 

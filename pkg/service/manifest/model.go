@@ -36,7 +36,7 @@ type DeleteManifestRequest struct {
 
 type SubmitApplicationRequest struct {
 	Application  manifestsdk.CredentialApplication
-	RequesterDID string
+	ApplicantDID string
 }
 
 type SubmitApplicationResponse struct {

@@ -154,7 +154,7 @@ func getValidApplicationRequest(applicantDID, manifestID, submissionDescriptorID
 
 	createApplicationRequest := manifest.SubmitApplicationRequest{
 		Application:  createApplication,
-		RequesterDID: applicantDID,
+		ApplicantDID: applicantDID,
 	}
 
 	return createApplicationRequest

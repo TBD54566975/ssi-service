@@ -6,10 +6,12 @@ import (
 	"os"
 	"testing"
 
+	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
+	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -25,13 +27,22 @@ func TestDWNAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		credentialService := testCredentialService(tt, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
 		manifestRouter, manifestService := testManifest(tt, bolt, keyStoreService, credentialService)
 		dwnService := testDWNRouter(tt, bolt, keyStoreService, manifestService)
 
 		w := httptest.NewRecorder()
 
+		// create an issuer
+		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  did.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDIDDoc)
+
 		// good request
-		createManifestRequest := getValidManifestRequest()
+		createManifestRequest := getValidManifestRequest(issuerDIDDoc.DID.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)

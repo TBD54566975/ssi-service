@@ -164,7 +164,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	for _, od := range gotManifest.Manifest.OutputDescriptors {
 		credentialRequest := credential.CreateCredentialRequest{
 			Issuer:     gotManifest.Manifest.Issuer.ID,
-			Subject:    request.RequesterDID,
+			Subject:    request.ApplicantDID,
 			JSONSchema: od.Schema,
 			// TODO(gabe) need to add in data here to match the request + schema
 			Data: map[string]interface{}{},

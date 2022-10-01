@@ -117,13 +117,13 @@ func newRequestContextWithParams(params map[string]string) context.Context {
 	return httptreemux.AddParamsToContext(ctx, params)
 }
 
-func getValidManifestRequest() manifest.CreateManifestRequest {
+func getValidManifestRequest(issuer string) manifest.CreateManifestRequest {
 	createManifestRequest := manifest.CreateManifestRequest{
 		Manifest: manifestsdk.CredentialManifest{
 			ID:          "WA-DL-CLASS-A",
 			SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
 			Issuer: manifestsdk.Issuer{
-				ID: "did:abc:123",
+				ID: issuer,
 			},
 			PresentationDefinition: &exchange.PresentationDefinition{
 				ID: "pres-def-id",
@@ -160,7 +160,7 @@ func getValidManifestRequest() manifest.CreateManifestRequest {
 	return createManifestRequest
 }
 
-func getValidApplicationRequest(manifestID string, submissionDescriptorId string) manifest.SubmitApplicationRequest {
+func getValidApplicationRequest(applicantDID, manifestID, submissionDescriptorID string) manifest.SubmitApplicationRequest {
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
@@ -173,7 +173,7 @@ func getValidApplicationRequest(manifestID string, submissionDescriptorId string
 			DefinitionID: "definitionId",
 			DescriptorMap: []exchange.SubmissionDescriptor{
 				{
-					ID:     submissionDescriptorId,
+					ID:     submissionDescriptorID,
 					Format: "jwt",
 					Path:   "path",
 				},
@@ -183,7 +183,7 @@ func getValidApplicationRequest(manifestID string, submissionDescriptorId string
 
 	createApplicationRequest := manifest.SubmitApplicationRequest{
 		Application:  createApplication,
-		RequesterDID: "did:user:123",
+		ApplicantDID: applicantDID,
 	}
 
 	return createApplicationRequest
