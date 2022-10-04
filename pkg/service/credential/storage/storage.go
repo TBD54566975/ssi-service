@@ -31,11 +31,11 @@ type StoredCredential struct {
 }
 
 func (sc StoredCredential) IsValid() bool {
-	return sc.Credential != nil || sc.CredentialJWT != nil
+	return sc.ID != "" && (sc.HasDataIntegrityCredential() || sc.HasJWTCredential())
 }
 
 func (sc StoredCredential) HasDataIntegrityCredential() bool {
-	return sc.Credential != nil
+	return sc.Credential != nil && sc.Credential.Proof != nil
 }
 
 func (sc StoredCredential) HasJWTCredential() bool {
