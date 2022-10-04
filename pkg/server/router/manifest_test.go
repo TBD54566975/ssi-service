@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -52,8 +53,22 @@ func TestManifestRouter(t *testing.T) {
 		assert.Equal(tt, framework.Manifest, manifestService.Type())
 		assert.Equal(tt, framework.StatusReady, manifestService.Status().Status)
 
+		// create issuer and applicant DIDs
+		didService := testDIDService(tt, bolt, keyStoreService)
+		createDIDRequest := did.CreateDIDRequest{
+			Method:  did.KeyMethod,
+			KeyType: crypto.Ed25519,
+		}
+		issuerDID, err := didService.CreateDIDByMethod(createDIDRequest)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		applicantDID, err := didService.CreateDIDByMethod(createDIDRequest)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, applicantDID)
+
 		// good manifest request
-		createManifestRequest := getValidManifestRequest()
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID)
 
 		createdManifest, err := manifestService.CreateManifest(createManifestRequest)
 		assert.NoError(tt, err)
@@ -61,23 +76,25 @@ func TestManifestRouter(t *testing.T) {
 		assert.NotEmpty(tt, createdManifest.Manifest)
 
 		// good application request
-		createApplicationRequest := getValidApplicationRequest(createdManifest.Manifest.ID, createManifestRequest.Manifest.PresentationDefinition.InputDescriptors[0].ID)
+		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, createdManifest.Manifest.ID, createManifestRequest.Manifest.PresentationDefinition.InputDescriptors[0].ID)
 
-		createdApplication, err := manifestService.ProcessApplicationSubmission(createApplicationRequest)
+		createdApplicationResponse, err := manifestService.ProcessApplicationSubmission(createApplicationRequest)
+
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
-		assert.NotEmpty(tt, createdApplication.Response.ID)
+		assert.NotEmpty(tt, createdApplicationResponse.Response.ID)
+		assert.Equal(tt, len(createManifestRequest.Manifest.OutputDescriptors), len(createdApplicationResponse.Credential))
 	})
 
 }
 
-func getValidManifestRequest() manifest.CreateManifestRequest {
+func getValidManifestRequest(issuerDID string) manifest.CreateManifestRequest {
 	createManifestRequest := manifest.CreateManifestRequest{
 		Manifest: manifestsdk.CredentialManifest{
 			ID:          "WA-DL-CLASS-A",
 			SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
 			Issuer: manifestsdk.Issuer{
-				ID: "did:abc:123",
+				ID: issuerDID,
 			},
 			PresentationDefinition: &exchange.PresentationDefinition{
 				ID: "pres-def-id",
@@ -114,7 +131,7 @@ func getValidManifestRequest() manifest.CreateManifestRequest {
 	return createManifestRequest
 }
 
-func getValidApplicationRequest(manifestID string, submissionDescriptorId string) manifest.SubmitApplicationRequest {
+func getValidApplicationRequest(applicantDID, manifestID, submissionDescriptorID string) manifest.SubmitApplicationRequest {
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
@@ -127,7 +144,7 @@ func getValidApplicationRequest(manifestID string, submissionDescriptorId string
 			DefinitionID: "definitionId",
 			DescriptorMap: []exchange.SubmissionDescriptor{
 				{
-					ID:     submissionDescriptorId,
+					ID:     submissionDescriptorID,
 					Format: "jwt",
 					Path:   "path",
 				},
@@ -137,7 +154,7 @@ func getValidApplicationRequest(manifestID string, submissionDescriptorId string
 
 	createApplicationRequest := manifest.SubmitApplicationRequest{
 		Application:  createApplication,
-		RequesterDID: "did:user:123",
+		ApplicantDID: applicantDID,
 	}
 
 	return createApplicationRequest

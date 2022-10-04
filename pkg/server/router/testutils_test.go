@@ -7,6 +7,7 @@ import (
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
+	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -19,6 +20,15 @@ func testKeyStoreService(t *testing.T, db *storage.BoltDB) *keystore.Service {
 	require.NoError(t, err)
 	require.NotEmpty(t, keystoreService)
 	return keystoreService
+}
+
+func testDIDService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service) *did.Service {
+	serviceConfig := config.DIDServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "did"}, Methods: []string{"key"}}
+	// create a did service
+	didService, err := did.NewDIDService(serviceConfig, db, keyStore)
+	require.NoError(t, err)
+	require.NotEmpty(t, didService)
+	return didService
 }
 
 func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service) *credential.Service {

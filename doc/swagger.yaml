@@ -1,4 +1,14 @@
 definitions:
+  credential.CredentialContainer:
+    properties:
+      credential:
+        $ref: '#/definitions/credential.VerifiableCredential'
+      credentialJWT:
+        type: string
+      id:
+        description: Credential ID
+        type: string
+    type: object
   credential.CredentialSchema:
     properties:
       id:
@@ -472,6 +482,8 @@ definitions:
     properties:
       credential:
         $ref: '#/definitions/credential.VerifiableCredential'
+      credentialJwt:
+        type: string
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest:
     properties:
@@ -537,6 +549,8 @@ definitions:
     properties:
       credential:
         $ref: '#/definitions/credential.VerifiableCredential'
+      credentialJwt:
+        type: string
       id:
         type: string
     type: object
@@ -544,7 +558,7 @@ definitions:
     properties:
       credentials:
         items:
-          $ref: '#/definitions/credential.VerifiableCredential'
+          $ref: '#/definitions/credential.CredentialContainer'
         type: array
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse:
@@ -657,24 +671,25 @@ definitions:
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationRequest:
     properties:
-      application:
-        $ref: '#/definitions/manifest.CredentialApplication'
-      requesterDid:
+      applicantDid:
         description: Once we have JWT signed wrapper that can get the did this can
           be removed
         type: string
+      application:
+        $ref: '#/definitions/manifest.CredentialApplication'
     required:
+    - applicantDid
     - application
-    - requesterDid
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationResponse:
     properties:
-      credentials:
-        items:
-          $ref: '#/definitions/credential.VerifiableCredential'
-        type: array
-      response:
+      credential_response:
         $ref: '#/definitions/manifest.CredentialResponse'
+      verifiableCredential:
+        description: this is an interface type to union Data Integrity and JWT style
+          VCs
+        items: {}
+        type: array
     type: object
   manifest.CredentialApplication:
     properties:
@@ -815,6 +830,8 @@ definitions:
     properties:
       credential:
         $ref: '#/definitions/credential.VerifiableCredential'
+      credentialJwt:
+        type: string
     type: object
   pkg_server_router.CreateDIDByMethodRequest:
     properties:
@@ -880,6 +897,8 @@ definitions:
     properties:
       credential:
         $ref: '#/definitions/credential.VerifiableCredential'
+      credentialJwt:
+        type: string
       id:
         type: string
     type: object
@@ -887,7 +906,7 @@ definitions:
     properties:
       credentials:
         items:
-          $ref: '#/definitions/credential.VerifiableCredential'
+          $ref: '#/definitions/credential.CredentialContainer'
         type: array
     type: object
   pkg_server_router.GetDIDByMethodResponse:
@@ -1000,24 +1019,25 @@ definitions:
     type: object
   pkg_server_router.SubmitApplicationRequest:
     properties:
-      application:
-        $ref: '#/definitions/manifest.CredentialApplication'
-      requesterDid:
+      applicantDid:
         description: Once we have JWT signed wrapper that can get the did this can
           be removed
         type: string
+      application:
+        $ref: '#/definitions/manifest.CredentialApplication'
     required:
+    - applicantDid
     - application
-    - requesterDid
     type: object
   pkg_server_router.SubmitApplicationResponse:
     properties:
-      credentials:
-        items:
-          $ref: '#/definitions/credential.VerifiableCredential'
-        type: array
-      response:
+      credential_response:
         $ref: '#/definitions/manifest.CredentialResponse'
+      verifiableCredential:
+        description: this is an interface type to union Data Integrity and JWT style
+          VCs
+        items: {}
+        type: array
     type: object
   rendering.ColorResource:
     properties:
@@ -1800,7 +1820,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemasResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemasResponse'
         "500":
           description: Internal server error
           schema:
@@ -1818,14 +1838,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest'
+          $ref: '#/definitions/pkg_server_router.CreateSchemaRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.CreateSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -1854,7 +1874,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
         "400":
           description: Bad request
           schema:

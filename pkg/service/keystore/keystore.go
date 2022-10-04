@@ -71,11 +71,18 @@ func (s Service) StoreKey(request StoreKeyRequest) error {
 		return util.LoggingNewError(errMsg)
 	}
 
+	// serialize the key before storage
+	keyBytes, err := crypto.PrivKeyToBytes(request.Key)
+	if err != nil {
+		return errors.Wrap(err, "could not serialize key before storage")
+	}
+	privKeyBase58 := base58.Encode(keyBytes)
+
 	key := keystorestorage.StoredKey{
 		ID:         request.ID,
 		Controller: request.Controller,
 		KeyType:    request.Type,
-		Key:        request.Key,
+		Base58Key:  privKeyBase58,
 		CreatedAt:  time.Now().Format(time.RFC3339),
 	}
 	if err := s.storage.StoreKey(key); err != nil {
@@ -99,11 +106,22 @@ func (s Service) GetKey(request GetKeyRequest) (*GetKeyResponse, error) {
 		err := errors.Wrapf(err, "key with id<%s> could not be found", id)
 		return nil, util.LoggingError(err)
 	}
+
+	// deserialize the key before returning
+	keyBytes, err := base58.Decode(gotKey.Base58Key)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not deserialize key from base58")
+	}
+	privKey, err := crypto.BytesToPrivKey(keyBytes, gotKey.KeyType)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not reconstruct private key from storage")
+	}
+
 	return &GetKeyResponse{
 		ID:         gotKey.ID,
 		Type:       gotKey.KeyType,
 		Controller: gotKey.Controller,
-		Key:        gotKey.Key,
+		Key:        privKey,
 		CreatedAt:  gotKey.CreatedAt,
 	}, nil
 }

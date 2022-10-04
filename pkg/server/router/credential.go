@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
@@ -62,7 +63,8 @@ func (c CreateCredentialRequest) ToServiceRequest() credential.CreateCredentialR
 }
 
 type CreateCredentialResponse struct {
-	Credential credsdk.VerifiableCredential `json:"credential"`
+	Credential    *credsdk.VerifiableCredential `json:"credential,omitempty"`
+	CredentialJWT *string                       `json:"credentialJwt,omitempty"`
 }
 
 // CreateCredential godoc
@@ -92,13 +94,14 @@ func (cr CredentialRouter) CreateCredential(ctx context.Context, w http.Response
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := CreateCredentialResponse{Credential: createCredentialResponse.Credential}
+	resp := CreateCredentialResponse{Credential: createCredentialResponse.Credential, CredentialJWT: createCredentialResponse.CredentialJWT}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
 type GetCredentialResponse struct {
-	ID         string                       `json:"id"`
-	Credential credsdk.VerifiableCredential `json:"credential"`
+	ID            string                        `json:"id"`
+	Credential    *credsdk.VerifiableCredential `json:"credential,omitempty"`
+	CredentialJWT *string                       `json:"credentialJwt,omitempty"`
 }
 
 // GetCredential godoc
@@ -127,14 +130,15 @@ func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWri
 	}
 
 	resp := GetCredentialResponse{
-		ID:         gotCredential.Credential.ID,
-		Credential: gotCredential.Credential,
+		ID:            gotCredential.ID,
+		Credential:    gotCredential.Credential,
+		CredentialJWT: gotCredential.CredentialJWT,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
 type GetCredentialsResponse struct {
-	Credentials []credsdk.VerifiableCredential `json:"credentials"`
+	Credentials []credmodel.CredentialContainer `json:"credentials"`
 }
 
 // GetCredentials godoc

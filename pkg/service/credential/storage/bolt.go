@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -28,21 +29,60 @@ func NewBoltCredentialStorage(db *storage.BoltDB) (*BoltCredentialStorage, error
 	return &BoltCredentialStorage{db: db}, nil
 }
 
-func (b BoltCredentialStorage) StoreCredential(credential StoredCredential) error {
-	id := credential.Credential.ID
-	if id == "" {
-		return util.LoggingNewError("could not store credential without an ID")
+func (b BoltCredentialStorage) StoreCredential(request StoreCredentialRequest) error {
+	if !request.IsValid() {
+		return util.LoggingNewError("store request request is not valid")
 	}
 
-	// create and set prefix key for the credential
-	credential.ID = createPrefixKey(id, credential.Issuer, credential.Subject, credential.Schema)
-
-	credBytes, err := json.Marshal(credential)
+	// transform the credential into its denormalized form for storage
+	storedCredential, err := buildStoredCredential(request)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not store credential: %s", id)
+		return errors.Wrap(err, "could not build stored credential")
+	}
+
+	storedCredBytes, err := json.Marshal(storedCredential)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not store request: %s", storedCredential.CredentialID)
 		return util.LoggingErrorMsg(err, errMsg)
 	}
-	return b.db.Write(namespace, credential.ID, credBytes)
+	// TODO(gabe) conflict checking?
+	return b.db.Write(namespace, storedCredential.ID, storedCredBytes)
+}
+
+// buildStoredCredential generically parses a store credential request and returns the object to be stored
+func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, error) {
+	// assume we have a Data Integrity credential
+	cred := request.Credential
+	if request.HasJWTCredential() {
+		parsedCred, err := signing.ParseVerifiableCredentialFromJWT(*request.CredentialJWT)
+		if err != nil {
+			return nil, errors.Wrap(err, "could not parse credential from jwt")
+		}
+
+		// if we have a JWT credential, update the reference
+		cred = parsedCred
+	}
+
+	credID := cred.ID
+	// Note: we assume the issuer is always a string for now
+	issuer := cred.Issuer.(string)
+	subject := cred.CredentialSubject.GetID()
+
+	// schema is not a required field, so we must do this check
+	schema := ""
+	if cred.CredentialSchema != nil {
+		schema = cred.CredentialSchema.ID
+	}
+	return &StoredCredential{
+		ID:            createPrefixKey(credID, issuer, subject, schema),
+		CredentialID:  credID,
+		Credential:    cred,
+		CredentialJWT: request.CredentialJWT,
+		Issuer:        issuer,
+		Subject:       subject,
+		Schema:        schema,
+		IssuanceDate:  cred.IssuanceDate,
+	}, nil
 }
 
 func (b BoltCredentialStorage) GetCredential(id string) (*StoredCredential, error) {

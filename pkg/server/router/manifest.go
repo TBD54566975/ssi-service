@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/TBD54566975/ssi-sdk/credential"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
@@ -181,19 +180,20 @@ func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWrit
 type SubmitApplicationRequest struct {
 	Application manifestsdk.CredentialApplication `json:"application" validate:"required"`
 	// Once we have JWT signed wrapper that can get the did this can be removed
-	RequesterDID string `json:"requesterDid" validate:"required"`
+	ApplicantDID string `json:"applicantDid" validate:"required"`
 }
 
 func (sar SubmitApplicationRequest) ToServiceRequest() manifest.SubmitApplicationRequest {
 	return manifest.SubmitApplicationRequest{
 		Application:  sar.Application,
-		RequesterDID: sar.RequesterDID,
+		ApplicantDID: sar.ApplicantDID,
 	}
 }
 
 type SubmitApplicationResponse struct {
-	Response    manifestsdk.CredentialResponse    `json:"response"`
-	Credentials []credential.VerifiableCredential `json:"credentials"`
+	Response manifestsdk.CredentialResponse `json:"credential_response"`
+	// this is an interface type to union Data Integrity and JWT style VCs
+	Credentials []interface{} `json:"verifiableCredential"`
 }
 
 // SubmitApplication godoc
@@ -223,7 +223,15 @@ func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := SubmitApplicationResponse{Response: submitApplicationResponse.Response, Credentials: submitApplicationResponse.Credential}
+	var credentials []interface{}
+	for _, container := range submitApplicationResponse.Credential {
+		if container.HasDataIntegrityCredential() {
+			credentials = append(credentials, *container.Credential)
+		} else if container.HasJWTCredential() {
+			credentials = append(credentials, *container.CredentialJWT)
+		}
+	}
+	resp := SubmitApplicationResponse{Response: submitApplicationResponse.Response, Credentials: credentials}
 
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }

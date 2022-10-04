@@ -1,11 +1,16 @@
 package keystore
 
 import (
+	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestGenerateServiceKey(t *testing.T) {
@@ -38,7 +43,7 @@ func TestEncryptDecryptAllKeyTypes(t *testing.T) {
 			kt: crypto.X25519,
 		},
 		{
-			kt: crypto.Secp256k1,
+			kt: crypto.SECP256k1,
 		},
 		{
 			kt: crypto.P224,
@@ -83,4 +88,50 @@ func TestEncryptDecryptAllKeyTypes(t *testing.T) {
 			assert.EqualValues(t, privKey, privKeyReconstructed)
 		})
 	}
+}
+
+func TestStoreAndGetKey(t *testing.T) {
+	bolt, err := storage.NewBoltDB()
+	assert.NoError(t, err)
+	assert.NotEmpty(t, bolt)
+
+	// remove the db file after the test
+	t.Cleanup(func() {
+		_ = bolt.Close()
+		_ = os.Remove(storage.DBFile)
+	})
+
+	keyStore, err := NewKeyStoreService(
+		config.KeyStoreServiceConfig{
+			BaseServiceConfig: &config.BaseServiceConfig{
+				Name: "test-keyStore",
+			},
+			ServiceKeyPassword: "test-password",
+		},
+		bolt)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, keyStore)
+
+	// store the key
+	_, privKey, err := crypto.GenerateEd25519Key()
+	err = keyStore.StoreKey(StoreKeyRequest{
+		ID:         "test-id",
+		Type:       crypto.Ed25519,
+		Controller: "test-controller",
+		Key:        privKey,
+	})
+	assert.NoError(t, err)
+
+	// get it back
+	keyResponse, err := keyStore.GetKey(GetKeyRequest{ID: "test-id"})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, keyResponse)
+	assert.Equal(t, privKey, keyResponse.Key)
+
+	// make sure can create a signer properly
+	gotJWK, err := jwk.New(keyResponse.Key)
+	assert.NoError(t, err)
+	signer, err := crypto.NewJWTSigner("kid", gotJWK)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, signer)
 }

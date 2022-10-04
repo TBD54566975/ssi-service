@@ -1,11 +1,13 @@
 package manifest
 
 import (
-	"github.com/TBD54566975/ssi-sdk/credential"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+
+	cred "github.com/tbd54566975/ssi-service/internal/credential"
 )
 
 // Manifest
+
 type CreateManifestRequest struct {
 	Manifest manifestsdk.CredentialManifest
 }
@@ -31,14 +33,15 @@ type DeleteManifestRequest struct {
 }
 
 // Application
+
 type SubmitApplicationRequest struct {
 	Application  manifestsdk.CredentialApplication
-	RequesterDID string
+	ApplicantDID string
 }
 
 type SubmitApplicationResponse struct {
 	Response   manifestsdk.CredentialResponse
-	Credential []credential.VerifiableCredential
+	Credential []cred.CredentialContainer
 }
 
 type GetApplicationRequest struct {
@@ -58,6 +61,7 @@ type DeleteApplicationRequest struct {
 }
 
 // Response
+
 type GetResponseRequest struct {
 	ID string
 }
