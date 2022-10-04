@@ -168,6 +168,16 @@ func (s Service) signCredentialJWT(issuer string, cred credential.VerifiableCred
 	return &credToken.Token, nil
 }
 
+type VerifyCredentialRequest struct {
+}
+
+type VerifyCredentialResponse struct {
+}
+
+func (s Service) VerifyCredential(request VerifyCredentialRequest) (*VerifyCredentialResponse, error) {
+	return nil, nil
+}
+
 func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResponse, error) {
 
 	logrus.Debugf("getting credential: %s", request.ID)
