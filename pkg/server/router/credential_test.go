@@ -7,7 +7,6 @@ import (
 	"time"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
-	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/stretchr/testify/assert"
 
@@ -75,18 +74,16 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, createdCred)
 		assert.NotEmpty(tt, createdCred.CredentialJWT)
 
-		parsedCredential, err := signing.ParseVerifiableCredentialFromJWT(*createdCred.CredentialJWT)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedCredential)
+		cred := createdCred.Credential
 
 		// make sure it has the right data
-		assert.Equal(tt, issuer, parsedCredential.Issuer)
-		assert.Equal(tt, subject, parsedCredential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
-		assert.Equal(tt, "Satoshi", parsedCredential.CredentialSubject["firstName"])
-		assert.Equal(tt, "Nakamoto", parsedCredential.CredentialSubject["lastName"])
+		assert.Equal(tt, issuer, cred.Issuer)
+		assert.Equal(tt, subject, cred.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
+		assert.Equal(tt, "Satoshi", cred.CredentialSubject["firstName"])
+		assert.Equal(tt, "Nakamoto", cred.CredentialSubject["lastName"])
 
 		// get it back
-		gotCred, err := credService.GetCredential(credential.GetCredentialRequest{ID: parsedCredential.ID})
+		gotCred, err := credService.GetCredential(credential.GetCredentialRequest{ID: cred.ID})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, gotCred)
 
@@ -101,41 +98,24 @@ func TestCredentialRouter(t *testing.T) {
 		// get by schema - no schema
 		bySchema, err := credService.GetCredentialsBySchema(credential.GetCredentialBySchemaRequest{Schema: ""})
 		assert.NoError(tt, err)
-		assert.Len(tt, bySchema.CredentialJWTs, 1)
-
-		// parse cred
-		parsedBySchema, err := signing.ParseVerifiableCredentialFromJWT(bySchema.CredentialJWTs[0])
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedBySchema)
-
-		assert.Equal(tt, parsedCredential.ID, parsedBySchema.ID)
-		assert.EqualValues(tt, parsedCredential.CredentialSchema, parsedBySchema.CredentialSchema)
+		assert.Len(tt, bySchema.Credentials, 1)
+		assert.EqualValues(tt, cred.CredentialSchema, bySchema.Credentials[0].Credential.CredentialSchema)
 
 		// get by subject
 		bySubject, err := credService.GetCredentialsBySubject(credential.GetCredentialBySubjectRequest{Subject: subject})
 		assert.NoError(tt, err)
-		assert.Len(tt, bySubject.CredentialJWTs, 1)
+		assert.Len(tt, bySubject.Credentials, 1)
 
-		// parse cred
-		parsedBySubject, err := signing.ParseVerifiableCredentialFromJWT(bySubject.CredentialJWTs[0])
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedBySubject)
-
-		assert.Equal(tt, parsedCredential.ID, parsedBySubject.ID)
-		assert.Equal(tt, parsedCredential.CredentialSubject[credsdk.VerifiableCredentialIDProperty], parsedBySubject.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
+		assert.Equal(tt, cred.ID, bySubject.Credentials[0].ID)
+		assert.Equal(tt, cred.CredentialSubject[credsdk.VerifiableCredentialIDProperty], bySubject.Credentials[0].Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
 
 		// get by issuer
 		byIssuer, err := credService.GetCredentialsByIssuer(credential.GetCredentialByIssuerRequest{Issuer: issuer})
 		assert.NoError(tt, err)
-		assert.Len(tt, byIssuer.CredentialJWTs, 1)
+		assert.Len(tt, byIssuer.Credentials, 1)
 
-		// parse cred
-		parsedByIssuer, err := signing.ParseVerifiableCredentialFromJWT(byIssuer.CredentialJWTs[0])
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedByIssuer)
-
-		assert.Equal(tt, parsedCredential.ID, parsedByIssuer.ID)
-		assert.Equal(tt, parsedCredential.Issuer, parsedByIssuer.Issuer)
+		assert.Equal(tt, cred.ID, byIssuer.Credentials[0].Credential.ID)
+		assert.Equal(tt, cred.Issuer, byIssuer.Credentials[0].Credential.Issuer)
 
 		// create another cred with the same issuer, different subject, different schema
 		anotherCreatedCred, err := credService.CreateCredential(credential.CreateCredentialRequest{
@@ -153,42 +133,34 @@ func TestCredentialRouter(t *testing.T) {
 		// get by issuer
 		byIssuer, err = credService.GetCredentialsByIssuer(credential.GetCredentialByIssuerRequest{Issuer: issuer})
 		assert.NoError(tt, err)
-		assert.Len(tt, byIssuer.CredentialJWTs, 2)
+		assert.Len(tt, byIssuer.Credentials, 2)
 
 		// make sure the schema and subject queries are consistent
 		bySchema, err = credService.GetCredentialsBySchema(credential.GetCredentialBySchemaRequest{Schema: ""})
 		assert.NoError(tt, err)
-		assert.Len(tt, bySchema.CredentialJWTs, 1)
+		assert.Len(tt, bySchema.Credentials, 1)
 
-		parsedBySchema, err = signing.ParseVerifiableCredentialFromJWT(bySchema.CredentialJWTs[0])
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedBySchema)
-
-		assert.Equal(tt, parsedCredential.ID, parsedBySchema.ID)
-		assert.EqualValues(tt, parsedCredential.CredentialSchema, parsedBySchema.CredentialSchema)
+		assert.Equal(tt, cred.ID, bySchema.Credentials[0].ID)
+		assert.EqualValues(tt, cred.CredentialSchema, bySchema.Credentials[0].Credential.CredentialSchema)
 
 		bySubject, err = credService.GetCredentialsBySubject(credential.GetCredentialBySubjectRequest{Subject: subject})
 		assert.NoError(tt, err)
-		assert.Len(tt, bySubject.CredentialJWTs, 1)
+		assert.Len(tt, bySubject.Credentials, 1)
 
-		parsedBySubject, err = signing.ParseVerifiableCredentialFromJWT(bySubject.CredentialJWTs[0])
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedBySubject)
-
-		assert.Equal(tt, parsedCredential.ID, parsedBySubject.ID)
-		assert.Equal(tt, parsedCredential.CredentialSubject[credsdk.VerifiableCredentialIDProperty], parsedBySubject.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
+		assert.Equal(tt, cred.ID, bySubject.Credentials[0].ID)
+		assert.Equal(tt, cred.CredentialSubject[credsdk.VerifiableCredentialIDProperty], bySubject.Credentials[0].Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
 
 		// delete a cred that doesn't exist (no error since idempotent)
 		err = credService.DeleteCredential(credential.DeleteCredentialRequest{ID: "bad"})
 		assert.NoError(tt, err)
 
 		// delete a credential that does exist
-		err = credService.DeleteCredential(credential.DeleteCredentialRequest{ID: parsedCredential.ID})
+		err = credService.DeleteCredential(credential.DeleteCredentialRequest{ID: cred.ID})
 		assert.NoError(tt, err)
 
 		// get it back
-		_, err = credService.GetCredential(credential.GetCredentialRequest{ID: parsedCredential.ID})
+		_, err = credService.GetCredential(credential.GetCredentialRequest{ID: cred.ID})
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), fmt.Sprintf("credential not found with id: %s", parsedCredential.ID))
+		assert.Contains(tt, err.Error(), fmt.Sprintf("credential not found with id: %s", cred.ID))
 	})
 }

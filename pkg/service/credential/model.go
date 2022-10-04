@@ -47,7 +47,7 @@ type GetCredentialBySchemaRequest struct {
 }
 
 type GetCredentialsResponse struct {
-	credential.CredentialsContainer
+	Credentials []credential.CredentialContainer
 }
 
 type DeleteCredentialRequest struct {

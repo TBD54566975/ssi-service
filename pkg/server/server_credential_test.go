@@ -160,16 +160,12 @@ func TestCredentialAPI(t *testing.T) {
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
-		assert.Empty(tt, resp.Credential)
+		assert.NotEmpty(tt, resp.Credential)
 		assert.NotEmpty(tt, resp.CredentialJWT)
 
-		parsedCred, err := signing.ParseVerifiableCredentialFromJWT(*resp.CredentialJWT)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedCred)
-
 		// get credential by id
-		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", parsedCred.ID), nil)
-		err = credService.GetCredential(newRequestContextWithParams(map[string]string{"id": parsedCred.ID}), w, req)
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", resp.Credential.ID), nil)
+		err = credService.GetCredential(newRequestContextWithParams(map[string]string{"id": resp.Credential.ID}), w, req)
 		assert.NoError(tt, err)
 
 		var getCredResp router.GetCredentialResponse
@@ -177,11 +173,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getCredResp)
 		assert.NotEmpty(tt, getCredResp.CredentialJWT)
-
-		parsedCredResponse, err := signing.ParseVerifiableCredentialFromJWT(*getCredResp.CredentialJWT)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedCredResponse)
-		assert.Equal(tt, parsedCredResponse.ID, getCredResp.ID)
+		assert.Equal(tt, resp.Credential.ID, getCredResp.ID)
 	})
 
 	t.Run("Test Get Credential By Schema", func(tt *testing.T) {
@@ -227,10 +219,6 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, resp.CredentialJWT)
 
-		parsedCredResponse, err := signing.ParseVerifiableCredentialFromJWT(*resp.CredentialJWT)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedCredResponse)
-
 		w.Flush()
 
 		// get credential by schema
@@ -242,14 +230,10 @@ func TestCredentialAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&getCredsResp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getCredsResp)
-		assert.Len(tt, getCredsResp.CredentialJWTs, 1)
+		assert.Len(tt, getCredsResp.Credentials, 1)
 
-		parsedCredsResponse, err := signing.ParseVerifiableCredentialFromJWT(getCredsResp.CredentialJWTs[0])
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedCredsResponse)
-
-		assert.Equal(tt, parsedCredResponse.ID, parsedCredsResponse.ID)
-		assert.Equal(tt, parsedCredResponse.CredentialSchema.ID, parsedCredsResponse.CredentialSchema.ID)
+		assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].ID)
+		assert.Equal(tt, resp.Credential.CredentialSchema.ID, getCredsResp.Credentials[0].Credential.CredentialSchema.ID)
 	})
 
 	t.Run("Test Get Credential By Issuer", func(tt *testing.T) {
@@ -295,10 +279,6 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, resp.CredentialJWT)
 
-		parsedCredResponse, err := signing.ParseVerifiableCredentialFromJWT(*resp.CredentialJWT)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedCredResponse)
-
 		w.Flush()
 
 		// get credential by issuer id
@@ -311,16 +291,9 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getCredsResp)
 
-		parsedCredsResponse, err := signing.ParseVerifiableCredentialFromJWT(getCredsResp.CredentialJWTs[0])
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedCredsResponse)
-
-		assert.Equal(tt, parsedCredResponse.ID, parsedCredsResponse.ID)
-		assert.Equal(tt, parsedCredResponse.CredentialSchema.ID, parsedCredsResponse.CredentialSchema.ID)
-
-		assert.Len(tt, getCredsResp.CredentialJWTs, 1)
-		assert.Equal(tt, parsedCredResponse.ID, parsedCredsResponse.ID)
-		assert.Equal(tt, parsedCredResponse.Issuer, parsedCredsResponse.Issuer)
+		assert.Len(tt, getCredsResp.Credentials, 1)
+		assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].ID)
+		assert.Equal(tt, resp.Credential.CredentialSchema.ID, getCredsResp.Credentials[0].Credential.CredentialSchema.ID)
 	})
 
 	t.Run("Test Get Credential By Subject", func(tt *testing.T) {
@@ -367,10 +340,6 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, resp.CredentialJWT)
 
-		parsedCredResponse, err := signing.ParseVerifiableCredentialFromJWT(*resp.CredentialJWT)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedCredResponse)
-
 		w.Flush()
 
 		// get credential by subject id
@@ -383,13 +352,9 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getCredsResp)
 
-		parsedCredsResponse, err := signing.ParseVerifiableCredentialFromJWT(getCredsResp.CredentialJWTs[0])
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedCredsResponse)
-
-		assert.Len(tt, getCredsResp.CredentialJWTs, 1)
-		assert.Equal(tt, parsedCredResponse.ID, parsedCredsResponse.ID)
-		assert.Equal(tt, parsedCredResponse.CredentialSubject[credsdk.VerifiableCredentialIDProperty], parsedCredsResponse.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
+		assert.Len(tt, getCredsResp.Credentials, 1)
+		assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].ID)
+		assert.Equal(tt, resp.Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty], getCredsResp.Credentials[0].Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
 	})
 
 	t.Run("Test Delete Credential", func(tt *testing.T) {
@@ -431,14 +396,10 @@ func TestCredentialAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 
-		parsedCredResponse, err := signing.ParseVerifiableCredentialFromJWT(*resp.CredentialJWT)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedCredResponse)
-		credID := parsedCredResponse.ID
-
 		w.Flush()
 
 		// get credential by id
+		credID := resp.Credential.ID
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", credID), nil)
 		err = credService.GetCredential(newRequestContextWithParams(map[string]string{"id": credID}), w, req)
 		assert.NoError(tt, err)
@@ -447,12 +408,7 @@ func TestCredentialAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&getCredResp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getCredResp)
-
-		parsedGetCred, err := signing.ParseVerifiableCredentialFromJWT(*getCredResp.CredentialJWT)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedGetCred)
-
-		assert.Equal(tt, parsedCredResponse.ID, parsedGetCred.ID)
+		assert.Equal(tt, credID, getCredResp.Credential.ID)
 
 		w.Flush()
 

@@ -130,11 +130,13 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	}
 
 	// store the credential
+	container := credmodel.CredentialContainer{
+		ID:            cred.ID,
+		Credential:    cred,
+		CredentialJWT: credJWT,
+	}
 	storageRequest := credstorage.StoreCredentialRequest{
-		CredentialContainer: credmodel.CredentialContainer{
-			ID:            cred.ID,
-			CredentialJWT: credJWT,
-		},
+		CredentialContainer: container,
 	}
 	if err := s.storage.StoreCredential(storageRequest); err != nil {
 		errMsg := "could not store credential"
@@ -142,7 +144,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	}
 
 	// return the result
-	response := CreateCredentialResponse{credmodel.CredentialContainer{ID: cred.ID, CredentialJWT: credJWT}}
+	response := CreateCredentialResponse{CredentialContainer: container}
 	return &response, nil
 }
 
@@ -179,14 +181,13 @@ func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResp
 		errMsg := fmt.Sprintf("credential returned is not valid: %s", request.ID)
 		return nil, util.LoggingNewError(errMsg)
 	}
-	var response GetCredentialResponse
-	if gotCred.HasDataIntegrityCredential() {
-		response = GetCredentialResponse{credmodel.CredentialContainer{ID: gotCred.CredentialID, Credential: gotCred.Credential}}
+	response := GetCredentialResponse{
+		credmodel.CredentialContainer{
+			ID:            gotCred.CredentialID,
+			Credential:    gotCred.Credential,
+			CredentialJWT: gotCred.CredentialJWT,
+		},
 	}
-	if gotCred.HasJWTCredential() {
-		response = GetCredentialResponse{credmodel.CredentialContainer{ID: gotCred.CredentialID, CredentialJWT: gotCred.CredentialJWT}}
-	}
-
 	return &response, nil
 }
 
@@ -200,18 +201,17 @@ func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credential.VerifiableCredential
-	var credJWTs []string
+	var creds []credmodel.CredentialContainer
 	for _, cred := range gotCreds {
-		if cred.HasDataIntegrityCredential() {
-			creds = append(creds, *cred.Credential)
+		container := credmodel.CredentialContainer{
+			ID:            cred.CredentialID,
+			Credential:    cred.Credential,
+			CredentialJWT: cred.CredentialJWT,
 		}
-		if cred.HasJWTCredential() {
-			credJWTs = append(credJWTs, *cred.CredentialJWT)
-		}
+		creds = append(creds, container)
 	}
 
-	response := GetCredentialsResponse{credmodel.CredentialsContainer{Credentials: creds, CredentialJWTs: credJWTs}}
+	response := GetCredentialsResponse{Credentials: creds}
 	return &response, nil
 }
 
@@ -225,18 +225,16 @@ func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) 
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credential.VerifiableCredential
-	var credJWTs []string
+	var creds []credmodel.CredentialContainer
 	for _, cred := range gotCreds {
-		if cred.HasDataIntegrityCredential() {
-			creds = append(creds, *cred.Credential)
+		container := credmodel.CredentialContainer{
+			ID:            cred.CredentialID,
+			Credential:    cred.Credential,
+			CredentialJWT: cred.CredentialJWT,
 		}
-		if cred.HasJWTCredential() {
-			credJWTs = append(credJWTs, *cred.CredentialJWT)
-		}
+		creds = append(creds, container)
 	}
-
-	response := GetCredentialsResponse{credmodel.CredentialsContainer{Credentials: creds, CredentialJWTs: credJWTs}}
+	response := GetCredentialsResponse{Credentials: creds}
 	return &response, nil
 }
 
@@ -250,18 +248,16 @@ func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credential.VerifiableCredential
-	var credJWTs []string
+	var creds []credmodel.CredentialContainer
 	for _, cred := range gotCreds {
-		if cred.HasDataIntegrityCredential() {
-			creds = append(creds, *cred.Credential)
+		container := credmodel.CredentialContainer{
+			ID:            cred.CredentialID,
+			Credential:    cred.Credential,
+			CredentialJWT: cred.CredentialJWT,
 		}
-		if cred.HasJWTCredential() {
-			credJWTs = append(credJWTs, *cred.CredentialJWT)
-		}
+		creds = append(creds, container)
 	}
-
-	response := GetCredentialsResponse{credmodel.CredentialsContainer{Credentials: creds, CredentialJWTs: credJWTs}}
+	response := GetCredentialsResponse{Credentials: creds}
 	return &response, nil
 }
 

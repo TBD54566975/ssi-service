@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
@@ -137,8 +138,7 @@ func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWri
 }
 
 type GetCredentialsResponse struct {
-	Credentials    []credsdk.VerifiableCredential `json:"credentials"`
-	CredentialJWTs []string                       `json:"credentialJwts"`
+	Credentials []credmodel.CredentialContainer `json:"credentials"`
 }
 
 // GetCredentials godoc
@@ -186,7 +186,7 @@ func (cr CredentialRouter) getCredentialsByIssuer(issuer string, ctx context.Con
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials, CredentialJWTs: gotCredentials.CredentialJWTs}
+	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
@@ -198,7 +198,7 @@ func (cr CredentialRouter) getCredentialsBySubject(subject string, ctx context.C
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials, CredentialJWTs: gotCredentials.CredentialJWTs}
+	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
@@ -210,7 +210,7 @@ func (cr CredentialRouter) getCredentialsBySchema(schema string, ctx context.Con
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials, CredentialJWTs: gotCredentials.CredentialJWTs}
+	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 

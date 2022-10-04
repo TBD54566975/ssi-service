@@ -52,7 +52,6 @@ func (b BoltCredentialStorage) StoreCredential(request StoreCredentialRequest) e
 // buildStoredCredential generically parses a store credential request and returns the object to be stored
 func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, error) {
 	// assume we have a Data Integrity credential
-	var storedCred StoredCredential
 	cred := request.Credential
 	if request.HasJWTCredential() {
 		parsedCred, err := signing.ParseVerifiableCredentialFromJWT(*request.CredentialJWT)
@@ -62,12 +61,6 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 
 		// if we have a JWT credential, update the reference
 		cred = parsedCred
-
-		// set the cred value in the object to be stored
-		storedCred.CredentialJWT = request.CredentialJWT
-	} else {
-		// set the cred value in the object to be stored
-		storedCred.Credential = request.Credential
 	}
 
 	credID := cred.ID
@@ -80,15 +73,16 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 	if cred.CredentialSchema != nil {
 		schema = cred.CredentialSchema.ID
 	}
-
-	// set remaining credential properties
-	storedCred.ID = createPrefixKey(credID, issuer, subject, schema)
-	storedCred.CredentialID = credID
-	storedCred.Issuer = issuer
-	storedCred.Subject = subject
-	storedCred.Schema = schema
-	storedCred.IssuanceDate = cred.IssuanceDate
-	return &storedCred, nil
+	return &StoredCredential{
+		ID:            createPrefixKey(credID, issuer, subject, schema),
+		CredentialID:  credID,
+		Credential:    cred,
+		CredentialJWT: request.CredentialJWT,
+		Issuer:        issuer,
+		Subject:       subject,
+		Schema:        schema,
+		IssuanceDate:  cred.IssuanceDate,
+	}, nil
 }
 
 func (b BoltCredentialStorage) GetCredential(id string) (*StoredCredential, error) {
