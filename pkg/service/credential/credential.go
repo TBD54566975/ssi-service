@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -169,12 +170,53 @@ func (s Service) signCredentialJWT(issuer string, cred credential.VerifiableCred
 }
 
 type VerifyCredentialRequest struct {
+	DataIntegrityCredential *credential.VerifiableCredential `json:"credential,omitempty"`
+	CredentialJWT           *string                          `json:"credentialJwt,omitempty"`
+}
+
+func (vcr VerifyCredentialRequest) IsValid() error {
+	if vcr.DataIntegrityCredential == nil && vcr.CredentialJWT == nil {
+		return errors.New("either a credential or a credential JWT must be provided")
+	}
+	if vcr.DataIntegrityCredential != nil && vcr.CredentialJWT != nil {
+		return errors.New("only one of credential or credential JWT can be provided")
+	}
+	return nil
 }
 
 type VerifyCredentialResponse struct {
+	CredentialID string `json:"id"`
+	Verified     bool   `json:"verified" json:"verified"`
+	Reason       string `json:"reason,omitempty" json:"reason,omitempty"`
 }
 
+// VerifyCredential does three levels of verification on a credential:
+// 1. Makes sure the credential has a valid signature
+// 2. Makes sure the credential has is not expired
+// 3. Makes sure the credential complies with the VC Data Model
+// 4. If the credential has a schema, makes sure its data complies with the schema
+// LATER: Makes sure the credential has not been revoked, other checks.
+// Note: https://github.com/TBD54566975/ssi-sdk/issues/213
 func (s Service) VerifyCredential(request VerifyCredentialRequest) (*VerifyCredentialResponse, error) {
+	if err := request.IsValid(); err != nil {
+		return nil, util.LoggingErrorMsg(err, "invalid verify credential request")
+	}
+
+	var cred *credential.VerifiableCredential
+	var err error
+	if request.CredentialJWT != nil {
+		cred, err = signing.ParseVerifiableCredentialFromJWT(*request.CredentialJWT)
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not parse credential from JWT")
+		}
+		issuer, ok := cred.Issuer.(string)
+		if !ok {
+			return nil, util.LoggingErrorMsg(err, "could not parse issuer from credential")
+		}
+
+	} else {
+		cred = request.DataIntegrityCredential
+	}
 	return nil, nil
 }
 

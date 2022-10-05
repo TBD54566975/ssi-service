@@ -56,6 +56,19 @@ func TestJWKKeyAccessSignVerify(t *testing.T) {
 
 		err = ka.Verify(*token)
 		assert.NoError(tt, err)
+
+		// Create just a verifier and check that it can verify the token
+		verifier, err := NewJWKKeyAccessVerifier(kid, privKey.Public())
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, verifier)
+
+		err = verifier.Verify(*token)
+		assert.NoError(tt, err)
+
+		// Make sure the verifier can't sign
+		_, err = verifier.Sign(data)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "cannot sign with nil signer")
 	})
 
 	t.Run("Sign and Verify - Bad Data", func(tt *testing.T) {

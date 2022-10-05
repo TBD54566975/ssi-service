@@ -11,11 +11,11 @@ import (
 )
 
 type JWKKeyAccess struct {
-	crypto.JWTSigner
-	crypto.JWTVerifier
+	*crypto.JWTSigner
+	*crypto.JWTVerifier
 }
 
-// NewJWKKeyAccess creates a new JWKKeyAccess object from a key id and private key, generating both
+// NewJWKKeyAccess creates a JWKKeyAccess object from a key id and private key, generating both
 // JWT Signer and Verifier objects.
 func NewJWKKeyAccess(kid string, key gocrypto.PrivateKey) (*JWKKeyAccess, error) {
 	if kid == "" {
@@ -37,8 +37,29 @@ func NewJWKKeyAccess(kid string, key gocrypto.PrivateKey) (*JWKKeyAccess, error)
 		return nil, errors.Wrapf(err, "could not create JWK Key Access object for kid: %s, error creating verifier", kid)
 	}
 	return &JWKKeyAccess{
-		JWTSigner:   *signer,
-		JWTVerifier: *verifier,
+		JWTSigner:   signer,
+		JWTVerifier: verifier,
+	}, nil
+}
+
+// NewJWKKeyAccessVerifier creates JWKKeyAccess object from a key id and public key, generating a JWT Verifier object.
+func NewJWKKeyAccessVerifier(kid string, key gocrypto.PublicKey) (*JWKKeyAccess, error) {
+	if kid == "" {
+		return nil, errors.New("kid cannot be empty")
+	}
+	if key == nil {
+		return nil, errors.New("key cannot be nil")
+	}
+	gotJWK, err := jwk.New(key)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not create jwk from public key")
+	}
+	verifier, err := crypto.NewJWTVerifier(kid, gotJWK)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not create JWK Key Access object for kid: %s, error creating verifier", kid)
+	}
+	return &JWKKeyAccess{
+		JWTVerifier: verifier,
 	}, nil
 }
 
@@ -48,6 +69,9 @@ type JWKToken struct {
 }
 
 func (ka JWKKeyAccess) Sign(payload map[string]interface{}) (*JWKToken, error) {
+	if ka.JWTSigner == nil {
+		return nil, errors.New("cannot sign with nil signer")
+	}
 	if payload == nil {
 		return nil, errors.New("payload cannot be nil")
 	}
@@ -66,10 +90,13 @@ func (ka JWKKeyAccess) Verify(token JWKToken) error {
 }
 
 func (ka JWKKeyAccess) SignVerifiableCredential(credential credential.VerifiableCredential) (*JWKToken, error) {
+	if ka.JWTSigner == nil {
+		return nil, errors.New("cannot sign with nil signer")
+	}
 	if err := credential.IsValid(); err != nil {
 		return nil, errors.New("cannot sign invalid credential")
 	}
-	tokenBytes, err := signing.SignVerifiableCredentialJWT(ka.JWTSigner, credential)
+	tokenBytes, err := signing.SignVerifiableCredentialJWT(*ka.JWTSigner, credential)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not sign credential")
 	}
@@ -80,14 +107,17 @@ func (ka JWKKeyAccess) VerifyVerifiableCredential(token JWKToken) (*credential.V
 	if token.Token == "" {
 		return nil, errors.New("token cannot be empty")
 	}
-	return signing.VerifyVerifiableCredentialJWT(ka.JWTVerifier, token.Token)
+	return signing.VerifyVerifiableCredentialJWT(*ka.JWTVerifier, token.Token)
 }
 
 func (ka JWKKeyAccess) SignVerifiablePresentation(presentation credential.VerifiablePresentation) (*JWKToken, error) {
+	if ka.JWTSigner == nil {
+		return nil, errors.New("cannot sign with nil signer")
+	}
 	if err := presentation.IsValid(); err != nil {
 		return nil, errors.New("cannot sign invalid presentation")
 	}
-	tokenBytes, err := signing.SignVerifiablePresentationJWT(ka.JWTSigner, presentation)
+	tokenBytes, err := signing.SignVerifiablePresentationJWT(*ka.JWTSigner, presentation)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not sign presentation")
 	}
@@ -98,5 +128,5 @@ func (ka JWKKeyAccess) VerifyVerifiablePresentation(token JWKToken) (*credential
 	if token.Token == "" {
 		return nil, errors.New("token cannot be empty")
 	}
-	return signing.VerifyVerifiablePresentationJWT(ka.JWTVerifier, token.Token)
+	return signing.VerifyVerifiablePresentationJWT(*ka.JWTVerifier, token.Token)
 }
