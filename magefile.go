@@ -30,6 +30,20 @@ func Build() error {
 	return sh.Run(Go, "build", "-tags", "jwx_es256k", "./...")
 }
 
+// Vuln downloads and runs govulncheck https://go.dev/blog/vuln
+func Vuln() error {
+	fmt.Println("Vulnerability checks...")
+	if err := installGoVulnIfNotPresent(); err != nil {
+		fmt.Printf("Error installing go-vuln: %s", err.Error())
+		return err
+	}
+	return sh.Run("govulncheck", "./...")
+}
+
+func installGoVulnIfNotPresent() error {
+	return installIfNotPresent("govulncheck", "golang.org/x/vuln/cmd/govulncheck@latest")
+}
+
 // Clean deletes any build artifacts.
 func Clean() {
 	fmt.Println("Cleaning...")
@@ -154,21 +168,32 @@ func runGo(cmd string, args ...string) error {
 func installIfNotPresent(execName, goPackage string) error {
 	usr, err := user.Current()
 	if err != nil {
-		logrus.Fatal(err)
+		logrus.WithError(err).Fatal()
 		return err
 	}
 	pathOfExec := findOnPathOrGoPath(execName)
 	if len(pathOfExec) == 0 {
-		fmt.Printf("Attempting to go get %s\n", execName)
 		cmd := exec.Command(Go, "get", "-u", goPackage)
-		cmd.Dir = usr.HomeDir
-		if err := cmd.Start(); err != nil {
-			logrus.Fatal(err)
-			return err
+		if err := runGoCommand(usr, *cmd); err != nil {
+			logrus.WithError(err).Warnf("Error running command: %s", cmd.String())
+			cmd = exec.Command(Go, "install", goPackage)
+			if err := runGoCommand(usr, *cmd); err != nil {
+				logrus.WithError(err).Fatalf("Error running command: %s", cmd.String())
+				return err
+			}
 		}
-		return cmd.Wait()
+		logrus.Infof("Successfully installed %s", goPackage)
 	}
 	return nil
+}
+
+func runGoCommand(usr *user.User, cmd exec.Cmd) error {
+	cmd.Dir = usr.HomeDir
+	if err := cmd.Start(); err != nil {
+		logrus.WithError(err).Fatalf("Error running command: %s", cmd.String())
+		return err
+	}
+	return cmd.Wait()
 }
 
 // Check to see if Docker is running.
