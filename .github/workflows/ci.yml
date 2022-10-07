@@ -12,6 +12,21 @@ on:
   workflow_dispatch:
 
 jobs:
+  vulnerability-scan: 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+
+      - name: Install Mage
+        run: go install github.com/magefile/mage
+
+      - name: Check Vulnerabilities
+        run: mage -v vuln     
   build:
     runs-on: ubuntu-latest
     steps:
@@ -25,7 +40,7 @@ jobs:
     - name: Install mage
       run: go install github.com/magefile/mage
 
-    - name: Build
+    - name: Build library
       run: mage build
 
     - name: Test
@@ -33,3 +48,12 @@ jobs:
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
+
+    - name: Build binary
+      if: ${{ github.ref == 'refs/heads/main' }}
+      run: mage artifact
+
+    - uses: actions/upload-artifact@v3
+      if: ${{ github.ref == 'refs/heads/main' }}
+      with:
+        path: bin/ssi-service
