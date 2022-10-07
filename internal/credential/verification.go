@@ -102,15 +102,19 @@ func (v CredentialVerifier) getVerificationInformation(did, maybeKID string) (ki
 		}
 		for _, method := range verificationMethods {
 			if method.ID == kid {
-				return extractKeyFromVerificationMethod(method)
+				kid = did
+				pubKey, err = extractKeyFromVerificationMethod(verificationMethods[0])
+				return
 			}
 		}
 	}
-	return extractKeyFromVerificationMethod(verificationMethods[0])
+	// TODO(gabe): some DIDs, like did:key have KIDs that aren't used, so we need to know when to use a kid vs the DID
+	kid = did
+	pubKey, err = extractKeyFromVerificationMethod(verificationMethods[0])
+	return
 }
 
-func extractKeyFromVerificationMethod(method didsdk.VerificationMethod) (kid string, pubKey crypto.PublicKey, err error) {
-	kid = method.ID
+func extractKeyFromVerificationMethod(method didsdk.VerificationMethod) (pubKey crypto.PublicKey, err error) {
 	if method.PublicKeyMultibase != "" {
 		pubKeyBytes, multiBaseErr := multibaseToPubKeyBytes(method.PublicKeyMultibase)
 		if multiBaseErr != nil {

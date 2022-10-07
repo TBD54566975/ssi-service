@@ -11,6 +11,7 @@ import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -479,7 +480,6 @@ func TestCredentialAPI(t *testing.T) {
 		w.Flush()
 
 		// verify the credential
-
 		requestValue = newRequestValue(tt, router.VerifyCredentialRequest{CredentialJWT: resp.CredentialJWT})
 		req = httptest.NewRequest(http.MethodPost, "https://ssi-service.com/v1/credentials/verification", requestValue)
 		err = credService.VerifyCredential(newRequestContext(), w, req)
@@ -490,5 +490,17 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, verifyResp)
 		assert.True(tt, verifyResp.Verified)
+
+		// bad credential
+		requestValue = newRequestValue(tt, router.VerifyCredentialRequest{CredentialJWT: util.StringPtr("badjwt")})
+		req = httptest.NewRequest(http.MethodPost, "https://ssi-service.com/v1/credentials/verification", requestValue)
+		err = credService.VerifyCredential(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		err = json.NewDecoder(w.Body).Decode(&verifyResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, verifyResp)
+		assert.False(tt, verifyResp.Verified)
+		assert.Contains(tt, verifyResp.Reason, "could not parse credential from JWT")
 	})
 }
