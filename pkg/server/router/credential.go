@@ -69,7 +69,7 @@ type CreateCredentialResponse struct {
 
 // CreateCredential godoc
 // @Summary      Create Credential
-// @Description  Create credential
+// @Description  Create a credential
 // @Tags         CredentialAPI
 // @Accept       json
 // @Produce      json
@@ -114,7 +114,7 @@ type GetCredentialResponse struct {
 // @Success      200  {object}  GetCredentialResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/credentials/{id} [get]
-func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get credential without ID parameter"
@@ -134,6 +134,59 @@ func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWri
 		Credential:    gotCredential.Credential,
 		CredentialJWT: gotCredential.CredentialJWT,
 	}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
+
+type VerifyCredentialRequest struct {
+	DataIntegrityCredential *credsdk.VerifiableCredential `json:"credential,omitempty"`
+	CredentialJWT           *string                       `json:"credentialJwt,omitempty"`
+}
+
+func (vcr VerifyCredentialRequest) IsValid() bool {
+	return (vcr.DataIntegrityCredential != nil && vcr.CredentialJWT == nil) ||
+		(vcr.DataIntegrityCredential == nil && vcr.CredentialJWT != nil)
+}
+
+type VerifyCredentialResponse struct {
+	Verified bool   `json:"verified" json:"verified"`
+	Reason   string `json:"reason,omitempty" json:"reason,omitempty"`
+}
+
+// VerifyCredential godoc
+// @Summary      Verify Credential
+// @Description  Verify a given credential by its id
+// @Tags         CredentialAPI
+// @Accept       json
+// @Produce      json
+// @Param        request  body      VerifyCredentialRequest  true  "request body"
+// @Success      200  {object}  VerifyCredentialResponse
+// @Failure      400  {string}  string  "Bad request"
+// @Router       /v1/credentials/verification [put]
+func (cr CredentialRouter) VerifyCredential(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	var request VerifyCredentialRequest
+	if err := framework.Decode(r, &request); err != nil {
+		errMsg := "invalid verify credential request"
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	if !request.IsValid() {
+		err := errors.New("request must contain either a Data Integrity Credential or a JWT Credential")
+		logrus.WithError(err).Error()
+		return framework.NewRequestError(err, http.StatusBadRequest)
+	}
+
+	verificationResult, err := cr.service.VerifyCredential(credential.VerifyCredentialRequest{
+		DataIntegrityCredential: request.DataIntegrityCredential,
+		CredentialJWT:           request.CredentialJWT,
+	})
+	if err != nil {
+		errMsg := "could not verify credential"
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
+	}
+
+	resp := VerifyCredentialResponse{Verified: verificationResult.Verified, Reason: verificationResult.Reason}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
@@ -178,7 +231,7 @@ func (cr CredentialRouter) GetCredentials(ctx context.Context, w http.ResponseWr
 	return err
 }
 
-func (cr CredentialRouter) getCredentialsByIssuer(issuer string, ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (cr CredentialRouter) getCredentialsByIssuer(issuer string, ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotCredentials, err := cr.service.GetCredentialsByIssuer(credential.GetCredentialByIssuerRequest{Issuer: issuer})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for issuer: %s", util.SanitizeLog(issuer))
@@ -190,7 +243,7 @@ func (cr CredentialRouter) getCredentialsByIssuer(issuer string, ctx context.Con
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
-func (cr CredentialRouter) getCredentialsBySubject(subject string, ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (cr CredentialRouter) getCredentialsBySubject(subject string, ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotCredentials, err := cr.service.GetCredentialsBySubject(credential.GetCredentialBySubjectRequest{Subject: subject})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for subject: %s", util.SanitizeLog(subject))
@@ -202,7 +255,7 @@ func (cr CredentialRouter) getCredentialsBySubject(subject string, ctx context.C
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
-func (cr CredentialRouter) getCredentialsBySchema(schema string, ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (cr CredentialRouter) getCredentialsBySchema(schema string, ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotCredentials, err := cr.service.GetCredentialsBySchema(credential.GetCredentialBySchemaRequest{Schema: schema})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for schema: %s", util.SanitizeLog(schema))
@@ -225,7 +278,7 @@ func (cr CredentialRouter) getCredentialsBySchema(schema string, ctx context.Con
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/credentials/{id} [delete]
-func (cr CredentialRouter) DeleteCredential(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (cr CredentialRouter) DeleteCredential(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot delete credential without ID parameter"

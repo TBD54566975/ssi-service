@@ -9,11 +9,11 @@ import (
 	"time"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
-	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -23,6 +23,7 @@ import (
 func TestCredentialAPI(t *testing.T) {
 	t.Run("Test Create Credential", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -97,14 +98,13 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		assert.NotEmpty(tt, resp.CredentialJWT)
-		parsedCred, err := signing.ParseVerifiableCredentialFromJWT(*resp.CredentialJWT)
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsedCred)
-		assert.Equal(tt, parsedCred.Issuer, issuerDID.DID.ID)
+		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
 	})
 
 	t.Run("Test Get Credential By ID", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -179,6 +179,7 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Get Credential By Schema", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -239,6 +240,7 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Get Credential By Issuer", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -299,6 +301,7 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Get Credential By Subject", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -360,6 +363,7 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Delete Credential", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -425,5 +429,66 @@ func TestCredentialAPI(t *testing.T) {
 		err = credService.GetCredential(newRequestContextWithParams(map[string]string{"id": credID}), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), fmt.Sprintf("could not get credential with id: %s", credID))
+	})
+
+	t.Run("Test Verifying a Credential", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		credService := testCredentialRouter(tt, bolt, keyStoreService, didService)
+
+		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		// good request
+		createCredRequest := router.CreateCredentialRequest{
+			Issuer:  issuerDID.DID.ID,
+			Subject: "did:abc:456",
+			Data: map[string]interface{}{
+				"firstName": "Jack",
+				"lastName":  "Dorsey",
+			},
+			Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+		}
+		requestValue := newRequestValue(tt, createCredRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
+		w := httptest.NewRecorder()
+		err = credService.CreateCredential(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateCredentialResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, resp.CredentialJWT)
+		assert.NoError(tt, err)
+		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
+
+		w.Flush()
+
+		// verify the credential
+
+		requestValue = newRequestValue(tt, router.VerifyCredentialRequest{CredentialJWT: resp.CredentialJWT})
+		req = httptest.NewRequest(http.MethodPost, "https://ssi-service.com/v1/credentials/verification", requestValue)
+		err = credService.VerifyCredential(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var verifyResp router.VerifyCredentialResponse
+		err = json.NewDecoder(w.Body).Decode(&verifyResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, verifyResp)
+		assert.True(tt, verifyResp.Verified)
 	})
 }

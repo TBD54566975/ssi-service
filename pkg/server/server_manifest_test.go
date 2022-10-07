@@ -11,6 +11,7 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -20,6 +21,7 @@ import (
 func TestManifestAPI(t *testing.T) {
 	t.Run("Test Create Manifest", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -74,6 +76,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Get Manifest By ID", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -140,6 +143,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Get Manifests", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -189,6 +193,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Delete Manifest", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -254,6 +259,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Submit Application", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -327,6 +333,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Get Application By ID and Get Applications", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -430,6 +437,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Delete Application", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {

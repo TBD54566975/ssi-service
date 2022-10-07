@@ -7,6 +7,7 @@ import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/credential/verification"
+	"github.com/TBD54566975/ssi-sdk/cryptosuite"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/lestrrat-go/jwx/jwk"
@@ -95,7 +96,7 @@ func (v CredentialVerifier) getVerificationInformation(did, maybeKID string) (ki
 	}
 
 	// handle the case where a kid is provided && there are multiple verification methods
-	if len(verificationMethods) > 0 {
+	if len(verificationMethods) > 1 {
 		if kid == "" {
 			return "", nil, errors.Errorf("kid is required for did: %s, which has multiple verification methods", did)
 		}
@@ -111,10 +112,20 @@ func (v CredentialVerifier) getVerificationInformation(did, maybeKID string) (ki
 func extractKeyFromVerificationMethod(method didsdk.VerificationMethod) (kid string, pubKey crypto.PublicKey, err error) {
 	kid = method.ID
 	if method.PublicKeyMultibase != "" {
-		pubKey, err = multibaseToPubKey(method.PublicKeyMultibase)
+		pubKeyBytes, multiBaseErr := multibaseToPubKeyBytes(method.PublicKeyMultibase)
+		if multiBaseErr != nil {
+			err = multiBaseErr
+			return
+		}
+		pubKey, err = cryptosuite.PubKeyBytesToTypedKey(pubKeyBytes, method.Type)
 		return
 	} else if method.PublicKeyBase58 != "" {
-		pubKey, err = base58.Decode(method.PublicKeyBase58)
+		pubKeyDecoded, b58Err := base58.Decode(method.PublicKeyBase58)
+		if b58Err != nil {
+			err = b58Err
+			return
+		}
+		pubKey, err = cryptosuite.PubKeyBytesToTypedKey(pubKeyDecoded, method.Type)
 		return
 	} else if method.PublicKeyJWK != nil {
 		jwkBytes, jwkErr := json.Marshal(method.PublicKeyJWK)
@@ -129,8 +140,8 @@ func extractKeyFromVerificationMethod(method didsdk.VerificationMethod) (kid str
 	return
 }
 
-// multibaseToPubKey converts a multibase encoded public key to a crypto.PublicKey for known multibase encodings
-func multibaseToPubKey(mb string) (crypto.PublicKey, error) {
+// multibaseToPubKey converts a multibase encoded public key to public key bytes for known multibase encodings
+func multibaseToPubKeyBytes(mb string) ([]byte, error) {
 	if mb == "" {
 		err := fmt.Errorf("could not decode value: %s", mb)
 		logrus.WithError(err).Error()
