@@ -217,6 +217,7 @@ func testDIDService(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Servi
 	serviceConfig := config.DIDServiceConfig{
 		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-did"},
 		Methods:           []string{"key"},
+		ResolutionMethods: []string{"key"},
 	}
 
 	// create a did service

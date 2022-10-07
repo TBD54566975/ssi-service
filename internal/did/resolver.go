@@ -4,10 +4,14 @@ import (
 	"fmt"
 
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/pkg/errors"
 )
 
 // BuildResolver builds a DID resolver from a list of methods to support resolution for
 func BuildResolver(methods []string) (*didsdk.Resolver, error) {
+	if len(methods) == 0 {
+		return nil, errors.New("no methods provided")
+	}
 	var resolvers []didsdk.Resolution
 	for _, method := range methods {
 		resolver, err := getKnownResolver(method)
@@ -15,6 +19,9 @@ func BuildResolver(methods []string) (*didsdk.Resolver, error) {
 			return nil, err
 		}
 		resolvers = append(resolvers, resolver)
+	}
+	if len(resolvers) == 0 {
+		return nil, errors.New("no resolvers created")
 	}
 	return didsdk.NewResolver(resolvers...)
 }

@@ -8,17 +8,19 @@ import (
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
-	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestDIDAPI(t *testing.T) {
 	t.Run("Test Get DID Methods", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -42,11 +44,12 @@ func TestDIDAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		assert.Len(tt, resp.DIDMethods, 1)
-		assert.Equal(tt, resp.DIDMethods[0], did.KeyMethod)
+		assert.Equal(tt, resp.DIDMethods[0], didsdk.KeyMethod)
 	})
 
 	t.Run("Test Create DID By Method: Key", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -95,11 +98,12 @@ func TestDIDAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 
-		assert.Contains(tt, resp.DID.ID, did.KeyMethod)
+		assert.Contains(tt, resp.DID.ID, didsdk.KeyMethod)
 	})
 
 	t.Run("Test Get DID By Method", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -174,6 +178,7 @@ func TestDIDAPI(t *testing.T) {
 
 	t.Run("Test Get DIDs By Method", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -258,5 +263,57 @@ func TestDIDAPI(t *testing.T) {
 			}
 		}
 		assert.Len(tt, knownDIDs, 0)
+	})
+
+	t.Run("Test Resolve DIDs", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		_, keyStore := testKeyStore(tt, bolt)
+		didService := testDIDRouter(tt, bolt, keyStore)
+
+		// bad resolution request
+		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/resolver/bad", nil)
+		w := httptest.NewRecorder()
+
+		badParams := map[string]string{
+			"id": "bad",
+		}
+		err = didService.ResolveDID(newRequestContextWithParams(badParams), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "not a valid did: bad")
+
+		w.Flush()
+
+		// known method, bad did
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/resolver/did:key:abcd", nil)
+		badParams = map[string]string{
+			"id": "did:key:abcd",
+		}
+		err = didService.ResolveDID(newRequestContextWithParams(badParams), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "did:key:abcd: selected encoding not supported")
+
+		w.Flush()
+
+		// known method, good did
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/resolver/did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp", nil)
+		goodParams := map[string]string{
+			"id": "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp",
+		}
+		err = didService.ResolveDID(newRequestContextWithParams(goodParams), w, req)
+		assert.NoError(tt, err)
+
+		var resolutionResponse router.ResolveDIDResponse
+		err = json.NewDecoder(w.Body).Decode(&resolutionResponse)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, resolutionResponse.DIDDocument)
+		assert.Equal(tt, "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp", resolutionResponse.DIDDocument.ID)
 	})
 }

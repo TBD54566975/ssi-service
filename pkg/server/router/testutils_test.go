@@ -23,7 +23,13 @@ func testKeyStoreService(t *testing.T, db *storage.BoltDB) *keystore.Service {
 }
 
 func testDIDService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service) *did.Service {
-	serviceConfig := config.DIDServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "did"}, Methods: []string{"key"}}
+	serviceConfig := config.DIDServiceConfig{
+		BaseServiceConfig: &config.BaseServiceConfig{
+			Name: "did",
+		},
+		Methods:           []string{"key"},
+		ResolutionMethods: []string{"key"},
+	}
 	// create a did service
 	didService, err := did.NewDIDService(serviceConfig, db, keyStore)
 	require.NoError(t, err)

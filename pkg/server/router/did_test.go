@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -40,7 +41,8 @@ func TestDIDRouter(t *testing.T) {
 		assert.NotEmpty(tt, db)
 
 		keyStoreService := testKeyStoreService(tt, db)
-		serviceConfig := config.DIDServiceConfig{Methods: []string{string(did.KeyMethod)}}
+		methods := []string{didsdk.KeyMethod.String()}
+		serviceConfig := config.DIDServiceConfig{Methods: methods, ResolutionMethods: methods}
 		didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didService)
@@ -57,15 +59,15 @@ func TestDIDRouter(t *testing.T) {
 		supported := didService.GetSupportedMethods()
 		assert.NotEmpty(tt, supported)
 		assert.Len(tt, supported.Methods, 1)
-		assert.Equal(tt, did.KeyMethod, supported.Methods[0])
+		assert.Equal(tt, didsdk.KeyMethod, supported.Methods[0])
 
 		// bad key type
-		_, err = didService.CreateDIDByMethod(did.CreateDIDRequest{Method: did.KeyMethod, KeyType: "bad"})
+		_, err = didService.CreateDIDByMethod(did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: "bad"})
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not create did:key")
 
 		// good key type
-		createDIDResponse, err := didService.CreateDIDByMethod(did.CreateDIDRequest{Method: did.KeyMethod, KeyType: crypto.Ed25519})
+		createDIDResponse, err := didService.CreateDIDByMethod(did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createDIDResponse)
 
@@ -73,7 +75,7 @@ func TestDIDRouter(t *testing.T) {
 		assert.Contains(tt, createDIDResponse.DID.ID, "did:key")
 
 		// get it back
-		getDIDResponse, err := didService.GetDIDByMethod(did.GetDIDRequest{Method: did.KeyMethod, ID: createDIDResponse.DID.ID})
+		getDIDResponse, err := didService.GetDIDByMethod(did.GetDIDRequest{Method: didsdk.KeyMethod, ID: createDIDResponse.DID.ID})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getDIDResponse)
 
@@ -81,12 +83,12 @@ func TestDIDRouter(t *testing.T) {
 		assert.Equal(tt, createDIDResponse.DID.ID, getDIDResponse.DID.ID)
 
 		// create a second DID
-		createDIDResponse2, err := didService.CreateDIDByMethod(did.CreateDIDRequest{Method: did.KeyMethod, KeyType: crypto.Ed25519})
+		createDIDResponse2, err := didService.CreateDIDByMethod(did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createDIDResponse2)
 
 		// get all DIDs back
-		getDIDsResponse, err := didService.GetDIDsByMethod(did.GetDIDsRequest{Method: did.KeyMethod})
+		getDIDsResponse, err := didService.GetDIDsByMethod(did.GetDIDsRequest{Method: didsdk.KeyMethod})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getDIDsResponse)
 		assert.Len(tt, getDIDsResponse.DIDs, 2)

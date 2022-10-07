@@ -11,6 +11,7 @@ import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 
@@ -34,7 +35,7 @@ func TestCredentialAPI(t *testing.T) {
 		credService := testCredentialRouter(tt, bolt, keyStoreService, didService)
 
 		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -136,7 +137,7 @@ func TestCredentialAPI(t *testing.T) {
 		w.Flush()
 
 		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -192,7 +193,7 @@ func TestCredentialAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -252,7 +253,7 @@ func TestCredentialAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -312,7 +313,7 @@ func TestCredentialAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -371,7 +372,7 @@ func TestCredentialAPI(t *testing.T) {
 		credService := testCredentialRouter(tt, bolt, keyStoreService, didService)
 
 		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)

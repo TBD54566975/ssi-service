@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 
@@ -47,7 +48,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -107,7 +108,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -155,7 +156,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -202,7 +203,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -284,7 +285,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -350,7 +351,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -443,7 +444,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)

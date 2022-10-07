@@ -15,19 +15,13 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
-type Method string
-
-const (
-	KeyMethod Method = "key"
-)
-
 type Service struct {
 	config   config.DIDServiceConfig
 	storage  didstorage.Storage
 	resolver *didsdk.Resolver
 
 	// supported DID methods
-	handlers map[Method]MethodHandler
+	handlers map[didsdk.Method]MethodHandler
 
 	// external dependencies
 	keyStore *keystore.Service
@@ -37,7 +31,7 @@ type Service struct {
 type MethodHandler interface {
 	CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error)
 	GetDID(request GetDIDRequest) (*GetDIDResponse, error)
-	GetDIDs(method Method) (*GetDIDsResponse, error)
+	GetDIDs(method didsdk.Method) (*GetDIDsResponse, error)
 }
 
 func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
@@ -54,14 +48,14 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 
 	svc := Service{
 		storage:  didStorage,
-		handlers: make(map[Method]MethodHandler),
+		handlers: make(map[didsdk.Method]MethodHandler),
 		keyStore: keyStore,
 		resolver: resolver,
 	}
 
 	// instantiate all handlers for DID methods
 	for _, m := range config.Methods {
-		if err := svc.instantiateHandlerForMethod(Method(m)); err != nil {
+		if err := svc.instantiateHandlerForMethod(didsdk.Method(m)); err != nil {
 			return nil, errors.Wrap(err, "could not instantiate DID service")
 		}
 	}
@@ -69,12 +63,12 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 	return &svc, nil
 }
 
-func (s *Service) instantiateHandlerForMethod(method Method) error {
+func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
 	switch method {
-	case KeyMethod:
+	case didsdk.KeyMethod:
 		handler, err := newKeyDIDHandler(s.storage, s.keyStore)
 		if err != nil {
-			err := fmt.Errorf("could not instnatiate did:%s handler", KeyMethod)
+			err := fmt.Errorf("could not instnatiate did:%s handler", didsdk.KeyMethod)
 			return util.LoggingError(err)
 		}
 		s.handlers[method] = handler
@@ -124,7 +118,7 @@ func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, er
 }
 
 func (s *Service) GetSupportedMethods() GetSupportedMethodsResponse {
-	var methods []Method
+	var methods []didsdk.Method
 	for method := range s.handlers {
 		methods = append(methods, method)
 	}
@@ -159,7 +153,7 @@ func (s *Service) GetDIDsByMethod(request GetDIDsRequest) (*GetDIDsResponse, err
 	return handler.GetDIDs(method)
 }
 
-func (s *Service) getHandler(method Method) (MethodHandler, error) {
+func (s *Service) getHandler(method didsdk.Method) (MethodHandler, error) {
 	handler, ok := s.handlers[method]
 	if !ok {
 		err := fmt.Errorf("could not get handler for DID method: %s", method)

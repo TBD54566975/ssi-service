@@ -6,7 +6,7 @@ import (
 )
 
 type GetSupportedMethodsResponse struct {
-	Methods []Method `json:"methods"`
+	Methods []didsdk.Method `json:"methods"`
 }
 
 type ResolveDIDRequest struct {
@@ -21,7 +21,7 @@ type ResolveDIDResponse struct {
 
 // CreateDIDRequest is the JSON-serializable request for creating a DID across DID methods
 type CreateDIDRequest struct {
-	Method  Method         `json:"method" validate:"required"`
+	Method  didsdk.Method  `json:"method" validate:"required"`
 	KeyType crypto.KeyType `validate:"required"`
 }
 
@@ -33,8 +33,8 @@ type CreateDIDResponse struct {
 }
 
 type GetDIDRequest struct {
-	Method Method `json:"method" validate:"required"`
-	ID     string `json:"id" validate:"required"`
+	Method didsdk.Method `json:"method" validate:"required"`
+	ID     string        `json:"id" validate:"required"`
 }
 
 // GetDIDResponse is the JSON-serializable response for getting a DID
@@ -43,7 +43,7 @@ type GetDIDResponse struct {
 }
 
 type GetDIDsRequest struct {
-	Method Method `json:"method" validate:"required"`
+	Method didsdk.Method `json:"method" validate:"required"`
 }
 
 // GetDIDsResponse is the JSON-serializable response for getting all DIDs for a given method

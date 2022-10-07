@@ -8,6 +8,7 @@ import (
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -55,7 +56,7 @@ func TestCredentialRouter(t *testing.T) {
 
 		// create a credential
 
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{Method: did.KeyMethod, KeyType: crypto.Ed25519})
+		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
