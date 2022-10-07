@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
+	didint "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -13,7 +14,6 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	credstorage "github.com/tbd54566975/ssi-service/pkg/service/credential/storage"
-	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -46,13 +46,13 @@ func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
 
-func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, did *did.Service) (*Service, error) {
+func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, resolver *didint.Resolver) (*Service, error) {
 	credentialStorage, err := credstorage.NewCredentialStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate storage for the credential service"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
-	verifier, err := credint.NewCredentialVerifier(nil)
+	verifier, err := credint.NewCredentialVerifier(resolver)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate verifier for the credential service")
 	}
@@ -216,7 +216,7 @@ func (s Service) VerifyCredential(request VerifyCredentialRequest) (*VerifyCrede
 			return &VerifyCredentialResponse{Verified: false, Reason: err.Error()}, nil
 		}
 	}
-	
+
 	return &VerifyCredentialResponse{Verified: true}, nil
 }
 

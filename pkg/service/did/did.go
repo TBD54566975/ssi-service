@@ -104,6 +104,10 @@ func (s *Service) Config() config.DIDServiceConfig {
 	return s.config
 }
 
+func (s *Service) GetResolver() *didsdk.Resolver {
+	return s.resolver
+}
+
 func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, error) {
 	if request.DID == "" {
 		return nil, util.LoggingNewError("cannot resolve empty DID")

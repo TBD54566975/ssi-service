@@ -44,7 +44,8 @@ func TestManifestRouter(t *testing.T) {
 
 		serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
-		testCredentialService := testCredentialService(tt, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		testCredentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestService, err := manifest.NewManifestService(serviceConfig, bolt, keyStoreService, testCredentialService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, manifestService)
@@ -54,7 +55,6 @@ func TestManifestRouter(t *testing.T) {
 		assert.Equal(tt, framework.StatusReady, manifestService.Status().Status)
 
 		// create issuer and applicant DIDs
-		didService := testDIDService(tt, bolt, keyStoreService)
 		createDIDRequest := did.CreateDIDRequest{
 			Method:  did.KeyMethod,
 			KeyType: crypto.Ed25519,

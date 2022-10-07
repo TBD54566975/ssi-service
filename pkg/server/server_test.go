@@ -257,7 +257,7 @@ func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.
 	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 
 	// create a credential service
-	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did)
+	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver())
 	require.NoError(t, err)
 	require.NotEmpty(t, credentialService)
 	return credentialService

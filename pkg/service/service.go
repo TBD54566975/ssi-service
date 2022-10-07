@@ -89,7 +89,7 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the schema service")
 	}
 
-	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider, keyStoreService)
+	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider, keyStoreService, didService.GetResolver())
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the credential service")
 	}
