@@ -78,7 +78,8 @@ func (k *KeyStoreServiceConfig) IsEmpty() bool {
 
 type DIDServiceConfig struct {
 	*BaseServiceConfig
-	Methods []string `toml:"methods"`
+	Methods           []string `toml:"methods"`
+	ResolutionMethods []string `toml:"resolution_methods"`
 }
 
 func (d *DIDServiceConfig) IsEmpty() bool {

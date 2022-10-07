@@ -3,9 +3,11 @@ package did
 import (
 	"fmt"
 
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/pkg/errors"
 
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	didstorage "github.com/tbd54566975/ssi-service/pkg/service/did/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -24,6 +26,7 @@ type Service struct {
 	handlers map[Method]MethodHandler
 	storage  didstorage.Storage
 	config   config.DIDServiceConfig
+	resolver *didsdk.Resolver
 
 	// external dependencies
 	keyStore *keystore.Service
@@ -41,10 +44,18 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
 	}
+
+	// instantiate DID resolver
+	resolver, err := did.BuildResolver(config.ResolutionMethods)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not instantiate DID resolver")
+	}
+
 	svc := Service{
 		storage:  didStorage,
 		handlers: make(map[Method]MethodHandler),
 		keyStore: keyStore,
+		resolver: resolver,
 	}
 
 	// instantiate all handlers for DID methods
@@ -53,6 +64,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 			return nil, errors.Wrap(err, "could not instantiate DID service")
 		}
 	}
+
 	return &svc, nil
 }
 
@@ -89,6 +101,21 @@ func (s *Service) Status() framework.Status {
 
 func (s *Service) Config() config.DIDServiceConfig {
 	return s.config
+}
+
+func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, error) {
+	if request.DID == "" {
+		return nil, util.LoggingNewError("cannot resolve empty DID")
+	}
+	resolved, err := s.resolver.Resolve(request.DID)
+	if err != nil {
+		return nil, err
+	}
+	return &ResolveDIDResponse{
+		ResolutionMetadata:  &resolved.DIDResolutionMetadata,
+		DIDDocument:         &resolved.DIDDocument,
+		DIDDocumentMetadata: &resolved.DIDDocumentMetadata,
+	}, nil
 }
 
 func (s *Service) GetSupportedMethods() GetSupportedMethodsResponse {

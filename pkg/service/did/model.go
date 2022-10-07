@@ -9,6 +9,16 @@ type GetSupportedMethodsResponse struct {
 	Methods []Method `json:"methods"`
 }
 
+type ResolveDIDRequest struct {
+	DID string `json:"did" validate:"required"`
+}
+
+type ResolveDIDResponse struct {
+	ResolutionMetadata  *didsdk.DIDResolutionMetadata `json:"didResolutionMetadata,omitempty"`
+	DIDDocument         *didsdk.DIDDocument           `json:"didDocument"`
+	DIDDocumentMetadata *didsdk.DIDDocumentMetadata   `json:"didDocumentMetadata,omitempty"`
+}
+
 // CreateDIDRequest is the JSON-serializable request for creating a DID across DID methods
 type CreateDIDRequest struct {
 	Method  Method         `json:"method" validate:"required"`
