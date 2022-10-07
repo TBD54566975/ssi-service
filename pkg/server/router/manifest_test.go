@@ -7,6 +7,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
@@ -56,7 +57,7 @@ func TestManifestRouter(t *testing.T) {
 
 		// create issuer and applicant DIDs
 		createDIDRequest := did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		}
 		issuerDID, err := didService.CreateDIDByMethod(createDIDRequest)
