@@ -26,8 +26,8 @@ func TestDWNAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, manifestService := testManifest(tt, bolt, keyStoreService, credentialService)
 		dwnService := testDWNRouter(tt, bolt, keyStoreService, manifestService)
 

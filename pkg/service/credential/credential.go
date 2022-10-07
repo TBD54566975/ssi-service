@@ -5,23 +5,24 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
-	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
-	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
+	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	credstorage "github.com/tbd54566975/ssi-service/pkg/service/credential/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 type Service struct {
-	storage credstorage.Storage
-	config  config.CredentialServiceConfig
+	storage  credstorage.Storage
+	config   config.CredentialServiceConfig
+	verifier *credint.CredentialVerifier
 
 	// external dependencies
 	keyStore *keystore.Service
@@ -45,15 +46,20 @@ func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
 
-func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
+func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, did *did.Service) (*Service, error) {
 	credentialStorage, err := credstorage.NewCredentialStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate storage for the credential service"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
+	verifier, err := credint.NewCredentialVerifier(nil)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate verifier for the credential service")
+	}
 	return &Service{
 		storage:  credentialStorage,
 		config:   config,
+		verifier: verifier,
 		keyStore: keyStore,
 	}, nil
 }
@@ -131,7 +137,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	}
 
 	// store the credential
-	container := credmodel.CredentialContainer{
+	container := credint.CredentialContainer{
 		ID:            cred.ID,
 		Credential:    cred,
 		CredentialJWT: credJWT,
@@ -185,9 +191,8 @@ func (vcr VerifyCredentialRequest) IsValid() error {
 }
 
 type VerifyCredentialResponse struct {
-	CredentialID string `json:"id"`
-	Verified     bool   `json:"verified" json:"verified"`
-	Reason       string `json:"reason,omitempty" json:"reason,omitempty"`
+	Verified bool   `json:"verified" json:"verified"`
+	Reason   string `json:"reason,omitempty" json:"reason,omitempty"`
 }
 
 // VerifyCredential does three levels of verification on a credential:
@@ -202,22 +207,17 @@ func (s Service) VerifyCredential(request VerifyCredentialRequest) (*VerifyCrede
 		return nil, util.LoggingErrorMsg(err, "invalid verify credential request")
 	}
 
-	var cred *credential.VerifiableCredential
-	var err error
 	if request.CredentialJWT != nil {
-		cred, err = signing.ParseVerifiableCredentialFromJWT(*request.CredentialJWT)
-		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not parse credential from JWT")
+		if err := s.verifier.VerifyJWTCredential(*request.CredentialJWT); err != nil {
+			return &VerifyCredentialResponse{Verified: false, Reason: err.Error()}, nil
 		}
-		issuer, ok := cred.Issuer.(string)
-		if !ok {
-			return nil, util.LoggingErrorMsg(err, "could not parse issuer from credential")
-		}
-
 	} else {
-		cred = request.DataIntegrityCredential
+		if err := s.verifier.VerifyDataIntegrityCredential(*request.DataIntegrityCredential); err != nil {
+			return &VerifyCredentialResponse{Verified: false, Reason: err.Error()}, nil
+		}
 	}
-	return nil, nil
+	
+	return &VerifyCredentialResponse{Verified: true}, nil
 }
 
 func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResponse, error) {
@@ -234,7 +234,7 @@ func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResp
 		return nil, util.LoggingNewError(errMsg)
 	}
 	response := GetCredentialResponse{
-		credmodel.CredentialContainer{
+		credint.CredentialContainer{
 			ID:            gotCred.CredentialID,
 			Credential:    gotCred.Credential,
 			CredentialJWT: gotCred.CredentialJWT,
@@ -253,9 +253,9 @@ func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credmodel.CredentialContainer
+	var creds []credint.CredentialContainer
 	for _, cred := range gotCreds {
-		container := credmodel.CredentialContainer{
+		container := credint.CredentialContainer{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
@@ -277,9 +277,9 @@ func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) 
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credmodel.CredentialContainer
+	var creds []credint.CredentialContainer
 	for _, cred := range gotCreds {
-		container := credmodel.CredentialContainer{
+		container := credint.CredentialContainer{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
@@ -300,9 +300,9 @@ func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credmodel.CredentialContainer
+	var creds []credint.CredentialContainer
 	for _, cred := range gotCreds {
-		container := credmodel.CredentialContainer{
+		container := credint.CredentialContainer{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,

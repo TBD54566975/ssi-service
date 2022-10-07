@@ -27,8 +27,8 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// missing required field: Manifest
@@ -81,8 +81,8 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		w := httptest.NewRecorder()
@@ -147,8 +147,8 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		w := httptest.NewRecorder()
@@ -196,8 +196,8 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// create an issuer
@@ -261,8 +261,8 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
@@ -334,8 +334,8 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 		w := httptest.NewRecorder()
 
@@ -437,8 +437,8 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// create an issuer

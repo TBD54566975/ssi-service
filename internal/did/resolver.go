@@ -23,13 +23,13 @@ func BuildResolver(methods []string) (*didsdk.Resolver, error) {
 func getKnownResolver(method string) (didsdk.Resolution, error) {
 	switch didsdk.Method(method) {
 	case didsdk.KeyMethod:
-		return didsdk.KeyResolver{}, nil
+		return new(didsdk.KeyResolver), nil
 	case didsdk.WebMethod:
-		return didsdk.WebResolver{}, nil
+		return new(didsdk.WebResolver), nil
 	case didsdk.PKHMethod:
-		return didsdk.PKHResolver{}, nil
+		return new(didsdk.PKHResolver), nil
 	case didsdk.PeerMethod:
-		return didsdk.PeerResolver{}, nil
+		return new(didsdk.PeerResolver), nil
 	}
 	return nil, fmt.Errorf("unsupported method: %s", method)
 }

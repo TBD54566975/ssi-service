@@ -30,8 +30,8 @@ func TestCredentialAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credService := testCredentialRouter(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credService := testCredentialRouter(tt, bolt, keyStoreService, didService)
 
 		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
 			Method:  did.KeyMethod,
@@ -112,8 +112,8 @@ func TestCredentialAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credService := testCredentialRouter(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credService := testCredentialRouter(tt, bolt, keyStoreService, didService)
 
 		w := httptest.NewRecorder()
 
@@ -186,8 +186,8 @@ func TestCredentialAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credService := testCredentialRouter(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credService := testCredentialRouter(tt, bolt, keyStoreService, didService)
 
 		w := httptest.NewRecorder()
 
@@ -246,8 +246,8 @@ func TestCredentialAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credService := testCredentialRouter(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credService := testCredentialRouter(tt, bolt, keyStoreService, didService)
 
 		w := httptest.NewRecorder()
 
@@ -306,8 +306,8 @@ func TestCredentialAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credService := testCredentialRouter(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credService := testCredentialRouter(tt, bolt, keyStoreService, didService)
 
 		w := httptest.NewRecorder()
 
@@ -367,8 +367,8 @@ func TestCredentialAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credService := testCredentialRouter(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credService := testCredentialRouter(tt, bolt, keyStoreService, didService)
 
 		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
 			Method:  did.KeyMethod,

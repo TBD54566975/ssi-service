@@ -22,11 +22,12 @@ const (
 )
 
 type Service struct {
+	config   config.DIDServiceConfig
+	storage  didstorage.Storage
+	resolver *didsdk.Resolver
+
 	// supported DID methods
 	handlers map[Method]MethodHandler
-	storage  didstorage.Storage
-	config   config.DIDServiceConfig
-	resolver *didsdk.Resolver
 
 	// external dependencies
 	keyStore *keystore.Service
