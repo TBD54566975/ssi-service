@@ -5,10 +5,12 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	schemalib "github.com/TBD54566975/ssi-sdk/schema"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
+	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -27,6 +29,7 @@ type Service struct {
 
 	// external dependencies
 	keyStore *keystore.Service
+	resolver *didsdk.Resolver
 }
 
 func (s Service) Type() framework.Type {
@@ -47,7 +50,7 @@ func (s Service) Config() config.SchemaServiceConfig {
 	return s.config
 }
 
-func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
+func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, resolver *didsdk.Resolver) (*Service, error) {
 	schemaStorage, err := schemastorage.NewSchemaStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate storage for the schema service"
@@ -57,6 +60,7 @@ func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorag
 		storage:  schemaStorage,
 		config:   config,
 		keyStore: keyStore,
+		resolver: resolver,
 	}, nil
 }
 
@@ -132,10 +136,63 @@ func (s Service) signSchemaJWT(author string, schema schema.VCJSONSchema) (*stri
 		errMsg := fmt.Sprintf("could not sign schema for author<%s>", author)
 		return nil, errors.Wrap(err, errMsg)
 	}
+	if err = s.verifySchemaJWT(string(schemaToken)); err != nil {
+		return nil, errors.Wrap(err, "could not verify signed schema")
+	}
 	return sdkutil.StringPtr(string(schemaToken)), nil
 }
 
+type VerifySchemaRequest struct {
+	SchemaJWT string `json:"credentialJwt"`
+}
+
+type VerifySchemaResponse struct {
+	Verified bool   `json:"verified" json:"verified"`
+	Reason   string `json:"reason,omitempty" json:"reason,omitempty"`
+}
+
+func (s Service) VerifySchema(request VerifySchemaRequest) (*VerifySchemaResponse, error) {
+	if err := s.verifySchemaJWT(request.SchemaJWT); err != nil {
+		return &VerifySchemaResponse{Verified: false, Reason: "could not verify schema: " + err.Error()}, nil
+	}
+	return &VerifySchemaResponse{Verified: true}, nil
+}
+
 func (s Service) verifySchemaJWT(token string) error {
+	parsed, err := jwt.Parse([]byte(token))
+	if err != nil {
+		errMsg := "could not parse JWT"
+		logrus.WithError(err).Error(errMsg)
+		return util.LoggingErrorMsg(err, errMsg)
+	}
+	claims := parsed.PrivateClaims()
+	claimsJSONBytes, err := json.Marshal(claims)
+	if err != nil {
+		errMsg := "could not marshal claims"
+		logrus.WithError(err).Error(errMsg)
+		return util.LoggingErrorMsg(err, errMsg)
+	}
+	var parsedSchema schema.VCJSONSchema
+	if err := json.Unmarshal(claimsJSONBytes, &parsedSchema); err != nil {
+		errMsg := "could not unmarshal claims into schema"
+		logrus.WithError(err).Error(errMsg)
+		return util.LoggingErrorMsg(err, errMsg)
+	}
+	resolved, err := s.resolver.Resolve(parsedSchema.Author)
+	if err != nil {
+		return errors.Wrapf(err, "failed to resolve schema author's did: %s", parsedSchema.Author)
+	}
+	kid, pubKey, err := keyaccess.GetVerificationInformation(resolved.DIDDocument, "")
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not get verification information from schema")
+	}
+	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not create verifier")
+	}
+	if err := verifier.Verify(keyaccess.JWKToken{Token: token}); err != nil {
+		return util.LoggingErrorMsg(err, "could not verify the schema's signature")
+	}
 	return nil
 }
 

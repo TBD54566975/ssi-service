@@ -148,6 +148,44 @@ type GetSchemaResponse struct {
 	SchemaJWT *string                `json:"schemaJwt,omitempty"`
 }
 
+type VerifySchemaRequest struct {
+	SchemaJWT string `json:"schemaJwt"`
+}
+
+type VerifySchemaResponse struct {
+	Verified bool   `json:"verified" json:"verified"`
+	Reason   string `json:"reason,omitempty" json:"reason,omitempty"`
+}
+
+// VerifySchema godoc
+// @Summary      Verify Schema
+// @Description  Verify a given schema by its id
+// @Tags         SchemaAPI
+// @Accept       json
+// @Produce      json
+// @Param        request  body      VerifySchemaRequest  true  "request body"
+// @Success      200  {object}  VerifySchemaResponse
+// @Failure      400  {string}  string  "Bad request"
+// @Router       /v1/schemas/verification [put]
+func (sr SchemaRouter) VerifySchema(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	var request VerifySchemaRequest
+	if err := framework.Decode(r, &request); err != nil {
+		errMsg := "invalid verify schema request"
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	verificationResult, err := sr.service.VerifySchema(schema.VerifySchemaRequest{SchemaJWT: request.SchemaJWT})
+	if err != nil {
+		errMsg := "could not verify schema"
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
+	}
+
+	resp := VerifySchemaResponse{Verified: verificationResult.Verified, Reason: verificationResult.Reason}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
+
 // DeleteSchema godoc
 // @Summary      Delete Schema
 // @Description  Delete a schema by its ID

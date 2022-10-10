@@ -5,15 +5,10 @@ import (
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
-	cryptosdk "github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
-	"github.com/goccy/go-json"
-	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/crypto/ed25519"
 
 	"github.com/tbd54566975/ssi-service/config"
-	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -48,7 +43,8 @@ func TestSchemaRouter(t *testing.T) {
 
 		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
-		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, schemaService)
 
@@ -134,7 +130,8 @@ func TestSchemaSigning(t *testing.T) {
 
 		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
-		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, schemaService)
 
@@ -169,7 +166,8 @@ func TestSchemaSigning(t *testing.T) {
 
 		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
-		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, schemaService)
 
@@ -202,7 +200,7 @@ func TestSchemaSigning(t *testing.T) {
 		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
-		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService)
+		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, schemaService)
 
@@ -234,25 +232,17 @@ func TestSchemaSigning(t *testing.T) {
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.SchemaJWT)
 
-		// parse the JWT
-		verifier := cryptosdk.JWTSigner{}
-		parsed, err := verifier.ParseJWT(*createdSchema.SchemaJWT)
+		// verify the schema
+		verifiedSchema, err := schemaService.VerifySchema(schema.VerifySchemaRequest{SchemaJWT: *createdSchema.SchemaJWT})
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, parsed)
+		assert.NotEmpty(tt, verifiedSchema)
+		assert.True(tt, verifiedSchema.Verified)
 
-		createdSchemaJSONBytes, err := json.Marshal(createdSchema.Schema)
+		// verify a bad schema
+		verifiedSchema, err = schemaService.VerifySchema(schema.VerifySchemaRequest{SchemaJWT: "bad"})
 		assert.NoError(tt, err)
-		parsedSchemaJSONBytes, err := json.Marshal(parsed.PrivateClaims())
-		assert.NoError(tt, err)
-		assert.JSONEq(tt, string(createdSchemaJSONBytes), string(parsedSchemaJSONBytes))
-
-		// validate the JWT
-		privKeyBytes, err := base58.Decode(authorDID.PrivateKey)
-		assert.NoError(tt, err)
-		ka, err := keyaccess.NewJWKKeyAccess(authorDID.DID.ID, ed25519.PrivateKey(privKeyBytes))
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
-		err = ka.VerifyJWT(*createdSchema.SchemaJWT)
-		assert.NoError(tt, err)
+		assert.NotEmpty(tt, verifiedSchema)
+		assert.False(tt, verifiedSchema.Verified)
+		assert.Contains(tt, verifiedSchema.Reason, "could not verify schema")
 	})
 }
