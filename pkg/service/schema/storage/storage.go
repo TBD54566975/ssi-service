@@ -10,7 +10,9 @@ import (
 )
 
 type StoredSchema struct {
-	Schema schema.VCJSONSchema `json:"schema"`
+	ID        string              `json:"id"`
+	Schema    schema.VCJSONSchema `json:"schema"`
+	SchemaJWT *string             `json:"token,omitempty"`
 }
 
 type Storage interface {

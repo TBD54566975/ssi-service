@@ -35,12 +35,14 @@ type CreateSchemaRequest struct {
 	Author string               `json:"author" validate:"required"`
 	Name   string               `json:"name" validate:"required"`
 	Schema schemalib.JSONSchema `json:"schema" validate:"required"`
+	// Sign represents whether the schema should be signed by the author. Default is false.
+	Sign bool `json:"sign"`
 }
 
 type CreateSchemaResponse struct {
 	ID        string                 `json:"id"`
 	Schema    schemalib.VCJSONSchema `json:"schema"`
-	SchemaJWT string                 `json:"schemaJwt"`
+	SchemaJWT *string                `json:"schemaJwt,omitempty"`
 }
 
 // CreateSchema godoc
@@ -69,7 +71,7 @@ func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, 
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	req := schema.CreateSchemaRequest{Author: request.Author, Name: request.Name, Schema: request.Schema}
+	req := schema.CreateSchemaRequest{Author: request.Author, Name: request.Name, Schema: request.Schema, Sign: request.Sign}
 	createSchemaResponse, err := sr.service.CreateSchema(req)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create schema with authoring DID: %s", request.Author)
@@ -77,36 +79,8 @@ func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, 
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := CreateSchemaResponse{ID: createSchemaResponse.ID, Schema: createSchemaResponse.Schema}
+	resp := CreateSchemaResponse{ID: createSchemaResponse.ID, Schema: createSchemaResponse.Schema, SchemaJWT: createSchemaResponse.SchemaJWT}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
-}
-
-type GetSchemasResponse struct {
-	Schemas []schemalib.VCJSONSchema `json:"schemas,omitempty"`
-}
-
-// GetSchemas godoc
-// @Summary      Get Schemas
-// @Description  Get schemas
-// @Tags         SchemaAPI
-// @Accept       json
-// @Produce      json
-// @Success      200  {object}  GetSchemasResponse
-// @Failure      500  {string}  string  "Internal server error"
-// @Router       /v1/schemas [get]
-func (sr SchemaRouter) GetSchemas(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	gotSchemas, err := sr.service.GetSchemas()
-	if err != nil {
-		errMsg := "could not get schemas"
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
-	}
-	resp := GetSchemasResponse{Schemas: gotSchemas.Schemas}
-	return framework.Respond(ctx, w, resp, http.StatusOK)
-}
-
-type GetSchemaResponse struct {
-	Schema schemalib.VCJSONSchema `json:"schema,omitempty"`
 }
 
 // GetSchema godoc
@@ -135,8 +109,43 @@ func (sr SchemaRouter) GetSchema(ctx context.Context, w http.ResponseWriter, r *
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	resp := GetSchemaResponse{Schema: gotSchema.Schema}
+	resp := GetSchemaResponse{Schema: gotSchema.Schema, SchemaJWT: gotSchema.SchemaJWT}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
+
+type GetSchemasResponse struct {
+	Schemas []GetSchemaResponse `json:"schemas,omitempty"`
+}
+
+// GetSchemas godoc
+// @Summary      Get Schemas
+// @Description  Get schemas
+// @Tags         SchemaAPI
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  GetSchemasResponse
+// @Failure      500  {string}  string  "Internal server error"
+// @Router       /v1/schemas [get]
+func (sr SchemaRouter) GetSchemas(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	gotSchemas, err := sr.service.GetSchemas()
+	if err != nil {
+		errMsg := "could not get schemas"
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
+	}
+
+	var schemas []GetSchemaResponse
+	for _, s := range gotSchemas.Schemas {
+		schemas = append(schemas, GetSchemaResponse{Schema: s.Schema})
+	}
+
+	resp := GetSchemasResponse{Schemas: schemas}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
+
+type GetSchemaResponse struct {
+	Schema    schemalib.VCJSONSchema `json:"schema,omitempty"`
+	SchemaJWT *string                `json:"schemaJwt,omitempty"`
 }
 
 // DeleteSchema godoc
