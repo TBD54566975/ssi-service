@@ -135,6 +135,10 @@ func (s Service) signSchemaJWT(author string, schema schema.VCJSONSchema) (*stri
 	return sdkutil.StringPtr(string(schemaToken)), nil
 }
 
+func (s Service) verifySchemaJWT(token string) error {
+	return nil
+}
+
 func (s Service) GetSchemas() (*GetSchemasResponse, error) {
 
 	logrus.Debug("getting all schema")

@@ -485,6 +485,9 @@ func TestManifestAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&appResp)
 		assert.NoError(tt, err)
 
+		b, _ := json.Marshal(appResp)
+		println(string(b))
+		
 		// get all applications
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		err = manifestRouter.GetApplications(newRequestContext(), w, req)
