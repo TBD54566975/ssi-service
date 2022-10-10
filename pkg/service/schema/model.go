@@ -1,6 +1,9 @@
 package schema
 
-import "github.com/TBD54566975/ssi-sdk/credential/schema"
+import (
+	"github.com/TBD54566975/ssi-sdk/credential/schema"
+	"github.com/TBD54566975/ssi-sdk/util"
+)
 
 const (
 	Version1 string = "1.0.0"
@@ -10,6 +13,10 @@ type CreateSchemaRequest struct {
 	Author string            `json:"author" validate:"required"`
 	Name   string            `json:"name" validate:"required"`
 	Schema schema.JSONSchema `json:"schema" validate:"required"`
+}
+
+func (csr CreateSchemaRequest) IsValid() bool {
+	return util.IsValidStruct(csr) == nil
 }
 
 type CreateSchemaResponse struct {

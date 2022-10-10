@@ -59,8 +59,13 @@ func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorag
 
 // CreateSchema houses the main service logic for schema creation. It validates the input, and
 // produces a schema value that conforms with the VC JSON JSONSchema specification.
-// TODO(gabe) support proof generation on schemas, versioning, and more
+// TODO(gabe) support data integrity proof generation on schemas, versioning, and more
 func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaResponse, error) {
+	if !request.IsValid() {
+		errMsg := fmt.Sprintf("invalid create schema request: %+v", request)
+		return nil, util.LoggingNewError(errMsg)
+	}
+
 	schemaBytes, err := json.Marshal(request.Schema)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not marshal schema in request")
@@ -69,6 +74,7 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 		return nil, util.LoggingErrorMsg(err, "provided value is not a valid JSON schema")
 	}
 
+	// create schema
 	schemaID := uuid.NewString()
 	schemaValue := schema.VCJSONSchema{
 		Type:     schema.VCJSONSchemaType,
@@ -79,6 +85,8 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 		Authored: time.Now().Format(time.RFC3339),
 		Schema:   request.Schema,
 	}
+
+	// sign the schema
 
 	storedSchema := schemastorage.StoredSchema{Schema: schemaValue}
 	if err := s.storage.StoreSchema(storedSchema); err != nil {

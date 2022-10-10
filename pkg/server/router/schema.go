@@ -8,6 +8,7 @@ import (
 	schemalib "github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -54,8 +55,15 @@ type CreateSchemaResponse struct {
 // @Router       /v1/schemas [put]
 func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreateSchemaRequest
+	invalidCreateSchemaRequest := "invalid create schema request"
 	if err := framework.Decode(r, &request); err != nil {
-		errMsg := "invalid create schema request"
+		errMsg := invalidCreateSchemaRequest
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	if err := framework.ValidateRequest(request); err != nil {
+		errMsg := invalidCreateSchemaRequest
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
