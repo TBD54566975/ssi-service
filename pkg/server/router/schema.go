@@ -38,8 +38,9 @@ type CreateSchemaRequest struct {
 }
 
 type CreateSchemaResponse struct {
-	ID     string                 `json:"id"`
-	Schema schemalib.VCJSONSchema `json:"schema"`
+	ID        string                 `json:"id"`
+	Schema    schemalib.VCJSONSchema `json:"schema"`
+	SchemaJWT string                 `json:"schemaJwt"`
 }
 
 // CreateSchema godoc
@@ -110,7 +111,7 @@ type GetSchemaResponse struct {
 
 // GetSchema godoc
 // @Summary      Get Schema
-// @Description  Get schema by ID
+// @Description  Get a schema by its ID
 // @Tags         SchemaAPI
 // @Accept       json
 // @Produce      json
@@ -136,4 +137,32 @@ func (sr SchemaRouter) GetSchema(ctx context.Context, w http.ResponseWriter, r *
 
 	resp := GetSchemaResponse{Schema: gotSchema.Schema}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
+
+// DeleteSchema godoc
+// @Summary      Delete Schema
+// @Description  Delete a schema by its ID
+// @Tags         SchemaAPI
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "ID"
+// @Success      200  {string}  string  "OK"
+// @Failure      400  {string}  string  "Bad request"
+// @Failure      500  {string}  string  "Internal server error"
+// @Router       /v1/schemas/{id} [delete]
+func (sr SchemaRouter) DeleteSchema(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		errMsg := "cannot delete a schema without an ID parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	if err := sr.service.DeleteSchema(schema.DeleteSchemaRequest{ID: *id}); err != nil {
+		errMsg := fmt.Sprintf("could not delete schema with id: %s", *id)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
+	}
+
+	return framework.Respond(ctx, w, nil, http.StatusOK)
 }

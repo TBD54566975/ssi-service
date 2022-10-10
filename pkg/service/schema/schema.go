@@ -9,6 +9,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -96,6 +97,8 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 	return &CreateSchemaResponse{ID: schemaID, Schema: schemaValue}, nil
 }
 
+// func (s Service) Sign
+
 func (s Service) GetSchemas() (*GetSchemasResponse, error) {
 	storedSchemas, err := s.storage.GetSchemas()
 	if err != nil {
@@ -121,4 +124,16 @@ func (s Service) GetSchema(request GetSchemaRequest) (*GetSchemaResponse, error)
 		return nil, util.LoggingError(err)
 	}
 	return &GetSchemaResponse{Schema: gotSchema.Schema}, nil
+}
+
+func (s Service) DeleteSchema(request DeleteSchemaRequest) error {
+
+	logrus.Debugf("deleting schema: %s", request.ID)
+
+	if err := s.storage.DeleteSchema(request.ID); err != nil {
+		errMsg := fmt.Sprintf("could not delete schema with id: %s", request.ID)
+		return util.LoggingErrorMsg(err, errMsg)
+	}
+
+	return nil
 }

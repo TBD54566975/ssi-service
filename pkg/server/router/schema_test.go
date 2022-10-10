@@ -105,5 +105,15 @@ func TestSchemaRouter(t *testing.T) {
 
 		// make sure their IDs are different
 		assert.True(tt, gotSchemas.Schemas[0].ID != gotSchemas.Schemas[1].ID)
+
+		// delete the first schema
+		err = schemaService.DeleteSchema(schema.DeleteSchemaRequest{ID: gotSchemas.Schemas[0].ID})
+		assert.NoError(tt, err)
+
+		// get all schemas, expect one
+		gotSchemas, err = schemaService.GetSchemas()
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, gotSchemas.Schemas)
+		assert.Len(tt, gotSchemas.Schemas, 1)
 	})
 }

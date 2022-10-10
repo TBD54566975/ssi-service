@@ -35,3 +35,7 @@ type GetSchemaRequest struct {
 type GetSchemaResponse struct {
 	Schema schema.VCJSONSchema `json:"schema"`
 }
+
+type DeleteSchemaRequest struct {
+	ID string `json:"id" validate:"required"`
+}

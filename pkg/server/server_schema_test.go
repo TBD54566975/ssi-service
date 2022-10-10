@@ -65,7 +65,7 @@ func TestSchemaAPI(t *testing.T) {
 		assert.EqualValues(tt, schemaRequest.Schema, resp.Schema.Schema)
 	})
 
-	t.Run("Test Get Schemas", func(tt *testing.T) {
+	t.Run("Test Get Schema and Get Schemas", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		require.NoError(tt, err)
 
@@ -159,5 +159,74 @@ func TestSchemaAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&getSchemasResp)
 		assert.NoError(tt, err)
 		assert.Len(tt, getSchemasResp.Schemas, 1)
+	})
+
+	t.Run("Test Delete Schema", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		keyStoreService := testKeyStoreService(tt, bolt)
+		schemaService := testSchemaRouter(tt, bolt, keyStoreService)
+
+		w := httptest.NewRecorder()
+
+		// delete a schema that doesn't exist
+		req := httptest.NewRequest(http.MethodDelete, "https://ssi-service.com/v1/schemas/bad", nil)
+		err = schemaService.DeleteSchema(newRequestContextWithParams(map[string]string{"id": "bad"}), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "could not delete schema with id: bad")
+
+		// create a schema
+		simpleSchema := map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"foo": map[string]interface{}{
+					"type": "string",
+				},
+			},
+			"required":             []interface{}{"foo"},
+			"additionalProperties": false,
+		}
+
+		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema}
+		schemaRequestValue := newRequestValue(tt, schemaRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
+		err = schemaService.CreateSchema(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateSchemaResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, resp.ID)
+		assert.EqualValues(tt, schemaRequest.Schema, resp.Schema.Schema)
+
+		w.Flush()
+
+		// get schema by id
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
+		err = schemaService.GetSchema(newRequestContextWithParams(map[string]string{"id": resp.ID}), w, req)
+		assert.NoError(tt, err)
+
+		w.Flush()
+
+		// delete it
+		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
+		err = schemaService.DeleteSchema(newRequestContextWithParams(map[string]string{"id": resp.ID}), w, req)
+		assert.NoError(tt, err)
+
+		w.Flush()
+
+		// get it back
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
+		err = schemaService.GetSchema(newRequestContextWithParams(map[string]string{"id": resp.ID}), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "schema not found")
 	})
 }
