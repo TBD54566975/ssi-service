@@ -44,6 +44,10 @@ func NewCredentialVerifier(resolver *didsdk.Resolver) (*CredentialVerifier, erro
 	}, nil
 }
 
+// TODO(gabe) consider moving this verification logic to the sdk https://github.com/TBD54566975/ssi-service/issues/122
+
+// VerifyJWTCredential first parses and checks the signature on the given JWT credential. Next, it runs
+// a set of static verification checks on the credential as per the credential service's configuration.
 func (v CredentialVerifier) VerifyJWTCredential(token string) error {
 	cred, err := signing.ParseVerifiableCredentialFromJWT(token)
 	if err != nil {
@@ -60,9 +64,14 @@ func (v CredentialVerifier) VerifyJWTCredential(token string) error {
 	if err := verifier.Verify(keyaccess.JWKToken{Token: token}); err != nil {
 		return util.LoggingErrorMsg(err, "could not verify credential's signature")
 	}
-	return v.verifier.VerifyCredential(*cred)
+	if err = v.verifier.VerifyCredential(*cred); err != nil {
+		return util.LoggingErrorMsg(err, "static credential verification failed")
+	}
+	return err
 }
 
+// VerifyDataIntegrityCredential first checks the signature on the given data integrity credential. Next, it runs
+// a set of static verification checks on the credential as per the credential service's configuration.
 func (v CredentialVerifier) VerifyDataIntegrityCredential(credential credsdk.VerifiableCredential) error {
 	// TODO(gabe): perhaps this should be a verification method referenced on the proof object, not the issuer
 	kid, pubKey, err := v.getVerificationInformation(credential.Issuer.(string), "")
@@ -76,7 +85,10 @@ func (v CredentialVerifier) VerifyDataIntegrityCredential(credential credsdk.Ver
 	if err := verifier.Verify(&credential); err != nil {
 		return util.LoggingErrorMsg(err, "could not verify credential's signature")
 	}
-	return v.verifier.VerifyCredential(credential)
+	if err = v.verifier.VerifyCredential(credential); err != nil {
+		return util.LoggingErrorMsg(err, "static credential verification failed")
+	}
+	return err
 }
 
 // getVerificationInformation resolves a DID and provides a kid and public key needed for credential verification

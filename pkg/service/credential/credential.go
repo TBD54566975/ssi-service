@@ -180,6 +180,7 @@ type VerifyCredentialRequest struct {
 	CredentialJWT           *string                          `json:"credentialJwt,omitempty"`
 }
 
+// IsValid checks if the request is valid, meaning there is at least one data integrity OR jwt credential, but not both
 func (vcr VerifyCredentialRequest) IsValid() error {
 	if vcr.DataIntegrityCredential == nil && vcr.CredentialJWT == nil {
 		return errors.New("either a credential or a credential JWT must be provided")
@@ -203,6 +204,9 @@ type VerifyCredentialResponse struct {
 // LATER: Makes sure the credential has not been revoked, other checks.
 // Note: https://github.com/TBD54566975/ssi-sdk/issues/213
 func (s Service) VerifyCredential(request VerifyCredentialRequest) (*VerifyCredentialResponse, error) {
+
+	logrus.Debugf("verifying credential: %+v", request)
+
 	if err := request.IsValid(); err != nil {
 		return nil, util.LoggingErrorMsg(err, "invalid verify credential request")
 	}
