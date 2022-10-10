@@ -40,7 +40,7 @@ func NewDIDRouter(s svcframework.Service) (*DIDRouter, error) {
 }
 
 type GetDIDMethodsResponse struct {
-	DIDMethods []did.Method `json:"didMethods,omitempty"`
+	DIDMethods []didsdk.Method `json:"methods,omitempty"`
 }
 
 // GetDIDMethods godoc
@@ -94,7 +94,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 	}
 
 	// TODO(gabe) check if the key type is supported for the method, to tell whether this is a bad req or internal error
-	createDIDRequest := did.CreateDIDRequest{Method: did.Method(*method), KeyType: request.KeyType}
+	createDIDRequest := did.CreateDIDRequest{Method: didsdk.Method(*method), KeyType: request.KeyType}
 	createDIDResponse, err := dr.service.CreateDIDByMethod(createDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)
@@ -141,7 +141,7 @@ func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _
 
 	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
 	// TODO(gabe) differentiate between internal errors and not found DIDs
-	getDIDRequest := did.GetDIDRequest{Method: did.Method(*method), ID: *id}
+	getDIDRequest := did.GetDIDRequest{Method: didsdk.Method(*method), ID: *id}
 	gotDID, err := dr.service.GetDIDByMethod(getDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get DID for method<%s> with id: %s", *method, *id)
@@ -177,7 +177,7 @@ func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, 
 
 	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
 	// TODO(gabe) differentiate between internal errors and not found DIDs
-	getDIDsRequest := did.GetDIDsRequest{Method: did.Method(*method)}
+	getDIDsRequest := did.GetDIDsRequest{Method: didsdk.Method(*method)}
 	gotDIDs, err := dr.service.GetDIDsByMethod(getDIDsRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get DIDs for method: %s", *method)
@@ -186,5 +186,41 @@ func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	resp := GetDIDsByMethodResponse{DIDs: gotDIDs.DIDs}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
+
+type ResolveDIDResponse struct {
+	ResolutionMetadata  *didsdk.DIDResolutionMetadata `json:"didResolutionMetadata,omitempty"`
+	DIDDocument         *didsdk.DIDDocument           `json:"didDocument"`
+	DIDDocumentMetadata *didsdk.DIDDocumentMetadata   `json:"didDocumentMetadata,omitempty"`
+}
+
+// ResolveDID godoc
+// @Summary      Resolve a DID
+// @Description  Resolve a DID that may not be stored in this service
+// @Tags         DecentralizedIdentityAPI
+// @Accept       json
+// @Produce      json
+// @Param        id       path      string                    true  "ID"
+// @Success      200      {object}  ResolveDIDResponse
+// @Failure      400      {string}  string  "Bad request"
+// @Router       /v1/dids/resolver/{id} [get]
+func (dr DIDRouter) ResolveDID(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		errMsg := "get DID request missing id parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	resolveDIDRequest := did.ResolveDIDRequest{DID: *id}
+	resolvedDID, err := dr.service.ResolveDID(resolveDIDRequest)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get DID with id: %s", *id)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	resp := ResolveDIDResponse{ResolutionMetadata: resolvedDID.ResolutionMetadata, DIDDocument: resolvedDID.DIDDocument, DIDDocumentMetadata: resolvedDID.DIDDocumentMetadata}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }

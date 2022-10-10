@@ -9,6 +9,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -17,6 +18,7 @@ import (
 func TestSchemaAPI(t *testing.T) {
 	t.Run("Test Create Schema", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -65,6 +67,7 @@ func TestSchemaAPI(t *testing.T) {
 
 	t.Run("Test Get Schemas", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {

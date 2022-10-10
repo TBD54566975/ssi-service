@@ -7,8 +7,10 @@ import (
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -18,6 +20,7 @@ import (
 func TestDWNAPI(t *testing.T) {
 	t.Run("Test DWN Publish Manifest", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -26,8 +29,8 @@ func TestDWNAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, manifestService := testManifest(tt, bolt, keyStoreService, credentialService)
 		dwnService := testDWNRouter(tt, bolt, keyStoreService, manifestService)
 
@@ -35,7 +38,7 @@ func TestDWNAPI(t *testing.T) {
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)

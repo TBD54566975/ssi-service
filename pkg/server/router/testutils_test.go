@@ -23,7 +23,13 @@ func testKeyStoreService(t *testing.T, db *storage.BoltDB) *keystore.Service {
 }
 
 func testDIDService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service) *did.Service {
-	serviceConfig := config.DIDServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "did"}, Methods: []string{"key"}}
+	serviceConfig := config.DIDServiceConfig{
+		BaseServiceConfig: &config.BaseServiceConfig{
+			Name: "did",
+		},
+		Methods:           []string{"key"},
+		ResolutionMethods: []string{"key"},
+	}
 	// create a did service
 	didService, err := did.NewDIDService(serviceConfig, db, keyStore)
 	require.NoError(t, err)
@@ -31,10 +37,10 @@ func testDIDService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service
 	return didService
 }
 
-func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service) *credential.Service {
+func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service) *credential.Service {
 	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 	// create a credential service
-	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore)
+	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver())
 	require.NoError(t, err)
 	require.NotEmpty(t, credentialService)
 	return credentialService

@@ -8,8 +8,10 @@ import (
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -19,6 +21,7 @@ import (
 func TestManifestAPI(t *testing.T) {
 	t.Run("Test Create Manifest", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -27,8 +30,8 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// missing required field: Manifest
@@ -47,7 +50,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -73,6 +76,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Get Manifest By ID", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -81,8 +85,8 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		w := httptest.NewRecorder()
@@ -107,7 +111,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -139,6 +143,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Get Manifests", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -147,15 +152,15 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		w := httptest.NewRecorder()
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -188,6 +193,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Delete Manifest", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -196,13 +202,13 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -253,6 +259,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Submit Application", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -261,8 +268,8 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
@@ -284,7 +291,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -326,6 +333,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Get Application By ID and Get Applications", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -334,8 +342,8 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 		w := httptest.NewRecorder()
 
@@ -350,7 +358,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
@@ -429,6 +437,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Delete Application", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -437,13 +446,13 @@ func TestManifestAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		credentialService := testCredentialService(tt, bolt, keyStoreService)
 		didService := testDIDService(tt, bolt, keyStoreService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// create an issuer
 		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  did.KeyMethod,
+			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)

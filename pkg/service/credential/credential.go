@@ -5,11 +5,12 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
+	didint "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
-	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
+	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	credstorage "github.com/tbd54566975/ssi-service/pkg/service/credential/storage"
@@ -19,8 +20,9 @@ import (
 )
 
 type Service struct {
-	storage credstorage.Storage
-	config  config.CredentialServiceConfig
+	storage  credstorage.Storage
+	config   config.CredentialServiceConfig
+	verifier *credint.CredentialVerifier
 
 	// external dependencies
 	keyStore *keystore.Service
@@ -44,15 +46,20 @@ func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
 
-func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
+func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, resolver *didint.Resolver) (*Service, error) {
 	credentialStorage, err := credstorage.NewCredentialStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate storage for the credential service"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
+	verifier, err := credint.NewCredentialVerifier(resolver)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate verifier for the credential service")
+	}
 	return &Service{
 		storage:  credentialStorage,
 		config:   config,
+		verifier: verifier,
 		keyStore: keyStore,
 	}, nil
 }
@@ -130,7 +137,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	}
 
 	// store the credential
-	container := credmodel.CredentialContainer{
+	container := credint.CredentialContainer{
 		ID:            cred.ID,
 		Credential:    cred,
 		CredentialJWT: credJWT,
@@ -168,6 +175,55 @@ func (s Service) signCredentialJWT(issuer string, cred credential.VerifiableCred
 	return &credToken.Token, nil
 }
 
+type VerifyCredentialRequest struct {
+	DataIntegrityCredential *credential.VerifiableCredential `json:"credential,omitempty"`
+	CredentialJWT           *string                          `json:"credentialJwt,omitempty"`
+}
+
+// IsValid checks if the request is valid, meaning there is at least one data integrity OR jwt credential, but not both
+func (vcr VerifyCredentialRequest) IsValid() error {
+	if vcr.DataIntegrityCredential == nil && vcr.CredentialJWT == nil {
+		return errors.New("either a credential or a credential JWT must be provided")
+	}
+	if vcr.DataIntegrityCredential != nil && vcr.CredentialJWT != nil {
+		return errors.New("only one of credential or credential JWT can be provided")
+	}
+	return nil
+}
+
+type VerifyCredentialResponse struct {
+	Verified bool   `json:"verified" json:"verified"`
+	Reason   string `json:"reason,omitempty" json:"reason,omitempty"`
+}
+
+// VerifyCredential does three levels of verification on a credential:
+// 1. Makes sure the credential has a valid signature
+// 2. Makes sure the credential has is not expired
+// 3. Makes sure the credential complies with the VC Data Model
+// 4. If the credential has a schema, makes sure its data complies with the schema
+// LATER: Makes sure the credential has not been revoked, other checks.
+// Note: https://github.com/TBD54566975/ssi-sdk/issues/213
+func (s Service) VerifyCredential(request VerifyCredentialRequest) (*VerifyCredentialResponse, error) {
+
+	logrus.Debugf("verifying credential: %+v", request)
+
+	if err := request.IsValid(); err != nil {
+		return nil, util.LoggingErrorMsg(err, "invalid verify credential request")
+	}
+
+	if request.CredentialJWT != nil {
+		if err := s.verifier.VerifyJWTCredential(*request.CredentialJWT); err != nil {
+			return &VerifyCredentialResponse{Verified: false, Reason: err.Error()}, nil
+		}
+	} else {
+		if err := s.verifier.VerifyDataIntegrityCredential(*request.DataIntegrityCredential); err != nil {
+			return &VerifyCredentialResponse{Verified: false, Reason: err.Error()}, nil
+		}
+	}
+
+	return &VerifyCredentialResponse{Verified: true}, nil
+}
+
 func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResponse, error) {
 
 	logrus.Debugf("getting credential: %s", request.ID)
@@ -182,7 +238,7 @@ func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResp
 		return nil, util.LoggingNewError(errMsg)
 	}
 	response := GetCredentialResponse{
-		credmodel.CredentialContainer{
+		credint.CredentialContainer{
 			ID:            gotCred.CredentialID,
 			Credential:    gotCred.Credential,
 			CredentialJWT: gotCred.CredentialJWT,
@@ -201,9 +257,9 @@ func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credmodel.CredentialContainer
+	var creds []credint.CredentialContainer
 	for _, cred := range gotCreds {
-		container := credmodel.CredentialContainer{
+		container := credint.CredentialContainer{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
@@ -225,9 +281,9 @@ func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) 
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credmodel.CredentialContainer
+	var creds []credint.CredentialContainer
 	for _, cred := range gotCreds {
-		container := credmodel.CredentialContainer{
+		container := credint.CredentialContainer{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
@@ -248,9 +304,9 @@ func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credmodel.CredentialContainer
+	var creds []credint.CredentialContainer
 	for _, cred := range gotCreds {
-		container := credmodel.CredentialContainer{
+		container := credint.CredentialContainer{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,

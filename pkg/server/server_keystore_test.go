@@ -11,6 +11,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -19,6 +20,7 @@ import (
 func TestKeyStoreAPI(t *testing.T) {
 	t.Run("Test Store Key", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {
@@ -68,6 +70,7 @@ func TestKeyStoreAPI(t *testing.T) {
 
 	t.Run("Test Get Key Details", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
 
 		// remove the db file after the test
 		tt.Cleanup(func() {

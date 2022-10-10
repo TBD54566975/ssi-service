@@ -87,7 +87,7 @@ func (h *keyDIDHandler) GetDID(request GetDIDRequest) (*GetDIDResponse, error) {
 	return &GetDIDResponse{DID: gotDID.DID}, nil
 }
 
-func (h *keyDIDHandler) GetDIDs(method Method) (*GetDIDsResponse, error) {
+func (h *keyDIDHandler) GetDIDs(method did.Method) (*GetDIDsResponse, error) {
 
 	logrus.Debugf("getting DIDs for method: %s", method)
 
