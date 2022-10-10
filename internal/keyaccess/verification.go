@@ -20,17 +20,17 @@ import (
 // resolution will fail.
 func GetVerificationInformation(did didsdk.DIDDocument, maybeKID string) (kid string, pubKey crypto.PublicKey, err error) {
 	if did.IsEmpty() {
-		return "", nil, errors.Errorf("did doc: %s is empty", did)
+		return "", nil, errors.Errorf("did doc: %+v is empty", did)
 	}
 	verificationMethods := did.VerificationMethod
 	if len(verificationMethods) == 0 {
-		return "", nil, errors.Errorf("did doc: %s has no verification methods", did)
+		return "", nil, errors.Errorf("did doc: %s has no verification methods", did.ID)
 	}
 
 	// handle the case where a kid is provided && there are multiple verification methods
 	if len(verificationMethods) > 1 {
 		if kid == "" {
-			return "", nil, errors.Errorf("kid is required for did: %s, which has multiple verification methods", did)
+			return "", nil, errors.Errorf("kid is required for did: %s, which has multiple verification methods", did.ID)
 		}
 		for _, method := range verificationMethods {
 			if method.ID == kid {

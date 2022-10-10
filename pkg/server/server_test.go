@@ -237,15 +237,15 @@ func testDIDRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Servic
 	return didRouter
 }
 
-func testSchemaService(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *schema.Service {
-	schemaService, err := schema.NewSchemaService(config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-schema"}}, bolt, keyStore)
+func testSchemaService(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service, did *did.Service) *schema.Service {
+	schemaService, err := schema.NewSchemaService(config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-schema"}}, bolt, keyStore, did.GetResolver())
 	require.NoError(t, err)
 	require.NotEmpty(t, schemaService)
 	return schemaService
 }
 
-func testSchemaRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *router.SchemaRouter {
-	schemaService := testSchemaService(t, bolt, keyStore)
+func testSchemaRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service, did *did.Service) *router.SchemaRouter {
+	schemaService := testSchemaService(t, bolt, keyStore, did)
 
 	// create router for service
 	schemaRouter, err := router.NewSchemaRouter(schemaService)

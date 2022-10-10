@@ -83,13 +83,14 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the DID service")
 	}
+	didResolver := didService.GetResolver()
 
-	schemaService, err := schema.NewSchemaService(config.SchemaConfig, storageProvider, keyStoreService)
+	schemaService, err := schema.NewSchemaService(config.SchemaConfig, storageProvider, keyStoreService, didResolver)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the schema service")
 	}
 
-	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider, keyStoreService, didService.GetResolver())
+	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider, keyStoreService, didResolver)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the credential service")
 	}
