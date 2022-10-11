@@ -18,6 +18,7 @@ import (
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
+	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -102,6 +103,104 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, resp.CredentialJWT)
 		assert.NoError(tt, err)
 		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
+	})
+
+	t.Run("Test Create Credential with Schema", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
+
+		w := httptest.NewRecorder()
+
+		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		// create a schema
+		simpleSchema := map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"firstName": map[string]interface{}{
+					"type": "string",
+				},
+				"lastName": map[string]interface{}{
+					"type": "string",
+				},
+			},
+			"required":             []interface{}{"firstName", "lastName"},
+			"additionalProperties": false,
+		}
+		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
+
+		createCredRequest := router.CreateCredentialRequest{
+			Issuer:  issuerDID.DID.ID,
+			Subject: "did:abc:456",
+			Schema:  createdSchema.ID,
+			Data: map[string]interface{}{
+				"firstName": "Jack",
+				"lastName":  "Dorsey",
+			},
+			Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+		}
+		requestValue := newRequestValue(tt, createCredRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
+		err = credRouter.CreateCredential(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateCredentialResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, resp.CredentialJWT)
+
+		w.Flush()
+
+		// get credential by schema
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?schema=%s", createdSchema.ID), nil)
+		err = credRouter.GetCredentials(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var getCredsResp router.GetCredentialsResponse
+		err = json.NewDecoder(w.Body).Decode(&getCredsResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, getCredsResp)
+		assert.Len(tt, getCredsResp.Credentials, 1)
+
+		assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].ID)
+		assert.Equal(tt, resp.Credential.CredentialSchema.ID, getCredsResp.Credentials[0].Credential.CredentialSchema.ID)
+
+		w.Flush()
+
+		// create cred with unknown schema
+		missingSchemaCred := router.CreateCredentialRequest{
+			Issuer:  issuerDID.DID.ID,
+			Subject: "did:abc:456",
+			Schema:  "bad",
+			Data: map[string]interface{}{
+				"firstName": "Jack",
+				"lastName":  "Dorsey",
+			},
+			Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+		}
+		requestValue = newRequestValue(tt, missingSchemaCred)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
+		err = credRouter.CreateCredential(newRequestContext(), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "schema not found")
 	})
 
 	t.Run("Test Get Credential By ID", func(tt *testing.T) {
@@ -204,11 +303,28 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
-		schemaID := "https://test-schema.com/name"
+		// create a schema
+		simpleSchema := map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"firstName": map[string]interface{}{
+					"type": "string",
+				},
+				"lastName": map[string]interface{}{
+					"type": "string",
+				},
+			},
+			"required":             []interface{}{"firstName", "lastName"},
+			"additionalProperties": false,
+		}
+		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
+
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
-			Schema:  schemaID,
+			Schema:  createdSchema.ID,
 			Data: map[string]interface{}{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
@@ -228,7 +344,7 @@ func TestCredentialAPI(t *testing.T) {
 		w.Flush()
 
 		// get credential by schema
-		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?schema=%s", schemaID), nil)
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?schema=%s", createdSchema.ID), nil)
 		err = credRouter.GetCredentials(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
@@ -266,11 +382,9 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
-		schemaID := "https://test-schema.com/name"
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
-			Schema:  schemaID,
 			Data: map[string]interface{}{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
@@ -301,7 +415,6 @@ func TestCredentialAPI(t *testing.T) {
 
 		assert.Len(tt, getCredsResp.Credentials, 1)
 		assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].ID)
-		assert.Equal(tt, resp.Credential.CredentialSchema.ID, getCredsResp.Credentials[0].Credential.CredentialSchema.ID)
 	})
 
 	t.Run("Test Get Credential By Subject", func(tt *testing.T) {
@@ -328,12 +441,10 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
-		schemaID := "https://test-schema.com/name"
 		subjectID := "did:abc:456"
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: subjectID,
-			Schema:  schemaID,
 			Data: map[string]interface{}{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
@@ -452,7 +563,7 @@ func TestCredentialAPI(t *testing.T) {
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
-		
+
 		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,

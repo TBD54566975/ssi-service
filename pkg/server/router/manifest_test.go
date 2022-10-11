@@ -15,6 +15,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
+	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -69,8 +70,22 @@ func TestManifestRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, applicantDID)
 
+		// create a schema for the creds to be issued against
+		emailSchema := map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"email": map[string]interface{}{
+					"type": "string",
+				},
+			},
+			"additionalProperties": true,
+		}
+		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
+
 		// good manifest request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID)
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
 
 		createdManifest, err := manifestService.CreateManifest(createManifestRequest)
 		assert.NoError(tt, err)
@@ -88,7 +103,7 @@ func TestManifestRouter(t *testing.T) {
 	})
 }
 
-func getValidManifestRequest(issuerDID string) manifest.CreateManifestRequest {
+func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifestRequest {
 	createManifestRequest := manifest.CreateManifestRequest{
 		Manifest: manifestsdk.CredentialManifest{
 			ID:          "WA-DL-CLASS-A",
@@ -114,13 +129,13 @@ func getValidManifestRequest(issuerDID string) manifest.CreateManifestRequest {
 			OutputDescriptors: []manifestsdk.OutputDescriptor{
 				{
 					ID:          "id1",
-					Schema:      "https://test.com/schema",
+					Schema:      schemaID,
 					Name:        "good ID",
 					Description: "it's all good",
 				},
 				{
 					ID:          "id2",
-					Schema:      "https://test.com/schema",
+					Schema:      schemaID,
 					Name:        "good ID",
 					Description: "it's all good",
 				},
