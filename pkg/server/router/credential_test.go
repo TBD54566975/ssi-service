@@ -46,7 +46,8 @@ func TestCredentialRouter(t *testing.T) {
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
-		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, credService)
 

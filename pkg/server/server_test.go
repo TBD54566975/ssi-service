@@ -254,18 +254,18 @@ func testSchemaRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Ser
 	return schemaRouter
 }
 
-func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service) *credential.Service {
+func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
 	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 
 	// create a credential service
-	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver())
+	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver(), schema)
 	require.NoError(t, err)
 	require.NotEmpty(t, credentialService)
 	return credentialService
 }
 
-func testCredentialRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service, did *did.Service) *router.CredentialRouter {
-	credentialService := testCredentialService(t, bolt, keyStore, did)
+func testCredentialRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *router.CredentialRouter {
+	credentialService := testCredentialService(t, bolt, keyStore, did, schema)
 
 	// create router for service
 	credentialRouter, err := router.NewCredentialRouter(credentialService)

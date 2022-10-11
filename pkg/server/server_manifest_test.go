@@ -31,7 +31,8 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
-		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// missing required field: Manifest
@@ -86,7 +87,8 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
-		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		w := httptest.NewRecorder()
@@ -153,7 +155,8 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
-		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		w := httptest.NewRecorder()
@@ -203,7 +206,8 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
-		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// create an issuer
@@ -269,8 +273,8 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
-		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
-
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// missing required field: Application
@@ -343,7 +347,8 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
-		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 		w := httptest.NewRecorder()
 
@@ -447,7 +452,8 @@ func TestManifestAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
-		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
 		// create an issuer

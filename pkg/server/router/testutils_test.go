@@ -10,6 +10,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
+	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -37,10 +38,19 @@ func testDIDService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service
 	return didService
 }
 
-func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service) *credential.Service {
+func testSchemaService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service) *schema.Service {
+	serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
+	// create a schema service
+	schemaService, err := schema.NewSchemaService(serviceConfig, db, keyStore, did.GetResolver())
+	require.NoError(t, err)
+	require.NotEmpty(t, schemaService)
+	return schemaService
+}
+
+func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
 	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 	// create a credential service
-	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver())
+	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver(), schema)
 	require.NoError(t, err)
 	require.NotEmpty(t, credentialService)
 	return credentialService

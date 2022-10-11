@@ -46,8 +46,9 @@ func TestManifestRouter(t *testing.T) {
 		serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
-		testCredentialService := testCredentialService(tt, bolt, keyStoreService, didService)
-		manifestService, err := manifest.NewManifestService(serviceConfig, bolt, keyStoreService, testCredentialService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
+		manifestService, err := manifest.NewManifestService(serviceConfig, bolt, keyStoreService, credentialService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, manifestService)
 
