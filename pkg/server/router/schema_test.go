@@ -7,6 +7,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -38,8 +39,8 @@ func TestSchemaRouter(t *testing.T) {
 
 	t.Run("Schema Service Test", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, bolt)
+		require.NoError(tt, err)
+		require.NotEmpty(tt, bolt)
 
 		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -123,10 +124,15 @@ func TestSchemaRouter(t *testing.T) {
 }
 
 func TestSchemaSigning(t *testing.T) {
+	// remove the db file after the test
+	t.Cleanup(func() {
+		_ = os.Remove(storage.DBFile)
+	})
+
 	t.Run("Unsigned Schema Test", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, bolt)
+		require.NoError(tt, err)
+		require.NotEmpty(tt, bolt)
 
 		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -157,58 +163,14 @@ func TestSchemaSigning(t *testing.T) {
 		assert.Empty(tt, createdSchema.SchemaJWT)
 		assert.Equal(tt, "me", createdSchema.Schema.Author)
 		assert.Equal(tt, "simple schema", createdSchema.Schema.Name)
-	})
 
-	t.Run("Missing DID Test", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, bolt)
-
-		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
-		keyStoreService := testKeyStoreService(tt, bolt)
-		didService := testDIDService(tt, bolt, keyStoreService)
-		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, schemaService)
-
-		// check type and status
-		assert.Equal(tt, framework.Schema, schemaService.Type())
-		assert.Equal(tt, framework.StatusReady, schemaService.Status().Status)
-
-		// create a schema and don't sign it
-		simpleSchema := map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"foo": map[string]interface{}{
-					"type": "string",
-				},
-			},
-			"required":             []interface{}{"foo"},
-			"additionalProperties": false,
-		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema, Sign: true})
+		// missing DID
+		createdSchema, err = schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema, Sign: true})
 		assert.Error(tt, err)
 		assert.Empty(tt, createdSchema)
 		assert.Contains(tt, err.Error(), "could not get key for signing schema for author<me>")
-	})
 
-	t.Run("Signing with Valid DID Test", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, bolt)
-
-		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
-		keyStoreService := testKeyStoreService(tt, bolt)
-		didService := testDIDService(tt, bolt, keyStoreService)
-		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, schemaService)
-
-		// check type and status
-		assert.Equal(tt, framework.Schema, schemaService.Type())
-		assert.Equal(tt, framework.StatusReady, schemaService.Status().Status)
-
-		// create an author dID
+		// create an author DID
 		authorDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
@@ -216,18 +178,7 @@ func TestSchemaSigning(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, authorDID)
 
-		// create a schema
-		simpleSchema := map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"foo": map[string]interface{}{
-					"type": "string",
-				},
-			},
-			"required":             []interface{}{"foo"},
-			"additionalProperties": false,
-		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: authorDID.DID.ID, Name: "simple schema", Schema: simpleSchema, Sign: true})
+		createdSchema, err = schemaService.CreateSchema(schema.CreateSchemaRequest{Author: authorDID.DID.ID, Name: "simple schema", Schema: simpleSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.SchemaJWT)
