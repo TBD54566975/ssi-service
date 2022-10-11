@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -27,11 +28,40 @@ type Service struct {
 	keyStore *keystore.Service
 }
 
-// MethodHandler describes the functionality of *all* possible DID service, regardless of method
-type MethodHandler interface {
-	CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error)
-	GetDID(request GetDIDRequest) (*GetDIDResponse, error)
-	GetDIDs(method didsdk.Method) (*GetDIDsResponse, error)
+func (s *Service) Type() framework.Type {
+	return framework.DID
+}
+
+// Status is a self-reporting status for the DID service.
+func (s *Service) Status() framework.Status {
+	ae := sdkutil.NewAppendError()
+	if s.storage == nil {
+		ae.AppendString("no storage configured")
+	}
+	if len(s.handlers) == 0 {
+		ae.AppendString("no did handlers configured")
+	}
+	if s.keyStore == nil {
+		ae.AppendString("no key store service configured")
+	}
+	if s.resolver == nil {
+		ae.AppendString("no resolver configured")
+	}
+	if !ae.IsEmpty() {
+		return framework.Status{
+			Status:  framework.StatusNotReady,
+			Message: fmt.Sprintf("did service is not ready: %s", ae.Error().Error()),
+		}
+	}
+	return framework.Status{Status: framework.StatusReady}
+}
+
+func (s *Service) Config() config.DIDServiceConfig {
+	return s.config
+}
+
+func (s *Service) GetResolver() *didsdk.Resolver {
+	return s.resolver
 }
 
 func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
@@ -46,7 +76,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 		return nil, errors.Wrap(err, "could not instantiate DID resolver")
 	}
 
-	svc := Service{
+	service := Service{
 		storage:  didStorage,
 		handlers: make(map[didsdk.Method]MethodHandler),
 		keyStore: keyStore,
@@ -55,12 +85,22 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 
 	// instantiate all handlers for DID methods
 	for _, m := range config.Methods {
-		if err := svc.instantiateHandlerForMethod(didsdk.Method(m)); err != nil {
+		if err = service.instantiateHandlerForMethod(didsdk.Method(m)); err != nil {
 			return nil, errors.Wrap(err, "could not instantiate DID service")
 		}
 	}
 
-	return &svc, nil
+	if !service.Status().IsReady() {
+		return nil, errors.New(service.Status().Message)
+	}
+	return &service, nil
+}
+
+// MethodHandler describes the functionality of *all* possible DID service, regardless of method
+type MethodHandler interface {
+	CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error)
+	GetDID(request GetDIDRequest) (*GetDIDResponse, error)
+	GetDIDs(method didsdk.Method) (*GetDIDsResponse, error)
 }
 
 func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
@@ -77,29 +117,6 @@ func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
 		return util.LoggingError(err)
 	}
 	return nil
-}
-
-func (s *Service) Type() framework.Type {
-	return framework.DID
-}
-
-// Status is a self-reporting status for the DID service.
-func (s *Service) Status() framework.Status {
-	if s.storage == nil || len(s.handlers) == 0 {
-		return framework.Status{
-			Status:  framework.StatusNotReady,
-			Message: "storage not loaded and/or no DID methods loaded",
-		}
-	}
-	return framework.Status{Status: framework.StatusReady}
-}
-
-func (s *Service) Config() config.DIDServiceConfig {
-	return s.config
-}
-
-func (s *Service) GetResolver() *didsdk.Resolver {
-	return s.resolver
 }
 
 func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, error) {

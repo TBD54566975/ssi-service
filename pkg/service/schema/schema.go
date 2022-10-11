@@ -37,10 +37,20 @@ func (s Service) Type() framework.Type {
 }
 
 func (s Service) Status() framework.Status {
+	ae := sdkutil.NewAppendError()
 	if s.storage == nil {
+		ae.AppendString("no storage configured")
+	}
+	if s.keyStore == nil {
+		ae.AppendString("no key store service configured")
+	}
+	if s.resolver == nil {
+		ae.AppendString("no did resolver configured")
+	}
+	if !ae.IsEmpty() {
 		return framework.Status{
 			Status:  framework.StatusNotReady,
-			Message: "storage not loaded",
+			Message: fmt.Sprintf("schema service is not ready: %s", ae.Error().Error()),
 		}
 	}
 	return framework.Status{Status: framework.StatusReady}
@@ -56,12 +66,16 @@ func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorag
 		errMsg := "could not instantiate storage for the schema service"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
-	return &Service{
+	service := Service{
 		storage:  schemaStorage,
 		config:   config,
 		keyStore: keyStore,
 		resolver: resolver,
-	}, nil
+	}
+	if !service.Status().IsReady() {
+		return nil, errors.New(service.Status().Message)
+	}
+	return &service, nil
 }
 
 // CreateSchema houses the main service logic for schema creation. It validates the input, and

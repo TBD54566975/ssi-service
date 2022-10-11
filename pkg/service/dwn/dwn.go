@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -27,17 +28,17 @@ func (s Service) Type() framework.Type {
 }
 
 func (s Service) Status() framework.Status {
-	err := sdkutil.NewAppendError()
+	ae := sdkutil.NewAppendError()
 	if s.keyStore == nil {
-		err.AppendString("keystore not set")
+		ae.AppendString("no key store service configured")
 	}
 	if s.manifest == nil {
-		err.AppendString("manifest not set")
+		ae.AppendString("no manifest service configured")
 	}
-	if gotErr := err.Error(); gotErr != nil {
+	if !ae.IsEmpty() {
 		return framework.Status{
 			Status:  framework.StatusNotReady,
-			Message: gotErr.Error(),
+			Message: fmt.Sprintf("dwn service is not ready: %s", ae.Error().Error()),
 		}
 	}
 	return framework.Status{Status: framework.StatusReady}
@@ -48,17 +49,15 @@ func (s Service) Config() config.DWNServiceConfig {
 }
 
 func NewDWNService(config config.DWNServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, manifest *manifest.Service) (*Service, error) {
-	if keyStore == nil {
-		return nil, fmt.Errorf("keystore not set")
-	}
-	if manifest == nil {
-		return nil, fmt.Errorf("manifest not set")
-	}
-	return &Service{
+	service := Service{
 		config:   config,
 		keyStore: keyStore,
 		manifest: manifest,
-	}, nil
+	}
+	if !service.Status().IsReady() {
+		return nil, errors.New(service.Status().Message)
+	}
+	return &service, nil
 }
 
 func (s Service) GetManifest(request DWNPublishManifestRequest) (*DWNPublishManifestResponse, error) {

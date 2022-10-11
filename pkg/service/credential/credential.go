@@ -6,6 +6,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	didint "github.com/TBD54566975/ssi-sdk/did"
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -16,6 +17,7 @@ import (
 	credstorage "github.com/tbd54566975/ssi-service/pkg/service/credential/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
+	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -26,6 +28,7 @@ type Service struct {
 
 	// external dependencies
 	keyStore *keystore.Service
+	schema   *schema.Service
 }
 
 func (s Service) Type() framework.Type {
@@ -33,10 +36,23 @@ func (s Service) Type() framework.Type {
 }
 
 func (s Service) Status() framework.Status {
+	ae := sdkutil.NewAppendError()
 	if s.storage == nil {
+		ae.AppendString("no storage configured")
+	}
+	if s.verifier == nil {
+		ae.AppendString("no credential verifier configured")
+	}
+	if s.keyStore == nil {
+		ae.AppendString("no key store service configured")
+	}
+	if s.schema == nil {
+		ae.AppendString("no schema service configured")
+	}
+	if !ae.IsEmpty() {
 		return framework.Status{
 			Status:  framework.StatusNotReady,
-			Message: "no storage",
+			Message: fmt.Sprintf("credential service is not ready: %s", ae.Error().Error()),
 		}
 	}
 	return framework.Status{Status: framework.StatusReady}
@@ -46,7 +62,7 @@ func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
 
-func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, resolver *didint.Resolver) (*Service, error) {
+func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, resolver *didint.Resolver, schema *schema.Service) (*Service, error) {
 	credentialStorage, err := credstorage.NewCredentialStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate storage for the credential service"
@@ -56,12 +72,17 @@ func NewCredentialService(config config.CredentialServiceConfig, s storage.Servi
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate verifier for the credential service")
 	}
-	return &Service{
+	service := Service{
 		storage:  credentialStorage,
 		config:   config,
 		verifier: verifier,
 		keyStore: keyStore,
-	}, nil
+		schema:   schema,
+	}
+	if !service.Status().IsReady() {
+		return nil, errors.New(service.Status().Message)
+	}
+	return &service, nil
 }
 
 func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCredentialResponse, error) {
@@ -100,11 +121,13 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 
 	// if a schema value exists, verify we can access it, validate the data against it, then set it
 	if request.JSONSchema != "" {
-		schema := credential.CredentialSchema{
+		// resolve schema
+
+		credSchema := credential.CredentialSchema{
 			ID:   request.JSONSchema,
 			Type: SchemaType,
 		}
-		if err := builder.SetCredentialSchema(schema); err != nil {
+		if err := builder.SetCredentialSchema(credSchema); err != nil {
 			errMsg := fmt.Sprintf("could not set JSON Schema for credential: %s", request.JSONSchema)
 			return nil, util.LoggingErrorMsg(err, errMsg)
 		}
@@ -128,6 +151,8 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		errMsg := "could not build credential"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
+
+	// verify the built schema complies with the schema we've set
 
 	// TODO(gabe) support Data Integrity creds too https://github.com/TBD54566975/ssi-service/issues/105
 	// sign the credential

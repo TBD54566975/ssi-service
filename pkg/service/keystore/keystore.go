@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -27,10 +28,14 @@ func (s Service) Type() framework.Type {
 }
 
 func (s Service) Status() framework.Status {
+	ae := sdkutil.NewAppendError()
 	if s.storage == nil {
+		ae.AppendString("no storage configured")
+	}
+	if !ae.IsEmpty() {
 		return framework.Status{
 			Status:  framework.StatusNotReady,
-			Message: "no storage",
+			Message: fmt.Sprintf("key store service is not ready: %s", ae.Error().Error()),
 		}
 	}
 	return framework.Status{Status: framework.StatusReady}
@@ -54,10 +59,14 @@ func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceSt
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	return &Service{
+	service := Service{
 		storage: keyStoreStorage,
 		config:  config,
-	}, nil
+	}
+	if !service.Status().IsReady() {
+		return nil, errors.New(service.Status().Message)
+	}
+	return &service, nil
 }
 
 func (s Service) StoreKey(request StoreKeyRequest) error {
