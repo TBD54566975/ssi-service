@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
+	schemalib "github.com/TBD54566975/ssi-sdk/credential/schema"
 	didint "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
@@ -120,14 +121,21 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	}
 
 	// if a schema value exists, verify we can access it, validate the data against it, then set it
+	var credSchema *schemalib.VCJSONSchema
 	if request.JSONSchema != "" {
-		// resolve schema
+		// resolve schema and save it for validation later
+		gotSchema, err := s.schema.GetSchema(schema.GetSchemaRequest{ID: request.JSONSchema})
+		if err != nil {
+			errMsg := fmt.Sprintf("failed to create credential; could not get schema: %s", request.JSONSchema)
+			return nil, util.LoggingErrorMsg(err, errMsg)
+		}
+		credSchema = &gotSchema.Schema
 
 		credSchema := credential.CredentialSchema{
 			ID:   request.JSONSchema,
 			Type: SchemaType,
 		}
-		if err := builder.SetCredentialSchema(credSchema); err != nil {
+		if err = builder.SetCredentialSchema(credSchema); err != nil {
 			errMsg := fmt.Sprintf("could not set JSON Schema for credential: %s", request.JSONSchema)
 			return nil, util.LoggingErrorMsg(err, errMsg)
 		}
@@ -153,6 +161,12 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	}
 
 	// verify the built schema complies with the schema we've set
+	if credSchema != nil {
+		if err = schemalib.IsCredentialValidForVCJSONSchema(*cred, *credSchema); err != nil {
+			errMsg := fmt.Sprintf("credential data does not comply with the provided schema: %s", request.JSONSchema)
+			return nil, util.LoggingErrorMsg(err, errMsg)
+		}
+	}
 
 	// TODO(gabe) support Data Integrity creds too https://github.com/TBD54566975/ssi-service/issues/105
 	// sign the credential
