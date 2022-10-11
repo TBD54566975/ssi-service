@@ -2,9 +2,11 @@ package storage
 
 import (
 	"fmt"
+
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -24,7 +26,7 @@ func NewBoltSchemaStorage(db *storage.BoltDB) (*BoltSchemaStorage, error) {
 }
 
 func (b BoltSchemaStorage) StoreSchema(schema StoredSchema) error {
-	id := schema.Schema.ID
+	id := schema.ID
 	if id == "" {
 		err := errors.New("could not store schema without an ID")
 		logrus.WithError(err).Error()

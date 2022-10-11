@@ -7,11 +7,14 @@ import (
 	"os"
 	"testing"
 
+	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
+	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -27,7 +30,8 @@ func TestSchemaAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		schemaService := testSchemaRouter(tt, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
 
 		simpleSchema := map[string]interface{}{
 			"type": "object",
@@ -65,7 +69,7 @@ func TestSchemaAPI(t *testing.T) {
 		assert.EqualValues(tt, schemaRequest.Schema, resp.Schema.Schema)
 	})
 
-	t.Run("Test Get Schemas", func(tt *testing.T) {
+	t.Run("Test Sign & Verify Schema", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		require.NoError(tt, err)
 
@@ -76,7 +80,92 @@ func TestSchemaAPI(t *testing.T) {
 		})
 
 		keyStoreService := testKeyStoreService(tt, bolt)
-		schemaService := testSchemaRouter(tt, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
+
+		simpleSchema := map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"foo": map[string]interface{}{
+					"type": "string",
+				},
+			},
+			"required":             []interface{}{"foo"},
+			"additionalProperties": false,
+		}
+
+		w := httptest.NewRecorder()
+
+		// sign request with unknown DID
+		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema, Sign: true}
+		schemaRequestValue := newRequestValue(tt, schemaRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
+		err = schemaService.CreateSchema(newRequestContext(), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "could not create schema with authoring DID: did:test")
+
+		// create a DID
+		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		// sign with known DID
+		schemaRequest = router.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "test schema", Schema: simpleSchema, Sign: true}
+		schemaRequestValue = newRequestValue(tt, schemaRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
+		err = schemaService.CreateSchema(newRequestContext(), w, req)
+
+		var resp router.CreateSchemaResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, resp.SchemaJWT)
+		assert.NotEmpty(tt, resp.ID)
+		assert.EqualValues(tt, schemaRequest.Schema, resp.Schema.Schema)
+
+		// verify schema
+		verifySchemaRequest := router.VerifySchemaRequest{SchemaJWT: *resp.SchemaJWT}
+		verifySchemaRequestValue := newRequestValue(tt, verifySchemaRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas/verification", verifySchemaRequestValue)
+		err = schemaService.VerifySchema(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var verifyResp router.VerifySchemaResponse
+		err = json.NewDecoder(w.Body).Decode(&verifyResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, verifyResp)
+		assert.True(tt, verifyResp.Verified)
+
+		// verify a bad schema
+		verifySchemaRequest = router.VerifySchemaRequest{SchemaJWT: "bad"}
+		verifySchemaRequestValue = newRequestValue(tt, verifySchemaRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas/verification", verifySchemaRequestValue)
+		err = schemaService.VerifySchema(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		err = json.NewDecoder(w.Body).Decode(&verifyResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, verifyResp)
+		assert.False(tt, verifyResp.Verified)
+		assert.Contains(tt, verifyResp.Reason, "could not verify schema")
+	})
+
+	t.Run("Test Get Schema and Get Schemas", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
 
 		// get schema that doesn't exist
 		w := httptest.NewRecorder()
@@ -159,5 +248,75 @@ func TestSchemaAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&getSchemasResp)
 		assert.NoError(tt, err)
 		assert.Len(tt, getSchemasResp.Schemas, 1)
+	})
+
+	t.Run("Test Delete Schema", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
+
+		w := httptest.NewRecorder()
+
+		// delete a schema that doesn't exist
+		req := httptest.NewRequest(http.MethodDelete, "https://ssi-service.com/v1/schemas/bad", nil)
+		err = schemaService.DeleteSchema(newRequestContextWithParams(map[string]string{"id": "bad"}), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "could not delete schema with id: bad")
+
+		// create a schema
+		simpleSchema := map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"foo": map[string]interface{}{
+					"type": "string",
+				},
+			},
+			"required":             []interface{}{"foo"},
+			"additionalProperties": false,
+		}
+
+		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema}
+		schemaRequestValue := newRequestValue(tt, schemaRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
+		err = schemaService.CreateSchema(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateSchemaResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, resp.ID)
+		assert.EqualValues(tt, schemaRequest.Schema, resp.Schema.Schema)
+
+		w.Flush()
+
+		// get schema by id
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
+		err = schemaService.GetSchema(newRequestContextWithParams(map[string]string{"id": resp.ID}), w, req)
+		assert.NoError(tt, err)
+
+		w.Flush()
+
+		// delete it
+		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
+		err = schemaService.DeleteSchema(newRequestContextWithParams(map[string]string{"id": resp.ID}), w, req)
+		assert.NoError(tt, err)
+
+		w.Flush()
+
+		// get it back
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
+		err = schemaService.GetSchema(newRequestContextWithParams(map[string]string{"id": resp.ID}), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "schema not found")
 	})
 }

@@ -98,7 +98,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		}
 	}
 
-	// if a schema value exists, set it
+	// if a schema value exists, verify we can access it, validate the data against it, then set it
 	if request.JSONSchema != "" {
 		schema := credential.CredentialSchema{
 			ID:   request.JSONSchema,

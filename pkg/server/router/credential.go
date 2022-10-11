@@ -80,8 +80,15 @@ type CreateCredentialResponse struct {
 // @Router       /v1/credentials [put]
 func (cr CredentialRouter) CreateCredential(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreateCredentialRequest
+	invalidCreateCredentialRequest := "invalid create credential request"
 	if err := framework.Decode(r, &request); err != nil {
-		errMsg := "invalid create credential request"
+		errMsg := invalidCreateCredentialRequest
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	if err := framework.ValidateRequest(request); err != nil {
+		errMsg := invalidCreateCredentialRequest
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}

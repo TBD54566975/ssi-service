@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 
 	"github.com/dimfeld/httptreemux/v5"
@@ -94,4 +95,8 @@ func Decode(r *http.Request, val interface{}) error {
 	}
 
 	return nil
+}
+
+func ValidateRequest(request interface{}) error {
+	return util.IsValidStruct(request)
 }

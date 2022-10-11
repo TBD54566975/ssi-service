@@ -87,8 +87,15 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 	}
 
 	var request CreateDIDByMethodRequest
+	invalidCreateDIDRequest := "invalid create DID request"
 	if err := framework.Decode(r, &request); err != nil {
-		errMsg := "invalid create DID request"
+		errMsg := invalidCreateDIDRequest
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	if err := framework.ValidateRequest(request); err != nil {
+		errMsg := invalidCreateDIDRequest
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}

@@ -4,9 +4,13 @@ import (
 	"os"
 	"testing"
 
+	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -35,12 +39,13 @@ func TestSchemaRouter(t *testing.T) {
 
 	t.Run("Schema Service Test", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, bolt)
+		require.NoError(tt, err)
+		require.NotEmpty(tt, bolt)
 
 		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
-		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, schemaService)
 
@@ -105,5 +110,90 @@ func TestSchemaRouter(t *testing.T) {
 
 		// make sure their IDs are different
 		assert.True(tt, gotSchemas.Schemas[0].ID != gotSchemas.Schemas[1].ID)
+
+		// delete the first schema
+		err = schemaService.DeleteSchema(schema.DeleteSchemaRequest{ID: gotSchemas.Schemas[0].ID})
+		assert.NoError(tt, err)
+
+		// get all schemas, expect one
+		gotSchemas, err = schemaService.GetSchemas()
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, gotSchemas.Schemas)
+		assert.Len(tt, gotSchemas.Schemas, 1)
+	})
+}
+
+func TestSchemaSigning(t *testing.T) {
+	// remove the db file after the test
+	t.Cleanup(func() {
+		_ = os.Remove(storage.DBFile)
+	})
+
+	t.Run("Unsigned Schema Test", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
+		require.NotEmpty(tt, bolt)
+
+		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, schemaService)
+
+		// check type and status
+		assert.Equal(tt, framework.Schema, schemaService.Type())
+		assert.Equal(tt, framework.StatusReady, schemaService.Status().Status)
+
+		// create a schema and don't sign it
+		simpleSchema := map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"foo": map[string]interface{}{
+					"type": "string",
+				},
+			},
+			"required":             []interface{}{"foo"},
+			"additionalProperties": false,
+		}
+		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
+		assert.NotEmpty(tt, createdSchema.ID)
+		assert.Empty(tt, createdSchema.SchemaJWT)
+		assert.Equal(tt, "me", createdSchema.Schema.Author)
+		assert.Equal(tt, "simple schema", createdSchema.Schema.Name)
+
+		// missing DID
+		createdSchema, err = schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema, Sign: true})
+		assert.Error(tt, err)
+		assert.Empty(tt, createdSchema)
+		assert.Contains(tt, err.Error(), "could not get key for signing schema for author<me>")
+
+		// create an author DID
+		authorDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, authorDID)
+
+		createdSchema, err = schemaService.CreateSchema(schema.CreateSchemaRequest{Author: authorDID.DID.ID, Name: "simple schema", Schema: simpleSchema, Sign: true})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
+		assert.NotEmpty(tt, createdSchema.SchemaJWT)
+
+		// verify the schema
+		verifiedSchema, err := schemaService.VerifySchema(schema.VerifySchemaRequest{SchemaJWT: *createdSchema.SchemaJWT})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, verifiedSchema)
+		assert.True(tt, verifiedSchema.Verified)
+
+		// verify a bad schema
+		verifiedSchema, err = schemaService.VerifySchema(schema.VerifySchemaRequest{SchemaJWT: "bad"})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, verifiedSchema)
+		assert.False(tt, verifiedSchema.Verified)
+		assert.Contains(tt, verifiedSchema.Reason, "could not verify schema")
 	})
 }

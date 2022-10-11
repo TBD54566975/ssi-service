@@ -31,6 +31,7 @@ const (
 	ResponsesPrefix    = "/responses"
 	KeyStorePrefix     = "/keys"
 	DWNPrefix          = "/dwn"
+	VerificationPath   = "/verification"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -130,8 +131,10 @@ func (s *SSIServer) SchemaAPI(service svcframework.Service) (err error) {
 	handlerPath := V1Prefix + SchemasPrefix
 
 	s.Handle(http.MethodPut, handlerPath, schemaRouter.CreateSchema)
-	s.Handle(http.MethodGet, handlerPath, schemaRouter.GetSchemas)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), schemaRouter.GetSchema)
+	s.Handle(http.MethodGet, handlerPath, schemaRouter.GetSchemas)
+	s.Handle(http.MethodPut, path.Join(handlerPath, VerificationPath), schemaRouter.VerifySchema)
+	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), schemaRouter.DeleteSchema)
 	return
 }
 
@@ -146,6 +149,7 @@ func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodPut, handlerPath, credRouter.CreateCredential)
 	s.Handle(http.MethodGet, handlerPath, credRouter.GetCredentials)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), credRouter.GetCredential)
+	s.Handle(http.MethodPut, path.Join(handlerPath, VerificationPath), credRouter.VerifyCredential)
 	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), credRouter.DeleteCredential)
 	return
 }
