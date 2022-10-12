@@ -15,6 +15,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
+	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -46,8 +47,9 @@ func TestManifestRouter(t *testing.T) {
 		serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
-		testCredentialService := testCredentialService(tt, bolt, keyStoreService, didService)
-		manifestService, err := manifest.NewManifestService(serviceConfig, bolt, keyStoreService, testCredentialService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
+		manifestService, err := manifest.NewManifestService(serviceConfig, bolt, keyStoreService, credentialService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, manifestService)
 
@@ -68,8 +70,22 @@ func TestManifestRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, applicantDID)
 
+		// create a schema for the creds to be issued against
+		licenseSchema := map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"licenseType": map[string]interface{}{
+					"type": "string",
+				},
+			},
+			"additionalProperties": true,
+		}
+		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
+
 		// good manifest request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID)
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
 
 		createdManifest, err := manifestService.CreateManifest(createManifestRequest)
 		assert.NoError(tt, err)
@@ -87,7 +103,7 @@ func TestManifestRouter(t *testing.T) {
 	})
 }
 
-func getValidManifestRequest(issuerDID string) manifest.CreateManifestRequest {
+func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifestRequest {
 	createManifestRequest := manifest.CreateManifestRequest{
 		Manifest: manifestsdk.CredentialManifest{
 			ID:          "WA-DL-CLASS-A",
@@ -113,13 +129,13 @@ func getValidManifestRequest(issuerDID string) manifest.CreateManifestRequest {
 			OutputDescriptors: []manifestsdk.OutputDescriptor{
 				{
 					ID:          "id1",
-					Schema:      "https://test.com/schema",
+					Schema:      schemaID,
 					Name:        "good ID",
 					Description: "it's all good",
 				},
 				{
 					ID:          "id2",
-					Schema:      "https://test.com/schema",
+					Schema:      schemaID,
 					Name:        "good ID",
 					Description: "it's all good",
 				},

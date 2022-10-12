@@ -40,7 +40,8 @@ func TestDWNRouter(t *testing.T) {
 		serviceConfig := config.DWNServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "dwn"}}
 		keyStore := testKeyStoreService(t, bolt)
 		didService := testDIDService(t, bolt, keyStore)
-		credentialService := testCredentialService(t, bolt, keyStore, didService)
+		schemaService := testSchemaService(t, bolt, keyStore, didService)
+		credentialService := testCredentialService(t, bolt, keyStore, didService, schemaService)
 		manifestService := testManifestService(t, bolt, keyStore, credentialService)
 		dwnService, err := dwn.NewDWNService(serviceConfig, bolt, keyStore, manifestService)
 		assert.NoError(tt, err)
