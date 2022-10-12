@@ -128,10 +128,10 @@ project.
 
 - [x] [DID Management](https://www.w3.org/TR/did-core/) - Using [did:key](https://w3c-ccg.github.io/did-method-key/)
 - [x] [Verifiable Credential Schema](https://w3c-ccg.github.io/vc-json-schemas/v2/index.html) Management
-- [ ] [Verifiable Credential](https://www.w3.org/TR/vc-data-model) Issuance & Verification
+- [x] [Verifiable Credential](https://www.w3.org/TR/vc-data-model) Issuance & Verification
+- [x] Applying for Verifiable Credentials using [Credential Manifest](https://identity.foundation/credential-manifest/)
 - [ ] Requesting, Receiving, and the Validation of Verifiable Claims
   using [Presentation Exchange](https://identity.foundation/presentation-exchange/)
-- [ ] Applying for Verifiable Credentials using [Credential Manifest](https://identity.foundation/credential-manifest/)
 - [ ] Revocations of Verifiable Credentials using the [Status List 2021](https://w3c-ccg.github.io/vc-status-list-2021/)
 - [ ] [Decentralized Web Node](https://identity.foundation/decentralized-web-node/spec/) Messaging
 
@@ -139,9 +139,9 @@ project.
 
 | Resource                                                                                   | Description                                                                   |
 |--------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| [VISION](https://github.com/TBD54566975/ssi-service/blob/main/doc/VISION.md)                   | Outlines the project vision                                                   |
+| [VISION](https://github.com/TBD54566975/ssi-service/blob/main/doc/VISION.md)               | Outlines the project vision                                                   |
 | [SIPs](sip/README.md)                                                                      | Proposals for improving the SSI Service                                       |
-| [VERSIONING](https://github.com/TBD54566975/ssi-service/blob/main/doc/VERSIONING.md)           | Project versioning strategy                                                   |
+| [VERSIONING](https://github.com/TBD54566975/ssi-service/blob/main/doc/VERSIONING.md)       | Project versioning strategy                                                   |
 | [CODEOWNERS](https://github.com/TBD54566975/ssi-service/blob/main/CODEOWNERS)              | Outlines the project lead(s)                                                  |
 | [CODE_OF_CONDUCT](https://github.com/TBD54566975/ssi-service/blob/main/CODE_OF_CONDUCT.md) | Expected behavior for project contributors, promoting a welcoming environment |
 | [CONTRIBUTING](https://github.com/TBD54566975/ssi-service/blob/main/CONTRIBUTING.md)       | Developer guide to build, test, run, access CI, chat, discuss, file issues    |

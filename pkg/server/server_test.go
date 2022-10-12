@@ -117,13 +117,13 @@ func newRequestContextWithParams(params map[string]string) context.Context {
 	return httptreemux.AddParamsToContext(ctx, params)
 }
 
-func getValidManifestRequest(issuer string) manifest.CreateManifestRequest {
+func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifestRequest {
 	createManifestRequest := manifest.CreateManifestRequest{
 		Manifest: manifestsdk.CredentialManifest{
 			ID:          "WA-DL-CLASS-A",
 			SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
 			Issuer: manifestsdk.Issuer{
-				ID: issuer,
+				ID: issuerDID,
 			},
 			PresentationDefinition: &exchange.PresentationDefinition{
 				ID: "pres-def-id",
@@ -143,13 +143,13 @@ func getValidManifestRequest(issuer string) manifest.CreateManifestRequest {
 			OutputDescriptors: []manifestsdk.OutputDescriptor{
 				{
 					ID:          "id1",
-					Schema:      "https://test.com/schema",
+					Schema:      schemaID,
 					Name:        "good ID",
 					Description: "it's all good",
 				},
 				{
 					ID:          "id2",
-					Schema:      "https://test.com/schema",
+					Schema:      schemaID,
 					Name:        "good ID",
 					Description: "it's all good",
 				},

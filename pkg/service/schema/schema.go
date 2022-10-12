@@ -235,6 +235,7 @@ func (s Service) GetSchema(request GetSchemaRequest) (*GetSchemaResponse, error)
 
 	logrus.Debugf("getting schema: %s", request.ID)
 
+	// TODO(gabe) support external schema resolution https://github.com/TBD54566975/ssi-service/issues/125
 	gotSchema, err := s.storage.GetSchema(request.ID)
 	if err != nil {
 		err := errors.Wrapf(err, "error getting schema: %s", request.ID)

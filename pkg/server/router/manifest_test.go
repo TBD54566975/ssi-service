@@ -71,16 +71,16 @@ func TestManifestRouter(t *testing.T) {
 		assert.NotEmpty(tt, applicantDID)
 
 		// create a schema for the creds to be issued against
-		emailSchema := map[string]interface{}{
+		licenseSchema := map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"email": map[string]interface{}{
+				"licenseType": map[string]interface{}{
 					"type": "string",
 				},
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
