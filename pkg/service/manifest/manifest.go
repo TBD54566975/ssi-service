@@ -236,10 +236,10 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	return &response, nil
 }
 
-// TODO: (Neal) Add entire validation framework in place of these validation checks - https://github.com/TBD54566975/ssi-service/issues/95
 func isValidApplication(gotManifest *manifeststorage.StoredManifest, application manifest.CredentialApplication) error {
 	if gotManifest == nil {
-		return util.LoggingNewError(fmt.Sprintf("application is not valid. A manifest does not exist with id: %s", application.ManifestID))
+		errMsg := fmt.Sprintf("application is not valid. A manifest does not exist with id: %s", application.ManifestID)
+		return util.LoggingNewError(errMsg)
 	}
 
 	inputDescriptors := gotManifest.Manifest.PresentationDefinition.InputDescriptors
