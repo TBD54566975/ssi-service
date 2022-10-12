@@ -29,6 +29,10 @@ type Status struct {
 	Message string      `json:"message,omitempty"`
 }
 
+func (s Status) IsReady() bool {
+	return s.Status == StatusReady
+}
+
 // Service is an interface each service must comply with to be registered and orchestrated by the http.
 type Service interface {
 	Type() Type

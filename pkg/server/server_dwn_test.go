@@ -14,6 +14,7 @@ import (
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
+	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -30,22 +31,37 @@ func TestDWNAPI(t *testing.T) {
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
-		credentialService := testCredentialService(tt, bolt, keyStoreService, didService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
 		manifestRouter, manifestService := testManifest(tt, bolt, keyStoreService, credentialService)
 		dwnService := testDWNRouter(tt, bolt, keyStoreService, manifestService)
 
 		w := httptest.NewRecorder()
 
 		// create an issuer
-		issuerDIDDoc, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, issuerDIDDoc)
+		assert.NotEmpty(tt, issuerDID)
+
+		// create a schema for the creds to be issued against
+		licenseSchema := map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"licenseType": map[string]interface{}{
+					"type": "string",
+				},
+			},
+			"additionalProperties": true,
+		}
+		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDIDDoc.DID.ID)
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)

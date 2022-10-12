@@ -15,6 +15,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -46,7 +47,8 @@ func TestCredentialRouter(t *testing.T) {
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
-		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, credService)
 
@@ -118,8 +120,8 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Equal(tt, cred.ID, byIssuer.Credentials[0].Credential.ID)
 		assert.Equal(tt, cred.Issuer, byIssuer.Credentials[0].Credential.Issuer)
 
-		// create another cred with the same issuer, different subject, different schema
-		anotherCreatedCred, err := credService.CreateCredential(credential.CreateCredentialRequest{
+		// create another cred with the same issuer, different subject, different schema that doesn't exist
+		_, err = credService.CreateCredential(credential.CreateCredentialRequest{
 			Issuer:     issuer,
 			Subject:    "did:abcd:efghi",
 			JSONSchema: "https://test-schema.com",
@@ -128,8 +130,36 @@ func TestCredentialRouter(t *testing.T) {
 			},
 			Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
 		})
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "schema not found with id: https://test-schema.com")
+
+		// create schema
+		emailSchema := map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"email": map[string]interface{}{
+					"type": "string",
+				},
+			},
+			"required":             []interface{}{"email"},
+			"additionalProperties": false,
+		}
+		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, anotherCreatedCred)
+		assert.NotEmpty(tt, createdSchema)
+
+		// create another cred with the same issuer, different subject, different schema that does exist
+		createdCredWithSchema, err := credService.CreateCredential(credential.CreateCredentialRequest{
+			Issuer:     issuer,
+			Subject:    "did:abcd:efghi",
+			JSONSchema: createdSchema.ID,
+			Data: map[string]interface{}{
+				"email": "satoshi@nakamoto.com",
+			},
+			Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCredWithSchema)
 
 		// get by issuer
 		byIssuer, err = credService.GetCredentialsByIssuer(credential.GetCredentialByIssuerRequest{Issuer: issuer})
