@@ -39,7 +39,7 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 	}
 
 	// store metadata in DID storage
-	id := doc.ToString()
+	id := doc.String()
 	storedDID := storage.StoredDID{
 		ID:  id,
 		DID: *expanded,

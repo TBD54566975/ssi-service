@@ -136,8 +136,16 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 		return nil, util.LoggingErrorMsg(err, "problem with retrieving manifest during application validation")
 	}
 
+	if gotManifest == nil {
+		return nil, util.LoggingNewError(fmt.Sprintf("application is not valid. A manifest does not exist with id: %s", credApp.ManifestID))
+	}
+
 	// validate
 	if err := isValidApplication(gotManifest, credApp); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not validate application")
+	}
+
+	if err := manifest.IsValidCredentialApplicationForManifest(gotManifest.Manifest, credApp); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not validate application")
 	}
 
@@ -232,7 +240,8 @@ func isValidApplication(gotManifest *manifeststorage.StoredManifest, application
 
 	for _, submissionDescriptor := range application.PresentationSubmission.DescriptorMap {
 		if inputDescriptorIDs[submissionDescriptor.ID] != true {
-			return util.LoggingNewError("application is not valid. The submission descriptor ids do not match the input descriptor ids")
+
+			return util.LoggingNewError("application is not valid. The application's presentation submissions descriptor map ids do not match the manifest's input descriptor ids")
 		}
 	}
 

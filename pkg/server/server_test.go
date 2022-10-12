@@ -126,7 +126,7 @@ func getValidManifestRequest(issuer string) manifest.CreateManifestRequest {
 				ID: issuer,
 			},
 			PresentationDefinition: &exchange.PresentationDefinition{
-				ID: "pres-def-id",
+				ID: "id123",
 				InputDescriptors: []exchange.InputDescriptor{
 					{
 						ID: "test-id",
@@ -170,12 +170,12 @@ func getValidApplicationRequest(applicantDID, manifestID, submissionDescriptorID
 		},
 		PresentationSubmission: &exchange.PresentationSubmission{
 			ID:           "psid",
-			DefinitionID: "definitionId",
+			DefinitionID: "id123",
 			DescriptorMap: []exchange.SubmissionDescriptor{
 				{
 					ID:     submissionDescriptorID,
 					Format: "jwt",
-					Path:   "path",
+					Path:   "$.verifiableCredential[0]",
 				},
 			},
 		},

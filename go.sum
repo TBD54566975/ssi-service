@@ -14,8 +14,12 @@ github.com/TBD54566975/ssi-sdk v0.0.1-alpha.0.20221007010336-560f7ccb3b93 h1:paL
 github.com/TBD54566975/ssi-sdk v0.0.1-alpha.0.20221007010336-560f7ccb3b93/go.mod h1:oi28ndJG+ksI/NvGI+x7t6xHiDXYGOYxORTjuVynklQ=
 github.com/TBD54566975/ssi-sdk v0.0.1-alpha.0.20221007180051-d48966db0f15 h1:tg8HA0K2/a7X6K/K5ayToC7Yrout5+v2CZH5sGpX2mc=
 github.com/TBD54566975/ssi-sdk v0.0.1-alpha.0.20221007180051-d48966db0f15/go.mod h1:oi28ndJG+ksI/NvGI+x7t6xHiDXYGOYxORTjuVynklQ=
+github.com/TBD54566975/ssi-sdk v0.0.1-alpha.0.20221012163631-99a9a918234b h1:7JhNPNNGDdIB7Q6kTaHd3cirG1xcDsmEX2ryK+a5iKM=
+github.com/TBD54566975/ssi-sdk v0.0.1-alpha.0.20221012163631-99a9a918234b/go.mod h1:zmrYK0NCOKbD6lOOXzZBN51RN6Ai78HuZ3Jt0tqbkm0=
 github.com/ardanlabs/conf v1.5.0 h1:5TwP6Wu9Xi07eLFEpiCUF3oQXh9UzHMDVnD3u/I5d5c=
 github.com/ardanlabs/conf v1.5.0/go.mod h1:ILsMo9dMqYzCxDjDXTiwMI0IgxOJd0MOiucbQY2wlJw=
+github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=
+github.com/buger/jsonparser v1.1.1/go.mod h1:6RYKKt7H4d4+iWqouImQ9R2FZql3VbhNgx27UK13J/0=
 github.com/creack/pty v1.1.9/go.mod h1:oKZEueFk5CKHvIhNR5MUki03XCEU+Q6VDXinZuGJ33E=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
@@ -26,6 +30,8 @@ github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 h1:HbphB4TFFXpv7MNrT52FGrrgVXF1
 github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0/go.mod h1:DZGJHZMqrU4JJqFAWUS2UO1+lbSKsdiOoYi9Zzey7Fc=
 github.com/dimfeld/httptreemux/v5 v5.4.0 h1:IiHYEjh+A7pYbhWyjmGnj5HZK6gpOOvyBXCJ+BE8/Gs=
 github.com/dimfeld/httptreemux/v5 v5.4.0/go.mod h1:QeEylH57C0v3VO0tkKraVz9oD3Uu93CKPnTLbsidvSw=
+github.com/flowstack-com/jsonschema v0.1.2 h1:qO2Ed0OHxY88yqqfNwUGfWxF64rVQCdbJ68lmlHSIXs=
+github.com/flowstack-com/jsonschema v0.1.2/go.mod h1:Ce82M1ocyTfow5soqyAcHShvlSUqM8odW0UZVIIK4pQ=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-logr/logr v1.2.3 h1:2DntVwHkVopvECVRSlL5PSo9eG+cAkDCuckLubN+rq0=
 github.com/go-logr/logr v1.2.3/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
@@ -89,6 +95,8 @@ github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852 h1:Yl0tPBa8QPjG
 github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852/go.mod h1:eqOVx5Vwu4gd2mmMZvVZsgIqNSaW3xxRThUJ0k/TPk4=
 github.com/piprate/json-gold v0.4.1 h1:JYbYN36n6YcAYipKy3ttv3X2HDQPeqWqmwta35NPj04=
 github.com/piprate/json-gold v0.4.1/go.mod h1:OK1z7UgtBZk06n2cDE2OSq1kffmjFFp5/2yhLLCz9UM=
+github.com/piprate/json-gold v0.4.2 h1:Rq8V+637HOFcj20KdTqW/g/llCwX2qtau0g5d1pD79o=
+github.com/piprate/json-gold v0.4.2/go.mod h1:OK1z7UgtBZk06n2cDE2OSq1kffmjFFp5/2yhLLCz9UM=
 github.com/pkg/diff v0.0.0-20210226163009-20ebb0f2a09e/go.mod h1:pJLUxLENpZxwdsKMEsNbx1VGcRFpLqf3715MtcvvzbA=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
@@ -138,6 +146,8 @@ golang.org/x/crypto v0.0.0-20220919173607-35f4265a4bc0 h1:a5Yg6ylndHHYJqIPrdq0Ah
 golang.org/x/crypto v0.0.0-20220919173607-35f4265a4bc0/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
 golang.org/x/crypto v0.0.0-20221005025214-4161e89ecf1b h1:huxqepDufQpLLIRXiVkTvnxrzJlpwmIWAObmcCcUFr0=
 golang.org/x/crypto v0.0.0-20221005025214-4161e89ecf1b/go.mod h1:IxCIyHEi3zRg3s0A5j5BB6A9Jmi73HwBIUl50j+osU4=
+golang.org/x/net v0.0.0-20210805182204-aaa1db679c0d/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
+golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2 h1:CIJ76btIcR3eFI5EgSo6k1qKw9KJexJuRLI9G7Hp5wE=
 golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2/go.mod h1:9nx3DQGgdP8bBQD5qxJ1jj9UTztislL4KSBs9R2vV5Y=
 golang.org/x/sys v0.0.0-20200923182605-d9f96fdee20d/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20201119102817-f84b799fce68/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
