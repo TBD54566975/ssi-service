@@ -49,8 +49,8 @@ type PublishManifestResponse struct {
 }
 
 // PublishManifest godoc
-// @Summary      Public Manifest to DWN
-// @Description  Public Manifest to DWN
+// @Summary      Publish Manifest to DWN
+// @Description  Publish Manifest to DWN
 // @Tags         DWNAPI
 // @Accept       json
 // @Produce      json
