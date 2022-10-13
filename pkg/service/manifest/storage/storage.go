@@ -20,7 +20,7 @@ type StoredApplication struct {
 	ID             string                         `json:"id"`
 	ManifestID     string                         `json:"manifestId"`
 	Application    manifest.CredentialApplication `json:"application"`
-	Credentials    []cred.CredentialContainer     `json:"credentials"`
+	Credentials    []cred.Container               `json:"credentials"`
 	ApplicationJWT string                         `json:"applicationJwt"`
 }
 

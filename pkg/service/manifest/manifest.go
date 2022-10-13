@@ -202,7 +202,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 		return nil, util.LoggingErrorMsg(err, "could not fulfill credential application: could not set application id")
 	}
 
-	var creds []cred.CredentialContainer
+	var creds []cred.Container
 	for _, od := range credentialManifest.OutputDescriptors {
 		credentialRequest := credential.CreateCredentialRequest{
 			Issuer:     credentialManifest.Issuer.ID,
@@ -217,7 +217,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 			return nil, util.LoggingErrorMsg(err, "could not create credential")
 		}
 
-		creds = append(creds, credentialResponse.CredentialContainer)
+		creds = append(creds, credentialResponse.Container)
 	}
 
 	// build descriptor map based on credential type

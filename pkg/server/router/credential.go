@@ -198,7 +198,7 @@ func (cr CredentialRouter) VerifyCredential(ctx context.Context, w http.Response
 }
 
 type GetCredentialsResponse struct {
-	Credentials []credmodel.CredentialContainer `json:"credentials"`
+	Credentials []credmodel.Container `json:"credentials"`
 }
 
 // GetCredentials godoc

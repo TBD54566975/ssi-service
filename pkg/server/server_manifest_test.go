@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
+	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -355,7 +356,13 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
-		applicantDID := "did:example:abcd"
+		// create an applicant
+		applicantDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema for the creds to be issued against
 		licenseSchema := map[string]interface{}{
@@ -371,6 +378,16 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
+		// issue a credential against the schema to the subject, from the issuer
+		createdCred, err := credentialService.CreateCredential(credential.CreateCredentialRequest{
+			Issuer:     issuerDID.DID.ID,
+			Subject:    applicantDID.DID.ID,
+			JSONSchema: createdSchema.ID,
+			Data:       map[string]interface{}{"licenseType": "WA-DL-CLASS-A"},
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCred)
+
 		// good request
 		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
 
@@ -383,11 +400,13 @@ func TestManifestAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 
-		assert.NotEmpty(tt, resp.Manifest)
-		assert.Equal(tt, resp.Manifest.Issuer.ID, issuerDID.DID.ID)
+		m := resp.Manifest
+		assert.NotEmpty(tt, m)
+		assert.Equal(tt, m.Issuer.ID, issuerDID.DID.ID)
 
 		// good application request
-		createApplicationRequest := getValidApplicationRequest(applicantDID, resp.Manifest.ID, resp.Manifest.PresentationDefinition.InputDescriptors[0].ID)
+		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
+			m.PresentationDefinition.InputDescriptors[0].ID, []interface{}{createdCred.CredentialJWT})
 
 		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
@@ -398,8 +417,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		assert.NotEmpty(tt, appResp.Response)
-		assert.Equal(tt, appResp.Response.ManifestID, resp.Manifest.ID)
-
+		assert.Equal(tt, resp.Manifest.ID, appResp.Response.ManifestID)
 	})
 
 	t.Run("Test Get Application By ID and Get Applications", func(tt *testing.T) {
@@ -436,7 +454,13 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
-		applicantDID := "did:example:abcd"
+		// create an applicant
+		applicantDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, applicantDID)
 
 		// create a schema for the creds to be issued against
 		licenseSchema := map[string]interface{}{
@@ -452,6 +476,16 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
+		// issue a credential against the schema to the subject, from the issuer
+		createdCred, err := credentialService.CreateCredential(credential.CreateCredentialRequest{
+			Issuer:     issuerDID.DID.ID,
+			Subject:    applicantDID.DID.ID,
+			JSONSchema: createdSchema.ID,
+			Data:       map[string]interface{}{"licenseType": "WA-DL-CLASS-A"},
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCred)
+
 		// good request
 		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
 
@@ -464,8 +498,13 @@ func TestManifestAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 
+		m := resp.Manifest
+		assert.NotEmpty(tt, m)
+		assert.Equal(tt, m.Issuer.ID, issuerDID.DID.ID)
+
 		// good application request
-		createApplicationRequest := getValidApplicationRequest(applicantDID, resp.Manifest.ID, resp.Manifest.PresentationDefinition.InputDescriptors[0].ID)
+		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
+			m.PresentationDefinition.InputDescriptors[0].ID, []interface{}{createdCred.CredentialJWT})
 
 		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
@@ -536,6 +575,8 @@ func TestManifestAPI(t *testing.T) {
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
 
+		w := httptest.NewRecorder()
+
 		// create an issuer
 		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
@@ -544,7 +585,13 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
-		applicantDID := "did:example:abcd"
+		// create an applicant
+		applicantDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema for the creds to be issued against
 		licenseSchema := map[string]interface{}{
@@ -560,12 +607,21 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
+		// issue a credential against the schema to the subject, from the issuer
+		createdCred, err := credentialService.CreateCredential(credential.CreateCredentialRequest{
+			Issuer:     issuerDID.DID.ID,
+			Subject:    applicantDID.DID.ID,
+			JSONSchema: createdSchema.ID,
+			Data:       map[string]interface{}{"licenseType": "WA-DL-CLASS-A"},
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCred)
+
 		// good request
 		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
-		w := httptest.NewRecorder()
 		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
@@ -573,8 +629,13 @@ func TestManifestAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 
+		m := resp.Manifest
+		assert.NotEmpty(tt, m)
+		assert.Equal(tt, m.Issuer.ID, issuerDID.DID.ID)
+
 		// good application request
-		createApplicationRequest := getValidApplicationRequest(applicantDID, resp.Manifest.ID, resp.Manifest.PresentationDefinition.InputDescriptors[0].ID)
+		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
+			m.PresentationDefinition.InputDescriptors[0].ID, []interface{}{createdCred.CredentialJWT})
 
 		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)

@@ -107,12 +107,12 @@ func TestManifestRouter(t *testing.T) {
 		assert.NotEmpty(tt, m)
 
 		// good application request
-		containers := []credmodel.CredentialContainer{{
+		containers := []credmodel.Container{{
 			ID:            createdCred.ID,
 			CredentialJWT: createdCred.CredentialJWT,
 		}}
 		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
-			createManifestRequest.Manifest.PresentationDefinition.InputDescriptors[0].ID, containers)
+			m.PresentationDefinition.InputDescriptors[0].ID, containers)
 
 		createdApplicationResponse, err := manifestService.ProcessApplicationSubmission(createApplicationRequest)
 		assert.NoError(tt, err)
@@ -171,7 +171,7 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 	return createManifestRequest
 }
 
-func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.CredentialContainer) manifest.SubmitApplicationRequest {
+func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.Container) manifest.SubmitApplicationRequest {
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: manifestsdk.SpecVersion,

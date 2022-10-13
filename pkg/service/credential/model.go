@@ -23,7 +23,7 @@ type CreateCredentialRequest struct {
 // CreateCredentialResponse holds a resulting credential from credential creation, which is an XOR type:
 // containing either a Data Integrity Proofed credential or a VC-JWT representation.
 type CreateCredentialResponse struct {
-	credential.CredentialContainer
+	credential.Container
 }
 
 type GetCredentialRequest struct {
@@ -31,7 +31,7 @@ type GetCredentialRequest struct {
 }
 
 type GetCredentialResponse struct {
-	credential.CredentialContainer
+	credential.Container
 }
 
 type GetCredentialByIssuerRequest struct {
@@ -47,7 +47,7 @@ type GetCredentialBySchemaRequest struct {
 }
 
 type GetCredentialsResponse struct {
-	Credentials []credential.CredentialContainer
+	Credentials []credential.Container
 }
 
 type DeleteCredentialRequest struct {

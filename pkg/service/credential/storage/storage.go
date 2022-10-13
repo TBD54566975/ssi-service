@@ -11,7 +11,7 @@ import (
 )
 
 type StoreCredentialRequest struct {
-	cred.CredentialContainer
+	cred.Container
 }
 
 type StoredCredential struct {

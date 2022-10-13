@@ -176,13 +176,13 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	}
 
 	// store the credential
-	container := credint.CredentialContainer{
+	container := credint.Container{
 		ID:            cred.ID,
 		Credential:    cred,
 		CredentialJWT: credJWT,
 	}
 	storageRequest := credstorage.StoreCredentialRequest{
-		CredentialContainer: container,
+		Container: container,
 	}
 	if err := s.storage.StoreCredential(storageRequest); err != nil {
 		errMsg := "could not store credential"
@@ -190,7 +190,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	}
 
 	// return the result
-	response := CreateCredentialResponse{CredentialContainer: container}
+	response := CreateCredentialResponse{Container: container}
 	return &response, nil
 }
 
@@ -277,7 +277,7 @@ func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResp
 		return nil, util.LoggingNewError(errMsg)
 	}
 	response := GetCredentialResponse{
-		credint.CredentialContainer{
+		credint.Container{
 			ID:            gotCred.CredentialID,
 			Credential:    gotCred.Credential,
 			CredentialJWT: gotCred.CredentialJWT,
@@ -296,9 +296,9 @@ func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credint.CredentialContainer
+	var creds []credint.Container
 	for _, cred := range gotCreds {
-		container := credint.CredentialContainer{
+		container := credint.Container{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
@@ -320,9 +320,9 @@ func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) 
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credint.CredentialContainer
+	var creds []credint.Container
 	for _, cred := range gotCreds {
-		container := credint.CredentialContainer{
+		container := credint.Container{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
@@ -343,9 +343,9 @@ func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credint.CredentialContainer
+	var creds []credint.Container
 	for _, cred := range gotCreds {
-		container := credint.CredentialContainer{
+		container := credint.Container{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
