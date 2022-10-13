@@ -135,8 +135,9 @@ func (s Service) DeleteManifest(request DeleteManifestRequest) error {
 }
 
 func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) (*SubmitApplicationResponse, error) {
-	credApp := request.Application
+	// TODO(gabe) validate the application's signature
 
+	credApp := request.Application
 	if err := credApp.IsValid(); err != nil {
 		return nil, util.LoggingErrorMsg(err, "application is not valid")
 	}
@@ -145,18 +146,41 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "problem with retrieving manifest during application validation")
 	}
-
 	if gotManifest == nil {
-		return nil, util.LoggingNewError(fmt.Sprintf("application is not valid. A manifest does not exist with id: %s", credApp.ManifestID))
+		errMsg := fmt.Sprintf("application is not valid; a manifest does not exist with id: %s", credApp.ManifestID)
+		return nil, util.LoggingNewError(errMsg)
 	}
 
-	// validate
-	if err := isValidApplication(gotManifest, credApp); err != nil {
+	// validation
+
+	// first, validate that the application complies with the associated manifest
+	credentialManifest := gotManifest.Manifest
+	if err := manifest.IsValidCredentialApplicationForManifest(credentialManifest, credApp); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not validate application")
 	}
 
-	if err := manifest.IsValidCredentialApplicationForManifest(gotManifest.Manifest, credApp); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not validate application")
+	// next, validate that the credential(s) provided in the application are valid
+	// TODO(neal): this is coming in a future PR after a change to the SDK, and the below will be removed
+	if credentialManifest.PresentationDefinition != nil &&
+		len(credentialManifest.PresentationDefinition.InputDescriptors) > 0 &&
+		len(request.Credentials) == 0 {
+		errMsg := fmt.Sprintf("no credentials provided for application: %s against manifest: %s", credApp.ID, credentialManifest.ID)
+		return nil, util.LoggingNewError(errMsg)
+	}
+
+	// signature and validity checks
+	for _, credentialContainer := range request.Credentials {
+		verificationResult, err := s.credential.VerifyCredential(credential.VerifyCredentialRequest{
+			DataIntegrityCredential: credentialContainer.Credential,
+			CredentialJWT:           credentialContainer.CredentialJWT,
+		})
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not validate credential")
+		}
+		if !verificationResult.Verified {
+			errMsg := fmt.Sprintf("submitted credential<%s> is not valid: %s", credentialContainer.Credential.ID, verificationResult.Reason)
+			return nil, util.LoggingNewError(errMsg)
+		}
 	}
 
 	// store the application
@@ -179,9 +203,9 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	}
 
 	var creds []cred.CredentialContainer
-	for _, od := range gotManifest.Manifest.OutputDescriptors {
+	for _, od := range credentialManifest.OutputDescriptors {
 		credentialRequest := credential.CreateCredentialRequest{
-			Issuer:     gotManifest.Manifest.Issuer.ID,
+			Issuer:     credentialManifest.Issuer.ID,
 			Subject:    request.ApplicantDID,
 			JSONSchema: od.Schema,
 			// TODO(gabe) need to add in data here to match the request + schema
@@ -214,7 +238,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	}
 
 	// set the information for the fulfilled credentials in the response
-	if err := responseBuilder.SetFulfillment(descriptors); err != nil {
+	if err = responseBuilder.SetFulfillment(descriptors); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not fulfill credential application: could not set fulfillment")
 	}
 	credRes, err := responseBuilder.Build()
@@ -234,28 +258,6 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 
 	response := SubmitApplicationResponse{Response: *credRes, Credential: creds}
 	return &response, nil
-}
-
-func isValidApplication(gotManifest *manifeststorage.StoredManifest, application manifest.CredentialApplication) error {
-	if gotManifest == nil {
-		errMsg := fmt.Sprintf("application is not valid. A manifest does not exist with id: %s", application.ManifestID)
-		return util.LoggingNewError(errMsg)
-	}
-
-	inputDescriptors := gotManifest.Manifest.PresentationDefinition.InputDescriptors
-	inputDescriptorIDs := make(map[string]bool)
-	for _, inputDescriptor := range inputDescriptors {
-		inputDescriptorIDs[inputDescriptor.ID] = true
-	}
-
-	for _, submissionDescriptor := range application.PresentationSubmission.DescriptorMap {
-		if inputDescriptorIDs[submissionDescriptor.ID] != true {
-
-			return util.LoggingNewError("application is not valid. The application's presentation submissions descriptor map ids do not match the manifest's input descriptor ids")
-		}
-	}
-
-	return nil
 }
 
 func (s Service) GetApplication(request GetApplicationRequest) (*GetApplicationResponse, error) {

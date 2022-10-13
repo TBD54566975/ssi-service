@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tbd54566975/ssi-service/config"
+	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
@@ -84,16 +86,33 @@ func TestManifestRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
-		// good manifest request
+		// issue a credential against the schema to the subject, from the issuer
+		createdCred, err := credentialService.CreateCredential(credential.CreateCredentialRequest{
+			Issuer:     issuerDID.DID.ID,
+			Subject:    applicantDID.DID.ID,
+			JSONSchema: createdSchema.ID,
+			Data:       map[string]interface{}{"licenseType": "WA-DL-CLASS-A"},
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCred)
+
+		// good manifest request, which asks for a single verifiable credential in the VC-JWT format
 		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
 
 		createdManifest, err := manifestService.CreateManifest(createManifestRequest)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
-		assert.NotEmpty(tt, createdManifest.Manifest)
+
+		m := createdManifest.Manifest
+		assert.NotEmpty(tt, m)
 
 		// good application request
-		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, createdManifest.Manifest.ID, createManifestRequest.Manifest.PresentationDefinition.InputDescriptors[0].ID)
+		containers := []credmodel.CredentialContainer{{
+			ID:            createdCred.ID,
+			CredentialJWT: createdCred.CredentialJWT,
+		}}
+		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
+			createManifestRequest.Manifest.PresentationDefinition.InputDescriptors[0].ID, containers)
 
 		createdApplicationResponse, err := manifestService.ProcessApplicationSubmission(createApplicationRequest)
 		assert.NoError(tt, err)
@@ -103,11 +122,12 @@ func TestManifestRouter(t *testing.T) {
 	})
 }
 
+// getValidManifestRequest returns a valid manifest request, expecting a single JWT-VC EdDSA credential
 func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifestRequest {
 	createManifestRequest := manifest.CreateManifestRequest{
 		Manifest: manifestsdk.CredentialManifest{
 			ID:          "WA-DL-CLASS-A",
-			SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+			SpecVersion: manifestsdk.SpecVersion,
 			Issuer: manifestsdk.Issuer{
 				ID: issuerDID,
 			},
@@ -119,8 +139,13 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 						Constraints: &exchange.Constraints{
 							Fields: []exchange.Field{
 								{
-									Path: []string{".vc.id"},
+									Path: []string{".verifiableCredential.id"},
 								},
+							},
+						},
+						Format: &exchange.ClaimFormat{
+							JWTVC: &exchange.JWTType{
+								Alg: []crypto.SignatureAlgorithm{crypto.EdDSA},
 							},
 						},
 					},
@@ -146,31 +171,31 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 	return createManifestRequest
 }
 
-func getValidApplicationRequest(applicantDID, manifestID, submissionDescriptorID string) manifest.SubmitApplicationRequest {
+func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.CredentialContainer) manifest.SubmitApplicationRequest {
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
-		SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+		SpecVersion: manifestsdk.SpecVersion,
 		ManifestID:  manifestID,
 		Format: &exchange.ClaimFormat{
 			JWT: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
 		PresentationSubmission: &exchange.PresentationSubmission{
 			ID:           "psid",
-			DefinitionID: "id123",
+			DefinitionID: presDefID,
 			DescriptorMap: []exchange.SubmissionDescriptor{
 				{
 					ID:     submissionDescriptorID,
-					Format: "jwt",
+					Format: exchange.JWTVC.String(),
 					Path:   "$.verifiableCredential[0]",
 				},
 			},
 		},
 	}
 
-	createApplicationRequest := manifest.SubmitApplicationRequest{
-		Application:  createApplication,
+	// TODO(gabe) sign the request
+	return manifest.SubmitApplicationRequest{
 		ApplicantDID: applicantDID,
+		Application:  createApplication,
+		Credentials:  credentials,
 	}
-
-	return createApplicationRequest
 }

@@ -1,10 +1,11 @@
 package dwn
 
 import (
+	"testing"
+
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestPublishManifest(t *testing.T) {
@@ -21,7 +22,7 @@ func getValidManifest() manifestsdk.CredentialManifest {
 
 	return manifestsdk.CredentialManifest{
 		ID:          "WA-DL-CLASS-A",
-		SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+		SpecVersion: manifestsdk.SpecVersion,
 		Issuer: manifestsdk.Issuer{
 			ID: "did:abc:123",
 		},
@@ -33,7 +34,7 @@ func getValidManifest() manifestsdk.CredentialManifest {
 					Constraints: &exchange.Constraints{
 						Fields: []exchange.Field{
 							{
-								Path: []string{".vc.id"},
+								Path: []string{".verifiableCredential.id"},
 							},
 						},
 					},

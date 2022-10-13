@@ -121,7 +121,7 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 	createManifestRequest := manifest.CreateManifestRequest{
 		Manifest: manifestsdk.CredentialManifest{
 			ID:          "WA-DL-CLASS-A",
-			SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+			SpecVersion: manifestsdk.SpecVersion,
 			Issuer: manifestsdk.Issuer{
 				ID: issuerDID,
 			},
@@ -163,7 +163,7 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 func getValidApplicationRequest(applicantDID, manifestID, submissionDescriptorID string) manifest.SubmitApplicationRequest {
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
-		SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+		SpecVersion: manifestsdk.SpecVersion,
 		ManifestID:  manifestID,
 		Format: &exchange.ClaimFormat{
 			JWT: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},

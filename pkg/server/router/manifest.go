@@ -7,6 +7,7 @@ import (
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 
+	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 
 	"github.com/pkg/errors"
@@ -86,7 +87,7 @@ type GetManifestResponse struct {
 
 // GetManifest godoc
 // @Summary      Get manifest
-// @Description  Get manifest by id
+// @Description  Get a credential manifest by its id
 // @Tags         ManifestAPI
 // @Accept       json
 // @Produce      json
@@ -178,16 +179,22 @@ func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWrit
 }
 
 type SubmitApplicationRequest struct {
-	Application manifestsdk.CredentialApplication `json:"application" validate:"required"`
 	// Once we have JWT signed wrapper that can get the did this can be removed
-	ApplicantDID string `json:"applicantDid" validate:"required"`
+	ApplicantDID string                            `json:"applicantDid" validate:"required"`
+	Application  manifestsdk.CredentialApplication `json:"credential_application" validate:"required"`
+	Credentials  []interface{}                     `json:"verifiableCredentials" validate:"required"`
 }
 
-func (sar SubmitApplicationRequest) ToServiceRequest() manifest.SubmitApplicationRequest {
-	return manifest.SubmitApplicationRequest{
-		Application:  sar.Application,
-		ApplicantDID: sar.ApplicantDID,
+func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicationRequest, error) {
+	credContainer, err := credential.NewCredentialContainerFromArray(sar.Credentials)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not parse submitted credentials")
 	}
+	return &manifest.SubmitApplicationRequest{
+		ApplicantDID: sar.ApplicantDID,
+		Application:  sar.Application,
+		Credentials:  credContainer,
+	}, nil
 }
 
 type SubmitApplicationResponse struct {
@@ -215,8 +222,14 @@ func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	req := request.ToServiceRequest()
-	submitApplicationResponse, err := mr.service.ProcessApplicationSubmission(req)
+	req, err := request.ToServiceRequest()
+	if err != nil {
+		errMsg := "invalid submit application request"
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	submitApplicationResponse, err := mr.service.ProcessApplicationSubmission(*req)
 	if err != nil {
 		errMsg := "could not submit application"
 		logrus.WithError(err).Error(errMsg)
