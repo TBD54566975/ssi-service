@@ -107,7 +107,7 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 		Name:     request.Name,
 		Author:   request.Author,
 		Authored: time.Now().Format(time.RFC3339),
-		Schema:   request.Schema,
+		Schema:   prepareJSONSchema(schemaID, request.Name, request.Schema),
 	}
 
 	storedSchema := schemastorage.StoredSchema{ID: schemaID, Schema: schemaValue}
@@ -126,6 +126,23 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 	}
 
 	return &CreateSchemaResponse{ID: schemaID, Schema: schemaValue, SchemaJWT: storedSchema.SchemaJWT}, nil
+}
+
+// make sure the schema is well-formed before proceeding
+func prepareJSONSchema(id, name string, s schema.JSONSchema) schema.JSONSchema {
+	if _, ok := s["$id"]; !ok {
+		s["$id"] = id
+	}
+	if _, ok := s["$schema"]; !ok {
+		s["$schema"] = "http://json-schema.org/draft-07/schema#"
+	}
+	if _, ok := s["description"]; !ok {
+		s["description"] = "schema for " + name
+	}
+	if _, ok := s["required"]; !ok {
+		s["required"] = []string{}
+	}
+	return s
 }
 
 // signSchemaJWT signs a schema after the key associated with the provided author for the schema as a JWT
@@ -246,6 +263,14 @@ func (s Service) GetSchema(request GetSchemaRequest) (*GetSchemaResponse, error)
 		return nil, util.LoggingError(err)
 	}
 	return &GetSchemaResponse{Schema: gotSchema.Schema, SchemaJWT: gotSchema.SchemaJWT}, nil
+}
+
+func (s Service) Resolve(id string) (*schema.VCJSONSchema, error) {
+	schemaResponse, err := s.GetSchema(GetSchemaRequest{ID: id})
+	if err != nil {
+		return nil, err
+	}
+	return &schemaResponse.Schema, nil
 }
 
 func (s Service) DeleteSchema(request DeleteSchemaRequest) error {

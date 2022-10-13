@@ -25,7 +25,7 @@ import (
 type Service struct {
 	storage  credstorage.Storage
 	config   config.CredentialServiceConfig
-	verifier *credint.CredentialVerifier
+	verifier *credint.Verifier
 
 	// external dependencies
 	keyStore *keystore.Service
@@ -63,13 +63,13 @@ func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
 
-func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, resolver *didint.Resolver, schema *schema.Service) (*Service, error) {
+func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver *didint.Resolver, schema *schema.Service) (*Service, error) {
 	credentialStorage, err := credstorage.NewCredentialStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate storage for the credential service"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
-	verifier, err := credint.NewCredentialVerifier(resolver)
+	verifier, err := credint.NewCredentialVerifier(didResolver, schema)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate verifier for the credential service")
 	}

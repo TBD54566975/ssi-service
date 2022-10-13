@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	Version1 string = "1.0.0"
+	Version1 string = "1.0"
 )
 
 type CreateSchemaRequest struct {
