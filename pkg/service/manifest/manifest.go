@@ -28,9 +28,9 @@ type Service struct {
 	config  config.ManifestServiceConfig
 
 	// external dependencies
-	credential *credential.Service
 	keyStore   *keystore.Service
 	resolver   *didsdk.Resolver
+	credential *credential.Service
 }
 
 func (s Service) Type() framework.Type {
@@ -42,11 +42,14 @@ func (s Service) Status() framework.Status {
 	if s.storage == nil {
 		ae.AppendString("no storage configured")
 	}
-	if s.credential == nil {
-		ae.AppendString("no credential service configured")
-	}
 	if s.keyStore == nil {
 		ae.AppendString("no keystore service configured")
+	}
+	if s.resolver == nil {
+		ae.AppendString("no did resolver configured")
+	}
+	if s.credential == nil {
+		ae.AppendString("no credential service configured")
 	}
 	if !ae.IsEmpty() {
 		return framework.Status{
@@ -61,7 +64,7 @@ func (s Service) Config() config.ManifestServiceConfig {
 	return s.config
 }
 
-func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, credential *credential.Service) (*Service, error) {
+func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver *didsdk.Resolver, credential *credential.Service) (*Service, error) {
 	manifestStorage, err := manifeststorage.NewManifestStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate storage for the manifest service"
@@ -71,6 +74,7 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 		storage:    manifestStorage,
 		config:     config,
 		keyStore:   keyStore,
+		resolver:   didResolver,
 		credential: credential,
 	}, nil
 }
@@ -104,7 +108,7 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 	}
 
 	// return the result
-	response := CreateManifestResponse{Manifest: m}
+	response := CreateManifestResponse{Manifest: m, ManifestJWT: *manifestJWT}
 	return &response, nil
 }
 

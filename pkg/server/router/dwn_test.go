@@ -42,7 +42,7 @@ func TestDWNRouter(t *testing.T) {
 		didService := testDIDService(t, bolt, keyStore)
 		schemaService := testSchemaService(t, bolt, keyStore, didService)
 		credentialService := testCredentialService(t, bolt, keyStore, didService, schemaService)
-		manifestService := testManifestService(t, bolt, keyStore, credentialService)
+		manifestService := testManifestService(t, bolt, keyStore, didService, credentialService)
 		dwnService, err := dwn.NewDWNService(serviceConfig, bolt, keyStore, manifestService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, dwnService)

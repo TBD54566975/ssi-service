@@ -85,8 +85,7 @@ func (mr ManifestRouter) CreateManifest(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := CreateManifestResponse{Manifest: createManifestResponse.Manifest}
-
+	resp := CreateManifestResponse{Manifest: createManifestResponse.Manifest, ManifestJWT: createManifestResponse.ManifestJWT}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 

@@ -6,7 +6,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	schemalib "github.com/TBD54566975/ssi-sdk/credential/schema"
-	didint "github.com/TBD54566975/ssi-sdk/did"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -63,7 +63,7 @@ func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
 
-func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver *didint.Resolver, schema *schema.Service) (*Service, error) {
+func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver *didsdk.Resolver, schema *schema.Service) (*Service, error) {
 	credentialStorage, err := credstorage.NewCredentialStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate storage for the credential service"
