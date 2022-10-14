@@ -16,7 +16,21 @@ type Container struct {
 	// Credential ID
 	ID            string
 	Credential    *credential.VerifiableCredential
-	CredentialJWT *string
+	CredentialJWT *CredentialJWT
+}
+
+func (c Container) JWTString() string {
+	return string(*c.CredentialJWT)
+}
+
+type CredentialJWT string
+
+func (c *CredentialJWT) String() string {
+	return string(*c)
+}
+
+func CredentialJWTPtr(s string) *CredentialJWT {
+	return (*CredentialJWT)(&s)
 }
 
 // NewCredentialContainerFromJWT attempts to parse a VC-JWT credential from a string into a Container
@@ -27,7 +41,7 @@ func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
 	}
 	return &Container{
 		ID:            cred.ID,
-		CredentialJWT: &credentialJWT,
+		CredentialJWT: CredentialJWTPtr(credentialJWT),
 	}, nil
 }
 

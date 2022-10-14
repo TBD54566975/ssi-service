@@ -179,7 +179,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	container := credint.Container{
 		ID:            cred.ID,
 		Credential:    cred,
-		CredentialJWT: credJWT,
+		CredentialJWT: credint.CredentialJWTPtr(*credJWT),
 	}
 	storageRequest := credstorage.StoreCredentialRequest{
 		Container: container,
@@ -216,7 +216,7 @@ func (s Service) signCredentialJWT(issuer string, cred credential.VerifiableCred
 
 type VerifyCredentialRequest struct {
 	DataIntegrityCredential *credential.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT           *string                          `json:"credentialJwt,omitempty"`
+	CredentialJWT           *credint.CredentialJWT           `json:"credentialJwt,omitempty"`
 }
 
 // IsValid checks if the request is valid, meaning there is at least one data integrity OR jwt credential, but not both
@@ -301,7 +301,7 @@ func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*
 		container := credint.Container{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
-			CredentialJWT: cred.CredentialJWT,
+			CredentialJWT: (*credint.CredentialJWT)(cred.CredentialJWT),
 		}
 		creds = append(creds, container)
 	}

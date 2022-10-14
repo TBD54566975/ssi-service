@@ -175,7 +175,8 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 			CredentialJWT:           credentialContainer.CredentialJWT,
 		})
 		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not validate credential")
+			errMsg := fmt.Sprintf("could not verify credential: %s", credentialContainer.Credential.ID)
+			return nil, util.LoggingErrorMsg(err, errMsg)
 		}
 		if !verificationResult.Verified {
 			errMsg := fmt.Sprintf("submitted credential<%s> is not valid: %s", credentialContainer.Credential.ID, verificationResult.Reason)

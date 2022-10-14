@@ -22,7 +22,7 @@ type StoredCredential struct {
 
 	// only one of these fields should be present
 	Credential    *credential.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT *string                          `json:"token,omitempty"`
+	CredentialJWT *cred.CredentialJWT              `json:"token,omitempty"`
 
 	Issuer       string `json:"issuer"`
 	Subject      string `json:"subject"`
