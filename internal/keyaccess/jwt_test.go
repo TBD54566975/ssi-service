@@ -99,7 +99,7 @@ func TestJWKKeyAccessSignVerify(t *testing.T) {
 }
 
 func TestJWKKeyAccessSignVerifyCredentials(t *testing.T) {
-	t.Run("Sign and Verify Credentials - Happy Path", func(tt *testing.T) {
+	t.Run("Sign and Verify Credential - Happy Path", func(tt *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		kid := "test-kid"
 		assert.NoError(tt, err)
@@ -126,7 +126,7 @@ func TestJWKKeyAccessSignVerifyCredentials(t *testing.T) {
 		assert.JSONEq(tt, string(testJSON), string(verifiedJSON))
 	})
 
-	t.Run("Sign and Verify Credentials - Bad Data", func(tt *testing.T) {
+	t.Run("Sign and Verify Credential - Bad Data", func(tt *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		kid := "test-kid"
 		assert.NoError(tt, err)
@@ -140,7 +140,7 @@ func TestJWKKeyAccessSignVerifyCredentials(t *testing.T) {
 		assert.Contains(tt, err.Error(), "cannot sign invalid credential")
 	})
 
-	t.Run("Sign and Verify Credentials - Bad Signature", func(tt *testing.T) {
+	t.Run("Sign and Verify Credential - Bad Signature", func(tt *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		kid := "test-kid"
 		assert.NoError(tt, err)
