@@ -69,7 +69,7 @@ type CreateCredentialResponse struct {
 }
 
 // CreateCredential godoc
-// @Summary      Create Credential
+// @Summary      Create Credentials
 // @Description  Create a credential
 // @Tags         CredentialAPI
 // @Accept       json
@@ -113,7 +113,7 @@ type GetCredentialResponse struct {
 }
 
 // GetCredential godoc
-// @Summary      Get Credential
+// @Summary      Get Credentials
 // @Description  Get credential by id
 // @Tags         CredentialAPI
 // @Accept       json
@@ -161,7 +161,7 @@ type VerifyCredentialResponse struct {
 }
 
 // VerifyCredential godoc
-// @Summary      Verify Credential
+// @Summary      Verify Credentials
 // @Description  Verify a given credential by its id
 // @Tags         CredentialAPI
 // @Accept       json
@@ -179,7 +179,7 @@ func (cr CredentialRouter) VerifyCredential(ctx context.Context, w http.Response
 	}
 
 	if !request.IsValid() {
-		err := errors.New("request must contain either a Data Integrity Credential or a JWT Credential")
+		err := errors.New("request must contain either a Data Integrity Credentials or a JWT Credentials")
 		logrus.WithError(err).Error()
 		return framework.NewRequestError(err, http.StatusBadRequest)
 	}

@@ -5,8 +5,10 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
+	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -28,6 +30,7 @@ type Service struct {
 	// external dependencies
 	credential *credential.Service
 	keyStore   *keystore.Service
+	resolver   *didsdk.Resolver
 }
 
 func (s Service) Type() framework.Type {
@@ -76,13 +79,9 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 
 	logrus.Debugf("creating manifest: %+v", request)
 
+	// validate the request
 	m := request.Manifest
 	if err := m.IsValid(); err != nil {
-		return nil, util.LoggingErrorMsg(err, "manifest is not valid")
-	}
-
-	// validate the request
-	if err := sdkutil.IsValidStruct(request.Manifest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "manifest is not valid")
 	}
 
@@ -140,6 +139,58 @@ func (s Service) signManifestJWT(m manifest.CredentialManifest) (*keyaccess.JWT,
 		return nil, errors.Wrap(err, errMsg)
 	}
 	return manifestToken, nil
+}
+
+// VerifyManifest verifies a manifest's signature and makes sure the manifest is compliant with the specification
+func (s Service) VerifyManifest(request VerifyManifestRequest) (*VerifyManifestResponse, error) {
+	m, err := s.verifyManifestJWT(request.ManifestJWT)
+	if err != nil {
+		return &VerifyManifestResponse{Verified: false, Reason: "could not verify manifest's signature: " + err.Error()}, nil
+	}
+
+	// check the manifest is valid against its specification
+	if err := m.IsValid(); err != nil {
+		return &VerifyManifestResponse{Verified: false, Reason: "manifest is not valid: " + err.Error()}, nil
+	}
+	return &VerifyManifestResponse{Verified: true}, nil
+}
+
+func (s Service) verifyManifestJWT(token keyaccess.JWT) (*manifest.CredentialManifest, error) {
+	parsed, err := jwt.Parse([]byte(token))
+	if err != nil {
+		errMsg := "could not parse JWT"
+		logrus.WithError(err).Error(errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	claims := parsed.PrivateClaims()
+	claimsJSONBytes, err := json.Marshal(claims)
+	if err != nil {
+		errMsg := "could not marshal claims"
+		logrus.WithError(err).Error(errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	var parsedManifest manifest.CredentialManifest
+	if err := json.Unmarshal(claimsJSONBytes, &parsedManifest); err != nil {
+		errMsg := "could not unmarshal claims into manifest"
+		logrus.WithError(err).Error(errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	resolved, err := s.resolver.Resolve(parsedManifest.Issuer.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to resolve manifest issuer's did: %s", parsedManifest.Issuer.ID)
+	}
+	kid, pubKey, err := keyaccess.GetVerificationInformation(resolved.DIDDocument, "")
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not get verification information from manifest")
+	}
+	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not create manifest verifier")
+	}
+	if err := verifier.Verify(token); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not verify the manifest's signature")
+	}
+	return &parsedManifest, nil
 }
 
 func (s Service) GetManifest(request GetManifestRequest) (*GetManifestResponse, error) {
@@ -307,7 +358,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 		return nil, util.LoggingErrorMsg(err, "could not store manifest response")
 	}
 
-	response := SubmitApplicationResponse{Response: *credRes, Credential: creds}
+	response := SubmitApplicationResponse{Response: *credRes, Credentials: creds}
 	return &response, nil
 }
 

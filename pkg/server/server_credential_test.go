@@ -23,7 +23,7 @@ import (
 )
 
 func TestCredentialAPI(t *testing.T) {
-	t.Run("Test Create Credential", func(tt *testing.T) {
+	t.Run("Test Create Credentials", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		require.NoError(tt, err)
 
@@ -105,7 +105,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
 	})
 
-	t.Run("Test Create Credential with Schema", func(tt *testing.T) {
+	t.Run("Test Create Credentials with Schema", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		require.NoError(tt, err)
 
@@ -203,7 +203,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "schema not found")
 	})
 
-	t.Run("Test Get Credential By ID", func(tt *testing.T) {
+	t.Run("Test Get Credentials By ID", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		require.NoError(tt, err)
 
@@ -279,7 +279,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.ID, getCredResp.ID)
 	})
 
-	t.Run("Test Get Credential By Schema", func(tt *testing.T) {
+	t.Run("Test Get Credentials By Schema", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		require.NoError(tt, err)
 
@@ -358,7 +358,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.CredentialSchema.ID, getCredsResp.Credentials[0].Credential.CredentialSchema.ID)
 	})
 
-	t.Run("Test Get Credential By Issuer", func(tt *testing.T) {
+	t.Run("Test Get Credentials By Issuer", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		require.NoError(tt, err)
 
@@ -417,7 +417,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].ID)
 	})
 
-	t.Run("Test Get Credential By Subject", func(tt *testing.T) {
+	t.Run("Test Get Credentials By Subject", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		require.NoError(tt, err)
 
@@ -478,7 +478,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty], getCredsResp.Credentials[0].Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
 	})
 
-	t.Run("Test Delete Credential", func(tt *testing.T) {
+	t.Run("Test Delete Credentials", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		require.NoError(tt, err)
 
@@ -549,7 +549,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), fmt.Sprintf("could not get credential with id: %s", credID))
 	})
 
-	t.Run("Test Verifying a Credential", func(tt *testing.T) {
+	t.Run("Test Verifying a Credentials", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		require.NoError(tt, err)
 

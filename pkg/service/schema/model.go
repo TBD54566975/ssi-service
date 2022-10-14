@@ -28,6 +28,15 @@ type CreateSchemaResponse struct {
 	SchemaJWT *keyaccess.JWT      `json:"schemaJwt,omitempty"`
 }
 
+type VerifySchemaRequest struct {
+	SchemaJWT keyaccess.JWT `json:"schemaJwt"`
+}
+
+type VerifySchemaResponse struct {
+	Verified bool   `json:"verified" json:"verified"`
+	Reason   string `json:"reason,omitempty" json:"reason,omitempty"`
+}
+
 type GetSchemasResponse struct {
 	Schemas []GetSchemaResponse `json:"schemas,omitempty"`
 }

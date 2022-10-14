@@ -3,9 +3,11 @@ package router
 import (
 	"context"
 	"fmt"
-	"github.com/TBD54566975/ssi-sdk/credential/manifest"
-	"github.com/tbd54566975/ssi-service/pkg/service/dwn"
 	"net/http"
+
+	"github.com/TBD54566975/ssi-sdk/credential/manifest"
+
+	"github.com/tbd54566975/ssi-service/pkg/service/dwn"
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -37,8 +39,8 @@ type PublishManifestRequest struct {
 	ManifestID string `json:"manifestId" validate:"required"`
 }
 
-func (req PublishManifestRequest) ToServiceRequest() dwn.DWNPublishManifestRequest {
-	return dwn.DWNPublishManifestRequest{
+func (req PublishManifestRequest) ToServiceRequest() dwn.PublishManifestRequest {
+	return dwn.PublishManifestRequest{
 		ManifestID: req.ManifestID,
 	}
 }

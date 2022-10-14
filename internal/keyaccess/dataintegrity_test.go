@@ -38,7 +38,7 @@ func TestCreateDataIntegrityKeyAccess(t *testing.T) {
 }
 
 func TestDataIntegrityKeyAccessSignVerify(t *testing.T) {
-	t.Run("Sign and Verify Credential - Happy Path", func(tt *testing.T) {
+	t.Run("Sign and Verify Credentials - Happy Path", func(tt *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		kid := "test-kid"
 		assert.NoError(tt, err)
@@ -61,7 +61,7 @@ func TestDataIntegrityKeyAccessSignVerify(t *testing.T) {
 		assert.NoError(tt, err)
 	})
 
-	t.Run("Sign and Verify Credential - Bad Data", func(tt *testing.T) {
+	t.Run("Sign and Verify Credentials - Bad Data", func(tt *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		kid := "test-kid"
 		assert.NoError(tt, err)
@@ -75,7 +75,7 @@ func TestDataIntegrityKeyAccessSignVerify(t *testing.T) {
 		assert.Contains(tt, err.Error(), "payload cannot be nil")
 	})
 
-	t.Run("Sign and Verify Credential - Bad Signature", func(tt *testing.T) {
+	t.Run("Sign and Verify Credentials - Bad Signature", func(tt *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		kid := "test-kid"
 		assert.NoError(tt, err)

@@ -255,7 +255,7 @@ func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseW
 	}
 
 	var credentials []interface{}
-	for _, container := range submitApplicationResponse.Credential {
+	for _, container := range submitApplicationResponse.Credentials {
 		if container.HasDataIntegrityCredential() {
 			credentials = append(credentials, *container.Credential)
 		} else if container.HasJWTCredential() {
