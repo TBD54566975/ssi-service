@@ -179,7 +179,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	container := credint.Container{
 		ID:            cred.ID,
 		Credential:    cred,
-		CredentialJWT: credint.CredentialJWTPtr(*credJWT),
+		CredentialJWT: credJWT,
 	}
 	storageRequest := credstorage.StoreCredentialRequest{
 		Container: container,
@@ -195,7 +195,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 }
 
 // signCredentialJWT signs a credential and returns it as a vc-jwt
-func (s Service) signCredentialJWT(issuer string, cred credential.VerifiableCredential) (*string, error) {
+func (s Service) signCredentialJWT(issuer string, cred credential.VerifiableCredential) (*keyaccess.JWT, error) {
 	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: issuer})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get key for signing credential with key<%s>", issuer)
@@ -203,20 +203,20 @@ func (s Service) signCredentialJWT(issuer string, cred credential.VerifiableCred
 	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create key access for signing credential with key<%s>", issuer)
+		errMsg := fmt.Sprintf("could not create key access for signing credential with key<%s>", gotKey.ID)
 		return nil, errors.Wrap(err, errMsg)
 	}
 	credToken, err := keyAccess.SignVerifiableCredential(cred)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not sign credential with key<%s>", issuer)
+		errMsg := fmt.Sprintf("could not sign credential with key<%s>", gotKey.ID)
 		return nil, errors.Wrap(err, errMsg)
 	}
-	return &credToken.Token, nil
+	return credToken, nil
 }
 
 type VerifyCredentialRequest struct {
 	DataIntegrityCredential *credential.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT           *credint.CredentialJWT           `json:"credentialJwt,omitempty"`
+	CredentialJWT           *keyaccess.JWT                   `json:"credentialJwt,omitempty"`
 }
 
 // IsValid checks if the request is valid, meaning there is at least one data integrity OR jwt credential, but not both
@@ -301,7 +301,7 @@ func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*
 		container := credint.Container{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
-			CredentialJWT: (*credint.CredentialJWT)(cred.CredentialJWT),
+			CredentialJWT: cred.CredentialJWT,
 		}
 		creds = append(creds, container)
 	}

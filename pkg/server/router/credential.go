@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
@@ -64,7 +65,7 @@ func (c CreateCredentialRequest) ToServiceRequest() credential.CreateCredentialR
 
 type CreateCredentialResponse struct {
 	Credential    *credsdk.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT *credmodel.CredentialJWT      `json:"credentialJwt,omitempty"`
+	CredentialJWT *keyaccess.JWT                `json:"credentialJwt,omitempty"`
 }
 
 // CreateCredential godoc
@@ -108,7 +109,7 @@ func (cr CredentialRouter) CreateCredential(ctx context.Context, w http.Response
 type GetCredentialResponse struct {
 	ID            string                        `json:"id"`
 	Credential    *credsdk.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT *credmodel.CredentialJWT      `json:"credentialJwt,omitempty"`
+	CredentialJWT *keyaccess.JWT                `json:"credentialJwt,omitempty"`
 }
 
 // GetCredential godoc
@@ -146,7 +147,7 @@ func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWri
 
 type VerifyCredentialRequest struct {
 	DataIntegrityCredential *credsdk.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT           *credmodel.CredentialJWT      `json:"credentialJwt,omitempty"`
+	CredentialJWT           *keyaccess.JWT                `json:"credentialJwt,omitempty"`
 }
 
 func (vcr VerifyCredentialRequest) IsValid() bool {

@@ -8,6 +8,8 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 )
 
 // Container acts as an abstraction over both possible credential representations
@@ -16,21 +18,11 @@ type Container struct {
 	// Credential ID
 	ID            string
 	Credential    *credential.VerifiableCredential
-	CredentialJWT *CredentialJWT
+	CredentialJWT *keyaccess.JWT
 }
 
 func (c Container) JWTString() string {
 	return string(*c.CredentialJWT)
-}
-
-type CredentialJWT string
-
-func (c *CredentialJWT) String() string {
-	return string(*c)
-}
-
-func CredentialJWTPtr(s string) *CredentialJWT {
-	return (*CredentialJWT)(&s)
 }
 
 // NewCredentialContainerFromJWT attempts to parse a VC-JWT credential from a string into a Container
@@ -41,7 +33,7 @@ func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
 	}
 	return &Container{
 		ID:            cred.ID,
-		CredentialJWT: CredentialJWTPtr(credentialJWT),
+		CredentialJWT: keyaccess.JWTPtr(credentialJWT),
 	}, nil
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -26,9 +27,7 @@ func NewSchemaRouter(s svcframework.Service) (*SchemaRouter, error) {
 	if !ok {
 		return nil, fmt.Errorf("could not create schema router with service type: %s", s.Type())
 	}
-	return &SchemaRouter{
-		service: schemaService,
-	}, nil
+	return &SchemaRouter{service: schemaService}, nil
 }
 
 type CreateSchemaRequest struct {
@@ -42,7 +41,7 @@ type CreateSchemaRequest struct {
 type CreateSchemaResponse struct {
 	ID        string                 `json:"id"`
 	Schema    schemalib.VCJSONSchema `json:"schema"`
-	SchemaJWT *string                `json:"schemaJwt,omitempty"`
+	SchemaJWT *keyaccess.JWT         `json:"schemaJwt,omitempty"`
 }
 
 // CreateSchema godoc
@@ -145,16 +144,16 @@ func (sr SchemaRouter) GetSchemas(ctx context.Context, w http.ResponseWriter, r 
 
 type GetSchemaResponse struct {
 	Schema    schemalib.VCJSONSchema `json:"schema,omitempty"`
-	SchemaJWT *string                `json:"schemaJwt,omitempty"`
+	SchemaJWT *keyaccess.JWT         `json:"schemaJwt,omitempty"`
 }
 
 type VerifySchemaRequest struct {
-	SchemaJWT string `json:"schemaJwt"`
+	SchemaJWT keyaccess.JWT `json:"schemaJwt" validate:"required"`
 }
 
 type VerifySchemaResponse struct {
-	Verified bool   `json:"verified" json:"verified"`
-	Reason   string `json:"reason,omitempty" json:"reason,omitempty"`
+	Verified bool   `json:"verified"`
+	Reason   string `json:"reason,omitempty"`
 }
 
 // VerifySchema godoc

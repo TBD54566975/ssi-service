@@ -4,6 +4,7 @@ import (
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 )
 
 // Manifest
@@ -13,7 +14,8 @@ type CreateManifestRequest struct {
 }
 
 type CreateManifestResponse struct {
-	Manifest manifestsdk.CredentialManifest
+	Manifest    manifestsdk.CredentialManifest
+	ManifestJWT keyaccess.JWT
 }
 
 type GetManifestRequest struct {
@@ -21,11 +23,12 @@ type GetManifestRequest struct {
 }
 
 type GetManifestResponse struct {
-	Manifest manifestsdk.CredentialManifest
+	Manifest    manifestsdk.CredentialManifest
+	ManifestJWT keyaccess.JWT
 }
 
 type GetManifestsResponse struct {
-	Manifests []manifestsdk.CredentialManifest
+	Manifests []GetManifestResponse
 }
 
 type DeleteManifestRequest struct {

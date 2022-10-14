@@ -6,10 +6,13 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/goccy/go-json"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -70,6 +73,7 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 }
 
 func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestResponse, error) {
+
 	logrus.Debugf("creating manifest: %+v", request)
 
 	m := request.Manifest
@@ -77,20 +81,65 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 		return nil, util.LoggingErrorMsg(err, "manifest is not valid")
 	}
 
-	// store the manifest
-	storageRequest := manifeststorage.StoredManifest{
-		ID:       m.ID,
-		Manifest: m,
-		Issuer:   m.Issuer.ID,
+	// validate the request
+	if err := sdkutil.IsValidStruct(request.Manifest); err != nil {
+		return nil, util.LoggingErrorMsg(err, "manifest is not valid")
 	}
 
-	if err := s.storage.StoreManifest(storageRequest); err != nil {
+	// sign the manifest
+	manifestJWT, err := s.signManifestJWT(m)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not sign manifest")
+	}
+
+	// store the manifest
+	storageRequest := manifeststorage.StoredManifest{
+		ID:          m.ID,
+		Issuer:      m.Issuer.ID,
+		Manifest:    m,
+		ManifestJWT: *manifestJWT,
+	}
+
+	if err = s.storage.StoreManifest(storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store manifest")
 	}
 
 	// return the result
 	response := CreateManifestResponse{Manifest: m}
 	return &response, nil
+}
+
+func (s Service) signManifestJWT(m manifest.CredentialManifest) (*keyaccess.JWT, error) {
+	issuerID := m.Issuer.ID
+	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: issuerID})
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get key for signing manifest with key<%s>", issuerID)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not create key access for signing manifest with key<%s>", gotKey.ID)
+		return nil, errors.Wrap(err, errMsg)
+	}
+
+	// marshal the manifest before signing it as a JWT
+	manifestBytes, err := json.Marshal(m)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not marshal manifest<%s>", m.ID)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	var manifestJSON map[string]interface{}
+	if err := json.Unmarshal(manifestBytes, &manifestJSON); err != nil {
+		errMsg := fmt.Sprintf("could not unmarshal manifest<%s>", m.ID)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	manifestToken, err := keyAccess.Sign(manifestJSON)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not sign manifest with key<%s>", gotKey.ID)
+		return nil, errors.Wrap(err, errMsg)
+	}
+	return manifestToken, nil
 }
 
 func (s Service) GetManifest(request GetManifestRequest) (*GetManifestResponse, error) {
@@ -103,7 +152,7 @@ func (s Service) GetManifest(request GetManifestRequest) (*GetManifestResponse, 
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	response := GetManifestResponse{Manifest: gotManifest.Manifest}
+	response := GetManifestResponse{Manifest: gotManifest.Manifest, ManifestJWT: gotManifest.ManifestJWT}
 	return &response, nil
 }
 
@@ -114,9 +163,10 @@ func (s Service) GetManifests() (*GetManifestsResponse, error) {
 		return nil, util.LoggingErrorMsg(err, "could not get manifests(s)")
 	}
 
-	var manifests []manifest.CredentialManifest
+	var manifests []GetManifestResponse
 	for _, m := range gotManifests {
-		manifests = append(manifests, m.Manifest)
+		response := GetManifestResponse{Manifest: m.Manifest, ManifestJWT: m.ManifestJWT}
+		manifests = append(manifests, response)
 	}
 	response := GetManifestsResponse{Manifests: manifests}
 	return &response, nil

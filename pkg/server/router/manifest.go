@@ -8,6 +8,7 @@ import (
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 
 	"github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 
 	"github.com/pkg/errors"
@@ -34,6 +35,8 @@ func NewManifestRouter(s svcframework.Service) (*ManifestRouter, error) {
 	}, nil
 }
 
+// CreateManifestRequest
+// TODO(gabe) consider simplifying this to accept just output descriptors, format, presentation definition
 type CreateManifestRequest struct {
 	Manifest manifestsdk.CredentialManifest `json:"manifest" validate:"required"`
 }
@@ -45,7 +48,8 @@ func (c CreateManifestRequest) ToServiceRequest() manifest.CreateManifestRequest
 }
 
 type CreateManifestResponse struct {
-	Manifest manifestsdk.CredentialManifest `json:"manifest"`
+	Manifest    manifestsdk.CredentialManifest `json:"credential_manifest"`
+	ManifestJWT keyaccess.JWT                  `json:"manifestJwt"`
 }
 
 // CreateManifest godoc
@@ -67,6 +71,12 @@ func (mr ManifestRouter) CreateManifest(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
+	if err := framework.ValidateRequest(request); err != nil {
+		errMsg := "invalid create manifest request"
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
 	req := request.ToServiceRequest()
 	createManifestResponse, err := mr.service.CreateManifest(req)
 	if err != nil {
@@ -81,8 +91,9 @@ func (mr ManifestRouter) CreateManifest(ctx context.Context, w http.ResponseWrit
 }
 
 type GetManifestResponse struct {
-	ID       string                         `json:"id"`
-	Manifest manifestsdk.CredentialManifest `json:"manifest"`
+	ID          string                         `json:"id"`
+	Manifest    manifestsdk.CredentialManifest `json:"credential_manifest"`
+	ManifestJWT keyaccess.JWT                  `json:"manifestJwt"`
 }
 
 // GetManifest godoc
@@ -111,14 +122,15 @@ func (mr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter,
 	}
 
 	resp := GetManifestResponse{
-		ID:       gotManifest.Manifest.ID,
-		Manifest: gotManifest.Manifest,
+		ID:          gotManifest.Manifest.ID,
+		Manifest:    gotManifest.Manifest,
+		ManifestJWT: gotManifest.ManifestJWT,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
 type GetManifestsResponse struct {
-	Manifests []manifestsdk.CredentialManifest `json:"manifests"`
+	Manifests []GetManifestResponse `json:"manifests,omitempty"`
 }
 
 // GetManifests godoc
@@ -143,10 +155,16 @@ func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	resp := GetManifestsResponse{
-		Manifests: gotManifests.Manifests,
+	var manifests []GetManifestResponse
+	for _, m := range gotManifests.Manifests {
+		manifests = append(manifests, GetManifestResponse{
+			ID:          m.Manifest.ID,
+			Manifest:    m.Manifest,
+			ManifestJWT: m.ManifestJWT,
+		})
 	}
 
+	resp := GetManifestsResponse{Manifests: manifests}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 

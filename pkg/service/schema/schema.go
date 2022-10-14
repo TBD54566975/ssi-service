@@ -146,7 +146,7 @@ func prepareJSONSchema(id, name string, s schema.JSONSchema) schema.JSONSchema {
 }
 
 // signSchemaJWT signs a schema after the key associated with the provided author for the schema as a JWT
-func (s Service) signSchemaJWT(author string, schema schema.VCJSONSchema) (*string, error) {
+func (s Service) signSchemaJWT(author string, schema schema.VCJSONSchema) (*keyaccess.JWT, error) {
 	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: author})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get key for signing schema for author<%s>", author)
@@ -167,14 +167,14 @@ func (s Service) signSchemaJWT(author string, schema schema.VCJSONSchema) (*stri
 		errMsg := fmt.Sprintf("could not sign schema for author<%s>", author)
 		return nil, errors.Wrap(err, errMsg)
 	}
-	if err = s.verifySchemaJWT(string(schemaToken)); err != nil {
+	if err = s.verifySchemaJWT(keyaccess.JWT(schemaToken)); err != nil {
 		return nil, errors.Wrap(err, "could not verify signed schema")
 	}
-	return sdkutil.StringPtr(string(schemaToken)), nil
+	return keyaccess.JWTPtr(string(schemaToken)), nil
 }
 
 type VerifySchemaRequest struct {
-	SchemaJWT string `json:"credentialJwt"`
+	SchemaJWT keyaccess.JWT `json:"credentialJwt"`
 }
 
 type VerifySchemaResponse struct {
@@ -189,7 +189,7 @@ func (s Service) VerifySchema(request VerifySchemaRequest) (*VerifySchemaRespons
 	return &VerifySchemaResponse{Verified: true}, nil
 }
 
-func (s Service) verifySchemaJWT(token string) error {
+func (s Service) verifySchemaJWT(token keyaccess.JWT) error {
 	parsed, err := jwt.Parse([]byte(token))
 	if err != nil {
 		errMsg := "could not parse JWT"
@@ -221,7 +221,7 @@ func (s Service) verifySchemaJWT(token string) error {
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not create verifier")
 	}
-	if err := verifier.Verify(keyaccess.JWKToken{Token: token}); err != nil {
+	if err := verifier.Verify(token); err != nil {
 		return util.LoggingErrorMsg(err, "could not verify the schema's signature")
 	}
 	return nil
@@ -243,9 +243,8 @@ func (s Service) GetSchemas() (*GetSchemasResponse, error) {
 			SchemaJWT: stored.SchemaJWT,
 		})
 	}
-	return &GetSchemasResponse{
-		Schemas: schemas,
-	}, nil
+
+	return &GetSchemasResponse{Schemas: schemas}, nil
 }
 
 func (s Service) GetSchema(request GetSchemaRequest) (*GetSchemaResponse, error) {

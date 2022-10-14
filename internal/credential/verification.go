@@ -47,7 +47,7 @@ func NewCredentialVerifier(didResolver *didsdk.Resolver, schemaResolver schema.R
 
 // VerifyJWTCredential first parses and checks the signature on the given JWT credential. Next, it runs
 // a set of static verification checks on the credential as per the credential service's configuration.
-func (v Verifier) VerifyJWTCredential(token CredentialJWT) error {
+func (v Verifier) VerifyJWTCredential(token keyaccess.JWT) error {
 	// first, parse the token to see if it contains a valid verifiable credential
 	cred, err := signing.ParseVerifiableCredentialFromJWT(token.String())
 	if err != nil {
@@ -67,7 +67,7 @@ func (v Verifier) VerifyJWTCredential(token CredentialJWT) error {
 	}
 
 	// verify the signature on the credential
-	if err := verifier.Verify(keyaccess.JWKToken{Token: token.String()}); err != nil {
+	if err = verifier.Verify(token); err != nil {
 		return util.LoggingErrorMsg(err, "could not verify credential's signature")
 	}
 
@@ -90,7 +90,7 @@ func (v Verifier) VerifyDataIntegrityCredential(credential credsdk.VerifiableCre
 	}
 
 	// verify the signature on the credential
-	if err := verifier.Verify(&credential); err != nil {
+	if err = verifier.Verify(&credential); err != nil {
 		return util.LoggingErrorMsg(err, "could not verify the credential's signature")
 	}
 
