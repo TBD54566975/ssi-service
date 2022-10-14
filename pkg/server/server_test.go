@@ -121,7 +121,7 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 	createManifestRequest := manifest.CreateManifestRequest{
 		Manifest: manifestsdk.CredentialManifest{
 			ID:          "WA-DL-CLASS-A",
-			SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+			SpecVersion: manifestsdk.SpecVersion,
 			Issuer: manifestsdk.Issuer{
 				ID: issuerDID,
 			},
@@ -160,33 +160,33 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 	return createManifestRequest
 }
 
-func getValidApplicationRequest(applicantDID, manifestID, submissionDescriptorID string) manifest.SubmitApplicationRequest {
+func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []interface{}) router.SubmitApplicationRequest {
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
-		SpecVersion: "https://identity.foundation/credential-manifest/spec/v1.0.0/",
+		SpecVersion: manifestsdk.SpecVersion,
 		ManifestID:  manifestID,
 		Format: &exchange.ClaimFormat{
 			JWT: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
 		PresentationSubmission: &exchange.PresentationSubmission{
 			ID:           "psid",
-			DefinitionID: "id123",
+			DefinitionID: presDefID,
 			DescriptorMap: []exchange.SubmissionDescriptor{
 				{
 					ID:     submissionDescriptorID,
-					Format: "jwt",
+					Format: exchange.JWTVC.String(),
 					Path:   "$.verifiableCredential[0]",
 				},
 			},
 		},
 	}
 
-	createApplicationRequest := manifest.SubmitApplicationRequest{
-		Application:  createApplication,
+	// TODO(gabe) sign the request
+	return router.SubmitApplicationRequest{
 		ApplicantDID: applicantDID,
+		Application:  createApplication,
+		Credentials:  credentials,
 	}
-
-	return createApplicationRequest
 }
 
 func testKeyStore(t *testing.T, bolt *storage.BoltDB) (*router.KeyStoreRouter, *keystore.Service) {

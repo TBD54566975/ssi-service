@@ -7,6 +7,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
@@ -33,16 +34,7 @@ func TestSchemaAPI(t *testing.T) {
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
 
-		simpleSchema := map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"foo": map[string]interface{}{
-					"type": "string",
-				},
-			},
-			"required":             []interface{}{"foo"},
-			"additionalProperties": false,
-		}
+		simpleSchema := getTestSchema()
 		badSchemaRequest := router.CreateSchemaRequest{Schema: simpleSchema}
 		schemaRequestValue := newRequestValue(tt, badSchemaRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
@@ -83,20 +75,10 @@ func TestSchemaAPI(t *testing.T) {
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
 
-		simpleSchema := map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"foo": map[string]interface{}{
-					"type": "string",
-				},
-			},
-			"required":             []interface{}{"foo"},
-			"additionalProperties": false,
-		}
-
 		w := httptest.NewRecorder()
 
 		// sign request with unknown DID
+		simpleSchema := getTestSchema()
 		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema, Sign: true}
 		schemaRequestValue := newRequestValue(tt, schemaRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
@@ -199,16 +181,8 @@ func TestSchemaAPI(t *testing.T) {
 		w.Flush()
 
 		// create a schema
-		simpleSchema := map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"foo": map[string]interface{}{
-					"type": "string",
-				},
-			},
-			"required":             []interface{}{"foo"},
-			"additionalProperties": false,
-		}
+		simpleSchema := getTestSchema()
+
 		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema}
 		schemaRequestValue := newRequestValue(tt, schemaRequest)
 		createReq := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
@@ -273,16 +247,7 @@ func TestSchemaAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not delete schema with id: bad")
 
 		// create a schema
-		simpleSchema := map[string]interface{}{
-			"type": "object",
-			"properties": map[string]interface{}{
-				"foo": map[string]interface{}{
-					"type": "string",
-				},
-			},
-			"required":             []interface{}{"foo"},
-			"additionalProperties": false,
-		}
+		simpleSchema := getTestSchema()
 
 		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema}
 		schemaRequestValue := newRequestValue(tt, schemaRequest)
@@ -319,4 +284,20 @@ func TestSchemaAPI(t *testing.T) {
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "schema not found")
 	})
+}
+
+func getTestSchema() schema.JSONSchema {
+	return map[string]interface{}{
+		"$id":         "https://example.com/foo.schema.json",
+		"$schema":     "http://json-schema.org/draft-07/schema#",
+		"description": "foo schema",
+		"type":        "object",
+		"properties": map[string]interface{}{
+			"foo": map[string]interface{}{
+				"type": "string",
+			},
+		},
+		"required":             []interface{}{"foo"},
+		"additionalProperties": false,
+	}
 }

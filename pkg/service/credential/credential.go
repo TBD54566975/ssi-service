@@ -25,7 +25,7 @@ import (
 type Service struct {
 	storage  credstorage.Storage
 	config   config.CredentialServiceConfig
-	verifier *credint.CredentialVerifier
+	verifier *credint.Verifier
 
 	// external dependencies
 	keyStore *keystore.Service
@@ -63,13 +63,13 @@ func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
 
-func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, resolver *didint.Resolver, schema *schema.Service) (*Service, error) {
+func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver *didint.Resolver, schema *schema.Service) (*Service, error) {
 	credentialStorage, err := credstorage.NewCredentialStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate storage for the credential service"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
-	verifier, err := credint.NewCredentialVerifier(resolver)
+	verifier, err := credint.NewCredentialVerifier(didResolver, schema)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate verifier for the credential service")
 	}
@@ -176,13 +176,13 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	}
 
 	// store the credential
-	container := credint.CredentialContainer{
+	container := credint.Container{
 		ID:            cred.ID,
 		Credential:    cred,
-		CredentialJWT: credJWT,
+		CredentialJWT: credint.CredentialJWTPtr(*credJWT),
 	}
 	storageRequest := credstorage.StoreCredentialRequest{
-		CredentialContainer: container,
+		Container: container,
 	}
 	if err := s.storage.StoreCredential(storageRequest); err != nil {
 		errMsg := "could not store credential"
@@ -190,7 +190,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	}
 
 	// return the result
-	response := CreateCredentialResponse{CredentialContainer: container}
+	response := CreateCredentialResponse{Container: container}
 	return &response, nil
 }
 
@@ -216,7 +216,7 @@ func (s Service) signCredentialJWT(issuer string, cred credential.VerifiableCred
 
 type VerifyCredentialRequest struct {
 	DataIntegrityCredential *credential.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT           *string                          `json:"credentialJwt,omitempty"`
+	CredentialJWT           *credint.CredentialJWT           `json:"credentialJwt,omitempty"`
 }
 
 // IsValid checks if the request is valid, meaning there is at least one data integrity OR jwt credential, but not both
@@ -277,7 +277,7 @@ func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResp
 		return nil, util.LoggingNewError(errMsg)
 	}
 	response := GetCredentialResponse{
-		credint.CredentialContainer{
+		credint.Container{
 			ID:            gotCred.CredentialID,
 			Credential:    gotCred.Credential,
 			CredentialJWT: gotCred.CredentialJWT,
@@ -296,12 +296,12 @@ func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credint.CredentialContainer
+	var creds []credint.Container
 	for _, cred := range gotCreds {
-		container := credint.CredentialContainer{
+		container := credint.Container{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
-			CredentialJWT: cred.CredentialJWT,
+			CredentialJWT: (*credint.CredentialJWT)(cred.CredentialJWT),
 		}
 		creds = append(creds, container)
 	}
@@ -320,9 +320,9 @@ func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) 
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credint.CredentialContainer
+	var creds []credint.Container
 	for _, cred := range gotCreds {
-		container := credint.CredentialContainer{
+		container := credint.Container{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
@@ -343,9 +343,9 @@ func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credint.CredentialContainer
+	var creds []credint.Container
 	for _, cred := range gotCreds {
-		container := credint.CredentialContainer{
+		container := credint.Container{
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,

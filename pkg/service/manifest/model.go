@@ -35,13 +35,15 @@ type DeleteManifestRequest struct {
 // Application
 
 type SubmitApplicationRequest struct {
-	Application  manifestsdk.CredentialApplication
-	ApplicantDID string
+	ApplicantDID   string
+	Application    manifestsdk.CredentialApplication
+	Credentials    []cred.Container
+	ApplicationJWT string
 }
 
 type SubmitApplicationResponse struct {
 	Response   manifestsdk.CredentialResponse
-	Credential []cred.CredentialContainer
+	Credential []cred.Container
 }
 
 type GetApplicationRequest struct {

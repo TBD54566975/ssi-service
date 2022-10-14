@@ -64,7 +64,7 @@ func (c CreateCredentialRequest) ToServiceRequest() credential.CreateCredentialR
 
 type CreateCredentialResponse struct {
 	Credential    *credsdk.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT *string                       `json:"credentialJwt,omitempty"`
+	CredentialJWT *credmodel.CredentialJWT      `json:"credentialJwt,omitempty"`
 }
 
 // CreateCredential godoc
@@ -108,7 +108,7 @@ func (cr CredentialRouter) CreateCredential(ctx context.Context, w http.Response
 type GetCredentialResponse struct {
 	ID            string                        `json:"id"`
 	Credential    *credsdk.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT *string                       `json:"credentialJwt,omitempty"`
+	CredentialJWT *credmodel.CredentialJWT      `json:"credentialJwt,omitempty"`
 }
 
 // GetCredential godoc
@@ -146,7 +146,7 @@ func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWri
 
 type VerifyCredentialRequest struct {
 	DataIntegrityCredential *credsdk.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT           *string                       `json:"credentialJwt,omitempty"`
+	CredentialJWT           *credmodel.CredentialJWT      `json:"credentialJwt,omitempty"`
 }
 
 func (vcr VerifyCredentialRequest) IsValid() bool {
@@ -198,7 +198,7 @@ func (cr CredentialRouter) VerifyCredential(ctx context.Context, w http.Response
 }
 
 type GetCredentialsResponse struct {
-	Credentials []credmodel.CredentialContainer `json:"credentials"`
+	Credentials []credmodel.Container `json:"credentials"`
 }
 
 // GetCredentials godoc
