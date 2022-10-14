@@ -39,7 +39,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create credential router with service type: test")
 	})
 
-	t.Run("Credentials Service Test", func(tt *testing.T) {
+	t.Run("Credential Service Test", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)

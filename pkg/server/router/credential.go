@@ -69,7 +69,7 @@ type CreateCredentialResponse struct {
 }
 
 // CreateCredential godoc
-// @Summary      Create Credentials
+// @Summary      Create Credential
 // @Description  Create a credential
 // @Tags         CredentialAPI
 // @Accept       json
