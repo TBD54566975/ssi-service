@@ -1,13 +1,13 @@
 name: End to End Test
 
 on:
-push:
-branches:
-- main
-- test/**
-pull_request:
+  push:
     branches:
     - main
+    - test/**
+  pull_request:
+      branches:
+      - main
 
 jobs:
   end2endtest:
