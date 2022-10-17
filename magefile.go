@@ -18,6 +18,8 @@ import (
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 	"golang.org/x/crypto/ssh/terminal"
+
+	end2end "github.com/tbd54566975/ssi-service/test"
 )
 
 var (
@@ -93,6 +95,11 @@ func Spec() error {
 		return err
 	}
 	return sh.Run(swagCommand, "init", "-g", "cmd/main.go", "--pd", "-o", "doc", "-ot", "yaml")
+}
+
+// EndToEndTest runs a full end-to-end test doing a full credential exchange flow
+func EndToEndTest() error {
+	return end2end.RunTest()
 }
 
 func runCITests(extraTestArgs ...string) error {
