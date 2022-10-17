@@ -122,7 +122,7 @@ func (s Service) signManifestJWT(m manifest.CredentialManifest) (*keyaccess.JWT,
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create key access for signing manifest with key<%s>", gotKey.ID)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
 	// marshal the manifest before signing it as a JWT
@@ -140,7 +140,7 @@ func (s Service) signManifestJWT(m manifest.CredentialManifest) (*keyaccess.JWT,
 	manifestToken, err := keyAccess.Sign(manifestJSON)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not sign manifest with key<%s>", gotKey.ID)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	return manifestToken, nil
 }
