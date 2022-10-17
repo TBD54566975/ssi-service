@@ -6,14 +6,16 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 type StoredManifest struct {
-	ID       string                      `json:"id"`
-	Manifest manifest.CredentialManifest `json:"manifest"`
-	Issuer   string                      `json:"issuer"`
+	ID          string                      `json:"id"`
+	Issuer      string                      `json:"issuer"`
+	Manifest    manifest.CredentialManifest `json:"manifest"`
+	ManifestJWT keyaccess.JWT               `json:"manifestJwt"`
 }
 
 type StoredApplication struct {

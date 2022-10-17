@@ -5,11 +5,16 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/goccy/go-json"
+	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -23,8 +28,9 @@ type Service struct {
 	config  config.ManifestServiceConfig
 
 	// external dependencies
-	credential *credential.Service
 	keyStore   *keystore.Service
+	resolver   *didsdk.Resolver
+	credential *credential.Service
 }
 
 func (s Service) Type() framework.Type {
@@ -36,11 +42,14 @@ func (s Service) Status() framework.Status {
 	if s.storage == nil {
 		ae.AppendString("no storage configured")
 	}
-	if s.credential == nil {
-		ae.AppendString("no credential service configured")
-	}
 	if s.keyStore == nil {
 		ae.AppendString("no keystore service configured")
+	}
+	if s.resolver == nil {
+		ae.AppendString("no did resolver configured")
+	}
+	if s.credential == nil {
+		ae.AppendString("no credential service configured")
 	}
 	if !ae.IsEmpty() {
 		return framework.Status{
@@ -55,7 +64,7 @@ func (s Service) Config() config.ManifestServiceConfig {
 	return s.config
 }
 
-func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, credential *credential.Service) (*Service, error) {
+func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver *didsdk.Resolver, credential *credential.Service) (*Service, error) {
 	manifestStorage, err := manifeststorage.NewManifestStorage(s)
 	if err != nil {
 		errMsg := "could not instantiate storage for the manifest service"
@@ -65,32 +74,127 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 		storage:    manifestStorage,
 		config:     config,
 		keyStore:   keyStore,
+		resolver:   didResolver,
 		credential: credential,
 	}, nil
 }
 
 func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestResponse, error) {
+
 	logrus.Debugf("creating manifest: %+v", request)
 
+	// validate the request
 	m := request.Manifest
 	if err := m.IsValid(); err != nil {
 		return nil, util.LoggingErrorMsg(err, "manifest is not valid")
 	}
 
-	// store the manifest
-	storageRequest := manifeststorage.StoredManifest{
-		ID:       m.ID,
-		Manifest: m,
-		Issuer:   m.Issuer.ID,
+	// sign the manifest
+	manifestJWT, err := s.signManifestJWT(m)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not sign manifest")
 	}
 
-	if err := s.storage.StoreManifest(storageRequest); err != nil {
+	// store the manifest
+	storageRequest := manifeststorage.StoredManifest{
+		ID:          m.ID,
+		Issuer:      m.Issuer.ID,
+		Manifest:    m,
+		ManifestJWT: *manifestJWT,
+	}
+
+	if err = s.storage.StoreManifest(storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store manifest")
 	}
 
 	// return the result
-	response := CreateManifestResponse{Manifest: m}
+	response := CreateManifestResponse{Manifest: m, ManifestJWT: *manifestJWT}
 	return &response, nil
+}
+
+func (s Service) signManifestJWT(m manifest.CredentialManifest) (*keyaccess.JWT, error) {
+	issuerID := m.Issuer.ID
+	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: issuerID})
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get key for signing manifest with key<%s>", issuerID)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not create key access for signing manifest with key<%s>", gotKey.ID)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	// marshal the manifest before signing it as a JWT
+	manifestBytes, err := json.Marshal(m)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not marshal manifest<%s>", m.ID)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	var manifestJSON map[string]interface{}
+	if err := json.Unmarshal(manifestBytes, &manifestJSON); err != nil {
+		errMsg := fmt.Sprintf("could not unmarshal manifest<%s>", m.ID)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	manifestToken, err := keyAccess.Sign(manifestJSON)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not sign manifest with key<%s>", gotKey.ID)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	return manifestToken, nil
+}
+
+// VerifyManifest verifies a manifest's signature and makes sure the manifest is compliant with the specification
+func (s Service) VerifyManifest(request VerifyManifestRequest) (*VerifyManifestResponse, error) {
+	m, err := s.verifyManifestJWT(request.ManifestJWT)
+	if err != nil {
+		return &VerifyManifestResponse{Verified: false, Reason: "could not verify manifest's signature: " + err.Error()}, nil
+	}
+
+	// check the manifest is valid against its specification
+	if err := m.IsValid(); err != nil {
+		return &VerifyManifestResponse{Verified: false, Reason: "manifest is not valid: " + err.Error()}, nil
+	}
+	return &VerifyManifestResponse{Verified: true}, nil
+}
+
+func (s Service) verifyManifestJWT(token keyaccess.JWT) (*manifest.CredentialManifest, error) {
+	parsed, err := jwt.Parse([]byte(token))
+	if err != nil {
+		errMsg := "could not parse JWT"
+		logrus.WithError(err).Error(errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	claims := parsed.PrivateClaims()
+	claimsJSONBytes, err := json.Marshal(claims)
+	if err != nil {
+		errMsg := "could not marshal claims"
+		logrus.WithError(err).Error(errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	var parsedManifest manifest.CredentialManifest
+	if err := json.Unmarshal(claimsJSONBytes, &parsedManifest); err != nil {
+		errMsg := "could not unmarshal claims into manifest"
+		logrus.WithError(err).Error(errMsg)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	resolved, err := s.resolver.Resolve(parsedManifest.Issuer.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to resolve manifest issuer's did: %s", parsedManifest.Issuer.ID)
+	}
+	kid, pubKey, err := keyaccess.GetVerificationInformation(resolved.DIDDocument, "")
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not get verification information from manifest")
+	}
+	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not create manifest verifier")
+	}
+	if err := verifier.Verify(token); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not verify the manifest's signature")
+	}
+	return &parsedManifest, nil
 }
 
 func (s Service) GetManifest(request GetManifestRequest) (*GetManifestResponse, error) {
@@ -103,7 +207,7 @@ func (s Service) GetManifest(request GetManifestRequest) (*GetManifestResponse, 
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	response := GetManifestResponse{Manifest: gotManifest.Manifest}
+	response := GetManifestResponse{Manifest: gotManifest.Manifest, ManifestJWT: gotManifest.ManifestJWT}
 	return &response, nil
 }
 
@@ -114,9 +218,10 @@ func (s Service) GetManifests() (*GetManifestsResponse, error) {
 		return nil, util.LoggingErrorMsg(err, "could not get manifests(s)")
 	}
 
-	var manifests []manifest.CredentialManifest
+	var manifests []GetManifestResponse
 	for _, m := range gotManifests {
-		manifests = append(manifests, m.Manifest)
+		response := GetManifestResponse{Manifest: m.Manifest, ManifestJWT: m.ManifestJWT}
+		manifests = append(manifests, response)
 	}
 	response := GetManifestsResponse{Manifests: manifests}
 	return &response, nil
@@ -257,7 +362,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 		return nil, util.LoggingErrorMsg(err, "could not store manifest response")
 	}
 
-	response := SubmitApplicationResponse{Response: *credRes, Credential: creds}
+	response := SubmitApplicationResponse{Response: *credRes, Credentials: creds}
 	return &response, nil
 }
 

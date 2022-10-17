@@ -16,6 +16,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
+	manifestsvc "github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -35,11 +36,10 @@ func TestManifestAPI(t *testing.T) {
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
-		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, manifestService := testManifest(tt, bolt, keyStoreService, didService, credentialService)
 
 		// missing required field: Manifest
-		badManifestRequest := router.CreateManifestRequest{}
-
+		var badManifestRequest router.CreateManifestRequest
 		badRequestValue := newRequestValue(tt, badManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", badRequestValue)
 		w := httptest.NewRecorder()
@@ -87,6 +87,12 @@ func TestManifestAPI(t *testing.T) {
 
 		assert.NotEmpty(tt, resp.Manifest)
 		assert.Equal(tt, resp.Manifest.Issuer.ID, issuerDID.DID.ID)
+
+		// verify the manifest
+		verificationResponse, err := manifestService.VerifyManifest(manifestsvc.VerifyManifestRequest{ManifestJWT: resp.ManifestJWT})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, verificationResponse)
+		assert.True(tt, verificationResponse.Verified)
 	})
 
 	t.Run("Test Get Manifest By ID", func(tt *testing.T) {
@@ -103,7 +109,7 @@ func TestManifestAPI(t *testing.T) {
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
-		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, didService, credentialService)
 
 		w := httptest.NewRecorder()
 
@@ -185,7 +191,7 @@ func TestManifestAPI(t *testing.T) {
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
-		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, manifestService := testManifest(tt, bolt, keyStoreService, didService, credentialService)
 
 		w := httptest.NewRecorder()
 
@@ -234,6 +240,14 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, getManifestsResp)
 		assert.Len(tt, getManifestsResp.Manifests, 1)
 		assert.Equal(tt, resp.Manifest.ID, getManifestsResp.Manifests[0].ID)
+
+		// verify each manifest
+		for _, m := range getManifestsResp.Manifests {
+			verificationResponse, err := manifestService.VerifyManifest(manifestsvc.VerifyManifestRequest{ManifestJWT: m.ManifestJWT})
+			assert.NoError(tt, err)
+			assert.NotEmpty(tt, verificationResponse)
+			assert.True(tt, verificationResponse.Verified)
+		}
 	})
 
 	t.Run("Test Delete Manifest", func(tt *testing.T) {
@@ -250,7 +264,7 @@ func TestManifestAPI(t *testing.T) {
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
-		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, didService, credentialService)
 
 		// create an issuer
 		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
@@ -330,7 +344,7 @@ func TestManifestAPI(t *testing.T) {
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
-		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, didService, credentialService)
 
 		// missing required field: Application
 		badManifestRequest := router.SubmitApplicationRequest{
@@ -434,7 +448,7 @@ func TestManifestAPI(t *testing.T) {
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
-		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, didService, credentialService)
 		w := httptest.NewRecorder()
 
 		// get a application that doesn't exit
@@ -573,7 +587,7 @@ func TestManifestAPI(t *testing.T) {
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
-		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, didService, credentialService)
 
 		w := httptest.NewRecorder()
 

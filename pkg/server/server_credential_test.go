@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -610,7 +610,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.True(tt, verifyResp.Verified)
 
 		// bad credential
-		requestValue = newRequestValue(tt, router.VerifyCredentialRequest{CredentialJWT: credential.CredentialJWTPtr("bad")})
+		requestValue = newRequestValue(tt, router.VerifyCredentialRequest{CredentialJWT: keyaccess.JWTPtr("bad")})
 		req = httptest.NewRequest(http.MethodPost, "https://ssi-service.com/v1/credentials/verification", requestValue)
 		err = credRouter.VerifyCredential(newRequestContext(), w, req)
 		assert.NoError(tt, err)

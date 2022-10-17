@@ -3,6 +3,8 @@ package schema
 import (
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/TBD54566975/ssi-sdk/util"
+
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 )
 
 const (
@@ -23,7 +25,16 @@ func (csr CreateSchemaRequest) IsValid() bool {
 type CreateSchemaResponse struct {
 	ID        string              `json:"id"`
 	Schema    schema.VCJSONSchema `json:"schema"`
-	SchemaJWT *string             `json:"schemaJwt,omitempty"`
+	SchemaJWT *keyaccess.JWT      `json:"schemaJwt,omitempty"`
+}
+
+type VerifySchemaRequest struct {
+	SchemaJWT keyaccess.JWT `json:"schemaJwt"`
+}
+
+type VerifySchemaResponse struct {
+	Verified bool   `json:"verified" json:"verified"`
+	Reason   string `json:"reason,omitempty" json:"reason,omitempty"`
 }
 
 type GetSchemasResponse struct {
@@ -37,7 +48,7 @@ type GetSchemaRequest struct {
 type GetSchemaResponse struct {
 	ID        string              `json:"id"`
 	Schema    schema.VCJSONSchema `json:"schema"`
-	SchemaJWT *string             `json:"schemaJwt,omitempty"`
+	SchemaJWT *keyaccess.JWT      `json:"schemaJwt,omitempty"`
 }
 
 type DeleteSchemaRequest struct {

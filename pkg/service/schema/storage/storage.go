@@ -5,6 +5,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -12,7 +13,7 @@ import (
 type StoredSchema struct {
 	ID        string              `json:"id"`
 	Schema    schema.VCJSONSchema `json:"schema"`
-	SchemaJWT *string             `json:"token,omitempty"`
+	SchemaJWT *keyaccess.JWT      `json:"token,omitempty"`
 }
 
 type Storage interface {

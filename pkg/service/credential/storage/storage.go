@@ -6,6 +6,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -22,7 +23,7 @@ type StoredCredential struct {
 
 	// only one of these fields should be present
 	Credential    *credential.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT *cred.CredentialJWT              `json:"token,omitempty"`
+	CredentialJWT *keyaccess.JWT                   `json:"token,omitempty"`
 
 	Issuer       string `json:"issuer"`
 	Subject      string `json:"subject"`

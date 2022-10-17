@@ -95,7 +95,7 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the credential service")
 	}
 
-	manifestService, err := manifest.NewManifestService(config.ManifestConfig, storageProvider, keyStoreService, credentialService)
+	manifestService, err := manifest.NewManifestService(config.ManifestConfig, storageProvider, keyStoreService, didResolver, credentialService)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the manifest service")
 	}

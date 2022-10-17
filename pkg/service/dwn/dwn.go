@@ -60,7 +60,7 @@ func NewDWNService(config config.DWNServiceConfig, s storage.ServiceStorage, key
 	return &service, nil
 }
 
-func (s Service) GetManifest(request DWNPublishManifestRequest) (*DWNPublishManifestResponse, error) {
+func (s Service) GetManifest(request PublishManifestRequest) (*PublishManifestResponse, error) {
 
 	logrus.Debugf("getting manifest: %s", request.ManifestID)
 
@@ -70,6 +70,6 @@ func (s Service) GetManifest(request DWNPublishManifestRequest) (*DWNPublishMani
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	response := DWNPublishManifestResponse{Manifest: gotManifest.Manifest}
+	response := PublishManifestResponse{Manifest: gotManifest.Manifest}
 	return &response, nil
 }

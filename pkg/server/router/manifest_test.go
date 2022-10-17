@@ -51,7 +51,7 @@ func TestManifestRouter(t *testing.T) {
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
-		manifestService, err := manifest.NewManifestService(serviceConfig, bolt, keyStoreService, credentialService)
+		manifestService, err := manifest.NewManifestService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), credentialService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, manifestService)
 
@@ -103,6 +103,11 @@ func TestManifestRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
 
+		verificationResponse, err := manifestService.VerifyManifest(manifest.VerifyManifestRequest{ManifestJWT: createdManifest.ManifestJWT})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, verificationResponse)
+		assert.True(tt, verificationResponse.Verified)
+
 		m := createdManifest.Manifest
 		assert.NotEmpty(tt, m)
 
@@ -118,7 +123,7 @@ func TestManifestRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
 		assert.NotEmpty(tt, createdApplicationResponse.Response.ID)
-		assert.Equal(tt, len(createManifestRequest.Manifest.OutputDescriptors), len(createdApplicationResponse.Credential))
+		assert.Equal(tt, len(createManifestRequest.Manifest.OutputDescriptors), len(createdApplicationResponse.Credentials))
 	})
 }
 

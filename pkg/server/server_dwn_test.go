@@ -33,7 +33,7 @@ func TestDWNAPI(t *testing.T) {
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
-		manifestRouter, manifestService := testManifest(tt, bolt, keyStoreService, credentialService)
+		manifestRouter, manifestService := testManifest(tt, bolt, keyStoreService, didService, credentialService)
 		dwnService := testDWNRouter(tt, bolt, keyStoreService, manifestService)
 
 		w := httptest.NewRecorder()
