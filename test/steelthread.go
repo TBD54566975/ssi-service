@@ -28,7 +28,7 @@ func RunTest() error {
 	// Make sure service is up and running
 	output, err := get(endpoint + "readiness")
 	if err != nil {
-		return errors.Wrap(err, "problem with readiness endpoint with output:"+output)
+		return errors.Wrapf(err, "problem with readiness endpoint with output: %s", output)
 	}
 
 	fmt.Println(output)
@@ -37,7 +37,7 @@ func RunTest() error {
 	fmt.Println("\n\nCreate a did for the issuer:")
 	output, err = put(endpoint+version+"dids/key", getJSONFromFile("did.json"))
 	if err != nil {
-		return errors.Wrap(err, "problem with dids/key endpoint with output: "+output)
+		return errors.Wrapf(err, "problem with dids/key endpoint with output: %s", output)
 	}
 
 	fmt.Println(output)
@@ -50,7 +50,7 @@ func RunTest() error {
 	fmt.Println("\n\nCreate a schema to be used in CM:")
 	output, err = put(endpoint+version+"schemas", getJSONFromFile("schema.json"))
 	if err != nil {
-		return errors.Wrap(err, "problem with schema endpoint with output: "+output)
+		return errors.Wrapf(err, "problem with schema endpoint with output: %s", output)
 	}
 
 	fmt.Println(output)
@@ -67,7 +67,7 @@ func RunTest() error {
 	credentialJSON = strings.Replace(credentialJSON, "<SCHEMAID>", schemaID, -1)
 	output, err = put(endpoint+version+"credentials", credentialJSON)
 	if err != nil {
-		return errors.Wrap(err, "problem with credentials endpoint with output: "+output)
+		return errors.Wrapf(err, "problem with credentials endpoint with output: %s", output)
 	}
 
 	fmt.Println(output)
@@ -83,7 +83,7 @@ func RunTest() error {
 	manifestJSON = strings.Replace(manifestJSON, "<ISSUERID>", issuerDID, -1)
 	output, err = put(endpoint+version+"manifests", manifestJSON)
 	if err != nil {
-		return errors.Wrap(err, "problem with manifest endpoint with output: "+output)
+		return errors.Wrapf(err, "problem with manifest endpoint with output: %s", output)
 	}
 
 	fmt.Println(output)
@@ -99,7 +99,7 @@ func RunTest() error {
 	applicationJSON = strings.Replace(applicationJSON, "<VCJWT>", credentialJWT, -1)
 	output, err = put(endpoint+version+"manifests/applications", applicationJSON)
 	if err != nil {
-		return errors.Wrap(err, "problem with application endpoint with output: "+output)
+		return errors.Wrapf(err, "problem with application endpoint with output: %s", output)
 	}
 
 	fmt.Println(output)
@@ -134,7 +134,7 @@ func get(url string) (string, error) {
 	}
 
 	if resp.StatusCode/100 != 2 {
-		return "", errors.New("status code not in the 200s " + string(body))
+		return "", errors.New(fmt.Sprintf("status code not in the 200s. body: %s", string(body)))
 	}
 
 	return string(body), err
@@ -160,7 +160,7 @@ func put(url string, json string) (string, error) {
 	}
 
 	if resp.StatusCode/100 != 2 {
-		return "", errors.New("status code not in the 200s " + string(body))
+		return "", errors.New(fmt.Sprintf("status code not in the 200s. body: %s", string(body)))
 	}
 
 	return string(body), err
