@@ -12,8 +12,10 @@ import (
 	"strings"
 )
 
-const endpoint = "http://localhost:8080/"
-const version = "v1/"
+const (
+	endpoint = "http://localhost:8080/"
+	version  = "v1/"
+)
 
 var (
 	//go:embed testdata
@@ -25,85 +27,146 @@ func RunTest() error {
 
 	// Make sure service is up and running
 	output, err := get(endpoint + "readiness")
+	if err != nil {
+		return errors.Wrap(err, "problem with readiness endpoint with output:"+output)
+	}
+
 	fmt.Println(output)
 
 	// Create a did for the issuer
 	fmt.Println("\n\nCreate a did for the issuer:")
-	output, err = put(endpoint+version+"dids/key", getJsonFromFile("did.json"))
+	output, err = put(endpoint+version+"dids/key", getJSONFromFile("did.json"))
+	if err != nil {
+		return errors.Wrap(err, "problem with dids/key endpoint with output: "+output)
+	}
+
 	fmt.Println(output)
-	issuerDID, err := getJsonElement(output, "$.did.id")
+	issuerDID, err := getJSONElement(output, "$.did.id")
+	if err != nil {
+		return errors.Wrap(err, "problem with getting json element")
+	}
 
 	// Create a schema to be used in CM
 	fmt.Println("\n\nCreate a schema to be used in CM:")
-	output, err = put(endpoint+version+"schemas", getJsonFromFile("schema.json"))
+	output, err = put(endpoint+version+"schemas", getJSONFromFile("schema.json"))
+	if err != nil {
+		return errors.Wrap(err, "problem with schema endpoint with output: "+output)
+	}
+
 	fmt.Println(output)
-	schemaID, err := getJsonElement(output, "$.id")
+	schemaID, err := getJSONElement(output, "$.id")
+	if err != nil {
+		return errors.Wrap(err, "problem getting json element")
+	}
 
 	// Create a credential
 	fmt.Println("\n\nCreate a credential to be used in CA:")
-	credentialJson := getJsonFromFile("credential.json")
-	credentialJson = strings.Replace(credentialJson, "<CREDISSUERID>", issuerDID, -1)
-	credentialJson = strings.Replace(credentialJson, "<CREDSUBJECTID>", issuerDID, -1)
-	credentialJson = strings.Replace(credentialJson, "<SCHEMAID>", schemaID, -1)
-	output, err = put(endpoint+version+"credentials", credentialJson)
+	credentialJSON := getJSONFromFile("credential.json")
+	credentialJSON = strings.Replace(credentialJSON, "<CREDISSUERID>", issuerDID, -1)
+	credentialJSON = strings.Replace(credentialJSON, "<CREDSUBJECTID>", issuerDID, -1)
+	credentialJSON = strings.Replace(credentialJSON, "<SCHEMAID>", schemaID, -1)
+	output, err = put(endpoint+version+"credentials", credentialJSON)
+	if err != nil {
+		return errors.Wrap(err, "problem with credentials endpoint with output: "+output)
+	}
+
 	fmt.Println(output)
-	credentialJWT, err := getJsonElement(output, "$.credentialJwt")
+	credentialJWT, err := getJSONElement(output, "$.credentialJwt")
+	if err != nil {
+		return errors.Wrap(err, "problem getting json element")
+	}
 
 	// Create our Credential Manifest
 	fmt.Println("\n\nCreate our Credential Manifest:")
-	manifestJson := getJsonFromFile("manifest.json")
-	manifestJson = strings.Replace(manifestJson, "<SCHEMAID>", schemaID, -1)
-	manifestJson = strings.Replace(manifestJson, "<ISSUERID>", issuerDID, -1)
-	output, err = put(endpoint+version+"manifests", manifestJson)
+	manifestJSON := getJSONFromFile("manifest.json")
+	manifestJSON = strings.Replace(manifestJSON, "<SCHEMAID>", schemaID, -1)
+	manifestJSON = strings.Replace(manifestJSON, "<ISSUERID>", issuerDID, -1)
+	output, err = put(endpoint+version+"manifests", manifestJSON)
+	if err != nil {
+		return errors.Wrap(err, "problem with manifest endpoint with output: "+output)
+	}
+
 	fmt.Println(output)
-	presentationDefinitionID, err := getJsonElement(output, "$.credential_manifest.presentation_definition.id")
+	presentationDefinitionID, err := getJSONElement(output, "$.credential_manifest.presentation_definition.id")
+	if err != nil {
+		return errors.Wrap(err, "problem getting json element")
+	}
 
 	// Submit an application
 	fmt.Println("\n\nSubmit an Application:")
-	applicationJson := getJsonFromFile("application.json")
-	applicationJson = strings.Replace(applicationJson, "<DEFINITIONID>", presentationDefinitionID, -1)
-	applicationJson = strings.Replace(applicationJson, "<VCJWT>", credentialJWT, -1)
-	output, err = put(endpoint+version+"manifests/applications", applicationJson)
+	applicationJSON := getJSONFromFile("application.json")
+	applicationJSON = strings.Replace(applicationJSON, "<DEFINITIONID>", presentationDefinitionID, -1)
+	applicationJSON = strings.Replace(applicationJSON, "<VCJWT>", credentialJWT, -1)
+	output, err = put(endpoint+version+"manifests/applications", applicationJSON)
+	if err != nil {
+		return errors.Wrap(err, "problem with application endpoint with output: "+output)
+	}
+
 	fmt.Println(output)
 
 	return err
 }
 
-func getJsonElement(jsonString string, jsonPath string) (string, error) {
-	var jsonMap map[string]interface{}
+func getJSONElement(jsonString string, jsonPath string) (string, error) {
+	jsonMap := make(map[string]interface{})
 	err := json.Unmarshal([]byte(jsonString), &jsonMap)
+	if err != nil {
+		return "", errors.Wrap(err, "problem with unmarshalling json string")
+	}
 
 	element, err := jsonpath.JsonPathLookup(jsonMap, jsonPath)
+	if err != nil {
+		return "", errors.Wrap(err, "problem with finding element in json string")
+	}
 
 	return element.(string), err
 }
 
 func get(url string) (string, error) {
 	resp, err := http.Get(url)
-	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "problem with finding element in json string")
+	}
 
-	if resp.StatusCode > 299 {
-		return "", errors.New("status code > than 299 with message: " + string(body))
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "problem with parsing body")
+	}
+
+	if resp.StatusCode/100 != 2 {
+		return "", errors.New("status code not in the 200s " + string(body))
 	}
 
 	return string(body), err
 }
 
 func put(url string, json string) (string, error) {
-	client := &http.Client{}
+	client := new(http.Client)
 
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer([]byte(json)))
+	if err != nil {
+		return "", errors.Wrap(err, "problem with building http req")
+	}
+
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
-	body, err := ioutil.ReadAll(resp.Body)
-
-	if resp.StatusCode > 299 {
-		return "", errors.New("status code > than 299 with message " + string(body))
+	if err != nil {
+		return "", errors.Wrap(err, "problem client http client")
 	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "problem with parsing body")
+	}
+
+	if resp.StatusCode/100 != 2 {
+		return "", errors.New("status code not in the 200s " + string(body))
+	}
+
 	return string(body), err
 }
 
-func getJsonFromFile(fileName string) string {
+func getJSONFromFile(fileName string) string {
 	b, _ := testVectors.ReadFile("testdata/" + fileName)
 	return string(b)
 }
