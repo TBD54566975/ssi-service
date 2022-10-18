@@ -21,15 +21,19 @@ type StoredManifest struct {
 type StoredApplication struct {
 	ID             string                         `json:"id"`
 	ManifestID     string                         `json:"manifestId"`
+	ApplicantDID   string                         `json:"applicantDid"`
 	Application    manifest.CredentialApplication `json:"application"`
 	Credentials    []cred.Container               `json:"credentials"`
-	ApplicationJWT string                         `json:"applicationJwt"`
+	ApplicationJWT keyaccess.JWT                  `json:"applicationJwt"`
 }
 
 type StoredResponse struct {
-	ID         string                      `json:"id"`
-	Response   manifest.CredentialResponse `json:"response"`
-	ManifestID string                      `json:"manifestId"`
+	ID           string                      `json:"id"`
+	ManifestID   string                      `json:"manifestId"`
+	ApplicantDID string                      `json:"applicantId"`
+	Response     manifest.CredentialResponse `json:"response"`
+	Credentials  []cred.Container            `json:"credentials"`
+	ResponseJWT  keyaccess.JWT               `json:"responseJwt"`
 }
 
 type Storage interface {

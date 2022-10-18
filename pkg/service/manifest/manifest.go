@@ -3,19 +3,12 @@ package manifest
 import (
 	"fmt"
 
-	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
-	"github.com/goccy/go-json"
-	"github.com/lestrrat-go/jwx/jwt"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
-	cred "github.com/tbd54566975/ssi-service/internal/credential"
-	didint "github.com/tbd54566975/ssi-service/internal/did"
-	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -149,39 +142,6 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 	return &response, nil
 }
 
-func (s Service) signManifestJWT(m manifest.CredentialManifest) (*keyaccess.JWT, error) {
-	issuerID := m.Issuer.ID
-	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: issuerID})
-	if err != nil {
-		errMsg := fmt.Sprintf("could not get key for signing manifest with key<%s>", issuerID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
-	if err != nil {
-		errMsg := fmt.Sprintf("could not create key access for signing manifest with key<%s>", gotKey.ID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	// marshal the manifest before signing it as a JWT
-	manifestBytes, err := json.Marshal(m)
-	if err != nil {
-		errMsg := fmt.Sprintf("could not marshal manifest<%s>", m.ID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-	var manifestJSON map[string]interface{}
-	if err := json.Unmarshal(manifestBytes, &manifestJSON); err != nil {
-		errMsg := fmt.Sprintf("could not unmarshal manifest<%s>", m.ID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	manifestToken, err := keyAccess.Sign(manifestJSON)
-	if err != nil {
-		errMsg := fmt.Sprintf("could not sign manifest with key<%s>", gotKey.ID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-	return manifestToken, nil
-}
-
 // VerifyManifest verifies a manifest's signature and makes sure the manifest is compliant with the specification
 func (s Service) VerifyManifest(request VerifyManifestRequest) (*VerifyManifestResponse, error) {
 	m, err := s.verifyManifestJWT(request.ManifestJWT)
@@ -194,40 +154,6 @@ func (s Service) VerifyManifest(request VerifyManifestRequest) (*VerifyManifestR
 		return &VerifyManifestResponse{Verified: false, Reason: "manifest is not valid: " + err.Error()}, nil
 	}
 	return &VerifyManifestResponse{Verified: true}, nil
-}
-
-func (s Service) verifyManifestJWT(token keyaccess.JWT) (*manifest.CredentialManifest, error) {
-	parsed, err := jwt.Parse([]byte(token))
-	if err != nil {
-		errMsg := "could not parse JWT"
-		logrus.WithError(err).Error(errMsg)
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-	claims := parsed.PrivateClaims()
-	claimsJSONBytes, err := json.Marshal(claims)
-	if err != nil {
-		errMsg := "could not marshal claims"
-		logrus.WithError(err).Error(errMsg)
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-	var parsedManifest manifest.CredentialManifest
-	if err := json.Unmarshal(claimsJSONBytes, &parsedManifest); err != nil {
-		errMsg := "could not unmarshal claims into manifest"
-		logrus.WithError(err).Error(errMsg)
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-	kid, pubKey, err := didint.ResolveKeyForDID(s.didResolver, parsedManifest.Issuer.ID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve manifest issuer's did: %s", parsedManifest.Issuer.ID)
-	}
-	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
-	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not create manifest verifier")
-	}
-	if err := verifier.Verify(token); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not verify the manifest's signature")
-	}
-	return &parsedManifest, nil
 }
 
 func (s Service) GetManifest(request GetManifestRequest) (*GetManifestResponse, error) {
@@ -272,154 +198,94 @@ func (s Service) DeleteManifest(request DeleteManifestRequest) error {
 	return nil
 }
 
-func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) (*SubmitApplicationResponse, error) {
-	// validate the application's signature
-	if err := s.verifyApplicationJWT(request.ApplicantDID, request.ApplicationJWT); err != nil {
-		return &SubmitApplicationResponse{Success: false, Reason: "could not verify application's signature: " + err.Error()}, nil
-	}
-	
-	// validate the application
-	credApp := request.Application
-	if err := credApp.IsValid(); err != nil {
-		return nil, util.LoggingErrorMsg(err, "application is not valid")
-	}
+// CredentialResponseContainer represents what is signed over and return for a credential response
+type CredentialResponseContainer struct {
+	Response    manifest.CredentialResponse `json:"credential_response"`
+	Credentials []interface{}               `json:"verifiableCredentials,omitempty"`
+}
 
-	gotManifest, err := s.storage.GetManifest(credApp.ManifestID)
+func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) (*SubmitApplicationResponse, error) {
+	// get the manifest associated with the application
+	manifestID := request.Application.ManifestID
+	gotManifest, err := s.storage.GetManifest(manifestID)
+	applicationID := request.Application.ID
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "problem with retrieving manifest during application validation")
+		errMsg := fmt.Sprintf("problem with retrieving manifest<%s> during application<%s>'s validation", manifestID, applicationID)
+		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	if gotManifest == nil {
-		errMsg := fmt.Sprintf("application is not valid; a manifest does not exist with id: %s", credApp.ManifestID)
+		errMsg := fmt.Sprintf("application<%s> is not valid; a manifest does not exist with id: %s", applicationID, manifestID)
 		return nil, util.LoggingNewError(errMsg)
 	}
+	credManifest := gotManifest.Manifest
 
-	// validation
-
-	// first, validate that the application complies with the associated manifest
-	credentialManifest := gotManifest.Manifest
-	if err := manifest.IsValidCredentialApplicationForManifest(credentialManifest, credApp); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not validate application")
-	}
-
-	// next, validate that the credential(s) provided in the application are valid
-	// TODO(neal): this is coming in a future PR after a change to the SDK, and the below will be removed
-	if credentialManifest.PresentationDefinition != nil &&
-		len(credentialManifest.PresentationDefinition.InputDescriptors) > 0 &&
-		len(request.Credentials) == 0 {
-		errMsg := fmt.Sprintf("no credentials provided for application: %s against manifest: %s", credApp.ID, credentialManifest.ID)
-		return nil, util.LoggingNewError(errMsg)
-	}
-
-	// signature and validity checks
-	for _, credentialContainer := range request.Credentials {
-		verificationResult, err := s.credential.VerifyCredential(credential.VerifyCredentialRequest{
-			DataIntegrityCredential: credentialContainer.Credential,
-			CredentialJWT:           credentialContainer.CredentialJWT,
-		})
+	// validate the application
+	if err = s.validateCredentialApplication(gotManifest.Manifest, request); err != nil {
+		denialResp, err := buildDenialCredentialResponse(manifestID, applicationID, err.Error())
 		if err != nil {
-			errMsg := fmt.Sprintf("could not verify credential: %s", credentialContainer.Credential.ID)
-			return nil, util.LoggingErrorMsg(err, errMsg)
+			return nil, util.LoggingErrorMsg(err, "could not build denial credential response")
 		}
-		if !verificationResult.Verified {
-			errMsg := fmt.Sprintf("submitted credential<%s> is not valid: %s", credentialContainer.Credential.ID, verificationResult.Reason)
-			return nil, util.LoggingNewError(errMsg)
-		}
+		return &SubmitApplicationResponse{Response: *denialResp}, nil
 	}
 
 	// store the application
+	applicantDID := request.ApplicantDID
 	storageRequest := manifeststorage.StoredApplication{
-		ID:          credApp.ID,
-		Application: credApp,
-		ManifestID:  request.Application.ManifestID,
+		ID:             applicationID,
+		ManifestID:     manifestID,
+		ApplicantDID:   applicantDID,
+		Application:    request.Application,
+		Credentials:    request.Credentials,
+		ApplicationJWT: request.ApplicationJWT,
 	}
-
-	if err := s.storage.StoreApplication(storageRequest); err != nil {
-		errMsg := "could not store application"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+	if err = s.storage.StoreApplication(storageRequest); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not store application")
 	}
 
 	// build the credential response
-	// TODO(gabe) need to check if this can be fulfilled and conditionally return success/denial
-	responseBuilder := manifest.NewCredentialResponseBuilder(request.Application.ManifestID)
-	if err := responseBuilder.SetApplicationID(credApp.ID); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not fulfill credential application: could not set application id")
-	}
-
-	var creds []cred.Container
-	for _, od := range credentialManifest.OutputDescriptors {
-		credentialRequest := credential.CreateCredentialRequest{
-			Issuer:     credentialManifest.Issuer.ID,
-			Subject:    request.ApplicantDID,
-			JSONSchema: od.Schema,
-			// TODO(gabe) need to add in data here to match the request + schema
-			Data: map[string]interface{}{},
-		}
-
-		credentialResponse, err := s.credential.CreateCredential(credentialRequest)
-		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not create credential")
-		}
-
-		creds = append(creds, credentialResponse.Container)
-	}
-
-	// build descriptor map based on credential type
-	var descriptors []exchange.SubmissionDescriptor
-	for i, c := range creds {
-		var format string
-		if c.HasDataIntegrityCredential() {
-			format = string(exchange.LDPVC)
-		}
-		if c.HasJWTCredential() {
-			format = string(exchange.JWTVC)
-		}
-		descriptors = append(descriptors, exchange.SubmissionDescriptor{
-			ID:     c.ID,
-			Format: format,
-			Path:   fmt.Sprintf("$.verifiableCredential[%d]", i),
-		})
-	}
-
-	// set the information for the fulfilled credentials in the response
-	if err = responseBuilder.SetFulfillment(descriptors); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not fulfill credential application: could not set fulfillment")
-	}
-	credRes, err := responseBuilder.Build()
+	credResp, creds, err := s.buildCredentialResponse(applicantDID, manifestID, applicationID, credManifest)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not build response")
+		return nil, util.LoggingErrorMsg(err, "could not build credential response")
+	}
+
+	// prepare credentials for the response
+	var credentials []interface{}
+	for _, container := range creds {
+		if container.HasDataIntegrityCredential() {
+			credentials = append(credentials, *container.Credential)
+		} else if container.HasJWTCredential() {
+			credentials = append(credentials, *container.CredentialJWT)
+		}
+	}
+
+	// sign the response before returning
+	responseJWT, err := s.signResponseJWT(gotManifest.Issuer, CredentialResponseContainer{
+		Response:    *credResp,
+		Credentials: credentials,
+	})
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not sign credential response")
 	}
 
 	// store the response we've generated
 	storeResponseRequest := manifeststorage.StoredResponse{
-		ID:         credRes.ID,
-		Response:   *credRes,
-		ManifestID: request.Application.ManifestID,
+		ID:           credResp.ID,
+		ManifestID:   manifestID,
+		ApplicantDID: applicantDID,
+		Response:     *credResp,
+		Credentials:  creds,
+		ResponseJWT:  *responseJWT,
 	}
-	if err := s.storage.StoreResponse(storeResponseRequest); err != nil {
+	if err = s.storage.StoreResponse(storeResponseRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store manifest response")
 	}
 
-	response := SubmitApplicationResponse{Response: *credRes, Credentials: creds}
+	response := SubmitApplicationResponse{Response: *credResp, Credentials: credentials, ResponseJWT: *responseJWT}
 	return &response, nil
 }
 
-func (s Service) verifyApplicationJWT(did string, token keyaccess.JWT) error {
-	kid, pubKey, err := didint.ResolveKeyForDID(s.didResolver, did)
-	if err != nil {
-		return errors.Wrapf(err, "failed to resolve applicant's did: %s", did)
-	}
-	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
-	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create application verifier")
-	}
-	if err := verifier.Verify(token); err != nil {
-		return util.LoggingErrorMsg(err, "could not verify the application's signature")
-	}
-	return nil
-}
-
 func (s Service) GetApplication(request GetApplicationRequest) (*GetApplicationResponse, error) {
-	f
+
 	logrus.Debugf("getting application: %s", request.ID)
 
 	gotApp, err := s.storage.GetApplication(request.ID)

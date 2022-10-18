@@ -116,7 +116,7 @@ type GetManifestResponse struct {
 // @Success      200  {object}  GetManifestResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/manifests/{id} [get]
-func (mr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get manifest without ID parameter"
@@ -156,7 +156,7 @@ type GetManifestsResponse struct {
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests [get]
-func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotManifests, err := mr.service.GetManifests()
 
 	if err != nil {
@@ -189,7 +189,7 @@ func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/manifests/{id} [delete]
-func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot delete manifest without ID parameter"
@@ -267,7 +267,8 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 type SubmitApplicationResponse struct {
 	Response manifestsdk.CredentialResponse `json:"credential_response"`
 	// this is an interface type to union Data Integrity and JWT style VCs
-	Credentials []interface{} `json:"verifiableCredential"`
+	Credentials []interface{} `json:"verifiableCredentials"`
+	ResponseJWT keyaccess.JWT `json:"responseJwt"`
 }
 
 // SubmitApplication godoc
@@ -303,15 +304,11 @@ func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	var credentials []interface{}
-	for _, container := range submitApplicationResponse.Credentials {
-		if container.HasDataIntegrityCredential() {
-			credentials = append(credentials, *container.Credential)
-		} else if container.HasJWTCredential() {
-			credentials = append(credentials, *container.CredentialJWT)
-		}
+	resp := SubmitApplicationResponse{
+		Response:    submitApplicationResponse.Response,
+		Credentials: submitApplicationResponse.Credentials,
+		ResponseJWT: submitApplicationResponse.ResponseJWT,
 	}
-	resp := SubmitApplicationResponse{Response: submitApplicationResponse.Response, Credentials: credentials}
 
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
@@ -331,7 +328,7 @@ type GetApplicationResponse struct {
 // @Success      200  {object}  GetApplicationResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/manifests/applications/{id} [get]
-func (mr ManifestRouter) GetApplication(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) GetApplication(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get application without ID parameter"
@@ -367,7 +364,7 @@ type GetApplicationsResponse struct {
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests/applications [get]
-func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotApplications, err := mr.service.GetApplications()
 
 	if err != nil {
@@ -394,7 +391,7 @@ func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWri
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/manifests/applications/{id} [delete]
-func (mr ManifestRouter) DeleteApplication(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) DeleteApplication(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot delete application without ID parameter"
@@ -426,7 +423,7 @@ type GetResponseResponse struct {
 // @Success      200  {object}  GetResponseResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/manifests/responses/{id} [get]
-func (mr ManifestRouter) GetResponse(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) GetResponse(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get response without ID parameter"
@@ -462,7 +459,7 @@ type GetResponsesResponse struct {
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests/responses [get]
-func (mr ManifestRouter) GetResponses(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) GetResponses(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotResponses, err := mr.service.GetResponses()
 
 	if err != nil {
@@ -489,7 +486,7 @@ func (mr ManifestRouter) GetResponses(ctx context.Context, w http.ResponseWriter
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/manifests/responses/{id} [delete]
-func (mr ManifestRouter) DeleteResponse(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) DeleteResponse(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot delete response without ID parameter"
