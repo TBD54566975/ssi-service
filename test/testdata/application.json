@@ -1,0 +1,29 @@
+{
+  "applicantDid": "did:example:1234",
+  "credential_application": {
+    "format": {
+      "jwt_vc": {
+        "alg": [
+          "string"
+        ]
+      }
+    },
+    "id": "id123",
+    "manifest_id": "WA-DL-CLASS-A",
+    "presentation_submission": {
+      "id": "psid",
+      "definition_id": "<DEFINITIONID>",
+      "descriptor_map": [
+        {
+          "format": "jwt_vc",
+          "id": "kyc1",
+          "path": "$[0]"
+        }
+      ]
+    },
+    "spec_version": "https://identity.foundation/credential-manifest/spec/v1.0.0/"
+  },
+  "verifiableCredentials": [
+    "<VCJWT>"
+  ]
+}
