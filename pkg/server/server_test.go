@@ -12,6 +12,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 
+	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/dwn"
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
@@ -157,7 +158,7 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 	return createManifestRequest
 }
 
-func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []interface{}) router.SubmitApplicationRequest {
+func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.Container) manifest.SubmitApplicationRequest {
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: manifestsdk.SpecVersion,
@@ -179,7 +180,7 @@ func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionD
 	}
 
 	// TODO(gabe) sign the request
-	return router.SubmitApplicationRequest{
+	return manifest.SubmitApplicationRequest{
 		ApplicantDID: applicantDID,
 		Application:  createApplication,
 		Credentials:  credentials,

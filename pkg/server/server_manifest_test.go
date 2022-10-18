@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -348,7 +349,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// missing required field: Application
 		badManifestRequest := router.SubmitApplicationRequest{
-			ApplicantDID: "did:example:abcd",
+			ApplicationJWT: "bad",
 		}
 
 		badRequestValue := newRequestValue(tt, badManifestRequest)
@@ -419,8 +420,11 @@ func TestManifestAPI(t *testing.T) {
 		assert.Equal(tt, m.Issuer.ID, issuerDID.DID.ID)
 
 		// good application request
+		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
 		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
-			m.PresentationDefinition.InputDescriptors[0].ID, []interface{}{createdCred.CredentialJWT})
+			m.PresentationDefinition.InputDescriptors[0].ID, container)
+
+		// TODO(gabe) sign the application request
 
 		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
@@ -517,8 +521,11 @@ func TestManifestAPI(t *testing.T) {
 		assert.Equal(tt, m.Issuer.ID, issuerDID.DID.ID)
 
 		// good application request
+		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
 		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
-			m.PresentationDefinition.InputDescriptors[0].ID, []interface{}{createdCred.CredentialJWT})
+			m.PresentationDefinition.InputDescriptors[0].ID, container)
+
+		// TODO(gabe) sign the application request
 
 		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
@@ -648,8 +655,10 @@ func TestManifestAPI(t *testing.T) {
 		assert.Equal(tt, m.Issuer.ID, issuerDID.DID.ID)
 
 		// good application request
+		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
 		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
-			m.PresentationDefinition.InputDescriptors[0].ID, []interface{}{createdCred.CredentialJWT})
+			m.PresentationDefinition.InputDescriptors[0].ID, container)
+		// TODO(gabe) sign the application request
 
 		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
