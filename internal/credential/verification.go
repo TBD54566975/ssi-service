@@ -2,6 +2,7 @@ package credential
 
 import (
 	"crypto"
+	"fmt"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
@@ -10,6 +11,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 
+	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/schema"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -55,7 +57,7 @@ func (v Verifier) VerifyJWTCredential(token keyaccess.JWT) error {
 	}
 
 	// resolve the issuer's key material
-	kid, pubKey, err := v.resolveIssuerKey(*cred)
+	kid, pubKey, err := v.resolveCredentialIssuerKey(*cred)
 	if err != nil {
 		return util.LoggingError(err)
 	}
@@ -78,7 +80,7 @@ func (v Verifier) VerifyJWTCredential(token keyaccess.JWT) error {
 // a set of static verification checks on the credential as per the credential service's configuration.
 func (v Verifier) VerifyDataIntegrityCredential(credential credsdk.VerifiableCredential) error {
 	// resolve the issuer's key material
-	kid, pubKey, err := v.resolveIssuerKey(credential)
+	kid, pubKey, err := v.resolveCredentialIssuerKey(credential)
 	if err != nil {
 		return util.LoggingError(err)
 	}
@@ -86,7 +88,8 @@ func (v Verifier) VerifyDataIntegrityCredential(credential credsdk.VerifiableCre
 	// construct a signature verifier from the verification information
 	verifier, err := keyaccess.NewDataIntegrityKeyAccess(kid, pubKey)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create verifier")
+		errMsg := fmt.Sprintf("could not create verifier for kid %s", kid)
+		return util.LoggingErrorMsg(err, errMsg)
 	}
 
 	// verify the signature on the credential
@@ -97,24 +100,35 @@ func (v Verifier) VerifyDataIntegrityCredential(credential credsdk.VerifiableCre
 	return v.staticVerificationChecks(credential)
 }
 
-// resolveIssuerKey resolves the issuer's public key from the credential's issuer DID.
-// TODO(gabe): perhaps this should be a verification method referenced on the proof object, not the issuer
-// TODO(gabe): support issuers that are not strings, but objects
-func (v Verifier) resolveIssuerKey(credential credsdk.VerifiableCredential) (kid string, pubKey crypto.PublicKey, err error) {
-	issuerDID := credential.Issuer.(string)
-	resolved, err := v.didResolver.Resolve(issuerDID, nil)
+func (v Verifier) VerifyJWT(did string, token keyaccess.JWT) error {
+	// resolve the did's key material
+	kid, pubKey, err := didint.ResolveKeyForDID(v.didResolver, did)
 	if err != nil {
-		err = errors.Wrapf(err, "failed to resolve did: %s", issuerDID)
-		return
+		return util.LoggingError(err)
 	}
 
-	// next, get the verification information (key) from the did document of the issuer
-	kid, pubKey, err = keyaccess.GetVerificationInformation(resolved.DIDDocument, "")
+	// construct a signature verifier from the verification information
+	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
 	if err != nil {
-		err = errors.Wrapf(err, "failed to get verification information from the issuer's did document: %s", issuerDID)
-		return
+		errMsg := fmt.Sprintf("could not create verifier for kid %s", kid)
+		return util.LoggingErrorMsg(err, errMsg)
 	}
-	return
+
+	// verify the signature on the credential
+	if err = verifier.Verify(token); err != nil {
+		return util.LoggingErrorMsg(err, "could not verify the JWT signature")
+	}
+
+	return nil
+}
+
+// resolveCredentialIssuerKey resolves the issuer's public key from the credential's issuer DID.
+// TODO(gabe): perhaps this should be a verification method referenced on the proof object, not the issuer
+// TODO(gabe): support issuers that are not strings, but objects
+func (v Verifier) resolveCredentialIssuerKey(credential credsdk.VerifiableCredential) (kid string, pubKey crypto.PublicKey, err error) {
+	issuerDID := credential.Issuer.(string)
+	return didint.ResolveKeyForDID(v.didResolver, issuerDID)
+
 }
 
 // staticVerificationChecks runs a set of static verification checks on the credential as per the credential

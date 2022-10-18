@@ -14,6 +14,7 @@ import (
 
 	"github.com/tbd54566975/ssi-service/config"
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
+	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
@@ -28,9 +29,9 @@ type Service struct {
 	config  config.ManifestServiceConfig
 
 	// external dependencies
-	keyStore   *keystore.Service
-	resolver   *didsdk.Resolver
-	credential *credential.Service
+	keyStore    *keystore.Service
+	didResolver *didsdk.Resolver
+	credential  *credential.Service
 }
 
 func (s Service) Type() framework.Type {
@@ -45,7 +46,7 @@ func (s Service) Status() framework.Status {
 	if s.keyStore == nil {
 		ae.AppendString("no keystore service configured")
 	}
-	if s.resolver == nil {
+	if s.didResolver == nil {
 		ae.AppendString("no did resolver configured")
 	}
 	if s.credential == nil {
@@ -71,11 +72,11 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	return &Service{
-		storage:    manifestStorage,
-		config:     config,
-		keyStore:   keyStore,
-		resolver:   didResolver,
-		credential: credential,
+		storage:     manifestStorage,
+		config:      config,
+		keyStore:    keyStore,
+		didResolver: didResolver,
+		credential:  credential,
 	}, nil
 }
 
@@ -215,13 +216,9 @@ func (s Service) verifyManifestJWT(token keyaccess.JWT) (*manifest.CredentialMan
 		logrus.WithError(err).Error(errMsg)
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
-	resolved, err := s.resolver.Resolve(parsedManifest.Issuer.ID)
+	kid, pubKey, err := didint.ResolveKeyForDID(s.didResolver, parsedManifest.Issuer.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to resolve manifest issuer's did: %s", parsedManifest.Issuer.ID)
-	}
-	kid, pubKey, err := keyaccess.GetVerificationInformation(resolved.DIDDocument, "")
-	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not get verification information from manifest")
 	}
 	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
 	if err != nil {
@@ -276,8 +273,12 @@ func (s Service) DeleteManifest(request DeleteManifestRequest) error {
 }
 
 func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) (*SubmitApplicationResponse, error) {
-	// TODO(gabe) validate the application's signature
-
+	// validate the application's signature
+	if err := s.verifyApplicationJWT(request.ApplicantDID, request.ApplicationJWT); err != nil {
+		return &SubmitApplicationResponse{Success: false, Reason: "could not verify application's signature: " + err.Error()}, nil
+	}
+	
+	// validate the application
 	credApp := request.Application
 	if err := credApp.IsValid(); err != nil {
 		return nil, util.LoggingErrorMsg(err, "application is not valid")
@@ -402,8 +403,23 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	return &response, nil
 }
 
-func (s Service) GetApplication(request GetApplicationRequest) (*GetApplicationResponse, error) {
+func (s Service) verifyApplicationJWT(did string, token keyaccess.JWT) error {
+	kid, pubKey, err := didint.ResolveKeyForDID(s.didResolver, did)
+	if err != nil {
+		return errors.Wrapf(err, "failed to resolve applicant's did: %s", did)
+	}
+	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not create application verifier")
+	}
+	if err := verifier.Verify(token); err != nil {
+		return util.LoggingErrorMsg(err, "could not verify the application's signature")
+	}
+	return nil
+}
 
+func (s Service) GetApplication(request GetApplicationRequest) (*GetApplicationResponse, error) {
+	f
 	logrus.Debugf("getting application: %s", request.ID)
 
 	gotApp, err := s.storage.GetApplication(request.ID)

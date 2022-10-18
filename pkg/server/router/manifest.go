@@ -7,6 +7,8 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+	"github.com/goccy/go-json"
+	"github.com/lestrrat-go/jwx/jwt"
 
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -205,21 +207,60 @@ func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWrit
 }
 
 type SubmitApplicationRequest struct {
-	// Once we have JWT signed wrapper that can get the did this can be removed
-	ApplicantDID string                            `json:"applicantDid" validate:"required"`
-	Application  manifestsdk.CredentialApplication `json:"credential_application" validate:"required"`
-	Credentials  []interface{}                     `json:"verifiableCredentials" validate:"required"`
+	ApplicationJWT keyaccess.JWT `json:"applicationJwt" validate:"required"`
+	// Contains the following properties:
+	// Application  manifestsdk.CredentialApplication `json:"credential_application" validate:"required"`
+	// Credentials  []interface{}                     `json:"vcs" validate:"required"`
 }
 
 func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicationRequest, error) {
-	credContainer, err := credential.NewCredentialContainerFromArray(sar.Credentials)
+	parsed, err := jwt.Parse([]byte(sar.ApplicationJWT))
+	if err != nil {
+		return nil, errors.Wrap(err, "could not parse Credential Application token")
+	}
+
+	// make sure the known properties are present (Application and Credentials)
+	iss := parsed.Issuer()
+	if iss == "" {
+		return nil, errors.New("Credential Application token missing issuer")
+	}
+	claims, ok := parsed.Get("credential_application")
+	if !ok {
+		return nil, errors.New("could not find credential_application in Credential Application token")
+	}
+	var creds []interface{}
+	credentials, ok := parsed.Get("vcs")
+	if !ok {
+		logrus.Warn("could not find vc in Credential Application token, looking for `verifiableCredentials`")
+		if credentials, ok = parsed.Get("verifiableCredentials"); !ok {
+			return nil, errors.New("could not find vc or verifiableCredentials in Credential Application token")
+		}
+		creds = credentials.([]interface{})
+	} else {
+		creds = []interface{}{credentials}
+	}
+
+	// marshal known properties into their respective types
+	applicationTokenBytes, err := json.Marshal(claims)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not marshal Credential Application claims")
+	}
+	var application manifestsdk.CredentialApplication
+	if err = json.Unmarshal(applicationTokenBytes, &application); err != nil {
+		errMsg := "could not reconstruct Credential Application"
+		logrus.WithError(err).Error(errMsg)
+		return nil, errors.Wrap(err, errMsg)
+	}
+
+	credContainer, err := credential.NewCredentialContainerFromArray(creds)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse submitted credentials")
 	}
 	return &manifest.SubmitApplicationRequest{
-		ApplicantDID: sar.ApplicantDID,
-		Application:  sar.Application,
-		Credentials:  credContainer,
+		ApplicantDID:   iss,
+		Application:    application,
+		Credentials:    credContainer,
+		ApplicationJWT: sar.ApplicationJWT,
 	}, nil
 }
 
@@ -231,7 +272,7 @@ type SubmitApplicationResponse struct {
 
 // SubmitApplication godoc
 // @Summary      Submit application
-// @Description  Submit application
+// @Description  Submit a credential application in response to a credential manifest
 // @Tags         ApplicationAPI
 // @Accept       json
 // @Produce      json
