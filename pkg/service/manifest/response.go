@@ -33,8 +33,8 @@ func (s Service) signResponseJWT(signingDID string, r CredentialResponseContaine
 		errMsg := fmt.Sprintf("could not marshal response<%s>", id)
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
-	var responseJSON map[string]interface{}
-	if err := json.Unmarshal(responseBytes, &responseJSON); err != nil {
+	responseJSON := make(map[string]interface{})
+	if err = json.Unmarshal(responseBytes, &responseJSON); err != nil {
 		errMsg := fmt.Sprintf("could not unmarshal response<%s>", id)
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
@@ -62,7 +62,7 @@ func (s Service) buildCredentialResponse(applicantDID, manifestID, applicationID
 			Subject:    applicantDID,
 			JSONSchema: od.Schema,
 			// TODO(gabe) need to add in data here to match the request + schema
-			Data: map[string]interface{}{},
+			Data: make(map[string]interface{}),
 		}
 
 		credentialResponse, err := s.credential.CreateCredential(credentialRequest)
