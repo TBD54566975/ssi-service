@@ -61,7 +61,7 @@ func RunTest() error {
 	// Submit an application
 	fmt.Println("\n\nSubmit an Application:")
 	applicationJson := getJsonFromFile("application.json")
-	applicationJson = strings.Replace(applicationJson, "<DEFINITIONID>", presentationDefinitionID+"lol", -1)
+	applicationJson = strings.Replace(applicationJson, "<DEFINITIONID>", presentationDefinitionID, -1)
 	applicationJson = strings.Replace(applicationJson, "<VCJWT>", credentialJWT, -1)
 	output, err = put(endpoint+version+"manifests/applications", applicationJson)
 	fmt.Println(output)
