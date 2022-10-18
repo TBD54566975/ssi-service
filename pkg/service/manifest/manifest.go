@@ -84,13 +84,49 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 	logrus.Debugf("creating manifest: %+v", request)
 
 	// validate the request
-	m := request.Manifest
-	if err := m.IsValid(); err != nil {
-		return nil, util.LoggingErrorMsg(err, "manifest is not valid")
+	if err := sdkutil.IsValidStruct(request); err != nil {
+		errMsg := fmt.Sprintf("invalid create manifest request: %s", err.Error())
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+
+	// compose a valid manifest
+	builder := manifest.NewCredentialManifestBuilder()
+
+	// set the issuer
+	var issuerName string
+	if request.IssuerName != nil {
+		issuerName = *request.IssuerName
+	}
+	if err := builder.SetIssuer(manifest.Issuer{
+		ID:   request.IssuerDID,
+		Name: issuerName,
+	}); err != nil {
+		errMsg := fmt.Sprintf("could not set issuer<%s> for manifest", request.IssuerDID)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	if err := builder.SetClaimFormat(*request.ClaimFormat); err != nil {
+		errMsg := fmt.Sprintf("could not set claim format<%+v> for manifest", request.ClaimFormat)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	if err := builder.SetOutputDescriptors(request.OutputDescriptors); err != nil {
+		errMsg := fmt.Sprintf("could not set output descriptors<%+v> for manifest", request.OutputDescriptors)
+		return nil, util.LoggingErrorMsg(err, errMsg)
+	}
+	if request.PresentationDefinition != nil {
+		if err := builder.SetPresentationDefinition(*request.PresentationDefinition); err != nil {
+			errMsg := fmt.Sprintf("could not set presentation definition<%+v> for manifest", request.PresentationDefinition)
+			return nil, util.LoggingErrorMsg(err, errMsg)
+		}
+	}
+
+	// build the manifest
+	m, err := builder.Build()
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not build manifest")
 	}
 
 	// sign the manifest
-	manifestJWT, err := s.signManifestJWT(m)
+	manifestJWT, err := s.signManifestJWT(*m)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not sign manifest")
 	}
@@ -99,7 +135,7 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 	storageRequest := manifeststorage.StoredManifest{
 		ID:          m.ID,
 		Issuer:      m.Issuer.ID,
-		Manifest:    m,
+		Manifest:    *m,
 		ManifestJWT: *manifestJWT,
 	}
 
@@ -108,7 +144,7 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 	}
 
 	// return the result
-	response := CreateManifestResponse{Manifest: m, ManifestJWT: *manifestJWT}
+	response := CreateManifestResponse{Manifest: *m, ManifestJWT: *manifestJWT}
 	return &response, nil
 }
 

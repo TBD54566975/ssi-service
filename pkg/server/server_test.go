@@ -119,40 +119,37 @@ func newRequestContextWithParams(params map[string]string) context.Context {
 
 func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifestRequest {
 	createManifestRequest := manifest.CreateManifestRequest{
-		Manifest: manifestsdk.CredentialManifest{
-			ID:          "WA-DL-CLASS-A",
-			SpecVersion: manifestsdk.SpecVersion,
-			Issuer: manifestsdk.Issuer{
-				ID: issuerDID,
-			},
-			PresentationDefinition: &exchange.PresentationDefinition{
-				ID: "id123",
-				InputDescriptors: []exchange.InputDescriptor{
-					{
-						ID: "test-id",
-						Constraints: &exchange.Constraints{
-							Fields: []exchange.Field{
-								{
-									Path: []string{".vc.id"},
-								},
+		IssuerDID: issuerDID,
+		ClaimFormat: &exchange.ClaimFormat{
+			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
+		},
+		PresentationDefinition: &exchange.PresentationDefinition{
+			ID: "id123",
+			InputDescriptors: []exchange.InputDescriptor{
+				{
+					ID: "test-id",
+					Constraints: &exchange.Constraints{
+						Fields: []exchange.Field{
+							{
+								Path: []string{".vc.id"},
 							},
 						},
 					},
 				},
 			},
-			OutputDescriptors: []manifestsdk.OutputDescriptor{
-				{
-					ID:          "id1",
-					Schema:      schemaID,
-					Name:        "good ID",
-					Description: "it's all good",
-				},
-				{
-					ID:          "id2",
-					Schema:      schemaID,
-					Name:        "good ID",
-					Description: "it's all good",
-				},
+		},
+		OutputDescriptors: []manifestsdk.OutputDescriptor{
+			{
+				ID:          "id1",
+				Schema:      schemaID,
+				Name:        "good ID",
+				Description: "it's all good",
+			},
+			{
+				ID:          "id2",
+				Schema:      schemaID,
+				Name:        "good ID",
+				Description: "it's all good",
 			},
 		},
 	}
@@ -166,7 +163,7 @@ func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionD
 		SpecVersion: manifestsdk.SpecVersion,
 		ManifestID:  manifestID,
 		Format: &exchange.ClaimFormat{
-			JWT: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
+			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
 		PresentationSubmission: &exchange.PresentationSubmission{
 			ID:           "psid",

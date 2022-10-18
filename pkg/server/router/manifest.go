@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 
 	"github.com/tbd54566975/ssi-service/internal/credential"
@@ -35,15 +36,23 @@ func NewManifestRouter(s svcframework.Service) (*ManifestRouter, error) {
 	}, nil
 }
 
-// CreateManifestRequest
-// TODO(gabe) consider simplifying this to accept just output descriptors, format, presentation definition
+// CreateManifestRequest is the request body for creating a manifest, which populates all remaining fields
+// and builds a well-formed manifest object.
 type CreateManifestRequest struct {
-	Manifest manifestsdk.CredentialManifest `json:"manifest" validate:"required"`
+	IssuerDID              string                           `json:"issuerDid" validate:"required"`
+	IssuerName             *string                          `json:"issuerName,omitempty"`
+	ClaimFormat            *exchange.ClaimFormat            `json:"format" validate:"required,dive"`
+	OutputDescriptors      []manifestsdk.OutputDescriptor   `json:"outputDescriptors" validate:"required,dive"`
+	PresentationDefinition *exchange.PresentationDefinition `json:"presentationDefinition,omitempty" validate:"omitempty,dive"`
 }
 
 func (c CreateManifestRequest) ToServiceRequest() manifest.CreateManifestRequest {
 	return manifest.CreateManifestRequest{
-		Manifest: c.Manifest,
+		IssuerDID:              c.IssuerDID,
+		IssuerName:             c.IssuerName,
+		OutputDescriptors:      c.OutputDescriptors,
+		ClaimFormat:            c.ClaimFormat,
+		PresentationDefinition: c.PresentationDefinition,
 	}
 }
 

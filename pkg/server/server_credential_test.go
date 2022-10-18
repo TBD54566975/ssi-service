@@ -358,7 +358,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.CredentialSchema.ID, getCredsResp.Credentials[0].Credential.CredentialSchema.ID)
 	})
 
-	t.Run("Test Get Credential By Issuer", func(tt *testing.T) {
+	t.Run("Test Get Credential By IssuerDID", func(tt *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		require.NoError(tt, err)
 

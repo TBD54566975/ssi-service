@@ -74,7 +74,7 @@ func TestDWNAPI(t *testing.T) {
 
 		w = httptest.NewRecorder()
 
-		dwnRequest := router.PublishManifestRequest{ManifestID: "WA-DL-CLASS-A"}
+		dwnRequest := router.PublishManifestRequest{ManifestID: resp.Manifest.ID}
 		dwnRequestValue := newRequestValue(tt, dwnRequest)
 		dwnReq := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dwn/manifests", dwnRequestValue)
 		err = dwnService.PublishManifest(newRequestContext(), w, dwnReq)

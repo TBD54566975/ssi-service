@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
@@ -10,7 +11,11 @@ import (
 // Manifest
 
 type CreateManifestRequest struct {
-	Manifest manifestsdk.CredentialManifest `json:"manifest" validate:"required"`
+	IssuerDID              string                           `json:"issuerDid" validate:"required"`
+	IssuerName             *string                          `json:"issuerName,omitempty"`
+	OutputDescriptors      []manifestsdk.OutputDescriptor   `json:"outputDescriptors" validate:"required,dive"`
+	ClaimFormat            *exchange.ClaimFormat            `json:"format" validate:"required,dive"`
+	PresentationDefinition *exchange.PresentationDefinition `json:"presentationDefinition,omitempty" validate:"omitempty,dive"`
 }
 
 type CreateManifestResponse struct {
