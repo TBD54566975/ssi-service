@@ -28,19 +28,8 @@ func (s Service) signManifestJWT(m manifest.CredentialManifest) (*keyaccess.JWT,
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	// marshal the manifest before signing it as a JWT
-	manifestBytes, err := json.Marshal(m)
-	if err != nil {
-		errMsg := fmt.Sprintf("could not marshal manifest<%s>", m.ID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-	manifestJSON := make(map[string]interface{})
-	if err = json.Unmarshal(manifestBytes, &manifestJSON); err != nil {
-		errMsg := fmt.Sprintf("could not unmarshal manifest<%s>", m.ID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	manifestToken, err := keyAccess.Sign(manifestJSON)
+	// signing the manifest as a JWT
+	manifestToken, err := keyAccess.SignJSON(m)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not sign manifest with key<%s>", gotKey.ID)
 		return nil, util.LoggingErrorMsg(err, errMsg)

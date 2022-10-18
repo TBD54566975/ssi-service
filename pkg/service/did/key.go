@@ -3,6 +3,7 @@ package did
 import (
 	"fmt"
 
+	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
@@ -44,31 +45,33 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 		ID:  id,
 		DID: *expanded,
 	}
-	if err := h.storage.StoreDID(storedDID); err != nil {
+	if err = h.storage.StoreDID(storedDID); err != nil {
 		return nil, errors.Wrap(err, "could not store did:key value")
 	}
 
 	// convert to a serialized format for return to the client
-	privKeyBase58, err := privateKeyToBase58(privKey)
+	privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not encode private key as base58")
 	}
+	privKeyBase58 := base58.Encode(privKeyBytes)
 
 	// store private key in key storage
 	keyStoreRequest := keystore.StoreKeyRequest{
-		ID:         id,
-		Type:       request.KeyType,
-		Controller: id,
-		Key:        privKey,
+		ID:               id,
+		Type:             request.KeyType,
+		Controller:       id,
+		PrivateKeyBase58: privKeyBase58,
 	}
 
-	if err := h.keyStore.StoreKey(keyStoreRequest); err != nil {
+	if err = h.keyStore.StoreKey(keyStoreRequest); err != nil {
 		return nil, errors.Wrap(err, "could not store did:key private key")
 	}
 
 	return &CreateDIDResponse{
-		DID:        storedDID.DID,
-		PrivateKey: privKeyBase58,
+		DID:              storedDID.DID,
+		PrivateKeyBase58: privKeyBase58,
+		KeyType:          request.KeyType,
 	}, nil
 }
 

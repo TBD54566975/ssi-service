@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -53,10 +54,10 @@ func TestKeyStoreRouter(t *testing.T) {
 
 		// store an invalid key type
 		err = keyStoreService.StoreKey(keystore.StoreKeyRequest{
-			ID:         "test-kid",
-			Type:       "bad",
-			Controller: "me",
-			Key:        []byte("bad"),
+			ID:               "test-kid",
+			Type:             "bad",
+			Controller:       "me",
+			PrivateKeyBase58: base58.Encode([]byte("bad")),
 		})
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "unsupported key type: bad")
@@ -67,11 +68,13 @@ func TestKeyStoreRouter(t *testing.T) {
 		assert.NotEmpty(tt, privKey)
 
 		keyID := "did:test:me#key-1"
+		privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
+		assert.NoError(tt, err)
 		err = keyStoreService.StoreKey(keystore.StoreKeyRequest{
-			ID:         keyID,
-			Type:       crypto.Ed25519,
-			Controller: "did:test:me",
-			Key:        privKey,
+			ID:               keyID,
+			Type:             crypto.Ed25519,
+			Controller:       "did:test:me",
+			PrivateKeyBase58: base58.Encode(privKeyBytes),
 		})
 		assert.NoError(tt, err)
 

@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
+	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -249,14 +250,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	}
 
 	// prepare credentials for the response
-	var credentials []interface{}
-	for _, container := range creds {
-		if container.HasDataIntegrityCredential() {
-			credentials = append(credentials, *container.Credential)
-		} else if container.HasJWTCredential() {
-			credentials = append(credentials, *container.CredentialJWT)
-		}
-	}
+	credentials := credint.ContainersToInterface(creds)
 
 	// sign the response before returning
 	responseJWT, err := s.signResponseJWT(gotManifest.Issuer, CredentialResponseContainer{

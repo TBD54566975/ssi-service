@@ -5,7 +5,6 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
-	"github.com/goccy/go-json"
 
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -15,7 +14,6 @@ import (
 )
 
 func (s Service) signResponseJWT(signingDID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
-	id := r.Response.ID
 	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: signingDID})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get key for signing response with key<%s>", signingDID)
@@ -27,19 +25,8 @@ func (s Service) signResponseJWT(signingDID string, r CredentialResponseContaine
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	// marshal the response before signing it as a JWT
-	responseBytes, err := json.Marshal(r)
-	if err != nil {
-		errMsg := fmt.Sprintf("could not marshal response<%s>", id)
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-	responseJSON := make(map[string]interface{})
-	if err = json.Unmarshal(responseBytes, &responseJSON); err != nil {
-		errMsg := fmt.Sprintf("could not unmarshal response<%s>", id)
-		return nil, util.LoggingErrorMsg(err, errMsg)
-	}
-
-	responseToken, err := keyAccess.Sign(responseJSON)
+	// signing the response as a JWT
+	responseToken, err := keyAccess.SignJSON(r)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not sign response with key<%s>", gotKey.ID)
 		return nil, util.LoggingErrorMsg(err, errMsg)

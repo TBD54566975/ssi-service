@@ -9,10 +9,12 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/google/uuid"
+	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tbd54566975/ssi-service/config"
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -98,7 +100,6 @@ func TestManifestRouter(t *testing.T) {
 
 		// good manifest request, which asks for a single verifiable credential in the VC-JWT format
 		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
-
 		createdManifest, err := manifestService.CreateManifest(createManifestRequest)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
@@ -116,10 +117,23 @@ func TestManifestRouter(t *testing.T) {
 			ID:            createdCred.ID,
 			CredentialJWT: createdCred.CredentialJWT,
 		}}
-		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
+		applicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
 			m.PresentationDefinition.InputDescriptors[0].ID, containers)
 
-		createdApplicationResponse, err := manifestService.ProcessApplicationSubmission(createApplicationRequest)
+		// sign application
+		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
+		assert.NoError(tt, err)
+		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
+		assert.NoError(tt, err)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantPrivKey)
+		assert.NoError(tt, err)
+		signed, err := signer.SignJSON(applicationRequest)
+		assert.NoError(tt, err)
+
+		submitApplicationRequest := SubmitApplicationRequest{ApplicationJWT: *signed}
+		sar, err := submitApplicationRequest.ToServiceRequest()
+		assert.NoError(tt, err)
+		createdApplicationResponse, err := manifestService.ProcessApplicationSubmission(*sar)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
 		assert.NotEmpty(tt, createdApplicationResponse.Response.ID)
@@ -173,7 +187,13 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 	return createManifestRequest
 }
 
-func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.Container) manifest.SubmitApplicationRequest {
+// the request that is to be signed
+type ApplicationRequest struct {
+	Application manifestsdk.CredentialApplication `json:"credential_application" validate:"required"`
+	Credentials []interface{}                     `json:"vcs" validate:"required"`
+}
+
+func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.Container) ApplicationRequest {
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: manifestsdk.SpecVersion,
@@ -194,10 +214,9 @@ func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionD
 		},
 	}
 
-	// TODO(gabe) sign the request
-	return manifest.SubmitApplicationRequest{
-		ApplicantDID: applicantDID,
-		Application:  createApplication,
-		Credentials:  credentials,
+	creds := credmodel.ContainersToInterface(credentials)
+	return ApplicationRequest{
+		Application: createApplication,
+		Credentials: creds,
 	}
 }

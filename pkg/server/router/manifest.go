@@ -213,6 +213,12 @@ type SubmitApplicationRequest struct {
 	// Credentials  []interface{}                     `json:"vcs" validate:"required"`
 }
 
+const (
+	credentialApplicationJSONProperty = "credential_application"
+	vcsJSONProperty                   = "vcs"
+	verifiableCredentialsJSONProperty = "verifiableCredentials"
+)
+
 func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicationRequest, error) {
 	parsed, err := jwt.Parse([]byte(sar.ApplicationJWT))
 	if err != nil {
@@ -224,15 +230,15 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 	if iss == "" {
 		return nil, errors.New("Credential Application token missing issuer")
 	}
-	claims, ok := parsed.Get("credential_application")
+	claims, ok := parsed.Get(credentialApplicationJSONProperty)
 	if !ok {
 		return nil, errors.New("could not find credential_application in Credential Application token")
 	}
 	var creds []interface{}
-	credentials, ok := parsed.Get("vcs")
+	credentials, ok := parsed.Get(vcsJSONProperty)
 	if !ok {
 		logrus.Warn("could not find vc in Credential Application token, looking for `verifiableCredentials`")
-		if credentials, ok = parsed.Get("verifiableCredentials"); !ok {
+		if credentials, ok = parsed.Get(verifiableCredentialsJSONProperty); !ok {
 			return nil, errors.New("could not find vc or verifiableCredentials in Credential Application token")
 		}
 		creds = credentials.([]interface{})
