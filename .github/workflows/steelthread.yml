@@ -29,7 +29,7 @@ jobs:
       run: docker-compose -f "build/docker-compose.yml" up -d --build
 
     - name: End To End Test
-      run: mage EndToEndTest
+      run: mage integration steelthread
 
     - name: Stop containers
       if: always()

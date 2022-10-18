@@ -19,7 +19,7 @@ import (
 	"github.com/magefile/mage/sh"
 	"golang.org/x/crypto/ssh/terminal"
 
-	end2end "github.com/tbd54566975/ssi-service/test"
+	steelthread "github.com/tbd54566975/ssi-service/test"
 )
 
 var (
@@ -97,9 +97,15 @@ func Spec() error {
 	return sh.Run(swagCommand, "init", "-g", "cmd/main.go", "--pd", "-o", "doc", "-ot", "yaml")
 }
 
-// EndToEndTest runs a full end-to-end test doing a full credential exchange flow
-func EndToEndTest() error {
-	return end2end.RunTest()
+// Integration runs an integration test. Note: the ssi-service must be running for this to work
+func Integration(testName string) error {
+	switch testName {
+	case "steelthread":
+		return steelthread.RunTest()
+	default:
+		fmt.Println("Running all tests")
+		return steelthread.RunTest()
+	}
 }
 
 func runCITests(extraTestArgs ...string) error {

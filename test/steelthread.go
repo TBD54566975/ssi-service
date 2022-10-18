@@ -1,4 +1,4 @@
-package end2end
+package steelthread
 
 import (
 	"bytes"
