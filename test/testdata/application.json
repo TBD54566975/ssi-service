@@ -1,0 +1,29 @@
+{
+  "applicantDid": "did:example:1234",
+  "credential_application": {
+    "format": {
+      "jwt_vc": {
+        "alg": [
+          "string"
+        ]
+      }
+    },
+    "id": "id123",
+    "manifest_id": "WA-DL-CLASS-A",
+    "presentation_submission": {
+      "id": "psid",
+      "definition_id": "<DEFINITIONID>",
+      "descriptor_map": [
+        {
+          "format": "jwt_vc",
+          "id": "kyc1",
+          "path": "$[0]"
+        }
+      ]
+    },
+    "spec_version": "https://identity.foundation/credential-manifest/spec/v1.0.0/"
+  },
+  "verifiableCredentials": [
+    "eyJhbGciOiJFZERTQSIsImtpZCI6ImRpZDprZXk6ejZNa29pTVh0VEx4emV4RWZCU3haNjhSc25rVVFud0hWOXlMd3h3cHJFUm5zbWpuIiwidHlwIjoiSldUIn0.eyJleHAiOjI1ODAxMzAwODAsImlzcyI6ImRpZDprZXk6ejZNa29pTVh0VEx4emV4RWZCU3haNjhSc25rVVFud0hWOXlMd3h3cHJFUm5zbWpuIiwianRpIjoiZjVjNTAxMDMtMGNmNy00MzIyLWE2NTQtMWYyZGJlYWEwNjEzIiwibmJmIjoxNjY2MTExNzg2LCJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJpZCI6ImY1YzUwMTAzLTBjZjctNDMyMi1hNjU0LTFmMmRiZWFhMDYxMyIsInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiXSwiaXNzdWVyIjoiZGlkOmtleTp6Nk1rb2lNWHRUTHh6ZXhFZkJTeFo2OFJzbmtVUW53SFY5eUx3eHdwckVSbnNtam4iLCJpc3N1YW5jZURhdGUiOiIyMDIyLTEwLTE4VDE2OjQ5OjQ2WiIsImV4cGlyYXRpb25EYXRlIjoiMjA1MS0xMC0wNVQxNDo0ODowMC4wMDBaIiwiY3JlZGVudGlhbFN1YmplY3QiOnsiYWRkaXRpb25hbE5hbWUiOiJoYW5rIGhpbGwiLCJiaXJ0aERhdGUiOiIyMDA5LTAxLTAzIiwiZmFtaWx5TmFtZSI6InNpbXBzb24iLCJnaXZlbk5hbWUiOiJyaWNreSBib2JieSIsInBvc3RhbEFkZHJlc3MiOiJwIHNoZXJtYW4gNDIgd2FsbGFieSB3YXksIHN5ZG5leSIsInRheElEIjoiMTIzIn0sImNyZWRlbnRpYWxTY2hlbWEiOnsiaWQiOiI2YTYzZDQ4My0wNDQ3LTQ3MzgtODFmOS05NzU4ODVjNDllNDQiLCJ0eXBlIjoiSnNvblNjaGVtYVZhbGlkYXRvcjIwMTgifX19.M39ccx2uzhfguXMhsghzWDjRinmfbEsoOuNnrzlyMg5sV3btRalKU3-fAcLZlulx1mC_QNN-0oZHCyBoOu8dBQ"
+  ]
+}

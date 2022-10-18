@@ -28,7 +28,7 @@ jobs:
     - name: Start containers
       run: docker-compose -f "build/docker-compose.yml" up -d --build
 
-    - name: Test
+    - name: End To End Test
       run: mage EndToEndTest
 
     - name: Stop containers
