@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/goccy/go-json"
 	"github.com/oliveagle/jsonpath"
+	"github.com/pkg/errors"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -27,39 +28,43 @@ func RunTest() error {
 	fmt.Println(output)
 
 	// Create a did for the issuer
+	fmt.Println("\n\nCreate a did for the issuer:")
 	output, err = put(endpoint+version+"dids/key", getJsonFromFile("did.json"))
 	fmt.Println(output)
-
 	issuerDID, err := getJsonElement(output, "$.did.id")
-	fmt.Println(issuerDID)
 
 	// Create a schema to be used in CM
+	fmt.Println("\n\nCreate a schema to be used in CM:")
 	output, err = put(endpoint+version+"schemas", getJsonFromFile("schema.json"))
 	fmt.Println(output)
-
 	schemaID, err := getJsonElement(output, "$.id")
-	fmt.Println(schemaID)
 
+	// Create a credential
+	fmt.Println("\n\nCreate a credential to be used in CA:")
+	credentialJson := getJsonFromFile("credential.json")
+	credentialJson = strings.Replace(credentialJson, "<CREDISSUERID>", issuerDID, -1)
+	credentialJson = strings.Replace(credentialJson, "<CREDSUBJECTID>", issuerDID, -1)
+	credentialJson = strings.Replace(credentialJson, "<SCHEMAID>", schemaID, -1)
+	output, err = put(endpoint+version+"credentials", credentialJson)
+	fmt.Println(output)
+	credentialJWT, err := getJsonElement(output, "$.credentialJwt")
+
+	// Create our Credential Manifest
+	fmt.Println("\n\nCreate our Credential Manifest:")
 	manifestJson := getJsonFromFile("manifest.json")
 	manifestJson = strings.Replace(manifestJson, "<SCHEMAID>", schemaID, -1)
 	manifestJson = strings.Replace(manifestJson, "<ISSUERID>", issuerDID, -1)
-
-	// Create our Credential Manifest
 	output, err = put(endpoint+version+"manifests", manifestJson)
 	fmt.Println(output)
-
 	presentationDefinitionID, err := getJsonElement(output, "$.credential_manifest.presentation_definition.id")
-	fmt.Println(presentationDefinitionID)
-
-	applicationJson := getJsonFromFile("application.json")
-	applicationJson = strings.Replace(applicationJson, "<DEFINITIONID>", presentationDefinitionID, -1)
 
 	// Submit an application
+	fmt.Println("\n\nSubmit an Application:")
+	applicationJson := getJsonFromFile("application.json")
+	applicationJson = strings.Replace(applicationJson, "<DEFINITIONID>", presentationDefinitionID+"lol", -1)
+	applicationJson = strings.Replace(applicationJson, "<VCJWT>", credentialJWT, -1)
 	output, err = put(endpoint+version+"manifests/applications", applicationJson)
 	fmt.Println(output)
-
-	vcJWT, err := getJsonElement(output, "$.verifiableCredential[0]")
-	fmt.Println(vcJWT)
 
 	return err
 }
@@ -75,8 +80,11 @@ func getJsonElement(jsonString string, jsonPath string) (string, error) {
 
 func get(url string) (string, error) {
 	resp, err := http.Get(url)
-
 	body, err := ioutil.ReadAll(resp.Body)
+
+	if resp.StatusCode > 299 {
+		return "", errors.New("status code > than 299 with message: " + string(body))
+	}
 
 	return string(body), err
 }
@@ -86,10 +94,12 @@ func put(url string, json string) (string, error) {
 
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer([]byte(json)))
 	req.Header.Set("Content-Type", "application/json")
-
 	resp, err := client.Do(req)
 	body, err := ioutil.ReadAll(resp.Body)
 
+	if resp.StatusCode > 299 {
+		return "", errors.New("status code > than 299 with message " + string(body))
+	}
 	return string(body), err
 }
 
