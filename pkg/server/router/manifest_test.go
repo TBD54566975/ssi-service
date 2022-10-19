@@ -156,7 +156,7 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 					Constraints: &exchange.Constraints{
 						Fields: []exchange.Field{
 							{
-								Path: []string{".verifiableCredential.id"},
+								Path: []string{"$.credentialSubject.licenseType"},
 							},
 						},
 					},
@@ -187,13 +187,7 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 	return createManifestRequest
 }
 
-// the request that is to be signed
-type ApplicationRequest struct {
-	Application manifestsdk.CredentialApplication `json:"credential_application" validate:"required"`
-	Credentials []interface{}                     `json:"vcs" validate:"required"`
-}
-
-func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.Container) ApplicationRequest {
+func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.Container) manifestsdk.CredentialApplicationWrapper {
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: manifestsdk.SpecVersion,
@@ -208,15 +202,15 @@ func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionD
 				{
 					ID:     submissionDescriptorID,
 					Format: exchange.JWTVC.String(),
-					Path:   "$.verifiableCredential[0]",
+					Path:   "$.verifiableCredentials[0]",
 				},
 			},
 		},
 	}
 
 	creds := credmodel.ContainersToInterface(credentials)
-	return ApplicationRequest{
-		Application: createApplication,
-		Credentials: creds,
+	return manifestsdk.CredentialApplicationWrapper{
+		CredentialApplication: createApplication,
+		Credentials:           creds,
 	}
 }

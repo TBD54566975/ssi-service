@@ -52,10 +52,11 @@ type DeleteManifestRequest struct {
 // Application
 
 type SubmitApplicationRequest struct {
-	ApplicantDID   string                            `json:"applicantDid" validate:"required"`
-	Application    manifestsdk.CredentialApplication `json:"application" validate:"required"`
-	Credentials    []cred.Container                  `json:"credentials,omitempty"`
-	ApplicationJWT keyaccess.JWT                     `json:"applicationJwt,omitempty" validate:"required"`
+	ApplicantDID    string                            `json:"applicantDid" validate:"required"`
+	Application     manifestsdk.CredentialApplication `json:"application" validate:"required"`
+	Credentials     []cred.Container                  `json:"credentials,omitempty"`
+	ApplicationJWT  keyaccess.JWT                     `json:"applicationJwt,omitempty" validate:"required"`
+	ApplicationJSON map[string]interface{}            `json:"applicationJson,omitempty"`
 }
 
 type SubmitApplicationResponse struct {

@@ -8,6 +8,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/goccy/go-json"
+	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/lestrrat-go/jwx/jwt"
 
 	"github.com/tbd54566975/ssi-service/internal/credential"
@@ -214,7 +215,6 @@ type SubmitApplicationRequest struct {
 }
 
 const (
-	credentialApplicationJSONProperty = "credential_application"
 	vcsJSONProperty                   = "vcs"
 	verifiableCredentialsJSONProperty = "verifiableCredentials"
 )
@@ -226,13 +226,9 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 	}
 
 	// make sure the known properties are present (Application and Credentials)
-	iss := parsed.Issuer()
-	if iss == "" {
-		return nil, errors.New("Credential Application token missing issuer")
-	}
-	claims, ok := parsed.Get(credentialApplicationJSONProperty)
-	if !ok {
-		return nil, errors.New("could not find credential_application in Credential Application token")
+	kid, ok := parsed.Get(jwk.KeyIDKey)
+	if !ok || kid == "" {
+		return nil, errors.New("Credential Application token missing kid")
 	}
 	var creds []interface{}
 	credentials, ok := parsed.Get(vcsJSONProperty)
@@ -241,15 +237,17 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 		if credentials, ok = parsed.Get(verifiableCredentialsJSONProperty); !ok {
 			return nil, errors.New("could not find vc or verifiableCredentials in Credential Application token")
 		}
-		creds = credentials.([]interface{})
-	} else {
-		creds = []interface{}{credentials}
 	}
+	creds = credentials.([]interface{})
 
 	// marshal known properties into their respective types
-	applicationTokenBytes, err := json.Marshal(claims)
+	credAppJSON, ok := parsed.Get(manifestsdk.CredentialApplicationJSONProperty)
+	if !ok {
+		return nil, errors.New("could not find credential_application in Credential Application token")
+	}
+	applicationTokenBytes, err := json.Marshal(credAppJSON)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not marshal Credential Application claims")
+		return nil, errors.Wrap(err, "could not marshal Credential Application credAppJSON")
 	}
 	var application manifestsdk.CredentialApplication
 	if err = json.Unmarshal(applicationTokenBytes, &application); err != nil {
@@ -263,10 +261,11 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 		return nil, errors.Wrap(err, "could not parse submitted credentials")
 	}
 	return &manifest.SubmitApplicationRequest{
-		ApplicantDID:   iss,
-		Application:    application,
-		Credentials:    credContainer,
-		ApplicationJWT: sar.ApplicationJWT,
+		ApplicantDID:    kid.(string),
+		Application:     application,
+		Credentials:     credContainer,
+		ApplicationJWT:  sar.ApplicationJWT,
+		ApplicationJSON: parsed.PrivateClaims(),
 	}, nil
 }
 

@@ -173,7 +173,7 @@ func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionD
 				{
 					ID:     submissionDescriptorID,
 					Format: exchange.JWTVC.String(),
-					Path:   "$.verifiableCredential[0]",
+					Path:   "$.verifiableCredentials[0]",
 				},
 			},
 		},

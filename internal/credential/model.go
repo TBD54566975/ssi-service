@@ -49,6 +49,7 @@ func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
 	}
 	return &Container{
 		ID:            cred.ID,
+		Credential:    cred,
 		CredentialJWT: keyaccess.JWTPtr(credentialJWT),
 	}, nil
 }
@@ -107,7 +108,7 @@ func NewCredentialContainerFromArray(creds []interface{}) ([]Container, error) {
 			}
 			containers = append(containers, *container)
 		default:
-			return nil, fmt.Errorf("invalid credential type: %s", reflect.TypeOf(c).Name())
+			return nil, fmt.Errorf("invalid credential type: %s", reflect.TypeOf(c).Kind().String())
 		}
 	}
 	return containers, nil

@@ -93,7 +93,7 @@ func buildDenialCredentialResponse(manifestID, applicationID, reason string, fai
 	if err := builder.SetApplicationID(applicationID); err != nil {
 		return nil, err
 	}
-	if err := builder.SetDenial(reason, failedOutputDescriptorIDs); err != nil {
+	if err := builder.SetDenial(reason, failedOutputDescriptorIDs...); err != nil {
 		return nil, err
 	}
 	return builder.Build()

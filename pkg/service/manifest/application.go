@@ -43,19 +43,10 @@ func (s Service) validateCredentialApplication(credManifest manifest.CredentialM
 		return util.LoggingErrorMsg(err, "application is not valid")
 	}
 
-	// validate that the application complies with the associated manifest
-	if err := manifest.IsValidCredentialApplicationForManifest(credManifest, credApp); err != nil {
+	// next, validate that the credential(s) provided in the application are valid
+	if err := manifest.IsValidCredentialApplicationForManifest(credManifest, request.ApplicationJSON); err != nil {
 		errMsg := fmt.Sprintf("could not validate application: %s", credApp.ID)
 		return util.LoggingErrorMsg(err, errMsg)
-	}
-
-	// next, validate that the credential(s) provided in the application are valid
-	// TODO(neal): this is coming in a future PR after a change to the SDK, and the below will be removed
-	if credManifest.PresentationDefinition != nil &&
-		len(credManifest.PresentationDefinition.InputDescriptors) > 0 &&
-		len(request.Credentials) == 0 {
-		errMsg := fmt.Sprintf("no credentials provided for application: %s against manifest: %s", credApp.ID, credManifest.ID)
-		return util.LoggingNewError(errMsg)
 	}
 
 	// signature and validity checks for each credential submitted with the application

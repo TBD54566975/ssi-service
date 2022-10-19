@@ -219,12 +219,13 @@ type VerifyCredentialRequest struct {
 	CredentialJWT           *keyaccess.JWT                   `json:"credentialJwt,omitempty"`
 }
 
-// IsValid checks if the request is valid, meaning there is at least one data integrity OR jwt credential, but not both
+// IsValid checks if the request is valid, meaning there is at least one data integrity (with proof)
+// OR jwt credential, but not both
 func (vcr VerifyCredentialRequest) IsValid() error {
 	if vcr.DataIntegrityCredential == nil && vcr.CredentialJWT == nil {
 		return errors.New("either a credential or a credential JWT must be provided")
 	}
-	if vcr.DataIntegrityCredential != nil && vcr.CredentialJWT != nil {
+	if vcr.DataIntegrityCredential.Proof != nil && vcr.CredentialJWT != nil {
 		return errors.New("only one of credential or credential JWT can be provided")
 	}
 	return nil
