@@ -132,7 +132,7 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 					Constraints: &exchange.Constraints{
 						Fields: []exchange.Field{
 							{
-								Path: []string{".vc.id"},
+								Path: []string{"$.credentialSubject.licenseType"},
 							},
 						},
 					},
@@ -158,7 +158,7 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 	return createManifestRequest
 }
 
-func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.Container) manifest.SubmitApplicationRequest {
+func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.Container) manifestsdk.CredentialApplicationWrapper {
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: manifestsdk.SpecVersion,
@@ -179,11 +179,10 @@ func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionD
 		},
 	}
 
-	// TODO(gabe) sign the request
-	return manifest.SubmitApplicationRequest{
-		ApplicantDID: applicantDID,
-		Application:  createApplication,
-		Credentials:  credentials,
+	creds := credmodel.ContainersToInterface(credentials)
+	return manifestsdk.CredentialApplicationWrapper{
+		CredentialApplication: createApplication,
+		Credentials:           creds,
 	}
 }
 

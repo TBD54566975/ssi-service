@@ -272,13 +272,14 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 type SubmitApplicationResponse struct {
 	Response manifestsdk.CredentialResponse `json:"credential_response"`
 	// this is an interface type to union Data Integrity and JWT style VCs
-	Credentials []interface{} `json:"verifiableCredentials"`
-	ResponseJWT keyaccess.JWT `json:"responseJwt"`
+	Credentials []interface{} `json:"verifiableCredentials,omitempty"`
+	ResponseJWT keyaccess.JWT `json:"responseJwt,omitempty"`
 }
 
 // SubmitApplication godoc
 // @Summary      Submit application
-// @Description  Submit a credential application in response to a credential manifest
+// @Description  Submit a credential application in response to a credential manifest. The request body is expected to
+// be a valid JWT signed by the applicant's DID, containing two top level properties: credential_application and vcs.
 // @Tags         ApplicationAPI
 // @Accept       json
 // @Produce      json

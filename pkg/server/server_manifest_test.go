@@ -10,10 +10,12 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
+	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -421,12 +423,20 @@ func TestManifestAPI(t *testing.T) {
 
 		// good application request
 		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
-		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
+		applicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
 			m.PresentationDefinition.InputDescriptors[0].ID, container)
 
-		// TODO(gabe) sign the application request
+		// sign application
+		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
+		assert.NoError(tt, err)
+		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
+		assert.NoError(tt, err)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantPrivKey)
+		assert.NoError(tt, err)
+		signed, err := signer.SignJSON(applicationRequest)
+		assert.NoError(tt, err)
 
-		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
+		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 
@@ -521,19 +531,31 @@ func TestManifestAPI(t *testing.T) {
 		assert.Equal(tt, m.Issuer.ID, issuerDID.DID.ID)
 
 		// good application request
+		// good application request
 		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
-		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
+		applicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
 			m.PresentationDefinition.InputDescriptors[0].ID, container)
 
-		// TODO(gabe) sign the application request
+		// sign application
+		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
+		assert.NoError(tt, err)
+		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
+		assert.NoError(tt, err)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantPrivKey)
+		assert.NoError(tt, err)
+		signed, err := signer.SignJSON(applicationRequest)
+		assert.NoError(tt, err)
 
-		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
+		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 
 		var appResp router.SubmitApplicationResponse
 		err = json.NewDecoder(w.Body).Decode(&appResp)
 		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, appResp.Response.Fulfillment)
+		assert.Empty(tt, appResp.Response.Denial)
 
 		// get response by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/responses/%s", appResp.Response.ID), nil)
@@ -655,12 +677,22 @@ func TestManifestAPI(t *testing.T) {
 		assert.Equal(tt, m.Issuer.ID, issuerDID.DID.ID)
 
 		// good application request
+		// good application request
 		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
-		createApplicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
+		applicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
 			m.PresentationDefinition.InputDescriptors[0].ID, container)
-		// TODO(gabe) sign the application request
 
-		applicationRequestValue := newRequestValue(tt, createApplicationRequest)
+		// sign application
+		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
+		assert.NoError(tt, err)
+		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
+		assert.NoError(tt, err)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantPrivKey)
+		assert.NoError(tt, err)
+		signed, err := signer.SignJSON(applicationRequest)
+		assert.NoError(tt, err)
+
+		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 
