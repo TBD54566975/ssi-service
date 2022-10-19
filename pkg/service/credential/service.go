@@ -225,7 +225,7 @@ func (vcr VerifyCredentialRequest) IsValid() error {
 	if vcr.DataIntegrityCredential == nil && vcr.CredentialJWT == nil {
 		return errors.New("either a credential or a credential JWT must be provided")
 	}
-	if vcr.DataIntegrityCredential.Proof != nil && vcr.CredentialJWT != nil {
+	if (vcr.DataIntegrityCredential != nil && vcr.DataIntegrityCredential.Proof != nil) && vcr.CredentialJWT != nil {
 		return errors.New("only one of credential or credential JWT can be provided")
 	}
 	return nil
