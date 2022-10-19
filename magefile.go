@@ -154,7 +154,8 @@ func ColorizeTestOutput(w io.Writer) io.Writer {
 }
 
 func ColorizeTestStdout() io.Writer {
-	if terminal.IsTerminal(syscall.Stdout) {
+	stdout := int(syscall.Stdout)
+	if terminal.IsTerminal(stdout) {
 		return ColorizeTestOutput(os.Stdout)
 	}
 	return os.Stdout

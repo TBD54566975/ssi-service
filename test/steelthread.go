@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+
 	"github.com/goccy/go-json"
 	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
-	"io/ioutil"
-	"net/http"
-	"strings"
 )
 
 const (
@@ -97,6 +98,9 @@ func RunTest() error {
 	applicationJSON := getJSONFromFile("application-input.json")
 	applicationJSON = strings.Replace(applicationJSON, "<DEFINITIONID>", presentationDefinitionID, -1)
 	applicationJSON = strings.Replace(applicationJSON, "<VCJWT>", credentialJWT, -1)
+
+	// sign the application as a jwt
+
 	output, err = put(endpoint+version+"manifests/applications", applicationJSON)
 	if err != nil {
 		return errors.Wrapf(err, "problem with application endpoint with output: %s", output)
@@ -109,8 +113,7 @@ func RunTest() error {
 
 func getJSONElement(jsonString string, jsonPath string) (string, error) {
 	jsonMap := make(map[string]interface{})
-	err := json.Unmarshal([]byte(jsonString), &jsonMap)
-	if err != nil {
+	if err := json.Unmarshal([]byte(jsonString), &jsonMap); err != nil {
 		return "", errors.Wrap(err, "problem with unmarshalling json string")
 	}
 
@@ -128,13 +131,13 @@ func get(url string) (string, error) {
 		return "", errors.Wrap(err, "problem with finding element in json string")
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Wrap(err, "problem with parsing body")
 	}
 
-	if resp.StatusCode/100 != 2 {
-		return "", errors.New(fmt.Sprintf("status code not in the 200s. body: %s", string(body)))
+	if is200Response(resp.StatusCode) {
+		return "", fmt.Errorf("status code not in the 200s. body: %s", string(body))
 	}
 
 	return string(body), err
@@ -154,13 +157,13 @@ func put(url string, json string) (string, error) {
 		return "", errors.Wrap(err, "problem client http client")
 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", errors.Wrap(err, "problem with parsing body")
 	}
 
-	if resp.StatusCode/100 != 2 {
-		return "", errors.New(fmt.Sprintf("status code not in the 200s. body: %s", string(body)))
+	if is200Response(resp.StatusCode) {
+		return "", fmt.Errorf("status code not in the 200s. body: %s", string(body))
 	}
 
 	return string(body), err
@@ -169,4 +172,8 @@ func put(url string, json string) (string, error) {
 func getJSONFromFile(fileName string) string {
 	b, _ := testVectors.ReadFile("testdata/" + fileName)
 	return string(b)
+}
+
+func is200Response(statusCode int) bool {
+	return statusCode/100 != 2
 }

@@ -27,9 +27,9 @@ type CreateDIDRequest struct {
 
 // CreateDIDResponse is the JSON-serializable response for creating a DID
 type CreateDIDResponse struct {
-	DID didsdk.DIDDocument `json:"did"`
-	// TODO(gabe) this is temporary, and should never be exposed like this!
-	PrivateKey string `json:"base58PrivateKey"`
+	DID              didsdk.DIDDocument `json:"did"`
+	PrivateKeyBase58 string             `json:"base58PrivateKey"`
+	KeyType          crypto.KeyType     `json:"keyType"`
 }
 
 type GetDIDRequest struct {

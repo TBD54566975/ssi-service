@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -215,7 +216,7 @@ func (s Service) verifySchemaJWT(token keyaccess.JWT) (*schema.VCJSONSchema, err
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to resolve schema author's did: %s", parsedSchema.Author)
 	}
-	kid, pubKey, err := keyaccess.GetVerificationInformation(resolved.DIDDocument, "")
+	kid, pubKey, err := did.GetVerificationInformation(resolved.DIDDocument, "")
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get verification information from schema")
 	}

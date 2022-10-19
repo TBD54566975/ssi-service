@@ -62,8 +62,9 @@ type CreateDIDByMethodRequest struct {
 }
 
 type CreateDIDByMethodResponse struct {
-	DID        didsdk.DIDDocument `json:"did,omitempty"`
-	PrivateKey string             `json:"privateKeyBase58,omitempty"`
+	DID              didsdk.DIDDocument `json:"did,omitempty"`
+	PrivateKeyBase58 string             `json:"privateKeyBase58,omitempty"`
+	KeyType          crypto.KeyType     `json:"keyType,omitempty"`
 }
 
 // CreateDIDByMethod godoc
@@ -110,8 +111,9 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 	}
 
 	resp := CreateDIDByMethodResponse{
-		DID:        createDIDResponse.DID,
-		PrivateKey: createDIDResponse.PrivateKey,
+		DID:              createDIDResponse.DID,
+		PrivateKeyBase58: createDIDResponse.PrivateKeyBase58,
+		KeyType:          createDIDResponse.KeyType,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }

@@ -25,6 +25,22 @@ func (c Container) JWTString() string {
 	return string(*c.CredentialJWT)
 }
 
+func (c Container) IsValid() bool {
+	return c.ID != "" && (c.HasDataIntegrityCredential() || c.HasJWTCredential())
+}
+
+func (c Container) HasSignedCredential() bool {
+	return c.HasDataIntegrityCredential() || c.HasJWTCredential()
+}
+
+func (c Container) HasDataIntegrityCredential() bool {
+	return c.Credential != nil && c.Credential.Proof != nil
+}
+
+func (c Container) HasJWTCredential() bool {
+	return c.CredentialJWT != nil
+}
+
 // NewCredentialContainerFromJWT attempts to parse a VC-JWT credential from a string into a Container
 func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
 	cred, err := signing.ParseVerifiableCredentialFromJWT(credentialJWT)
@@ -33,6 +49,7 @@ func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
 	}
 	return &Container{
 		ID:            cred.ID,
+		Credential:    cred,
 		CredentialJWT: keyaccess.JWTPtr(credentialJWT),
 	}, nil
 }
@@ -58,20 +75,16 @@ func NewCredentialContainerFromMap(credMap map[string]interface{}) (*Container, 
 	return nil, errors.New("credential does not have a data integrity proof")
 }
 
-func (cc Container) IsValid() bool {
-	return cc.ID != "" && (cc.HasDataIntegrityCredential() || cc.HasJWTCredential())
-}
-
-func (cc Container) HasSignedCredential() bool {
-	return cc.HasDataIntegrityCredential() || cc.HasJWTCredential()
-}
-
-func (cc Container) HasDataIntegrityCredential() bool {
-	return cc.Credential != nil && cc.Credential.Proof != nil
-}
-
-func (cc Container) HasJWTCredential() bool {
-	return cc.CredentialJWT != nil
+func ContainersToInterface(cs []Container) []interface{} {
+	var credentials []interface{}
+	for _, container := range cs {
+		if container.HasDataIntegrityCredential() {
+			credentials = append(credentials, *container.Credential)
+		} else if container.HasJWTCredential() {
+			credentials = append(credentials, *container.CredentialJWT)
+		}
+	}
+	return credentials
 }
 
 // NewCredentialContainerFromArray attempts to parse arrays of credentials of any type (either data integrity or JWT)
@@ -95,7 +108,7 @@ func NewCredentialContainerFromArray(creds []interface{}) ([]Container, error) {
 			}
 			containers = append(containers, *container)
 		default:
-			return nil, fmt.Errorf("invalid credential type: %s", reflect.TypeOf(c).Name())
+			return nil, fmt.Errorf("invalid credential type: %s", reflect.TypeOf(c).Kind().String())
 		}
 	}
 	return containers, nil

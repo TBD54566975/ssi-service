@@ -297,6 +297,8 @@ definitions:
         $ref: '#/definitions/exchange.Filter'
       id:
         type: string
+      optional:
+        type: boolean
       path:
         items:
           type: string
@@ -322,9 +324,6 @@ definitions:
       exclusiveMinimum: {}
       format:
         type: string
-      formatMaximum: {}
-      formatMinimum:
-        description: TODO(gabe) these may not be valid https://github.com/decentralized-identity/presentation-exchange/issues/312
       maxLength:
         type: integer
       maximum: {}
@@ -512,15 +511,29 @@ definitions:
     properties:
       did:
         $ref: '#/definitions/did.DIDDocument'
+      keyType:
+        type: string
       privateKeyBase58:
         type: string
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest:
     properties:
-      manifest:
-        $ref: '#/definitions/manifest.CredentialManifest'
+      format:
+        $ref: '#/definitions/exchange.ClaimFormat'
+      issuerDid:
+        type: string
+      issuerName:
+        type: string
+      outputDescriptors:
+        items:
+          $ref: '#/definitions/manifest.OutputDescriptor'
+        type: array
+      presentationDefinition:
+        $ref: '#/definitions/exchange.PresentationDefinition'
     required:
-    - manifest
+    - format
+    - issuerDid
+    - outputDescriptors
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestResponse:
     properties:
@@ -708,25 +721,18 @@ definitions:
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationRequest:
     properties:
-      applicantDid:
-        description: Once we have JWT signed wrapper that can get the did this can
-          be removed
+      applicationJwt:
         type: string
-      credential_application:
-        $ref: '#/definitions/manifest.CredentialApplication'
-      verifiableCredentials:
-        items: {}
-        type: array
     required:
-    - applicantDid
-    - credential_application
-    - verifiableCredentials
+    - applicationJwt
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationResponse:
     properties:
       credential_response:
         $ref: '#/definitions/manifest.CredentialResponse'
-      verifiableCredential:
+      responseJwt:
+        type: string
+      verifiableCredentials:
         description: this is an interface type to union Data Integrity and JWT style
           VCs
         items: {}
@@ -913,15 +919,29 @@ definitions:
     properties:
       did:
         $ref: '#/definitions/did.DIDDocument'
+      keyType:
+        type: string
       privateKeyBase58:
         type: string
     type: object
   pkg_server_router.CreateManifestRequest:
     properties:
-      manifest:
-        $ref: '#/definitions/manifest.CredentialManifest'
+      format:
+        $ref: '#/definitions/exchange.ClaimFormat'
+      issuerDid:
+        type: string
+      issuerName:
+        type: string
+      outputDescriptors:
+        items:
+          $ref: '#/definitions/manifest.OutputDescriptor'
+        type: array
+      presentationDefinition:
+        $ref: '#/definitions/exchange.PresentationDefinition'
     required:
-    - manifest
+    - format
+    - issuerDid
+    - outputDescriptors
     type: object
   pkg_server_router.CreateManifestResponse:
     properties:
@@ -1109,25 +1129,18 @@ definitions:
     type: object
   pkg_server_router.SubmitApplicationRequest:
     properties:
-      applicantDid:
-        description: Once we have JWT signed wrapper that can get the did this can
-          be removed
+      applicationJwt:
         type: string
-      credential_application:
-        $ref: '#/definitions/manifest.CredentialApplication'
-      verifiableCredentials:
-        items: {}
-        type: array
     required:
-    - applicantDid
-    - credential_application
-    - verifiableCredentials
+    - applicationJwt
     type: object
   pkg_server_router.SubmitApplicationResponse:
     properties:
       credential_response:
         $ref: '#/definitions/manifest.CredentialResponse'
-      verifiableCredential:
+      responseJwt:
+        type: string
+      verifiableCredentials:
         description: this is an interface type to union Data Integrity and JWT style
           VCs
         items: {}
@@ -1473,7 +1486,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDMethodsResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDMethodsResponse'
       summary: Get DID Methods
       tags:
       - DecentralizedIdentityAPI
@@ -1494,7 +1507,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDsByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDsByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -1512,7 +1525,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -1524,7 +1537,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.CreateDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -1547,7 +1560,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -1564,7 +1577,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -1589,7 +1602,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse'
+            $ref: '#/definitions/pkg_server_router.ResolveDIDResponse'
         "400":
           description: Bad request
           schema:
@@ -1608,14 +1621,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.PublishManifestRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.PublishManifestRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.PublishManifestResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.PublishManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -1638,7 +1651,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.StoreKeyRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest'
       produces:
       - application/json
       responses:
@@ -1672,7 +1685,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetKeyDetailsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetKeyDetailsResponse'
         "400":
           description: Bad request
           schema:
@@ -1826,7 +1839,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Submit application
+      description: Submit a credential application in response to a credential manifest.
+        The request body is expected to
       parameters:
       - description: request body
         in: body

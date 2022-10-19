@@ -115,10 +115,10 @@ func TestStoreAndGetKey(t *testing.T) {
 	// store the key
 	_, privKey, err := crypto.GenerateEd25519Key()
 	err = keyStore.StoreKey(StoreKeyRequest{
-		ID:         "test-id",
-		Type:       crypto.Ed25519,
-		Controller: "test-controller",
-		Key:        privKey,
+		ID:               "test-id",
+		Type:             crypto.Ed25519,
+		Controller:       "test-controller",
+		PrivateKeyBase58: base58.Encode(privKey),
 	})
 	assert.NoError(t, err)
 

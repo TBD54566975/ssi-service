@@ -36,7 +36,7 @@ func TestKeyStoreAPI(t *testing.T) {
 			ID:               "test-kid",
 			Type:             "bad",
 			Controller:       "me",
-			Base58PrivateKey: "bad",
+			PrivateKeyBase58: "bad",
 		}
 		badRequestValue := newRequestValue(tt, badKeyStoreRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", badRequestValue)
@@ -60,7 +60,7 @@ func TestKeyStoreAPI(t *testing.T) {
 			ID:               "did:test:me#key-1",
 			Type:             crypto.Ed25519,
 			Controller:       "did:test:me",
-			Base58PrivateKey: base58.Encode(privKeyBytes),
+			PrivateKeyBase58: base58.Encode(privKeyBytes),
 		}
 		requestValue := newRequestValue(tt, storeKeyRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
@@ -96,7 +96,7 @@ func TestKeyStoreAPI(t *testing.T) {
 			ID:               keyID,
 			Type:             crypto.Ed25519,
 			Controller:       controller,
-			Base58PrivateKey: base58.Encode(privKeyBytes),
+			PrivateKeyBase58: base58.Encode(privKeyBytes),
 		}
 		requestValue := newRequestValue(tt, storeKeyRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)

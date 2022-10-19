@@ -7,10 +7,10 @@ import (
 )
 
 type StoreKeyRequest struct {
-	ID         string
-	Type       crypto.KeyType
-	Controller string
-	Key        gocrypto.PrivateKey
+	ID               string
+	Type             crypto.KeyType
+	Controller       string
+	PrivateKeyBase58 string
 }
 
 type GetKeyRequest struct {
