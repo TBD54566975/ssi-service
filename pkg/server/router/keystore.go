@@ -34,23 +34,23 @@ type StoreKeyRequest struct {
 	ID               string         `json:"id" validate:"required"`
 	Type             crypto.KeyType `json:"type,omitempty" validate:"required"`
 	Controller       string         `json:"controller,omitempty" validate:"required"`
-	Base58PrivateKey string         `json:"base58PrivateKey,omitempty" validate:"required"`
+	PrivateKeyBase58 string         `json:"base58PrivateKey,omitempty" validate:"required"`
 }
 
 func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) {
-	privateKeyBytes, err := base58.Decode(sk.Base58PrivateKey)
+	// make sure we can decode and re-encode the key before storing it
+	privateKeyBytes, err := base58.Decode(sk.PrivateKeyBase58)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not decode base58 private key")
 	}
-	privKey, err := crypto.BytesToPrivKey(privateKeyBytes, sk.Type)
-	if err != nil {
+	if _, err = crypto.BytesToPrivKey(privateKeyBytes, sk.Type); err != nil {
 		return nil, errors.Wrap(err, "could not convert bytes to private key")
 	}
 	return &keystore.StoreKeyRequest{
-		ID:         sk.ID,
-		Type:       sk.Type,
-		Controller: sk.Controller,
-		Key:        privKey,
+		ID:               sk.ID,
+		Type:             sk.Type,
+		Controller:       sk.Controller,
+		PrivateKeyBase58: sk.PrivateKeyBase58,
 	}, nil
 }
 

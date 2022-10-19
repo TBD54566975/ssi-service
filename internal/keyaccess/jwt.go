@@ -6,6 +6,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/goccy/go-json"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
 )
@@ -76,6 +77,22 @@ func (j JWT) Ptr() *JWT {
 func JWTPtr(j string) *JWT {
 	jwt := JWT(j)
 	return &jwt
+}
+
+// SignJSON takes an object that is either itself json or json-serializable and signs it.
+func (ka JWKKeyAccess) SignJSON(data interface{}) (*JWT, error) {
+	if ka.JWTSigner == nil {
+		return nil, errors.New("cannot sign with nil signer")
+	}
+	jsonBytes, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+	payload := make(map[string]interface{})
+	if err = json.Unmarshal(jsonBytes, &payload); err != nil {
+		return nil, err
+	}
+	return ka.Sign(payload)
 }
 
 func (ka JWKKeyAccess) Sign(payload map[string]interface{}) (*JWT, error) {

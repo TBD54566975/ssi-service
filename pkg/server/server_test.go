@@ -12,6 +12,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 
+	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/dwn"
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
@@ -119,40 +120,37 @@ func newRequestContextWithParams(params map[string]string) context.Context {
 
 func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifestRequest {
 	createManifestRequest := manifest.CreateManifestRequest{
-		Manifest: manifestsdk.CredentialManifest{
-			ID:          "WA-DL-CLASS-A",
-			SpecVersion: manifestsdk.SpecVersion,
-			Issuer: manifestsdk.Issuer{
-				ID: issuerDID,
-			},
-			PresentationDefinition: &exchange.PresentationDefinition{
-				ID: "id123",
-				InputDescriptors: []exchange.InputDescriptor{
-					{
-						ID: "test-id",
-						Constraints: &exchange.Constraints{
-							Fields: []exchange.Field{
-								{
-									Path: []string{".vc.id"},
-								},
+		IssuerDID: issuerDID,
+		ClaimFormat: &exchange.ClaimFormat{
+			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
+		},
+		PresentationDefinition: &exchange.PresentationDefinition{
+			ID: "id123",
+			InputDescriptors: []exchange.InputDescriptor{
+				{
+					ID: "test-id",
+					Constraints: &exchange.Constraints{
+						Fields: []exchange.Field{
+							{
+								Path: []string{"$.credentialSubject.licenseType"},
 							},
 						},
 					},
 				},
 			},
-			OutputDescriptors: []manifestsdk.OutputDescriptor{
-				{
-					ID:          "id1",
-					Schema:      schemaID,
-					Name:        "good ID",
-					Description: "it's all good",
-				},
-				{
-					ID:          "id2",
-					Schema:      schemaID,
-					Name:        "good ID",
-					Description: "it's all good",
-				},
+		},
+		OutputDescriptors: []manifestsdk.OutputDescriptor{
+			{
+				ID:          "id1",
+				Schema:      schemaID,
+				Name:        "good ID",
+				Description: "it's all good",
+			},
+			{
+				ID:          "id2",
+				Schema:      schemaID,
+				Name:        "good ID",
+				Description: "it's all good",
 			},
 		},
 	}
@@ -160,13 +158,13 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 	return createManifestRequest
 }
 
-func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []interface{}) router.SubmitApplicationRequest {
+func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.Container) manifestsdk.CredentialApplicationWrapper {
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: manifestsdk.SpecVersion,
 		ManifestID:  manifestID,
 		Format: &exchange.ClaimFormat{
-			JWT: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
+			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
 		PresentationSubmission: &exchange.PresentationSubmission{
 			ID:           "psid",
@@ -175,17 +173,16 @@ func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionD
 				{
 					ID:     submissionDescriptorID,
 					Format: exchange.JWTVC.String(),
-					Path:   "$.verifiableCredential[0]",
+					Path:   "$.verifiableCredentials[0]",
 				},
 			},
 		},
 	}
 
-	// TODO(gabe) sign the request
-	return router.SubmitApplicationRequest{
-		ApplicantDID: applicantDID,
-		Application:  createApplication,
-		Credentials:  credentials,
+	creds := credmodel.ContainersToInterface(credentials)
+	return manifestsdk.CredentialApplicationWrapper{
+		CredentialApplication: createApplication,
+		Credentials:           creds,
 	}
 }
 

@@ -121,7 +121,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	}
 
 	// if a schema value exists, verify we can access it, validate the data against it, then set it
-	var credSchema *schemalib.VCJSONSchema
+	var knownSchema *schemalib.VCJSONSchema
 	if request.JSONSchema != "" {
 		// resolve schema and save it for validation later
 		gotSchema, err := s.schema.GetSchema(schema.GetSchemaRequest{ID: request.JSONSchema})
@@ -129,7 +129,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 			errMsg := fmt.Sprintf("failed to create credential; could not get schema: %s", request.JSONSchema)
 			return nil, util.LoggingErrorMsg(err, errMsg)
 		}
-		credSchema = &gotSchema.Schema
+		knownSchema = &gotSchema.Schema
 
 		credSchema := credential.CredentialSchema{
 			ID:   request.JSONSchema,
@@ -161,8 +161,8 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	}
 
 	// verify the built schema complies with the schema we've set
-	if credSchema != nil {
-		if err = schemalib.IsCredentialValidForVCJSONSchema(*cred, *credSchema); err != nil {
+	if knownSchema != nil {
+		if err = schemalib.IsCredentialValidForVCJSONSchema(*cred, *knownSchema); err != nil {
 			errMsg := fmt.Sprintf("credential data does not comply with the provided schema: %s", request.JSONSchema)
 			return nil, util.LoggingErrorMsg(err, errMsg)
 		}
@@ -184,7 +184,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	storageRequest := credstorage.StoreCredentialRequest{
 		Container: container,
 	}
-	if err := s.storage.StoreCredential(storageRequest); err != nil {
+	if err = s.storage.StoreCredential(storageRequest); err != nil {
 		errMsg := "could not store credential"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
@@ -219,12 +219,13 @@ type VerifyCredentialRequest struct {
 	CredentialJWT           *keyaccess.JWT                   `json:"credentialJwt,omitempty"`
 }
 
-// IsValid checks if the request is valid, meaning there is at least one data integrity OR jwt credential, but not both
+// IsValid checks if the request is valid, meaning there is at least one data integrity (with proof)
+// OR jwt credential, but not both
 func (vcr VerifyCredentialRequest) IsValid() error {
 	if vcr.DataIntegrityCredential == nil && vcr.CredentialJWT == nil {
 		return errors.New("either a credential or a credential JWT must be provided")
 	}
-	if vcr.DataIntegrityCredential != nil && vcr.CredentialJWT != nil {
+	if (vcr.DataIntegrityCredential != nil && vcr.DataIntegrityCredential.Proof != nil) && vcr.CredentialJWT != nil {
 		return errors.New("only one of credential or credential JWT can be provided")
 	}
 	return nil

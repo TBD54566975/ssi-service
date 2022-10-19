@@ -80,22 +80,15 @@ func (s Service) StoreKey(request StoreKeyRequest) error {
 		return util.LoggingNewError(errMsg)
 	}
 
-	// serialize the key before storage
-	keyBytes, err := crypto.PrivKeyToBytes(request.Key)
-	if err != nil {
-		return errors.Wrap(err, "could not serialize key before storage")
-	}
-	privKeyBase58 := base58.Encode(keyBytes)
-
 	key := keystorestorage.StoredKey{
 		ID:         request.ID,
 		Controller: request.Controller,
 		KeyType:    request.Type,
-		Base58Key:  privKeyBase58,
+		Base58Key:  request.PrivateKeyBase58,
 		CreatedAt:  time.Now().Format(time.RFC3339),
 	}
 	if err := s.storage.StoreKey(key); err != nil {
-		err := errors.Wrapf(err, "could not store key: %s", request.ID)
+		err = errors.Wrapf(err, "could not store key: %s", request.ID)
 		return util.LoggingError(err)
 	}
 	return nil
@@ -108,11 +101,11 @@ func (s Service) GetKey(request GetKeyRequest) (*GetKeyResponse, error) {
 	id := request.ID
 	gotKey, err := s.storage.GetKey(id)
 	if err != nil {
-		err := errors.Wrapf(err, "could not get key for key: %s", id)
+		err = errors.Wrapf(err, "could not get key for key: %s", id)
 		return nil, util.LoggingError(err)
 	}
 	if gotKey == nil {
-		err := errors.Wrapf(err, "key with id<%s> could not be found", id)
+		err = errors.Wrapf(err, "key with id<%s> could not be found", id)
 		return nil, util.LoggingError(err)
 	}
 
@@ -142,11 +135,11 @@ func (s Service) GetKeyDetails(request GetKeyDetailsRequest) (*GetKeyDetailsResp
 	id := request.ID
 	gotKeyDetails, err := s.storage.GetKeyDetails(id)
 	if err != nil {
-		err := errors.Wrapf(err, "could not get key details for key: %s", id)
+		err = errors.Wrapf(err, "could not get key details for key: %s", id)
 		return nil, util.LoggingError(err)
 	}
 	if gotKeyDetails == nil {
-		err := errors.Wrapf(err, "key with id<%s> could not be found", id)
+		err = errors.Wrapf(err, "key with id<%s> could not be found", id)
 		return nil, util.LoggingError(err)
 	}
 	return &GetKeyDetailsResponse{
@@ -162,13 +155,13 @@ func (s Service) GetKeyDetails(request GetKeyDetailsRequest) (*GetKeyDetailsResp
 func GenerateServiceKey(skPassword string) (key, salt string, err error) {
 	saltBytes, err := util.GenerateSalt(util.Argon2SaltSize)
 	if err != nil {
-		err := errors.Wrap(err, "could not generate salt for service key")
+		err = errors.Wrap(err, "could not generate salt for service key")
 		return "", "", util.LoggingError(err)
 	}
 
 	keyBytes, err := util.Argon2KeyGen(skPassword, saltBytes, chacha20poly1305.KeySize)
 	if err != nil {
-		err := errors.Wrap(err, "could not generate key for service key")
+		err = errors.Wrap(err, "could not generate key for service key")
 		return "", "", util.LoggingError(err)
 	}
 

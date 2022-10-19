@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+	"github.com/goccy/go-json"
+	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/lestrrat-go/jwx/jwt"
 
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -35,15 +39,23 @@ func NewManifestRouter(s svcframework.Service) (*ManifestRouter, error) {
 	}, nil
 }
 
-// CreateManifestRequest
-// TODO(gabe) consider simplifying this to accept just output descriptors, format, presentation definition
+// CreateManifestRequest is the request body for creating a manifest, which populates all remaining fields
+// and builds a well-formed manifest object.
 type CreateManifestRequest struct {
-	Manifest manifestsdk.CredentialManifest `json:"manifest" validate:"required"`
+	IssuerDID              string                           `json:"issuerDid" validate:"required"`
+	IssuerName             *string                          `json:"issuerName,omitempty"`
+	ClaimFormat            *exchange.ClaimFormat            `json:"format" validate:"required,dive"`
+	OutputDescriptors      []manifestsdk.OutputDescriptor   `json:"outputDescriptors" validate:"required,dive"`
+	PresentationDefinition *exchange.PresentationDefinition `json:"presentationDefinition,omitempty" validate:"omitempty,dive"`
 }
 
 func (c CreateManifestRequest) ToServiceRequest() manifest.CreateManifestRequest {
 	return manifest.CreateManifestRequest{
-		Manifest: c.Manifest,
+		IssuerDID:              c.IssuerDID,
+		IssuerName:             c.IssuerName,
+		OutputDescriptors:      c.OutputDescriptors,
+		ClaimFormat:            c.ClaimFormat,
+		PresentationDefinition: c.PresentationDefinition,
 	}
 }
 
@@ -105,7 +117,7 @@ type GetManifestResponse struct {
 // @Success      200  {object}  GetManifestResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/manifests/{id} [get]
-func (mr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get manifest without ID parameter"
@@ -145,7 +157,7 @@ type GetManifestsResponse struct {
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests [get]
-func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotManifests, err := mr.service.GetManifests()
 
 	if err != nil {
@@ -178,7 +190,7 @@ func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/manifests/{id} [delete]
-func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot delete manifest without ID parameter"
@@ -196,33 +208,83 @@ func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWrit
 }
 
 type SubmitApplicationRequest struct {
-	// Once we have JWT signed wrapper that can get the did this can be removed
-	ApplicantDID string                            `json:"applicantDid" validate:"required"`
-	Application  manifestsdk.CredentialApplication `json:"credential_application" validate:"required"`
-	Credentials  []interface{}                     `json:"verifiableCredentials" validate:"required"`
+	ApplicationJWT keyaccess.JWT `json:"applicationJwt" validate:"required"`
+	// Contains the following properties:
+	// Application  manifestsdk.CredentialApplication `json:"credential_application" validate:"required"`
+	// Credentials  []interface{}                     `json:"vcs" validate:"required"`
 }
 
+const (
+	vcsJSONProperty                   = "vcs"
+	verifiableCredentialsJSONProperty = "verifiableCredentials"
+)
+
 func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicationRequest, error) {
-	credContainer, err := credential.NewCredentialContainerFromArray(sar.Credentials)
+	parsed, err := jwt.Parse([]byte(sar.ApplicationJWT))
+	if err != nil {
+		return nil, errors.Wrap(err, "could not parse Credential Application token")
+	}
+
+	// make sure the known properties are present (Application and Credentials)
+	kid, ok := parsed.Get(jwk.KeyIDKey)
+	if !ok || kid == "" {
+		return nil, errors.New("Credential Application token missing kid")
+	}
+	var creds []interface{}
+	credentials, ok := parsed.Get(vcsJSONProperty)
+	if !ok {
+		logrus.Warn("could not find vc in Credential Application token, looking for `verifiableCredentials`")
+		if credentials, ok = parsed.Get(verifiableCredentialsJSONProperty); !ok {
+			return nil, errors.New("could not find vc or verifiableCredentials in Credential Application token")
+		}
+	}
+	creds, ok = credentials.([]interface{})
+	if !ok {
+		errMsg := fmt.Sprintf("could not parse Credential Application token, %s is not an array", vcsJSONProperty)
+		logrus.Errorf("%s: %s", errMsg, credentials)
+		return nil, errors.New(errMsg)
+	}
+
+	// marshal known properties into their respective types
+	credAppJSON, ok := parsed.Get(manifestsdk.CredentialApplicationJSONProperty)
+	if !ok {
+		return nil, errors.New("could not find credential_application in Credential Application token")
+	}
+	applicationTokenBytes, err := json.Marshal(credAppJSON)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not marshal Credential Application credAppJSON")
+	}
+	var application manifestsdk.CredentialApplication
+	if err = json.Unmarshal(applicationTokenBytes, &application); err != nil {
+		errMsg := "could not reconstruct Credential Application"
+		logrus.WithError(err).Error(errMsg)
+		return nil, errors.Wrap(err, errMsg)
+	}
+
+	credContainer, err := credential.NewCredentialContainerFromArray(creds)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse submitted credentials")
 	}
 	return &manifest.SubmitApplicationRequest{
-		ApplicantDID: sar.ApplicantDID,
-		Application:  sar.Application,
-		Credentials:  credContainer,
+		ApplicantDID:    kid.(string),
+		Application:     application,
+		Credentials:     credContainer,
+		ApplicationJWT:  sar.ApplicationJWT,
+		ApplicationJSON: parsed.PrivateClaims(),
 	}, nil
 }
 
 type SubmitApplicationResponse struct {
 	Response manifestsdk.CredentialResponse `json:"credential_response"`
 	// this is an interface type to union Data Integrity and JWT style VCs
-	Credentials []interface{} `json:"verifiableCredential"`
+	Credentials []interface{} `json:"verifiableCredentials,omitempty"`
+	ResponseJWT keyaccess.JWT `json:"responseJwt,omitempty"`
 }
 
 // SubmitApplication godoc
 // @Summary      Submit application
-// @Description  Submit application
+// @Description  Submit a credential application in response to a credential manifest. The request body is expected to
+// be a valid JWT signed by the applicant's DID, containing two top level properties: credential_application and vcs.
 // @Tags         ApplicationAPI
 // @Accept       json
 // @Produce      json
@@ -253,15 +315,11 @@ func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	var credentials []interface{}
-	for _, container := range submitApplicationResponse.Credentials {
-		if container.HasDataIntegrityCredential() {
-			credentials = append(credentials, *container.Credential)
-		} else if container.HasJWTCredential() {
-			credentials = append(credentials, *container.CredentialJWT)
-		}
+	resp := SubmitApplicationResponse{
+		Response:    submitApplicationResponse.Response,
+		Credentials: submitApplicationResponse.Credentials,
+		ResponseJWT: submitApplicationResponse.ResponseJWT,
 	}
-	resp := SubmitApplicationResponse{Response: submitApplicationResponse.Response, Credentials: credentials}
 
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
@@ -281,7 +339,7 @@ type GetApplicationResponse struct {
 // @Success      200  {object}  GetApplicationResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/manifests/applications/{id} [get]
-func (mr ManifestRouter) GetApplication(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) GetApplication(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get application without ID parameter"
@@ -317,7 +375,7 @@ type GetApplicationsResponse struct {
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests/applications [get]
-func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotApplications, err := mr.service.GetApplications()
 
 	if err != nil {
@@ -344,7 +402,7 @@ func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWri
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/manifests/applications/{id} [delete]
-func (mr ManifestRouter) DeleteApplication(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) DeleteApplication(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot delete application without ID parameter"
@@ -376,7 +434,7 @@ type GetResponseResponse struct {
 // @Success      200  {object}  GetResponseResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/manifests/responses/{id} [get]
-func (mr ManifestRouter) GetResponse(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) GetResponse(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get response without ID parameter"
@@ -412,7 +470,7 @@ type GetResponsesResponse struct {
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests/responses [get]
-func (mr ManifestRouter) GetResponses(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) GetResponses(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotResponses, err := mr.service.GetResponses()
 
 	if err != nil {
@@ -439,7 +497,7 @@ func (mr ManifestRouter) GetResponses(ctx context.Context, w http.ResponseWriter
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/manifests/responses/{id} [delete]
-func (mr ManifestRouter) DeleteResponse(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (mr ManifestRouter) DeleteResponse(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot delete response without ID parameter"

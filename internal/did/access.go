@@ -1,4 +1,4 @@
-package keyaccess
+package did
 
 import (
 	"crypto"
@@ -29,7 +29,7 @@ func GetVerificationInformation(did didsdk.DIDDocument, maybeKID string) (kid st
 
 	// handle the case where a kid is provided && there are multiple verification methods
 	if len(verificationMethods) > 1 {
-		if kid == "" {
+		if maybeKID == "" {
 			return "", nil, errors.Errorf("kid is required for did: %s, which has multiple verification methods", did.ID)
 		}
 		for _, method := range verificationMethods {
@@ -105,4 +105,21 @@ func multibaseToPubKeyBytes(mb string) ([]byte, error) {
 	}
 	pubKeyBytes := decoded[n:]
 	return pubKeyBytes, nil
+}
+
+// ResolveKeyForDID resolves a public key from a DID.
+func ResolveKeyForDID(resolver *didsdk.Resolver, did string) (kid string, pubKey crypto.PublicKey, err error) {
+	resolved, err := resolver.Resolve(did, nil)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to resolve did: %s", did)
+		return
+	}
+
+	// next, get the verification information (key) from the did document
+	kid, pubKey, err = GetVerificationInformation(resolved.DIDDocument, "")
+	if err != nil {
+		err = errors.Wrapf(err, "failed to get verification information from the did document: %s", did)
+		return
+	}
+	return
 }
