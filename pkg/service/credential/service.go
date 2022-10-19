@@ -184,7 +184,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	storageRequest := credstorage.StoreCredentialRequest{
 		Container: container,
 	}
-	if err := s.storage.StoreCredential(storageRequest); err != nil {
+	if err = s.storage.StoreCredential(storageRequest); err != nil {
 		errMsg := "could not store credential"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
