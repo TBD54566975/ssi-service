@@ -1,0 +1,20 @@
+{
+  "credential_response":{
+    "id":"cb0cb76e-4a83-4212-aacb-2dd34603927d",
+    "spec_version":"https://identity.foundation/credential-manifest/spec/v1.0.0/",
+    "manifest_id":"WA-DL-CLASS-A",
+    "application_id":"id123",
+    "fulfillment":{
+      "descriptor_map":[
+        {
+          "id":"6a2726f9-37c3-4a5a-886b-4c8e9eb1b264",
+          "format":"jwt_vc",
+          "path":"$.verifiableCredential[0]"
+        }
+      ]
+    }
+  },
+  "verifiableCredential":[
+    "eyJhbGciOiJFZERTQSIsImtpZCI6ImRpZDprZXk6ejZNa2dNRkJrN3VFdHJZaU1aRmZQRmZ4Z2E5UzhhaHR0anNGd2JGek5MRzJGM3JnIiwidHlwIjoiSldUIn0.eyJpc3MiOiJkaWQ6a2V5Ono2TWtnTUZCazd1RXRyWWlNWkZmUEZmeGdhOVM4YWh0dGpzRndiRnpOTEcyRjNyZyIsImp0aSI6IjZhMjcyNmY5LTM3YzMtNGE1YS04ODZiLTRjOGU5ZWIxYjI2NCIsIm5iZiI6MTY2NjE5NTY1NSwidmMiOnsiQGNvbnRleHQiOlsiaHR0cHM6Ly93d3cudzMub3JnLzIwMTgvY3JlZGVudGlhbHMvdjEiXSwiaWQiOiI2YTI3MjZmOS0zN2MzLTRhNWEtODg2Yi00YzhlOWViMWIyNjQiLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImlzc3VlciI6ImRpZDprZXk6ejZNa2dNRkJrN3VFdHJZaU1aRmZQRmZ4Z2E5UzhhaHR0anNGd2JGek5MRzJGM3JnIiwiaXNzdWFuY2VEYXRlIjoiMjAyMi0xMC0xOVQxNjowNzozNVoiLCJjcmVkZW50aWFsU3ViamVjdCI6e30sImNyZWRlbnRpYWxTY2hlbWEiOnsiaWQiOiJiYzc3OTU0Yi01N2ZjLTRkNWMtYmZmZi1hNmFjYjJhMTdiNjAiLCJ0eXBlIjoiSnNvblNjaGVtYVZhbGlkYXRvcjIwMTgifX19.3EkBtSh_yBbArNVOaLRyhjmebM1BNFHpVAC1Wj-obnkuSNDqvGpQkRVEMUGZD-phZIgSJjVHQORXpuc2SWLwBQ"
+  ]
+}
