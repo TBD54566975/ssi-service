@@ -531,7 +531,6 @@ func TestManifestAPI(t *testing.T) {
 		assert.Equal(tt, m.Issuer.ID, issuerDID.DID.ID)
 
 		// good application request
-		// good application request
 		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
 		applicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
 			m.PresentationDefinition.InputDescriptors[0].ID, container)
@@ -676,7 +675,6 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, m)
 		assert.Equal(tt, m.Issuer.ID, issuerDID.DID.ID)
 
-		// good application request
 		// good application request
 		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
 		applicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
