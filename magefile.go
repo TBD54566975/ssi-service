@@ -18,6 +18,8 @@ import (
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 	"golang.org/x/crypto/ssh/terminal"
+
+	steelthread "github.com/tbd54566975/ssi-service/test"
 )
 
 var (
@@ -93,6 +95,17 @@ func Spec() error {
 		return err
 	}
 	return sh.Run(swagCommand, "init", "-g", "cmd/main.go", "--pd", "-o", "doc", "-ot", "yaml")
+}
+
+// Integration runs an integration test. Note: the ssi-service must be running for this to work
+func Integration(testName string) error {
+	switch testName {
+	case "steelthread":
+		return steelthread.RunTest()
+	default:
+		fmt.Println("Running all tests")
+		return steelthread.RunTest()
+	}
 }
 
 func runCITests(extraTestArgs ...string) error {

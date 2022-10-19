@@ -1,0 +1,35 @@
+{
+  "author": "did:example:123",
+  "name": "KYC",
+  "schema": {
+    "$id": "kyc-schema-1.0",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "description": "KYC Schema",
+    "type": "object",
+    "properties": {
+      "id": {
+        "type": "string"
+      },
+      "givenName": {
+        "type": "string"
+      },
+      "additionalName": {
+        "type": "string"
+      },
+      "familyName": {
+        "type": "string"
+      },
+      "birthDate": {
+        "type": "string"
+      },
+      "postalAddress": {
+        "type": "string"
+      },
+      "taxID": {
+        "type": "string"
+      }
+    },
+    "required": [],
+    "additionalProperties": false
+  }
+}
