@@ -297,6 +297,8 @@ definitions:
         $ref: '#/definitions/exchange.Filter'
       id:
         type: string
+      optional:
+        type: boolean
       path:
         items:
           type: string
@@ -322,9 +324,6 @@ definitions:
       exclusiveMinimum: {}
       format:
         type: string
-      formatMaximum: {}
-      formatMinimum:
-        description: TODO(gabe) these may not be valid https://github.com/decentralized-identity/presentation-exchange/issues/312
       maxLength:
         type: integer
       maximum: {}
@@ -512,6 +511,8 @@ definitions:
     properties:
       did:
         $ref: '#/definitions/did.DIDDocument'
+      keyType:
+        type: string
       privateKeyBase58:
         type: string
     type: object
@@ -720,25 +721,18 @@ definitions:
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationRequest:
     properties:
-      applicantDid:
-        description: Once we have JWT signed wrapper that can get the did this can
-          be removed
+      applicationJwt:
         type: string
-      credential_application:
-        $ref: '#/definitions/manifest.CredentialApplication'
-      verifiableCredentials:
-        items: {}
-        type: array
     required:
-    - applicantDid
-    - credential_application
-    - verifiableCredentials
+    - applicationJwt
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationResponse:
     properties:
       credential_response:
         $ref: '#/definitions/manifest.CredentialResponse'
-      verifiableCredential:
+      responseJwt:
+        type: string
+      verifiableCredentials:
         description: this is an interface type to union Data Integrity and JWT style
           VCs
         items: {}
@@ -925,6 +919,8 @@ definitions:
     properties:
       did:
         $ref: '#/definitions/did.DIDDocument'
+      keyType:
+        type: string
       privateKeyBase58:
         type: string
     type: object
@@ -1133,25 +1129,18 @@ definitions:
     type: object
   pkg_server_router.SubmitApplicationRequest:
     properties:
-      applicantDid:
-        description: Once we have JWT signed wrapper that can get the did this can
-          be removed
+      applicationJwt:
         type: string
-      credential_application:
-        $ref: '#/definitions/manifest.CredentialApplication'
-      verifiableCredentials:
-        items: {}
-        type: array
     required:
-    - applicantDid
-    - credential_application
-    - verifiableCredentials
+    - applicationJwt
     type: object
   pkg_server_router.SubmitApplicationResponse:
     properties:
       credential_response:
         $ref: '#/definitions/manifest.CredentialResponse'
-      verifiableCredential:
+      responseJwt:
+        type: string
+      verifiableCredentials:
         description: this is an interface type to union Data Integrity and JWT style
           VCs
         items: {}
@@ -1320,7 +1309,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse'
+            $ref: '#/definitions/pkg_server_router.GetHealthCheckResponse'
       summary: Health Check
       tags:
       - HealthCheck
@@ -1366,7 +1355,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetCredentialsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialsResponse'
         "400":
           description: Bad request
           schema:
@@ -1388,14 +1377,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateCredentialRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateCredentialResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -1452,7 +1441,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetCredentialResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -1471,14 +1460,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.VerifyCredentialRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.VerifyCredentialResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -1497,7 +1486,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDMethodsResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDMethodsResponse'
       summary: Get DID Methods
       tags:
       - DecentralizedIdentityAPI
@@ -1518,7 +1507,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDsByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDsByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -1536,7 +1525,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -1548,7 +1537,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.CreateDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -1571,7 +1560,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -1588,7 +1577,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -1613,7 +1602,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse'
+            $ref: '#/definitions/pkg_server_router.ResolveDIDResponse'
         "400":
           description: Bad request
           schema:
@@ -1729,7 +1718,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestsResponse'
+            $ref: '#/definitions/pkg_server_router.GetManifestsResponse'
         "400":
           description: Bad request
           schema:
@@ -1751,14 +1740,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest'
+          $ref: '#/definitions/pkg_server_router.CreateManifestRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestResponse'
+            $ref: '#/definitions/pkg_server_router.CreateManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -1815,7 +1804,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestResponse'
+            $ref: '#/definitions/pkg_server_router.GetManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -1835,7 +1824,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationsResponse'
+            $ref: '#/definitions/pkg_server_router.GetApplicationsResponse'
         "400":
           description: Bad request
           schema:
@@ -1850,21 +1839,22 @@ paths:
     put:
       consumes:
       - application/json
-      description: Submit a credential application in response to a credential manifest
+      description: Submit a credential application in response to a credential manifest.
+        The request body is expected to
       parameters:
       - description: request body
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationRequest'
+          $ref: '#/definitions/pkg_server_router.SubmitApplicationRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationResponse'
+            $ref: '#/definitions/pkg_server_router.SubmitApplicationResponse'
         "400":
           description: Bad request
           schema:
@@ -1921,7 +1911,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationResponse'
+            $ref: '#/definitions/pkg_server_router.GetApplicationResponse'
         "400":
           description: Bad request
           schema:
@@ -1941,7 +1931,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetResponsesResponse'
+            $ref: '#/definitions/pkg_server_router.GetResponsesResponse'
         "400":
           description: Bad request
           schema:
@@ -1998,7 +1988,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetResponseResponse'
+            $ref: '#/definitions/pkg_server_router.GetResponseResponse'
         "400":
           description: Bad request
           schema:
