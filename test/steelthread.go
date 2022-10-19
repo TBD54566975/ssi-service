@@ -35,7 +35,7 @@ func RunTest() error {
 
 	// Create a did for the issuer
 	fmt.Println("\n\nCreate a did for the issuer:")
-	output, err = put(endpoint+version+"dids/key", getJSONFromFile("did.json"))
+	output, err = put(endpoint+version+"dids/key", getJSONFromFile("did-input.json"))
 	if err != nil {
 		return errors.Wrapf(err, "problem with dids/key endpoint with output: %s", output)
 	}
@@ -48,7 +48,7 @@ func RunTest() error {
 
 	// Create a schema to be used in CM
 	fmt.Println("\n\nCreate a schema to be used in CM:")
-	output, err = put(endpoint+version+"schemas", getJSONFromFile("schema.json"))
+	output, err = put(endpoint+version+"schemas", getJSONFromFile("schema-input.json"))
 	if err != nil {
 		return errors.Wrapf(err, "problem with schema endpoint with output: %s", output)
 	}
@@ -61,7 +61,7 @@ func RunTest() error {
 
 	// Create a credential
 	fmt.Println("\n\nCreate a credential to be used in CA:")
-	credentialJSON := getJSONFromFile("credential.json")
+	credentialJSON := getJSONFromFile("credential-input.json")
 	credentialJSON = strings.Replace(credentialJSON, "<CREDISSUERID>", issuerDID, -1)
 	credentialJSON = strings.Replace(credentialJSON, "<CREDSUBJECTID>", issuerDID, -1)
 	credentialJSON = strings.Replace(credentialJSON, "<SCHEMAID>", schemaID, -1)
@@ -78,7 +78,7 @@ func RunTest() error {
 
 	// Create our Credential Manifest
 	fmt.Println("\n\nCreate our Credential Manifest:")
-	manifestJSON := getJSONFromFile("manifest.json")
+	manifestJSON := getJSONFromFile("manifest-input.json")
 	manifestJSON = strings.Replace(manifestJSON, "<SCHEMAID>", schemaID, -1)
 	manifestJSON = strings.Replace(manifestJSON, "<ISSUERID>", issuerDID, -1)
 	output, err = put(endpoint+version+"manifests", manifestJSON)
@@ -94,7 +94,7 @@ func RunTest() error {
 
 	// Submit an application
 	fmt.Println("\n\nSubmit an Application:")
-	applicationJSON := getJSONFromFile("application.json")
+	applicationJSON := getJSONFromFile("application-input.json")
 	applicationJSON = strings.Replace(applicationJSON, "<DEFINITIONID>", presentationDefinitionID, -1)
 	applicationJSON = strings.Replace(applicationJSON, "<VCJWT>", credentialJWT, -1)
 	output, err = put(endpoint+version+"manifests/applications", applicationJSON)
