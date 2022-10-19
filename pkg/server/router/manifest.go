@@ -238,7 +238,12 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 			return nil, errors.New("could not find vc or verifiableCredentials in Credential Application token")
 		}
 	}
-	creds = credentials.([]interface{})
+	creds, ok = credentials.([]interface{})
+	if !ok {
+		errMsg := fmt.Sprintf("could not parse Credential Application token, %s is not an array", vcsJSONProperty)
+		logrus.Errorf("%s: %s", errMsg, credentials)
+		return nil, errors.New(errMsg)
+	}
 
 	// marshal known properties into their respective types
 	credAppJSON, ok := parsed.Get(manifestsdk.CredentialApplicationJSONProperty)

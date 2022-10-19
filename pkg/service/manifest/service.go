@@ -253,7 +253,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	credentials := credint.ContainersToInterface(creds)
 
 	// sign the response before returning
-	responseJWT, err := s.signResponseJWT(gotManifest.Issuer, CredentialResponseContainer{
+	responseJWT, err := s.signCredentialResponseJWT(gotManifest.Issuer, CredentialResponseContainer{
 		Response:    *credResp,
 		Credentials: credentials,
 	})

@@ -13,7 +13,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func (s Service) signResponseJWT(signingDID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
+func (s Service) signCredentialResponseJWT(signingDID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
 	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: signingDID})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get key for signing response with key<%s>", signingDID)
