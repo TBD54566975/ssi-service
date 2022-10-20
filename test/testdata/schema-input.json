@@ -23,7 +23,23 @@
         "type": "string"
       },
       "postalAddress": {
-        "type": "string"
+        "type": "object",
+        "properties": {
+          "addressCountry": {
+            "type": "string"
+          },
+          "addressLocality": {
+            "type": "string"
+          },
+          "addressRegion": {
+            "type": "string"
+          },
+          "postalCode": {
+            "type": "string"
+          },
+          "streetAddress": {
+            "type": "string"
+          }
       },
       "taxID": {
         "type": "string"

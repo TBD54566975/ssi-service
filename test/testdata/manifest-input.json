@@ -74,8 +74,32 @@
                 "path":[
                   "$.vc.credentialSubject.postalAddress"
                 ],
-                "filter":{
-                  "type":"string"
+                "filter": {
+                  "type": "object",
+                  "properties": {
+                    "addressCountry": {
+                      "type": "string"
+                    },
+                    "addressLocality": {
+                      "type": "string"
+                    },
+                    "addressRegion": {
+                      "type": "string"
+                    },
+                    "postalCode": {
+                      "type": "string"
+                    },
+                    "streetAddress": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "addressCountry",
+                    "addressLocality",
+                    "addressRegion",
+                    "postalCode",
+                    "streetAddress"
+                  ]
                 }
               },
               {
