@@ -4,6 +4,13 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/did"
+	"github.com/lestrrat-go/jwx/jwk"
+	"github.com/mr-tron/base58"
+	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"io"
 	"net/http"
 	"strings"
@@ -41,11 +48,33 @@ func RunTest() error {
 		return errors.Wrapf(err, "problem with dids/key endpoint with output: %s", output)
 	}
 
-	fmt.Println(output)
 	issuerDID, err := getJSONElement(output, "$.did.id")
 	if err != nil {
 		return errors.Wrap(err, "problem with getting json element")
 	}
+
+	// Create a did for alice
+	fmt.Println("\n\nCreate a did for alice:")
+	output, err = put(endpoint+version+"dids/key", getJSONFromFile("did-input.json"))
+	if err != nil {
+		return errors.Wrapf(err, "problem with dids/key endpoint with output: %s", output)
+	}
+
+	aliceDID, err := getJSONElement(output, "$.did.id")
+	if err != nil {
+		return errors.Wrap(err, "problem with getting json element")
+	}
+
+	//var aliceDid did2.CreateDIDResponse
+	//if err := json.Unmarshal([]byte(output), &aliceDid); err != nil {
+	//	return errors.Wrap(err, "problem with unmarshalling json string")
+	//}
+
+	aliceDidPrivateKey, err := getJSONElement(output, "$.privateKeyBase58")
+	fmt.Println("ALICE DID Private KEy")
+	fmt.Println(aliceDidPrivateKey)
+
+	fmt.Println(output)
 
 	// Create a schema to be used in CM
 	fmt.Println("\n\nCreate a schema to be used in CM:")
@@ -92,21 +121,84 @@ func RunTest() error {
 	if err != nil {
 		return errors.Wrap(err, "problem getting json element")
 	}
+	manifestID, err := getJSONElement(output, "$.credential_manifest.id")
+	if err != nil {
+		return errors.Wrap(err, "problem getting json element")
+	}
 
 	// Submit an application
 	fmt.Println("\n\nSubmit an Application:")
 	applicationJSON := getJSONFromFile("application-input.json")
 	applicationJSON = strings.Replace(applicationJSON, "<DEFINITIONID>", presentationDefinitionID, -1)
 	applicationJSON = strings.Replace(applicationJSON, "<VCJWT>", credentialJWT, -1)
+	applicationJSON = strings.Replace(applicationJSON, "<MANIFESTID>", manifestID, -1)
 
 	// sign the application as a jwt
+	//applicationJSON
 
-	output, err = put(endpoint+version+"manifests/applications", applicationJSON)
+	// START
+	holderDIDPrivateKey, holderDIDKey, err := did.GenerateDIDKey(crypto.Ed25519)
+	if err != nil {
+		return errors.Wrap(err, "problem generating did")
+	}
+	holderDIDWJWK, err := jwk.New(holderDIDPrivateKey)
+	if err != nil {
+		return errors.Wrap(err, "problem generating jwk")
+	}
+	holderSigner, err := crypto.NewJWTSigner(holderDIDKey.String(), holderDIDWJWK)
+	if err != nil {
+		return errors.Wrap(err, "problem generating signer")
+	}
+	holderVerifier, err := holderSigner.ToVerifier()
+	if err != nil {
+		return errors.Wrap(err, "problem generating verifier")
+	}
+
+	//applicantDID, err := didService.CreateDIDByMethod(createDIDRequest)
+
+	fmt.Println("DEBUG ALICE")
+	//fmt.Println(aliceDid)
+	//fmt.Println(aliceDid.PrivateKeyBase58)
+	fmt.Println("END DEBUG ALICE")
+	alicPrivKeyBytes, err := base58.Decode(aliceDidPrivateKey)
+	if err != nil {
+		return errors.Wrap(err, "problem base58 decoding")
+	}
+
+	alicePrivKey, err := crypto.BytesToPrivKey(alicPrivKeyBytes, "Ed25519")
+	if err != nil {
+		return errors.Wrap(err, "problem with bytes to priv key")
+	}
+
+	signer, err := keyaccess.NewJWKKeyAccess(aliceDID, alicePrivKey)
+	if err != nil {
+		return errors.Wrap(err, "problem with creating signer")
+	}
+
+	credAppWrapper := getValidApplicationRequest(applicationJSON, credentialJWT)
+
+	signed, err := signer.SignJSON(credAppWrapper)
+	if err != nil {
+		return errors.Wrap(err, "problem signing json")
+	}
+
+	fmt.Println("SIGNED APPLICATION JWT:")
+	fmt.Println(signed)
+	// END
+
+	trueApplicationJSON := getJSONFromFile("application-input-new.json")
+	trueApplicationJSON = strings.Replace(trueApplicationJSON, "<APPLICATIONJWT>", signed.String(), -1)
+
+	output, err = put(endpoint+version+"manifests/applications", trueApplicationJSON)
 	if err != nil {
 		return errors.Wrapf(err, "problem with application endpoint with output: %s", output)
 	}
 
 	fmt.Println(output)
+
+	if holderVerifier != nil && applicationJSON != "" {
+
+	}
 
 	return err
 }
@@ -176,4 +268,47 @@ func getJSONFromFile(fileName string) string {
 
 func is200Response(statusCode int) bool {
 	return statusCode/100 != 2
+}
+
+func getValidApplicationRequest(credAppJson string, credentialJWT string) manifestsdk.CredentialApplicationWrapper {
+	//createApplication := manifestsdk.CredentialApplication{
+	//	ID:          uuid.New().String(),
+	//	SpecVersion: manifestsdk.SpecVersion,
+	//	ManifestID:  manifestID,
+	//	Format: &exchange.ClaimFormat{
+	//		JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
+	//	},
+	//	PresentationSubmission: &exchange.PresentationSubmission{
+	//		ID:           "psid",
+	//		DefinitionID: presDefID,
+	//		DescriptorMap: []exchange.SubmissionDescriptor{
+	//			{
+	//				ID:     submissionDescriptorID,
+	//				Format: exchange.JWTVC.String(),
+	//				Path:   "$.verifiableCredentials[0]",
+	//			},
+	//		},
+	//	},
+	//}
+
+	var createApplication manifestsdk.CredentialApplication
+	if err := json.Unmarshal([]byte(credAppJson), &createApplication); err != nil {
+		//return nil, errors.Wrap(err, "problem with unmarshalling json string")
+		fmt.Println("unmarshal error")
+	}
+
+	fmt.Println("CREATE APP CRED APP:")
+	fmt.Println(createApplication)
+
+	contain, err := credmodel.NewCredentialContainerFromJWT(credentialJWT)
+	if err != nil {
+		fmt.Println("Problem making NewCredentialContainerFromJWT")
+	}
+	contains := []credmodel.Container{*contain}
+
+	creds := credmodel.ContainersToInterface(contains)
+	return manifestsdk.CredentialApplicationWrapper{
+		CredentialApplication: createApplication,
+		Credentials:           creds,
+	}
 }
