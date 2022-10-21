@@ -13,9 +13,9 @@
     "definition_id":"<DEFINITIONID>",
     "descriptor_map":[
       {
-        "format":"jwt_vc",
         "id":"kyc1",
-        "path":"$.verifiableCredentials[0]"
+        "format":"jwt_vc",
+        "path": "$.verifiableCredentials[0]"
       }
     ]
   },

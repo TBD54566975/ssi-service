@@ -35,7 +35,7 @@
             {
               "id":"givenName",
               "path":[
-                "$.vc.credentialSubject.givenName"
+                "$.credentialSubject.givenName"
               ],
               "filter":{
                 "type":"string",
@@ -45,7 +45,7 @@
             {
               "id":"additionalName",
               "path":[
-                "$.vc.credentialSubject.additionalName"
+                "$.credentialSubject.additionalName"
               ],
               "filter":{
                 "type":"string",
@@ -55,7 +55,7 @@
             {
               "id":"familyName",
               "path":[
-                "$.vc.credentialSubject.familyName"
+                "$.credentialSubject.familyName"
               ],
               "filter":{
                 "type":"string",
@@ -65,7 +65,7 @@
             {
               "id":"birthDate",
               "path":[
-                "$.vc.credentialSubject.birthDate"
+                "$.credentialSubject.birthDate"
               ],
               "filter":{
                 "type":"string",
@@ -75,7 +75,7 @@
             {
               "id":"taxID",
               "path":[
-                "$.vc.credentialSubject.taxID"
+                "$.credentialSubject.taxID"
               ],
               "filter":{
                 "type":"string"
