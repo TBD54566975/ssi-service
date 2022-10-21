@@ -38,7 +38,7 @@ func RunTest() error {
 		return errors.Wrapf(err, "problem with readiness endpoint with output: %s", output)
 	}
 
-	fmt.Println(output)
+	//fmt.Println(output)
 
 	// Create a did for the issuer
 	fmt.Println("\n\nCreate a did for the issuer:")
@@ -59,7 +59,7 @@ func RunTest() error {
 		return errors.Wrapf(err, "problem with dids/key endpoint with output: %s", output)
 	}
 
-	fmt.Println(output)
+	//fmt.Println(output)
 
 	aliceDID, err := getJSONElement(output, "$.did.id")
 	if err != nil {
@@ -67,8 +67,8 @@ func RunTest() error {
 	}
 
 	aliceDidPrivateKey, err := getJSONElement(output, "$.privateKeyBase58")
-	fmt.Println("Alice DID privateKeyBase58")
-	fmt.Println(aliceDidPrivateKey)
+	//fmt.Println("Alice DID privateKeyBase58")
+	//fmt.Println(aliceDidPrivateKey)
 
 	// Create a schema to be used in CM
 	fmt.Println("\n\nCreate a schema to be used in CM:")
@@ -77,7 +77,7 @@ func RunTest() error {
 		return errors.Wrapf(err, "problem with schema endpoint with output: %s", output)
 	}
 
-	fmt.Println(output)
+	//fmt.Println(output)
 	schemaID, err := getJSONElement(output, "$.id")
 	if err != nil {
 		return errors.Wrap(err, "problem getting json element")
@@ -94,7 +94,7 @@ func RunTest() error {
 		return errors.Wrapf(err, "problem with credentials endpoint with output: %s", output)
 	}
 
-	fmt.Println(output)
+	//fmt.Println(output)
 	credentialJWT, err := getJSONElement(output, "$.credentialJwt")
 	if err != nil {
 		return errors.Wrap(err, "problem getting json element")
@@ -110,7 +110,7 @@ func RunTest() error {
 		return errors.Wrapf(err, "problem with manifest endpoint with output: %s", output)
 	}
 
-	fmt.Println(output)
+	//fmt.Println(output)
 	presentationDefinitionID, err := getJSONElement(output, "$.credential_manifest.presentation_definition.id")
 	if err != nil {
 		return errors.Wrap(err, "problem getting json element")
@@ -150,7 +150,10 @@ func RunTest() error {
 		return errors.Wrap(err, "problem signing json")
 	}
 
-	fmt.Println("SIGNED APPLICATION JWT:")
+	fmt.Println("\nApplication JSON:")
+	fmt.Println(compactJSONOutput(applicationJSON))
+
+	fmt.Println("\nSIGNED APPLICATION JWT:")
 	fmt.Println(signed)
 	// END Signing
 
@@ -162,8 +165,18 @@ func RunTest() error {
 		return errors.Wrapf(err, "problem with application endpoint with output: %s", output)
 	}
 
-	fmt.Println(output)
+	//fmt.Println(output)
 	return err
+}
+
+func compactJSONOutput(json string) string {
+	var json_bytes = []byte(json)
+	buffer := new(bytes.Buffer)
+	if err := cmpact.Compact(buffer, json_bytes); err != nil {
+		fmt.Println(err)
+	}
+
+	return buffer.String()
 }
 
 func getJSONElement(jsonString string, jsonPath string) (string, error) {
@@ -181,7 +194,7 @@ func getJSONElement(jsonString string, jsonPath string) (string, error) {
 }
 
 func get(url string) (string, error) {
-	fmt.Printf("\nPerforming GET request to:  %s\n\n", url)
+	fmt.Printf("\nPerforming GET request to:  %s\n", url)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -197,17 +210,14 @@ func get(url string) (string, error) {
 		return "", fmt.Errorf("status code not in the 200s. body: %s", string(body))
 	}
 
+	fmt.Printf("\nOutput:\n")
+	fmt.Println(string(body))
+
 	return string(body), err
 }
 
 func put(url string, json string) (string, error) {
-	var json_bytes = []byte(json)
-	buffer := new(bytes.Buffer)
-	if err := cmpact.Compact(buffer, json_bytes); err != nil {
-		fmt.Println(err)
-	}
-
-	fmt.Printf("\nPerforming PUT request to:  %s \n\nwith data: \n%s\n\n", url, buffer.String())
+	fmt.Printf("\nPerforming PUT request to:  %s \n\nwith data: \n%s\n", url, compactJSONOutput(json))
 
 	client := new(http.Client)
 
@@ -230,6 +240,9 @@ func put(url string, json string) (string, error) {
 	if is200Response(resp.StatusCode) {
 		return "", fmt.Errorf("status code not in the 200s. body: %s", string(body))
 	}
+
+	fmt.Printf("\nOutput:\n")
+	fmt.Println(string(body))
 
 	return string(body), err
 }
