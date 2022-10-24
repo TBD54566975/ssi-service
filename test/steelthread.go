@@ -62,7 +62,7 @@ func RunTest() error {
 		return errors.Wrap(err, "problem with getting json element")
 	}
 
-	aliceDidPrivateKey, err := getJSONElement(output, "$.privateKeyBase58")
+	aliceDIDPrivateKey, err := getJSONElement(output, "$.privateKeyBase58")
 
 	// Create a schema to be used in CM
 	fmt.Println("\n\nCreate a schema to be used in CM:")
@@ -119,12 +119,12 @@ func RunTest() error {
 	applicationJSON = strings.ReplaceAll(applicationJSON, "<MANIFESTID>", manifestID)
 
 	// Start signing credential application
-	alicPrivKeyBytes, err := base58.Decode(aliceDidPrivateKey)
+	alicPrivKeyBytes, err := base58.Decode(aliceDIDPrivateKey)
 	if err != nil {
 		return errors.Wrap(err, "problem base58 decoding")
 	}
 
-	alicePrivKey, err := crypto.BytesToPrivKey(alicPrivKeyBytes, "Ed25519")
+	alicePrivKey, err := crypto.BytesToPrivKey(alicPrivKeyBytes, crypto.Ed25519)
 	if err != nil {
 		return errors.Wrap(err, "problem with bytes to priv key")
 	}
@@ -160,9 +160,9 @@ func RunTest() error {
 }
 
 func compactJSONOutput(json string) string {
-	var json_bytes = []byte(json)
+	jsonBytes := []byte(json)
 	buffer := new(bytes.Buffer)
-	if err := cmpact.Compact(buffer, json_bytes); err != nil {
+	if err := cmpact.Compact(buffer, jsonBytes); err != nil {
 		fmt.Println(err)
 	}
 
@@ -246,9 +246,9 @@ func is200Response(statusCode int) bool {
 	return statusCode/100 != 2
 }
 
-func getValidApplicationRequest(credAppJson string, credentialJWT string) manifestsdk.CredentialApplicationWrapper {
+func getValidApplicationRequest(credAppJSON string, credentialJWT string) manifestsdk.CredentialApplicationWrapper {
 	var createApplication manifestsdk.CredentialApplication
-	if err := json.Unmarshal([]byte(credAppJson), &createApplication); err != nil {
+	if err := json.Unmarshal([]byte(credAppJSON), &createApplication); err != nil {
 		fmt.Println("unmarshal error")
 	}
 
