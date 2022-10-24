@@ -38,8 +38,6 @@ func RunTest() error {
 		return errors.Wrapf(err, "problem with readiness endpoint with output: %s", output)
 	}
 
-	//fmt.Println(output)
-
 	// Create a did for the issuer
 	fmt.Println("\n\nCreate a did for the issuer:")
 	output, err = put(endpoint+version+"dids/key", getJSONFromFile("did-input.json"))
@@ -59,16 +57,12 @@ func RunTest() error {
 		return errors.Wrapf(err, "problem with dids/key endpoint with output: %s", output)
 	}
 
-	//fmt.Println(output)
-
 	aliceDID, err := getJSONElement(output, "$.did.id")
 	if err != nil {
 		return errors.Wrap(err, "problem with getting json element")
 	}
 
 	aliceDidPrivateKey, err := getJSONElement(output, "$.privateKeyBase58")
-	//fmt.Println("Alice DID privateKeyBase58")
-	//fmt.Println(aliceDidPrivateKey)
 
 	// Create a schema to be used in CM
 	fmt.Println("\n\nCreate a schema to be used in CM:")
@@ -77,7 +71,6 @@ func RunTest() error {
 		return errors.Wrapf(err, "problem with schema endpoint with output: %s", output)
 	}
 
-	//fmt.Println(output)
 	schemaID, err := getJSONElement(output, "$.id")
 	if err != nil {
 		return errors.Wrap(err, "problem getting json element")
@@ -94,7 +87,6 @@ func RunTest() error {
 		return errors.Wrapf(err, "problem with credentials endpoint with output: %s", output)
 	}
 
-	//fmt.Println(output)
 	credentialJWT, err := getJSONElement(output, "$.credentialJwt")
 	if err != nil {
 		return errors.Wrap(err, "problem getting json element")
@@ -110,7 +102,6 @@ func RunTest() error {
 		return errors.Wrapf(err, "problem with manifest endpoint with output: %s", output)
 	}
 
-	//fmt.Println(output)
 	presentationDefinitionID, err := getJSONElement(output, "$.credential_manifest.presentation_definition.id")
 	if err != nil {
 		return errors.Wrap(err, "problem getting json element")
@@ -127,7 +118,7 @@ func RunTest() error {
 	applicationJSON = strings.ReplaceAll(applicationJSON, "<VCJWT>", credentialJWT)
 	applicationJSON = strings.ReplaceAll(applicationJSON, "<MANIFESTID>", manifestID)
 
-	// START signing
+	// Start signing credential application
 	alicPrivKeyBytes, err := base58.Decode(aliceDidPrivateKey)
 	if err != nil {
 		return errors.Wrap(err, "problem base58 decoding")
@@ -155,9 +146,9 @@ func RunTest() error {
 
 	fmt.Println("\nSIGNED APPLICATION JWT:")
 	fmt.Println(signed)
-	// END Signing
+	// End signing credential application
 
-	trueApplicationJSON := getJSONFromFile("application-input-new.json")
+	trueApplicationJSON := getJSONFromFile("application-input-jwt.json")
 	trueApplicationJSON = strings.Replace(trueApplicationJSON, "<APPLICATIONJWT>", signed.String(), -1)
 
 	output, err = put(endpoint+version+"manifests/applications", trueApplicationJSON)
@@ -165,7 +156,6 @@ func RunTest() error {
 		return errors.Wrapf(err, "problem with application endpoint with output: %s", output)
 	}
 
-	//fmt.Println(output)
 	return err
 }
 
@@ -257,26 +247,6 @@ func is200Response(statusCode int) bool {
 }
 
 func getValidApplicationRequest(credAppJson string, credentialJWT string) manifestsdk.CredentialApplicationWrapper {
-	//createApplication := manifestsdk.CredentialApplication{
-	//	ID:          uuid.New().String(),
-	//	SpecVersion: manifestsdk.SpecVersion,
-	//	ManifestID:  manifestID,
-	//	Format: &exchange.ClaimFormat{
-	//		JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
-	//	},
-	//	PresentationSubmission: &exchange.PresentationSubmission{
-	//		ID:           "psid",
-	//		DefinitionID: presDefID,
-	//		DescriptorMap: []exchange.SubmissionDescriptor{
-	//			{
-	//				ID:     submissionDescriptorID,
-	//				Format: exchange.JWTVC.String(),
-	//				Path:   "$.verifiableCredentials[0]",
-	//			},
-	//		},
-	//	},
-	//}
-
 	var createApplication manifestsdk.CredentialApplication
 	if err := json.Unmarshal([]byte(credAppJson), &createApplication); err != nil {
 		fmt.Println("unmarshal error")
