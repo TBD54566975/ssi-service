@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/BurntSushi/toml v1.2.0
-	github.com/TBD54566975/ssi-sdk v0.0.1-alpha.0.20221019200812-2e73f0ac7722
+	github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221027011419-39fefd7f233c
 	github.com/ardanlabs/conf v1.5.0
 	github.com/dimfeld/httptreemux/v5 v5.4.0
 	github.com/go-playground/locales v0.14.0
@@ -19,7 +19,7 @@ require (
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	go.etcd.io/bbolt v1.3.6
 	go.opentelemetry.io/otel v1.11.0
 	go.opentelemetry.io/otel/exporters/jaeger v1.11.0

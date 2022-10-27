@@ -44,7 +44,7 @@ func (s Service) validateCredentialApplication(credManifest manifest.CredentialM
 	}
 
 	// next, validate that the credential(s) provided in the application are valid
-	if err := manifest.IsValidCredentialApplicationForManifest(credManifest, request.ApplicationJSON); err != nil {
+	if _, err := manifest.IsValidCredentialApplicationForManifest(credManifest, request.ApplicationJSON); err != nil {
 		errMsg := fmt.Sprintf("could not validate application: %s", credApp.ID)
 		return util.LoggingErrorMsg(err, errMsg)
 	}
