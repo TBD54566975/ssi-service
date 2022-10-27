@@ -2,8 +2,10 @@ package manifest
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
+	errresp "github.com/TBD54566975/ssi-sdk/error"
 	"github.com/pkg/errors"
 
 	didint "github.com/tbd54566975/ssi-service/internal/did"
@@ -28,41 +30,66 @@ func (s Service) verifyApplicationJWT(did string, token keyaccess.JWT) error {
 }
 
 // validateCredentialApplication validates the credential application's signature(s) in addition to making sure it
-// is a valid credential application, and complies with its corresponding manifest
-// TODO: this should also (optionally) return the failed input descriptor(s)
-func (s Service) validateCredentialApplication(credManifest manifest.CredentialManifest, request SubmitApplicationRequest) error {
+// is a valid credential application, and complies with its corresponding manifest. it returns the ids of unfulfilled
+// input descriptors along with an error if validation fails.
+func (s Service) validateCredentialApplication(credManifest manifest.CredentialManifest, request SubmitApplicationRequest) (inputDescriptorIDs []string, err error) {
 	// validate the payload's signature
-	if err := s.verifyApplicationJWT(request.ApplicantDID, request.ApplicationJWT); err != nil {
+	if verificationErr := s.verifyApplicationJWT(request.ApplicantDID, request.ApplicationJWT); verificationErr != nil {
 		errMsg := fmt.Sprintf("could not verify application<%s>'s signature", request.Application.ID)
-		return util.LoggingErrorMsg(err, errMsg)
+		err = util.LoggingErrorMsg(err, errMsg)
+		return
 	}
 
 	// validate the application
 	credApp := request.Application
-	if err := credApp.IsValid(); err != nil {
-		return util.LoggingErrorMsg(err, "application is not valid")
+	if credErr := credApp.IsValid(); credErr != nil {
+		err = util.LoggingErrorMsg(credErr, "application is not valid")
+		return
 	}
 
 	// next, validate that the credential(s) provided in the application are valid
-	if err := manifest.IsValidCredentialApplicationForManifest(credManifest, request.ApplicationJSON); err != nil {
+	unfulfilledInputDescriptorIDs, validationErr := manifest.IsValidCredentialApplicationForManifest(credManifest, request.ApplicationJSON)
+	if validationErr != nil {
+		resp := errresp.GetErrorResponse(validationErr)
+		// a valid error response means this is an application level error, and we should return a credential denial
+		if resp.Valid {
+			if len(unfulfilledInputDescriptorIDs) > 0 {
+				var reasons []string
+				for id, reason := range unfulfilledInputDescriptorIDs {
+					inputDescriptorIDs = append(inputDescriptorIDs, id)
+					reasons = append(reasons, fmt.Sprintf("%s: %s", id, reason))
+				}
+				err = errresp.NewErrorResponsef(DenialResponse, "unfilled input descriptor(s): %s", strings.Join(reasons, ", "))
+				return
+			}
+			err = errresp.NewErrorResponseWithError(DenialResponse, resp.Err)
+			return
+		}
+
+		// otherwise, we have an internal error and  set the error to the value of the errResp's error
 		errMsg := fmt.Sprintf("could not validate application: %s", credApp.ID)
-		return util.LoggingErrorMsg(err, errMsg)
+		err = util.LoggingErrorMsg(resp.Err, errMsg)
+		return
 	}
 
 	// signature and validity checks for each credential submitted with the application
 	for _, credentialContainer := range request.Credentials {
-		verificationResult, err := s.credential.VerifyCredential(credential.VerifyCredentialRequest{
+		verificationResult, verificationErr := s.credential.VerifyCredential(credential.VerifyCredentialRequest{
 			DataIntegrityCredential: credentialContainer.Credential,
 			CredentialJWT:           credentialContainer.CredentialJWT,
 		})
-		if err != nil {
+
+		if verificationErr != nil {
 			errMsg := fmt.Sprintf("could not verify credential: %s", credentialContainer.Credential.ID)
-			return util.LoggingNewError(errMsg)
+			err = util.LoggingNewError(errMsg)
+			return
 		}
+
 		if !verificationResult.Verified {
 			errMsg := fmt.Sprintf("submitted credential<%s> is not valid: %s", credentialContainer.Credential.ID, verificationResult.Reason)
-			return util.LoggingNewError(errMsg)
+			err = util.LoggingNewError(errMsg)
+			return
 		}
 	}
-	return nil
+	return
 }

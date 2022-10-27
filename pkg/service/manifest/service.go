@@ -5,6 +5,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	errresp "github.com/TBD54566975/ssi-sdk/error"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/sirupsen/logrus"
 
@@ -221,12 +222,16 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	credManifest := gotManifest.Manifest
 
 	// validate the application
-	if err = s.validateCredentialApplication(gotManifest.Manifest, request); err != nil {
-		denialResp, err := buildDenialCredentialResponse(manifestID, applicationID, err.Error())
-		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not build denial credential response")
+	if unfulfilledInputDescriptorIDs, validationErr := s.validateCredentialApplication(gotManifest.Manifest, request); validationErr != nil {
+		resp := errresp.GetErrorResponse(validationErr)
+		if resp.ErrorType == DenialResponse {
+			denialResp, err := buildDenialCredentialResponse(manifestID, applicationID, resp.Err.Error(), unfulfilledInputDescriptorIDs...)
+			if err != nil {
+				return nil, util.LoggingErrorMsg(err, "could not build denial credential response")
+			}
+			return &SubmitApplicationResponse{Response: *denialResp}, nil
 		}
-		return &SubmitApplicationResponse{Response: *denialResp}, nil
+		return nil, util.LoggingErrorMsg(validationErr, "could not validate application")
 	}
 
 	// store the application

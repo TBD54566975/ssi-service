@@ -5,12 +5,18 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
+	errresp "github.com/TBD54566975/ssi-sdk/error"
 
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
+)
+
+const (
+	// DenialResponse is an error response corresponding to a credential denial
+	DenialResponse errresp.Type = "DenialResponse"
 )
 
 func (s Service) signCredentialResponseJWT(signingDID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
