@@ -137,6 +137,8 @@ func TestManifestRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
 		assert.NotEmpty(tt, createdApplicationResponse.Response.ID)
+		assert.NotEmpty(tt, createdApplicationResponse.Response.Fulfillment)
+		assert.Empty(tt, createdApplicationResponse.Response.Denial)
 		assert.Equal(tt, len(createManifestRequest.OutputDescriptors), len(createdApplicationResponse.Credentials))
 	})
 }

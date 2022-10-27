@@ -408,6 +408,8 @@ func TestManifestAPI(t *testing.T) {
 		// good request
 		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
 
+		w.Flush()
+
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
@@ -436,9 +438,12 @@ func TestManifestAPI(t *testing.T) {
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)
 
+		w.Flush()
+
 		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
+		assert.NoError(tt, err)
 
 		var appResp router.SubmitApplicationResponse
 		err = json.NewDecoder(w.Body).Decode(&appResp)
@@ -446,6 +451,162 @@ func TestManifestAPI(t *testing.T) {
 
 		assert.NotEmpty(tt, appResp.Response)
 		assert.Equal(tt, resp.Manifest.ID, appResp.Response.ManifestID)
+		assert.NotEmpty(tt, appResp.Response.Fulfillment)
+		assert.Len(tt, appResp.Response.Fulfillment.DescriptorMap, 2)
+		assert.Len(tt, appResp.Credentials, 2)
+		assert.Empty(tt, appResp.Response.Denial)
+	})
+
+	t.Run("Test Denied Application", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, didService, credentialService)
+
+		// missing required field: Application
+		badManifestRequest := router.SubmitApplicationRequest{
+			ApplicationJWT: "bad",
+		}
+
+		badRequestValue := newRequestValue(tt, badManifestRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", badRequestValue)
+		w := httptest.NewRecorder()
+
+		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "invalid submit application request")
+
+		// reset the http recorder
+		w.Flush()
+
+		// create an issuer
+		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		// create an applicant
+		applicantDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		// create a schema for the creds to be issued against
+		licenseSchema := map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"licenseType": map[string]interface{}{
+					"type": "string",
+				},
+			},
+			"additionalProperties": true,
+		}
+		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
+
+		// issue a credential against the schema to the subject, from the issuer
+		createdCred, err := credentialService.CreateCredential(credential.CreateCredentialRequest{
+			Issuer:     issuerDID.DID.ID,
+			Subject:    applicantDID.DID.ID,
+			JSONSchema: createdSchema.ID,
+			Data:       map[string]interface{}{"licenseType": "WA-DL-CLASS-A"},
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCred)
+
+		w.Flush()
+
+		// good request
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
+
+		requestValue := newRequestValue(tt, createManifestRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
+		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateManifestResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		m := resp.Manifest
+		assert.NotEmpty(tt, m)
+		assert.Equal(tt, m.Issuer.ID, issuerDID.DID.ID)
+
+		// good application request
+		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
+		applicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
+			m.PresentationDefinition.InputDescriptors[0].ID, container)
+
+		// remove the presentation to make this a bad request
+		savedSubmission := applicationRequest.CredentialApplication.PresentationSubmission
+		applicationRequest.CredentialApplication.PresentationSubmission = nil
+
+		// sign application
+		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
+		assert.NoError(tt, err)
+		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
+		assert.NoError(tt, err)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantPrivKey)
+		assert.NoError(tt, err)
+		signed, err := signer.SignJSON(applicationRequest)
+		assert.NoError(tt, err)
+
+		w.Flush()
+
+		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
+		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var appResp router.SubmitApplicationResponse
+		err = json.NewDecoder(w.Body).Decode(&appResp)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, appResp.Response)
+		assert.Equal(tt, resp.Manifest.ID, appResp.Response.ManifestID)
+		assert.NotEmpty(tt, appResp.Response.Denial)
+		assert.Contains(tt, appResp.Response.Denial.Reason, "no descriptors provided for application")
+		assert.Len(tt, appResp.Response.Denial.InputDescriptors, 0)
+
+		// submit it again, with an unfulfilled descriptor
+		savedSubmission.DescriptorMap[0].ID = "bad"
+		applicationRequest.CredentialApplication.PresentationSubmission = savedSubmission
+
+		w.Flush()
+
+		// sign application
+		signed, err = signer.SignJSON(applicationRequest)
+		assert.NoError(tt, err)
+
+		applicationRequestValue = newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
+		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		err = json.NewDecoder(w.Body).Decode(&appResp)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, appResp.Response)
+		assert.Equal(tt, resp.Manifest.ID, appResp.Response.ManifestID)
+		assert.NotEmpty(tt, appResp.Response.Denial)
+		assert.Contains(tt, appResp.Response.Denial.Reason, "unfilled input descriptor(s): test-id: no submission descriptor found for input descriptor")
+		assert.Len(tt, appResp.Response.Denial.InputDescriptors, 1)
+		assert.Equal(tt, appResp.Response.Denial.InputDescriptors[0], "test-id")
 	})
 
 	t.Run("Test Get Application By ID and Get Applications", func(tt *testing.T) {
