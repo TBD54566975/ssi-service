@@ -228,18 +228,18 @@ func (cr CredentialRouter) GetCredentials(ctx context.Context, w http.ResponseWr
 	}
 
 	if issuer != nil {
-		return cr.getCredentialsByIssuer(*issuer, ctx, w, r)
+		return cr.getCredentialsByIssuer(ctx, *issuer, w, r)
 	}
 	if subject != nil {
-		return cr.getCredentialsBySubject(*subject, ctx, w, r)
+		return cr.getCredentialsBySubject(ctx, *subject, w, r)
 	}
 	if schema != nil {
-		return cr.getCredentialsBySchema(*schema, ctx, w, r)
+		return cr.getCredentialsBySchema(ctx, *schema, w, r)
 	}
 	return err
 }
 
-func (cr CredentialRouter) getCredentialsByIssuer(issuer string, ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (cr CredentialRouter) getCredentialsByIssuer(ctx context.Context, issuer string, w http.ResponseWriter, _ *http.Request) error {
 	gotCredentials, err := cr.service.GetCredentialsByIssuer(credential.GetCredentialByIssuerRequest{Issuer: issuer})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for issuer: %s", util.SanitizeLog(issuer))
@@ -251,7 +251,7 @@ func (cr CredentialRouter) getCredentialsByIssuer(issuer string, ctx context.Con
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
-func (cr CredentialRouter) getCredentialsBySubject(subject string, ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (cr CredentialRouter) getCredentialsBySubject(ctx context.Context, subject string, w http.ResponseWriter, _ *http.Request) error {
 	gotCredentials, err := cr.service.GetCredentialsBySubject(credential.GetCredentialBySubjectRequest{Subject: subject})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for subject: %s", util.SanitizeLog(subject))
@@ -263,7 +263,7 @@ func (cr CredentialRouter) getCredentialsBySubject(subject string, ctx context.C
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
-func (cr CredentialRouter) getCredentialsBySchema(schema string, ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (cr CredentialRouter) getCredentialsBySchema(ctx context.Context, schema string, w http.ResponseWriter, _ *http.Request) error {
 	gotCredentials, err := cr.service.GetCredentialsBySchema(credential.GetCredentialBySchemaRequest{Schema: schema})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for schema: %s", util.SanitizeLog(schema))
