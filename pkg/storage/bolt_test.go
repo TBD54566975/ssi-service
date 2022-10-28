@@ -125,7 +125,7 @@ func TestBoltDBPrefixAndKeys(t *testing.T) {
 	assert.Len(t, prefixValues, 2)
 
 	var keys []string
-	for k, _ := range prefixValues {
+	for k := range prefixValues {
 		keys = append(keys, k)
 	}
 	assert.Contains(t, keys, "bitcoin-testnet")

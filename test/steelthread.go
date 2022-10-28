@@ -189,7 +189,7 @@ func getJSONElement(jsonString string, jsonPath string) (string, error) {
 func get(url string) (string, error) {
 	fmt.Printf("\nPerforming GET request to:  %s\n", url)
 
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) // #nosec: testing only.
 	if err != nil {
 		return "", errors.Wrap(err, "problem with finding element in json string")
 	}

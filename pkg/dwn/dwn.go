@@ -9,19 +9,19 @@ import (
 	"net/http"
 )
 
-type DWNPublishManifestRequest struct {
+type PublishManifestRequest struct {
 	Manifest manifest.CredentialManifest `json:"manifest" validate:"required"`
 }
 
-type DWNPublishManifestResponse struct {
+type PublishManifestResponse struct {
 	Status   int    `json:"status" validate:"required"`
 	Response string `json:"response" validate:"required"`
 }
 
 // PublishManifest publishes a CredentialManifest to a DWN
-func PublishManifest(endpoint string, manifest manifest.CredentialManifest) (*DWNPublishManifestResponse, error) {
+func PublishManifest(endpoint string, manifest manifest.CredentialManifest) (*PublishManifestResponse, error) {
 
-	dwnReq := DWNPublishManifestRequest{Manifest: manifest}
+	dwnReq := PublishManifestRequest{Manifest: manifest}
 	postResp, err := Post(endpoint, dwnReq)
 
 	if err != nil {
@@ -33,7 +33,7 @@ func PublishManifest(endpoint string, manifest manifest.CredentialManifest) (*DW
 	b, _ := io.ReadAll(postResp.Body)
 	body := string(b)
 
-	return &DWNPublishManifestResponse{Status: postResp.StatusCode, Response: body}, nil
+	return &PublishManifestResponse{Status: postResp.StatusCode, Response: body}, nil
 
 }
 
@@ -45,6 +45,7 @@ func Post(endpoint string, data interface{}) (*http.Response, error) {
 		return nil, err
 	}
 
+	// #nosec: we are assuming the endpoint is safe. We might want to revisit.
 	resp, err := http.Post(endpoint, "application/json", bytes.NewBuffer(jsonData))
 
 	if err != nil {

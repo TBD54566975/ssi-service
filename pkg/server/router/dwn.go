@@ -46,8 +46,8 @@ func (req PublishManifestRequest) ToServiceRequest() dwn.PublishManifestRequest 
 }
 
 type PublishManifestResponse struct {
-	Manifest    *manifest.CredentialManifest       `json:"manifest" validate:"required"`
-	DWNResponse *dwnpkg.DWNPublishManifestResponse `json:"dwnResponse" validate:"required"`
+	Manifest    *manifest.CredentialManifest    `json:"manifest" validate:"required"`
+	DWNResponse *dwnpkg.PublishManifestResponse `json:"dwnResponse" validate:"required"`
 }
 
 // PublishManifest godoc

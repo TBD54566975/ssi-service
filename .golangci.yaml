@@ -10,8 +10,15 @@ output:
 linters:
   disable-all: true
   enable:
-# TODO(Andres): enable the linters specified below.
-#    - revive
-#    - gosec
-#    - govet
+    - revive
+    - gosec
+    - govet
     - staticcheck
+
+linters-settings:
+  gosec:
+    config:
+      G101:
+        # We intentionally remove the 'cred' regex, to avoid false positives
+        pattern: "(/i)passwd|pass|password|pwd|secret|token|pw|apiKey|bearer"
+
