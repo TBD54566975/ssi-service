@@ -28,8 +28,8 @@ type VerifyManifestRequest struct {
 }
 
 type VerifyManifestResponse struct {
-	Verified bool   `json:"verified" json:"verified"`
-	Reason   string `json:"reason,omitempty" json:"reason,omitempty"`
+	Verified bool   `json:"verified"`
+	Reason   string `json:"reason,omitempty"`
 }
 
 type GetManifestRequest struct {

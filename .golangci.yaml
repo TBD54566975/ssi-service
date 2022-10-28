@@ -1,0 +1,17 @@
+# See https://golangci-lint.run/usage/configuration/ for reference.
+run:
+  concurrency: 16
+  skip-dirs:
+    - bin
+
+output:
+  sort-results: true
+
+linters:
+  disable-all: true
+  enable:
+# TODO(Andres): enable the linters specified below.
+#    - revive
+#    - gosec
+#    - govet
+    - staticcheck

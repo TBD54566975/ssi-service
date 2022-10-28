@@ -156,8 +156,8 @@ func (vcr VerifyCredentialRequest) IsValid() bool {
 }
 
 type VerifyCredentialResponse struct {
-	Verified bool   `json:"verified" json:"verified"`
-	Reason   string `json:"reason,omitempty" json:"reason,omitempty"`
+	Verified bool   `json:"verified"`
+	Reason   string `json:"reason,omitempty"`
 }
 
 // VerifyCredential godoc

@@ -709,6 +709,7 @@ func TestManifestAPI(t *testing.T) {
 		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
+		assert.NoError(tt, err)
 
 		var appResp router.SubmitApplicationResponse
 		err = json.NewDecoder(w.Body).Decode(&appResp)
@@ -731,6 +732,7 @@ func TestManifestAPI(t *testing.T) {
 		// get all responses
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/responses", nil)
 		err = manifestRouter.GetResponses(newRequestContext(), w, req)
+		assert.NoError(tt, err)
 
 		var getResponsesResp router.GetResponsesResponse
 		err = json.NewDecoder(w.Body).Decode(&getResponsesResp)
@@ -742,6 +744,7 @@ func TestManifestAPI(t *testing.T) {
 		// get all applications
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		err = manifestRouter.GetApplications(newRequestContext(), w, req)
+		assert.NoError(tt, err)
 
 		var getApplicationsResp router.GetApplicationsResponse
 		err = json.NewDecoder(w.Body).Decode(&getApplicationsResp)
@@ -854,6 +857,7 @@ func TestManifestAPI(t *testing.T) {
 		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
+		assert.NoError(tt, err)
 
 		var appResp router.SubmitApplicationResponse
 		err = json.NewDecoder(w.Body).Decode(&appResp)
@@ -862,6 +866,7 @@ func TestManifestAPI(t *testing.T) {
 		// get all applications
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		err = manifestRouter.GetApplications(newRequestContext(), w, req)
+		assert.NoError(tt, err)
 
 		var getApplicationsResp router.GetApplicationsResponse
 		err = json.NewDecoder(w.Body).Decode(&getApplicationsResp)

@@ -79,7 +79,7 @@ func (dwnr DWNRouter) PublishManifest(ctx context.Context, w http.ResponseWriter
 	req := request.ToServiceRequest()
 	publishManifestResponse, err := dwnr.service.GetManifest(req)
 
-	if err != nil || &publishManifestResponse.Manifest == nil {
+	if err != nil || publishManifestResponse.Manifest.IsEmpty() {
 		errMsg := "could not retrieve manifest"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)

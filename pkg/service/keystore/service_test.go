@@ -85,6 +85,7 @@ func TestEncryptDecryptAllKeyTypes(t *testing.T) {
 
 			// reconstruct the key from its serialized form
 			privKeyReconstructed, err := crypto.BytesToPrivKey(decryptedKey, test.kt)
+			assert.NoError(t, err)
 			assert.EqualValues(t, privKey, privKeyReconstructed)
 		})
 	}
@@ -114,6 +115,7 @@ func TestStoreAndGetKey(t *testing.T) {
 
 	// store the key
 	_, privKey, err := crypto.GenerateEd25519Key()
+	assert.NoError(t, err)
 	err = keyStore.StoreKey(StoreKeyRequest{
 		ID:               "test-id",
 		Type:             crypto.Ed25519,
