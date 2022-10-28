@@ -46,8 +46,8 @@ func (req PublishManifestRequest) ToServiceRequest() dwn.PublishManifestRequest 
 }
 
 type PublishManifestResponse struct {
-	Manifest    *manifest.CredentialManifest    `json:"manifest" validate:"required"`
-	DWNResponse *dwnpkg.PublishManifestResponse `json:"dwnResponse" validate:"required"`
+	Manifest    manifest.CredentialManifest       `json:"manifest" validate:"required"`
+	DWNResponse dwnpkg.DWNPublishManifestResponse `json:"dwnResponse" validate:"required"`
 }
 
 // PublishManifest godoc
@@ -79,13 +79,13 @@ func (dwnr DWNRouter) PublishManifest(ctx context.Context, w http.ResponseWriter
 	req := request.ToServiceRequest()
 	publishManifestResponse, err := dwnr.service.GetManifest(req)
 
-	if err != nil || publishManifestResponse.Manifest == nil {
+	if err != nil || publishManifestResponse.Manifest.IsEmpty() {
 		errMsg := "could not retrieve manifest"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	dwnResp, err := dwnpkg.PublishManifest(dwnr.service.Config().DWNEndpoint, *publishManifestResponse.Manifest)
+	dwnResp, err := dwnpkg.PublishManifest(dwnr.service.Config().DWNEndpoint, publishManifestResponse.Manifest)
 
 	if err != nil {
 		errMsg := "could not publish manifest to DWN"
@@ -93,6 +93,6 @@ func (dwnr DWNRouter) PublishManifest(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := PublishManifestResponse{Manifest: publishManifestResponse.Manifest, DWNResponse: dwnResp}
+	resp := PublishManifestResponse{Manifest: publishManifestResponse.Manifest, DWNResponse: *dwnResp}
 	return framework.Respond(ctx, w, resp, http.StatusAccepted)
 }
