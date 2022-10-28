@@ -99,6 +99,7 @@ func TestSchemaAPI(t *testing.T) {
 		schemaRequestValue = newRequestValue(tt, schemaRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		err = schemaService.CreateSchema(newRequestContext(), w, req)
+		assert.NoError(tt, err)
 
 		var resp router.CreateSchemaResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)

@@ -63,6 +63,9 @@ func RunTest() error {
 	}
 
 	aliceDIDPrivateKey, err := getJSONElement(output, "$.privateKeyBase58")
+	if err != nil {
+		return errors.Wrap(err, "getting json")
+	}
 
 	// Create a schema to be used in CM
 	fmt.Println("\n\nCreate a schema to be used in CM:")

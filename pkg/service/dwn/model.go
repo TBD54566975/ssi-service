@@ -7,5 +7,5 @@ type PublishManifestRequest struct {
 }
 
 type PublishManifestResponse struct {
-	Manifest manifestsdk.CredentialManifest `json:"manifest"`
+	Manifest *manifestsdk.CredentialManifest `json:"manifest,omitempty"`
 }

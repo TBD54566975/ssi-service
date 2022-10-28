@@ -67,6 +67,20 @@ func CleanRun() error {
 	return sh.Run("docker-compose", "--project-directory", "build", "down", "--rmi", "local")
 }
 
+// Deps installs the dependencies needed for the build toolchain.
+func Deps() error {
+	return brewInstall("golangci-lint")
+}
+
+func brewInstall(formula string) error {
+	return sh.Run("brew", "install", formula)
+}
+
+// Lint runs the configured linter.
+func Lint() error {
+	return sh.Run("golangci-lint", "run")
+}
+
 // Run the service via docker-compose.
 func Run() error {
 	if err := isDockerReady(); err != nil {

@@ -70,6 +70,6 @@ func (s Service) GetManifest(request PublishManifestRequest) (*PublishManifestRe
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	response := PublishManifestResponse{Manifest: gotManifest.Manifest}
+	response := PublishManifestResponse{Manifest: &gotManifest.Manifest}
 	return &response, nil
 }
