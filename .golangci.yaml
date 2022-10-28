@@ -10,6 +10,7 @@ output:
 linters:
   disable-all: true
   enable:
+# TODO(Andres): enable the linters specified below.
 #    - revive
 #    - gosec
 #    - govet
