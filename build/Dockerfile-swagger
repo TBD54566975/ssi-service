@@ -1,8 +1,8 @@
-FROM golang:1.19-alpine AS build
+FROM golang:1.19.2-alpine AS build
 
 WORKDIR /app
 
-ENV SWAGGER_VERSION=v0.29.0
+ENV SWAGGER_VERSION=v0.30.3
 ENV REPO="github.com/go-swagger/go-swagger/cmd/swagger"
 
 COPY go.mod ./
