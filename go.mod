@@ -6,7 +6,7 @@ require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221027011419-39fefd7f233c
 	github.com/ardanlabs/conf v1.5.0
-	github.com/dimfeld/httptreemux/v5 v5.4.0
+	github.com/dimfeld/httptreemux/v5 v5.5.0
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
 	github.com/goccy/go-json v0.9.11
