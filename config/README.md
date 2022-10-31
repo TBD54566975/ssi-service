@@ -12,8 +12,8 @@ Each service may define specific configuration, such as which DID methods are en
 The service, upon boot, looks for a file called `config.toml` to find its configuration.
 
 There are a number of configuration files in this directory provided as defaults.
-Specifically, `[config.toml](config.toml)`
+Specifically, `config.toml`
 is intended to be used when the service is run as a local go process. There is another
-file, `[compose.toml](compose.toml)`,
+file, `compose.toml`,
 which is intended to be used when the service is run via docker compose. To make this switch, it's recommended that one
 renames the file to `config.toml` and then maintains the original `compose.toml` file as `local.toml` or similar. 
