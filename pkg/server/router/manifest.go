@@ -8,11 +8,10 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/goccy/go-json"
-	"github.com/lestrrat-go/jwx/jwk"
-	"github.com/lestrrat-go/jwx/jwt"
 
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 
 	"github.com/pkg/errors"
@@ -220,21 +219,23 @@ const (
 )
 
 func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicationRequest, error) {
-	parsed, err := jwt.Parse([]byte(sar.ApplicationJWT))
+	signature, token, err := util.ParseJWT(sar.ApplicationJWT)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not parse Credential Application token")
+		logrus.WithError(err).Error("could not parse application JWT")
+		return nil, err
+	}
+	kid := signature.ProtectedHeaders().KeyID()
+	if kid == "" {
+		return nil, errors.New("Credential Application token missing kid")
 	}
 
 	// make sure the known properties are present (Application and Credentials)
-	kid, ok := parsed.Get(jwk.KeyIDKey)
-	if !ok || kid == "" {
-		return nil, errors.New("Credential Application token missing kid")
-	}
+
 	var creds []interface{}
-	credentials, ok := parsed.Get(vcsJSONProperty)
+	credentials, ok := token.Get(vcsJSONProperty)
 	if !ok {
 		logrus.Warn("could not find vc in Credential Application token, looking for `verifiableCredentials`")
-		if credentials, ok = parsed.Get(verifiableCredentialsJSONProperty); !ok {
+		if credentials, ok = token.Get(verifiableCredentialsJSONProperty); !ok {
 			return nil, errors.New("could not find vc or verifiableCredentials in Credential Application token")
 		}
 	}
@@ -246,7 +247,7 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 	}
 
 	// marshal known properties into their respective types
-	credAppJSON, ok := parsed.Get(manifestsdk.CredentialApplicationJSONProperty)
+	credAppJSON, ok := token.Get(manifestsdk.CredentialApplicationJSONProperty)
 	if !ok {
 		return nil, errors.New("could not find credential_application in Credential Application token")
 	}
@@ -266,11 +267,11 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 		return nil, errors.Wrap(err, "could not parse submitted credentials")
 	}
 	return &manifest.SubmitApplicationRequest{
-		ApplicantDID:    kid.(string),
+		ApplicantDID:    kid,
 		Application:     application,
 		Credentials:     credContainer,
 		ApplicationJWT:  sar.ApplicationJWT,
-		ApplicationJSON: parsed.PrivateClaims(),
+		ApplicationJSON: token.PrivateClaims(),
 	}, nil
 }
 
