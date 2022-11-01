@@ -26,3 +26,16 @@ func ParseJWT(token keyaccess.JWT) (*jws.Signature, jwt.Token, error) {
 	}
 	return signatures[0], parsedJWT, nil
 }
+
+func GetKeyIDFromJWT(token keyaccess.JWT) (string, error) {
+	tokenBytes := []byte(token)
+	parsedJWS, err := jws.Parse(tokenBytes)
+	if err != nil {
+		return "", err
+	}
+	signatures := parsedJWS.Signatures()
+	if len(signatures) != 1 {
+		return "", fmt.Errorf("expected 1 signature, got %d", len(signatures))
+	}
+	return signatures[0].ProtectedHeaders().KeyID(), nil
+}

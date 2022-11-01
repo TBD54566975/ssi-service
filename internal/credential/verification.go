@@ -56,10 +56,21 @@ func (v Verifier) VerifyJWTCredential(token keyaccess.JWT) error {
 		return util.LoggingErrorMsg(err, "could not parse credential from JWT")
 	}
 
+	// TODO(gabe) support resolving keys by ID
+	jwtKID, err := util.GetKeyIDFromJWT(token)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not get key ID from JWT")
+	}
+
 	// resolve the issuer's key material
 	kid, pubKey, err := v.resolveCredentialIssuerKey(*cred)
 	if err != nil {
 		return util.LoggingError(err)
+	}
+
+	if jwtKID != kid {
+		errMsg := fmt.Sprintf("JWT<%s> and credential<%s> key IDs do not match", jwtKID, kid)
+		return util.LoggingErrorMsg(err, errMsg)
 	}
 
 	// construct a signature verifier from the verification information
