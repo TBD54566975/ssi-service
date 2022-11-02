@@ -75,6 +75,11 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 	}, nil
 }
 
+// CredentialManifestContainer represents what is signed over and return for a credential manifest
+type CredentialManifestContainer struct {
+	Manifest manifest.CredentialManifest `json:"credential_manifest"`
+}
+
 func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestResponse, error) {
 
 	logrus.Debugf("creating manifest: %+v", request)
@@ -122,7 +127,7 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 	}
 
 	// sign the manifest
-	manifestJWT, err := s.signManifestJWT(*m)
+	manifestJWT, err := s.signManifestJWT(CredentialManifestContainer{Manifest: *m})
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not sign manifest")
 	}
