@@ -44,8 +44,7 @@ func RespondError(ctx context.Context, w http.ResponseWriter, err error) error {
 	// if the cause of the error provided is a `SafeError`, construct an ErrorResponse
 	// using the contents of SafeError and send it back to the client
 	var webErr *SafeError
-	ok := errors.As(errors.Cause(err), &webErr)
-	if ok {
+	if ok := errors.As(errors.Cause(err), &webErr); ok {
 		er := ErrorResponse{
 			Error:  webErr.Err.Error(),
 			Fields: webErr.Fields,
