@@ -4,7 +4,6 @@
 SIP: 1
 Title: SIP Title
 Author(s): Satoshi Nakamoto (@satoshi)
-Comments URI: Link to a GitHub issue, pull request, or forum post for discussion
 Status: Draft
 Created: May 5, 2022
 Updated: May 6, 2022
