@@ -29,7 +29,7 @@ linters:
 #    - nilerr
     - makezero
     - prealloc
-#    - unparam
+    - unparam
 #    - goconst
 #    - errorlint
 #    - dupl
