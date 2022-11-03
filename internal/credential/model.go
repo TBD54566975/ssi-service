@@ -92,17 +92,17 @@ func ContainersToInterface(cs []Container) []interface{} {
 func NewCredentialContainerFromArray(creds []interface{}) ([]Container, error) {
 	var containers []Container
 	for _, c := range creds {
-		switch c.(type) {
+		switch v := c.(type) {
 		case string:
 			// JWT
-			container, err := NewCredentialContainerFromJWT(c.(string))
+			container, err := NewCredentialContainerFromJWT(v)
 			if err != nil {
 				return nil, errors.Wrap(err, "could not parse credential from JWT")
 			}
 			containers = append(containers, *container)
 		case map[string]interface{}:
 			// JSON
-			container, err := NewCredentialContainerFromMap(c.(map[string]interface{}))
+			container, err := NewCredentialContainerFromMap(v)
 			if err != nil {
 				return nil, errors.Wrap(err, "could not parse credential from JSON")
 			}
