@@ -425,8 +425,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// good application request
 		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
-		applicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
-			m.PresentationDefinition.InputDescriptors[0].ID, container)
+		applicationRequest := getValidApplicationRequest(m.ID, m.PresentationDefinition.ID, m.PresentationDefinition.InputDescriptors[0].ID, container)
 
 		// sign application
 		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
@@ -549,8 +548,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// good application request
 		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
-		applicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
-			m.PresentationDefinition.InputDescriptors[0].ID, container)
+		applicationRequest := getValidApplicationRequest(m.ID, m.PresentationDefinition.ID, m.PresentationDefinition.InputDescriptors[0].ID, container)
 
 		// remove the presentation to make this a bad request
 		savedSubmission := applicationRequest.CredentialApplication.PresentationSubmission
@@ -693,8 +691,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// good application request
 		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
-		applicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
-			m.PresentationDefinition.InputDescriptors[0].ID, container)
+		applicationRequest := getValidApplicationRequest(m.ID, m.PresentationDefinition.ID, m.PresentationDefinition.InputDescriptors[0].ID, container)
 
 		// sign application
 		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
@@ -841,8 +838,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// good application request
 		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
-		applicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
-			m.PresentationDefinition.InputDescriptors[0].ID, container)
+		applicationRequest := getValidApplicationRequest(m.ID, m.PresentationDefinition.ID, m.PresentationDefinition.InputDescriptors[0].ID, container)
 
 		// sign application
 		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)

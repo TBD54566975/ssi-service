@@ -14,8 +14,8 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func newKeyDIDHandler(s storage.Storage, ks *keystore.Service) (MethodHandler, error) {
-	return &keyDIDHandler{storage: s, keyStore: ks}, nil
+func newKeyDIDHandler(s storage.Storage, ks *keystore.Service) MethodHandler {
+	return &keyDIDHandler{storage: s, keyStore: ks}
 }
 
 type keyDIDHandler struct {
