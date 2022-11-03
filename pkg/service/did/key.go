@@ -98,7 +98,7 @@ func (h *keyDIDHandler) GetDIDs(method did.Method) (*GetDIDsResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting DIDs for method: %s", method)
 	}
-	var dids []did.DIDDocument
+	dids := make([]did.DIDDocument, 0, len(gotDIDs))
 	for _, did := range gotDIDs {
 		dids = append(dids, did.DID)
 	}

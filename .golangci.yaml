@@ -27,8 +27,8 @@ linters:
 #    - nilnil
 #    - whitespace
 #    - nilerr
-#    - makezero
-#    - prealloc
+    - makezero
+    - prealloc
 #    - unparam
 #    - goconst
 #    - errorlint

@@ -56,8 +56,7 @@ func TestSchemaRouter(t *testing.T) {
 		// get all schemas (none)
 		gotSchemas, err := schemaService.GetSchemas()
 		assert.NoError(tt, err)
-		assert.Empty(tt, gotSchemas)
-		assert.Equal(tt, 0, len(gotSchemas.Schemas))
+		assert.Empty(tt, gotSchemas.Schemas)
 
 		// get schema that doesn't exist
 		_, err = schemaService.GetSchema(schema.GetSchemaRequest{ID: "bad"})

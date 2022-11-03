@@ -179,7 +179,7 @@ func (s Service) GetManifests() (*GetManifestsResponse, error) {
 		return nil, util.LoggingErrorMsg(err, "could not get manifests(s)")
 	}
 
-	var manifests []GetManifestResponse
+	manifests := make([]GetManifestResponse, 0, len(gotManifests))
 	for _, m := range gotManifests {
 		response := GetManifestResponse{Manifest: m.Manifest, ManifestJWT: m.ManifestJWT}
 		manifests = append(manifests, response)
@@ -306,7 +306,7 @@ func (s Service) GetApplications() (*GetApplicationsResponse, error) {
 		return nil, util.LoggingErrorMsg(err, "could not get application(s)")
 	}
 
-	var apps []manifest.CredentialApplication
+	apps := make([]manifest.CredentialApplication, 0, len(gotApps))
 	for _, cred := range gotApps {
 		apps = append(apps, cred.Application)
 	}
@@ -350,7 +350,7 @@ func (s Service) GetResponses() (*GetResponsesResponse, error) {
 		return nil, util.LoggingErrorMsg(err, "could not get response(s)")
 	}
 
-	var responses []manifest.CredentialResponse
+	responses := make([]manifest.CredentialResponse, 0, len(gotResponses))
 	for _, res := range gotResponses {
 		responses = append(responses, res.Response)
 	}

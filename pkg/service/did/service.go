@@ -135,7 +135,7 @@ func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, er
 }
 
 func (s *Service) GetSupportedMethods() GetSupportedMethodsResponse {
-	var methods []didsdk.Method
+	methods := make([]didsdk.Method, 0, len(s.handlers))
 	for method := range s.handlers {
 		methods = append(methods, method)
 	}

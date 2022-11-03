@@ -297,7 +297,7 @@ func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credint.Container
+	creds := make([]credint.Container, 0, len(gotCreds))
 	for _, cred := range gotCreds {
 		container := credint.Container{
 			ID:            cred.CredentialID,
@@ -321,7 +321,7 @@ func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) 
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credint.Container
+	creds := make([]credint.Container, 0, len(gotCreds))
 	for _, cred := range gotCreds {
 		container := credint.Container{
 			ID:            cred.CredentialID,
@@ -344,7 +344,7 @@ func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []credint.Container
+	creds := make([]credint.Container, 0, len(gotCreds))
 	for _, cred := range gotCreds {
 		container := credint.Container{
 			ID:            cred.CredentialID,
