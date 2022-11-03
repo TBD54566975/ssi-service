@@ -33,3 +33,4 @@ the [template](sips/sip_template.md), add it to the table below, and open up a p
 | [SIP-2](sips/sip2/README.md) | Credential Issuance Flow                     | [Neal Roessler](https://github.com/nitro-neal) | Accepted | September 13, 2022 |
 | [SIP-3](sips/sip3/README.md) | Key Access: Signing & Verification           | [Gabe Cohen](https://github.com/decentralgabe) | Accepted | September 20, 2022 |
 | [SIP-4](sips/sip4/README.md) | DWN Message Processing / Credential Issuance | [Neal Roessler](https://github.com/nitro-neal) | Accepted | September 23, 2022 |
+| [SIP-5](sips/sip5/README.md) | Credential Application Processing            | [Gabe Cohen](https://github.com/decentralgabe) | Draft    | November 3, 2022   |
