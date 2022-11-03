@@ -68,7 +68,8 @@ func Decode(r *http.Request, val interface{}) error {
 	}
 
 	if err := validate.Struct(val); err != nil {
-		vErrors, ok := err.(validator.ValidationErrors)
+		var vErrors validator.ValidationErrors
+		ok := errors.As(err, &vErrors)
 		if !ok {
 			return err
 		}
