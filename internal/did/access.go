@@ -47,7 +47,8 @@ func GetVerificationInformation(did didsdk.DIDDocument, maybeKID string) (kid st
 }
 
 func extractKeyFromVerificationMethod(method didsdk.VerificationMethod) (pubKey crypto.PublicKey, err error) {
-	if method.PublicKeyMultibase != "" {
+	switch {
+	case method.PublicKeyMultibase != "":
 		pubKeyBytes, multiBaseErr := multibaseToPubKeyBytes(method.PublicKeyMultibase)
 		if multiBaseErr != nil {
 			err = multiBaseErr
@@ -55,7 +56,7 @@ func extractKeyFromVerificationMethod(method didsdk.VerificationMethod) (pubKey 
 		}
 		pubKey, err = cryptosuite.PubKeyBytesToTypedKey(pubKeyBytes, method.Type)
 		return
-	} else if method.PublicKeyBase58 != "" {
+	case method.PublicKeyBase58 != "":
 		pubKeyDecoded, b58Err := base58.Decode(method.PublicKeyBase58)
 		if b58Err != nil {
 			err = b58Err
@@ -63,7 +64,7 @@ func extractKeyFromVerificationMethod(method didsdk.VerificationMethod) (pubKey 
 		}
 		pubKey, err = cryptosuite.PubKeyBytesToTypedKey(pubKeyDecoded, method.Type)
 		return
-	} else if method.PublicKeyJWK != nil {
+	case method.PublicKeyJWK != nil:
 		jwkBytes, jwkErr := json.Marshal(method.PublicKeyJWK)
 		if err != nil {
 			err = jwkErr

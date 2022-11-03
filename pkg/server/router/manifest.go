@@ -165,7 +165,7 @@ func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	var manifests []GetManifestResponse
+	manifests := make([]GetManifestResponse, 0, len(gotManifests.Manifests))
 	for _, m := range gotManifests.Manifests {
 		manifests = append(manifests, GetManifestResponse{
 			ID:          m.Manifest.ID,

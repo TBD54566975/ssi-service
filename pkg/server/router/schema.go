@@ -133,7 +133,7 @@ func (sr SchemaRouter) GetSchemas(ctx context.Context, w http.ResponseWriter, r 
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	var schemas []GetSchemaResponse
+	schemas := make([]GetSchemaResponse, 0, len(gotSchemas.Schemas))
 	for _, s := range gotSchemas.Schemas {
 		schemas = append(schemas, GetSchemaResponse{Schema: s.Schema})
 	}

@@ -152,8 +152,8 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 
 	// parse and apply defaults
 	if err := conf.Parse(os.Args[1:], ServiceName, &config); err != nil {
-		switch err {
-		case conf.ErrHelpWanted:
+		switch {
+		case errors.Is(err, conf.ErrHelpWanted):
 			usage, err := conf.Usage(ServiceName, &config)
 			if err != nil {
 				return nil, errors.Wrap(err, "parsing config")
@@ -162,7 +162,7 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 
 			return nil, nil
 
-		case conf.ErrVersionWanted:
+		case errors.Is(err, conf.ErrVersionWanted):
 			version, err := conf.VersionString(ServiceName, &config)
 			if err != nil {
 				return nil, errors.Wrap(err, "generating config version")

@@ -88,7 +88,7 @@ func GenerateSalt(size int) ([]byte, error) {
 	}
 
 	salt := make([]byte, size)
-	if _, err := rand.Read(salt[:]); err != nil {
+	if _, err := rand.Read(salt); err != nil {
 		return nil, err
 	}
 

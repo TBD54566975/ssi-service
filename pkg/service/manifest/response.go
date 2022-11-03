@@ -48,7 +48,7 @@ func (s Service) buildCredentialResponse(applicantDID, manifestID, applicationID
 		return nil, nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	var creds []cred.Container
+	creds := make([]cred.Container, 0, len(credManifest.OutputDescriptors))
 	for _, od := range credManifest.OutputDescriptors {
 		credentialRequest := credential.CreateCredentialRequest{
 			Issuer:     credManifest.Issuer.ID,
@@ -67,7 +67,7 @@ func (s Service) buildCredentialResponse(applicantDID, manifestID, applicationID
 	}
 
 	// build descriptor map based on credential type
-	var descriptors []exchange.SubmissionDescriptor
+	descriptors := make([]exchange.SubmissionDescriptor, 0, len(creds))
 	for i, c := range creds {
 		var format string
 		if c.HasDataIntegrityCredential() {

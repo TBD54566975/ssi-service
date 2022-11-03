@@ -124,7 +124,7 @@ func TestBoltDBPrefixAndKeys(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, prefixValues, 2)
 
-	var keys []string
+	keys := make([]string, 0, len(prefixValues))
 	for k := range prefixValues {
 		keys = append(keys, k)
 	}

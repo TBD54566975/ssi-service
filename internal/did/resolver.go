@@ -12,7 +12,7 @@ func BuildResolver(methods []string) (*didsdk.Resolver, error) {
 	if len(methods) == 0 {
 		return nil, errors.New("no methods provided")
 	}
-	var resolvers []didsdk.Resolution
+	resolvers := make([]didsdk.Resolution, 0, len(methods))
 	for _, method := range methods {
 		resolver, err := getKnownResolver(method)
 		if err != nil {

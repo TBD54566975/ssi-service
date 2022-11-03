@@ -10,10 +10,32 @@ output:
 linters:
   disable-all: true
   enable:
-    - revive
+    - asasalint
+    - durationcheck
+    - errcheck
+    - errorlint
+    - gocritic
     - gosec
     - govet
+    - ineffassign
+    - makezero
+    - prealloc
+    - revive
     - staticcheck
+    - tenv
+    - tparallel
+    - typecheck
+    - unparam
+    - unused
+    - usestdlibvars
+# TODO(andres): consider fixing and enabling the following.
+#    - nilerr
+#    - whitespace
+#    - nilnil
+#    - wrapcheck
+#    - goconst
+#    - dupl
+#    - tagliatelle
 
 linters-settings:
   gosec:

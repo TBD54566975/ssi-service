@@ -39,6 +39,6 @@ func LoggingErrorMsg(err error, msg string) error {
 // SanitizeLog prevents certain classes of injection attacks before logging
 // https://codeql.github.com/codeql-query-help/go/go-log-injection/
 func SanitizeLog(log string) string {
-	escapedLog := strings.Replace(log, "\n", "", -1)
-	return strings.Replace(escapedLog, "\r", "", -1)
+	escapedLog := strings.ReplaceAll(log, "\n", "")
+	return strings.ReplaceAll(escapedLog, "\r", "")
 }

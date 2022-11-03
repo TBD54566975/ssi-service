@@ -152,7 +152,7 @@ func RunTest() error {
 	// End signing credential application
 
 	trueApplicationJSON := getJSONFromFile("application-input-jwt.json")
-	trueApplicationJSON = strings.Replace(trueApplicationJSON, "<APPLICATIONJWT>", signed.String(), -1)
+	trueApplicationJSON = strings.ReplaceAll(trueApplicationJSON, "<APPLICATIONJWT>", signed.String())
 
 	output, err = put(endpoint+version+"manifests/applications", trueApplicationJSON)
 	if err != nil {

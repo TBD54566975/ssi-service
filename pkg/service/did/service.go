@@ -106,12 +106,7 @@ type MethodHandler interface {
 func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
 	switch method {
 	case didsdk.KeyMethod:
-		handler, err := newKeyDIDHandler(s.storage, s.keyStore)
-		if err != nil {
-			err := fmt.Errorf("could not instnatiate did:%s handler", didsdk.KeyMethod)
-			return util.LoggingError(err)
-		}
-		s.handlers[method] = handler
+		s.handlers[method] = newKeyDIDHandler(s.storage, s.keyStore)
 	default:
 		err := fmt.Errorf("unsupported DID method: %s", method)
 		return util.LoggingError(err)
@@ -135,7 +130,7 @@ func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, er
 }
 
 func (s *Service) GetSupportedMethods() GetSupportedMethodsResponse {
-	var methods []didsdk.Method
+	methods := make([]didsdk.Method, 0, len(s.handlers))
 	for method := range s.handlers {
 		methods = append(methods, method)
 	}

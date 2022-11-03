@@ -238,7 +238,7 @@ func (s Service) GetSchemas() (*GetSchemasResponse, error) {
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "error getting schemas")
 	}
-	var schemas []GetSchemaResponse
+	schemas := make([]GetSchemaResponse, 0, len(storedSchemas))
 	for _, stored := range storedSchemas {
 		schemas = append(schemas, GetSchemaResponse{
 			ID:        stored.Schema.ID,

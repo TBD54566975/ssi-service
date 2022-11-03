@@ -5,7 +5,6 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
-	"github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -14,8 +13,8 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func newKeyDIDHandler(s storage.Storage, ks *keystore.Service) (MethodHandler, error) {
-	return &keyDIDHandler{storage: s, keyStore: ks}, nil
+func newKeyDIDHandler(s storage.Storage, ks *keystore.Service) MethodHandler {
+	return &keyDIDHandler{storage: s, keyStore: ks}
 }
 
 type keyDIDHandler struct {
@@ -98,20 +97,9 @@ func (h *keyDIDHandler) GetDIDs(method did.Method) (*GetDIDsResponse, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting DIDs for method: %s", method)
 	}
-	var dids []did.DIDDocument
+	dids := make([]did.DIDDocument, 0, len(gotDIDs))
 	for _, did := range gotDIDs {
 		dids = append(dids, did.DID)
 	}
 	return &GetDIDsResponse{DIDs: dids}, nil
-}
-
-func privateKeyToBase58(privKey interface{}) (string, error) {
-	if haveBytes, ok := privKey.([]byte); ok {
-		return base58.Encode(haveBytes), nil
-	}
-	gotBytes, err := json.Marshal(privKey)
-	if err != nil {
-		return "", errors.Wrap(err, "could not marshal private key")
-	}
-	return base58.Encode(gotBytes), nil
 }

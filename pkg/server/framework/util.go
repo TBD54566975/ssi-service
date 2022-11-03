@@ -39,8 +39,3 @@ func PeekRequestBody(r *http.Request) (string, error) {
 	r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 	return result, nil
 }
-
-func peekBuffer(buf *bytes.Buffer, b []byte) (int, error) {
-	copiedBuffer := bytes.NewBuffer(buf.Bytes())
-	return copiedBuffer.Read(b)
-}

@@ -117,8 +117,7 @@ func TestManifestRouter(t *testing.T) {
 			ID:            createdCred.ID,
 			CredentialJWT: createdCred.CredentialJWT,
 		}}
-		applicationRequest := getValidApplicationRequest(applicantDID.DID.ID, m.ID, m.PresentationDefinition.ID,
-			m.PresentationDefinition.InputDescriptors[0].ID, containers)
+		applicationRequest := getValidApplicationRequest(m.ID, m.PresentationDefinition.ID, m.PresentationDefinition.InputDescriptors[0].ID, containers)
 
 		// sign application
 		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
@@ -189,7 +188,7 @@ func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifest
 	return createManifestRequest
 }
 
-func getValidApplicationRequest(applicantDID, manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.Container) manifestsdk.CredentialApplicationWrapper {
+func getValidApplicationRequest(manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.Container) manifestsdk.CredentialApplicationWrapper {
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: manifestsdk.SpecVersion,
