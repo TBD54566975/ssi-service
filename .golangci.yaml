@@ -10,45 +10,34 @@ output:
 linters:
   disable-all: true
   enable:
-    - errcheck
-    - ineffassign
-    - typecheck
-    - revive
-    - gosec
-    - govet
-    - staticcheck
     - asasalint
     - durationcheck
+    - errcheck
+    - errorlint
     - gocritic
-    - tparallel
-    - usestdlibvars
-    - tenv
-#    - wrapcheck
-#    - nilnil
-#    - whitespace
-#    - nilerr
+    - gosec
+    - govet
+    - ineffassign
     - makezero
     - prealloc
+    - revive
+    - staticcheck
+    - tenv
+    - tparallel
+    - typecheck
     - unparam
-#    - goconst
-    - errorlint
-#    - dupl
     - unused
+    - usestdlibvars
+# TODO(andres): consider fixing and enabling the following.
+#    - nilerr
+#    - whitespace
+#    - nilnil
+#    - wrapcheck
+#    - goconst
+#    - dupl
 #    - tagliatelle
 
 linters-settings:
-  tagliatelle:
-    # Check the struck tag name case.
-    case:
-      # Use the struct field name to check the name of the struct tag.
-      # Default: false
-      use-field-name: true
-      # `camel` is used for `json` and `yaml` (can be overridden)
-      # Default: {}
-      rules:
-        # Any struct tag type can be used.
-        # Support string case: `camel`, `pascal`, `kebab`, `snake`, `goCamel`, `goPascal`, `goKebab`, `goSnake`, `upper`, `lower`
-        json: snake
   gosec:
     config:
       G101:
