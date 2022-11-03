@@ -24,6 +24,7 @@ type CreateManifestResponse struct {
 }
 
 type VerifyManifestRequest struct {
+	// ManifestJWT contains a `CredentialManifestWrapper` with a top level `credential_manifest` claim
 	ManifestJWT keyaccess.JWT `json:"manifestJwt"`
 }
 
