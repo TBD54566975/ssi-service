@@ -33,7 +33,7 @@ linters:
 #    - goconst
     - errorlint
 #    - dupl
-#    - unused
+    - unused
 #    - tagliatelle
 
 linters-settings:

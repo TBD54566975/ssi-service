@@ -52,18 +52,6 @@ func (b BoltKeyStoreStorage) storeServiceKey(key ServiceKey) error {
 	return nil
 }
 
-func (b BoltKeyStoreStorage) getServiceKey() (*ServiceKey, error) {
-	skBytes, err := b.db.Read(namespace, skKey)
-	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not retrieve service key")
-	}
-	var serviceKey ServiceKey
-	if err := json.Unmarshal(skBytes, &serviceKey); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not unmarshal service key")
-	}
-	return &serviceKey, nil
-}
-
 func (b BoltKeyStoreStorage) StoreKey(key StoredKey) error {
 	id := key.ID
 	if id == "" {

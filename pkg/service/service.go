@@ -18,7 +18,6 @@ import (
 // SSIService represents all services and their dependencies independent of transport
 type SSIService struct {
 	services []framework.Service
-	config   config.ServicesConfig
 }
 
 // InstantiateSSIService creates a new instance of the SSIS which instantiates all services and their

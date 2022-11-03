@@ -5,7 +5,6 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
-	"github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -103,15 +102,4 @@ func (h *keyDIDHandler) GetDIDs(method did.Method) (*GetDIDsResponse, error) {
 		dids = append(dids, did.DID)
 	}
 	return &GetDIDsResponse{DIDs: dids}, nil
-}
-
-func privateKeyToBase58(privKey interface{}) (string, error) {
-	if haveBytes, ok := privKey.([]byte); ok {
-		return base58.Encode(haveBytes), nil
-	}
-	gotBytes, err := json.Marshal(privKey)
-	if err != nil {
-		return "", errors.Wrap(err, "could not marshal private key")
-	}
-	return base58.Encode(gotBytes), nil
 }
