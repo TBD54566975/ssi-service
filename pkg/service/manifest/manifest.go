@@ -15,8 +15,8 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func (s Service) signManifestJWT(m manifest.CredentialManifest) (*keyaccess.JWT, error) {
-	issuerID := m.Issuer.ID
+func (s Service) signManifestJWT(m CredentialManifestContainer) (*keyaccess.JWT, error) {
+	issuerID := m.Manifest.Issuer.ID
 	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: issuerID})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get key for signing manifest with key<%s>", issuerID)
@@ -51,15 +51,16 @@ func (s Service) verifyManifestJWT(token keyaccess.JWT) (*manifest.CredentialMan
 		logrus.WithError(err).Error(errMsg)
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
-	var parsedManifest manifest.CredentialManifest
+	var parsedManifest CredentialManifestContainer
 	if err = json.Unmarshal(claimsJSONBytes, &parsedManifest); err != nil {
 		errMsg := "could not unmarshal claims into manifest"
 		logrus.WithError(err).Error(errMsg)
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
-	kid, pubKey, err := didint.ResolveKeyForDID(s.didResolver, parsedManifest.Issuer.ID)
+	issuer := parsedManifest.Manifest.Issuer.ID
+	kid, pubKey, err := didint.ResolveKeyForDID(s.didResolver, issuer)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve manifest issuer's did: %s", parsedManifest.Issuer.ID)
+		return nil, errors.Wrapf(err, "failed to resolve manifest issuer's did: %s", issuer)
 	}
 	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
 	if err != nil {
@@ -68,5 +69,5 @@ func (s Service) verifyManifestJWT(token keyaccess.JWT) (*manifest.CredentialMan
 	if err = verifier.Verify(token); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not verify the manifest's signature")
 	}
-	return &parsedManifest, nil
+	return &parsedManifest.Manifest, nil
 }

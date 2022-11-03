@@ -8,7 +8,7 @@
 
 **Comments URI**: https://forums.tbd.website/t/sip-4-discussion-dwn-message-processing/137
 
-**Status**: *Draft*
+**Status**: *Accepted*
 
 **Created: September** *20, 2022*
 
