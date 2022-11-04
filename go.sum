@@ -4,6 +4,8 @@ github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221027011419-39fefd7f233c h1:tMb
 github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221027011419-39fefd7f233c/go.mod h1:Uvgv4WK66gwiV76SpWe6EUnUSwyH7r9EFqP0tTSDP18=
 github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221101200844-4aaa87cf0001 h1:FxNNYtGZSwoAz3NhphlANaETYiBq07j0e2tB8LhMXBs=
 github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221101200844-4aaa87cf0001/go.mod h1:Uvgv4WK66gwiV76SpWe6EUnUSwyH7r9EFqP0tTSDP18=
+github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221104161850-6dad71a33c46 h1:7S6fWVagOnkfBHoqj9g54aueyrUlpsYq+8wTTBm6WCk=
+github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221104161850-6dad71a33c46/go.mod h1:Uvgv4WK66gwiV76SpWe6EUnUSwyH7r9EFqP0tTSDP18=
 github.com/ardanlabs/conf v1.5.0 h1:5TwP6Wu9Xi07eLFEpiCUF3oQXh9UzHMDVnD3u/I5d5c=
 github.com/ardanlabs/conf v1.5.0/go.mod h1:ILsMo9dMqYzCxDjDXTiwMI0IgxOJd0MOiucbQY2wlJw=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=

@@ -30,10 +30,20 @@ func LoggingNewError(msg string) error {
 	return err
 }
 
+// LoggingNewErrorf is a utility to create an error from a formatted message, log it, and return it as an error
+func LoggingNewErrorf(msg string, args ...interface{}) error {
+	return LoggingNewError(fmt.Sprintf(msg, args...))
+}
+
 // LoggingErrorMsg is a utility to combine logging an error, and returning and error with a message
 func LoggingErrorMsg(err error, msg string) error {
 	logrus.WithError(err).Error(SanitizeLog(msg))
 	return errors.Wrap(err, msg)
+}
+
+// LoggingErrorMsgf is a utility to combine logging an error, and returning and error with a formatted message
+func LoggingErrorMsgf(err error, msg string, args ...interface{}) error {
+	return LoggingErrorMsg(err, fmt.Sprintf(msg, args...))
 }
 
 // SanitizeLog prevents certain classes of injection attacks before logging
