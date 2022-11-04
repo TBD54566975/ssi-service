@@ -92,13 +92,13 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 	builder := manifest.NewCredentialManifestBuilder()
 
 	// set the manifest's name and description
-	if request.ManifestName != nil {
-		if err := builder.SetName(*request.ManifestName); err != nil {
+	if request.Name != nil {
+		if err := builder.SetName(*request.Name); err != nil {
 			return nil, util.LoggingErrorMsg(err, "invalid manifest name")
 		}
 	}
-	if request.ManifestDescription != nil {
-		if err := builder.SetDescription(*request.ManifestDescription); err != nil {
+	if request.Description != nil {
+		if err := builder.SetDescription(*request.Description); err != nil {
 			return nil, util.LoggingErrorMsg(err, "invalid manifest description")
 		}
 	}

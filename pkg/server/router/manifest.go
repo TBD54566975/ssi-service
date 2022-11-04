@@ -52,8 +52,8 @@ type CreateManifestRequest struct {
 
 func (c CreateManifestRequest) ToServiceRequest() manifest.CreateManifestRequest {
 	return manifest.CreateManifestRequest{
-		ManifestName:           c.ManifestName,
-		ManifestDescription:    c.ManifestDescription,
+		Name:           c.Name,
+		Description:    c.Description,
 		IssuerDID:              c.IssuerDID,
 		IssuerName:             c.IssuerName,
 		OutputDescriptors:      c.OutputDescriptors,
