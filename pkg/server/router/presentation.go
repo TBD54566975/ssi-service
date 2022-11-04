@@ -48,20 +48,21 @@ type CreatePresentationDefinitionResponse struct {
 // @Router       /v1/presentation/definition [put]
 func (sr PresentationDefinitionRouter) CreatePresentationDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreatePresentationDefinitionRequest
-	invalidCreatePresentationDefinitionRequest := "invalid create presentation request"
 	if err := framework.Decode(r, &request); err != nil {
-		errMsg := invalidCreatePresentationDefinitionRequest
+		errMsg := "decoding"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
 	if err := framework.ValidateRequest(request); err != nil {
-		errMsg := invalidCreatePresentationDefinitionRequest
+		errMsg := "validating"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	req := presentation.CreatePresentationDefinitionRequest{}
+	req := presentation.CreatePresentationDefinitionRequest{
+		PresentationDefinition: request.PresentationDefinition,
+	}
 	def, err := sr.service.CreatePresentationDefinition(req)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create presentation definition")
