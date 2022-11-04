@@ -20,11 +20,11 @@ func NewPresentationDefinitionRouter(s svcframework.Service) (*PresentationDefin
 	if s == nil {
 		return nil, errors.New("service cannot be nil")
 	}
-	schemaService, ok := s.(*presentation.Service)
+	service, ok := s.(*presentation.Service)
 	if !ok {
 		return nil, fmt.Errorf("could not create presentation router with service type: %s", s.Type())
 	}
-	return &PresentationDefinitionRouter{service: schemaService}, nil
+	return &PresentationDefinitionRouter{service: service}, nil
 }
 
 type CreatePresentationDefinitionRequest struct {
@@ -45,7 +45,7 @@ type CreatePresentationDefinitionResponse struct {
 // @Success      201      {object}  CreatePresentationDefinitionResponse
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
-// @Router       /v1/schemas [put]
+// @Router       /v1/presentation/definition [put]
 func (sr PresentationDefinitionRouter) CreatePresentationDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreatePresentationDefinitionRequest
 	invalidCreatePresentationDefinitionRequest := "invalid create presentation request"
@@ -87,7 +87,7 @@ type GetPresentationDefinitionResponse struct {
 // @Param        id   path      string  true  "ID"
 // @Success      200  {object}  GetPresentationDefinitionResponse
 // @Failure      400  {string}  string  "Bad request"
-// @Router       /v1/schemas/{id} [get]
+// @Router       /v1/presentation/definition/{id} [get]
 func (sr PresentationDefinitionRouter) GetPresentationDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -96,7 +96,6 @@ func (sr PresentationDefinitionRouter) GetPresentationDefinition(ctx context.Con
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	// TODO(gabe) differentiate between internal errors and not found schemas
 	def, err := sr.service.GetPresentationDefinition(presentation.GetPresentationDefinitionRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get presentation with id: %s", *id)
@@ -121,7 +120,7 @@ func (sr PresentationDefinitionRouter) GetPresentationDefinition(ctx context.Con
 // @Success      200  {string}  string  "OK"
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
-// @Router       /v1/schemas/{id} [delete]
+// @Router       /v1/presentation/definition/{id} [delete]
 func (sr PresentationDefinitionRouter) DeletePresentationDefinition(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
