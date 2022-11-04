@@ -12,10 +12,6 @@ import (
 )
 
 func TestPresentationDefinitionRouter(t *testing.T) {
-	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
-	})
-
 	t.Run("Nil Service", func(tt *testing.T) {
 		pdRouter, err := NewPresentationDefinitionRouter(nil)
 		assert.Error(tt, err)
@@ -29,6 +25,12 @@ func TestPresentationDefinitionRouter(t *testing.T) {
 		assert.Empty(tt, pdRouter)
 		assert.Contains(tt, err.Error(), "could not create presentation router with service type: test")
 	})
+}
+
+func TestPresentationDefinitionService(t *testing.T) {
+	t.Cleanup(func() {
+		_ = os.Remove(storage.DBFile)
+	})
 
 	s, err := storage.NewStorage(storage.Bolt)
 	assert.NoError(t, err)
@@ -36,6 +38,43 @@ func TestPresentationDefinitionRouter(t *testing.T) {
 	service, err := presentation.NewPresentationDefinitionService(config.PresentationServiceConfig{}, s)
 	assert.NoError(t, err)
 
+	t.Run("Create returns the created definition", func(t *testing.T) {
+		pd := createPresentationDefinition(t)
+		created, err := service.CreatePresentationDefinition(presentation.CreatePresentationDefinitionRequest{PresentationDefinition: *pd})
+		assert.NoError(t, err)
+		assert.Equal(t, pd, &created.PresentationDefinition)
+	})
+
+	t.Run("Get returns the created definition", func(t *testing.T) {
+		pd := createPresentationDefinition(t)
+		_, err := service.CreatePresentationDefinition(presentation.CreatePresentationDefinitionRequest{PresentationDefinition: *pd})
+		assert.NoError(t, err)
+
+		getPd, err := service.GetPresentationDefinition(presentation.GetPresentationDefinitionRequest{ID: pd.ID})
+
+		assert.NoError(t, err)
+		assert.Equal(t, pd.ID, getPd.ID)
+		assert.Equal(t, pd, &getPd.PresentationDefinition)
+	})
+
+	t.Run("Get does not return after deletion", func(t *testing.T) {
+		pd := createPresentationDefinition(t)
+		_, err := service.CreatePresentationDefinition(presentation.CreatePresentationDefinitionRequest{PresentationDefinition: *pd})
+		assert.NoError(t, err)
+
+		assert.NoError(t, service.DeletePresentationDefinition(presentation.DeletePresentationDefinitionRequest{ID: pd.ID}))
+
+		_, err = service.GetPresentationDefinition(presentation.GetPresentationDefinitionRequest{ID: pd.ID})
+		assert.Error(t, err)
+	})
+
+	t.Run("Delete can be called with any ID", func(t *testing.T) {
+		err := service.DeletePresentationDefinition(presentation.DeletePresentationDefinitionRequest{ID: "some crazy ID"})
+		assert.NoError(t, err)
+	})
+}
+
+func createPresentationDefinition(t *testing.T) *exchange.PresentationDefinition {
 	builder := exchange.NewPresentationDefinitionBuilder()
 	assert.NoError(t, builder.SetInputDescriptors([]exchange.InputDescriptor{
 		{
@@ -50,37 +89,5 @@ func TestPresentationDefinitionRouter(t *testing.T) {
 	}))
 	pd, err := builder.Build()
 	assert.NoError(t, err)
-
-	t.Run("Create", func(t *testing.T) {
-		created, err := service.CreatePresentationDefinition(presentation.CreatePresentationDefinitionRequest{PresentationDefinition: *pd})
-		assert.NoError(t, err)
-		assert.Equal(t, pd, &created.PresentationDefinition)
-	})
-
-	t.Run("then Get returns the created definition", func(t *testing.T) {
-		getPd, err := service.GetPresentationDefinition(presentation.GetPresentationDefinitionRequest{ID: pd.ID})
-		assert.NoError(t, err)
-		assert.Equal(t, pd.ID, getPd.ID)
-		assert.Equal(t, pd, &getPd.PresentationDefinition)
-	})
-
-	t.Run("then Delete succeeds", func(t *testing.T) {
-		err := service.DeletePresentationDefinition(presentation.DeletePresentationDefinitionRequest{ID: pd.ID})
-		assert.NoError(t, err)
-	})
-
-	t.Run("then Get errors after deletion", func(t *testing.T) {
-		_, err = service.GetPresentationDefinition(presentation.GetPresentationDefinitionRequest{ID: pd.ID})
-		assert.Error(t, err)
-	})
-
-	t.Run("then Delete is idempotent", func(t *testing.T) {
-		err := service.DeletePresentationDefinition(presentation.DeletePresentationDefinitionRequest{ID: pd.ID})
-		assert.NoError(t, err)
-	})
-
-	t.Run("Delete can be called with any ID", func(t *testing.T) {
-		err := service.DeletePresentationDefinition(presentation.DeletePresentationDefinitionRequest{ID: "some crazy ID"})
-		assert.NoError(t, err)
-	})
+	return pd
 }

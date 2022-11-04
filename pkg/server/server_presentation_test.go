@@ -48,6 +48,7 @@ func TestPresentationAPI(t *testing.T) {
 
 	t.Run("Create, Get, and Delete PresentationDefinition", func(t *testing.T) {
 		{
+			// Create returns the expected PD.
 			request := router.CreatePresentationDefinitionRequest{
 				PresentationDefinition: *pd,
 			}
@@ -65,6 +66,7 @@ func TestPresentationAPI(t *testing.T) {
 			w.Flush()
 		}
 		{
+			// We can get the PD after it's created.
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentation/definition/%s", pd.ID), nil)
 			w := httptest.NewRecorder()
 			assert.NoError(t, pRouter.GetPresentationDefinition(newRequestContextWithParams(map[string]string{"id": pd.ID}), w, req))
@@ -77,6 +79,7 @@ func TestPresentationAPI(t *testing.T) {
 			w.Flush()
 		}
 		{
+			// The PD can be deleted.
 			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentation/definition/%s", pd.ID), nil)
 			w := httptest.NewRecorder()
 			assert.NoError(t, pRouter.DeletePresentationDefinition(newRequestContextWithParams(map[string]string{"id": pd.ID}), w, req))
@@ -84,6 +87,7 @@ func TestPresentationAPI(t *testing.T) {
 			w.Flush()
 		}
 		{
+			// And we cannot get the PD after it's been deleted.
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentation/definition/%s", pd.ID), nil)
 			w := httptest.NewRecorder()
 			assert.Error(t, pRouter.GetPresentationDefinition(newRequestContextWithParams(map[string]string{"id": pd.ID}), w, req))
@@ -92,7 +96,7 @@ func TestPresentationAPI(t *testing.T) {
 		}
 	})
 
-	t.Run("Create Errors", func(t *testing.T) {
+	t.Run("Create returns error with bad definition", func(t *testing.T) {
 		request := router.CreatePresentationDefinitionRequest{
 			PresentationDefinition: exchange.PresentationDefinition{ID: "some id"},
 		}
@@ -101,7 +105,22 @@ func TestPresentationAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		err = pRouter.CreatePresentationDefinition(newRequestContext(), w, req)
+
 		assert.Error(t, err)
+		w.Flush()
+	})
+
+	t.Run("Get without and ID returns error", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentation/definition/%s", pd.ID), nil)
+		w := httptest.NewRecorder()
+		assert.Error(t, pRouter.GetPresentationDefinition(newRequestContext(), w, req))
+		w.Flush()
+	})
+
+	t.Run("Delete without an ID returns error", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentation/definition/%s", pd.ID), nil)
+		w := httptest.NewRecorder()
+		assert.Error(t, pRouter.DeletePresentationDefinition(newRequestContext(), w, req))
 		w.Flush()
 	})
 }
