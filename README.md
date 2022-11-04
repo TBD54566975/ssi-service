@@ -110,7 +110,7 @@ The command below will tell if you all the services (credential, did, and schema
 
 ## HTTP Endpoints
 
-You can find more HTTP endpoints by checking out the swagger docs at: `http://localhost:8002/doc`
+You can find more HTTP endpoints by checking out the swagger docs at: `http://localhost:8002/docs`
 
 Note: Your port by differ, the range of the ports for swagger are between `8002` and `8080`.
 
