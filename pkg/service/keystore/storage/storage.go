@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"fmt"
-
 	"github.com/TBD54566975/ssi-sdk/crypto"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -42,8 +40,7 @@ func NewKeyStoreStorage(s storage.ServiceStorage, serviceKey, serviceKeySalt str
 	case storage.Bolt:
 		gotBolt, ok := s.(*storage.BoltDB)
 		if !ok {
-			errMsg := fmt.Sprintf("trouble instantiating : %s", s.Type())
-			return nil, util.LoggingNewError(errMsg)
+			return nil, util.LoggingNewErrorf("trouble instantiating : %s", s.Type())
 		}
 		boltStorage, err := NewBoltKeyStoreStorage(gotBolt, ServiceKey{
 			Base58Key:  serviceKey,
@@ -54,7 +51,6 @@ func NewKeyStoreStorage(s storage.ServiceStorage, serviceKey, serviceKeySalt str
 		}
 		return boltStorage, err
 	default:
-		errMsg := fmt.Errorf("unsupported storage type: %s", s.Type())
-		return nil, util.LoggingError(errMsg)
+		return nil, util.LoggingNewErrorf("unsupported storage type: %s", s.Type())
 	}
 }

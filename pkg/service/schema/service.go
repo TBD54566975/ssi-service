@@ -64,8 +64,7 @@ func (s Service) Config() config.SchemaServiceConfig {
 func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, resolver *didsdk.Resolver) (*Service, error) {
 	schemaStorage, err := schemastorage.NewSchemaStorage(s)
 	if err != nil {
-		errMsg := "could not instantiate storage for the schema service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the schema service")
 	}
 	service := Service{
 		storage:  schemaStorage,
@@ -87,15 +86,14 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 	logrus.Debugf("creating schema: %+v", request)
 
 	if !request.IsValid() {
-		errMsg := fmt.Sprintf("invalid create schema request: %+v", request)
-		return nil, util.LoggingNewError(errMsg)
+		return nil, util.LoggingNewErrorf("invalid create schema request: %+v", request)
 	}
 
 	schemaBytes, err := json.Marshal(request.Schema)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not marshal schema in request")
+		return nil, util.LoggingErrorMsg(err, "could not marshal schema in request")
 	}
-	if err := schemalib.IsValidJSONSchema(string(schemaBytes)); err != nil {
+	if err = schemalib.IsValidJSONSchema(string(schemaBytes)); err != nil {
 		return nil, util.LoggingErrorMsg(err, "provided value is not a valid JSON schema")
 	}
 
@@ -122,7 +120,7 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 		storedSchema.SchemaJWT = signedSchema
 	}
 
-	if err := s.storage.StoreSchema(storedSchema); err != nil {
+	if err = s.storage.StoreSchema(storedSchema); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store schema")
 	}
 
@@ -150,26 +148,22 @@ func prepareJSONSchema(id, name string, s schema.JSONSchema) schema.JSONSchema {
 func (s Service) signSchemaJWT(author string, schema schema.VCJSONSchema) (*keyaccess.JWT, error) {
 	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: author})
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get key for signing schema for author<%s>", author)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get key for signing schema for author<%s>", author)
 	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create key access for signing schema for author<%s>", author)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not create key access for signing schema for author<%s>", author)
 	}
 	schemaJSONBytes, err := sdkutil.ToJSONMap(schema)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not marshal schema for signing for author<%s>", author)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not marshal schema for signing for author<%s>", author)
 	}
 	schemaToken, err := keyAccess.SignJWT(schemaJSONBytes)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not sign schema for author<%s>", author)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not sign schema for author<%s>", author)
 	}
 	if _, err = s.verifySchemaJWT(keyaccess.JWT(schemaToken)); err != nil {
-		return nil, errors.Wrap(err, "could not verify signed schema")
+		return nil, util.LoggingErrorMsg(err, "could not verify signed schema")
 	}
 	return keyaccess.JWTPtr(string(schemaToken)), nil
 }
@@ -195,22 +189,16 @@ func (s Service) VerifySchema(request VerifySchemaRequest) (*VerifySchemaRespons
 func (s Service) verifySchemaJWT(token keyaccess.JWT) (*schema.VCJSONSchema, error) {
 	parsed, err := jwt.Parse([]byte(token))
 	if err != nil {
-		errMsg := "could not parse JWT"
-		logrus.WithError(err).Error(errMsg)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not parse JWT")
 	}
 	claims := parsed.PrivateClaims()
 	claimsJSONBytes, err := json.Marshal(claims)
 	if err != nil {
-		errMsg := "could not marshal claims"
-		logrus.WithError(err).Error(errMsg)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not marshal claims")
 	}
 	var parsedSchema schema.VCJSONSchema
-	if err := json.Unmarshal(claimsJSONBytes, &parsedSchema); err != nil {
-		errMsg := "could not unmarshal claims into schema"
-		logrus.WithError(err).Error(errMsg)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+	if err = json.Unmarshal(claimsJSONBytes, &parsedSchema); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not unmarshal claims into schema")
 	}
 	resolved, err := s.resolver.Resolve(parsedSchema.Author)
 	if err != nil {
@@ -224,7 +212,7 @@ func (s Service) verifySchemaJWT(token keyaccess.JWT) (*schema.VCJSONSchema, err
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not create schema verifier")
 	}
-	if err := verifier.Verify(token); err != nil {
+	if err = verifier.Verify(token); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not verify the schema's signature")
 	}
 	return &parsedSchema, nil
@@ -257,12 +245,10 @@ func (s Service) GetSchema(request GetSchemaRequest) (*GetSchemaResponse, error)
 	// TODO(gabe) support external schema resolution https://github.com/TBD54566975/ssi-service/issues/125
 	gotSchema, err := s.storage.GetSchema(request.ID)
 	if err != nil {
-		err := errors.Wrapf(err, "error getting schema: %s", request.ID)
-		return nil, util.LoggingError(err)
+		return nil, util.LoggingErrorMsgf(err, "error getting schema: %s", request.ID)
 	}
 	if gotSchema == nil {
-		err := fmt.Errorf("schema with id<%s> could not be found", request.ID)
-		return nil, util.LoggingError(err)
+		return nil, util.LoggingNewErrorf("schema with id<%s> could not be found", request.ID)
 	}
 	return &GetSchemaResponse{Schema: gotSchema.Schema, SchemaJWT: gotSchema.SchemaJWT}, nil
 }
@@ -270,7 +256,7 @@ func (s Service) GetSchema(request GetSchemaRequest) (*GetSchemaResponse, error)
 func (s Service) Resolve(id string) (*schema.VCJSONSchema, error) {
 	schemaResponse, err := s.GetSchema(GetSchemaRequest{ID: id})
 	if err != nil {
-		return nil, err
+		return nil, util.LoggingErrorMsgf(err, "could not get schema for id<%s>", id)
 	}
 	return &schemaResponse.Schema, nil
 }
@@ -280,8 +266,7 @@ func (s Service) DeleteSchema(request DeleteSchemaRequest) error {
 	logrus.Debugf("deleting schema: %s", request.ID)
 
 	if err := s.storage.DeleteSchema(request.ID); err != nil {
-		errMsg := fmt.Sprintf("could not delete schema with id: %s", request.ID)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not delete schema with id: %s", request.ID)
 	}
 
 	return nil

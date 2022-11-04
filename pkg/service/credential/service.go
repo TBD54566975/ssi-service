@@ -66,8 +66,7 @@ func (s Service) Config() config.CredentialServiceConfig {
 func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver *didsdk.Resolver, schema *schema.Service) (*Service, error) {
 	credentialStorage, err := credstorage.NewCredentialStorage(s)
 	if err != nil {
-		errMsg := "could not instantiate storage for the credential service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the credential service")
 	}
 	verifier, err := credint.NewCredentialVerifier(didResolver, schema)
 	if err != nil {
@@ -93,14 +92,12 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	builder := credential.NewVerifiableCredentialBuilder()
 
 	if err := builder.SetIssuer(request.Issuer); err != nil {
-		errMsg := fmt.Sprintf("could not build credential when setting issuer: %s", request.Issuer)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not build credential when setting issuer: %s", request.Issuer)
 	}
 
 	// check if there's a conflict with subject ID
 	if id, ok := request.Data[credential.VerifiableCredentialIDProperty]; ok && id != request.Subject {
-		errMsg := fmt.Sprintf("cannot set subject<%s>, data already contains a different ID value: %s", request.Subject, id)
-		return nil, util.LoggingNewError(errMsg)
+		return nil, util.LoggingNewErrorf("cannot set subject<%s>, data already contains a different ID value: %s", request.Subject, id)
 	}
 
 	// set subject value
@@ -108,15 +105,13 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	subject[credential.VerifiableCredentialIDProperty] = request.Subject
 
 	if err := builder.SetCredentialSubject(subject); err != nil {
-		errMsg := fmt.Sprintf("could not set subject: %+v", subject)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not set subject: %+v", subject)
 	}
 
 	// if a context value exists, set it
 	if request.Context != "" {
 		if err := builder.AddContext(request.Context); err != nil {
-			errMsg := fmt.Sprintf("could not add context to credential: %s", request.Context)
-			return nil, util.LoggingErrorMsg(err, errMsg)
+			return nil, util.LoggingErrorMsgf(err, "could not add context to credential: %s", request.Context)
 		}
 	}
 
@@ -126,8 +121,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		// resolve schema and save it for validation later
 		gotSchema, err := s.schema.GetSchema(schema.GetSchemaRequest{ID: request.JSONSchema})
 		if err != nil {
-			errMsg := fmt.Sprintf("failed to create credential; could not get schema: %s", request.JSONSchema)
-			return nil, util.LoggingErrorMsg(err, errMsg)
+			return nil, util.LoggingErrorMsgf(err, "failed to create credential; could not get schema: %s", request.JSONSchema)
 		}
 		knownSchema = &gotSchema.Schema
 
@@ -136,16 +130,14 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 			Type: SchemaLDType,
 		}
 		if err = builder.SetCredentialSchema(credSchema); err != nil {
-			errMsg := fmt.Sprintf("could not set JSON Schema for credential: %s", request.JSONSchema)
-			return nil, util.LoggingErrorMsg(err, errMsg)
+			return nil, util.LoggingErrorMsgf(err, "could not set JSON Schema for credential: %s", request.JSONSchema)
 		}
 	}
 
 	// if an expiry value exists, set it
 	if request.Expiry != "" {
 		if err := builder.SetExpirationDate(request.Expiry); err != nil {
-			errMsg := fmt.Sprintf("could not set expirty for credential: %s", request.Expiry)
-			return nil, util.LoggingErrorMsg(err, errMsg)
+			return nil, util.LoggingErrorMsgf(err, "could not set expiry for credential: %s", request.Expiry)
 		}
 	}
 
@@ -156,15 +148,13 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 
 	cred, err := builder.Build()
 	if err != nil {
-		errMsg := "could not build credential"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not build credential")
 	}
 
 	// verify the built schema complies with the schema we've set
 	if knownSchema != nil {
 		if err = schemalib.IsCredentialValidForVCJSONSchema(*cred, *knownSchema); err != nil {
-			errMsg := fmt.Sprintf("credential data does not comply with the provided schema: %s", request.JSONSchema)
-			return nil, util.LoggingErrorMsg(err, errMsg)
+			return nil, util.LoggingErrorMsgf(err, "credential data does not comply with the provided schema: %s", request.JSONSchema)
 		}
 	}
 
@@ -185,8 +175,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		Container: container,
 	}
 	if err = s.storage.StoreCredential(storageRequest); err != nil {
-		errMsg := "could not store credential"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not store credential")
 	}
 
 	// return the result
@@ -198,18 +187,15 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 func (s Service) signCredentialJWT(issuer string, cred credential.VerifiableCredential) (*keyaccess.JWT, error) {
 	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: issuer})
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get key for signing credential with key<%s>", issuer)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get key for signing credential with key<%s>", issuer)
 	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create key access for signing credential with key<%s>", gotKey.ID)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, errors.Wrapf(err, "could not create key access for signing credential with key<%s>", gotKey.ID)
 	}
 	credToken, err := keyAccess.SignVerifiableCredential(cred)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not sign credential with key<%s>", gotKey.ID)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, errors.Wrapf(err, "could not sign credential with key<%s>", gotKey.ID)
 	}
 	return credToken, nil
 }
@@ -270,12 +256,10 @@ func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResp
 
 	gotCred, err := s.storage.GetCredential(request.ID)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get credential: %s", request.ID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get credential: %s", request.ID)
 	}
 	if !gotCred.IsValid() {
-		errMsg := fmt.Sprintf("credential returned is not valid: %s", request.ID)
-		return nil, util.LoggingNewError(errMsg)
+		return nil, util.LoggingNewErrorf("credential returned is not valid: %s", request.ID)
 	}
 	response := GetCredentialResponse{
 		credint.Container{
@@ -293,8 +277,7 @@ func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*
 
 	gotCreds, err := s.storage.GetCredentialsByIssuer(request.Issuer)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get credential(s) for issuer: %s", request.Issuer)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get credential(s) for issuer: %s", request.Issuer)
 	}
 
 	creds := make([]credint.Container, 0, len(gotCreds))
@@ -317,8 +300,7 @@ func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) 
 
 	gotCreds, err := s.storage.GetCredentialsBySubject(request.Subject)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get credential(s) for subject: %s", request.Subject)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get credential(s) for subject: %s", request.Subject)
 	}
 
 	creds := make([]credint.Container, 0, len(gotCreds))
@@ -340,8 +322,7 @@ func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*
 
 	gotCreds, err := s.storage.GetCredentialsBySchema(request.Schema)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get credential(s) for schema: %s", request.Schema)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get credential(s) for schema: %s", request.Schema)
 	}
 
 	creds := make([]credint.Container, 0, len(gotCreds))
@@ -362,8 +343,7 @@ func (s Service) DeleteCredential(request DeleteCredentialRequest) error {
 	logrus.Debugf("deleting credential: %s", request.ID)
 
 	if err := s.storage.DeleteCredential(request.ID); err != nil {
-		errMsg := fmt.Sprintf("could not delete credential with id: %s", request.ID)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not delete credential with id: %s", request.ID)
 	}
 
 	return nil

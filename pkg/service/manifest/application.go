@@ -35,8 +35,7 @@ func (s Service) verifyApplicationJWT(did string, token keyaccess.JWT) error {
 func (s Service) validateCredentialApplication(credManifest manifest.CredentialManifest, request SubmitApplicationRequest) (inputDescriptorIDs []string, err error) {
 	// validate the payload's signature
 	if verificationErr := s.verifyApplicationJWT(request.ApplicantDID, request.ApplicationJWT); verificationErr != nil {
-		errMsg := fmt.Sprintf("could not verify application<%s>'s signature", request.Application.ID)
-		err = util.LoggingErrorMsg(err, errMsg)
+		err = util.LoggingErrorMsgf(err, "could not verify application<%s>'s signature", request.Application.ID)
 		return
 	}
 
@@ -67,8 +66,7 @@ func (s Service) validateCredentialApplication(credManifest manifest.CredentialM
 		}
 
 		// otherwise, we have an internal error and  set the error to the value of the errResp's error
-		errMsg := fmt.Sprintf("could not validate application: %s", credApp.ID)
-		err = util.LoggingErrorMsg(resp.Err, errMsg)
+		err = util.LoggingErrorMsgf(resp.Err, "could not validate application: %s", credApp.ID)
 		return
 	}
 
@@ -80,14 +78,12 @@ func (s Service) validateCredentialApplication(credManifest manifest.CredentialM
 		})
 
 		if verificationErr != nil {
-			errMsg := fmt.Sprintf("could not verify credential: %s", credentialContainer.Credential.ID)
-			err = util.LoggingNewError(errMsg)
+			err = util.LoggingNewErrorf("could not verify credential: %s", credentialContainer.Credential.ID)
 			return
 		}
 
 		if !verificationResult.Verified {
-			errMsg := fmt.Sprintf("submitted credential<%s> is not valid: %s", credentialContainer.Credential.ID, verificationResult.Reason)
-			err = util.LoggingNewError(errMsg)
+			err = util.LoggingNewErrorf("submitted credential<%s> is not valid: %s", credentialContainer.Credential.ID, verificationResult.Reason)
 			return
 		}
 	}

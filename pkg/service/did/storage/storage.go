@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"fmt"
-
 	"github.com/TBD54566975/ssi-sdk/did"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -27,8 +25,7 @@ func NewDIDStorage(s storage.ServiceStorage) (Storage, error) {
 	case storage.Bolt:
 		gotBolt, ok := s.(*storage.BoltDB)
 		if !ok {
-			errMsg := fmt.Sprintf("trouble instantiating : %s", s.Type())
-			return nil, util.LoggingNewError(errMsg)
+			return nil, util.LoggingNewErrorf("trouble instantiating : %s", s.Type())
 		}
 		boltStorage, err := NewBoltDIDStorage(gotBolt)
 		if err != nil {
@@ -36,7 +33,6 @@ func NewDIDStorage(s storage.ServiceStorage) (Storage, error) {
 		}
 		return boltStorage, err
 	default:
-		errMsg := fmt.Errorf("unsupported storage type: %s", s.Type())
-		return nil, util.LoggingError(errMsg)
+		return nil, util.LoggingNewErrorf("unsupported storage type: %s", s.Type())
 	}
 }

@@ -55,8 +55,7 @@ func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceSt
 	// Next, instantiate the key storage
 	keyStoreStorage, err := keystorestorage.NewKeyStoreStorage(s, serviceKey, serviceKeySalt)
 	if err != nil {
-		errMsg := "could not instantiate storage for the keystore service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the keystore service")
 	}
 
 	service := Service{
@@ -76,8 +75,7 @@ func (s Service) StoreKey(request StoreKeyRequest) error {
 	// check if the provided key type is supported. support entails being able to serialize/deserialize, in addition
 	// to facilitating signing/verification and encryption/decryption support.
 	if !crypto.IsSupportedKeyType(request.Type) {
-		errMsg := fmt.Sprintf("unsupported key type: %s", request.Type)
-		return util.LoggingNewError(errMsg)
+		return util.LoggingNewErrorf("unsupported key type: %s", request.Type)
 	}
 
 	key := keystorestorage.StoredKey{
@@ -88,8 +86,7 @@ func (s Service) StoreKey(request StoreKeyRequest) error {
 		CreatedAt:  time.Now().Format(time.RFC3339),
 	}
 	if err := s.storage.StoreKey(key); err != nil {
-		err = errors.Wrapf(err, "could not store key: %s", request.ID)
-		return util.LoggingError(err)
+		return util.LoggingErrorMsgf(err, "could not store key: %s", request.ID)
 	}
 	return nil
 }
@@ -101,22 +98,20 @@ func (s Service) GetKey(request GetKeyRequest) (*GetKeyResponse, error) {
 	id := request.ID
 	gotKey, err := s.storage.GetKey(id)
 	if err != nil {
-		err = errors.Wrapf(err, "could not get key for key: %s", id)
-		return nil, util.LoggingError(err)
+		return nil, util.LoggingErrorMsgf(err, "could not get key for key: %s", id)
 	}
 	if gotKey == nil {
-		err = errors.Wrapf(err, "key with id<%s> could not be found", id)
-		return nil, util.LoggingError(err)
+		return nil, util.LoggingErrorMsgf(err, "key with id<%s> could not be found", id)
 	}
 
 	// deserialize the key before returning
 	keyBytes, err := base58.Decode(gotKey.Base58Key)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not deserialize key from base58")
+		return nil, util.LoggingErrorMsg(err, "could not deserialize key from base58")
 	}
 	privKey, err := crypto.BytesToPrivKey(keyBytes, gotKey.KeyType)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not reconstruct private key from storage")
+		return nil, util.LoggingErrorMsg(err, "could not reconstruct private key from storage")
 	}
 
 	return &GetKeyResponse{
@@ -135,12 +130,10 @@ func (s Service) GetKeyDetails(request GetKeyDetailsRequest) (*GetKeyDetailsResp
 	id := request.ID
 	gotKeyDetails, err := s.storage.GetKeyDetails(id)
 	if err != nil {
-		err = errors.Wrapf(err, "could not get key details for key: %s", id)
-		return nil, util.LoggingError(err)
+		return nil, util.LoggingErrorMsgf(err, "could not get key details for key: %s", id)
 	}
 	if gotKeyDetails == nil {
-		err = errors.Wrapf(err, "key with id<%s> could not be found", id)
-		return nil, util.LoggingError(err)
+		return nil, util.LoggingErrorMsgf(err, "key with id<%s> could not be found", id)
 	}
 	return &GetKeyDetailsResponse{
 		ID:         gotKeyDetails.ID,

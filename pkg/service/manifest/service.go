@@ -63,8 +63,7 @@ func (s Service) Config() config.ManifestServiceConfig {
 func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver *didsdk.Resolver, credential *credential.Service) (*Service, error) {
 	manifestStorage, err := manifeststorage.NewManifestStorage(s)
 	if err != nil {
-		errMsg := "could not instantiate storage for the manifest service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the manifest service")
 	}
 	return &Service{
 		storage:     manifestStorage,
@@ -86,12 +85,23 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 
 	// validate the request
 	if err := sdkutil.IsValidStruct(request); err != nil {
-		errMsg := fmt.Sprintf("invalid create manifest request: %s", err.Error())
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "invalid create manifest request: %s", err.Error())
 	}
 
 	// compose a valid manifest
 	builder := manifest.NewCredentialManifestBuilder()
+
+	// set the manifest's name and description
+	if request.Name != nil {
+		if err := builder.SetName(*request.Name); err != nil {
+			return nil, util.LoggingErrorMsg(err, "invalid manifest name")
+		}
+	}
+	if request.Description != nil {
+		if err := builder.SetDescription(*request.Description); err != nil {
+			return nil, util.LoggingErrorMsg(err, "invalid manifest description")
+		}
+	}
 
 	// set the issuer
 	var issuerName string
@@ -102,21 +112,17 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 		ID:   request.IssuerDID,
 		Name: issuerName,
 	}); err != nil {
-		errMsg := fmt.Sprintf("could not set issuer<%s> for manifest", request.IssuerDID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not set issuer<%s> for manifest", request.IssuerDID)
 	}
 	if err := builder.SetClaimFormat(*request.ClaimFormat); err != nil {
-		errMsg := fmt.Sprintf("could not set claim format<%+v> for manifest", request.ClaimFormat)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not set claim format<%+v> for manifest", request.ClaimFormat)
 	}
 	if err := builder.SetOutputDescriptors(request.OutputDescriptors); err != nil {
-		errMsg := fmt.Sprintf("could not set output descriptors<%+v> for manifest", request.OutputDescriptors)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not set output descriptors<%+v> for manifest", request.OutputDescriptors)
 	}
 	if request.PresentationDefinition != nil {
 		if err := builder.SetPresentationDefinition(*request.PresentationDefinition); err != nil {
-			errMsg := fmt.Sprintf("could not set presentation definition<%+v> for manifest", request.PresentationDefinition)
-			return nil, util.LoggingErrorMsg(err, errMsg)
+			return nil, util.LoggingErrorMsgf(err, "could not set presentation definition<%+v> for manifest", request.PresentationDefinition)
 		}
 	}
 
@@ -169,8 +175,7 @@ func (s Service) GetManifest(request GetManifestRequest) (*GetManifestResponse, 
 
 	gotManifest, err := s.storage.GetManifest(request.ID)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get manifest: %s", request.ID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get manifest: %s", request.ID)
 	}
 
 	response := GetManifestResponse{Manifest: gotManifest.Manifest, ManifestJWT: gotManifest.ManifestJWT}
@@ -198,8 +203,7 @@ func (s Service) DeleteManifest(request DeleteManifestRequest) error {
 	logrus.Debugf("deleting manifest: %s", request.ID)
 
 	if err := s.storage.DeleteManifest(request.ID); err != nil {
-		errMsg := fmt.Sprintf("could not delete manifest with id: %s", request.ID)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not delete manifest with id: %s", request.ID)
 	}
 
 	return nil
@@ -217,12 +221,10 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	gotManifest, err := s.storage.GetManifest(manifestID)
 	applicationID := request.Application.ID
 	if err != nil {
-		errMsg := fmt.Sprintf("problem with retrieving manifest<%s> during application<%s>'s validation", manifestID, applicationID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "problem with retrieving manifest<%s> during application<%s>'s validation", manifestID, applicationID)
 	}
 	if gotManifest == nil {
-		errMsg := fmt.Sprintf("application<%s> is not valid; a manifest does not exist with id: %s", applicationID, manifestID)
-		return nil, util.LoggingNewError(errMsg)
+		return nil, util.LoggingNewErrorf("application<%s> is not valid; a manifest does not exist with id: %s", applicationID, manifestID)
 	}
 	credManifest := gotManifest.Manifest
 
@@ -294,8 +296,7 @@ func (s Service) GetApplication(request GetApplicationRequest) (*GetApplicationR
 
 	gotApp, err := s.storage.GetApplication(request.ID)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get application: %s", request.ID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get application: %s", request.ID)
 	}
 
 	response := GetApplicationResponse{Application: gotApp.Application}
@@ -325,8 +326,7 @@ func (s Service) DeleteApplication(request DeleteApplicationRequest) error {
 	logrus.Debugf("deleting application: %s", request.ID)
 
 	if err := s.storage.DeleteApplication(request.ID); err != nil {
-		errMsg := fmt.Sprintf("could not delete application with id: %s", request.ID)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not delete application with id: %s", request.ID)
 	}
 
 	return nil
@@ -338,8 +338,7 @@ func (s Service) GetResponse(request GetResponseRequest) (*GetResponseResponse, 
 
 	gotResponse, err := s.storage.GetResponse(request.ID)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get response: %s", request.ID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get response: %s", request.ID)
 	}
 
 	response := GetResponseResponse{Response: gotResponse.Response}
@@ -369,8 +368,7 @@ func (s Service) DeleteResponse(request DeleteResponseRequest) error {
 	logrus.Debugf("deleting response: %s", request.ID)
 
 	if err := s.storage.DeleteResponse(request.ID); err != nil {
-		errMsg := fmt.Sprintf("could not delete response with id: %s", request.ID)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not delete response with id: %s", request.ID)
 	}
 
 	return nil

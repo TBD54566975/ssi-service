@@ -42,8 +42,7 @@ func (b BoltCredentialStorage) StoreCredential(request StoreCredentialRequest) e
 
 	storedCredBytes, err := json.Marshal(storedCredential)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not store request: %s", storedCredential.CredentialID)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.CredentialID)
 	}
 	// TODO(gabe) conflict checking?
 	return b.db.Write(namespace, storedCredential.ID, storedCredBytes)
@@ -88,12 +87,10 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 func (b BoltCredentialStorage) GetCredential(id string) (*StoredCredential, error) {
 	prefixValues, err := b.db.ReadPrefix(namespace, id)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get credential from storage: %s", id)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get credential from storage: %s", id)
 	}
 	if len(prefixValues) > 1 {
-		err := fmt.Errorf("multiple prefix values matched credential id: %s", id)
-		return nil, util.LoggingErrorMsg(err, "could not get credential from storage")
+		return nil, util.LoggingNewErrorf("could not get credential from storage; multiple prefix values matched credential id: %s", id)
 	}
 
 	// since we know the map now only has a single value, we break after the first element
@@ -103,14 +100,12 @@ func (b BoltCredentialStorage) GetCredential(id string) (*StoredCredential, erro
 		break
 	}
 	if len(credBytes) == 0 {
-		err := fmt.Errorf("%s with id: %s", credentialNotFoundErrMsg, id)
-		return nil, util.LoggingErrorMsg(err, "could not get credential from storage")
+		return nil, util.LoggingNewErrorf("could not get credential from storage %s with id: %s", credentialNotFoundErrMsg, id)
 	}
 
 	var stored StoredCredential
-	if err := json.Unmarshal(credBytes, &stored); err != nil {
-		errMsg := fmt.Sprintf("could not unmarshal stored credential: %s", id)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+	if err = json.Unmarshal(credBytes, &stored); err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored credential: %s", id)
 	}
 	return &stored, nil
 }
@@ -125,8 +120,7 @@ func (b BoltCredentialStorage) GetCredential(id string) (*StoredCredential, erro
 func (b BoltCredentialStorage) GetCredentialsByIssuer(issuer string) ([]StoredCredential, error) {
 	keys, err := b.db.ReadAllKeys(namespace)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not read credential storage while searching for creds for issuer: %s", issuer)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
 	}
 	// see if the prefix keys contains the issuer value
 	var issuerKeys []string
@@ -148,7 +142,7 @@ func (b BoltCredentialStorage) GetCredentialsByIssuer(issuer string) ([]StoredCr
 			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
 		} else {
 			var cred StoredCredential
-			if err := json.Unmarshal(credBytes, &cred); err != nil {
+			if err = json.Unmarshal(credBytes, &cred); err != nil {
 				logrus.WithError(err).Errorf("could not unmarshal credential with key: %s", key)
 			}
 			storedCreds = append(storedCreds, cred)
@@ -168,8 +162,7 @@ func (b BoltCredentialStorage) GetCredentialsByIssuer(issuer string) ([]StoredCr
 func (b BoltCredentialStorage) GetCredentialsBySubject(subject string) ([]StoredCredential, error) {
 	keys, err := b.db.ReadAllKeys(namespace)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not read credential storage while searching for creds for subject: %s", subject)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for subject: %s", subject)
 	}
 
 	// see if the prefix keys contains the subject value
@@ -212,8 +205,7 @@ func (b BoltCredentialStorage) GetCredentialsBySubject(subject string) ([]Stored
 func (b BoltCredentialStorage) GetCredentialsBySchema(schema string) ([]StoredCredential, error) {
 	keys, err := b.db.ReadAllKeys(namespace)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not read credential storage while searching for creds for schema: %s", schema)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for schema: %s", schema)
 	}
 
 	// see if the prefix keys contains the schema value
@@ -263,8 +255,7 @@ func (b BoltCredentialStorage) DeleteCredential(id string) error {
 			return nil
 		}
 
-		errMsg := fmt.Sprintf("could not get credential<%s> before deletion", id)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not get credential<%s> before deletion", id)
 	}
 
 	// no error on deletion for a non-existent credential
@@ -275,9 +266,8 @@ func (b BoltCredentialStorage) DeleteCredential(id string) error {
 
 	// re-create the prefix key to delete
 	prefix := createPrefixKey(id, gotCred.Issuer, gotCred.Subject, gotCred.Schema)
-	if err := b.db.Delete(namespace, prefix); err != nil {
-		errMsg := fmt.Sprintf("could not delete credential: %s", id)
-		return util.LoggingErrorMsg(err, errMsg)
+	if err = b.db.Delete(namespace, prefix); err != nil {
+		return util.LoggingErrorMsgf(err, "could not delete credential: %s", id)
 	}
 	return nil
 }

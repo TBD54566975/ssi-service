@@ -108,8 +108,7 @@ func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
 	case didsdk.KeyMethod:
 		s.handlers[method] = newKeyDIDHandler(s.storage, s.keyStore)
 	default:
-		err := fmt.Errorf("unsupported DID method: %s", method)
-		return util.LoggingError(err)
+		return util.LoggingNewErrorf("unsupported DID method: %s", method)
 	}
 	return nil
 }
@@ -120,7 +119,7 @@ func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, er
 	}
 	resolved, err := s.resolver.Resolve(request.DID)
 	if err != nil {
-		return nil, err
+		return nil, util.LoggingErrorMsgf(err, "could not resolve DID: %s", request.DID)
 	}
 	return &ResolveDIDResponse{
 		ResolutionMetadata:  &resolved.DIDResolutionMetadata,
@@ -140,8 +139,7 @@ func (s *Service) GetSupportedMethods() GetSupportedMethodsResponse {
 func (s *Service) CreateDIDByMethod(request CreateDIDRequest) (*CreateDIDResponse, error) {
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get handler for method<%s>", request.Method)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
 	}
 	return handler.CreateDID(request)
 }
@@ -149,8 +147,7 @@ func (s *Service) CreateDIDByMethod(request CreateDIDRequest) (*CreateDIDRespons
 func (s *Service) GetDIDByMethod(request GetDIDRequest) (*GetDIDResponse, error) {
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get handler for method<%s>", request.Method)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
 	}
 	return handler.GetDID(request)
 }
@@ -159,8 +156,7 @@ func (s *Service) GetDIDsByMethod(request GetDIDsRequest) (*GetDIDsResponse, err
 	method := request.Method
 	handler, err := s.getHandler(method)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get handler for method<%s>", method)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get handler for method<%s>", method)
 	}
 	return handler.GetDIDs(method)
 }
@@ -168,8 +164,7 @@ func (s *Service) GetDIDsByMethod(request GetDIDsRequest) (*GetDIDsResponse, err
 func (s *Service) getHandler(method didsdk.Method) (MethodHandler, error) {
 	handler, ok := s.handlers[method]
 	if !ok {
-		err := fmt.Errorf("could not get handler for DID method: %s", method)
-		return nil, util.LoggingError(err)
+		return nil, util.LoggingNewErrorf("could not get handler for DID method: %s", method)
 	}
 	return handler, nil
 }

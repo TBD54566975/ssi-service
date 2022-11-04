@@ -80,7 +80,7 @@ func (b BoltManifestStorage) GetManifests() ([]StoredManifest, error) {
 	var stored []StoredManifest
 	for _, manifestBytes := range gotManifests {
 		var nextManifest StoredManifest
-		if err := json.Unmarshal(manifestBytes, &nextManifest); err == nil {
+		if err = json.Unmarshal(manifestBytes, &nextManifest); err == nil {
 			stored = append(stored, nextManifest)
 		}
 	}
@@ -89,8 +89,7 @@ func (b BoltManifestStorage) GetManifests() ([]StoredManifest, error) {
 
 func (b BoltManifestStorage) DeleteManifest(id string) error {
 	if err := b.db.Delete(manifestNamespace, id); err != nil {
-		errMsg := fmt.Sprintf("could not delete manifest: %s", id)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not delete manifest: %s", id)
 	}
 	return nil
 }
@@ -102,8 +101,7 @@ func (b BoltManifestStorage) StoreApplication(application StoredApplication) err
 	}
 	applicationBytes, err := json.Marshal(application)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not store application: %s", id)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not store application: %s", id)
 	}
 	return b.db.Write(applicationNamespace, id, applicationBytes)
 }
@@ -111,18 +109,14 @@ func (b BoltManifestStorage) StoreApplication(application StoredApplication) err
 func (b BoltManifestStorage) GetApplication(id string) (*StoredApplication, error) {
 	applicationBytes, err := b.db.Read(applicationNamespace, id)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get application: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrapf(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get application: %s", id)
 	}
 	if len(applicationBytes) == 0 {
-		err = fmt.Errorf("application not found with id: %s", id)
-		return nil, util.LoggingErrorMsg(err, "could not get application from storage")
+		return nil, util.LoggingNewErrorf("could not get application from storage; application not found with id: %s", id)
 	}
 	var stored StoredApplication
 	if err = json.Unmarshal(applicationBytes, &stored); err != nil {
-		errMsg := fmt.Sprintf("could not unmarshal stored application: %s", id)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored application: %s", id)
 	}
 	return &stored, nil
 }
@@ -151,8 +145,7 @@ func (b BoltManifestStorage) GetApplications() ([]StoredApplication, error) {
 
 func (b BoltManifestStorage) DeleteApplication(id string) error {
 	if err := b.db.Delete(applicationNamespace, id); err != nil {
-		errMsg := fmt.Sprintf("could not delete application: %s", id)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not delete application: %s", id)
 	}
 	return nil
 }
@@ -164,8 +157,7 @@ func (b BoltManifestStorage) StoreResponse(response StoredResponse) error {
 	}
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not store response: %s", id)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not store response: %s", id)
 	}
 	return b.db.Write(responseNamespace, id, responseBytes)
 }
@@ -173,17 +165,14 @@ func (b BoltManifestStorage) StoreResponse(response StoredResponse) error {
 func (b BoltManifestStorage) GetResponse(id string) (*StoredResponse, error) {
 	responseBytes, err := b.db.Read(responseNamespace, id)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get response: %s", id)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get response: %s", id)
 	}
 	if len(responseBytes) == 0 {
-		err = fmt.Errorf("response not found with id: %s", id)
-		return nil, util.LoggingErrorMsg(err, "could not get response from storage")
+		return nil, util.LoggingErrorMsgf(err, "response not found with id: %s", id)
 	}
 	var stored StoredResponse
 	if err = json.Unmarshal(responseBytes, &stored); err != nil {
-		errMsg := fmt.Sprintf("could not unmarshal stored response: %s", id)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored response: %s", id)
 	}
 	return &stored, nil
 }
@@ -192,8 +181,7 @@ func (b BoltManifestStorage) GetResponse(id string) (*StoredResponse, error) {
 func (b BoltManifestStorage) GetResponses() ([]StoredResponse, error) {
 	gotResponses, err := b.db.ReadAll(responseNamespace)
 	if err != nil {
-		errMsg := "could not get all responses"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not get all responses")
 	}
 	if len(gotResponses) == 0 {
 		logrus.Info("no responses to get")
@@ -213,8 +201,7 @@ func (b BoltManifestStorage) GetResponses() ([]StoredResponse, error) {
 
 func (b BoltManifestStorage) DeleteResponse(id string) error {
 	if err := b.db.Delete(responseNamespace, id); err != nil {
-		errMsg := fmt.Sprintf("could not delete response: %s", id)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not delete response: %s", id)
 	}
 	return nil
 }

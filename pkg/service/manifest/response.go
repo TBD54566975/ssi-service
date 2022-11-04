@@ -22,20 +22,17 @@ const (
 func (s Service) signCredentialResponseJWT(signingDID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
 	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: signingDID})
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get key for signing response with key<%s>", signingDID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get key for signing response with key<%s>", signingDID)
 	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create key access for signing response with key<%s>", gotKey.ID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not create key access for signing response with key<%s>", gotKey.ID)
 	}
 
 	// signing the response as a JWT
 	responseToken, err := keyAccess.SignJSON(r)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not sign response with key<%s>", gotKey.ID)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not sign response with key<%s>", gotKey.ID)
 	}
 	return responseToken, nil
 }
@@ -44,8 +41,7 @@ func (s Service) buildCredentialResponse(applicantDID, manifestID, applicationID
 	// TODO(gabe) need to check if this can be fulfilled and conditionally return success/denial
 	responseBuilder := manifest.NewCredentialResponseBuilder(manifestID)
 	if err := responseBuilder.SetApplicationID(applicationID); err != nil {
-		errMsg := fmt.Sprintf("could not fulfill credential application: could not set application id: %s", applicationID)
-		return nil, nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, nil, util.LoggingErrorMsgf(err, "could not fulfill credential application: could not set application id: %s", applicationID)
 	}
 
 	creds := make([]cred.Container, 0, len(credManifest.OutputDescriptors))
