@@ -9,6 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
+
+	"github.com/tbd54566975/ssi-service/internal/util"
 )
 
 const (
@@ -92,8 +94,7 @@ func (b *BoltDB) ReadAll(namespace string) (map[string][]byte, error) {
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
 		if bucket == nil {
-			errMsg := fmt.Sprintf("namespace<%s> does not exist", namespace)
-			logrus.Error(errMsg)
+			logrus.Errorf("namespace<%s> does not exist", namespace)
 			return nil
 		}
 		cursor := bucket.Cursor()
@@ -110,9 +111,7 @@ func (b *BoltDB) ReadAllKeys(namespace string) ([]string, error) {
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
 		if bucket == nil {
-			errMsg := fmt.Sprintf("namespace<%s> does not exist", namespace)
-			logrus.Error(errMsg)
-			return errors.New(errMsg)
+			return util.LoggingNewErrorf("namespace<%s> does not exist", namespace)
 		}
 		cursor := bucket.Cursor()
 		for k, _ := cursor.First(); k != nil; k, _ = cursor.Next() {
@@ -127,7 +126,7 @@ func (b *BoltDB) Delete(namespace, key string) error {
 	return b.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
 		if bucket == nil {
-			return fmt.Errorf("namespace<%s> does not exist", namespace)
+			return util.LoggingNewErrorf("namespace<%s> does not exist", namespace)
 		}
 		return bucket.Delete([]byte(key))
 	})
@@ -136,7 +135,7 @@ func (b *BoltDB) Delete(namespace, key string) error {
 func (b *BoltDB) DeleteNamespace(namespace string) error {
 	return b.db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket([]byte(namespace)); err != nil {
-			return errors.Wrapf(err, "could not delete namespace<%s>, n", namespace)
+			return util.LoggingErrorMsgf(err, "could not delete namespace<%s>", namespace)
 		}
 		return nil
 	})

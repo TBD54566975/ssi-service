@@ -24,13 +24,11 @@ type SSIService struct {
 // dependencies independent of transport.
 func InstantiateSSIService(config config.ServicesConfig) (*SSIService, error) {
 	if err := validateServiceConfig(config); err != nil {
-		errMsg := "could not instantiate SSI Service, invalid config"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not instantiate SSI Service, invalid config")
 	}
 	services, err := instantiateServices(config)
 	if err != nil {
-		errMsg := "could not instantiate the ssi service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not instantiate the ssi service")
 	}
 	return &SSIService{services: services}, nil
 }
@@ -69,8 +67,7 @@ func (ssi *SSIService) GetServices() []framework.Service {
 func instantiateServices(config config.ServicesConfig) ([]framework.Service, error) {
 	storageProvider, err := storage.NewStorage(storage.Storage(config.StorageProvider))
 	if err != nil {
-		errMsg := fmt.Sprintf("could not instantiate storage provider: %s", config.StorageProvider)
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not instantiate storage provider: %s", config.StorageProvider)
 	}
 
 	keyStoreService, err := keystore.NewKeyStoreService(config.KeyStoreConfig, storageProvider)
