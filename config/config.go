@@ -53,7 +53,6 @@ type ServicesConfig struct {
 	SchemaConfig     SchemaServiceConfig     `toml:"schema,omitempty"`
 	CredentialConfig CredentialServiceConfig `toml:"credential,omitempty"`
 	ManifestConfig   ManifestServiceConfig   `toml:"manifest,omitempty"`
-	DWNConfig        DWNServiceConfig        `toml:"dwn,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
@@ -123,18 +122,6 @@ func (m *ManifestServiceConfig) IsEmpty() bool {
 	return reflect.DeepEqual(m, &ManifestServiceConfig{})
 }
 
-type DWNServiceConfig struct {
-	*BaseServiceConfig
-	DWNEndpoint string `toml:"dwn_endpoint"`
-}
-
-func (d *DWNServiceConfig) IsEmpty() bool {
-	if d == nil {
-		return true
-	}
-	return reflect.DeepEqual(d, &DWNServiceConfig{})
-}
-
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
 // Before loading, defaults are applied on certain properties, which are overwritten if specified in the TOML file.
 func LoadConfig(path string) (*SSIServiceConfig, error) {
@@ -195,10 +182,6 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 			},
 			ManifestConfig: ManifestServiceConfig{
 				BaseServiceConfig: &BaseServiceConfig{Name: "manifest"},
-			},
-			DWNConfig: DWNServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "dwn"},
-				DWNEndpoint:       "http://localhost:4321",
 			},
 		}
 	} else {

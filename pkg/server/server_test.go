@@ -12,9 +12,6 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 
-	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
-	"github.com/tbd54566975/ssi-service/pkg/service/dwn"
-
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/dimfeld/httptreemux/v5"
@@ -22,6 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -285,17 +283,4 @@ func testManifest(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, 
 	require.NotEmpty(t, manifestRouter)
 
 	return manifestRouter, manifestService
-}
-
-func testDWNRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service, manifest *manifest.Service) *router.DWNRouter {
-	dwnService, err := dwn.NewDWNService(config.DWNServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-dwn"}, DWNEndpoint: "test-endpoint"}, bolt, keyStore, manifest)
-	require.NoError(t, err)
-	require.NotEmpty(t, dwnService)
-
-	// create router for service
-	dwnRouter, err := router.NewDWNRouter(dwnService)
-	require.NoError(t, err)
-	require.NotEmpty(t, dwnRouter)
-
-	return dwnRouter
 }
