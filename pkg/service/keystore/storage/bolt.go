@@ -50,8 +50,8 @@ func (b BoltKeyStoreStorage) storeServiceKey(key ServiceKey) error {
 	return nil
 }
 
-// getServiceKey attempts to get the service key from memory, and if not available rehydrates it from the DB
-func (b BoltKeyStoreStorage) getServiceKey() ([]byte, error) {
+// getAndSetServiceKey attempts to get the service key from memory, and if not available rehydrates it from the DB
+func (b BoltKeyStoreStorage) getAndSetServiceKey() ([]byte, error) {
 	if len(b.serviceKey) != 0 {
 		return b.serviceKey, nil
 	}
@@ -69,11 +69,12 @@ func (b BoltKeyStoreStorage) getServiceKey() ([]byte, error) {
 		return nil, util.LoggingErrorMsg(err, "could not unmarshal service key")
 	}
 
-	// decode service key
 	keyBytes, err := base58.Decode(stored.Base58Key)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not decode service key")
 	}
+
+	b.serviceKey = keyBytes
 	return keyBytes, nil
 }
 
@@ -89,7 +90,7 @@ func (b BoltKeyStoreStorage) StoreKey(key StoredKey) error {
 	}
 
 	// get service key
-	serviceKey, err := b.getServiceKey()
+	serviceKey, err := b.getAndSetServiceKey()
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "could not get service key while storing key: %s", id)
 	}
@@ -113,7 +114,7 @@ func (b BoltKeyStoreStorage) GetKey(id string) (*StoredKey, error) {
 	}
 
 	// get service key
-	serviceKey, err := b.getServiceKey()
+	serviceKey, err := b.getAndSetServiceKey()
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get service key while getting key: %s", id)
 	}
