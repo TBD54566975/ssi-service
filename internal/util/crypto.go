@@ -34,7 +34,7 @@ func XChaCha20Poly1305Encrypt(key, data []byte) ([]byte, error) {
 
 	// generate a random nonce, leaving room for the ciphertext
 	nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(data)+aead.Overhead())
-	if _, err := rand.Read(nonce); err != nil {
+	if _, err = rand.Read(nonce); err != nil {
 		return nil, errors.Wrap(err, "could not generate nonce for encryption")
 	}
 
@@ -50,7 +50,7 @@ func XChaCha20Poly1305Decrypt(key, data []byte) ([]byte, error) {
 	}
 
 	if len(data) < aead.NonceSize() {
-		panic("ciphertext too short")
+		return nil, errors.New("ciphertext too short; could not decrypt data")
 	}
 
 	// split nonce and ciphertext

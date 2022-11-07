@@ -6,6 +6,10 @@ github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221101200844-4aaa87cf0001 h1:FxN
 github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221101200844-4aaa87cf0001/go.mod h1:Uvgv4WK66gwiV76SpWe6EUnUSwyH7r9EFqP0tTSDP18=
 github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221104161850-6dad71a33c46 h1:7S6fWVagOnkfBHoqj9g54aueyrUlpsYq+8wTTBm6WCk=
 github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221104161850-6dad71a33c46/go.mod h1:Uvgv4WK66gwiV76SpWe6EUnUSwyH7r9EFqP0tTSDP18=
+github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221107212226-7346cdaf17e4 h1:l5aJ2NBVedBqD2tf7b8iXA+jE73Y6GYSFc+VHpdtKQ4=
+github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221107212226-7346cdaf17e4/go.mod h1:Uvgv4WK66gwiV76SpWe6EUnUSwyH7r9EFqP0tTSDP18=
+github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221107213258-be34aab7630c h1:m9DT71T3BlIevoGVEUJBWNqg0PUz6VaUMnL5mrJRee4=
+github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221107213258-be34aab7630c/go.mod h1:Uvgv4WK66gwiV76SpWe6EUnUSwyH7r9EFqP0tTSDP18=
 github.com/ardanlabs/conf v1.5.0 h1:5TwP6Wu9Xi07eLFEpiCUF3oQXh9UzHMDVnD3u/I5d5c=
 github.com/ardanlabs/conf v1.5.0/go.mod h1:ILsMo9dMqYzCxDjDXTiwMI0IgxOJd0MOiucbQY2wlJw=
 github.com/buger/jsonparser v1.1.1 h1:2PnMjfWD7wBILjqQbt530v576A/cAbQvEW9gGIpYMUs=

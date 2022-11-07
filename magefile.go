@@ -285,6 +285,9 @@ func CBT() error {
 	if err := Build(); err != nil {
 		return err
 	}
+	if err := Lint(); err != nil {
+		return err
+	}
 	if err := Test(); err != nil {
 		return err
 	}

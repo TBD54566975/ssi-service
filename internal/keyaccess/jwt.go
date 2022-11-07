@@ -7,7 +7,6 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
-	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/pkg/errors"
 )
 
@@ -25,11 +24,7 @@ func NewJWKKeyAccess(kid string, key gocrypto.PrivateKey) (*JWKKeyAccess, error)
 	if key == nil {
 		return nil, errors.New("key cannot be nil")
 	}
-	gotJWK, err := jwk.New(key)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not create jwk from private key")
-	}
-	signer, err := crypto.NewJWTSigner(kid, gotJWK)
+	signer, err := crypto.NewJWTSigner(kid, key)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not create JWK Key Access object for kid: %s, error creating signer", kid)
 	}
@@ -51,11 +46,7 @@ func NewJWKKeyAccessVerifier(kid string, key gocrypto.PublicKey) (*JWKKeyAccess,
 	if key == nil {
 		return nil, errors.New("key cannot be nil")
 	}
-	gotJWK, err := jwk.New(key)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not create jwk from public key")
-	}
-	verifier, err := crypto.NewJWTVerifier(kid, gotJWK)
+	verifier, err := crypto.NewJWTVerifier(kid, key)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not create JWK Key Access object for kid: %s, error creating verifier", kid)
 	}
