@@ -46,13 +46,12 @@ func TestManifestRouter(t *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)
-		
+
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
 		manifestService := testManifestService(tt, bolt, keyStoreService, didService, credentialService)
-		//manifestService, err := manifest.NewManifestService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), credentialService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, manifestService)
 
