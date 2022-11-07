@@ -39,19 +39,19 @@ func NewBoltKeyStoreStorage(db *storage.BoltDB, key ServiceKey) (*BoltKeyStoreSt
 }
 
 // TODO(gabe): support more robust service key operations, including rotation, and caching
-func (b BoltKeyStoreStorage) storeServiceKey(key ServiceKey) error {
+func (b *BoltKeyStoreStorage) storeServiceKey(key ServiceKey) error {
 	keyBytes, err := json.Marshal(key)
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not marshal service key")
 	}
-	if err := b.db.Write(namespace, skKey, keyBytes); err != nil {
+	if err = b.db.Write(namespace, skKey, keyBytes); err != nil {
 		return util.LoggingErrorMsg(err, "could store marshal service key")
 	}
 	return nil
 }
 
 // getAndSetServiceKey attempts to get the service key from memory, and if not available rehydrates it from the DB
-func (b BoltKeyStoreStorage) getAndSetServiceKey() ([]byte, error) {
+func (b *BoltKeyStoreStorage) getAndSetServiceKey() ([]byte, error) {
 	if len(b.serviceKey) != 0 {
 		return b.serviceKey, nil
 	}
@@ -78,7 +78,7 @@ func (b BoltKeyStoreStorage) getAndSetServiceKey() ([]byte, error) {
 	return keyBytes, nil
 }
 
-func (b BoltKeyStoreStorage) StoreKey(key StoredKey) error {
+func (b *BoltKeyStoreStorage) StoreKey(key StoredKey) error {
 	id := key.ID
 	if id == "" {
 		return util.LoggingNewError("could not store key without an ID")
@@ -104,7 +104,7 @@ func (b BoltKeyStoreStorage) StoreKey(key StoredKey) error {
 	return b.db.Write(namespace, id, encryptedKey)
 }
 
-func (b BoltKeyStoreStorage) GetKey(id string) (*StoredKey, error) {
+func (b *BoltKeyStoreStorage) GetKey(id string) (*StoredKey, error) {
 	storedKeyBytes, err := b.db.Read(namespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key details for key: %s", id)
@@ -132,7 +132,7 @@ func (b BoltKeyStoreStorage) GetKey(id string) (*StoredKey, error) {
 	return &stored, nil
 }
 
-func (b BoltKeyStoreStorage) GetKeyDetails(id string) (*KeyDetails, error) {
+func (b *BoltKeyStoreStorage) GetKeyDetails(id string) (*KeyDetails, error) {
 	stored, err := b.GetKey(id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key details for key: %s", id)
