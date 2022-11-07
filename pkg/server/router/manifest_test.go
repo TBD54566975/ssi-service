@@ -12,7 +12,6 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/tbd54566975/ssi-service/config"
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
@@ -47,13 +46,13 @@ func TestManifestRouter(t *testing.T) {
 		bolt, err := storage.NewBoltDB()
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)
-
-		serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
+		
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
-		manifestService, err := manifest.NewManifestService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), credentialService)
+		manifestService := testManifestService(tt, bolt, keyStoreService, didService, credentialService)
+		//manifestService, err := manifest.NewManifestService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), credentialService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, manifestService)
 
