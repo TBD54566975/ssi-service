@@ -32,7 +32,7 @@ func NewBoltKeyStoreStorage(db *storage.BoltDB, key ServiceKey) (*BoltKeyStoreSt
 	bolt := &BoltKeyStoreStorage{db: db, serviceKey: keyBytes}
 
 	// first, store the service key
-	if err := bolt.storeServiceKey(key); err != nil {
+	if err = bolt.storeServiceKey(key); err != nil {
 		return nil, errors.Wrap(err, "could not store service key")
 	}
 	return bolt, nil
@@ -50,6 +50,33 @@ func (b BoltKeyStoreStorage) storeServiceKey(key ServiceKey) error {
 	return nil
 }
 
+// getServiceKey attempts to get the service key from memory, and if not available rehydrates it from the DB
+func (b BoltKeyStoreStorage) getServiceKey() ([]byte, error) {
+	if len(b.serviceKey) != 0 {
+		return b.serviceKey, nil
+	}
+
+	storedKeyBytes, err := b.db.Read(namespace, skKey)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not get service key")
+	}
+	if len(storedKeyBytes) == 0 {
+		return nil, util.LoggingNewError(keyNotFoundErrMsg)
+	}
+
+	var stored ServiceKey
+	if err = json.Unmarshal(storedKeyBytes, &stored); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not unmarshal service key")
+	}
+
+	// decode service key
+	keyBytes, err := base58.Decode(stored.Base58Key)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not decode service key")
+	}
+	return keyBytes, nil
+}
+
 func (b BoltKeyStoreStorage) StoreKey(key StoredKey) error {
 	id := key.ID
 	if id == "" {
@@ -61,8 +88,14 @@ func (b BoltKeyStoreStorage) StoreKey(key StoredKey) error {
 		return util.LoggingErrorMsgf(err, "could not store key: %s", id)
 	}
 
+	// get service key
+	serviceKey, err := b.getServiceKey()
+	if err != nil {
+		return util.LoggingErrorMsgf(err, "could not get service key while storing key: %s", id)
+	}
+
 	// encrypt key before storing
-	encryptedKey, err := util.XChaCha20Poly1305Encrypt(b.serviceKey, keyBytes)
+	encryptedKey, err := util.XChaCha20Poly1305Encrypt(serviceKey, keyBytes)
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "could not encrypt key: %s", key.ID)
 	}
@@ -79,8 +112,14 @@ func (b BoltKeyStoreStorage) GetKey(id string) (*StoredKey, error) {
 		return nil, util.LoggingNewErrorf("could not find key details for key: %s", id)
 	}
 
+	// get service key
+	serviceKey, err := b.getServiceKey()
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not get service key while getting key: %s", id)
+	}
+
 	// decrypt key before unmarshaling
-	decryptedKey, err := util.XChaCha20Poly1305Decrypt(b.serviceKey, storedKeyBytes)
+	decryptedKey, err := util.XChaCha20Poly1305Decrypt(serviceKey, storedKeyBytes)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not decrypt key: %s", id)
 	}
