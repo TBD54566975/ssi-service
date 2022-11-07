@@ -13,7 +13,6 @@ const (
 	Credential Type = "credential"
 	KeyStore   Type = "keystore"
 	Manifest   Type = "manifest"
-	DWN        Type = "DWN"
 
 	StatusReady    StatusState = "ready"
 	StatusNotReady StatusState = "not_ready"
