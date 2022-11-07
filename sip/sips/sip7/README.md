@@ -159,8 +159,8 @@ Adding the ability to create and update a **`StatusList2021Credential`** that de
 ```json
 
 {
-	"issuerId":issuerId,
-	"schemaId":schemaId
+	"issuerId":"issuerId",
+	"schemaId":"schemaId"
 }
 
 ```
@@ -351,11 +351,11 @@ A new route will be created which will regenerate a StatusList2021Credential typ
 
   
 
-```go
+```json
 
 {
-	"issuerId":issuerId,
-	"schemaId":schemaId
+	"issuerId":"issuerId",
+	"schemaId":"schemaId"
 }
 
 ```
