@@ -26,6 +26,7 @@ const (
 	DIDsPrefix         = "/dids"
 	SchemasPrefix      = "/schemas"
 	CredentialsPrefix  = "/credentials"
+	PresentationPrefix = "/presentation"
 	ManifestsPrefix    = "/manifests"
 	ApplicationsPrefix = "/applications"
 	ResponsesPrefix    = "/responses"
@@ -97,6 +98,8 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 		return s.KeyStoreAPI(service)
 	case svcframework.Manifest:
 		return s.ManifestAPI(service)
+	case svcframework.Presentation:
+		return s.PresentationAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
@@ -148,6 +151,20 @@ func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), credRouter.GetCredential)
 	s.Handle(http.MethodPut, path.Join(handlerPath, VerificationPath), credRouter.VerifyCredential)
 	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), credRouter.DeleteCredential)
+	return
+}
+
+func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
+	pRouter, err := router.NewPresentationDefinitionRouter(service)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not create credential router")
+	}
+
+	handlerPath := V1Prefix + PresentationPrefix
+
+	s.Handle(http.MethodPut, handlerPath, pRouter.CreatePresentationDefinition)
+	s.Handle(http.MethodGet, handlerPath, pRouter.GetPresentationDefinition)
+	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), pRouter.DeletePresentationDefinition)
 	return
 }
 
