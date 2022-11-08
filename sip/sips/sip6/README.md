@@ -1,7 +1,3 @@
-# SIP 6 - Presentation Exchange with long running Operations
-
-Status: Draft
-
 # SIP 6: Presentation Exchange with long running Operations
 
 ```yaml
