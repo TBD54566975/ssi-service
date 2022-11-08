@@ -134,6 +134,17 @@ func (p *PresentationServiceConfig) IsEmpty() bool {
 	return reflect.DeepEqual(p, &PresentationServiceConfig{})
 }
 
+type SubmissionServiceConfig struct {
+	*BaseServiceConfig
+}
+
+func (d *SubmissionServiceConfig) IsEmpty() bool {
+	if d == nil {
+		return true
+	}
+	return reflect.DeepEqual(d, &SubmissionServiceConfig{})
+}
+
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
 // Before loading, defaults are applied on certain properties, which are overwritten if specified in the TOML file.
 func LoadConfig(path string) (*SSIServiceConfig, error) {

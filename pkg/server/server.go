@@ -28,6 +28,7 @@ const (
 	CredentialsPrefix   = "/credentials"
 	PresentationsPrefix = "/presentations"
 	DefinitionsPrefix   = "/definitions"
+	SubmissionsPrefix  = "/presentations/submissions"
 	ManifestsPrefix     = "/manifests"
 	ApplicationsPrefix  = "/applications"
 	ResponsesPrefix     = "/responses"
@@ -166,6 +167,17 @@ func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodPut, handlerPath, pRouter.CreatePresentationDefinition)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), pRouter.GetPresentationDefinition)
 	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), pRouter.DeletePresentationDefinition)
+
+	return
+}
+func (s *SSIServer) SubmissionAPI(service svcframework.Service) (err error) {
+	sRouter, err := router.NewSubmissionRouter(service)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not create submission router")
+	}
+
+	hand := V1Prefix + SubmissionsPrefix
+	s.Handle(http.MethodPut, hand, sRouter.CreateSubmission)
 	return
 }
 
