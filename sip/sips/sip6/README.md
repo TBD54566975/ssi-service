@@ -2,7 +2,7 @@
 
 Status: Draft
 
-# SIP 5: Presentation Exchange with long running Operations
+# SIP 6: Presentation Exchange with long running Operations
 
 ```yaml
 SIP: 6
