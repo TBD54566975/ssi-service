@@ -33,6 +33,7 @@ type CreateSubmissionRequest struct {
 }
 
 type CreateSubmissionResponse struct {
+	// TODO(andres): return an operation here.
 	Status     string                          `json:"status"`
 	Submission exchange.PresentationSubmission `json:"submission"`
 }
@@ -50,20 +51,30 @@ type CreateSubmissionResponse struct {
 // @Router       /v1/presentations/submissions [put]
 func (sr SubmissionRouter) CreateSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreateSubmissionRequest
+	errMsg := "Invalid create submission request"
 	if err := framework.Decode(r, &request); err != nil {
-		errMsg := "decoding"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
 	if err := framework.ValidateRequest(request); err != nil {
-		errMsg := "validating"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
 	// TODO: convert from request.PresentationJwt
-	var s exchange.PresentationSubmission
+	s := exchange.PresentationSubmission{
+		ID:           "dummy value",
+		DefinitionID: "another dummy",
+		DescriptorMap: []exchange.SubmissionDescriptor{
+			{
+				ID:         "what?",
+				Format:     "jwt_vp",
+				Path:       "ohhh yeah",
+				PathNested: nil,
+			},
+		},
+	}
 
 	req := submission.CreateSubmissionRequest{
 		Submission: s,
@@ -80,7 +91,6 @@ func (sr SubmissionRouter) CreateSubmission(ctx context.Context, w http.Response
 }
 
 type GetSubmissionResponse struct {
-	ID         string                          `json:"id"`
 	Submission exchange.PresentationSubmission `json:"submission"`
 }
 
@@ -108,9 +118,11 @@ func (sr SubmissionRouter) GetSubmission(ctx context.Context, w http.ResponseWri
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
+	if def == nil {
+		return framework.NewRequestError(fmt.Errorf("submission with id: %s", *id), http.StatusNotFound)
+	}
 
 	resp := GetSubmissionResponse{
-		ID:         def.ID,
 		Submission: def.Submission,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)

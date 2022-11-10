@@ -26,7 +26,7 @@ func NewBoltSubmissionStorage(db *storage.BoltDB) (*BoltSubmissionStorage, error
 }
 
 func (b BoltSubmissionStorage) StoreSubmission(submission StoredSubmission) error {
-	id := submission.ID
+	id := submission.Submission.ID
 	if id == "" {
 		err := errors.New("could not store submission definition without an ID")
 		logrus.WithError(err).Error()

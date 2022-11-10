@@ -72,7 +72,7 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*CreateSubmi
 		return nil, util.LoggingErrorMsg(err, "provided value is not a valid presentation definition")
 	}
 
-	storedSubmission := presentationstorage.StoredSubmission{ID: request.Submission.ID, Submission: request.Submission}
+	storedSubmission := presentationstorage.StoredSubmission{Submission: request.Submission}
 
 	if err := s.storage.StoreSubmission(storedSubmission); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store presentation")
@@ -95,7 +95,7 @@ func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResp
 		err := fmt.Errorf("presentation definition with id<%s> could not be found", request.ID)
 		return nil, util.LoggingError(err)
 	}
-	return &GetSubmissionResponse{ID: storedSubmission.ID, Submission: storedSubmission.Submission}, nil
+	return &GetSubmissionResponse{Submission: storedSubmission.Submission}, nil
 }
 
 func (s Service) DeleteSubmission(request DeleteSubmissionRequest) error {

@@ -8,7 +8,6 @@ import (
 )
 
 type StoredSubmission struct {
-	ID         string                          `json:"id"`
 	Submission exchange.PresentationSubmission `json:"submission"`
 }
 
