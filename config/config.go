@@ -54,6 +54,7 @@ type ServicesConfig struct {
 	CredentialConfig   CredentialServiceConfig   `toml:"credential,omitempty"`
 	ManifestConfig     ManifestServiceConfig     `toml:"manifest,omitempty"`
 	PresentationConfig PresentationServiceConfig `toml:"presentation,omitempty"`
+	SubmissionConfig   SubmissionServiceConfig   `toml:"submission,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
@@ -208,6 +209,9 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 			},
 			PresentationConfig: PresentationServiceConfig{
 				BaseServiceConfig: &BaseServiceConfig{Name: "presentation"},
+			},
+			SubmissionConfig: SubmissionServiceConfig{
+				BaseServiceConfig: &BaseServiceConfig{Name: "submission"},
 			},
 		}
 	} else {

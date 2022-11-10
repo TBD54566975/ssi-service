@@ -50,7 +50,7 @@ func TestSubmissionRouter_CreateSubmission(t *testing.T) {
 func createRouter(t *testing.T) *SubmissionRouter {
 	svcStorage, err := storage.NewStorage(storage.Bolt)
 	assert.NoError(t, err)
-	submissionService, err := submission.NewSubmissionService(config.PresentationServiceConfig{}, svcStorage)
+	submissionService, err := submission.NewSubmissionService(config.SubmissionServiceConfig{}, svcStorage)
 	assert.NoError(t, err)
 	router, err := NewSubmissionRouter(submissionService)
 	assert.NoError(t, err)

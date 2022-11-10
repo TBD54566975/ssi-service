@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
+	"github.com/tbd54566975/ssi-service/pkg/service/submission"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -55,6 +56,9 @@ func validateServiceConfig(config config.ServicesConfig) error {
 	if config.PresentationConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.Presentation)
 	}
+	if config.SubmissionConfig.IsEmpty() {
+		return fmt.Errorf("%s no config provided", framework.Submission)
+	}
 	return nil
 }
 
@@ -101,5 +105,10 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the presentation service")
 	}
 
-	return []framework.Service{keyStoreService, didService, schemaService, credentialService, manifestService, presentationService}, nil
+	submissionService, err := submission.NewSubmissionService(config.SubmissionConfig, storageProvider)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate the presentation service")
+	}
+
+	return []framework.Service{keyStoreService, didService, schemaService, credentialService, manifestService, presentationService, submissionService}, nil
 }

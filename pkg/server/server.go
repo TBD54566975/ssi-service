@@ -102,6 +102,8 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 		return s.ManifestAPI(service)
 	case svcframework.Presentation:
 		return s.PresentationAPI(service)
+	case svcframework.Submission:
+		return s.SubmissionAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}

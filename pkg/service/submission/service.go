@@ -10,18 +10,17 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	presentationstorage "github.com/tbd54566975/ssi-service/pkg/service/submission/storage"
+	submissionstorage "github.com/tbd54566975/ssi-service/pkg/service/submission/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 type Service struct {
-	storage presentationstorage.Storage
-	// TODO(andres) maybe change this
-	config config.PresentationServiceConfig
+	storage submissionstorage.Storage
+	config  config.SubmissionServiceConfig
 }
 
 func (s Service) Type() framework.Type {
-	return framework.Presentation
+	return framework.Submission
 }
 
 func (s Service) Status() framework.Status {
@@ -32,24 +31,24 @@ func (s Service) Status() framework.Status {
 	if !ae.IsEmpty() {
 		return framework.Status{
 			Status:  framework.StatusNotReady,
-			Message: fmt.Sprintf("presentation service is not ready: %s", ae.Error().Error()),
+			Message: fmt.Sprintf("submission service is not ready: %s", ae.Error().Error()),
 		}
 	}
 	return framework.Status{Status: framework.StatusReady}
 }
 
-func (s Service) Config() config.PresentationServiceConfig {
+func (s Service) Config() config.SubmissionServiceConfig {
 	return s.config
 }
 
-func NewSubmissionService(config config.PresentationServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	presentationStorage, err := presentationstorage.NewSubmissionStorage(s)
+func NewSubmissionService(config config.SubmissionServiceConfig, s storage.ServiceStorage) (*Service, error) {
+	submissionStorage, err := submissionstorage.NewSubmissionStorage(s)
 	if err != nil {
-		errMsg := "could not instantiate storage for the presentation definition service"
+		errMsg := "could not instantiate storage for the submission service"
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 	service := Service{
-		storage: presentationStorage,
+		storage: submissionStorage,
 		config:  config,
 	}
 	if !service.Status().IsReady() {
@@ -58,21 +57,21 @@ func NewSubmissionService(config config.PresentationServiceConfig, s storage.Ser
 	return &service, nil
 }
 
-// CreateSubmission houses the main service logic for presentation definition creation. It validates the input, and
-// produces a presentation definition value that conforms with the Submission specification.
+// CreateSubmission houses the main service logic for presentation submission creation. It validates the input, and
+// produces a presentation submission value that conforms with the Submission specification.
 func (s Service) CreateSubmission(request CreateSubmissionRequest) (*CreateSubmissionResponse, error) {
-	logrus.Debugf("creating presentation definition: %+v", request)
+	logrus.Debugf("creating presentation submission: %+v", request)
 
 	if !request.IsValid() {
-		errMsg := fmt.Sprintf("invalid create presentation definition request: %+v", request)
+		errMsg := fmt.Sprintf("invalid create presentation submission request: %+v", request)
 		return nil, util.LoggingNewError(errMsg)
 	}
 
 	if err := exchange.IsValidPresentationSubmission(request.Submission); err != nil {
-		return nil, util.LoggingErrorMsg(err, "provided value is not a valid presentation definition")
+		return nil, util.LoggingErrorMsg(err, "provided value is not a valid presentation submission")
 	}
 
-	storedSubmission := presentationstorage.StoredSubmission{Submission: request.Submission}
+	storedSubmission := submissionstorage.StoredSubmission{Submission: request.Submission}
 
 	if err := s.storage.StoreSubmission(storedSubmission); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store presentation")
@@ -84,25 +83,25 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*CreateSubmi
 }
 
 func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResponse, error) {
-	logrus.Debugf("getting presentation definition: %s", request.ID)
+	logrus.Debugf("getting presentation submission: %s", request.ID)
 
 	storedSubmission, err := s.storage.GetSubmission(request.ID)
 	if err != nil {
-		err := errors.Wrapf(err, "error getting presentation definition: %s", request.ID)
+		err := errors.Wrapf(err, "error getting presentation submission: %s", request.ID)
 		return nil, util.LoggingError(err)
 	}
 	if storedSubmission == nil {
-		err := fmt.Errorf("presentation definition with id<%s> could not be found", request.ID)
+		err := fmt.Errorf("presentation submission with id<%s> could not be found", request.ID)
 		return nil, util.LoggingError(err)
 	}
 	return &GetSubmissionResponse{Submission: storedSubmission.Submission}, nil
 }
 
 func (s Service) DeleteSubmission(request DeleteSubmissionRequest) error {
-	logrus.Debugf("deleting presentation definition: %s", request.ID)
+	logrus.Debugf("deleting presentation submission: %s", request.ID)
 
 	if err := s.storage.DeleteSubmission(request.ID); err != nil {
-		errMsg := fmt.Sprintf("could not delete presentation definition with id: %s", request.ID)
+		errMsg := fmt.Sprintf("could not delete presentation submission with id: %s", request.ID)
 		return util.LoggingErrorMsg(err, errMsg)
 	}
 

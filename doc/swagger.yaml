@@ -223,16 +223,6 @@ definitions:
     - id
     - type
     type: object
-  dwn.PublishManifestResponse:
-    properties:
-      response:
-        type: string
-      status:
-        type: integer
-    required:
-    - response
-    - status
-    type: object
   exchange.ClaimFormat:
     properties:
       jwt:
@@ -296,6 +286,10 @@ definitions:
       filter:
         $ref: '#/definitions/exchange.Filter'
       id:
+        type: string
+      intent_to_retain:
+        type: boolean
+      name:
         type: string
       optional:
         type: boolean
@@ -525,11 +519,15 @@ definitions:
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest:
     properties:
+      description:
+        type: string
       format:
         $ref: '#/definitions/exchange.ClaimFormat'
       issuerDid:
         type: string
       issuerName:
+        type: string
+      name:
         type: string
       outputDescriptors:
         items:
@@ -586,6 +584,21 @@ definitions:
         $ref: '#/definitions/schema.VCJSONSchema'
       schemaJwt:
         type: string
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateSubmissionRequest:
+    properties:
+      presentationJwt:
+        type: string
+    required:
+    - presentationJwt
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateSubmissionResponse:
+    properties:
+      status:
+        description: 'TODO(andres): return an operation here.'
+        type: string
+      submission:
+        $ref: '#/definitions/exchange.PresentationSubmission'
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationResponse:
     properties:
@@ -703,22 +716,10 @@ definitions:
           $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
         type: array
     type: object
-  github.com_tbd54566975_ssi-service_pkg_server_router.PublishManifestRequest:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetSubmissionResponse:
     properties:
-      manifestId:
-        type: string
-    required:
-    - manifestId
-    type: object
-  github.com_tbd54566975_ssi-service_pkg_server_router.PublishManifestResponse:
-    properties:
-      dwnResponse:
-        $ref: '#/definitions/dwn.PublishManifestResponse'
-      manifest:
-        $ref: '#/definitions/manifest.CredentialManifest'
-    required:
-    - dwnResponse
-    - manifest
+      submission:
+        $ref: '#/definitions/exchange.PresentationSubmission'
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse:
     properties:
@@ -813,12 +814,16 @@ definitions:
     type: object
   manifest.CredentialManifest:
     properties:
+      description:
+        type: string
       format:
         $ref: '#/definitions/exchange.ClaimFormat'
       id:
         type: string
       issuer:
         $ref: '#/definitions/manifest.Issuer'
+      name:
+        type: string
       output_descriptors:
         items:
           $ref: '#/definitions/manifest.OutputDescriptor'
@@ -952,11 +957,15 @@ definitions:
     type: object
   pkg_server_router.CreateManifestRequest:
     properties:
+      description:
+        type: string
       format:
         $ref: '#/definitions/exchange.ClaimFormat'
       issuerDid:
         type: string
       issuerName:
+        type: string
+      name:
         type: string
       outputDescriptors:
         items:
@@ -1013,6 +1022,21 @@ definitions:
         $ref: '#/definitions/schema.VCJSONSchema'
       schemaJwt:
         type: string
+    type: object
+  pkg_server_router.CreateSubmissionRequest:
+    properties:
+      presentationJwt:
+        type: string
+    required:
+    - presentationJwt
+    type: object
+  pkg_server_router.CreateSubmissionResponse:
+    properties:
+      status:
+        description: 'TODO(andres): return an operation here.'
+        type: string
+      submission:
+        $ref: '#/definitions/exchange.PresentationSubmission'
     type: object
   pkg_server_router.GetApplicationResponse:
     properties:
@@ -1130,22 +1154,10 @@ definitions:
           $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
         type: array
     type: object
-  pkg_server_router.PublishManifestRequest:
+  pkg_server_router.GetSubmissionResponse:
     properties:
-      manifestId:
-        type: string
-    required:
-    - manifestId
-    type: object
-  pkg_server_router.PublishManifestResponse:
-    properties:
-      dwnResponse:
-        $ref: '#/definitions/dwn.PublishManifestResponse'
-      manifest:
-        $ref: '#/definitions/manifest.CredentialManifest'
-    required:
-    - dwnResponse
-    - manifest
+      submission:
+        $ref: '#/definitions/exchange.PresentationSubmission'
     type: object
   pkg_server_router.ResolveDIDResponse:
     properties:
@@ -1400,7 +1412,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialsResponse'
+            $ref: '#/definitions/pkg_server_router.GetCredentialsResponse'
         "400":
           description: Bad request
           schema:
@@ -1422,14 +1434,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialRequest'
+          $ref: '#/definitions/pkg_server_router.CreateCredentialRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialResponse'
+            $ref: '#/definitions/pkg_server_router.CreateCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -1486,7 +1498,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialResponse'
+            $ref: '#/definitions/pkg_server_router.GetCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -1505,14 +1517,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialRequest'
+          $ref: '#/definitions/pkg_server_router.VerifyCredentialRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialResponse'
+            $ref: '#/definitions/pkg_server_router.VerifyCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -1655,36 +1667,6 @@ paths:
       summary: Resolve a DID
       tags:
       - DecentralizedIdentityAPI
-  /v1/dwn/manifest:
-    put:
-      consumes:
-      - application/json
-      description: Publish Manifest to DWN
-      parameters:
-      - description: request body
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/pkg_server_router.PublishManifestRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/pkg_server_router.PublishManifestResponse'
-        "400":
-          description: Bad request
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: Publish Manifest to DWN
-      tags:
-      - DWNAPI
   /v1/keys:
     put:
       consumes:
@@ -2052,14 +2034,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreatePresentationDefinitionRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreatePresentationDefinitionResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionResponse'
         "400":
           description: Bad request
           schema:
@@ -2116,7 +2098,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetPresentationDefinitionResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetPresentationDefinitionResponse'
         "400":
           description: Bad request
           schema:
@@ -2124,6 +2106,90 @@ paths:
       summary: Get PresentationDefinition
       tags:
       - PresentationDefinitionAPI
+  /v1/presentations/submission/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a submission by its ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSubmissionResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Get Submission
+      tags:
+      - SubmissionAPI
+  /v1/presentations/submissions:
+    put:
+      consumes:
+      - application/json
+      description: Creates a submission in this server ready to be reviewed.
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSubmissionRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSubmissionResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create Submission
+      tags:
+      - SubmissionAPI
+  /v1/presentations/submissions/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a submission by its ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete Submission
+      tags:
+      - SubmissionAPI
   /v1/schemas:
     get:
       consumes:

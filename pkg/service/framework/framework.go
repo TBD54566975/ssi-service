@@ -14,6 +14,7 @@ const (
 	KeyStore     Type = "keystore"
 	Manifest     Type = "manifest"
 	Presentation Type = "presentation"
+	Submission   Type = "submission"
 
 	StatusReady    StatusState = "ready"
 	StatusNotReady StatusState = "not_ready"

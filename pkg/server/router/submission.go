@@ -118,9 +118,7 @@ func (sr SubmissionRouter) GetSubmission(ctx context.Context, w http.ResponseWri
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
-	if def == nil {
-		return framework.NewRequestError(fmt.Errorf("submission with id: %s", *id), http.StatusNotFound)
-	}
+	// TODO(andres): introduce not found errors that can be mapped to 404.
 
 	resp := GetSubmissionResponse{
 		Submission: def.Submission,
