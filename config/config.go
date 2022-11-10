@@ -48,11 +48,12 @@ type ServicesConfig struct {
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
 
-	KeyStoreConfig   KeyStoreServiceConfig   `toml:"keystore,omitempty"`
-	DIDConfig        DIDServiceConfig        `toml:"did,omitempty"`
-	SchemaConfig     SchemaServiceConfig     `toml:"schema,omitempty"`
-	CredentialConfig CredentialServiceConfig `toml:"credential,omitempty"`
-	ManifestConfig   ManifestServiceConfig   `toml:"manifest,omitempty"`
+	KeyStoreConfig     KeyStoreServiceConfig     `toml:"keystore,omitempty"`
+	DIDConfig          DIDServiceConfig          `toml:"did,omitempty"`
+	SchemaConfig       SchemaServiceConfig       `toml:"schema,omitempty"`
+	CredentialConfig   CredentialServiceConfig   `toml:"credential,omitempty"`
+	ManifestConfig     ManifestServiceConfig     `toml:"manifest,omitempty"`
+	PresentationConfig PresentationServiceConfig `toml:"presentation,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
@@ -122,6 +123,17 @@ func (m *ManifestServiceConfig) IsEmpty() bool {
 	return reflect.DeepEqual(m, &ManifestServiceConfig{})
 }
 
+type PresentationServiceConfig struct {
+	*BaseServiceConfig
+}
+
+func (p *PresentationServiceConfig) IsEmpty() bool {
+	if p == nil {
+		return true
+	}
+	return reflect.DeepEqual(p, &PresentationServiceConfig{})
+}
+
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
 // Before loading, defaults are applied on certain properties, which are overwritten if specified in the TOML file.
 func LoadConfig(path string) (*SSIServiceConfig, error) {
@@ -182,6 +194,9 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 			},
 			ManifestConfig: ManifestServiceConfig{
 				BaseServiceConfig: &BaseServiceConfig{Name: "manifest"},
+			},
+			PresentationConfig: PresentationServiceConfig{
+				BaseServiceConfig: &BaseServiceConfig{Name: "presentation"},
 			},
 		}
 	} else {
