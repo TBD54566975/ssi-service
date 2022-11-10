@@ -52,25 +52,24 @@ type CreatePresentationDefinitionResponse struct {
 // @Router       /v1/presentation/definition [put]
 func (pdr PresentationDefinitionRouter) CreatePresentationDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreatePresentationDefinitionRequest
+	errMsg := "Invalid Presentation Definition Request"
 	if err := framework.Decode(r, &request); err != nil {
-		errMsg := "decoding"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
 	if err := framework.ValidateRequest(request); err != nil {
-		errMsg := "validating"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
 	def, err := definitionFromRequest(request)
 	if err != nil {
-		return framework.NewRequestError(errors.Wrap(err, "definition from request"), http.StatusBadRequest)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 	serviceResp, err := pdr.service.CreatePresentationDefinition(presentation.CreatePresentationDefinitionRequest{PresentationDefinition: *def})
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create presentation definition")
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
@@ -113,7 +112,6 @@ func definitionFromRequest(request CreatePresentationDefinitionRequest) (*exchan
 }
 
 type GetPresentationDefinitionResponse struct {
-	ID                     string                          `json:"id"`
 	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition"`
 }
 
@@ -143,7 +141,6 @@ func (pdr PresentationDefinitionRouter) GetPresentationDefinition(ctx context.Co
 	}
 
 	resp := GetPresentationDefinitionResponse{
-		ID:                     def.ID,
 		PresentationDefinition: def.PresentationDefinition,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)

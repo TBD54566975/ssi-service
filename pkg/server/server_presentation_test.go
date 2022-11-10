@@ -86,7 +86,7 @@ func TestPresentationAPI(t *testing.T) {
 
 			var resp router.GetPresentationDefinitionResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Equal(t, createdID, resp.ID)
+			assert.Equal(t, createdID, resp.PresentationDefinition.ID)
 			if diff := cmp.Diff(*pd, resp.PresentationDefinition, cmpopts.IgnoreFields(exchange.PresentationDefinition{}, "ID")); diff != "" {
 				t.Errorf("PresentationDefinition mismatch (-want +got):\n%s", diff)
 			}
