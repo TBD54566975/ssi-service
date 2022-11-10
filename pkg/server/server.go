@@ -26,6 +26,7 @@ const (
 	DIDsPrefix         = "/dids"
 	SchemasPrefix      = "/schemas"
 	CredentialsPrefix  = "/credentials"
+	StatusPrefix       = "/status"
 	ManifestsPrefix    = "/manifests"
 	ApplicationsPrefix = "/applications"
 	ResponsesPrefix    = "/responses"
@@ -144,13 +145,20 @@ func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
 		return util.LoggingErrorMsg(err, "could not create credential router")
 	}
 
-	handlerPath := V1Prefix + CredentialsPrefix
+	credentialHandlerPath := V1Prefix + CredentialsPrefix
+	statusHandlerPath := V1Prefix + CredentialsPrefix + StatusPrefix
 
-	s.Handle(http.MethodPut, handlerPath, credRouter.CreateCredential)
-	s.Handle(http.MethodGet, handlerPath, credRouter.GetCredentials)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), credRouter.GetCredential)
-	s.Handle(http.MethodPut, path.Join(handlerPath, VerificationPath), credRouter.VerifyCredential)
-	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), credRouter.DeleteCredential)
+	// Credentials
+	s.Handle(http.MethodPut, credentialHandlerPath, credRouter.CreateCredential)
+	s.Handle(http.MethodGet, credentialHandlerPath, credRouter.GetCredentials)
+	s.Handle(http.MethodGet, path.Join(credentialHandlerPath, "/:id"), credRouter.GetCredential)
+	s.Handle(http.MethodPut, path.Join(credentialHandlerPath, VerificationPath), credRouter.VerifyCredential)
+	s.Handle(http.MethodDelete, path.Join(credentialHandlerPath, "/:id"), credRouter.DeleteCredential)
+
+	// Credential Status
+	s.Handle(http.MethodGet, path.Join(credentialHandlerPath, "/:id", StatusPrefix), credRouter.GetCredentialStatus)
+	s.Handle(http.MethodPut, path.Join(credentialHandlerPath, "/:id", StatusPrefix), credRouter.UpdateCredentialStatus)
+	s.Handle(http.MethodGet, path.Join(statusHandlerPath, "/:id"), credRouter.GetCredentialStatusList)
 	return
 }
 

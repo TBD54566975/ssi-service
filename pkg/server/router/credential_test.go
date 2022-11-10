@@ -40,9 +40,16 @@ func TestCredentialRouter(t *testing.T) {
 	})
 
 	t.Run("Credential Service Test", func(tt *testing.T) {
+
 		bolt, err := storage.NewBoltDB()
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, bolt)
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -193,5 +200,98 @@ func TestCredentialRouter(t *testing.T) {
 		_, err = credService.GetCredential(credential.GetCredentialRequest{ID: cred.ID})
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), fmt.Sprintf("credential not found with id: %s", cred.ID))
+	})
+
+	t.Run("Credential Status List Test", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, bolt)
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, credService)
+
+		// check type and status
+		assert.Equal(tt, framework.Credential, credService.Type())
+		assert.Equal(tt, framework.StatusReady, credService.Status().Status)
+
+		// create a did
+		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		// create a schema
+		emailSchema := map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"email": map[string]interface{}{
+					"type": "string",
+				},
+			},
+			"required":             []interface{}{"email"},
+			"additionalProperties": false,
+		}
+
+		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
+
+		issuer := issuerDID.DID.ID
+		subject := "did:test:345"
+
+		createdCred, err := credService.CreateCredential(credential.CreateCredentialRequest{
+			Issuer:     issuer,
+			Subject:    subject,
+			JSONSchema: createdSchema.ID,
+			Data: map[string]interface{}{
+				"email": "Satoshi@Nakamoto.btc",
+			},
+			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Revocable: true,
+		})
+
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCred)
+		assert.NotEmpty(tt, createdCred.CredentialJWT)
+
+		credStatusMap, ok := createdCred.Credential.CredentialStatus.(map[string]interface{})
+		assert.True(tt, ok)
+
+		assert.Contains(tt, credStatusMap["id"], fmt.Sprintf("v1/credentials/%s/status", createdCred.ID))
+		assert.Contains(tt, credStatusMap["statusListCredential"], "v1/credentials/status")
+		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
+
+		createdCredTwo, err := credService.CreateCredential(credential.CreateCredentialRequest{
+			Issuer:     issuer,
+			Subject:    subject,
+			JSONSchema: createdSchema.ID,
+			Data: map[string]interface{}{
+				"email": "Satoshi2@Nakamoto2.btc",
+			},
+			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Revocable: true,
+		})
+
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCredTwo)
+		assert.NotEmpty(tt, createdCredTwo.CredentialJWT)
+
+		credStatusMapTwo, ok := createdCredTwo.Credential.CredentialStatus.(map[string]interface{})
+		assert.True(tt, ok)
+
+		assert.Contains(tt, credStatusMapTwo["id"], fmt.Sprintf("v1/credentials/%s/status", createdCredTwo.ID))
+		assert.Contains(tt, credStatusMapTwo["statusListCredential"], "v1/credentials/status")
+		assert.NotEmpty(tt, credStatusMapTwo["statusListIndex"])
+
 	})
 }

@@ -37,6 +37,7 @@ name = "schema"
 
 [services.credential]
 name = "credential"
+service_endpoint = "http://localhost:8080"
 
 [services.manifest]
 name = "manifest"

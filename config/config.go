@@ -102,6 +102,7 @@ func (s *SchemaServiceConfig) IsEmpty() bool {
 
 type CredentialServiceConfig struct {
 	*BaseServiceConfig
+	ServiceEndpoint string `toml:"service_endpoint"`
 	// TODO(gabe) supported key and signature types
 }
 
@@ -192,6 +193,7 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 			},
 			CredentialConfig: CredentialServiceConfig{
 				BaseServiceConfig: &BaseServiceConfig{Name: "credential"},
+				ServiceEndpoint:   "http://localhost:8000",
 			},
 			ManifestConfig: ManifestServiceConfig{
 				BaseServiceConfig: &BaseServiceConfig{Name: "manifest"},

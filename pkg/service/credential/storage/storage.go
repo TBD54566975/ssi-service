@@ -27,6 +27,7 @@ type StoredCredential struct {
 	Subject      string `json:"subject"`
 	Schema       string `json:"schema"`
 	IssuanceDate string `json:"issuanceDate"`
+	Revoked      bool   `json:"revoked"`
 }
 
 func (sc StoredCredential) IsValid() bool {
@@ -47,7 +48,15 @@ type Storage interface {
 	GetCredentialsByIssuer(issuer string) ([]StoredCredential, error)
 	GetCredentialsBySubject(subject string) ([]StoredCredential, error)
 	GetCredentialsBySchema(schema string) ([]StoredCredential, error)
+	GetCredentialsByIssuerAndSchema(issuer, schema string) ([]StoredCredential, error)
 	DeleteCredential(id string) error
+
+	StoreStatusListCredential(request StoreCredentialRequest) error
+	GetStatusListCredential(id string) (*StoredCredential, error)
+	GetStatusListCredentialsByIssuerAndSchema(issuer, schema string) ([]StoredCredential, error)
+	DeleteStatusListCredential(id string) error
+
+	GetNextStatusListRandomIndex() (int, error)
 }
 
 func NewCredentialStorage(s storage.ServiceStorage) (Storage, error) {
