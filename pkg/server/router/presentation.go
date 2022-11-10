@@ -28,7 +28,11 @@ func NewPresentationDefinitionRouter(s svcframework.Service) (*PresentationDefin
 }
 
 type CreatePresentationDefinitionRequest struct {
-	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition" validate:"required"`
+	Name                   string                           `json:"name,omitempty"`
+	Purpose                string                           `json:"purpose,omitempty"`
+	Format                 *exchange.ClaimFormat            `json:"format,omitempty" validate:"omitempty,dive"`
+	InputDescriptors       []exchange.InputDescriptor       `json:"inputDescriptors" validate:"required,dive"`
+	SubmissionRequirements []exchange.SubmissionRequirement `json:"submissionRequirements,omitempty" validate:"omitempty,dive"`
 }
 
 type CreatePresentationDefinitionResponse struct {
@@ -46,7 +50,7 @@ type CreatePresentationDefinitionResponse struct {
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/presentation/definition [put]
-func (sr PresentationDefinitionRouter) CreatePresentationDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (pdr PresentationDefinitionRouter) CreatePresentationDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreatePresentationDefinitionRequest
 	if err := framework.Decode(r, &request); err != nil {
 		errMsg := "decoding"
@@ -60,18 +64,52 @@ func (sr PresentationDefinitionRouter) CreatePresentationDefinition(ctx context.
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	req := presentation.CreatePresentationDefinitionRequest{
-		PresentationDefinition: request.PresentationDefinition,
+	def, err := definitionFromRequest(request)
+	if err != nil {
+		return framework.NewRequestError(errors.Wrap(err, "definition from request"), http.StatusBadRequest)
 	}
-	def, err := sr.service.CreatePresentationDefinition(req)
+	serviceResp, err := pdr.service.CreatePresentationDefinition(presentation.CreatePresentationDefinitionRequest{PresentationDefinition: *def})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create presentation definition")
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := CreatePresentationDefinitionResponse{def.PresentationDefinition}
+	resp := CreatePresentationDefinitionResponse{
+		PresentationDefinition: serviceResp.PresentationDefinition,
+	}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
+}
+
+func definitionFromRequest(request CreatePresentationDefinitionRequest) (*exchange.PresentationDefinition, error) {
+	b := exchange.NewPresentationDefinitionBuilder()
+	if err := b.SetName(request.Name); err != nil {
+		return nil, err
+	}
+	if err := b.SetPurpose(request.Purpose); err != nil {
+		return nil, err
+	}
+	if request.Format != nil {
+		if err := b.SetClaimFormat(*request.Format); err != nil {
+			return nil, err
+		}
+	}
+	if len(request.SubmissionRequirements) > 0 {
+		if err := b.SetSubmissionRequirements(request.SubmissionRequirements); err != nil {
+			return nil, err
+		}
+	}
+	if len(request.InputDescriptors) > 0 {
+		if err := b.SetInputDescriptors(request.InputDescriptors); err != nil {
+			return nil, err
+		}
+	}
+
+	req, err := b.Build()
+	if err != nil {
+		return nil, err
+	}
+	return req, nil
 }
 
 type GetPresentationDefinitionResponse struct {
@@ -89,7 +127,7 @@ type GetPresentationDefinitionResponse struct {
 // @Success      200  {object}  GetPresentationDefinitionResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/presentation/definition/{id} [get]
-func (sr PresentationDefinitionRouter) GetPresentationDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (pdr PresentationDefinitionRouter) GetPresentationDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get presentation without ID parameter"
@@ -97,7 +135,7 @@ func (sr PresentationDefinitionRouter) GetPresentationDefinition(ctx context.Con
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	def, err := sr.service.GetPresentationDefinition(presentation.GetPresentationDefinitionRequest{ID: *id})
+	def, err := pdr.service.GetPresentationDefinition(presentation.GetPresentationDefinitionRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get presentation with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -122,7 +160,7 @@ func (sr PresentationDefinitionRouter) GetPresentationDefinition(ctx context.Con
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/presentation/definition/{id} [delete]
-func (sr PresentationDefinitionRouter) DeletePresentationDefinition(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (pdr PresentationDefinitionRouter) DeletePresentationDefinition(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot delete a presentation without an ID parameter"
@@ -130,7 +168,7 @@ func (sr PresentationDefinitionRouter) DeletePresentationDefinition(ctx context.
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := sr.service.DeletePresentationDefinition(presentation.DeletePresentationDefinitionRequest{ID: *id}); err != nil {
+	if err := pdr.service.DeletePresentationDefinition(presentation.DeletePresentationDefinitionRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete presentation with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)

@@ -63,8 +63,7 @@ func (s Service) CreatePresentationDefinition(request CreatePresentationDefiniti
 	logrus.Debugf("creating presentation definition: %+v", request)
 
 	if !request.IsValid() {
-		errMsg := fmt.Sprintf("invalid create presentation definition request: %+v", request)
-		return nil, util.LoggingNewError(errMsg)
+		return nil, util.LoggingNewErrorf("invalid create presentation definition request: %+v", request)
 	}
 
 	if err := exchange.IsValidPresentationDefinition(request.PresentationDefinition); err != nil {
@@ -87,12 +86,10 @@ func (s Service) GetPresentationDefinition(request GetPresentationDefinitionRequ
 
 	storedPresentation, err := s.storage.GetPresentation(request.ID)
 	if err != nil {
-		err := errors.Wrapf(err, "error getting presentation definition: %s", request.ID)
-		return nil, util.LoggingError(err)
+		return nil, util.LoggingErrorMsgf(err, "error getting presentation definition: %s", request.ID)
 	}
 	if storedPresentation == nil {
-		err := fmt.Errorf("presentation definition with id<%s> could not be found", request.ID)
-		return nil, util.LoggingError(err)
+		return nil, util.LoggingNewErrorf("presentation definition with id<%s> could not be found", request.ID)
 	}
 	return &GetPresentationDefinitionResponse{ID: storedPresentation.ID, PresentationDefinition: storedPresentation.PresentationDefinition}, nil
 }
@@ -101,8 +98,7 @@ func (s Service) DeletePresentationDefinition(request DeletePresentationDefiniti
 	logrus.Debugf("deleting presentation definition: %s", request.ID)
 
 	if err := s.storage.DeletePresentation(request.ID); err != nil {
-		errMsg := fmt.Sprintf("could not delete presentation definition with id: %s", request.ID)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingNewErrorf("could not delete presentation definition with id: %s", request.ID)
 	}
 
 	return nil

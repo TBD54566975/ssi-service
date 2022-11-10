@@ -5,6 +5,8 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
@@ -18,7 +20,7 @@ import (
 
 func TestPresentationAPI(t *testing.T) {
 	builder := exchange.NewPresentationDefinitionBuilder()
-	assert.NoError(t, builder.SetInputDescriptors([]exchange.InputDescriptor{
+	inputDescriptors := []exchange.InputDescriptor{
 		{
 			ID:      "id",
 			Name:    "name",
@@ -28,7 +30,10 @@ func TestPresentationAPI(t *testing.T) {
 			},
 			Constraints: &exchange.Constraints{SubjectIsIssuer: exchange.Preferred.Ptr()},
 		},
-	}))
+	}
+	assert.NoError(t, builder.SetInputDescriptors(inputDescriptors))
+	assert.NoError(t, builder.SetName("name"))
+	assert.NoError(t, builder.SetPurpose("purpose"))
 	pd, err := builder.Build()
 	assert.NoError(t, err)
 
@@ -47,13 +52,18 @@ func TestPresentationAPI(t *testing.T) {
 	})
 
 	t.Run("Create, Get, and Delete PresentationDefinition", func(t *testing.T) {
+		var createdID string
 		{
 			// Create returns the expected PD.
 			request := router.CreatePresentationDefinitionRequest{
-				PresentationDefinition: *pd,
+				Name:                   "name",
+				Purpose:                "purpose",
+				Format:                 nil,
+				SubmissionRequirements: nil,
+				InputDescriptors:       inputDescriptors,
 			}
 			value := newRequestValue(t, request)
-			req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentation/definition", value)
+			req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/definitions", value)
 			w := httptest.NewRecorder()
 
 			err = pRouter.CreatePresentationDefinition(newRequestContext(), w, req)
@@ -61,47 +71,50 @@ func TestPresentationAPI(t *testing.T) {
 
 			var resp router.CreatePresentationDefinitionResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Equal(t, *pd, resp.PresentationDefinition)
+			if diff := cmp.Diff(*pd, resp.PresentationDefinition, cmpopts.IgnoreFields(exchange.PresentationDefinition{}, "ID")); diff != "" {
+				t.Errorf("PresentationDefinition mismatch (-want +got):\n%s", diff)
+			}
 
 			w.Flush()
+			createdID = resp.PresentationDefinition.ID
 		}
 		{
 			// We can get the PD after it's created.
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentation/definition/%s", pd.ID), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", createdID), nil)
 			w := httptest.NewRecorder()
-			assert.NoError(t, pRouter.GetPresentationDefinition(newRequestContextWithParams(map[string]string{"id": pd.ID}), w, req))
+			assert.NoError(t, pRouter.GetPresentationDefinition(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
 
 			var resp router.GetPresentationDefinitionResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Equal(t, pd.ID, resp.ID)
-			assert.Equal(t, *pd, resp.PresentationDefinition)
+			assert.Equal(t, createdID, resp.ID)
+			if diff := cmp.Diff(*pd, resp.PresentationDefinition, cmpopts.IgnoreFields(exchange.PresentationDefinition{}, "ID")); diff != "" {
+				t.Errorf("PresentationDefinition mismatch (-want +got):\n%s", diff)
+			}
 
 			w.Flush()
 		}
 		{
 			// The PD can be deleted.
-			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentation/definition/%s", pd.ID), nil)
+			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", createdID), nil)
 			w := httptest.NewRecorder()
-			assert.NoError(t, pRouter.DeletePresentationDefinition(newRequestContextWithParams(map[string]string{"id": pd.ID}), w, req))
+			assert.NoError(t, pRouter.DeletePresentationDefinition(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
 
 			w.Flush()
 		}
 		{
 			// And we cannot get the PD after it's been deleted.
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentation/definition/%s", pd.ID), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", createdID), nil)
 			w := httptest.NewRecorder()
-			assert.Error(t, pRouter.GetPresentationDefinition(newRequestContextWithParams(map[string]string{"id": pd.ID}), w, req))
+			assert.Error(t, pRouter.GetPresentationDefinition(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
 
 			w.Flush()
 		}
 	})
 
-	t.Run("Create returns error with bad definition", func(t *testing.T) {
-		request := router.CreatePresentationDefinitionRequest{
-			PresentationDefinition: exchange.PresentationDefinition{ID: "some id"},
-		}
+	t.Run("Create returns error without input descriptors", func(t *testing.T) {
+		request := router.CreatePresentationDefinitionRequest{}
 		value := newRequestValue(t, request)
-		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentation/definition", value)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/definitions", value)
 		w := httptest.NewRecorder()
 
 		err = pRouter.CreatePresentationDefinition(newRequestContext(), w, req)
@@ -110,15 +123,15 @@ func TestPresentationAPI(t *testing.T) {
 		w.Flush()
 	})
 
-	t.Run("Get without and ID returns error", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentation/definition/%s", pd.ID), nil)
+	t.Run("Get without an ID returns error", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
 		assert.Error(t, pRouter.GetPresentationDefinition(newRequestContext(), w, req))
 		w.Flush()
 	})
 
 	t.Run("Delete without an ID returns error", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentation/definition/%s", pd.ID), nil)
+		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
 		assert.Error(t, pRouter.DeletePresentationDefinition(newRequestContext(), w, req))
 		w.Flush()

@@ -48,11 +48,11 @@ type ServicesConfig struct {
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
 
-	KeyStoreConfig     KeyStoreServiceConfig   `toml:"keystore,omitempty"`
-	DIDConfig          DIDServiceConfig        `toml:"did,omitempty"`
-	SchemaConfig       SchemaServiceConfig     `toml:"schema,omitempty"`
-	CredentialConfig   CredentialServiceConfig `toml:"credential,omitempty"`
-	ManifestConfig     ManifestServiceConfig   `toml:"manifest,omitempty"`
+	KeyStoreConfig     KeyStoreServiceConfig     `toml:"keystore,omitempty"`
+	DIDConfig          DIDServiceConfig          `toml:"did,omitempty"`
+	SchemaConfig       SchemaServiceConfig       `toml:"schema,omitempty"`
+	CredentialConfig   CredentialServiceConfig   `toml:"credential,omitempty"`
+	ManifestConfig     ManifestServiceConfig     `toml:"manifest,omitempty"`
 	PresentationConfig PresentationServiceConfig `toml:"presentation,omitempty"`
 }
 
@@ -127,11 +127,11 @@ type PresentationServiceConfig struct {
 	*BaseServiceConfig
 }
 
-func (d *PresentationServiceConfig) IsEmpty() bool {
-	if d == nil {
+func (p *PresentationServiceConfig) IsEmpty() bool {
+	if p == nil {
 		return true
 	}
-	return reflect.DeepEqual(d, &PresentationServiceConfig{})
+	return reflect.DeepEqual(p, &PresentationServiceConfig{})
 }
 
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.

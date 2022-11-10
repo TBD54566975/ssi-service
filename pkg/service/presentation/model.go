@@ -5,20 +5,16 @@ import (
 	"github.com/TBD54566975/ssi-sdk/util"
 )
 
-const (
-	Version1 string = "1.0"
-)
-
 type CreatePresentationDefinitionRequest struct {
-	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition" validate:"required"`
+	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition" validate:"required"`
 }
 
-func (csr CreatePresentationDefinitionRequest) IsValid() bool {
-	return util.IsValidStruct(csr) == nil
+func (cpr CreatePresentationDefinitionRequest) IsValid() bool {
+	return util.IsValidStruct(cpr) == nil
 }
 
 type CreatePresentationDefinitionResponse struct {
-	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition"`
+	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
 }
 
 type GetPresentationDefinitionRequest struct {
@@ -27,7 +23,7 @@ type GetPresentationDefinitionRequest struct {
 
 type GetPresentationDefinitionResponse struct {
 	ID                     string                          `json:"id"`
-	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition"`
+	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
 }
 
 type DeletePresentationDefinitionRequest struct {

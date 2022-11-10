@@ -20,18 +20,19 @@ import (
 )
 
 const (
-	HealthPrefix       = "/health"
-	ReadinessPrefix    = "/readiness"
-	V1Prefix           = "/v1"
-	DIDsPrefix         = "/dids"
-	SchemasPrefix      = "/schemas"
-	CredentialsPrefix  = "/credentials"
-	PresentationPrefix = "/presentation"
-	ManifestsPrefix    = "/manifests"
-	ApplicationsPrefix = "/applications"
-	ResponsesPrefix    = "/responses"
-	KeyStorePrefix     = "/keys"
-	VerificationPath   = "/verification"
+	HealthPrefix        = "/health"
+	ReadinessPrefix     = "/readiness"
+	V1Prefix            = "/v1"
+	DIDsPrefix          = "/dids"
+	SchemasPrefix       = "/schemas"
+	CredentialsPrefix   = "/credentials"
+	PresentationsPrefix = "/presentations"
+	DefinitionsPrefix   = "/definitions"
+	ManifestsPrefix     = "/manifests"
+	ApplicationsPrefix  = "/applications"
+	ResponsesPrefix     = "/responses"
+	KeyStorePrefix      = "/keys"
+	VerificationPath    = "/verification"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -160,7 +161,7 @@ func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
 		return util.LoggingErrorMsg(err, "could not create credential router")
 	}
 
-	handlerPath := V1Prefix + PresentationPrefix
+	handlerPath := V1Prefix + PresentationsPrefix + DefinitionsPrefix
 
 	s.Handle(http.MethodPut, handlerPath, pRouter.CreatePresentationDefinition)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), pRouter.GetPresentationDefinition)
