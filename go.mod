@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221104161850-6dad71a33c46
+	github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221107213258-be34aab7630c
 	github.com/ardanlabs/conf v1.5.0
 	github.com/dimfeld/httptreemux/v5 v5.5.0
 	github.com/go-playground/locales v0.14.0

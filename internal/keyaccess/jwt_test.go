@@ -10,6 +10,58 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestJWKKeyAccessForEachKeyType(t *testing.T) {
+	testKID := "test-kid"
+	testData := map[string]interface{}{
+		"test": "data",
+	}
+
+	tests := []struct {
+		kt crypto.KeyType
+	}{
+		{
+			kt: crypto.Ed25519,
+		},
+		{
+			kt: crypto.SECP256k1,
+		},
+		{
+			kt: crypto.P256,
+		},
+		{
+			kt: crypto.P384,
+		},
+		{
+			kt: crypto.P521,
+		},
+		{
+			kt: crypto.RSA,
+		},
+	}
+	for _, test := range tests {
+		t.Run(string(test.kt), func(t *testing.T) {
+			// generate a new key based on the given key type
+			_, privKey, err := crypto.GenerateKeyByKeyType(test.kt)
+			assert.NoError(t, err)
+			assert.NotEmpty(t, privKey)
+
+			// create key access with the key
+			ka, err := NewJWKKeyAccess(testKID, privKey)
+			assert.NoError(t, err)
+			assert.NotEmpty(t, ka)
+
+			// sign
+			token, err := ka.Sign(testData)
+			assert.NoError(t, err)
+			assert.NotEmpty(t, token)
+
+			// verify
+			err = ka.Verify(*token)
+			assert.NoError(t, err)
+		})
+	}
+}
+
 func TestCreateJWKKeyAccess(t *testing.T) {
 	t.Run("Create a Key Access object - Happy Path", func(tt *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()

@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
-	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 
@@ -131,9 +130,7 @@ func TestStoreAndGetKey(t *testing.T) {
 	assert.Equal(t, privKey, keyResponse.Key)
 
 	// make sure can create a signer properly
-	gotJWK, err := jwk.New(keyResponse.Key)
-	assert.NoError(t, err)
-	signer, err := crypto.NewJWTSigner("kid", gotJWK)
+	signer, err := crypto.NewJWTSigner("kid", keyResponse.Key)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, signer)
 }

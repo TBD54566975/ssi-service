@@ -41,7 +41,3 @@ service_endpoint = "http://localhost:8080"
 
 [services.manifest]
 name = "manifest"
-
-[services.dwn]
-name = "dwn"
-dwn_endpoint = "http://localhost:4321"
