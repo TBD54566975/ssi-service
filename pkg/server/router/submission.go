@@ -153,3 +153,50 @@ func (sr SubmissionRouter) DeleteSubmission(ctx context.Context, w http.Response
 
 	return framework.Respond(ctx, w, nil, http.StatusOK)
 }
+
+type ListSubmissionRequest struct {
+	Filter string `json:"filter"`
+}
+
+type ListSubmissionResponse struct {
+	Submissions []exchange.PresentationSubmission `json:"submissions"`
+}
+
+// ListSubmissions godoc
+// @Summary      List Submissions
+// @Description  List existing submissions according to a filtering query.
+// @Tags         SubmissionAPI
+// @Accept       json
+// @Produce      json
+// @Param        request  body      ListSubmissionRequest  true  "request body"
+// @Success      200  {object}  ListSubmissionResponse
+// @Failure      400  {string}  string  "Bad request"
+// @Failure      500  {string}  string  "Internal server error"
+// @Router       /v1/presentations/submissions [get]
+func (sr SubmissionRouter) ListSubmissions(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return framework.Respond(ctx, w, nil, http.StatusOK)
+}
+
+type ReviewSubmissionRequest struct {
+	Approved bool   `json:"approved" validate:"required"`
+	Reason   string `json:"reason"`
+}
+
+type ReviewSubmissionResponse struct {
+	Submission exchange.PresentationSubmission `json:"submission"`
+}
+
+// ReviewSubmission godoc
+// @Summary      Review a pending submissions
+// @Description  Reviews a pending submission. After this method is called, the operation with `id==presentations/submissions/{submission_id}` will be updated with the result of this invocation.
+// @Tags         SubmissionAPI
+// @Accept       json
+// @Produce      json
+// @Param        request  body      ReviewSubmissionRequest  true  "request body"
+// @Success      200  {object}  ReviewSubmissionResponse
+// @Failure      400  {string}  string  "Bad request"
+// @Failure      500  {string}  string  "Internal server error"
+// @Router       /v1/presentations/submissions [get]
+func (sr SubmissionRouter) ReviewSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return framework.Respond(ctx, w, nil, http.StatusOK)
+}

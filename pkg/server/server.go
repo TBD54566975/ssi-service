@@ -28,7 +28,7 @@ const (
 	CredentialsPrefix   = "/credentials"
 	PresentationsPrefix = "/presentations"
 	DefinitionsPrefix   = "/definitions"
-	SubmissionsPrefix  = "/presentations/submissions"
+	SubmissionsPrefix   = "/submissions"
 	ManifestsPrefix     = "/manifests"
 	ApplicationsPrefix  = "/applications"
 	ResponsesPrefix     = "/responses"
@@ -178,8 +178,11 @@ func (s *SSIServer) SubmissionAPI(service svcframework.Service) (err error) {
 		return util.LoggingErrorMsg(err, "could not create submission router")
 	}
 
-	hand := V1Prefix + SubmissionsPrefix
-	s.Handle(http.MethodPut, hand, sRouter.CreateSubmission)
+	handlerPath := V1Prefix + PresentationsPrefix + SubmissionsPrefix
+	s.Handle(http.MethodPut, handlerPath, sRouter.CreateSubmission)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), sRouter.GetSubmission)
+	s.Handle(http.MethodGet, handlerPath, sRouter.ListSubmissions)
+	s.Handle(http.MethodPut, path.Join(handlerPath, "/:id", "/review"), sRouter.ReviewSubmission)
 	return
 }
 

@@ -549,10 +549,22 @@ definitions:
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionRequest:
     properties:
-      presentation_definition:
-        $ref: '#/definitions/exchange.PresentationDefinition'
+      format:
+        $ref: '#/definitions/exchange.ClaimFormat'
+      inputDescriptors:
+        items:
+          $ref: '#/definitions/exchange.InputDescriptor'
+        type: array
+      name:
+        type: string
+      purpose:
+        type: string
+      submissionRequirements:
+        items:
+          $ref: '#/definitions/exchange.SubmissionRequirement'
+        type: array
     required:
-    - presentation_definition
+    - inputDescriptors
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionResponse:
     properties:
@@ -683,8 +695,6 @@ definitions:
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.GetPresentationDefinitionResponse:
     properties:
-      id:
-        type: string
       presentation_definition:
         $ref: '#/definitions/exchange.PresentationDefinition'
     type: object
@@ -721,6 +731,18 @@ definitions:
       submission:
         $ref: '#/definitions/exchange.PresentationSubmission'
     type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.ListSubmissionRequest:
+    properties:
+      filter:
+        type: string
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.ListSubmissionResponse:
+    properties:
+      submissions:
+        items:
+          $ref: '#/definitions/exchange.PresentationSubmission'
+        type: array
+    type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse:
     properties:
       didDocument:
@@ -729,6 +751,20 @@ definitions:
         $ref: '#/definitions/did.DIDDocumentMetadata'
       didResolutionMetadata:
         $ref: '#/definitions/did.DIDResolutionMetadata'
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.ReviewSubmissionRequest:
+    properties:
+      approved:
+        type: boolean
+      reason:
+        type: string
+    required:
+    - approved
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.ReviewSubmissionResponse:
+    properties:
+      submission:
+        $ref: '#/definitions/exchange.PresentationSubmission'
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest:
     properties:
@@ -987,10 +1023,22 @@ definitions:
     type: object
   pkg_server_router.CreatePresentationDefinitionRequest:
     properties:
-      presentation_definition:
-        $ref: '#/definitions/exchange.PresentationDefinition'
+      format:
+        $ref: '#/definitions/exchange.ClaimFormat'
+      inputDescriptors:
+        items:
+          $ref: '#/definitions/exchange.InputDescriptor'
+        type: array
+      name:
+        type: string
+      purpose:
+        type: string
+      submissionRequirements:
+        items:
+          $ref: '#/definitions/exchange.SubmissionRequirement'
+        type: array
     required:
-    - presentation_definition
+    - inputDescriptors
     type: object
   pkg_server_router.CreatePresentationDefinitionResponse:
     properties:
@@ -1121,8 +1169,6 @@ definitions:
     type: object
   pkg_server_router.GetPresentationDefinitionResponse:
     properties:
-      id:
-        type: string
       presentation_definition:
         $ref: '#/definitions/exchange.PresentationDefinition'
     type: object
@@ -1159,6 +1205,18 @@ definitions:
       submission:
         $ref: '#/definitions/exchange.PresentationSubmission'
     type: object
+  pkg_server_router.ListSubmissionRequest:
+    properties:
+      filter:
+        type: string
+    type: object
+  pkg_server_router.ListSubmissionResponse:
+    properties:
+      submissions:
+        items:
+          $ref: '#/definitions/exchange.PresentationSubmission'
+        type: array
+    type: object
   pkg_server_router.ResolveDIDResponse:
     properties:
       didDocument:
@@ -1167,6 +1225,20 @@ definitions:
         $ref: '#/definitions/did.DIDDocumentMetadata'
       didResolutionMetadata:
         $ref: '#/definitions/did.DIDResolutionMetadata'
+    type: object
+  pkg_server_router.ReviewSubmissionRequest:
+    properties:
+      approved:
+        type: boolean
+      reason:
+        type: string
+    required:
+    - approved
+    type: object
+  pkg_server_router.ReviewSubmissionResponse:
+    properties:
+      submission:
+        $ref: '#/definitions/exchange.PresentationSubmission'
     type: object
   pkg_server_router.StoreKeyRequest:
     properties:
@@ -2034,14 +2106,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionRequest'
+          $ref: '#/definitions/pkg_server_router.CreatePresentationDefinitionRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionResponse'
+            $ref: '#/definitions/pkg_server_router.CreatePresentationDefinitionResponse'
         "400":
           description: Bad request
           schema:
@@ -2098,7 +2170,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetPresentationDefinitionResponse'
+            $ref: '#/definitions/pkg_server_router.GetPresentationDefinitionResponse'
         "400":
           description: Bad request
           schema:
@@ -2132,6 +2204,37 @@ paths:
       tags:
       - SubmissionAPI
   /v1/presentations/submissions:
+    get:
+      consumes:
+      - application/json
+      description: Reviews a pending submission. After this method is called, the
+        operation with `id==presentations/submissions/{submission_id}` will be updated
+        with the result of this invocation.
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.ReviewSubmissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.ReviewSubmissionResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Review a pending submissions
+      tags:
+      - SubmissionAPI
     put:
       consumes:
       - application/json
@@ -2201,7 +2304,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemasResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemasResponse'
         "500":
           description: Internal server error
           schema:
@@ -2219,14 +2322,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest'
+          $ref: '#/definitions/pkg_server_router.CreateSchemaRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.CreateSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -2283,7 +2386,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -2302,14 +2405,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaRequest'
+          $ref: '#/definitions/pkg_server_router.VerifySchemaRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaResponse'
+            $ref: '#/definitions/pkg_server_router.VerifySchemaResponse'
         "400":
           description: Bad request
           schema:
