@@ -604,14 +604,6 @@ definitions:
     required:
     - presentationJwt
     type: object
-  github.com_tbd54566975_ssi-service_pkg_server_router.CreateSubmissionResponse:
-    properties:
-      status:
-        description: 'TODO(andres): return an operation here.'
-        type: string
-      submission:
-        $ref: '#/definitions/exchange.PresentationSubmission'
-    type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationResponse:
     properties:
       application:
@@ -742,6 +734,22 @@ definitions:
         items:
           $ref: '#/definitions/exchange.PresentationSubmission'
         type: array
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.Operation:
+    properties:
+      bool:
+        type: boolean
+      id:
+        type: string
+      result:
+        $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.OperationResult'
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.OperationResult:
+    properties:
+      error:
+        type: string
+      response:
+        $ref: '#/definitions/exchange.PresentationSubmission'
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse:
     properties:
@@ -1078,14 +1086,6 @@ definitions:
     required:
     - presentationJwt
     type: object
-  pkg_server_router.CreateSubmissionResponse:
-    properties:
-      status:
-        description: 'TODO(andres): return an operation here.'
-        type: string
-      submission:
-        $ref: '#/definitions/exchange.PresentationSubmission'
-    type: object
   pkg_server_router.GetApplicationResponse:
     properties:
       application:
@@ -1216,6 +1216,22 @@ definitions:
         items:
           $ref: '#/definitions/exchange.PresentationSubmission'
         type: array
+    type: object
+  pkg_server_router.Operation:
+    properties:
+      bool:
+        type: boolean
+      id:
+        type: string
+      result:
+        $ref: '#/definitions/pkg_server_router.OperationResult'
+    type: object
+  pkg_server_router.OperationResult:
+    properties:
+      error:
+        type: string
+      response:
+        $ref: '#/definitions/exchange.PresentationSubmission'
     type: object
   pkg_server_router.ResolveDIDResponse:
     properties:
@@ -1438,7 +1454,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetHealthCheckResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse'
       summary: Health Check
       tags:
       - HealthCheck
@@ -1615,7 +1631,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDMethodsResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDMethodsResponse'
       summary: Get DID Methods
       tags:
       - DecentralizedIdentityAPI
@@ -1636,7 +1652,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDsByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDsByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -1654,7 +1670,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -1666,7 +1682,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.CreateDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -1689,7 +1705,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -1706,7 +1722,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -1731,7 +1747,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse'
+            $ref: '#/definitions/pkg_server_router.ResolveDIDResponse'
         "400":
           description: Bad request
           schema:
@@ -2195,7 +2211,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSubmissionResponse'
+            $ref: '#/definitions/pkg_server_router.GetSubmissionResponse'
         "400":
           description: Bad request
           schema:
@@ -2216,14 +2232,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.ReviewSubmissionRequest'
+          $ref: '#/definitions/pkg_server_router.ReviewSubmissionRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.ReviewSubmissionResponse'
+            $ref: '#/definitions/pkg_server_router.ReviewSubmissionResponse'
         "400":
           description: Bad request
           schema:
@@ -2245,14 +2261,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSubmissionRequest'
+          $ref: '#/definitions/pkg_server_router.CreateSubmissionRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSubmissionResponse'
+            $ref: '#/definitions/pkg_server_router.Operation'
         "400":
           description: Bad request
           schema:
@@ -2275,7 +2291,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetSchemasResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemasResponse'
         "500":
           description: Internal server error
           schema:
@@ -2293,14 +2309,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateSchemaRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateSchemaResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -2357,7 +2373,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -2376,14 +2392,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.VerifySchemaRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.VerifySchemaResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaResponse'
         "400":
           description: Bad request
           schema:
