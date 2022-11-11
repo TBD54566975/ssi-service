@@ -6,12 +6,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	storage2 "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
+	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 type Service struct {
-	storage storage2.Storage
+	storage opstorage.Storage
 }
 
 func (s Service) Type() framework.Type {
@@ -33,7 +33,7 @@ func (s Service) Status() framework.Status {
 }
 
 func NewOperationService(s storage.ServiceStorage) (*Service, error) {
-	opStorage, err := storage2.NewOperationStorage(s)
+	opStorage, err := opstorage.NewOperationStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "creating operation storage")
 	}
