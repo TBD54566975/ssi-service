@@ -61,12 +61,3 @@ func (b BoltSubmissionStorage) GetSubmission(id string) (*StoredSubmission, erro
 	}
 	return &stored, nil
 }
-
-func (b BoltSubmissionStorage) DeleteSubmission(id string) error {
-	if err := b.db.Delete(namespace, id); err != nil {
-		errMsg := fmt.Sprintf("could not delete submission definition: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return errors.Wrapf(err, errMsg)
-	}
-	return nil
-}

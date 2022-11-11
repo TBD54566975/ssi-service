@@ -86,34 +86,6 @@ func TestSubmissionRouter_GetSubmission(t *testing.T) {
 	})
 }
 
-func TestSubmissionRouter_DeleteSubmission(t *testing.T) {
-	router := createRouter(t)
-	t.Run("error when id is not present", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodDelete, "http://localhost/v1/presentations/submissions", strings.NewReader(""))
-		w := httptest.NewRecorder()
-		assert.Error(t, router.DeleteSubmission(newRequestContextWithParams(map[string]string{"id": ""}), w, r))
-	})
-
-	t.Run("get returns empty after deletion", func(t *testing.T) {
-		t.Cleanup(func() {
-			_ = os.Remove(storage.DBFile)
-		})
-		jsonRequestString := `{"presentationJwt":"hello"}`
-		r := httptest.NewRequest(http.MethodPut, "http://localhost/v1/presentations/submissions", strings.NewReader(jsonRequestString))
-		w := httptest.NewRecorder()
-		assert.NoError(t, router.CreateSubmission(newRequestContext(), w, r))
-		r = httptest.NewRequest(http.MethodGet, "http://localhost/v1/presentations/submissions", strings.NewReader(""))
-		assert.NoError(t, router.GetSubmission(newRequestContextWithParams(map[string]string{"id": "dummy value"}), w, r))
-
-		r = httptest.NewRequest(http.MethodDelete, "http://localhost/v1/presentations/submissions", strings.NewReader(""))
-		assert.NoError(t, router.DeleteSubmission(newRequestContextWithParams(map[string]string{"id": "dummy value"}), w, r))
-
-		r = httptest.NewRequest(http.MethodGet, "http://localhost/v1/presentations/submissions", strings.NewReader(""))
-		w = httptest.NewRecorder()
-		assert.Error(t, router.GetSubmission(newRequestContextWithParams(map[string]string{"id": "dummy value"}), w, r))
-	})
-}
-
 // construct a context value as expected by our handler
 func newRequestContext() context.Context {
 	return context.WithValue(context.Background(), framework.KeyRequestState, &framework.RequestState{

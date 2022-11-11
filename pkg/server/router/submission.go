@@ -126,34 +126,6 @@ func (sr SubmissionRouter) GetSubmission(ctx context.Context, w http.ResponseWri
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
-// DeleteSubmission godoc
-// @Summary      Delete Submission
-// @Description  Delete a submission by its ID
-// @Tags         SubmissionAPI
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "ID"
-// @Success      200  {string}  string  "OK"
-// @Failure      400  {string}  string  "Bad request"
-// @Failure      500  {string}  string  "Internal server error"
-// @Router       /v1/presentations/submissions/{id} [delete]
-func (sr SubmissionRouter) DeleteSubmission(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	id := framework.GetParam(ctx, IDParam)
-	if id == nil {
-		errMsg := "cannot delete a submission without an ID parameter"
-		logrus.Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
-	}
-
-	if err := sr.service.DeleteSubmission(submission.DeleteSubmissionRequest{ID: *id}); err != nil {
-		errMsg := fmt.Sprintf("could not delete submission with id: %s", *id)
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
-	}
-
-	return framework.Respond(ctx, w, nil, http.StatusOK)
-}
-
 type ListSubmissionRequest struct {
 	Filter string `json:"filter"`
 }

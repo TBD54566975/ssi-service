@@ -14,7 +14,6 @@ type StoredSubmission struct {
 type Storage interface {
 	StoreSubmission(schema StoredSubmission) error
 	GetSubmission(id string) (*StoredSubmission, error)
-	DeleteSubmission(id string) error
 }
 
 // NewSubmissionStorage finds the submission storage impl for a given ServiceStorage value

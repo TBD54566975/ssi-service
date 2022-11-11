@@ -1438,7 +1438,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse'
+            $ref: '#/definitions/pkg_server_router.GetHealthCheckResponse'
       summary: Health Check
       tags:
       - HealthCheck
@@ -1484,7 +1484,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetCredentialsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialsResponse'
         "400":
           description: Bad request
           schema:
@@ -1506,14 +1506,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateCredentialRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateCredentialResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -1570,7 +1570,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetCredentialResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -1589,14 +1589,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.VerifyCredentialRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.VerifyCredentialResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -1750,7 +1750,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.StoreKeyRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest'
       produces:
       - application/json
       responses:
@@ -1784,7 +1784,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetKeyDetailsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetKeyDetailsResponse'
         "400":
           description: Bad request
           schema:
@@ -1817,7 +1817,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestsResponse'
+            $ref: '#/definitions/pkg_server_router.GetManifestsResponse'
         "400":
           description: Bad request
           schema:
@@ -1839,14 +1839,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest'
+          $ref: '#/definitions/pkg_server_router.CreateManifestRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestResponse'
+            $ref: '#/definitions/pkg_server_router.CreateManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -1903,7 +1903,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestResponse'
+            $ref: '#/definitions/pkg_server_router.GetManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -1923,7 +1923,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationsResponse'
+            $ref: '#/definitions/pkg_server_router.GetApplicationsResponse'
         "400":
           description: Bad request
           schema:
@@ -1946,14 +1946,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationRequest'
+          $ref: '#/definitions/pkg_server_router.SubmitApplicationRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationResponse'
+            $ref: '#/definitions/pkg_server_router.SubmitApplicationResponse'
         "400":
           description: Bad request
           schema:
@@ -2010,7 +2010,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationResponse'
+            $ref: '#/definitions/pkg_server_router.GetApplicationResponse'
         "400":
           description: Bad request
           schema:
@@ -2030,7 +2030,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetResponsesResponse'
+            $ref: '#/definitions/pkg_server_router.GetResponsesResponse'
         "400":
           description: Bad request
           schema:
@@ -2087,7 +2087,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetResponseResponse'
+            $ref: '#/definitions/pkg_server_router.GetResponseResponse'
         "400":
           description: Bad request
           schema:
@@ -2106,14 +2106,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreatePresentationDefinitionRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreatePresentationDefinitionResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionResponse'
         "400":
           description: Bad request
           schema:
@@ -2170,7 +2170,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetPresentationDefinitionResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetPresentationDefinitionResponse'
         "400":
           description: Bad request
           schema:
@@ -2262,35 +2262,6 @@ paths:
           schema:
             type: string
       summary: Create Submission
-      tags:
-      - SubmissionAPI
-  /v1/presentations/submissions/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete a submission by its ID
-      parameters:
-      - description: ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: string
-        "400":
-          description: Bad request
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: Delete Submission
       tags:
       - SubmissionAPI
   /v1/schemas:

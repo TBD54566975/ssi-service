@@ -96,14 +96,3 @@ func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResp
 	}
 	return &GetSubmissionResponse{Submission: storedSubmission.Submission}, nil
 }
-
-func (s Service) DeleteSubmission(request DeleteSubmissionRequest) error {
-	logrus.Debugf("deleting presentation submission: %s", request.ID)
-
-	if err := s.storage.DeleteSubmission(request.ID); err != nil {
-		errMsg := fmt.Sprintf("could not delete presentation submission with id: %s", request.ID)
-		return util.LoggingErrorMsg(err, errMsg)
-	}
-
-	return nil
-}
