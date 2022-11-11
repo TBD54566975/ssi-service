@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -32,10 +31,15 @@ type CreateSubmissionRequest struct {
 	PresentationJwt keyaccess.JWT `json:"presentationJwt" validate:"required"`
 }
 
-type CreateSubmissionResponse struct {
-	// TODO(andres): return an operation here.
-	Status     string                          `json:"status"`
-	Submission exchange.PresentationSubmission `json:"submission"`
+type Operation struct {
+	ID     string          `json:"id"`
+	Done   bool            `json:"bool"`
+	Result OperationResult `json:"result"`
+}
+
+type OperationResult struct {
+	Error    string                          `json:"error"`
+	Response exchange.PresentationSubmission `json:"response"`
 }
 
 // CreateSubmission godoc
@@ -45,48 +49,12 @@ type CreateSubmissionResponse struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body      CreateSubmissionRequest  true  "request body"
-// @Success      201      {object}  CreateSubmissionResponse
+// @Success      201      {object}  Operation
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/presentations/submissions [put]
 func (sr SubmissionRouter) CreateSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	var request CreateSubmissionRequest
-	errMsg := "Invalid create submission request"
-	if err := framework.Decode(r, &request); err != nil {
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
-	}
-
-	if err := framework.ValidateRequest(request); err != nil {
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
-	}
-
-	// TODO: convert from request.PresentationJwt
-	s := exchange.PresentationSubmission{
-		ID:           "dummy value",
-		DefinitionID: "another dummy",
-		DescriptorMap: []exchange.SubmissionDescriptor{
-			{
-				ID:         "what?",
-				Format:     "jwt_vp",
-				Path:       "ohhh yeah",
-				PathNested: nil,
-			},
-		},
-	}
-
-	req := submission.CreateSubmissionRequest{
-		Submission: s,
-	}
-	sub, err := sr.service.CreateSubmission(req)
-	if err != nil {
-		errMsg := fmt.Sprintf("could not create submission definition")
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
-	}
-
-	resp := CreateSubmissionResponse{Status: "pending", Submission: sub.Submission}
+	resp := Operation{}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
@@ -105,24 +73,7 @@ type GetSubmissionResponse struct {
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/presentations/submission/{id} [get]
 func (sr SubmissionRouter) GetSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	id := framework.GetParam(ctx, IDParam)
-	if id == nil {
-		errMsg := "cannot get submission without ID parameter"
-		logrus.Error(errMsg)
-		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
-	}
-
-	def, err := sr.service.GetSubmission(submission.GetSubmissionRequest{ID: *id})
-	if err != nil {
-		errMsg := fmt.Sprintf("could not get submission with id: %s", *id)
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
-	}
-	// TODO(andres): introduce not found errors that can be mapped to 404.
-
-	resp := GetSubmissionResponse{
-		Submission: def.Submission,
-	}
+	resp := GetSubmissionResponse{}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
@@ -146,7 +97,7 @@ type ListSubmissionResponse struct {
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/presentations/submissions [get]
 func (sr SubmissionRouter) ListSubmissions(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return framework.Respond(ctx, w, nil, http.StatusOK)
+	return framework.Respond(ctx, w, ListSubmissionRequest{}, http.StatusOK)
 }
 
 type ReviewSubmissionRequest struct {
@@ -170,5 +121,5 @@ type ReviewSubmissionResponse struct {
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/presentations/submissions [get]
 func (sr SubmissionRouter) ReviewSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return framework.Respond(ctx, w, nil, http.StatusOK)
+	return framework.Respond(ctx, w, ReviewSubmissionResponse{}, http.StatusOK)
 }

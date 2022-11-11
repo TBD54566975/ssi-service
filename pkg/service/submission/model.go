@@ -5,10 +5,6 @@ import (
 	"github.com/TBD54566975/ssi-sdk/util"
 )
 
-const (
-	Version1 string = "1.0"
-)
-
 type CreateSubmissionRequest struct {
 	Submission exchange.PresentationSubmission `json:"submission" validate:"required"`
 }
