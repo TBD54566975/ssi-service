@@ -43,8 +43,11 @@ jobs:
     - name: Install Mage
       run: go install github.com/magefile/mage
 
-    - name: Generate newest spec
-      run: mage spec
+    - name: Update to latest spec
+      shell: bash
+      run: |
+        export PATH=$PATH:$(go env GOPATH)/bin
+        mage spec
 
     - name: Push merge OpenAPI Spec
       run: |
