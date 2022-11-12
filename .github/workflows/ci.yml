@@ -46,7 +46,8 @@ jobs:
     - name: Update to latest spec
       shell: bash
       run: |
-        export PATH=$PATH:$HOME/go/bin
+        export PATH=$PATH:$(go env GOPATH)/bin
+        go install github.com/swaggo/swag/cmd/swag@latest
         mage spec
 
     - name: Push merge OpenAPI Spec
