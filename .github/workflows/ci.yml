@@ -51,8 +51,8 @@ jobs:
         mage spec
 
     - name: Push generated spec file
-      uses: actions/checkout@v3
-      run: |
+    - uses: actions/checkout@v3
+    - run: |
         git config --global user.name "${GITHUB_ACTOR}"
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
         if (git diff --shortstat | grep '[0-9]'); then \
