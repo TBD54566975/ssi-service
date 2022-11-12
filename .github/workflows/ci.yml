@@ -31,7 +31,8 @@ jobs:
   generate-spec:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - name: fetch history
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
 
@@ -51,7 +52,7 @@ jobs:
         mage spec
 
     - name: Push generated spec file
-    - uses: actions/checkout@v3
+      uses: actions/checkout@v3
     - run: |
         git config --global user.name "${GITHUB_ACTOR}"
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
