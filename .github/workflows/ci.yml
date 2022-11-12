@@ -46,7 +46,7 @@ jobs:
     - name: Update to latest spec
       shell: bash
       run: |
-        export PATH=$PATH:$(go env GOPATH)/bin
+        PATH=$PATH:$HOME/go/bin
         mage spec
 
     - name: Push merge OpenAPI Spec
