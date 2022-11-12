@@ -50,7 +50,7 @@ jobs:
         go install github.com/swaggo/swag/cmd/swag@v1.8.2
         mage spec
 
-    - name: Push merge OpenAPI Spec
+    - name: Push generated spec file
     - uses: actions/checkout@v3
       run: |
         git config --global user.name "${GITHUB_ACTOR}"
