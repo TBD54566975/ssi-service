@@ -49,6 +49,8 @@ jobs:
         export PATH=$PATH:$(go env GOPATH)/bin
         go install github.com/swaggo/swag/cmd/swag@latest
         mage spec
+      env:
+        GO111MODULE: off
 
     - name: Push merge OpenAPI Spec
       run: |
