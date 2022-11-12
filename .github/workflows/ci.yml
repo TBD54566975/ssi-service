@@ -33,7 +33,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        ref: ${{ github.event.pull_request.head.sha }}
+        fetch-depth: 0
+        ref: ${{ github.event.pull_request.head.ref }}
 
     - name: Set up Go
       uses: actions/setup-go@v3
