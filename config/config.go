@@ -56,7 +56,6 @@ type ServicesConfig struct {
 	CredentialConfig   CredentialServiceConfig   `toml:"credential,omitempty"`
 	ManifestConfig     ManifestServiceConfig     `toml:"manifest,omitempty"`
 	PresentationConfig PresentationServiceConfig `toml:"presentation,omitempty"`
-	SubmissionConfig   SubmissionServiceConfig   `toml:"submission,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
@@ -139,17 +138,6 @@ func (p *PresentationServiceConfig) IsEmpty() bool {
 	return reflect.DeepEqual(p, &PresentationServiceConfig{})
 }
 
-type SubmissionServiceConfig struct {
-	*BaseServiceConfig
-}
-
-func (d *SubmissionServiceConfig) IsEmpty() bool {
-	if d == nil {
-		return true
-	}
-	return reflect.DeepEqual(d, &SubmissionServiceConfig{})
-}
-
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
 // Before loading, defaults are applied on certain properties, which are overwritten if specified in the TOML file.
 func LoadConfig(path string) (*SSIServiceConfig, error) {
@@ -214,9 +202,6 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 			},
 			PresentationConfig: PresentationServiceConfig{
 				BaseServiceConfig: &BaseServiceConfig{Name: "presentation"},
-			},
-			SubmissionConfig: SubmissionServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "submission"},
 			},
 		}
 	} else {
