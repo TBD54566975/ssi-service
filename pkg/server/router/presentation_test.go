@@ -13,14 +13,14 @@ import (
 
 func TestPresentationDefinitionRouter(t *testing.T) {
 	t.Run("Nil Service", func(tt *testing.T) {
-		pdRouter, err := NewPresentationDefinitionRouter(nil)
+		pdRouter, err := NewPresentationRouter(nil)
 		assert.Error(tt, err)
 		assert.Empty(tt, pdRouter)
 		assert.Contains(tt, err.Error(), "service cannot be nil")
 	})
 
 	t.Run("Bad Service", func(tt *testing.T) {
-		pdRouter, err := NewPresentationDefinitionRouter(&testService{})
+		pdRouter, err := NewPresentationRouter(&testService{})
 		assert.Error(tt, err)
 		assert.Empty(tt, pdRouter)
 		assert.Contains(tt, err.Error(), "could not create presentation router with service type: test")
@@ -35,7 +35,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 	s, err := storage.NewStorage(storage.Bolt)
 	assert.NoError(t, err)
 
-	service, err := presentation.NewPresentationDefinitionService(config.PresentationServiceConfig{}, s)
+	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s)
 	assert.NoError(t, err)
 
 	t.Run("Create returns the created definition", func(t *testing.T) {
