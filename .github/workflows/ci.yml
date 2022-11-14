@@ -26,7 +26,44 @@ jobs:
         run: go install github.com/magefile/mage
 
       - name: Check Vulnerabilities
-        run: mage -v vuln     
+        run: mage -v vuln
+
+  generate-spec:
+    runs-on: ubuntu-latest
+    steps:
+    - name: fetch history
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up Go
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.19.2
+
+    - name: Install Mage
+      run: go install github.com/magefile/mage
+
+    - name: Update to latest spec
+      shell: bash
+      run: |
+        export PATH=$PATH:$(go env GOPATH)/bin
+        go install github.com/swaggo/swag/cmd/swag@v1.8.2
+        mage spec
+
+    - name: Push generated spec file
+      uses: actions/checkout@v3
+    - run: |
+        git config --global user.name "${GITHUB_ACTOR}"
+        git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+        if (git diff --shortstat | grep '[0-9]'); then \
+          git add .; \
+          git commit -m "gen OpenAPI Spec by github-actions"; \
+          git push
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build:
     runs-on: ubuntu-latest
     steps:
