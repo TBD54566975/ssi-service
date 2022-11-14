@@ -102,8 +102,6 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 		return s.ManifestAPI(service)
 	case svcframework.Presentation:
 		return s.PresentationAPI(service)
-	case svcframework.Submission:
-		return s.SubmissionAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
@@ -170,19 +168,12 @@ func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), pRouter.GetPresentationDefinition)
 	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), pRouter.DeletePresentationDefinition)
 
-	return
-}
-func (s *SSIServer) SubmissionAPI(service svcframework.Service) (err error) {
-	sRouter, err := router.NewSubmissionRouter(service)
-	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create submission router")
-	}
+	submissionHandlerPath := V1Prefix + PresentationsPrefix + SubmissionsPrefix
 
-	handlerPath := V1Prefix + PresentationsPrefix + SubmissionsPrefix
-	s.Handle(http.MethodPut, handlerPath, sRouter.CreateSubmission)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), sRouter.GetSubmission)
-	s.Handle(http.MethodGet, handlerPath, sRouter.ListSubmissions)
-	s.Handle(http.MethodPut, path.Join(handlerPath, "/:id", "/review"), sRouter.ReviewSubmission)
+	s.Handle(http.MethodPut, submissionHandlerPath, pRouter.CreateSubmission)
+	s.Handle(http.MethodGet, path.Join(submissionHandlerPath, "/:id"), pRouter.GetSubmission)
+	s.Handle(http.MethodGet, submissionHandlerPath, pRouter.ListSubmissions)
+	s.Handle(http.MethodPut, path.Join(submissionHandlerPath, "/:id", "/review"), pRouter.ReviewSubmission)
 	return
 }
 
