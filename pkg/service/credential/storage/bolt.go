@@ -1,13 +1,12 @@
 package storage
 
 import (
-	"crypto/rand"
 	"fmt"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"math/big"
+	"math/rand"
 	"strings"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -18,6 +17,13 @@ const (
 	credentialNamespace           = "credential"
 	statusListCredentialNamespace = "status-list-credential"
 	statusListIndexNamespace      = "status-list-index"
+
+	fakeKey              = "fake-key"
+	statusListIndexesKey = "status-list-indexes"
+	currentListIndexKey  = "current-list-index"
+
+	// A a minimum revocation bitString length of 131,072, or 16KB uncompressed
+	bitStringLength = 8 * 1024 * 16
 
 	credentialNotFoundErrMsg = "credential not found"
 )
@@ -37,38 +43,30 @@ func NewBoltCredentialStorage(db *storage.BoltDB) (*BoltCredentialStorage, error
 
 	// TODO: (Neal) there is a current bug with our Bolt implementation where if we do a GET without anything in the db it will throw an error
 	// Doing initial writes and then deleting will "warm up" our database and when we do a GET after that it will not crash and return empty list
-	err := db.Write(credentialNamespace, "fake-key", nil)
-	if err != nil {
+	// https://github.com/TBD54566975/ssi-service/issues/176
+	if err := db.Write(credentialNamespace, fakeKey, nil); err != nil {
 		return nil, util.LoggingErrorMsg(err, "problem writing status initial write to db")
-	}
 
-	err = db.Delete(credentialNamespace, "fake-key")
-	if err != nil {
+	}
+	if err := db.Delete(credentialNamespace, fakeKey); err != nil {
 		return nil, util.LoggingErrorMsg(err, "problem with initial delete to db")
 	}
 
-	err = db.Write(statusListCredentialNamespace, "fake-key", nil)
-	if err != nil {
+	if err := db.Write(statusListCredentialNamespace, fakeKey, nil); err != nil {
 		return nil, util.LoggingErrorMsg(err, "problem writing status initial write to db")
 	}
 
-	err = db.Delete(statusListCredentialNamespace, "fake-key")
-	if err != nil {
+	if err := db.Delete(statusListCredentialNamespace, fakeKey); err != nil {
 		return nil, util.LoggingErrorMsg(err, "problem with initial delete to db")
 	}
 
-	randUniqueList, err := randomUniqueNum(128000)
-	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "problem with generating random unique list")
-	}
-
+	randUniqueList := randomUniqueNum(bitStringLength)
 	uniqueNumBytes, err := json.Marshal(randUniqueList)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not marshal random unique numbers")
 	}
 
-	err = db.Write(statusListIndexNamespace, "status-list-indexes", uniqueNumBytes)
-	if err != nil {
+	if err := db.Write(statusListIndexNamespace, statusListIndexesKey, uniqueNumBytes); err != nil {
 		return nil, util.LoggingErrorMsg(err, "problem writing status list indexes to db")
 	}
 
@@ -77,8 +75,7 @@ func NewBoltCredentialStorage(db *storage.BoltDB) (*BoltCredentialStorage, error
 		return nil, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
 	}
 
-	err = db.Write(statusListIndexNamespace, "current-list-index", statusListIndexBytes)
-	if err != nil {
+	if err := db.Write(statusListIndexNamespace, currentListIndexKey, statusListIndexBytes); err != nil {
 		return nil, util.LoggingErrorMsg(err, "problem writing current list index to db")
 	}
 
@@ -87,9 +84,9 @@ func NewBoltCredentialStorage(db *storage.BoltDB) (*BoltCredentialStorage, error
 
 func (b BoltCredentialStorage) GetNextStatusListRandomIndex() (int, error) {
 
-	gotUniqueNumBytes, err := b.db.Read(statusListIndexNamespace, "status-list-indexes")
+	gotUniqueNumBytes, err := b.db.Read(statusListIndexNamespace, statusListIndexesKey)
 	if err != nil {
-		return -1, util.LoggingErrorMsgf(err, "could not get unique numbers from db")
+		return -1, util.LoggingErrorMsgf(err, "reading status list")
 	}
 
 	if len(gotUniqueNumBytes) == 0 {
@@ -101,7 +98,7 @@ func (b BoltCredentialStorage) GetNextStatusListRandomIndex() (int, error) {
 		return -1, util.LoggingErrorMsgf(err, "could not unmarshal unique numbers")
 	}
 
-	gotCurrentListIndexBytes, err := b.db.Read(statusListIndexNamespace, "current-list-index")
+	gotCurrentListIndexBytes, err := b.db.Read(statusListIndexNamespace, currentListIndexKey)
 	if err != nil {
 		return -1, util.LoggingErrorMsgf(err, "could not get list index")
 	}
@@ -116,8 +113,7 @@ func (b BoltCredentialStorage) GetNextStatusListRandomIndex() (int, error) {
 		return -1, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
 	}
 
-	err = b.db.Write(statusListIndexNamespace, "current-list-index", statusListIndexBytes)
-	if err != nil {
+	if err := b.db.Write(statusListIndexNamespace, currentListIndexKey, statusListIndexBytes); err != nil {
 		return -1, util.LoggingErrorMsg(err, "problem writing current list index to db")
 	}
 
@@ -227,7 +223,7 @@ func (b BoltCredentialStorage) getCredential(id string, namespace string) (*Stor
 // so this is not much of a concern.
 
 // GetCredentialsByIssuer gets all credentials stored with a prefix key containing the issuer value
-// The method is greedy, meaning if multiple values are found...and some fail during processing, we will
+// The method is greedy, meaning if multiple values are found and some fail during processing, we will
 // return only the successful values and log an error for the failures.
 func (b BoltCredentialStorage) GetCredentialsByIssuer(issuer string) ([]StoredCredential, error) {
 	keys, err := b.db.ReadAllKeys(credentialNamespace)
@@ -449,28 +445,16 @@ func createPrefixKey(id, issuer, subject, schema string) string {
 	return strings.Join([]string{id, "is:" + issuer, "su:" + subject, "sc:" + schema}, "-")
 }
 
-func randomUniqueNum(count int) ([]int, error) {
-	arr := make([]int, 0)
+func randomUniqueNum(count int) []int {
+	randomNumbers := make([]int, 0, count)
 
 	for i := 1; i <= count; i++ {
-		arr = append(arr, i)
+		randomNumbers = append(randomNumbers, i)
 	}
 
-	result := make([]int, 0)
+	rand.Shuffle(len(randomNumbers), func(i, j int) {
+		randomNumbers[i], randomNumbers[j] = randomNumbers[j], randomNumbers[i]
+	})
 
-	for i := 1; i <= count; i++ {
-		random := big.NewInt(0)
-		if (count - i) > 0 {
-			randomBigInt, err := rand.Int(rand.Reader, big.NewInt(int64(count-i)))
-			if err != nil {
-				return nil, util.LoggingErrorMsgf(err, "could not create random number")
-			}
-			random = randomBigInt
-		}
-
-		result = append(result, arr[random.Int64()])
-		arr[random.Int64()] = arr[count-i]
-	}
-
-	return result, nil
+	return randomNumbers
 }

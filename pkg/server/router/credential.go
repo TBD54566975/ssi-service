@@ -224,13 +224,12 @@ func (cr CredentialRouter) GetCredentialStatusList(ctx context.Context, w http.R
 }
 
 type UpdateCredentialStatusRequest struct {
-	ID      string `json:"id" validate:"required"`
-	Revoked bool   `json:"revoked" validate:"required"`
+	Revoked bool `json:"revoked" validate:"required"`
 }
 
-func (c UpdateCredentialStatusRequest) ToServiceRequest() credential.UpdateCredentialStatusRequest {
+func (c UpdateCredentialStatusRequest) ToServiceRequest(id string) credential.UpdateCredentialStatusRequest {
 	return credential.UpdateCredentialStatusRequest{
-		ID:      c.ID,
+		ID:      id,
 		Revoked: c.Revoked,
 	}
 }
@@ -251,6 +250,13 @@ type UpdateCredentialStatusResponse struct {
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/credentials/{id}/status [put]
 func (cr CredentialRouter) UpdateCredentialStatus(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		errMsg := "cannot get credential without ID parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
 	var request UpdateCredentialStatusRequest
 	invalidCreateCredentialRequest := "invalid update credential request"
 	if err := framework.Decode(r, &request); err != nil {
@@ -265,7 +271,7 @@ func (cr CredentialRouter) UpdateCredentialStatus(ctx context.Context, w http.Re
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	req := request.ToServiceRequest()
+	req := request.ToServiceRequest(*id)
 	gotCredential, err := cr.service.UpdateCredentialStatus(req)
 
 	if err != nil {

@@ -862,11 +862,11 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, false, credStatusResponse.Revoked)
 
 		// good request number one
-		updateCredStatusRequest := router.UpdateCredentialStatusRequest{ID: resp.Credential.ID, Revoked: true}
+		updateCredStatusRequest := router.UpdateCredentialStatusRequest{Revoked: true}
 
 		requestValue = newRequestValue(tt, updateCredStatusRequest)
 		req = httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s/status", resp.Credential.ID), requestValue)
-		err = credRouter.UpdateCredentialStatus(newRequestContext(), w, req)
+		err = credRouter.UpdateCredentialStatus(newRequestContextWithParams(map[string]string{"id": resp.Credential.ID}), w, req)
 		assert.NoError(tt, err)
 
 		var credStatusUpdateResponse = router.UpdateCredentialStatusResponse{}

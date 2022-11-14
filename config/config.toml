@@ -19,6 +19,7 @@ log_level = "debug"
 
 [services]
 storage = "bolt"
+service_endpoint = "http://localhost:8000"
 
 # per-service configuration
 [services.keystore]
@@ -35,7 +36,6 @@ name = "schema"
 
 [services.credential]
 name = "credential"
-service_endpoint = "http://localhost:8080"
 
 [services.manifest]
 name = "manifest"

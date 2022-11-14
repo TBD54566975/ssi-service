@@ -64,12 +64,14 @@ type GetCredentialStatusResponse struct {
 }
 
 type UpdateCredentialStatusRequest struct {
-	ID      string `json:"id" validate:"required"`
-	Revoked bool   `json:"revoked" validate:"required"`
+	ID        string `json:"id" validate:"required"`
+	Revoked   bool   `json:"revoked" validate:"required"`
+	Suspended bool   `json:"suspended" validate:"required"`
 }
 
 type UpdateCredentialStatusResponse struct {
-	Revoked bool `json:"revoked" validate:"required"`
+	Revoked   bool `json:"revoked" validate:"required"`
+	Suspended bool `json:"suspended" validate:"required"`
 }
 
 type GetCredentialStatusListRequest struct {
