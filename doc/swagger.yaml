@@ -223,16 +223,6 @@ definitions:
     - id
     - type
     type: object
-  dwn.PublishManifestResponse:
-    properties:
-      response:
-        type: string
-      status:
-        type: integer
-    required:
-    - response
-    - status
-    type: object
   exchange.ClaimFormat:
     properties:
       jwt:
@@ -296,6 +286,10 @@ definitions:
       filter:
         $ref: '#/definitions/exchange.Filter'
       id:
+        type: string
+      intent_to_retain:
+        type: boolean
+      name:
         type: string
       optional:
         type: boolean
@@ -525,11 +519,15 @@ definitions:
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest:
     properties:
+      description:
+        type: string
       format:
         $ref: '#/definitions/exchange.ClaimFormat'
       issuerDid:
         type: string
       issuerName:
+        type: string
+      name:
         type: string
       outputDescriptors:
         items:
@@ -551,10 +549,22 @@ definitions:
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionRequest:
     properties:
-      presentation_definition:
-        $ref: '#/definitions/exchange.PresentationDefinition'
+      format:
+        $ref: '#/definitions/exchange.ClaimFormat'
+      inputDescriptors:
+        items:
+          $ref: '#/definitions/exchange.InputDescriptor'
+        type: array
+      name:
+        type: string
+      purpose:
+        type: string
+      submissionRequirements:
+        items:
+          $ref: '#/definitions/exchange.SubmissionRequirement'
+        type: array
     required:
-    - presentation_definition
+    - inputDescriptors
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionResponse:
     properties:
@@ -668,10 +678,22 @@ definitions:
           $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestResponse'
         type: array
     type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetOperationsRequest:
+    properties:
+      filter:
+        type: string
+      parent:
+        type: string
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetOperationsResponse:
+    properties:
+      operations:
+        items:
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.Operation'
+        type: array
+    type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.GetPresentationDefinitionResponse:
     properties:
-      id:
-        type: string
       presentation_definition:
         $ref: '#/definitions/exchange.PresentationDefinition'
     type: object
@@ -703,22 +725,7 @@ definitions:
           $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
         type: array
     type: object
-  github.com_tbd54566975_ssi-service_pkg_server_router.PublishManifestRequest:
-    properties:
-      manifestId:
-        type: string
-    required:
-    - manifestId
-    type: object
-  github.com_tbd54566975_ssi-service_pkg_server_router.PublishManifestResponse:
-    properties:
-      dwnResponse:
-        $ref: '#/definitions/dwn.PublishManifestResponse'
-      manifest:
-        $ref: '#/definitions/manifest.CredentialManifest'
-    required:
-    - dwnResponse
-    - manifest
+  github.com_tbd54566975_ssi-service_pkg_server_router.Operation:
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse:
     properties:
@@ -813,12 +820,16 @@ definitions:
     type: object
   manifest.CredentialManifest:
     properties:
+      description:
+        type: string
       format:
         $ref: '#/definitions/exchange.ClaimFormat'
       id:
         type: string
       issuer:
         $ref: '#/definitions/manifest.Issuer'
+      name:
+        type: string
       output_descriptors:
         items:
           $ref: '#/definitions/manifest.OutputDescriptor'
@@ -952,11 +963,15 @@ definitions:
     type: object
   pkg_server_router.CreateManifestRequest:
     properties:
+      description:
+        type: string
       format:
         $ref: '#/definitions/exchange.ClaimFormat'
       issuerDid:
         type: string
       issuerName:
+        type: string
+      name:
         type: string
       outputDescriptors:
         items:
@@ -978,10 +993,22 @@ definitions:
     type: object
   pkg_server_router.CreatePresentationDefinitionRequest:
     properties:
-      presentation_definition:
-        $ref: '#/definitions/exchange.PresentationDefinition'
+      format:
+        $ref: '#/definitions/exchange.ClaimFormat'
+      inputDescriptors:
+        items:
+          $ref: '#/definitions/exchange.InputDescriptor'
+        type: array
+      name:
+        type: string
+      purpose:
+        type: string
+      submissionRequirements:
+        items:
+          $ref: '#/definitions/exchange.SubmissionRequirement'
+        type: array
     required:
-    - presentation_definition
+    - inputDescriptors
     type: object
   pkg_server_router.CreatePresentationDefinitionResponse:
     properties:
@@ -1095,10 +1122,22 @@ definitions:
           $ref: '#/definitions/pkg_server_router.GetManifestResponse'
         type: array
     type: object
+  pkg_server_router.GetOperationsRequest:
+    properties:
+      filter:
+        type: string
+      parent:
+        type: string
+    type: object
+  pkg_server_router.GetOperationsResponse:
+    properties:
+      operations:
+        items:
+          $ref: '#/definitions/pkg_server_router.Operation'
+        type: array
+    type: object
   pkg_server_router.GetPresentationDefinitionResponse:
     properties:
-      id:
-        type: string
       presentation_definition:
         $ref: '#/definitions/exchange.PresentationDefinition'
     type: object
@@ -1130,22 +1169,7 @@ definitions:
           $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
         type: array
     type: object
-  pkg_server_router.PublishManifestRequest:
-    properties:
-      manifestId:
-        type: string
-    required:
-    - manifestId
-    type: object
-  pkg_server_router.PublishManifestResponse:
-    properties:
-      dwnResponse:
-        $ref: '#/definitions/dwn.PublishManifestResponse'
-      manifest:
-        $ref: '#/definitions/manifest.CredentialManifest'
-    required:
-    - dwnResponse
-    - manifest
+  pkg_server_router.Operation:
     type: object
   pkg_server_router.ResolveDIDResponse:
     properties:
@@ -1354,7 +1378,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse'
+            $ref: '#/definitions/pkg_server_router.GetHealthCheckResponse'
       summary: Health Check
       tags:
       - HealthCheck
@@ -1655,36 +1679,6 @@ paths:
       summary: Resolve a DID
       tags:
       - DecentralizedIdentityAPI
-  /v1/dwn/manifest:
-    put:
-      consumes:
-      - application/json
-      description: Publish Manifest to DWN
-      parameters:
-      - description: request body
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/pkg_server_router.PublishManifestRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            $ref: '#/definitions/pkg_server_router.PublishManifestResponse'
-        "400":
-          description: Bad request
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: Publish Manifest to DWN
-      tags:
-      - DWNAPI
   /v1/keys:
     put:
       consumes:
@@ -1696,7 +1690,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.StoreKeyRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest'
       produces:
       - application/json
       responses:
@@ -1730,7 +1724,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetKeyDetailsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetKeyDetailsResponse'
         "400":
           description: Bad request
           schema:
@@ -2041,6 +2035,64 @@ paths:
       summary: Get response
       tags:
       - ResponseAPI
+  /v1/operations:
+    get:
+      consumes:
+      - application/json
+      description: Cancels an ongoing operation, if possible.
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.GetOperationsResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Cancel an ongoing operation
+      tags:
+      - OperationAPI
+  /v1/operations/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get operation by its ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.Operation'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get an operation
+      tags:
+      - OperationAPI
   /v1/presentation/definition:
     put:
       consumes:
@@ -2052,14 +2104,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreatePresentationDefinitionRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreatePresentationDefinitionResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionResponse'
         "400":
           description: Bad request
           schema:
@@ -2116,7 +2168,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetPresentationDefinitionResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetPresentationDefinitionResponse'
         "400":
           description: Bad request
           schema:

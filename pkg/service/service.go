@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -101,5 +102,10 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the presentation service")
 	}
 
-	return []framework.Service{keyStoreService, didService, schemaService, credentialService, manifestService, presentationService}, nil
+	operationService, err := operation.NewOperationService(storageProvider)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate the operation service")
+	}
+
+	return []framework.Service{keyStoreService, didService, schemaService, credentialService, manifestService, presentationService, operationService}, nil
 }
