@@ -176,7 +176,7 @@ func (pr PresentationRouter) DeletePresentationDefinition(ctx context.Context, w
 }
 
 type CreateSubmissionRequest struct {
-	PresentationJwt keyaccess.JWT `json:"presentationJwt" validate:"required"`
+	SubmissionJWT keyaccess.JWT `json:"submissionJwt" validate:"required"`
 }
 
 type Operation struct {
