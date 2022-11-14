@@ -24,9 +24,6 @@ func NewOperationRouter(s svcframework.Service) (*OperationRouter, error) {
 	return &OperationRouter{service: service}, nil
 }
 
-type Operation struct {
-}
-
 // GetOperation godoc
 // @Summary      Get an operation
 // @Description  Get operation by its ID
