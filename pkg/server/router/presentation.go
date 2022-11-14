@@ -181,13 +181,13 @@ type CreateSubmissionRequest struct {
 
 type Operation struct {
 	ID     string          `json:"id"`
-	Done   bool            `json:"bool"`
-	Result OperationResult `json:"result"`
+	Done   bool            `json:"done"`
+	Result OperationResult `json:"result,omitempty"`
 }
 
 type OperationResult struct {
-	Error    string                          `json:"error"`
-	Response exchange.PresentationSubmission `json:"response"`
+	Error    string                          `json:"error,omitempty"`
+	Response exchange.PresentationSubmission `json:"response,omitempty"`
 }
 
 // CreateSubmission godoc
@@ -245,7 +245,7 @@ type ListSubmissionResponse struct {
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/presentations/submissions [get]
 func (pr PresentationRouter) ListSubmissions(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return framework.Respond(ctx, w, ListSubmissionRequest{}, http.StatusOK)
+	return framework.Respond(ctx, w, ListSubmissionResponse{}, http.StatusOK)
 }
 
 type ReviewSubmissionRequest struct {
