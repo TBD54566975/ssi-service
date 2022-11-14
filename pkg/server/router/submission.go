@@ -54,7 +54,7 @@ type OperationResult struct {
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/presentations/submissions [put]
 func (sr SubmissionRouter) CreateSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	resp := Operation{}
+	var resp Operation
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
@@ -73,7 +73,7 @@ type GetSubmissionResponse struct {
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/presentations/submission/{id} [get]
 func (sr SubmissionRouter) GetSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	resp := GetSubmissionResponse{}
+	var resp GetSubmissionResponse
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
