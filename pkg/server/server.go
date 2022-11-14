@@ -23,6 +23,7 @@ const (
 	HealthPrefix        = "/health"
 	ReadinessPrefix     = "/readiness"
 	V1Prefix            = "/v1"
+	OperationPrefix     = "/operations"
 	DIDsPrefix          = "/dids"
 	SchemasPrefix       = "/schemas"
 	CredentialsPrefix   = "/credentials"
@@ -102,6 +103,8 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 		return s.ManifestAPI(service)
 	case svcframework.Presentation:
 		return s.PresentationAPI(service)
+	case svcframework.Operation:
+		return s.OperationAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
@@ -187,6 +190,21 @@ func (s *SSIServer) KeyStoreAPI(service svcframework.Service) (err error) {
 
 	s.Handle(http.MethodPut, handlerPath, keyStoreRouter.StoreKey)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), keyStoreRouter.GetKeyDetails)
+	return
+}
+
+func (s *SSIServer) OperationAPI(service svcframework.Service) (err error) {
+	operationRouter, err := router.NewOperationRouter(service)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "creating operation router")
+	}
+
+	handlerPath := V1Prefix + OperationPrefix
+
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), operationRouter.GetOperation)
+	s.Handle(http.MethodGet, handlerPath, operationRouter.GetOperations)
+	s.Handle(http.MethodPut, path.Join(handlerPath, "/:id/cancel"), operationRouter.CancelOperation)
+
 	return
 }
 
