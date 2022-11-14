@@ -43,8 +43,7 @@ func (s Service) Config() config.PresentationServiceConfig {
 func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage) (*Service, error) {
 	presentationStorage, err := presentationstorage.NewPresentationStorage(s)
 	if err != nil {
-		errMsg := "could not instantiate storage for the presentation definition service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the presentation definition service")
 	}
 	service := Service{
 		storage: presentationStorage,
@@ -109,8 +108,7 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*CreateSubmi
 	logrus.Debugf("creating presentation submission: %+v", request)
 
 	if !request.IsValid() {
-		errMsg := fmt.Sprintf("invalid create presentation submission request: %+v", request)
-		return nil, util.LoggingNewError(errMsg)
+		return nil, util.LoggingNewErrorf("invalid create presentation submission request: %+v", request)
 	}
 
 	if err := exchange.IsValidPresentationSubmission(request.Submission); err != nil {
@@ -133,12 +131,10 @@ func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResp
 
 	storedSubmission, err := s.storage.GetSubmission(request.ID)
 	if err != nil {
-		err := errors.Wrapf(err, "error getting presentation submission: %s", request.ID)
-		return nil, util.LoggingError(err)
+		return nil, util.LoggingNewErrorf("error getting presentation submission: %s", request.ID)
 	}
 	if storedSubmission == nil {
-		err := fmt.Errorf("presentation submission with id<%s> could not be found", request.ID)
-		return nil, util.LoggingError(err)
+		return nil, util.LoggingNewErrorf("presentation submission with id<%s> could not be found", request.ID)
 	}
 	return &GetSubmissionResponse{Submission: storedSubmission.Submission}, nil
 }

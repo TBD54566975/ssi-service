@@ -43,7 +43,7 @@ func TestPresentationAPI(t *testing.T) {
 	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s)
 	assert.NoError(t, err)
 
-	pRouter, err := router.NewPresentationDefinitionRouter(service)
+	pRouter, err := router.NewPresentationRouter(service)
 	assert.NoError(t, err)
 
 	t.Cleanup(func() {

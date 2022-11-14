@@ -160,7 +160,7 @@ func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
 }
 
 func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
-	pRouter, err := router.NewPresentationDefinitionRouter(service)
+	pRouter, err := router.NewPresentationRouter(service)
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not create credential router")
 	}

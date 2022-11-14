@@ -17,7 +17,7 @@ type PresentationRouter struct {
 	service *presentation.Service
 }
 
-func NewPresentationDefinitionRouter(s svcframework.Service) (*PresentationRouter, error) {
+func NewPresentationRouter(s svcframework.Service) (*PresentationRouter, error) {
 	if s == nil {
 		return nil, errors.New("service cannot be nil")
 	}
