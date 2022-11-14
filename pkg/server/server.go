@@ -20,18 +20,21 @@ import (
 )
 
 const (
-	HealthPrefix       = "/health"
-	ReadinessPrefix    = "/readiness"
-	V1Prefix           = "/v1"
-	DIDsPrefix         = "/dids"
-	SchemasPrefix      = "/schemas"
-	CredentialsPrefix  = "/credentials"
-	StatusPrefix       = "/status"
-	ManifestsPrefix    = "/manifests"
-	ApplicationsPrefix = "/applications"
-	ResponsesPrefix    = "/responses"
-	KeyStorePrefix     = "/keys"
-	VerificationPath   = "/verification"
+	HealthPrefix        = "/health"
+	ReadinessPrefix     = "/readiness"
+	V1Prefix            = "/v1"
+	OperationPrefix     = "/operations"
+	DIDsPrefix          = "/dids"
+	SchemasPrefix       = "/schemas"
+	CredentialsPrefix   = "/credentials"
+	StatusPrefix        = "/status"
+	PresentationsPrefix = "/presentations"
+	DefinitionsPrefix   = "/definitions"
+	ManifestsPrefix     = "/manifests"
+	ApplicationsPrefix  = "/applications"
+	ResponsesPrefix     = "/responses"
+	KeyStorePrefix      = "/keys"
+	VerificationPath    = "/verification"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -98,6 +101,10 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 		return s.KeyStoreAPI(service)
 	case svcframework.Manifest:
 		return s.ManifestAPI(service)
+	case svcframework.Presentation:
+		return s.PresentationAPI(service)
+	case svcframework.Operation:
+		return s.OperationAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
@@ -159,6 +166,20 @@ func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
 	return
 }
 
+func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
+	pRouter, err := router.NewPresentationDefinitionRouter(service)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not create credential router")
+	}
+
+	handlerPath := V1Prefix + PresentationsPrefix + DefinitionsPrefix
+
+	s.Handle(http.MethodPut, handlerPath, pRouter.CreatePresentationDefinition)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), pRouter.GetPresentationDefinition)
+	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), pRouter.DeletePresentationDefinition)
+	return
+}
+
 func (s *SSIServer) KeyStoreAPI(service svcframework.Service) (err error) {
 	keyStoreRouter, err := router.NewKeyStoreRouter(service)
 	if err != nil {
@@ -169,6 +190,21 @@ func (s *SSIServer) KeyStoreAPI(service svcframework.Service) (err error) {
 
 	s.Handle(http.MethodPut, handlerPath, keyStoreRouter.StoreKey)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), keyStoreRouter.GetKeyDetails)
+	return
+}
+
+func (s *SSIServer) OperationAPI(service svcframework.Service) (err error) {
+	operationRouter, err := router.NewOperationRouter(service)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "creating operation router")
+	}
+
+	handlerPath := V1Prefix + OperationPrefix
+
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), operationRouter.GetOperation)
+	s.Handle(http.MethodGet, handlerPath, operationRouter.GetOperations)
+	s.Handle(http.MethodPut, path.Join(handlerPath, "/:id/cancel"), operationRouter.CancelOperation)
+
 	return
 }
 

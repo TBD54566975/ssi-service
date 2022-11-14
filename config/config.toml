@@ -39,3 +39,6 @@ name = "credential"
 
 [services.manifest]
 name = "manifest"
+
+[services.presentation]
+name = "presentation"

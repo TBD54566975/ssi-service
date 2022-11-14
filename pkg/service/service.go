@@ -2,6 +2,8 @@ package service
 
 import (
 	"fmt"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation"
+	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -51,6 +53,9 @@ func validateServiceConfig(config config.ServicesConfig) error {
 	if config.ManifestConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.Manifest)
 	}
+	if config.PresentationConfig.IsEmpty() {
+		return fmt.Errorf("%s no config provided", framework.Presentation)
+	}
 	return nil
 }
 
@@ -92,5 +97,15 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the manifest service")
 	}
 
-	return []framework.Service{keyStoreService, didService, schemaService, credentialService, manifestService}, nil
+	presentationService, err := presentation.NewPresentationDefinitionService(config.PresentationConfig, storageProvider)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate the presentation service")
+	}
+
+	operationService, err := operation.NewOperationService(storageProvider)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate the operation service")
+	}
+
+	return []framework.Service{keyStoreService, didService, schemaService, credentialService, manifestService, presentationService, operationService}, nil
 }
