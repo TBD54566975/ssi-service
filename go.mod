@@ -31,6 +31,7 @@ require (
 )
 
 require (
+	github.com/bits-and-blooms/bitset v1.3.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect

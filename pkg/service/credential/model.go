@@ -17,6 +17,7 @@ type CreateCredentialRequest struct {
 	JSONSchema string                 `json:"jsonSchema,omitempty"`
 	Data       map[string]interface{} `json:"data,omitempty"`
 	Expiry     string                 `json:"expiry,omitempty"`
+	Revocable  bool                   `json:"revocable,omitempty"`
 	// TODO(gabe) support more capabilities like signature type, format, status, and more.
 }
 
@@ -52,4 +53,29 @@ type GetCredentialsResponse struct {
 
 type DeleteCredentialRequest struct {
 	ID string `json:"id" validate:"required"`
+}
+
+type GetCredentialStatusRequest struct {
+	ID string `json:"id" validate:"required"`
+}
+
+type GetCredentialStatusResponse struct {
+	Revoked bool `json:"revoked" validate:"required"`
+}
+
+type UpdateCredentialStatusRequest struct {
+	ID      string `json:"id" validate:"required"`
+	Revoked bool   `json:"revoked" validate:"required"`
+}
+
+type UpdateCredentialStatusResponse struct {
+	Revoked bool `json:"revoked" validate:"required"`
+}
+
+type GetCredentialStatusListRequest struct {
+	ID string `json:"id" validate:"required"`
+}
+
+type GetCredentialStatusListResponse struct {
+	credential.Container `json:"credential,omitempty"`
 }

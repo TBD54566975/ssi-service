@@ -18,6 +18,8 @@ const (
 	ConfigFileName    = "config.toml"
 	ServiceName       = "ssi-service"
 	ConfigExtension   = ".toml"
+
+	DefaultServiceEndpoint = "http://localhost:8000"
 )
 
 type SSIServiceConfig struct {
@@ -45,9 +47,9 @@ type ServicesConfig struct {
 	// in the future it may make sense to have per-service storage providers (e.g. mysql for one service,
 	// mongo for another)
 	StorageProvider string `toml:"storage"`
+	ServiceEndpoint string `toml:"service_endpoint"`
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
-
 	KeyStoreConfig     KeyStoreServiceConfig     `toml:"keystore,omitempty"`
 	DIDConfig          DIDServiceConfig          `toml:"did,omitempty"`
 	SchemaConfig       SchemaServiceConfig       `toml:"schema,omitempty"`
@@ -59,7 +61,8 @@ type ServicesConfig struct {
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
 // Can be wrapped and extended for any specific service config
 type BaseServiceConfig struct {
-	Name string `toml:"name"`
+	Name            string `toml:"name"`
+	ServiceEndpoint string `toml:"service_endpoint"`
 }
 
 type KeyStoreServiceConfig struct {
@@ -102,6 +105,7 @@ func (s *SchemaServiceConfig) IsEmpty() bool {
 
 type CredentialServiceConfig struct {
 	*BaseServiceConfig
+
 	// TODO(gabe) supported key and signature types
 }
 
@@ -177,6 +181,7 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 	if defaultConfig {
 		config.Services = ServicesConfig{
 			StorageProvider: "bolt",
+			ServiceEndpoint: DefaultServiceEndpoint,
 			KeyStoreConfig: KeyStoreServiceConfig{
 				BaseServiceConfig:  &BaseServiceConfig{Name: "keystore"},
 				ServiceKeyPassword: "default-password",
@@ -190,7 +195,7 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 				BaseServiceConfig: &BaseServiceConfig{Name: "schema"},
 			},
 			CredentialConfig: CredentialServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "credential"},
+				BaseServiceConfig: &BaseServiceConfig{Name: "credential", ServiceEndpoint: DefaultServiceEndpoint},
 			},
 			ManifestConfig: ManifestServiceConfig{
 				BaseServiceConfig: &BaseServiceConfig{Name: "manifest"},
@@ -204,6 +209,12 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 		if _, err := toml.DecodeFile(path, &config); err != nil {
 			return nil, errors.Wrapf(err, "could not load config: %s", path)
 		}
+
+		// apply defaults if not included in toml file
+		if config.Services.CredentialConfig.BaseServiceConfig.ServiceEndpoint == "" {
+			config.Services.CredentialConfig.BaseServiceConfig.ServiceEndpoint = config.Services.ServiceEndpoint
+		}
+
 	}
 
 	return &config, nil

@@ -46,9 +46,10 @@ type CreateCredentialRequest struct {
 	// A context is optional. If not present, we'll apply default, required context values.
 	Context string `json:"@context"`
 	// A schema is optional. If present, we'll attempt to look it up and validate the data against it.
-	Schema string                 `json:"schema"`
-	Data   map[string]interface{} `json:"data" validate:"required"`
-	Expiry string                 `json:"expiry"`
+	Schema    string                 `json:"schema"`
+	Data      map[string]interface{} `json:"data" validate:"required"`
+	Expiry    string                 `json:"expiry"`
+	Revocable bool                   `json:"revocable"`
 	// TODO(gabe) support more capabilities like signature type, format, status, and more.
 }
 
@@ -60,6 +61,7 @@ func (c CreateCredentialRequest) ToServiceRequest() credential.CreateCredentialR
 		JSONSchema: c.Schema,
 		Data:       c.Data,
 		Expiry:     c.Expiry,
+		Revocable:  c.Revocable,
 	}
 }
 
@@ -142,6 +144,146 @@ func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWri
 		Credential:    gotCredential.Credential,
 		CredentialJWT: gotCredential.CredentialJWT,
 	}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
+
+type GetCredentialStatusResponse struct {
+	Revoked bool `json:"revoked"`
+}
+
+// GetCredentialStatus godoc
+// @Summary      Get Credential Status
+// @Description  Get credential status by id
+// @Tags         CredentialAPI
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "ID"
+// @Success      200  {object}  GetCredentialStatusResponse
+// @Failure      400  {string}  string  "Bad request"
+// @Router       /v1/credentials/{id}/status [get]
+func (cr CredentialRouter) GetCredentialStatus(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		errMsg := "cannot get credential without ID parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	gotCredential, err := cr.service.GetCredential(credential.GetCredentialRequest{ID: *id})
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get credential with id: %s", *id)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	resp := GetCredentialStatusResponse{
+		Revoked: gotCredential.Revoked,
+	}
+
+	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
+
+type GetCredentialStatusListResponse struct {
+	ID            string                        `json:"id"`
+	Credential    *credsdk.VerifiableCredential `json:"credential,omitempty"`
+	CredentialJWT *keyaccess.JWT                `json:"credentialJwt,omitempty"`
+}
+
+// GetCredentialStatusList godoc
+// @Summary      Get Credential Status List
+// @Description  Get credential status list by id
+// @Tags         CredentialAPI
+// @Accept       json
+// @Produce      json
+// @Param        id   path      string  true  "ID"
+// @Success      200  {object}  GetCredentialStatusListResponse
+// @Failure      400  {string}  string  "Bad request"
+// @Router       /v1/credentials/status/{id} [get]
+func (cr CredentialRouter) GetCredentialStatusList(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		errMsg := "cannot get credential without ID parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	gotCredential, err := cr.service.GetCredentialStatusList(credential.GetCredentialStatusListRequest{ID: *id})
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get credential status list with id: %s", *id)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	resp := GetCredentialStatusListResponse{
+		ID:            gotCredential.ID,
+		Credential:    gotCredential.Credential,
+		CredentialJWT: gotCredential.CredentialJWT,
+	}
+
+	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
+
+type UpdateCredentialStatusRequest struct {
+	Revoked bool `json:"revoked" validate:"required"`
+}
+
+func (c UpdateCredentialStatusRequest) ToServiceRequest(id string) credential.UpdateCredentialStatusRequest {
+	return credential.UpdateCredentialStatusRequest{
+		ID:      id,
+		Revoked: c.Revoked,
+	}
+}
+
+type UpdateCredentialStatusResponse struct {
+	Revoked bool `json:"revoked"`
+}
+
+// UpdateCredentialStatus godoc
+// @Summary      Update Credential Status
+// @Description  Update a credential's status
+// @Tags         CredentialAPI
+// @Accept       json
+// @Produce      json
+// @Param        request  body      UpdateCredentialStatusRequest  true  "request body"
+// @Success      201      {object}  UpdateCredentialStatusResponse
+// @Failure      400      {string}  string  "Bad request"
+// @Failure      500      {string}  string  "Internal server error"
+// @Router       /v1/credentials/{id}/status [put]
+func (cr CredentialRouter) UpdateCredentialStatus(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		errMsg := "cannot get credential without ID parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	var request UpdateCredentialStatusRequest
+	invalidCreateCredentialRequest := "invalid update credential request"
+	if err := framework.Decode(r, &request); err != nil {
+		errMsg := invalidCreateCredentialRequest
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	if err := framework.ValidateRequest(request); err != nil {
+		errMsg := invalidCreateCredentialRequest
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	req := request.ToServiceRequest(*id)
+	gotCredential, err := cr.service.UpdateCredentialStatus(req)
+
+	if err != nil {
+		errMsg := fmt.Sprintf("could not update credential with id: %s", req.ID)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	resp := UpdateCredentialStatusResponse{
+		Revoked: gotCredential.Revoked,
+	}
+
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
