@@ -30,6 +30,7 @@ const (
 	StatusPrefix        = "/status"
 	PresentationsPrefix = "/presentations"
 	DefinitionsPrefix   = "/definitions"
+	SubmissionsPrefix   = "/submissions"
 	ManifestsPrefix     = "/manifests"
 	ApplicationsPrefix  = "/applications"
 	ResponsesPrefix     = "/responses"
@@ -167,7 +168,7 @@ func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
 }
 
 func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
-	pRouter, err := router.NewPresentationDefinitionRouter(service)
+	pRouter, err := router.NewPresentationRouter(service)
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not create credential router")
 	}
@@ -177,6 +178,13 @@ func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodPut, handlerPath, pRouter.CreatePresentationDefinition)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), pRouter.GetPresentationDefinition)
 	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), pRouter.DeletePresentationDefinition)
+
+	submissionHandlerPath := V1Prefix + PresentationsPrefix + SubmissionsPrefix
+
+	s.Handle(http.MethodPut, submissionHandlerPath, pRouter.CreateSubmission)
+	s.Handle(http.MethodGet, path.Join(submissionHandlerPath, "/:id"), pRouter.GetSubmission)
+	s.Handle(http.MethodGet, submissionHandlerPath, pRouter.ListSubmissions)
+	s.Handle(http.MethodPut, path.Join(submissionHandlerPath, "/:id", "/review"), pRouter.ReviewSubmission)
 	return
 }
 

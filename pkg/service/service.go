@@ -2,8 +2,6 @@ package service
 
 import (
 	"fmt"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation"
-	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -12,6 +10,8 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation"
+	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -97,7 +97,7 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the manifest service")
 	}
 
-	presentationService, err := presentation.NewPresentationDefinitionService(config.PresentationConfig, storageProvider)
+	presentationService, err := presentation.NewPresentationService(config.PresentationConfig, storageProvider)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the presentation service")
 	}
