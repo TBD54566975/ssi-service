@@ -6,7 +6,6 @@ import (
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -41,11 +40,10 @@ func (s Service) Config() config.PresentationServiceConfig {
 	return s.config
 }
 
-func NewPresentationDefinitionService(config config.PresentationServiceConfig, s storage.ServiceStorage) (*Service, error) {
+func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage) (*Service, error) {
 	presentationStorage, err := presentationstorage.NewPresentationStorage(s)
 	if err != nil {
-		errMsg := "could not instantiate storage for the presentation definition service"
-		return nil, util.LoggingErrorMsg(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not instantiate definition storage for the presentation service")
 	}
 	service := Service{
 		storage: presentationStorage,
@@ -102,4 +100,41 @@ func (s Service) DeletePresentationDefinition(request DeletePresentationDefiniti
 	}
 
 	return nil
+}
+
+// CreateSubmission houses the main service logic for presentation submission creation. It validates the input, and
+// produces a presentation submission value that conforms with the Submission specification.
+func (s Service) CreateSubmission(request CreateSubmissionRequest) (*CreateSubmissionResponse, error) {
+	logrus.Debugf("creating presentation submission: %+v", request)
+
+	if !request.IsValid() {
+		return nil, util.LoggingNewErrorf("invalid create presentation submission request: %+v", request)
+	}
+
+	if err := exchange.IsValidPresentationSubmission(request.Submission); err != nil {
+		return nil, util.LoggingErrorMsg(err, "provided value is not a valid presentation submission")
+	}
+
+	storedSubmission := presentationstorage.StoredSubmission{Submission: request.Submission}
+
+	if err := s.storage.StoreSubmission(storedSubmission); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not store presentation")
+	}
+
+	return &CreateSubmissionResponse{
+		Submission: storedSubmission.Submission,
+	}, nil
+}
+
+func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResponse, error) {
+	logrus.Debugf("getting presentation submission: %s", request.ID)
+
+	storedSubmission, err := s.storage.GetSubmission(request.ID)
+	if err != nil {
+		return nil, util.LoggingNewErrorf("error getting presentation submission: %s", request.ID)
+	}
+	if storedSubmission == nil {
+		return nil, util.LoggingNewErrorf("presentation submission with id<%s> could not be found", request.ID)
+	}
+	return &GetSubmissionResponse{Submission: storedSubmission.Submission}, nil
 }
