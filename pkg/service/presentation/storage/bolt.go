@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"github.com/tbd54566975/ssi-service/internal/util"
 
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
@@ -45,29 +46,21 @@ func (b BoltPresentationStorage) StorePresentation(presentation StoredPresentati
 func (b BoltPresentationStorage) GetPresentation(id string) (*StoredPresentation, error) {
 	jsonBytes, err := b.db.Read(namespace, id)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get presentation definition: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrapf(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get presentation definition: %s", id)
 	}
 	if len(jsonBytes) == 0 {
-		err := fmt.Errorf("presentation definition not found with id: %s", id)
-		logrus.WithError(err).Error("could not get presentation definition from storage")
-		return nil, err
+		return nil, util.LoggingNewErrorf("presentation definition not found with id: %s", id)
 	}
 	var stored StoredPresentation
 	if err := json.Unmarshal(jsonBytes, &stored); err != nil {
-		errMsg := fmt.Sprintf("could not unmarshal stored presentation definition: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrapf(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored presentation definition: %s", id)
 	}
 	return &stored, nil
 }
 
 func (b BoltPresentationStorage) DeletePresentation(id string) error {
 	if err := b.db.Delete(namespace, id); err != nil {
-		errMsg := fmt.Sprintf("could not delete presentation definition: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return errors.Wrapf(err, errMsg)
+		return util.LoggingNewErrorf("could not delete presentation definition: %s", id)
 	}
 	return nil
 }
@@ -81,9 +74,7 @@ func (b BoltPresentationStorage) StoreSubmission(submission StoredSubmission) er
 	}
 	jsonBytes, err := json.Marshal(submission)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not store submission definition: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return errors.Wrapf(err, errMsg)
+		return util.LoggingNewErrorf("could not store submission definition: %s", id)
 	}
 	return b.db.Write(submissionNamespace, id, jsonBytes)
 }
@@ -91,20 +82,14 @@ func (b BoltPresentationStorage) StoreSubmission(submission StoredSubmission) er
 func (b BoltPresentationStorage) GetSubmission(id string) (*StoredSubmission, error) {
 	jsonBytes, err := b.db.Read(submissionNamespace, id)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get submission definition: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrapf(err, errMsg)
+		return nil, util.LoggingNewErrorf("could not get submission definition: %s", id)
 	}
 	if len(jsonBytes) == 0 {
-		err := fmt.Errorf("submission definition not found with id: %s", id)
-		logrus.WithError(err).Error("could not get submission definition from storage")
-		return nil, err
+		return nil, util.LoggingNewErrorf("submission definition not found with id: %s", id)
 	}
 	var stored StoredSubmission
 	if err := json.Unmarshal(jsonBytes, &stored); err != nil {
-		errMsg := fmt.Sprintf("could not unmarshal stored submission definition: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrapf(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored submission definition: %s", id)
 	}
 	return &stored, nil
 }

@@ -43,7 +43,7 @@ func (s Service) Config() config.PresentationServiceConfig {
 func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage) (*Service, error) {
 	presentationStorage, err := presentationstorage.NewPresentationStorage(s)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the presentation definition service")
+		return nil, util.LoggingErrorMsg(err, "could not instantiate definition storage for the presentation service")
 	}
 	service := Service{
 		storage: presentationStorage,

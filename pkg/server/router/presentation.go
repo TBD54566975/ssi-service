@@ -235,7 +235,7 @@ type ListSubmissionResponse struct {
 
 // ListSubmissions godoc
 // @Summary      List Submissions
-// @Description  List existing submissions according to a filtering query.
+// @Description  List existing submissions according to a filtering query. The `filter` field follows the syntax described in https://google.aip.dev/160.
 // @Tags         SubmissionAPI
 // @Accept       json
 // @Produce      json
