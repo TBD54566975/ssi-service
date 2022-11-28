@@ -2,6 +2,9 @@ package credential
 
 import (
 	"fmt"
+	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
+	"github.com/google/uuid"
+	"strconv"
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
@@ -146,6 +149,34 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
+	if request.Revocable == true {
+		credID := builder.ID
+		issuerID := request.Issuer
+		schemaID := request.JSONSchema
+
+		statusListCredential, err := getStatusListCredential(s, issuerID, schemaID)
+		if err != nil {
+			return nil, util.LoggingErrorMsgf(err, "problem with getting status list credential")
+		}
+
+		statusListIndex, err := s.storage.GetNextStatusListRandomIndex()
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "problem with getting status list index")
+		}
+
+		status := statussdk.StatusList2021Entry{
+			ID:                   fmt.Sprintf(`%s/v1/credentials/%s/status`, s.config.ServiceEndpoint, credID),
+			Type:                 statussdk.StatusList2021EntryType,
+			StatusPurpose:        statussdk.StatusRevocation,
+			StatusListIndex:      strconv.Itoa(statusListIndex),
+			StatusListCredential: statusListCredential.ID,
+		}
+
+		if err := builder.SetCredentialStatus(status); err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not set credential status")
+		}
+	}
+
 	cred, err := builder.Build()
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not build credential")
@@ -170,10 +201,13 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		ID:            cred.ID,
 		Credential:    cred,
 		CredentialJWT: credJWT,
+		Revoked:       false,
 	}
+
 	storageRequest := credstorage.StoreCredentialRequest{
 		Container: container,
 	}
+
 	if err = s.storage.StoreCredential(storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store credential")
 	}
@@ -181,6 +215,56 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	// return the result
 	response := CreateCredentialResponse{Container: container}
 	return &response, nil
+}
+
+func getStatusListCredential(s Service, issuerID string, schemaID string) (*credential.VerifiableCredential, error) {
+	storedStatusListCreds, err := s.storage.GetStatusListCredentialsByIssuerAndSchema(issuerID, schemaID)
+	if err != nil {
+		return nil, util.LoggingNewErrorf("problem with getting status list credential for issuer: %s schema: %s", issuerID, schemaID)
+	}
+
+	// This should never happen, there should always be only 1 status list credential per <issuer,schema> pair
+	if len(storedStatusListCreds) > 1 {
+		return nil, util.LoggingNewErrorf("only one status list credential per <issuer,schema> pair allowed. issuer: %s schema: %s", issuerID, schemaID)
+	}
+
+	var statusListCredential *credential.VerifiableCredential
+
+	// First time that this <issuer,schema> pair has a revocation or suspension credential issued
+	if len(storedStatusListCreds) == 0 {
+		statusListID := fmt.Sprintf("%s/v1/credentials/status/%s", s.config.ServiceEndpoint, uuid.New().String())
+		generatedStatusListCredential, err := statussdk.GenerateStatusList2021Credential(statusListID, issuerID, statussdk.StatusRevocation, []credential.VerifiableCredential{})
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not generate status list")
+		}
+
+		statusListCredJWT, err := s.signCredentialJWT(issuerID, *generatedStatusListCredential)
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not sign status list credential")
+		}
+
+		// store the credential
+		statusListContainer := credint.Container{
+			ID:            generatedStatusListCredential.ID,
+			Credential:    generatedStatusListCredential,
+			CredentialJWT: statusListCredJWT,
+		}
+
+		storageRequest := credstorage.StoreCredentialRequest{
+			Container: statusListContainer,
+		}
+
+		if err = s.storage.StoreStatusListCredential(storageRequest); err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not store credential")
+		}
+
+		statusListCredential = generatedStatusListCredential
+
+	} else {
+		statusListCredential = storedStatusListCreds[0].Credential
+	}
+
+	return statusListCredential, nil
 }
 
 // signCredentialJWT signs a credential and returns it as a vc-jwt
@@ -336,6 +420,146 @@ func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*
 	}
 	response := GetCredentialsResponse{Credentials: creds}
 	return &response, nil
+}
+
+func (s Service) GetCredentialStatus(request GetCredentialStatusRequest) (*GetCredentialStatusResponse, error) {
+	logrus.Debugf("getting credential status: %s", request.ID)
+
+	gotCred, err := s.storage.GetCredential(request.ID)
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not get credential: %s", request.ID)
+	}
+	if !gotCred.IsValid() {
+		return nil, util.LoggingNewErrorf("credential returned is not valid: %s", request.ID)
+	}
+	response := GetCredentialStatusResponse{
+		Revoked: gotCred.Revoked,
+	}
+	return &response, nil
+}
+
+func (s Service) GetCredentialStatusList(request GetCredentialStatusListRequest) (*GetCredentialStatusListResponse, error) {
+	logrus.Debugf("getting credential status list: %s", request.ID)
+
+	gotCred, err := s.storage.GetStatusListCredential(request.ID)
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not get credential: %s", request.ID)
+	}
+	if !gotCred.IsValid() {
+		return nil, util.LoggingNewErrorf("credential returned is not valid: %s", request.ID)
+	}
+	response := GetCredentialStatusListResponse{
+		credint.Container{
+			ID:            gotCred.CredentialID,
+			Credential:    gotCred.Credential,
+			CredentialJWT: gotCred.CredentialJWT,
+		},
+	}
+	return &response, nil
+}
+
+func (s Service) UpdateCredentialStatus(request UpdateCredentialStatusRequest) (*UpdateCredentialStatusResponse, error) {
+	logrus.Debugf("updating credential status: %s to Revoked: %v", request.ID, request.Revoked)
+
+	gotCred, err := s.storage.GetCredential(request.ID)
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not get credential: %s", request.ID)
+	}
+	if !gotCred.IsValid() {
+		return nil, util.LoggingNewErrorf("credential returned is not valid: %s", request.ID)
+	}
+
+	// if the request is the same as what the current credential is there is no action
+	if gotCred.Revoked == request.Revoked {
+		response := UpdateCredentialStatusResponse{Revoked: gotCred.Revoked}
+		return &response, nil
+	}
+
+	container, err := updateCredentialStatus(s, gotCred, request)
+	if err != nil {
+		return nil, util.LoggingNewError("problem updating credential")
+	}
+
+	response := UpdateCredentialStatusResponse{Revoked: container.Revoked}
+	return &response, nil
+}
+
+func updateCredentialStatus(s Service, gotCred *credstorage.StoredCredential, request UpdateCredentialStatusRequest) (*credint.Container, error) {
+	// store the credential with updated status
+	container := credint.Container{
+		ID:            gotCred.ID,
+		Credential:    gotCred.Credential,
+		CredentialJWT: gotCred.CredentialJWT,
+		Revoked:       request.Revoked,
+	}
+
+	storageRequest := credstorage.StoreCredentialRequest{
+		Container: container,
+	}
+
+	if err := s.storage.StoreCredential(storageRequest); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not store credential")
+	}
+
+	storedStatusListCreds, err := s.storage.GetStatusListCredentialsByIssuerAndSchema(gotCred.Issuer, gotCred.Schema)
+	if err != nil {
+		return nil, util.LoggingNewErrorf("problem with getting status list credential for issuer: %s schema: %s", gotCred.Issuer, gotCred.Schema)
+	}
+
+	creds, err := s.storage.GetCredentialsByIssuerAndSchema(gotCred.Issuer, gotCred.Schema)
+	if err != nil {
+		return nil, util.LoggingNewErrorf("problem with getting status list credential for issuer: %s schema: %s", gotCred.Issuer, gotCred.Schema)
+	}
+
+	var revokedStatusCreds []credential.VerifiableCredential
+	for _, cred := range creds {
+		if cred.Credential.CredentialStatus != nil && cred.Revoked {
+			revokedStatusCreds = append(revokedStatusCreds, *cred.Credential)
+		}
+	}
+
+	generatedStatusListCredential, err := statussdk.GenerateStatusList2021Credential(storedStatusListCreds[0].ID, gotCred.Issuer, statussdk.StatusRevocation, revokedStatusCreds)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not generate status list")
+	}
+
+	statusListCredJWT, err := s.signCredentialJWT(gotCred.Issuer, *generatedStatusListCredential)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not sign status list credential")
+	}
+
+	// store the status list credential
+	statusListContainer := credint.Container{
+		ID:            generatedStatusListCredential.ID,
+		Credential:    generatedStatusListCredential,
+		CredentialJWT: statusListCredJWT,
+	}
+
+	storageRequest = credstorage.StoreCredentialRequest{
+		Container: statusListContainer,
+	}
+
+	if err = s.storage.StoreStatusListCredential(storageRequest); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not store credential status list")
+	}
+
+	return &container, nil
+}
+
+func (s Service) GetCredentialsByIssuerAndSchemaWithStatus(issuer string, schema string) ([]credential.VerifiableCredential, error) {
+	gotCreds, err := s.storage.GetCredentialsByIssuerAndSchema(issuer, schema)
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not get credential(s) for issuer: %s", issuer)
+	}
+
+	var creds []credential.VerifiableCredential
+	for _, cred := range gotCreds {
+		if cred.Credential.CredentialStatus != nil {
+			creds = append(creds, *cred.Credential)
+		}
+	}
+
+	return creds, nil
 }
 
 func (s Service) DeleteCredential(request DeleteCredentialRequest) error {

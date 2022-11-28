@@ -1,0 +1,17 @@
+name: ssi-service-dispatch
+on:
+  push:
+    branches:
+      - main
+      - test/**
+  workflow_dispatch:
+jobs:
+  ssiServiceDispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: ${{ secrets.ACTIONS_BOT_TOKEN }}
+          repository: TBD54566975/web5-components-tests
+          event-type: ssi-service-merge-event

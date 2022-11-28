@@ -19,6 +19,7 @@ type Container struct {
 	ID            string
 	Credential    *credential.VerifiableCredential
 	CredentialJWT *keyaccess.JWT
+	Revoked       bool
 }
 
 func (c Container) JWTString() string {

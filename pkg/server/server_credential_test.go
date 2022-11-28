@@ -621,4 +621,330 @@ func TestCredentialAPI(t *testing.T) {
 		assert.False(tt, verifyResp.Verified)
 		assert.Contains(tt, verifyResp.Reason, "could not parse credential from JWT")
 	})
+
+	t.Run("Test Create Revocable Credential", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
+
+		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		issuerDIDTwo, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDIDTwo)
+
+		w := httptest.NewRecorder()
+
+		// good request One
+		createCredRequest := router.CreateCredentialRequest{
+			Issuer:  issuerDID.DID.ID,
+			Subject: "did:abc:456",
+			Data: map[string]interface{}{
+				"firstName": "Jack",
+				"lastName":  "Dorsey",
+			},
+			Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+		}
+		requestValue := newRequestValue(tt, createCredRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
+		err = credRouter.CreateCredential(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateCredentialResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, resp.CredentialJWT)
+		assert.NoError(tt, err)
+		assert.Empty(tt, resp.Credential.CredentialStatus)
+		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
+
+		// good revocable request One
+		createRevocableCredRequestOne := router.CreateCredentialRequest{
+			Issuer:  issuerDID.DID.ID,
+			Subject: "did:abc:456",
+			Data: map[string]interface{}{
+				"firstName": "Jack",
+				"lastName":  "Dorsey",
+			},
+			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Revocable: true,
+		}
+
+		requestValue = newRequestValue(tt, createRevocableCredRequestOne)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
+		err = credRouter.CreateCredential(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var revocableRespOne router.CreateCredentialResponse
+		err = json.NewDecoder(w.Body).Decode(&revocableRespOne)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, revocableRespOne.CredentialJWT)
+		assert.NotEmpty(tt, revocableRespOne.Credential.CredentialStatus)
+		assert.Equal(tt, revocableRespOne.Credential.Issuer, issuerDID.DID.ID)
+
+		credStatusMap, ok := revocableRespOne.Credential.CredentialStatus.(map[string]interface{})
+		assert.True(tt, ok)
+
+		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
+
+		// good revocable request Two
+		createRevocableCredRequestTwo := router.CreateCredentialRequest{
+			Issuer:  issuerDID.DID.ID,
+			Subject: "did:abc:456",
+			Data: map[string]interface{}{
+				"firstName": "Jack",
+				"lastName":  "Dorsey",
+			},
+			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Revocable: true,
+		}
+
+		requestValue = newRequestValue(tt, createRevocableCredRequestTwo)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
+		err = credRouter.CreateCredential(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var revocableRespTwo router.CreateCredentialResponse
+		err = json.NewDecoder(w.Body).Decode(&revocableRespTwo)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, revocableRespTwo.CredentialJWT)
+		assert.NotEmpty(tt, revocableRespTwo.Credential.CredentialStatus)
+		assert.Equal(tt, revocableRespTwo.Credential.Issuer, issuerDID.DID.ID)
+
+		credStatusMap, ok = revocableRespTwo.Credential.CredentialStatus.(map[string]interface{})
+		assert.True(tt, ok)
+
+		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
+
+		// good revocable request Three
+		createRevocableCredRequestThree := router.CreateCredentialRequest{
+			Issuer:  issuerDID.DID.ID,
+			Subject: "did:abc:456",
+			Data: map[string]interface{}{
+				"firstName": "Jack",
+				"lastName":  "Dorsey",
+			},
+			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Revocable: true,
+		}
+
+		requestValue = newRequestValue(tt, createRevocableCredRequestThree)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
+		err = credRouter.CreateCredential(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var revocableRespThree router.CreateCredentialResponse
+		err = json.NewDecoder(w.Body).Decode(&revocableRespThree)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, revocableRespThree.CredentialJWT)
+		assert.NotEmpty(tt, revocableRespThree.Credential.CredentialStatus)
+		assert.Equal(tt, revocableRespThree.Credential.Issuer, issuerDID.DID.ID)
+
+		credStatusMap, ok = revocableRespThree.Credential.CredentialStatus.(map[string]interface{})
+		assert.True(tt, ok)
+
+		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
+
+		// good revocable request Four (different issuer / schema)
+		createRevocableCredRequestFour := router.CreateCredentialRequest{
+			Issuer:  issuerDIDTwo.DID.ID,
+			Subject: "did:abc:456",
+			Data: map[string]interface{}{
+				"firstName": "Jack",
+				"lastName":  "Dorsey",
+			},
+			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Revocable: true,
+		}
+
+		requestValue = newRequestValue(tt, createRevocableCredRequestFour)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
+		err = credRouter.CreateCredential(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var revocableRespFour router.CreateCredentialResponse
+		err = json.NewDecoder(w.Body).Decode(&revocableRespFour)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, revocableRespFour.CredentialJWT)
+		assert.NotEmpty(tt, revocableRespFour.Credential.CredentialStatus)
+		assert.Equal(tt, revocableRespFour.Credential.Issuer, issuerDIDTwo.DID.ID)
+
+		credStatusMap, ok = revocableRespFour.Credential.CredentialStatus.(map[string]interface{})
+		assert.True(tt, ok)
+
+		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
+	})
+
+	t.Run("Test Get Revoked Status Of Credential", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
+
+		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		w := httptest.NewRecorder()
+
+		// good request number one
+		createCredRequest := router.CreateCredentialRequest{
+			Issuer:  issuerDID.DID.ID,
+			Subject: "did:abc:456",
+			Data: map[string]interface{}{
+				"firstName": "Jack",
+				"lastName":  "Dorsey",
+			},
+			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Revocable: true,
+		}
+
+		requestValue := newRequestValue(tt, createCredRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
+		err = credRouter.CreateCredential(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateCredentialResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, resp.CredentialJWT)
+		assert.NotEmpty(tt, resp.Credential.CredentialStatus)
+		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
+
+		credStatusMap, ok := resp.Credential.CredentialStatus.(map[string]interface{})
+		assert.True(tt, ok)
+
+		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
+
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s/status", resp.Credential.ID), nil)
+		err = credRouter.GetCredentialStatus(newRequestContextWithParams(map[string]string{"id": resp.Credential.ID}), w, req)
+		assert.NoError(tt, err)
+
+		var credStatusResponse = router.GetCredentialStatusResponse{}
+		err = json.NewDecoder(w.Body).Decode(&credStatusResponse)
+		assert.NoError(tt, err)
+		assert.Equal(tt, false, credStatusResponse.Revoked)
+
+		// good request number one
+		updateCredStatusRequest := router.UpdateCredentialStatusRequest{Revoked: true}
+
+		requestValue = newRequestValue(tt, updateCredStatusRequest)
+		req = httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s/status", resp.Credential.ID), requestValue)
+		err = credRouter.UpdateCredentialStatus(newRequestContextWithParams(map[string]string{"id": resp.Credential.ID}), w, req)
+		assert.NoError(tt, err)
+
+		var credStatusUpdateResponse = router.UpdateCredentialStatusResponse{}
+		err = json.NewDecoder(w.Body).Decode(&credStatusUpdateResponse)
+		assert.NoError(tt, err)
+		assert.Equal(tt, true, credStatusUpdateResponse.Revoked)
+
+	})
+
+	t.Run("Test Get Status List Credential", func(tt *testing.T) {
+		bolt, err := storage.NewBoltDB()
+		require.NoError(tt, err)
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = bolt.Close()
+			_ = os.Remove(storage.DBFile)
+		})
+
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
+
+		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		w := httptest.NewRecorder()
+
+		// good request number one
+		createCredRequest := router.CreateCredentialRequest{
+			Issuer:  issuerDID.DID.ID,
+			Subject: "did:abc:456",
+			Data: map[string]interface{}{
+				"firstName": "Jack",
+				"lastName":  "Dorsey",
+			},
+			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Revocable: true,
+		}
+
+		requestValue := newRequestValue(tt, createCredRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
+		err = credRouter.CreateCredential(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateCredentialResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, resp.CredentialJWT)
+		assert.NotEmpty(tt, resp.Credential.CredentialStatus)
+		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
+
+		credStatusMap, ok := resp.Credential.CredentialStatus.(map[string]interface{})
+		assert.True(tt, ok)
+
+		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
+
+		credStatusListID := (credStatusMap["statusListCredential"]).(string)
+
+		assert.NotEmpty(tt, credStatusListID)
+		fmt.Println(credStatusListID)
+
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://localhost:8080/v1/credentials/status/%s", credStatusListID), nil)
+		err = credRouter.GetCredentialStatusList(newRequestContextWithParams(map[string]string{"id": credStatusListID}), w, req)
+		assert.NoError(tt, err)
+
+		var credListResp router.GetCredentialStatusListResponse
+		err = json.NewDecoder(w.Body).Decode(&credListResp)
+		assert.NoError(tt, err)
+
+		assert.NotEmpty(tt, credListResp.CredentialJWT)
+		assert.Empty(tt, credListResp.Credential.CredentialStatus)
+		assert.Equal(tt, credListResp.Credential.ID, credStatusListID)
+	})
 }

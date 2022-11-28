@@ -2,19 +2,29 @@ package storage
 
 import (
 	"fmt"
-	"strings"
-
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"math/rand"
+	"strings"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 const (
-	namespace                = "credential"
+	credentialNamespace           = "credential"
+	statusListCredentialNamespace = "status-list-credential"
+	statusListIndexNamespace      = "status-list-index"
+
+	fakeKey              = "fake-key"
+	statusListIndexesKey = "status-list-indexes"
+	currentListIndexKey  = "current-list-index"
+
+	// A a minimum revocation bitString length of 131,072, or 16KB uncompressed
+	bitStringLength = 8 * 1024 * 16
+
 	credentialNotFoundErrMsg = "credential not found"
 )
 
@@ -22,14 +32,103 @@ type BoltCredentialStorage struct {
 	db *storage.BoltDB
 }
 
+type StatusListIndex struct {
+	Index int `json:"index"`
+}
+
 func NewBoltCredentialStorage(db *storage.BoltDB) (*BoltCredentialStorage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}
+
+	// TODO: (Neal) there is a current bug with our Bolt implementation where if we do a GET without anything in the db it will throw an error
+	// Doing initial writes and then deleting will "warm up" our database and when we do a GET after that it will not crash and return empty list
+	// https://github.com/TBD54566975/ssi-service/issues/176
+	if err := db.Write(credentialNamespace, fakeKey, nil); err != nil {
+		return nil, util.LoggingErrorMsg(err, "problem writing status initial write to db")
+
+	}
+	if err := db.Delete(credentialNamespace, fakeKey); err != nil {
+		return nil, util.LoggingErrorMsg(err, "problem with initial delete to db")
+	}
+
+	if err := db.Write(statusListCredentialNamespace, fakeKey, nil); err != nil {
+		return nil, util.LoggingErrorMsg(err, "problem writing status initial write to db")
+	}
+
+	if err := db.Delete(statusListCredentialNamespace, fakeKey); err != nil {
+		return nil, util.LoggingErrorMsg(err, "problem with initial delete to db")
+	}
+
+	randUniqueList := randomUniqueNum(bitStringLength)
+	uniqueNumBytes, err := json.Marshal(randUniqueList)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not marshal random unique numbers")
+	}
+
+	if err := db.Write(statusListIndexNamespace, statusListIndexesKey, uniqueNumBytes); err != nil {
+		return nil, util.LoggingErrorMsg(err, "problem writing status list indexes to db")
+	}
+
+	statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: 0})
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
+	}
+
+	if err := db.Write(statusListIndexNamespace, currentListIndexKey, statusListIndexBytes); err != nil {
+		return nil, util.LoggingErrorMsg(err, "problem writing current list index to db")
+	}
+
 	return &BoltCredentialStorage{db: db}, nil
 }
 
+func (b BoltCredentialStorage) GetNextStatusListRandomIndex() (int, error) {
+
+	gotUniqueNumBytes, err := b.db.Read(statusListIndexNamespace, statusListIndexesKey)
+	if err != nil {
+		return -1, util.LoggingErrorMsgf(err, "reading status list")
+	}
+
+	if len(gotUniqueNumBytes) == 0 {
+		return -1, util.LoggingNewErrorf("could not get unique numbers from db")
+	}
+
+	var uniqueNums []int
+	if err = json.Unmarshal(gotUniqueNumBytes, &uniqueNums); err != nil {
+		return -1, util.LoggingErrorMsgf(err, "could not unmarshal unique numbers")
+	}
+
+	gotCurrentListIndexBytes, err := b.db.Read(statusListIndexNamespace, currentListIndexKey)
+	if err != nil {
+		return -1, util.LoggingErrorMsgf(err, "could not get list index")
+	}
+
+	var statusListIndex StatusListIndex
+	if err = json.Unmarshal(gotCurrentListIndexBytes, &statusListIndex); err != nil {
+		return -1, util.LoggingErrorMsgf(err, "could not unmarshal unique numbers")
+	}
+
+	statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: statusListIndex.Index + 1})
+	if err != nil {
+		return -1, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
+	}
+
+	if err := b.db.Write(statusListIndexNamespace, currentListIndexKey, statusListIndexBytes); err != nil {
+		return -1, util.LoggingErrorMsg(err, "problem writing current list index to db")
+	}
+
+	return uniqueNums[statusListIndex.Index], nil
+}
+
 func (b BoltCredentialStorage) StoreCredential(request StoreCredentialRequest) error {
+	return b.storeCredential(request, credentialNamespace)
+}
+
+func (b BoltCredentialStorage) StoreStatusListCredential(request StoreCredentialRequest) error {
+	return b.storeCredential(request, statusListCredentialNamespace)
+}
+
+func (b BoltCredentialStorage) storeCredential(request StoreCredentialRequest, namespace string) error {
 	if !request.IsValid() {
 		return util.LoggingNewError("store request request is not valid")
 	}
@@ -81,10 +180,19 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 		Subject:       subject,
 		Schema:        schema,
 		IssuanceDate:  cred.IssuanceDate,
+		Revoked:       request.Revoked,
 	}, nil
 }
 
 func (b BoltCredentialStorage) GetCredential(id string) (*StoredCredential, error) {
+	return b.getCredential(id, credentialNamespace)
+}
+
+func (b BoltCredentialStorage) GetStatusListCredential(id string) (*StoredCredential, error) {
+	return b.getCredential(id, statusListCredentialNamespace)
+}
+
+func (b BoltCredentialStorage) getCredential(id string, namespace string) (*StoredCredential, error) {
 	prefixValues, err := b.db.ReadPrefix(namespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get credential from storage: %s", id)
@@ -115,10 +223,10 @@ func (b BoltCredentialStorage) GetCredential(id string) (*StoredCredential, erro
 // so this is not much of a concern.
 
 // GetCredentialsByIssuer gets all credentials stored with a prefix key containing the issuer value
-// The method is greedy, meaning if multiple values are found...and some fail during processing, we will
+// The method is greedy, meaning if multiple values are found and some fail during processing, we will
 // return only the successful values and log an error for the failures.
 func (b BoltCredentialStorage) GetCredentialsByIssuer(issuer string) ([]StoredCredential, error) {
-	keys, err := b.db.ReadAllKeys(namespace)
+	keys, err := b.db.ReadAllKeys(credentialNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
 	}
@@ -137,7 +245,7 @@ func (b BoltCredentialStorage) GetCredentialsByIssuer(issuer string) ([]StoredCr
 	// now get each credential by key
 	var storedCreds []StoredCredential
 	for _, key := range issuerKeys {
-		credBytes, err := b.db.Read(namespace, key)
+		credBytes, err := b.db.Read(credentialNamespace, key)
 		if err != nil {
 			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
 		} else {
@@ -160,7 +268,7 @@ func (b BoltCredentialStorage) GetCredentialsByIssuer(issuer string) ([]StoredCr
 // The method is greedy, meaning if multiple values are found...and some fail during processing, we will
 // return only the successful values and log an error for the failures.
 func (b BoltCredentialStorage) GetCredentialsBySubject(subject string) ([]StoredCredential, error) {
-	keys, err := b.db.ReadAllKeys(namespace)
+	keys, err := b.db.ReadAllKeys(credentialNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for subject: %s", subject)
 	}
@@ -180,7 +288,7 @@ func (b BoltCredentialStorage) GetCredentialsBySubject(subject string) ([]Stored
 	// now get each credential by key
 	var storedCreds []StoredCredential
 	for _, key := range subjectKeys {
-		credBytes, err := b.db.Read(namespace, key)
+		credBytes, err := b.db.Read(credentialNamespace, key)
 		if err != nil {
 			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
 		} else {
@@ -203,7 +311,7 @@ func (b BoltCredentialStorage) GetCredentialsBySubject(subject string) ([]Stored
 // The method is greedy, meaning if multiple values are found...and some fail during processing, we will
 // return only the successful values and log an error for the failures.
 func (b BoltCredentialStorage) GetCredentialsBySchema(schema string) ([]StoredCredential, error) {
-	keys, err := b.db.ReadAllKeys(namespace)
+	keys, err := b.db.ReadAllKeys(credentialNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for schema: %s", schema)
 	}
@@ -224,7 +332,7 @@ func (b BoltCredentialStorage) GetCredentialsBySchema(schema string) ([]StoredCr
 	// now get each credential by key
 	var storedCreds []StoredCredential
 	for _, key := range schemaKeys {
-		credBytes, err := b.db.Read(namespace, key)
+		credBytes, err := b.db.Read(credentialNamespace, key)
 		if err != nil {
 			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
 		} else {
@@ -243,7 +351,67 @@ func (b BoltCredentialStorage) GetCredentialsBySchema(schema string) ([]StoredCr
 	return storedCreds, nil
 }
 
+// GetCredentialsByIssuerAndSchema gets all credentials stored with a prefix key containing the issuer value
+// The method is greedy, meaning if multiple values are found...and some fail during processing, we will
+// return only the successful values and log an error for the failures.
+func (b BoltCredentialStorage) GetCredentialsByIssuerAndSchema(issuer string, schema string) ([]StoredCredential, error) {
+	return b.getCredentialsByIssuerAndSchema(issuer, schema, credentialNamespace)
+}
+
+func (b BoltCredentialStorage) GetStatusListCredentialsByIssuerAndSchema(issuer string, schema string) ([]StoredCredential, error) {
+	return b.getCredentialsByIssuerAndSchema(issuer, schema, statusListCredentialNamespace)
+}
+
+func (b BoltCredentialStorage) getCredentialsByIssuerAndSchema(issuer string, schema string, namespace string) ([]StoredCredential, error) {
+	keys, err := b.db.ReadAllKeys(namespace)
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
+	}
+
+	query := "sc:" + schema
+	var issuerSchemaKeys []string
+	for _, k := range keys {
+		if strings.Contains(k, issuer) && strings.HasSuffix(k, query) {
+			issuerSchemaKeys = append(issuerSchemaKeys, k)
+		}
+	}
+
+	if len(issuerSchemaKeys) == 0 {
+		logrus.Warnf("no credentials found for issuer: %s and schema %s", util.SanitizeLog(issuer), util.SanitizeLog(schema))
+		return nil, nil
+	}
+
+	// now get each credential by key
+	var storedCreds []StoredCredential
+	for _, key := range issuerSchemaKeys {
+		credBytes, err := b.db.Read(namespace, key)
+		if err != nil {
+			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
+		} else {
+			var cred StoredCredential
+			if err = json.Unmarshal(credBytes, &cred); err != nil {
+				logrus.WithError(err).Errorf("could not unmarshal credential with key: %s", key)
+			}
+			storedCreds = append(storedCreds, cred)
+		}
+	}
+
+	if len(storedCreds) == 0 {
+		logrus.Warnf("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
+	}
+
+	return storedCreds, nil
+}
+
 func (b BoltCredentialStorage) DeleteCredential(id string) error {
+	return b.deleteCredential(id, credentialNamespace)
+}
+
+func (b BoltCredentialStorage) DeleteStatusListCredential(id string) error {
+	return b.deleteCredential(id, statusListCredentialNamespace)
+}
+
+func (b BoltCredentialStorage) deleteCredential(id string, namespace string) error {
 	credDoesNotExistMsg := fmt.Sprintf("credential does not exist, cannot delete: %s", id)
 
 	// first get the credential to regenerate the prefix key
@@ -275,4 +443,18 @@ func (b BoltCredentialStorage) DeleteCredential(id string) error {
 // unique key for a credential
 func createPrefixKey(id, issuer, subject, schema string) string {
 	return strings.Join([]string{id, "is:" + issuer, "su:" + subject, "sc:" + schema}, "-")
+}
+
+func randomUniqueNum(count int) []int {
+	randomNumbers := make([]int, 0, count)
+
+	for i := 1; i <= count; i++ {
+		randomNumbers = append(randomNumbers, i)
+	}
+
+	rand.Shuffle(len(randomNumbers), func(i, j int) {
+		randomNumbers[i], randomNumbers[j] = randomNumbers[j], randomNumbers[i]
+	})
+
+	return randomNumbers
 }
