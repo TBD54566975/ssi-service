@@ -85,7 +85,9 @@ func (b BoltPresentationStorage) GetSubmission(id string) (*StoredSubmission, er
 		return nil, util.LoggingNewErrorf("could not get submission definition: %s", id)
 	}
 	if len(jsonBytes) == 0 {
-		return nil, util.LoggingNewErrorf("submission definition not found with id: %s", id)
+		err := errors.Wrapf(ErrSubmissionNotFound, "submission definition not found with id: %s", id)
+		logrus.WithError(err).Error("could not get submission definition from storage")
+		return nil, err
 	}
 	var stored StoredSubmission
 	if err := json.Unmarshal(jsonBytes, &stored); err != nil {

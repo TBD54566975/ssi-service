@@ -35,7 +35,11 @@ func TestPresentationDefinitionService(t *testing.T) {
 	s, err := storage.NewStorage(storage.Bolt)
 	assert.NoError(t, err)
 
-	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s)
+	keyStoreService := testKeyStoreService(t, s)
+	didService := testDIDService(t, s, keyStoreService)
+	schemaService := testSchemaService(t, s, keyStoreService, didService)
+
+	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s, didService.GetResolver(), schemaService)
 	assert.NoError(t, err)
 
 	t.Run("Create returns the created definition", func(t *testing.T) {

@@ -195,7 +195,7 @@ func testKeyStore(t *testing.T, bolt *storage.BoltDB) (*router.KeyStoreRouter, *
 	return keyStoreRouter, keyStoreService
 }
 
-func testKeyStoreService(t *testing.T, db *storage.BoltDB) *keystore.Service {
+func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Service {
 	serviceConfig := config.KeyStoreServiceConfig{
 		BaseServiceConfig:  &config.BaseServiceConfig{Name: "test-keystore"},
 		ServiceKeyPassword: "test-password",
@@ -208,7 +208,7 @@ func testKeyStoreService(t *testing.T, db *storage.BoltDB) *keystore.Service {
 	return keystoreService
 }
 
-func testDIDService(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *did.Service {
+func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service) *did.Service {
 	serviceConfig := config.DIDServiceConfig{
 		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-did"},
 		Methods:           []string{"key"},
@@ -232,7 +232,7 @@ func testDIDRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Servic
 	return didRouter
 }
 
-func testSchemaService(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service, did *did.Service) *schema.Service {
+func testSchemaService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, did *did.Service) *schema.Service {
 	schemaService, err := schema.NewSchemaService(config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-schema"}}, bolt, keyStore, did.GetResolver())
 	require.NoError(t, err)
 	require.NotEmpty(t, schemaService)
@@ -249,7 +249,7 @@ func testSchemaRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Ser
 	return schemaRouter
 }
 
-func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
+func testCredentialService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
 	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 
 	// create a credential service

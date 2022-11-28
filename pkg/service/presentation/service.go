@@ -3,19 +3,30 @@ package presentation
 import (
 	"fmt"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/TBD54566975/ssi-sdk/credential/signing"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/pkg/jwt"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation"
+	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	presentationstorage "github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 type Service struct {
-	storage presentationstorage.Storage
-	config  config.PresentationServiceConfig
+	storage    presentationstorage.Storage
+	opsStorage opstorage.Storage
+	config     config.PresentationServiceConfig
+	resolver   *didsdk.Resolver
+	schema     *schema.Service
+	verifier   *credential.Verifier
 }
 
 func (s Service) Type() framework.Type {
@@ -40,14 +51,26 @@ func (s Service) Config() config.PresentationServiceConfig {
 	return s.config
 }
 
-func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage) (*Service, error) {
+func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage, resolver *didsdk.Resolver, schema *schema.Service) (*Service, error) {
 	presentationStorage, err := presentationstorage.NewPresentationStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate definition storage for the presentation service")
 	}
+	opsStorage, err := opstorage.NewOperationStorage(s)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the operations")
+	}
+	verifier, err := credential.NewCredentialVerifier(resolver, schema)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate verifier")
+	}
 	service := Service{
-		storage: presentationStorage,
-		config:  config,
+		storage:    presentationStorage,
+		opsStorage: opsStorage,
+		config:     config,
+		resolver:   resolver,
+		schema:     schema,
+		verifier:   verifier,
 	}
 	if !service.Status().IsReady() {
 		return nil, errors.New(service.Status().Message)
@@ -104,9 +127,7 @@ func (s Service) DeletePresentationDefinition(request DeletePresentationDefiniti
 
 // CreateSubmission houses the main service logic for presentation submission creation. It validates the input, and
 // produces a presentation submission value that conforms with the Submission specification.
-func (s Service) CreateSubmission(request CreateSubmissionRequest) (*CreateSubmissionResponse, error) {
-	logrus.Debugf("creating presentation submission: %+v", request)
-
+func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.Operation, error) {
 	if !request.IsValid() {
 		return nil, util.LoggingNewErrorf("invalid create presentation submission request: %+v", request)
 	}
@@ -115,14 +136,63 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*CreateSubmi
 		return nil, util.LoggingErrorMsg(err, "provided value is not a valid presentation submission")
 	}
 
+	sdkVp, err := signing.ParseVerifiablePresentationFromJWT(request.SubmissionJWT.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing vp from jwt")
+	}
+	if err := jwt.VerifyTokenFromDID(sdkVp.Holder, request.SubmissionJWT, s.resolver); err != nil {
+		return nil, errors.Wrap(err, "verifying token from did")
+	}
+
+	if _, err := s.storage.GetSubmission(request.Submission.ID); !errors.Is(err, presentationstorage.ErrSubmissionNotFound) {
+		return nil, errors.Errorf("submission with id %s already present", request.Submission.ID)
+	}
+
+	definition, err := s.storage.GetPresentation(request.Submission.DefinitionID)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "getting presentation definition")
+	}
+
+	for _, cred := range request.Credentials {
+		if !cred.IsValid() {
+			return nil, util.LoggingNewErrorf("invalid credential %+v", cred)
+		}
+		if cred.CredentialJWT != nil {
+			if err := s.verifier.VerifyJWTCredential(*cred.CredentialJWT); err != nil {
+				return nil, errors.Wrapf(err, "verifying jwt credential %s", cred.CredentialJWT)
+			}
+		} else {
+			if cred.Credential != nil && cred.Credential.Proof != nil {
+				if err := s.verifier.VerifyDataIntegrityCredential(*cred.Credential); err != nil {
+					return nil, errors.Wrapf(err, "verifying data integrity credential %+v", cred.Credential)
+				}
+			}
+		}
+	}
+
+	if err := exchange.VerifyPresentationSubmissionVP(definition.PresentationDefinition, request.Presentation); err != nil {
+		return nil, util.LoggingErrorMsg(err, "verifying presentation submission vp")
+	}
+
 	storedSubmission := presentationstorage.StoredSubmission{Submission: request.Submission}
 
+	// TODO(andres): IO requests should be done in parallel, once we have context wired up.
 	if err := s.storage.StoreSubmission(storedSubmission); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store presentation")
 	}
 
-	return &CreateSubmissionResponse{
-		Submission: storedSubmission.Submission,
+	opID := fmt.Sprintf("presentations/submissions/%s", storedSubmission.Submission.ID)
+	storedOp := opstorage.StoredOperation{
+		ID:   opID,
+		Done: false,
+	}
+	if err := s.opsStorage.StoreOperation(storedOp); err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not store operation")
+	}
+
+	return &operation.Operation{
+		ID:   storedOp.ID,
+		Done: false,
 	}, nil
 }
 

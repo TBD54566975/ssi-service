@@ -14,7 +14,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
-func testKeyStoreService(t *testing.T, db *storage.BoltDB) *keystore.Service {
+func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Service {
 	serviceConfig := config.KeyStoreServiceConfig{ServiceKeyPassword: "test-password"}
 	// create a keystore service
 	keystoreService, err := keystore.NewKeyStoreService(serviceConfig, db)
@@ -23,7 +23,7 @@ func testKeyStoreService(t *testing.T, db *storage.BoltDB) *keystore.Service {
 	return keystoreService
 }
 
-func testDIDService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service) *did.Service {
+func testDIDService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service) *did.Service {
 	serviceConfig := config.DIDServiceConfig{
 		BaseServiceConfig: &config.BaseServiceConfig{
 			Name: "did",
@@ -38,7 +38,7 @@ func testDIDService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service
 	return didService
 }
 
-func testSchemaService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service) *schema.Service {
+func testSchemaService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service) *schema.Service {
 	serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 	// create a schema service
 	schemaService, err := schema.NewSchemaService(serviceConfig, db, keyStore, did.GetResolver())

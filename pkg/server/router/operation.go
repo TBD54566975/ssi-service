@@ -3,7 +3,6 @@ package router
 import (
 	"context"
 	"fmt"
-	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/pkg/errors"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
@@ -23,17 +22,6 @@ func NewOperationRouter(s svcframework.Service) (*OperationRouter, error) {
 		return nil, fmt.Errorf("casting service: %s", s.Type())
 	}
 	return &OperationRouter{service: service}, nil
-}
-
-type Operation struct {
-	ID     string           `json:"id"`
-	Done   bool             `json:"bool"`
-	Result *OperationResult `json:"result"`
-}
-
-type OperationResult struct {
-	Error    string                          `json:"error"`
-	Response exchange.PresentationSubmission `json:"response"`
 }
 
 // GetOperation godoc
