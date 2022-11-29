@@ -183,7 +183,7 @@ type CreateSubmissionRequest struct {
 	SubmissionJWT keyaccess.JWT `json:"submissionJwt" validate:"required"`
 }
 
-func (r CreateSubmissionRequest) ToServiceRequest() (*presentation.CreateSubmissionRequest, error) {
+func (r CreateSubmissionRequest) toServiceRequest() (*presentation.CreateSubmissionRequest, error) {
 	sdkVp, err := signing.ParseVerifiablePresentationFromJWT(r.SubmissionJWT.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing presentation from jwt")
@@ -245,7 +245,7 @@ func (pr PresentationRouter) CreateSubmission(ctx context.Context, w http.Respon
 		return framework.NewRequestError(util.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
 	}
 
-	req, err := request.ToServiceRequest()
+	req, err := request.toServiceRequest()
 	if err != nil {
 		return framework.NewRequestError(util.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
 	}

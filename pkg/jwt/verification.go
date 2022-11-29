@@ -8,6 +8,9 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 )
 
+// VerifyTokenFromDID verifies that the information in the token was digitally signed by the public key associated with
+// the public key of the verification method of the did's document. The passed in resolver is used to map from the did
+// to the did document.
 func VerifyTokenFromDID(did string, token keyaccess.JWT, s *didsdk.Resolver) error {
 	kid, pubKey, err := didint.ResolveKeyForDID(s, did)
 	if err != nil {
