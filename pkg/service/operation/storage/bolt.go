@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -20,15 +19,11 @@ type BoltOperationStorage struct {
 func (b BoltOperationStorage) StoreOperation(op StoredOperation) error {
 	id := op.ID
 	if id == "" {
-		err := errors.New("ID is required for storing operations")
-		logrus.WithError(err).Error()
-		return err
+		return util.LoggingNewError("ID is required for storing operations")
 	}
 	jsonBytes, err := json.Marshal(op)
 	if err != nil {
-		errMsg := fmt.Sprintf("marshalling operation with id: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return errors.Wrapf(err, errMsg)
+		return util.LoggingErrorMsgf(err, "marshalling operation with id: %s", id)
 	}
 	return b.db.Write(namespace, id, jsonBytes)
 }
@@ -36,20 +31,14 @@ func (b BoltOperationStorage) StoreOperation(op StoredOperation) error {
 func (b BoltOperationStorage) GetOperation(id string) (*StoredOperation, error) {
 	jsonBytes, err := b.db.Read(namespace, id)
 	if err != nil {
-		errMsg := fmt.Sprintf("reading operation with id: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrapf(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "reading operation with id: %s", id)
 	}
 	if len(jsonBytes) == 0 {
-		err := fmt.Errorf("operation not found with id: %s", id)
-		logrus.WithError(err).Error("found empty bytes")
-		return nil, err
+		return nil, util.LoggingNewErrorf("operation not found with id: %s", id)
 	}
 	var stored StoredOperation
 	if err := json.Unmarshal(jsonBytes, &stored); err != nil {
-		errMsg := fmt.Sprintf("unmarshalling stored operation: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrapf(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "unmarshalling stored operation: %s", id)
 	}
 	return &stored, nil
 }
@@ -57,16 +46,15 @@ func (b BoltOperationStorage) GetOperation(id string) (*StoredOperation, error) 
 func (b BoltOperationStorage) GetOperations() ([]StoredOperation, error) {
 	operations, err := b.db.ReadAll(namespace)
 	if err != nil {
-		errMsg := "reading all from db"
-		logrus.WithError(err).Error("could not get all operations")
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get all operations")
 	}
 	stored := make([]StoredOperation, 0, len(operations))
-	for _, manifestBytes := range operations {
+	for i, manifestBytes := range operations {
 		var nextOp StoredOperation
-		if err = json.Unmarshal(manifestBytes, &nextOp); err == nil {
-			stored = append(stored, nextOp)
+		if err = json.Unmarshal(manifestBytes, &nextOp); err != nil {
+			logrus.WithError(err).WithField("idx", i).Warnf("Skipping operation")
 		}
+		stored = append(stored, nextOp)
 	}
 	return stored, nil
 }

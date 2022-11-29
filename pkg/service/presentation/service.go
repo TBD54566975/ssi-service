@@ -136,11 +136,11 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 		return nil, errors.Wrap(err, "provided value is not a valid presentation submission")
 	}
 
-	sdkVp, err := signing.ParseVerifiablePresentationFromJWT(request.SubmissionJWT.String())
+	sdkVP, err := signing.ParseVerifiablePresentationFromJWT(request.SubmissionJWT.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing vp from jwt")
 	}
-	if err := jwt.VerifyTokenFromDID(sdkVp.Holder, request.SubmissionJWT, s.resolver); err != nil {
+	if err := jwt.VerifyTokenFromDID(sdkVP.Holder, request.SubmissionJWT, s.resolver); err != nil {
 		return nil, errors.Wrap(err, "verifying token from did")
 	}
 

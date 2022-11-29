@@ -184,15 +184,15 @@ type CreateSubmissionRequest struct {
 }
 
 func (r CreateSubmissionRequest) toServiceRequest() (*presentation.CreateSubmissionRequest, error) {
-	sdkVp, err := signing.ParseVerifiablePresentationFromJWT(r.SubmissionJWT.String())
+	sdkVP, err := signing.ParseVerifiablePresentationFromJWT(r.SubmissionJWT.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing presentation from jwt")
 	}
-	if err := sdkVp.IsValid(); err != nil {
+	if err := sdkVP.IsValid(); err != nil {
 		return nil, errors.Wrap(err, "verifying vp validity")
 	}
 
-	submissionData, err := json.Marshal(sdkVp.PresentationSubmission)
+	submissionData, err := json.Marshal(sdkVP.PresentationSubmission)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling presentation_submission")
 	}
@@ -203,15 +203,15 @@ func (r CreateSubmissionRequest) toServiceRequest() (*presentation.CreateSubmiss
 	if err := s.IsValid(); err != nil {
 		return nil, errors.Wrap(err, "verifying submission validity")
 	}
-	sdkVp.PresentationSubmission = s
+	sdkVP.PresentationSubmission = s
 
-	credContainers, err := credint.NewCredentialContainerFromArray(sdkVp.VerifiableCredential)
+	credContainers, err := credint.NewCredentialContainerFromArray(sdkVP.VerifiableCredential)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing verifiable credential array")
 	}
 
 	return &presentation.CreateSubmissionRequest{
-		Presentation:  *sdkVp,
+		Presentation:  *sdkVP,
 		SubmissionJWT: r.SubmissionJWT,
 		Submission:    s,
 		Credentials:   credContainers}, nil
