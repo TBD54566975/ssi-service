@@ -162,7 +162,7 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 				return nil, errors.Wrapf(err, "verifying jwt credential %s", cred.CredentialJWT)
 			}
 		} else {
-			if cred.Credential != nil && cred.Credential.Proof != nil {
+			if cred.HasDataIntegrityCredential() {
 				if err := s.verifier.VerifyDataIntegrityCredential(*cred.Credential); err != nil {
 					return nil, errors.Wrapf(err, "verifying data integrity credential %+v", cred.Credential)
 				}
