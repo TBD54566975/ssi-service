@@ -129,11 +129,11 @@ func (s Service) DeletePresentationDefinition(request DeletePresentationDefiniti
 // produces a presentation submission value that conforms with the Submission specification.
 func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.Operation, error) {
 	if !request.IsValid() {
-		return nil, util.LoggingNewErrorf("invalid create presentation submission request: %+v", request)
+		return nil, errors.Errorf("invalid create presentation submission request: %+v", request)
 	}
 
 	if err := exchange.IsValidPresentationSubmission(request.Submission); err != nil {
-		return nil, util.LoggingErrorMsg(err, "provided value is not a valid presentation submission")
+		return nil, errors.Wrap(err, "provided value is not a valid presentation submission")
 	}
 
 	sdkVp, err := signing.ParseVerifiablePresentationFromJWT(request.SubmissionJWT.String())
@@ -150,12 +150,12 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 
 	definition, err := s.storage.GetPresentation(request.Submission.DefinitionID)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "getting presentation definition")
+		return nil, errors.Wrap(err, "getting presentation definition")
 	}
 
 	for _, cred := range request.Credentials {
 		if !cred.IsValid() {
-			return nil, util.LoggingNewErrorf("invalid credential %+v", cred)
+			return nil, errors.Errorf("invalid credential %+v", cred)
 		}
 		if cred.CredentialJWT != nil {
 			if err := s.verifier.VerifyJWTCredential(*cred.CredentialJWT); err != nil {
@@ -171,14 +171,14 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 	}
 
 	if err := exchange.VerifyPresentationSubmissionVP(definition.PresentationDefinition, request.Presentation); err != nil {
-		return nil, util.LoggingErrorMsg(err, "verifying presentation submission vp")
+		return nil, errors.Wrap(err, "verifying presentation submission vp")
 	}
 
 	storedSubmission := presentationstorage.StoredSubmission{Submission: request.Submission}
 
 	// TODO(andres): IO requests should be done in parallel, once we have context wired up.
 	if err := s.storage.StoreSubmission(storedSubmission); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not store presentation")
+		return nil, errors.Wrap(err, "could not store presentation")
 	}
 
 	opID := fmt.Sprintf("presentations/submissions/%s", storedSubmission.Submission.ID)
@@ -187,7 +187,7 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 		Done: false,
 	}
 	if err := s.opsStorage.StoreOperation(storedOp); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not store operation")
+		return nil, errors.Wrap(err, "could not store operation")
 	}
 
 	return &operation.Operation{

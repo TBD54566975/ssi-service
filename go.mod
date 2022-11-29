@@ -2,9 +2,12 @@ module github.com/tbd54566975/ssi-service
 
 go 1.19
 
+// TODO(andres): Remove this once https://github.com/TBD54566975/ssi-sdk/pull/260 is merged.
+replace github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221128221135-c0926ad9dcb6 => ../ssi-sdk
+
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221110170444-a9e67907c8f9
+	github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221128221135-c0926ad9dcb6
 	github.com/ardanlabs/conf v1.5.0
 	github.com/dimfeld/httptreemux/v5 v5.5.0
 	github.com/go-playground/locales v0.14.0
@@ -31,7 +34,7 @@ require (
 )
 
 require (
-	github.com/bits-and-blooms/bitset v1.3.3 // indirect
+	github.com/bits-and-blooms/bitset v1.4.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -46,11 +49,11 @@ require (
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.1.0 // indirect
 	github.com/multiformats/go-multicodec v0.7.0 // indirect
-	github.com/piprate/json-gold v0.4.2 // indirect
+	github.com/piprate/json-gold v0.5.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
-	github.com/santhosh-tekuri/jsonschema/v5 v5.0.2 // indirect
+	github.com/santhosh-tekuri/jsonschema/v5 v5.1.0 // indirect
 	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/term v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect

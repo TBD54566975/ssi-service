@@ -3,7 +3,6 @@ package did
 import (
 	"crypto"
 	"fmt"
-
 	"github.com/TBD54566975/ssi-sdk/cryptosuite"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
@@ -66,11 +65,19 @@ func extractKeyFromVerificationMethod(method didsdk.VerificationMethod) (pubKey 
 		return
 	case method.PublicKeyJWK != nil:
 		jwkBytes, jwkErr := json.Marshal(method.PublicKeyJWK)
-		if err != nil {
+		if jwkErr != nil {
 			err = jwkErr
 			return
 		}
-		pubKey, err = jwk.ParseKey(jwkBytes)
+		parsed, parseErr := jwk.ParseKey(jwkBytes)
+		if parseErr != nil {
+			err = parseErr
+			return
+		}
+		if err = parsed.Raw(&pubKey); err != nil {
+			return
+		}
+
 		return
 	}
 	err = errors.New("no public key found in verification method")
