@@ -2,12 +2,9 @@ module github.com/tbd54566975/ssi-service
 
 go 1.19
 
-// TODO(andres): Remove this once https://github.com/TBD54566975/ssi-sdk/pull/260 is merged.
-replace github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221128221135-c0926ad9dcb6 => ../ssi-sdk
-
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221128221135-c0926ad9dcb6
+	github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221129164433-9d3e18cca186
 	github.com/ardanlabs/conf v1.5.0
 	github.com/dimfeld/httptreemux/v5 v5.5.0
 	github.com/go-playground/locales v0.14.0

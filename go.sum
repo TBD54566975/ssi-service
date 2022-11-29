@@ -1,5 +1,7 @@
 github.com/BurntSushi/toml v1.2.1 h1:9F2/+DoOYIOksmaJFPw1tGFy1eDnIJXg+UHjuD8lTak=
 github.com/BurntSushi/toml v1.2.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
+github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221129164433-9d3e18cca186 h1:US/emNy9L9vvHVOhwRsaRdikhQ91lcL2K46ekESZJw0=
+github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221129164433-9d3e18cca186/go.mod h1:RFja7smnRZpi5OPDPpW35TDK3SbHuAGCHs8wbNTSBxY=
 github.com/ardanlabs/conf v1.5.0 h1:5TwP6Wu9Xi07eLFEpiCUF3oQXh9UzHMDVnD3u/I5d5c=
 github.com/ardanlabs/conf v1.5.0/go.mod h1:ILsMo9dMqYzCxDjDXTiwMI0IgxOJd0MOiucbQY2wlJw=
 github.com/bits-and-blooms/bitset v1.4.0 h1:+YZ8ePm+He2pU3dZlIZiOeAKfrBkXi1lSrXJ/Xzgbu8=
