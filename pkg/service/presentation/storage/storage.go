@@ -2,6 +2,7 @@ package storage
 
 import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -48,3 +49,5 @@ type SubmissionStorage interface {
 	StoreSubmission(schema StoredSubmission) error
 	GetSubmission(id string) (*StoredSubmission, error)
 }
+
+var ErrSubmissionNotFound = errors.New("submission not found")

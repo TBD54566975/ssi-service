@@ -2,13 +2,17 @@ package server
 
 import (
 	"fmt"
+	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -40,7 +44,11 @@ func TestPresentationAPI(t *testing.T) {
 	s, err := storage.NewStorage(storage.Bolt)
 	assert.NoError(t, err)
 
-	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s)
+	keyStoreService := testKeyStoreService(t, s)
+	didService := testDIDService(t, s, keyStoreService)
+	schemaService := testSchemaService(t, s, keyStoreService, didService)
+
+	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s, didService.GetResolver(), schemaService)
 	assert.NoError(t, err)
 
 	pRouter, err := router.NewPresentationRouter(service)
@@ -136,4 +144,144 @@ func TestPresentationAPI(t *testing.T) {
 		assert.Error(t, pRouter.DeletePresentationDefinition(newRequestContext(), w, req))
 		w.Flush()
 	})
+
+	t.Run("well formed submission returns operation", func(t *testing.T) {
+
+		definition := createPresentationDefinition(t, pRouter)
+		vc := credential.VerifiableCredential{
+			Context:          []string{credential.VerifiableCredentialsLinkedDataContext},
+			ID:               "7035a7ec-66c8-4aec-9191-a34e8cf1e82b",
+			Type:             []string{credential.VerifiablePresentationType},
+			Issuer:           "did:key:z4oJ8bFEFv7E3omhuK5LrAtL29Nmd8heBey9HtJCSvodSb7nrfaMrd6zb7fjYSRxrfSgBSDeM6Bs59KRKFgXSDWJcfcjs",
+			IssuanceDate:     "2022-11-07T21:28:57Z",
+			ExpirationDate:   "2051-10-05T14:48:00.000Z",
+			CredentialStatus: nil,
+			CredentialSubject: credential.CredentialSubject{
+				"additionalName": "Mclovin",
+				"dateOfBirth":    "1987-01-02",
+				"familyName":     "Andres",
+				"givenName":      "Uribe",
+				"id":             "did:web:andresuribe.com",
+			},
+			CredentialSchema: nil,
+			RefreshService:   nil,
+			TermsOfUse:       nil,
+			Evidence:         nil,
+			Proof:            nil,
+		}
+
+		signer0 := getTestVectorKey0Signer(t)
+		vcData, err := signing.SignVerifiableCredentialJWT(signer0, vc)
+		assert.NoError(t, err)
+		ps := exchange.PresentationSubmission{
+			ID:           "a30e3b91-fb77-4d22-95fa-871689c322e2",
+			DefinitionID: definition.PresentationDefinition.ID,
+			DescriptorMap: []exchange.SubmissionDescriptor{
+				{
+					ID:         "wa_driver_license",
+					Format:     string(exchange.JWTVPTarget),
+					Path:       "$.verifiableCredential[0]",
+					PathNested: nil,
+				},
+			},
+		}
+		vp := credential.VerifiablePresentation{
+			Context:                []string{credential.VerifiableCredentialsLinkedDataContext},
+			ID:                     "a9b575c7-bac2-47e7-a925-c432815ebb4c",
+			Holder:                 "did:key:z4oJ8eRi73fvkrXBgqTHZRTropESXLc7Vet8XpJrGUSBZAT2UHvQBYpBEPdAUiyKBi2XC2iFjgtn5Gw2Qd4WXHyj1LxjU",
+			Type:                   []string{credential.VerifiablePresentationType},
+			PresentationSubmission: ps,
+			VerifiableCredential:   []interface{}{keyaccess.JWT(vcData)},
+			Proof:                  nil,
+		}
+
+		signer1 := getTestVectorKey1Signer(t)
+		signed, err := signing.SignVerifiablePresentationJWT(signer1, vp)
+		assert.NoError(t, err)
+
+		request := router.CreateSubmissionRequest{SubmissionJWT: keyaccess.JWT(signed)}
+
+		value := newRequestValue(t, request)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/submissions", value)
+		w := httptest.NewRecorder()
+
+		err = pRouter.CreateSubmission(newRequestContext(), w, req)
+
+		require.NoError(t, err)
+		var resp router.Operation
+		assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+		assert.Contains(t, resp.ID, "presentations/submissions/")
+		assert.False(t, resp.Done)
+		assert.Zero(t, resp.Result)
+	})
+}
+
+func createPresentationDefinition(t *testing.T, pRouter *router.PresentationRouter) router.CreatePresentationDefinitionResponse {
+	request := router.CreatePresentationDefinitionRequest{
+		Name:                   "name",
+		Purpose:                "purpose",
+		Format:                 nil,
+		SubmissionRequirements: nil,
+		InputDescriptors: []exchange.InputDescriptor{
+			{
+				ID:      "wa_driver_license",
+				Name:    "washington state business license",
+				Purpose: "some testing stuff",
+				Format:  nil,
+				Constraints: &exchange.Constraints{
+					Fields: []exchange.Field{
+						{
+							ID: "date_of_birth",
+							Path: []string{
+								"$.credentialSubject.dateOfBirth",
+								"$.credentialSubject.dob",
+								"$.vc.credentialSubject.dateOfBirth",
+								"$.vc.credentialSubject.dob",
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	value := newRequestValue(t, request)
+	req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/definitions", value)
+	w := httptest.NewRecorder()
+
+	assert.NoError(t, pRouter.CreatePresentationDefinition(newRequestContext(), w, req))
+	var resp router.CreatePresentationDefinitionResponse
+	assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+	return resp
+}
+
+func getTestVectorKey0Signer(t *testing.T) crypto.JWTSigner {
+	// AKA the issuers key
+	// AKA did:key:z4oJ8bFEFv7E3omhuK5LrAtL29Nmd8heBey9HtJCSvodSb7nrfaMrd6zb7fjYSRxrfSgBSDeM6Bs59KRKFgXSDWJcfcjs
+	knownJWK := crypto.PrivateKeyJWK{
+		KTY: "EC",
+		CRV: "P-256",
+		X:   "SVqB4JcUD6lsfvqMr-OKUNUphdNn64Eay60978ZlL74",
+		Y:   "lf0u0pMj4lGAzZix5u4Cm5CMQIgMNpkwy163wtKYVKI",
+		D:   "0g5vAEKzugrXaRbgKG0Tj2qJ5lMP4Bezds1_sTybkfk",
+	}
+
+	signer, err := crypto.NewJWTSignerFromJWK(knownJWK.KID, knownJWK)
+	assert.NoError(t, err)
+	return *signer
+}
+
+func getTestVectorKey1Signer(t *testing.T) crypto.JWTSigner {
+	// AKA the submitter of the presentation
+	// AKA did:key:z4oJ8eRi73fvkrXBgqTHZRTropESXLc7Vet8XpJrGUSBZAT2UHvQBYpBEPdAUiyKBi2XC2iFjgtn5Gw2Qd4WXHyj1LxjU
+	knownJWK := crypto.PrivateKeyJWK{
+		KTY: "EC",
+		CRV: "P-256",
+		X:   "6HEz8SLP7NgHPGp0bElryiD7u3_cO1EmX-ngsV_yLsI",
+		Y:   "QlIYaYyDLxLkybDan9LOSkfGvjzZsrdgAb_nQr_Li5M",
+		D:   "7m6c2Axy9OWi7-d9hFVhmMe22vQTfQDL_pG-3WFsjzc",
+	}
+
+	signer, err := crypto.NewJWTSignerFromJWK(knownJWK.KID, knownJWK)
+	assert.NoError(t, err)
+	return *signer
 }
