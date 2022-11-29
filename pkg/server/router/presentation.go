@@ -242,17 +242,20 @@ type OperationResult struct {
 func (pr PresentationRouter) CreateSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreateSubmissionRequest
 	if err := framework.Decode(r, &request); err != nil {
-		return framework.NewRequestError(util.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
 	}
 
 	req, err := request.toServiceRequest()
 	if err != nil {
-		return framework.NewRequestError(util.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
 	}
 
 	operation, err := pr.service.CreateSubmission(*req)
 	if err != nil {
-		return framework.NewRequestError(util.LoggingErrorMsg(err, "cannot create submission"), http.StatusInternalServerError)
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "cannot create submission"), http.StatusInternalServerError)
 	}
 
 	resp := Operation{
