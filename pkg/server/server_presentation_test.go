@@ -350,7 +350,7 @@ func createSubmissionRequest(t *testing.T, definitionID string, vc credential.Ve
 	return request
 }
 
-func VerifiableCredential(options ...VcOption) credential.VerifiableCredential {
+func VerifiableCredential(options ...VCOption) credential.VerifiableCredential {
 	vc := credential.VerifiableCredential{
 		Context:          []string{credential.VerifiableCredentialsLinkedDataContext},
 		ID:               uuid.NewString(),
@@ -378,13 +378,13 @@ func VerifiableCredential(options ...VcOption) credential.VerifiableCredential {
 	return vc
 }
 
-func WithCredentialSubject(subject credential.CredentialSubject) VcOption {
+func WithCredentialSubject(subject credential.CredentialSubject) VCOption {
 	return func(vc *credential.VerifiableCredential) {
 		vc.CredentialSubject = subject
 	}
 }
 
-type VcOption func(verifiableCredential *credential.VerifiableCredential)
+type VCOption func(verifiableCredential *credential.VerifiableCredential)
 
 func createPresentationDefinition(t *testing.T, pRouter *router.PresentationRouter) router.CreatePresentationDefinitionResponse {
 	request := router.CreatePresentationDefinitionRequest{
@@ -428,7 +428,7 @@ func getSigner(t *testing.T) (crypto.JWTSigner, did.DIDKey) {
 	private, didKey, err := did.GenerateDIDKey(crypto.P256)
 	assert.NoError(t, err)
 
-	signer, err := crypto.NewJWTSigner("", private)
+	signer, err := crypto.NewJWTSigner(didKey.String(), private)
 	assert.NoError(t, err)
 
 	return *signer, *didKey

@@ -176,7 +176,8 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 
 	storedSubmission := presentationstorage.StoredSubmission{
 		Status:     presentationstorage.StatusPending,
-		Submission: request.Submission}
+		Submission: request.Submission,
+	}
 
 	// TODO(andres): IO requests should be done in parallel, once we have context wired up.
 	if err := s.storage.StoreSubmission(storedSubmission); err != nil {
@@ -209,7 +210,8 @@ func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResp
 		Submission: Submission{
 			Status:                 storedSubmission.Status.String(),
 			PresentationSubmission: &storedSubmission.Submission,
-		}}, nil
+		},
+	}, nil
 }
 
 func (s Service) ListSubmissions(request ListSubmissionRequest) (*ListSubmissionResponse, error) {

@@ -65,8 +65,8 @@ type ListSubmissionRequest struct {
 
 type Submission struct {
 	// One of {`pending`, `done`}.
-	Status                           string `json:"status" validate:"required"`
-	*exchange.PresentationSubmission `json:"submission"`
+	Status string `json:"status" validate:"required"`
+	*exchange.PresentationSubmission
 }
 
 type ListSubmissionResponse struct {
