@@ -25,22 +25,14 @@ func TestGetVerificationInformation(t *testing.T) {
 	}
 
 	kid2Method := did.VerificationMethod{
-		ID:                  "kid2",
-		Type:                "Ed25519",
-		Controller:          "",
-		PublicKeyBase58:     publicKey["kid2"].base58,
-		PublicKeyJWK:        nil,
-		PublicKeyMultibase:  "",
-		BlockchainAccountID: "",
+		ID:              "kid2",
+		Type:            "Ed25519",
+		PublicKeyBase58: publicKey["kid2"].base58,
 	}
 	awesomeKidMethod := did.VerificationMethod{
-		ID:                  "an awesome kid",
-		Type:                "Ed25519",
-		Controller:          "",
-		PublicKeyBase58:     publicKey["an awesome kid"].base58,
-		PublicKeyJWK:        nil,
-		PublicKeyMultibase:  "",
-		BlockchainAccountID: "",
+		ID:              "an awesome kid",
+		Type:            "Ed25519",
+		PublicKeyBase58: publicKey["an awesome kid"].base58,
 	}
 	type args struct {
 		did      did.DIDDocument
