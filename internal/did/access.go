@@ -32,9 +32,10 @@ func GetVerificationInformation(did didsdk.DIDDocument, maybeKID string) (kid st
 			return "", nil, errors.Errorf("kid is required for did: %s, which has multiple verification methods", did.ID)
 		}
 		for _, method := range verificationMethods {
-			if method.ID == kid {
-				kid = did.ID
-				pubKey, err = extractKeyFromVerificationMethod(verificationMethods[0])
+			// hi -- we are in this hangout - https://meet.google.com/wnp-paxg-ovm?authuser=0
+			if method.ID == maybeKID {
+				kid = method.ID
+				pubKey, err = extractKeyFromVerificationMethod(method)
 				return
 			}
 		}
