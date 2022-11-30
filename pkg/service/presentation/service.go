@@ -206,8 +206,10 @@ func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResp
 		return nil, errors.Wrap(err, "fetching from storage")
 	}
 	return &GetSubmissionResponse{
-		Status:     storedSubmission.Status.String(),
-		Submission: &storedSubmission.Submission}, nil
+		Submission: Submission{
+			Status:                 storedSubmission.Status.String(),
+			PresentationSubmission: &storedSubmission.Submission,
+		}}, nil
 }
 
 func (s Service) ListSubmissions(request ListSubmissionRequest) (*ListSubmissionResponse, error) {

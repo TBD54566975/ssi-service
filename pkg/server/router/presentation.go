@@ -292,10 +292,7 @@ func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseW
 			util.LoggingErrorMsg(err, "failed getting submission"), http.StatusBadRequest)
 	}
 	resp := GetSubmissionResponse{
-		Submission: presentation.Submission{
-			Status:                 submission.Status,
-			PresentationSubmission: submission.Submission,
-		},
+		Submission: submission.Submission,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
