@@ -28,7 +28,7 @@ password = "default-password"
 
 [services.did]
 name = "did"
-methods = ["key"]
+methods = ["key", "web"]
 resolution_methods = ["key", "web", "pkh", "peer"]
 
 [services.schema]
