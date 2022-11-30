@@ -32,7 +32,7 @@ func (h *webDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 	didWeb := did.DIDWeb(request.DIDWebID)
 
 	if !didWeb.IsValid() {
-		return nil, errors.New(fmt.Sprintf("did:web is not valid, could not resolve did:web DID: %s", didWeb))
+		return nil, fmt.Errorf("did:web is not valid, could not resolve did:web DID: %s", didWeb)
 	}
 
 	pubKey, privKey, err := crypto.GenerateKeyByKeyType(request.KeyType)
