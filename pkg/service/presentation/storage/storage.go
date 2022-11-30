@@ -65,6 +65,7 @@ type StoredSubmission struct {
 type SubmissionStorage interface {
 	StoreSubmission(schema StoredSubmission) error
 	GetSubmission(id string) (*StoredSubmission, error)
+	ListSubmissions() ([]StoredSubmission, error)
 }
 
 var ErrSubmissionNotFound = errors.New("submission not found")

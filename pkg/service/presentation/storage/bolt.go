@@ -20,6 +20,23 @@ type BoltPresentationStorage struct {
 	db *storage.BoltDB
 }
 
+func (b BoltPresentationStorage) ListSubmissions() ([]StoredSubmission, error) {
+	allData, err := b.db.ReadAll(submissionNamespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading all data")
+	}
+
+	storedSubmissions := make([]StoredSubmission, len(allData))
+	i := 0
+	for key, data := range allData {
+		if err := json.Unmarshal(data, &storedSubmissions[i]); err != nil {
+			logrus.WithError(err).WithField("key", key).Errorf("unmarshalling submission")
+		}
+		i++
+	}
+	return storedSubmissions, nil
+}
+
 func NewBoltPresentationStorage(db *storage.BoltDB) (*BoltPresentationStorage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")

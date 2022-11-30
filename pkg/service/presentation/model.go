@@ -60,3 +60,15 @@ type GetSubmissionResponse struct {
 type DeleteSubmissionRequest struct {
 	ID string `json:"id" validate:"required"`
 }
+
+type ListSubmissionRequest struct {
+}
+
+type Submission struct {
+	Status                           string `json:"status" validate:"required"`
+	*exchange.PresentationSubmission `json:"submission"`
+}
+
+type ListSubmissionResponse struct {
+	Submissions []Submission `json:"submissions"`
+}

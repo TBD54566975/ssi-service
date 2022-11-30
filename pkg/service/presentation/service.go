@@ -209,3 +209,23 @@ func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResp
 		Status:     storedSubmission.Status.String(),
 		Submission: &storedSubmission.Submission}, nil
 }
+
+func (s Service) ListSubmissions(request ListSubmissionRequest) (*ListSubmissionResponse, error) {
+	logrus.Debug("listing presentation submissions")
+
+	subs, err := s.storage.ListSubmissions()
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching submissions from storage")
+	}
+
+	resp := &ListSubmissionResponse{Submissions: make([]Submission, 0, len(subs))}
+	for _, sub := range subs {
+		sub := sub // What's this?? see https://github.com/golang/go/wiki/CommonMistakes#using-reference-to-loop-iterator-variable
+		resp.Submissions = append(resp.Submissions, Submission{
+			Status:                 sub.Status.String(),
+			PresentationSubmission: &sub.Submission,
+		})
+	}
+
+	return resp, nil
+}

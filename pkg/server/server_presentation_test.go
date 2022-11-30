@@ -6,9 +6,11 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/config"
@@ -42,25 +44,9 @@ func TestPresentationAPI(t *testing.T) {
 	pd, err := builder.Build()
 	assert.NoError(t, err)
 
-	s, err := storage.NewStorage(storage.Bolt)
-	assert.NoError(t, err)
-
-	keyStoreService := testKeyStoreService(t, s)
-	didService := testDIDService(t, s, keyStoreService)
-	schemaService := testSchemaService(t, s, keyStoreService, didService)
-
-	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s, didService.GetResolver(), schemaService)
-	assert.NoError(t, err)
-
-	pRouter, err := router.NewPresentationRouter(service)
-	assert.NoError(t, err)
-
-	t.Cleanup(func() {
-		_ = s.Close()
-		_ = os.Remove(storage.DBFile)
-	})
-
 	t.Run("Create, Get, and Delete PresentationDefinition", func(t *testing.T) {
+		pRouter := setupRouter(t)
+
 		var createdID string
 		{
 			// Create returns the expected PD.
@@ -107,7 +93,6 @@ func TestPresentationAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", createdID), nil)
 			w := httptest.NewRecorder()
 			assert.NoError(t, pRouter.DeletePresentationDefinition(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
-
 			w.Flush()
 		}
 		{
@@ -115,12 +100,11 @@ func TestPresentationAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", createdID), nil)
 			w := httptest.NewRecorder()
 			assert.Error(t, pRouter.GetPresentationDefinition(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
-
-			w.Flush()
 		}
 	})
 
 	t.Run("Create returns error without input descriptors", func(t *testing.T) {
+		pRouter := setupRouter(t)
 		request := router.CreatePresentationDefinitionRequest{}
 		value := newRequestValue(t, request)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/definitions", value)
@@ -129,17 +113,19 @@ func TestPresentationAPI(t *testing.T) {
 		err = pRouter.CreatePresentationDefinition(newRequestContext(), w, req)
 
 		assert.Error(t, err)
-		w.Flush()
 	})
 
 	t.Run("Get without an ID returns error", func(t *testing.T) {
+		pRouter := setupRouter(t)
 		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
+
 		assert.Error(t, pRouter.GetPresentationDefinition(newRequestContext(), w, req))
-		w.Flush()
 	})
 
 	t.Run("Delete without an ID returns error", func(t *testing.T) {
+		pRouter := setupRouter(t)
+
 		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
 		assert.Error(t, pRouter.DeletePresentationDefinition(newRequestContext(), w, req))
@@ -147,14 +133,29 @@ func TestPresentationAPI(t *testing.T) {
 	})
 
 	t.Run("Submission endpoints", func(t *testing.T) {
+
 		t.Run("Get non-existing ID returns error", func(t *testing.T) {
+			pRouter := setupRouter(t)
+
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions/myrandomid", nil)
 			w := httptest.NewRecorder()
 			assert.Error(t, pRouter.GetSubmission(newRequestContext(), w, req))
 		})
 
 		t.Run("Get returns submission after creation", func(t *testing.T) {
-			op, def := createDefinitionAndSubmission(t, pRouter)
+			pRouter := setupRouter(t)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			op := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(
+				WithCredentialSubject(credential.CredentialSubject{
+					"additionalName": "Mclovin",
+					"dateOfBirth":    "1987-01-02",
+					"familyName":     "Andres",
+					"givenName":      "Uribe",
+					"id":             "did:web:andresuribe.com",
+				})), holderDID, holderSigner)
+
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s", operation.SubmissionID(op.ID)), nil)
 			w := httptest.NewRecorder()
 
@@ -163,33 +164,144 @@ func TestPresentationAPI(t *testing.T) {
 			var resp router.GetSubmissionResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Equal(t, operation.SubmissionID(op.ID), resp.Submission.ID)
-			assert.Equal(t, def.ID, resp.Submission.DefinitionID)
+			assert.Equal(t, definition.PresentationDefinition.ID, resp.Submission.DefinitionID)
 			assert.Equal(t, "unknown", resp.Status)
+		})
+
+		t.Run("Create well formed submission returns operation", func(t *testing.T) {
+			pRouter := setupRouter(t)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			request := createSubmissionRequest(t, definition.PresentationDefinition.ID, VerifiableCredential(
+				WithCredentialSubject(credential.CredentialSubject{
+					"additionalName": "Mclovin",
+					"dateOfBirth":    "1987-01-02",
+					"familyName":     "Andres",
+					"givenName":      "Uribe",
+					"id":             "did:web:andresuribe.com",
+				})), holderSigner, holderDID)
+
+			value := newRequestValue(t, request)
+			req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/submissions", value)
+			w := httptest.NewRecorder()
+
+			err = pRouter.CreateSubmission(newRequestContext(), w, req)
+
+			require.NoError(t, err)
+			var resp router.Operation
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+			assert.Contains(t, resp.ID, "presentations/submissions/")
+			assert.False(t, resp.Done)
+			assert.Zero(t, resp.Result)
+		})
+
+		t.Run("List submissions returns empty when there are none", func(t *testing.T) {
+			pRouter := setupRouter(t)
+
+			request := router.ListSubmissionRequest{}
+
+			value := newRequestValue(t, request)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
+			w := httptest.NewRecorder()
+
+			err = pRouter.ListSubmissions(newRequestContext(), w, req)
+
+			require.NoError(t, err)
+			var resp router.ListSubmissionResponse
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+			assert.Empty(t, resp.Submissions)
+		})
+
+		t.Run("List submissions returns many submissions", func(t *testing.T) {
+			pRouter := setupRouter(t)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			op := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(
+				WithCredentialSubject(credential.CredentialSubject{
+					"additionalName": "Mclovin",
+					"dateOfBirth":    "1987-01-02",
+					"familyName":     "Andres",
+					"givenName":      "Uribe",
+					"id":             "did:web:andresuribe.com",
+				})), holderDID, holderSigner)
+
+			mrTeeSigner, mrTeeDID := getSigner(t)
+			op2 := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(
+				WithCredentialSubject(credential.CredentialSubject{
+					"additionalName": "Mr. T",
+					"dateOfBirth":    "1999-01-02",
+					"familyName":     "Mister",
+					"givenName":      "Tee",
+					"id":             "did:web:mrt.com"})), mrTeeDID, mrTeeSigner)
+
+			request := router.ListSubmissionRequest{}
+
+			value := newRequestValue(t, request)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
+			w := httptest.NewRecorder()
+
+			err = pRouter.ListSubmissions(newRequestContext(), w, req)
+
+			require.NoError(t, err)
+			var resp router.ListSubmissionResponse
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+			assert.Len(t, resp.Submissions, 2)
+
+			expectedSubmissions := []presentation.Submission{
+				{
+					Status: "unknown",
+					PresentationSubmission: &exchange.PresentationSubmission{
+						ID:           operation.SubmissionID(op.ID),
+						DefinitionID: definition.PresentationDefinition.ID,
+					},
+				},
+				{
+					Status: "unknown",
+					PresentationSubmission: &exchange.PresentationSubmission{
+						ID:           operation.SubmissionID(op2.ID),
+						DefinitionID: definition.PresentationDefinition.ID,
+					},
+				},
+			}
+			diff := cmp.Diff(expectedSubmissions, resp.Submissions,
+				cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
+				cmpopts.SortSlices(func(l, r presentation.Submission) bool {
+					return l.PresentationSubmission.ID < r.PresentationSubmission.ID
+				}),
+			)
+			if diff != "" {
+				t.Errorf("Mismatch on submissions (-want +got):\n%s", diff)
+			}
 		})
 	})
 
-	t.Run("well formed submission returns operation", func(t *testing.T) {
-		definition := createPresentationDefinition(t, pRouter)
-		request := createSubmissionRequest(t, definition)
-
-		value := newRequestValue(t, request)
-		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/submissions", value)
-		w := httptest.NewRecorder()
-
-		err = pRouter.CreateSubmission(newRequestContext(), w, req)
-
-		require.NoError(t, err)
-		var resp router.Operation
-		assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-		assert.Contains(t, resp.ID, "presentations/submissions/")
-		assert.False(t, resp.Done)
-		assert.Zero(t, resp.Result)
-	})
 }
 
-func createDefinitionAndSubmission(t *testing.T, pRouter *router.PresentationRouter) (router.Operation, exchange.PresentationDefinition) {
-	definition := createPresentationDefinition(t, pRouter)
-	request := createSubmissionRequest(t, definition)
+func setupRouter(t *testing.T) *router.PresentationRouter {
+	s, err := storage.NewStorage(storage.Bolt)
+	assert.NoError(t, err)
+
+	keyStoreService := testKeyStoreService(t, s)
+	didService := testDIDService(t, s, keyStoreService)
+	schemaService := testSchemaService(t, s, keyStoreService, didService)
+
+	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s, didService.GetResolver(), schemaService)
+	assert.NoError(t, err)
+
+	pRouter, err := router.NewPresentationRouter(service)
+	assert.NoError(t, err)
+
+	t.Cleanup(func() {
+		_ = s.Close()
+		_ = os.Remove(storage.DBFile)
+	})
+	return pRouter
+}
+
+func createSubmission(t *testing.T, pRouter *router.PresentationRouter, definitionID string, vc credential.VerifiableCredential, holderDID did.DIDKey, holderSigner crypto.JWTSigner) router.Operation {
+	request := createSubmissionRequest(t, definitionID, vc, holderSigner, holderDID)
 
 	value := newRequestValue(t, request)
 	req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/submissions", value)
@@ -200,26 +312,17 @@ func createDefinitionAndSubmission(t *testing.T, pRouter *router.PresentationRou
 	require.NoError(t, err)
 	var resp router.Operation
 	assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-	return resp, definition.PresentationDefinition
+	return resp
 }
 
-func createSubmissionRequest(t *testing.T, definition router.CreatePresentationDefinitionResponse) router.CreateSubmissionRequest {
-	vc := VerifiableCredential(
-		WithIssuer("did:key:z4oJ8bFEFv7E3omhuK5LrAtL29Nmd8heBey9HtJCSvodSb7nrfaMrd6zb7fjYSRxrfSgBSDeM6Bs59KRKFgXSDWJcfcjs"),
-		WithCredentialSubject(credential.CredentialSubject{
-			"additionalName": "Mclovin",
-			"dateOfBirth":    "1987-01-02",
-			"familyName":     "Andres",
-			"givenName":      "Uribe",
-			"id":             "did:web:andresuribe.com",
-		}))
-
-	signer0 := getTestVectorKey0Signer(t)
-	vcData, err := signing.SignVerifiableCredentialJWT(signer0, vc)
+func createSubmissionRequest(t *testing.T, definitionID string, vc credential.VerifiableCredential, holderSigner crypto.JWTSigner, holderDID did.DIDKey) router.CreateSubmissionRequest {
+	issuerSigner, didKey := getSigner(t)
+	vc.Issuer = didKey.String()
+	vcData, err := signing.SignVerifiableCredentialJWT(issuerSigner, vc)
 	assert.NoError(t, err)
 	ps := exchange.PresentationSubmission{
-		ID:           "a30e3b91-fb77-4d22-95fa-871689c322e2",
-		DefinitionID: definition.PresentationDefinition.ID,
+		ID:           uuid.NewString(),
+		DefinitionID: definitionID,
 		DescriptorMap: []exchange.SubmissionDescriptor{
 			{
 				ID:         "wa_driver_license",
@@ -229,18 +332,18 @@ func createSubmissionRequest(t *testing.T, definition router.CreatePresentationD
 			},
 		},
 	}
+
 	vp := credential.VerifiablePresentation{
 		Context:                []string{credential.VerifiableCredentialsLinkedDataContext},
-		ID:                     "a9b575c7-bac2-47e7-a925-c432815ebb4c",
-		Holder:                 "did:key:z4oJ8eRi73fvkrXBgqTHZRTropESXLc7Vet8XpJrGUSBZAT2UHvQBYpBEPdAUiyKBi2XC2iFjgtn5Gw2Qd4WXHyj1LxjU",
+		ID:                     uuid.NewString(),
+		Holder:                 holderDID.String(),
 		Type:                   []string{credential.VerifiablePresentationType},
 		PresentationSubmission: ps,
 		VerifiableCredential:   []interface{}{keyaccess.JWT(vcData)},
 		Proof:                  nil,
 	}
 
-	signer1 := getTestVectorKey1Signer(t)
-	signed, err := signing.SignVerifiablePresentationJWT(signer1, vp)
+	signed, err := signing.SignVerifiablePresentationJWT(holderSigner, vp)
 	assert.NoError(t, err)
 
 	request := router.CreateSubmissionRequest{SubmissionJWT: keyaccess.JWT(signed)}
@@ -250,7 +353,7 @@ func createSubmissionRequest(t *testing.T, definition router.CreatePresentationD
 func VerifiableCredential(options ...VcOption) credential.VerifiableCredential {
 	vc := credential.VerifiableCredential{
 		Context:          []string{credential.VerifiableCredentialsLinkedDataContext},
-		ID:               "7035a7ec-66c8-4aec-9191-a34e8cf1e82b",
+		ID:               uuid.NewString(),
 		Type:             []string{credential.VerifiablePresentationType},
 		Issuer:           "did:key:z4oJ8bFEFv7E3omhuK5LrAtL29Nmd8heBey9HtJCSvodSb7nrfaMrd6zb7fjYSRxrfSgBSDeM6Bs59KRKFgXSDWJcfcjs",
 		IssuanceDate:     "2022-11-07T21:28:57Z",
@@ -282,12 +385,6 @@ func WithCredentialSubject(subject credential.CredentialSubject) VcOption {
 }
 
 type VcOption func(verifiableCredential *credential.VerifiableCredential)
-
-func WithIssuer(s string) VcOption {
-	return func(vc *credential.VerifiableCredential) {
-		vc.Issuer = s
-	}
-}
 
 func createPresentationDefinition(t *testing.T, pRouter *router.PresentationRouter) router.CreatePresentationDefinitionResponse {
 	request := router.CreatePresentationDefinitionRequest{
@@ -327,34 +424,12 @@ func createPresentationDefinition(t *testing.T, pRouter *router.PresentationRout
 	return resp
 }
 
-func getTestVectorKey0Signer(t *testing.T) crypto.JWTSigner {
-	// AKA the issuers key
-	// AKA did:key:z4oJ8bFEFv7E3omhuK5LrAtL29Nmd8heBey9HtJCSvodSb7nrfaMrd6zb7fjYSRxrfSgBSDeM6Bs59KRKFgXSDWJcfcjs
-	knownJWK := crypto.PrivateKeyJWK{
-		KTY: "EC",
-		CRV: "P-256",
-		X:   "SVqB4JcUD6lsfvqMr-OKUNUphdNn64Eay60978ZlL74",
-		Y:   "lf0u0pMj4lGAzZix5u4Cm5CMQIgMNpkwy163wtKYVKI",
-		D:   "0g5vAEKzugrXaRbgKG0Tj2qJ5lMP4Bezds1_sTybkfk",
-	}
-
-	signer, err := crypto.NewJWTSignerFromJWK(knownJWK.KID, knownJWK)
+func getSigner(t *testing.T) (crypto.JWTSigner, did.DIDKey) {
+	private, didKey, err := did.GenerateDIDKey(crypto.P256)
 	assert.NoError(t, err)
-	return *signer
-}
 
-func getTestVectorKey1Signer(t *testing.T) crypto.JWTSigner {
-	// AKA the submitter of the presentation
-	// AKA did:key:z4oJ8eRi73fvkrXBgqTHZRTropESXLc7Vet8XpJrGUSBZAT2UHvQBYpBEPdAUiyKBi2XC2iFjgtn5Gw2Qd4WXHyj1LxjU
-	knownJWK := crypto.PrivateKeyJWK{
-		KTY: "EC",
-		CRV: "P-256",
-		X:   "6HEz8SLP7NgHPGp0bElryiD7u3_cO1EmX-ngsV_yLsI",
-		Y:   "QlIYaYyDLxLkybDan9LOSkfGvjzZsrdgAb_nQr_Li5M",
-		D:   "7m6c2Axy9OWi7-d9hFVhmMe22vQTfQDL_pG-3WFsjzc",
-	}
-
-	signer, err := crypto.NewJWTSignerFromJWK(knownJWK.KID, knownJWK)
+	signer, err := crypto.NewJWTSigner("", private)
 	assert.NoError(t, err)
-	return *signer
+
+	return *signer, *didKey
 }
