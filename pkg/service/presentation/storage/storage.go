@@ -41,7 +41,24 @@ func NewPresentationStorage(s storage.ServiceStorage) (Storage, error) {
 	}
 }
 
+type Status uint8
+
+func (s Status) String() string {
+	switch s {
+	case StatusDone:
+		return "done"
+	default:
+		return "unknown"
+	}
+}
+
+const (
+	StatusUnknown Status = iota
+	StatusDone           = 1
+)
+
 type StoredSubmission struct {
+	Status     Status                          `json:"status"`
 	Submission exchange.PresentationSubmission `json:"submission"`
 }
 

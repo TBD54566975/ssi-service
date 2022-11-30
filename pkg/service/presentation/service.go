@@ -174,7 +174,9 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 		return nil, errors.Wrap(err, "verifying presentation submission vp")
 	}
 
-	storedSubmission := presentationstorage.StoredSubmission{Submission: request.Submission}
+	storedSubmission := presentationstorage.StoredSubmission{
+		Status:     presentationstorage.StatusUnknown,
+		Submission: request.Submission}
 
 	// TODO(andres): IO requests should be done in parallel, once we have context wired up.
 	if err := s.storage.StoreSubmission(storedSubmission); err != nil {
@@ -201,10 +203,9 @@ func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResp
 
 	storedSubmission, err := s.storage.GetSubmission(request.ID)
 	if err != nil {
-		return nil, util.LoggingNewErrorf("error getting presentation submission: %s", request.ID)
+		return nil, errors.Wrap(err, "fetching from storage")
 	}
-	if storedSubmission == nil {
-		return nil, util.LoggingNewErrorf("presentation submission with id<%s> could not be found", request.ID)
-	}
-	return &GetSubmissionResponse{Submission: storedSubmission.Submission}, nil
+	return &GetSubmissionResponse{
+		Status:     storedSubmission.Status.String(),
+		Submission: &storedSubmission.Submission}, nil
 }

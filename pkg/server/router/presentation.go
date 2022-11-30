@@ -265,7 +265,10 @@ func (pr PresentationRouter) CreateSubmission(ctx context.Context, w http.Respon
 }
 
 type GetSubmissionResponse struct {
-	Submission exchange.PresentationSubmission `json:"submission"`
+	// One of {"done", "unknown"}
+	Status string `json:"status"`
+
+	Submission *exchange.PresentationSubmission `json:"submission,omitempty"`
 }
 
 // GetSubmission godoc
@@ -279,7 +282,22 @@ type GetSubmissionResponse struct {
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/presentations/submission/{id} [get]
 func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	var resp GetSubmissionResponse
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		return framework.NewRequestError(
+			util.LoggingNewError("get submission request requires id"), http.StatusBadRequest)
+	}
+
+	submission, err := pr.service.GetSubmission(presentation.GetSubmissionRequest{ID: *id})
+
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "failed getting submission"), http.StatusBadRequest)
+	}
+	resp := GetSubmissionResponse{
+		Status:     submission.Status,
+		Submission: submission.Submission,
+	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 

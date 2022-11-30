@@ -53,7 +53,8 @@ type GetSubmissionRequest struct {
 }
 
 type GetSubmissionResponse struct {
-	Submission exchange.PresentationSubmission `json:"submission"`
+	Status     string                           `json:"status" validate:"required"`
+	Submission *exchange.PresentationSubmission `json:"submission"`
 }
 
 type DeleteSubmissionRequest struct {
