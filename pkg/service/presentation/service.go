@@ -175,7 +175,7 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 	}
 
 	storedSubmission := presentationstorage.StoredSubmission{
-		Status:     presentationstorage.StatusUnknown,
+		Status:     presentationstorage.StatusPending,
 		Submission: request.Submission}
 
 	// TODO(andres): IO requests should be done in parallel, once we have context wired up.

@@ -265,9 +265,7 @@ func (pr PresentationRouter) CreateSubmission(ctx context.Context, w http.Respon
 }
 
 type GetSubmissionResponse struct {
-	// One of {"done", "unknown"}
-	Status     string                           `json:"status"`
-	Submission *exchange.PresentationSubmission `json:"submission,omitempty"`
+	Submission presentation.Submission
 }
 
 // GetSubmission godoc
@@ -294,8 +292,10 @@ func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseW
 			util.LoggingErrorMsg(err, "failed getting submission"), http.StatusBadRequest)
 	}
 	resp := GetSubmissionResponse{
-		Status:     submission.Status,
-		Submission: submission.Submission,
+		Submission: presentation.Submission{
+			Status:                 submission.Status,
+			PresentationSubmission: submission.Submission,
+		},
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }

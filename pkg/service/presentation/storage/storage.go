@@ -18,6 +18,7 @@ type Storage interface {
 }
 
 type DefinitionStorage interface {
+	// TODO: rename to Definition
 	StorePresentation(schema StoredPresentation) error
 	GetPresentation(id string) (*StoredPresentation, error)
 	DeletePresentation(id string) error
@@ -47,6 +48,8 @@ func (s Status) String() string {
 	switch s {
 	case StatusDone:
 		return "done"
+	case StatusPending:
+		return "pending"
 	default:
 		return "unknown"
 	}
@@ -54,7 +57,8 @@ func (s Status) String() string {
 
 const (
 	StatusUnknown Status = iota
-	StatusDone           = 1
+	StatusPending
+	StatusDone
 )
 
 type StoredSubmission struct {

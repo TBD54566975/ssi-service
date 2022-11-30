@@ -165,7 +165,7 @@ func TestPresentationAPI(t *testing.T) {
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Equal(t, operation.SubmissionID(op.ID), resp.Submission.ID)
 			assert.Equal(t, definition.PresentationDefinition.ID, resp.Submission.DefinitionID)
-			assert.Equal(t, "unknown", resp.Status)
+			assert.Equal(t, "pending", resp.Submission.Status)
 		})
 
 		t.Run("Create well formed submission returns operation", func(t *testing.T) {
@@ -251,14 +251,14 @@ func TestPresentationAPI(t *testing.T) {
 
 			expectedSubmissions := []presentation.Submission{
 				{
-					Status: "unknown",
+					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
 						ID:           operation.SubmissionID(op.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
 					},
 				},
 				{
-					Status: "unknown",
+					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
 						ID:           operation.SubmissionID(op2.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
