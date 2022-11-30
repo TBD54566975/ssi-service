@@ -58,7 +58,8 @@ func (dr DIDRouter) GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ 
 }
 
 type CreateDIDByMethodRequest struct {
-	KeyType crypto.KeyType `json:"keyType" validate:"required"`
+	KeyType  crypto.KeyType `json:"keyType" validate:"required"`
+	DIDWebID string         `json:"didWebId"`
 }
 
 type CreateDIDByMethodResponse struct {
@@ -102,7 +103,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 	}
 
 	// TODO(gabe) check if the key type is supported for the method, to tell whether this is a bad req or internal error
-	createDIDRequest := did.CreateDIDRequest{Method: didsdk.Method(*method), KeyType: request.KeyType}
+	createDIDRequest := did.CreateDIDRequest{Method: didsdk.Method(*method), KeyType: request.KeyType, DIDWebID: request.DIDWebID}
 	createDIDResponse, err := dr.service.CreateDIDByMethod(createDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)

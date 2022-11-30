@@ -21,8 +21,9 @@ type ResolveDIDResponse struct {
 
 // CreateDIDRequest is the JSON-serializable request for creating a DID across DID methods
 type CreateDIDRequest struct {
-	Method  didsdk.Method  `json:"method" validate:"required"`
-	KeyType crypto.KeyType `validate:"required"`
+	Method   didsdk.Method  `json:"method" validate:"required"`
+	KeyType  crypto.KeyType `validate:"required"`
+	DIDWebID string         `json:"didWebId"`
 }
 
 // CreateDIDResponse is the JSON-serializable response for creating a DID
