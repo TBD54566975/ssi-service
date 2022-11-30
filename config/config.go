@@ -188,7 +188,7 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 			},
 			DIDConfig: DIDServiceConfig{
 				BaseServiceConfig: &BaseServiceConfig{Name: "did"},
-				Methods:           []string{"key"},
+				Methods:           []string{"key", "web"},
 				ResolutionMethods: []string{"key", "peer", "web", "pkh"},
 			},
 			SchemaConfig: SchemaServiceConfig{

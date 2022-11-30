@@ -107,6 +107,8 @@ func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
 	switch method {
 	case didsdk.KeyMethod:
 		s.handlers[method] = newKeyDIDHandler(s.storage, s.keyStore)
+	case didsdk.WebMethod:
+		s.handlers[method] = newWebDIDHandler(s.storage, s.keyStore)
 	default:
 		return util.LoggingNewErrorf("unsupported DID method: %s", method)
 	}
