@@ -14,11 +14,13 @@ import (
 const (
 	namespace    = "did"
 	keyNamespace = "key"
+	webNamespace = "web"
 )
 
 var (
 	didMethodToNamespace = map[string]string{
 		"key": storage.MakeNamespace(namespace, keyNamespace),
+		"web": storage.MakeNamespace(namespace, webNamespace),
 	}
 )
 
