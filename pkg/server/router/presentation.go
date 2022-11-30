@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/TBD54566975/ssi-sdk/credential/signing"
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
@@ -179,6 +183,40 @@ type CreateSubmissionRequest struct {
 	SubmissionJWT keyaccess.JWT `json:"submissionJwt" validate:"required"`
 }
 
+func (r CreateSubmissionRequest) toServiceRequest() (*presentation.CreateSubmissionRequest, error) {
+	sdkVP, err := signing.ParseVerifiablePresentationFromJWT(r.SubmissionJWT.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing presentation from jwt")
+	}
+	if err := sdkVP.IsValid(); err != nil {
+		return nil, errors.Wrap(err, "verifying vp validity")
+	}
+
+	submissionData, err := json.Marshal(sdkVP.PresentationSubmission)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling presentation_submission")
+	}
+	var s exchange.PresentationSubmission
+	if err := json.Unmarshal(submissionData, &s); err != nil {
+		return nil, errors.Wrap(err, "unmarshalling presentation submission")
+	}
+	if err := s.IsValid(); err != nil {
+		return nil, errors.Wrap(err, "verifying submission validity")
+	}
+	sdkVP.PresentationSubmission = s
+
+	credContainers, err := credint.NewCredentialContainerFromArray(sdkVP.VerifiableCredential)
+	if err != nil {
+		return nil, errors.Wrap(err, "parsing verifiable credential array")
+	}
+
+	return &presentation.CreateSubmissionRequest{
+		Presentation:  *sdkVP,
+		SubmissionJWT: r.SubmissionJWT,
+		Submission:    s,
+		Credentials:   credContainers}, nil
+}
+
 type Operation struct {
 	ID     string          `json:"id"`
 	Done   bool            `json:"done"`
@@ -202,7 +240,27 @@ type OperationResult struct {
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/presentations/submissions [put]
 func (pr PresentationRouter) CreateSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	var resp Operation
+	var request CreateSubmissionRequest
+	if err := framework.Decode(r, &request); err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
+	}
+
+	req, err := request.toServiceRequest()
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
+	}
+
+	operation, err := pr.service.CreateSubmission(*req)
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "cannot create submission"), http.StatusInternalServerError)
+	}
+
+	resp := Operation{
+		ID: operation.ID,
+	}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 

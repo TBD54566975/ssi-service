@@ -184,7 +184,7 @@ A `Submission` object:
 {
   "iss": "did:web:andresuribe.com",
   "vp": {
-		"presentation_submission": {
+    "presentation_submission": {
 	    "id": "a30e3b91-fb77-4d22-95fa-871689c322e2",
 	    "definition_id": "32f54163-7166-48f1-93d8-ff217bdb0653",
 	    "descriptor_map": [

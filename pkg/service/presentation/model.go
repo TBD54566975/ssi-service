@@ -1,8 +1,11 @@
 package presentation
 
 import (
+	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/util"
+	"github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 )
 
 type CreatePresentationDefinitionRequest struct {
@@ -31,7 +34,10 @@ type DeletePresentationDefinitionRequest struct {
 }
 
 type CreateSubmissionRequest struct {
-	Submission exchange.PresentationSubmission `json:"submission" validate:"required"`
+	Presentation  credsdk.VerifiablePresentation  `json:"presentation" validate:"required"`
+	SubmissionJWT keyaccess.JWT                   `json:"submissionJwt,omitempty" validate:"required"`
+	Submission    exchange.PresentationSubmission `json:"submission" validate:"required"`
+	Credentials   []credential.Container          `json:"credentials,omitempty"`
 }
 
 func (csr CreateSubmissionRequest) IsValid() bool {

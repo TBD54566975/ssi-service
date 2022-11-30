@@ -2,31 +2,18 @@ package manifest
 
 import (
 	"fmt"
+	"github.com/tbd54566975/ssi-service/pkg/jwt"
 	"strings"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
-	"github.com/pkg/errors"
-
-	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 )
 
 func (s Service) verifyApplicationJWT(did string, token keyaccess.JWT) error {
-	kid, pubKey, err := didint.ResolveKeyForDID(s.didResolver, did)
-	if err != nil {
-		return errors.Wrapf(err, "failed to resolve applicant's did: %s", did)
-	}
-	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
-	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create application verifier")
-	}
-	if err := verifier.Verify(token); err != nil {
-		return util.LoggingErrorMsg(err, "could not verify the application's signature")
-	}
-	return nil
+	return jwt.VerifyTokenFromDID(did, token, s.didResolver)
 }
 
 // validateCredentialApplication validates the credential application's signature(s) in addition to making sure it
