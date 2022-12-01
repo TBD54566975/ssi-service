@@ -45,7 +45,7 @@ func TestPresentationAPI(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("Create, Get, and Delete PresentationDefinition", func(t *testing.T) {
-		pRouter := setupRouter(t)
+		pRouter, _ := setupPresentationRouter(t)
 
 		var createdID string
 		{
@@ -104,7 +104,7 @@ func TestPresentationAPI(t *testing.T) {
 	})
 
 	t.Run("Create returns error without input descriptors", func(t *testing.T) {
-		pRouter := setupRouter(t)
+		pRouter, _ := setupPresentationRouter(t)
 		request := router.CreatePresentationDefinitionRequest{}
 		value := newRequestValue(t, request)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/definitions", value)
@@ -116,7 +116,7 @@ func TestPresentationAPI(t *testing.T) {
 	})
 
 	t.Run("Get without an ID returns error", func(t *testing.T) {
-		pRouter := setupRouter(t)
+		pRouter, _ := setupPresentationRouter(t)
 		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
 
@@ -124,7 +124,7 @@ func TestPresentationAPI(t *testing.T) {
 	})
 
 	t.Run("Delete without an ID returns error", func(t *testing.T) {
-		pRouter := setupRouter(t)
+		pRouter, _ := setupPresentationRouter(t)
 
 		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
@@ -135,7 +135,7 @@ func TestPresentationAPI(t *testing.T) {
 	t.Run("Submission endpoints", func(t *testing.T) {
 
 		t.Run("Get non-existing ID returns error", func(t *testing.T) {
-			pRouter := setupRouter(t)
+			pRouter, _ := setupPresentationRouter(t)
 
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions/myrandomid", nil)
 			w := httptest.NewRecorder()
@@ -143,7 +143,7 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("Get returns submission after creation", func(t *testing.T) {
-			pRouter := setupRouter(t)
+			pRouter, _ := setupPresentationRouter(t)
 
 			holderSigner, holderDID := getSigner(t)
 			definition := createPresentationDefinition(t, pRouter)
@@ -169,7 +169,7 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("Create well formed submission returns operation", func(t *testing.T) {
-			pRouter := setupRouter(t)
+			pRouter, _ := setupPresentationRouter(t)
 
 			holderSigner, holderDID := getSigner(t)
 			definition := createPresentationDefinition(t, pRouter)
@@ -197,7 +197,7 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("List submissions returns empty when there are none", func(t *testing.T) {
-			pRouter := setupRouter(t)
+			pRouter, _ := setupPresentationRouter(t)
 
 			request := router.ListSubmissionRequest{}
 
@@ -214,7 +214,7 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("List submissions returns many submissions", func(t *testing.T) {
-			pRouter := setupRouter(t)
+			pRouter, _ := setupPresentationRouter(t)
 
 			holderSigner, holderDID := getSigner(t)
 			definition := createPresentationDefinition(t, pRouter)
@@ -279,7 +279,7 @@ func TestPresentationAPI(t *testing.T) {
 
 }
 
-func setupRouter(t *testing.T) *router.PresentationRouter {
+func setupPresentationRouter(t *testing.T) (*router.PresentationRouter, storage.ServiceStorage) {
 	s, err := storage.NewStorage(storage.Bolt)
 	assert.NoError(t, err)
 
@@ -297,7 +297,7 @@ func setupRouter(t *testing.T) *router.PresentationRouter {
 		_ = s.Close()
 		_ = os.Remove(storage.DBFile)
 	})
-	return pRouter
+	return pRouter, s
 }
 
 func createSubmission(t *testing.T, pRouter *router.PresentationRouter, definitionID string, vc credential.VerifiableCredential, holderDID did.DIDKey, holderSigner crypto.JWTSigner) router.Operation {

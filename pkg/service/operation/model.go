@@ -22,3 +22,12 @@ func SubmissionID(opID string) string {
 	}
 	return opID[(i + 1):]
 }
+
+type GetOperationsRequest struct {
+	Parent string
+	Filter string
+}
+
+type GetOperationsResponse struct {
+	Operations []Operation
+}

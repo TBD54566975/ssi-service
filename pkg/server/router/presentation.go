@@ -224,8 +224,8 @@ type Operation struct {
 }
 
 type OperationResult struct {
-	Error    string                          `json:"error,omitempty"`
-	Response exchange.PresentationSubmission `json:"response,omitempty"`
+	Error    string `json:"error,omitempty"`
+	Response any    `json:"response,omitempty"`
 }
 
 // CreateSubmission godoc
