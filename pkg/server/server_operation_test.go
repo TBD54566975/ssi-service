@@ -18,7 +18,9 @@ import (
 func TestOperationsAPI(t *testing.T) {
 	t.Run("GetOperations", func(t *testing.T) {
 		t.Run("Returns empty when no operations stored", func(t *testing.T) {
-			opRouter := setupOperationsRouter(t, nil)
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			opRouter := setupOperationsRouter(t, s)
 
 			request := router.GetOperationsRequest{}
 			value := newRequestValue(t, request)
@@ -32,8 +34,10 @@ func TestOperationsAPI(t *testing.T) {
 			assert.Empty(t, resp.Operations)
 		})
 		t.Run("Returns one operation for every submission", func(t *testing.T) {
-			pRouter, stg := setupPresentationRouter(t)
-			opRouter := setupOperationsRouter(t, stg)
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
+			opRouter := setupOperationsRouter(t, s)
 
 			def := createPresentationDefinition(t, pRouter)
 			holderSigner, holderDID := getSigner(t)
@@ -66,17 +70,12 @@ func TestOperationsAPI(t *testing.T) {
 
 }
 
-func setupOperationsRouter(t *testing.T, stg storage.ServiceStorage) *router.OperationRouter {
-	if stg == nil {
-		tmp, err := storage.NewStorage(storage.Bolt)
-		stg = tmp
-		assert.NoError(t, err)
-		t.Cleanup(func() {
-			assert.NoError(t, stg.Close())
-			assert.NoError(t, os.Remove(storage.DBFile))
-		})
-	}
-	svc, err := operation.NewOperationService(stg)
+func setupOperationsRouter(t *testing.T, s storage.ServiceStorage) *router.OperationRouter {
+	t.Cleanup(func() {
+		assert.NoError(t, s.Close())
+		assert.NoError(t, os.Remove(storage.DBFile))
+	})
+	svc, err := operation.NewOperationService(s)
 	assert.NoError(t, err)
 	opRouter, err := router.NewOperationRouter(svc)
 	assert.NoError(t, err)
