@@ -5,9 +5,9 @@ SIP: 5
 Title: Credential Application Processing
 Author(s): Gabe Cohen (@decentralgabe)
 Comments URI: https://forums.tbd.website/t/sip-4-discussion-credential-application-processing/198
-Status: Draft
+Status: Accepted
 Created: October 31, 2022
-Updated: November 3, 2022
+Updated: November 30, 2022
 ```
 
 # Abstract
@@ -56,7 +56,7 @@ This proposal assumes that someone has asked for a credential — using the Cred
 
 *The examples I show will not show authenticated payloads for the sake of simplicity.* 
 
-A [Credential Manifest](https://identity.foundation/credential-manifest/#credential-manifest) specifies `[output_descriptors](https://identity.foundation/credential-manifest/#output-descriptor)` which is an array of schema-based credentials a manifest advertises it issues along with some display information. A manifest may specify 1 or more credentials it issues. To issue these credentials a Credential Manifest optionally specifies a `presentation_definition` object, notably specifying `[input_descriptors](https://identity.foundation/presentation-exchange/#input-descriptor)` which specifies information the issuer of the manifest requires in order to produce the output descriptors.
+A [Credential Manifest](https://identity.foundation/credential-manifest/#credential-manifest) specifies [output_descriptors](https://identity.foundation/credential-manifest/#output-descriptor) which is an array of schema-based credentials a manifest advertises it issues along with some display information. A manifest may specify 1 or more credentials it issues. To issue these credentials a Credential Manifest optionally specifies a `presentation_definition` object, notably specifying [input_descriptors](https://identity.foundation/presentation-exchange/#input-descriptor) which specifies information the issuer of the manifest requires in order to produce the output descriptors.
 
 An example of one such interaction enabled by Credential Manifest is illustrated below. For simplicity we show the Issuer interacting directly with the Applicant, though normally there will be services and wallets in the mix.
 
