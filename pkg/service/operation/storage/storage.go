@@ -12,10 +12,10 @@ type StoredOperation struct {
 	Done bool `json:"done"`
 
 	// Populated when there was an error with the operation.
-	Error string `json:"errorResult"`
+	Error string `json:"errorResult,omitempty"`
 
 	// Populated only when Done == true and Error == ""
-	Response interface{} `json:"result"`
+	Response interface{} `json:"result,omitempty"`
 }
 
 type Storage interface {

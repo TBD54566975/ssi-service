@@ -218,14 +218,22 @@ func (r CreateSubmissionRequest) toServiceRequest() (*presentation.CreateSubmiss
 }
 
 type Operation struct {
-	ID     string          `json:"id"`
-	Done   bool            `json:"done"`
+	// The name of the resource related to this operation. E.g. "/presentation/submissions/<uuid>"
+	ID string `json:"id"`
+
+	// Whether this operation has finished.
+	Done bool `json:"done"`
+
+	// Populated Done == true.
 	Result OperationResult `json:"result,omitempty"`
 }
 
 type OperationResult struct {
-	Error    string `json:"error,omitempty"`
-	Response any    `json:"response,omitempty"`
+	// Populated when there was an error with the operation.
+	Error string `json:"error,omitempty"`
+
+	// Populated iff Error == "". The type should be specified in the calling APIs documentation.
+	Response any `json:"response,omitempty"`
 }
 
 // CreateSubmission godoc
@@ -235,7 +243,7 @@ type OperationResult struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body      CreateSubmissionRequest  true  "request body"
-// @Success      201      {object}  Operation
+// @Success      201      {object}  Operation  "The type of response is Submission once the operation has finished."
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/presentations/submissions [put]
