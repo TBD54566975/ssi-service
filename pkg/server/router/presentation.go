@@ -265,7 +265,7 @@ func (pr PresentationRouter) CreateSubmission(ctx context.Context, w http.Respon
 }
 
 type GetSubmissionResponse struct {
-	Submission exchange.PresentationSubmission `json:"submission"`
+	*presentation.Submission
 }
 
 // GetSubmission godoc
@@ -279,7 +279,21 @@ type GetSubmissionResponse struct {
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/presentations/submission/{id} [get]
 func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	var resp GetSubmissionResponse
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		return framework.NewRequestError(
+			util.LoggingNewError("get submission request requires id"), http.StatusBadRequest)
+	}
+
+	submission, err := pr.service.GetSubmission(presentation.GetSubmissionRequest{ID: *id})
+
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "failed getting submission"), http.StatusBadRequest)
+	}
+	resp := GetSubmissionResponse{
+		Submission: &submission.Submission,
+	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
@@ -288,7 +302,7 @@ type ListSubmissionRequest struct {
 }
 
 type ListSubmissionResponse struct {
-	Submissions []exchange.PresentationSubmission `json:"submissions"`
+	Submissions []presentation.Submission `json:"submissions"`
 }
 
 // ListSubmissions godoc
@@ -303,7 +317,12 @@ type ListSubmissionResponse struct {
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/presentations/submissions [get]
 func (pr PresentationRouter) ListSubmissions(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return framework.Respond(ctx, w, ListSubmissionResponse{}, http.StatusOK)
+	resp, err := pr.service.ListSubmissions(presentation.ListSubmissionRequest{})
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingNewError("failed listing submissions"), http.StatusInternalServerError)
+	}
+	return framework.Respond(ctx, w, ListSubmissionResponse{Submissions: resp.Submissions}, http.StatusOK)
 }
 
 type ReviewSubmissionRequest struct {

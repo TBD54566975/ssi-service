@@ -174,7 +174,10 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 		return nil, errors.Wrap(err, "verifying presentation submission vp")
 	}
 
-	storedSubmission := presentationstorage.StoredSubmission{Submission: request.Submission}
+	storedSubmission := presentationstorage.StoredSubmission{
+		Status:     presentationstorage.StatusPending,
+		Submission: request.Submission,
+	}
 
 	// TODO(andres): IO requests should be done in parallel, once we have context wired up.
 	if err := s.storage.StoreSubmission(storedSubmission); err != nil {
@@ -201,10 +204,32 @@ func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResp
 
 	storedSubmission, err := s.storage.GetSubmission(request.ID)
 	if err != nil {
-		return nil, util.LoggingNewErrorf("error getting presentation submission: %s", request.ID)
+		return nil, errors.Wrap(err, "fetching from storage")
 	}
-	if storedSubmission == nil {
-		return nil, util.LoggingNewErrorf("presentation submission with id<%s> could not be found", request.ID)
+	return &GetSubmissionResponse{
+		Submission: Submission{
+			Status:                 storedSubmission.Status.String(),
+			PresentationSubmission: &storedSubmission.Submission,
+		},
+	}, nil
+}
+
+func (s Service) ListSubmissions(request ListSubmissionRequest) (*ListSubmissionResponse, error) {
+	logrus.Debug("listing presentation submissions")
+
+	subs, err := s.storage.ListSubmissions()
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching submissions from storage")
 	}
-	return &GetSubmissionResponse{Submission: storedSubmission.Submission}, nil
+
+	resp := &ListSubmissionResponse{Submissions: make([]Submission, 0, len(subs))}
+	for _, sub := range subs {
+		sub := sub // What's this?? see https://github.com/golang/go/wiki/CommonMistakes#using-reference-to-loop-iterator-variable
+		resp.Submissions = append(resp.Submissions, Submission{
+			Status:                 sub.Status.String(),
+			PresentationSubmission: &sub.Submission,
+		})
+	}
+
+	return resp, nil
 }

@@ -753,7 +753,7 @@ definitions:
   github.com_tbd54566975_ssi-service_pkg_server_router.GetSubmissionResponse:
     properties:
       submission:
-        $ref: '#/definitions/exchange.PresentationSubmission'
+        $ref: '#/definitions/presentation.Submission'
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.ListSubmissionRequest:
     properties:
@@ -764,7 +764,7 @@ definitions:
     properties:
       submissions:
         items:
-          $ref: '#/definitions/exchange.PresentationSubmission'
+          $ref: '#/definitions/presentation.Submission'
         type: array
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.Operation:
@@ -1277,7 +1277,7 @@ definitions:
   pkg_server_router.GetSubmissionResponse:
     properties:
       submission:
-        $ref: '#/definitions/exchange.PresentationSubmission'
+        $ref: '#/definitions/presentation.Submission'
     type: object
   pkg_server_router.ListSubmissionRequest:
     properties:
@@ -1288,7 +1288,7 @@ definitions:
     properties:
       submissions:
         items:
-          $ref: '#/definitions/exchange.PresentationSubmission'
+          $ref: '#/definitions/presentation.Submission'
         type: array
     type: object
   pkg_server_router.Operation:
@@ -1404,6 +1404,25 @@ definitions:
         type: string
       verified:
         type: boolean
+    type: object
+  presentation.Submission:
+    properties:
+      definition_id:
+        type: string
+      descriptor_map:
+        items:
+          $ref: '#/definitions/exchange.SubmissionDescriptor'
+        type: array
+      id:
+        type: string
+      status:
+        description: One of {`pending`, `done`}.
+        type: string
+    required:
+    - definition_id
+    - descriptor_map
+    - id
+    - status
     type: object
   rendering.ColorResource:
     properties:
@@ -1931,7 +1950,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.StoreKeyRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest'
       produces:
       - application/json
       responses:
@@ -1965,7 +1984,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetKeyDetailsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetKeyDetailsResponse'
         "400":
           description: Bad request
           schema:
@@ -1998,7 +2017,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetManifestsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestsResponse'
         "400":
           description: Bad request
           schema:
@@ -2020,14 +2039,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateManifestRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateManifestResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -2084,7 +2103,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetManifestResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -2104,7 +2123,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetApplicationsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationsResponse'
         "400":
           description: Bad request
           schema:
@@ -2127,14 +2146,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.SubmitApplicationRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.SubmitApplicationResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationResponse'
         "400":
           description: Bad request
           schema:
@@ -2191,7 +2210,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetApplicationResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationResponse'
         "400":
           description: Bad request
           schema:
@@ -2211,7 +2230,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetResponsesResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetResponsesResponse'
         "400":
           description: Bad request
           schema:
@@ -2268,7 +2287,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetResponseResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetResponseResponse'
         "400":
           description: Bad request
           schema:
