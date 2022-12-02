@@ -45,7 +45,9 @@ func TestPresentationAPI(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("Create, Get, and Delete PresentationDefinition", func(t *testing.T) {
-		pRouter := setupRouter(t)
+		s, err := storage.NewBoltDB()
+		assert.NoError(t, err)
+		pRouter := setupPresentationRouter(t, s)
 
 		var createdID string
 		{
@@ -104,7 +106,9 @@ func TestPresentationAPI(t *testing.T) {
 	})
 
 	t.Run("Create returns error without input descriptors", func(t *testing.T) {
-		pRouter := setupRouter(t)
+		s, err := storage.NewBoltDB()
+		assert.NoError(t, err)
+		pRouter := setupPresentationRouter(t, s)
 		request := router.CreatePresentationDefinitionRequest{}
 		value := newRequestValue(t, request)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/definitions", value)
@@ -116,7 +120,9 @@ func TestPresentationAPI(t *testing.T) {
 	})
 
 	t.Run("Get without an ID returns error", func(t *testing.T) {
-		pRouter := setupRouter(t)
+		s, err := storage.NewBoltDB()
+		assert.NoError(t, err)
+		pRouter := setupPresentationRouter(t, s)
 		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
 
@@ -124,7 +130,9 @@ func TestPresentationAPI(t *testing.T) {
 	})
 
 	t.Run("Delete without an ID returns error", func(t *testing.T) {
-		pRouter := setupRouter(t)
+		s, err := storage.NewBoltDB()
+		assert.NoError(t, err)
+		pRouter := setupPresentationRouter(t, s)
 
 		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
@@ -135,7 +143,9 @@ func TestPresentationAPI(t *testing.T) {
 	t.Run("Submission endpoints", func(t *testing.T) {
 
 		t.Run("Get non-existing ID returns error", func(t *testing.T) {
-			pRouter := setupRouter(t)
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
 
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions/myrandomid", nil)
 			w := httptest.NewRecorder()
@@ -143,7 +153,9 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("Get returns submission after creation", func(t *testing.T) {
-			pRouter := setupRouter(t)
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
 
 			holderSigner, holderDID := getSigner(t)
 			definition := createPresentationDefinition(t, pRouter)
@@ -169,7 +181,9 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("Create well formed submission returns operation", func(t *testing.T) {
-			pRouter := setupRouter(t)
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
 
 			holderSigner, holderDID := getSigner(t)
 			definition := createPresentationDefinition(t, pRouter)
@@ -197,7 +211,9 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("List submissions returns empty when there are none", func(t *testing.T) {
-			pRouter := setupRouter(t)
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
 
 			request := router.ListSubmissionRequest{}
 
@@ -214,7 +230,9 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("List submissions returns many submissions", func(t *testing.T) {
-			pRouter := setupRouter(t)
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
 
 			holderSigner, holderDID := getSigner(t)
 			definition := createPresentationDefinition(t, pRouter)
@@ -279,10 +297,7 @@ func TestPresentationAPI(t *testing.T) {
 
 }
 
-func setupRouter(t *testing.T) *router.PresentationRouter {
-	s, err := storage.NewStorage(storage.Bolt)
-	assert.NoError(t, err)
-
+func setupPresentationRouter(t *testing.T, s storage.ServiceStorage) *router.PresentationRouter {
 	keyStoreService := testKeyStoreService(t, s)
 	didService := testDIDService(t, s, keyStoreService)
 	schemaService := testSchemaService(t, s, keyStoreService, didService)

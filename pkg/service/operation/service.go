@@ -32,6 +32,30 @@ func (s Service) Status() framework.Status {
 	return framework.Status{Status: framework.StatusReady}
 }
 
+func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResponse, error) {
+	ops, err := s.storage.GetOperations()
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching ops from storage")
+	}
+
+	resp := &GetOperationsResponse{
+		Operations: make([]Operation, len(ops)),
+	}
+	for i, op := range ops {
+		op := op
+		newOp := Operation{
+			ID:   op.ID,
+			Done: op.Done,
+			Result: Result{
+				Error:    op.Error,
+				Response: op.Response,
+			},
+		}
+		resp.Operations[i] = newOp
+	}
+	return resp, nil
+}
+
 func NewOperationService(s storage.ServiceStorage) (*Service, error) {
 	opStorage, err := opstorage.NewOperationStorage(s)
 	if err != nil {

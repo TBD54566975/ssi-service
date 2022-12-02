@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	"net/http"
@@ -40,8 +43,19 @@ func (pdr OperationRouter) GetOperation(ctx context.Context, w http.ResponseWrit
 }
 
 type GetOperationsRequest struct {
+	// The name of the parent's resource. For example: "/presentation/submissions".
 	Parent string `json:"parent"`
+
+	// A standard filter expression conforming to https://google.aip.dev/160.
+	// For example: 'status = done'.
 	Filter string `json:"filter"`
+}
+
+func (r GetOperationsRequest) ToServiceRequest() operation.GetOperationsRequest {
+	return operation.GetOperationsRequest{
+		Parent: r.Parent,
+		Filter: r.Filter,
+	}
 }
 
 type GetOperationsResponse struct {
@@ -54,13 +68,38 @@ type GetOperationsResponse struct {
 // @Tags         OperationAPI
 // @Accept       json
 // @Produce      json
-// @Param        request  body      GetOperationsRequest  true  "request body"
+// @Param        request  body  GetOperationsRequest  true  "request body"
 // @Success      200  {object}  GetOperationsResponse  "OK"
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/operations [get]
 func (pdr OperationRouter) GetOperations(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return nil
+	var request GetOperationsRequest
+	if err := framework.Decode(r, &request); err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
+	}
+
+	if err := framework.ValidateRequest(request); err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
+	}
+
+	req := request.ToServiceRequest()
+
+	ops, err := pdr.service.GetOperations(req)
+	if err != nil {
+		logrus.WithError(err).Error("getting operations from service")
+		return framework.NewRequestError(err, http.StatusInternalServerError)
+	}
+	resp := GetOperationsResponse{Operations: make([]Operation, len(ops.Operations))}
+	for i, op := range ops.Operations {
+		resp.Operations[i].ID = op.ID
+		resp.Operations[i].Done = op.Done
+		resp.Operations[i].Result.Error = op.Result.Error
+		resp.Operations[i].Result.Response = op.Result.Response
+	}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
 // CancelOperation godoc
