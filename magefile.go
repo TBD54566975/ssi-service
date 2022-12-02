@@ -120,8 +120,17 @@ func Integration(testName string) error {
 		return integtest.RunDidWebTest()
 	case "all":
 		fmt.Println("Running all tests")
-		return integtest.RunSteelthreadTest()
-		return integtest.RunDidWebTest()
+		err := integtest.RunSteelthreadTest()
+		if err != nil {
+			fmt.Printf("Error running steelthread test")
+			return err
+		}
+		err = integtest.RunDidWebTest()
+		if err != nil {
+			fmt.Printf("Error running did:web steelthread test")
+			return err
+		}
+		return nil
 	default:
 		fmt.Println("Please choose a test or run 'mage integration all' to run all integ tests")
 		return nil
