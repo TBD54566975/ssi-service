@@ -53,9 +53,22 @@ type GetSubmissionRequest struct {
 }
 
 type GetSubmissionResponse struct {
-	Submission exchange.PresentationSubmission `json:"submission"`
+	Submission Submission `json:"submission"`
 }
 
 type DeleteSubmissionRequest struct {
 	ID string `json:"id" validate:"required"`
+}
+
+type ListSubmissionRequest struct {
+}
+
+type Submission struct {
+	// One of {`pending`, `done`}.
+	Status string `json:"status" validate:"required"`
+	*exchange.PresentationSubmission
+}
+
+type ListSubmissionResponse struct {
+	Submissions []Submission `json:"submissions"`
 }

@@ -18,6 +18,7 @@ type Storage interface {
 }
 
 type DefinitionStorage interface {
+	// TODO: rename to Definition
 	StorePresentation(schema StoredPresentation) error
 	GetPresentation(id string) (*StoredPresentation, error)
 	DeletePresentation(id string) error
@@ -41,13 +42,34 @@ func NewPresentationStorage(s storage.ServiceStorage) (Storage, error) {
 	}
 }
 
+type Status uint8
+
+func (s Status) String() string {
+	switch s {
+	case StatusDone:
+		return "done"
+	case StatusPending:
+		return "pending"
+	default:
+		return "unknown"
+	}
+}
+
+const (
+	StatusUnknown Status = iota
+	StatusPending
+	StatusDone
+)
+
 type StoredSubmission struct {
+	Status     Status                          `json:"status"`
 	Submission exchange.PresentationSubmission `json:"submission"`
 }
 
 type SubmissionStorage interface {
 	StoreSubmission(schema StoredSubmission) error
 	GetSubmission(id string) (*StoredSubmission, error)
+	ListSubmissions() ([]StoredSubmission, error)
 }
 
 var ErrSubmissionNotFound = errors.New("submission not found")
