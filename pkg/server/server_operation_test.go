@@ -33,6 +33,7 @@ func TestOperationsAPI(t *testing.T) {
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Empty(t, resp.Operations)
 		})
+
 		t.Run("Returns one operation for every submission", func(t *testing.T) {
 			s, err := storage.NewBoltDB()
 			assert.NoError(t, err)
