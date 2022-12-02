@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-func RunSteelthreadTest() error {
-	fmt.Println("Start end to end test")
+func RunDidWebTest() error {
+	fmt.Println("Start end to end test with did:web")
 
 	// Make sure service is up and running
 	output, err := get(endpoint + "readiness")
@@ -20,10 +20,10 @@ func RunSteelthreadTest() error {
 	}
 
 	// Create a did for the issuer
-	fmt.Println("\n\nCreate a did for the issuer:")
-	output, err = put(endpoint+version+"dids/key", getJSONFromFile("did-input.json"))
+	fmt.Println("\n\nCreate a did:web for the issuer:")
+	output, err = put(endpoint+version+"dids/web", getJSONFromFile("did-web-input.json"))
 	if err != nil {
-		return errors.Wrapf(err, "problem with dids/key endpoint with output: %s", output)
+		return errors.Wrapf(err, "problem with dids/web endpoint with output: %s", output)
 	}
 
 	issuerDID, err := getJSONElement(output, "$.did.id")
@@ -33,9 +33,9 @@ func RunSteelthreadTest() error {
 
 	// Create a did for alice
 	fmt.Println("\n\nCreate a did for alice:")
-	output, err = put(endpoint+version+"dids/key", getJSONFromFile("did-input.json"))
+	output, err = put(endpoint+version+"dids/web", getJSONFromFile("did-web-input.json"))
 	if err != nil {
-		return errors.Wrapf(err, "problem with dids/key endpoint with output: %s", output)
+		return errors.Wrapf(err, "problem with dids/web endpoint with output: %s", output)
 	}
 
 	aliceDID, err := getJSONElement(output, "$.did.id")

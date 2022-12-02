@@ -19,7 +19,7 @@ import (
 	"github.com/magefile/mage/sh"
 	"golang.org/x/crypto/ssh/terminal"
 
-	steelthread "github.com/tbd54566975/ssi-service/test"
+	integtest "github.com/tbd54566975/ssi-service/test"
 )
 
 var (
@@ -115,10 +115,16 @@ func Spec() error {
 func Integration(testName string) error {
 	switch testName {
 	case "steelthread":
-		return steelthread.RunTest()
-	default:
+		return integtest.RunSteelthreadTest()
+	case "didweb":
+		return integtest.RunDidWebTest()
+	case "all":
 		fmt.Println("Running all tests")
-		return steelthread.RunTest()
+		return integtest.RunSteelthreadTest()
+		return integtest.RunDidWebTest()
+	default:
+		fmt.Println("Please choose a test or run 'mage integration all' to run all integ tests")
+		return nil
 	}
 }
 
