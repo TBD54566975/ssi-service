@@ -104,7 +104,11 @@ func CITest() error {
 // Spec generates an OpenAPI spec yaml based on code annotations.
 func Spec() error {
 	swagCommand := "swag"
-	if err := installIfNotPresent(swagCommand, "github.com/swaggo/swag/cmd/swag@latest"); err != nil {
+	if err := installIfNotPresent(swagCommand, "github.com/swaggo/swag/cmd/swag@1.8.7"); err != nil {
+		logrus.Fatal(err)
+		return err
+	}
+	if err := sh.Run(swagCommand, "fmt", "-d", "pkg/server/router"); err != nil {
 		logrus.Fatal(err)
 		return err
 	}
