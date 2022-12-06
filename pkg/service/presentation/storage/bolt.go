@@ -33,7 +33,7 @@ func (b BoltPresentationStorage) ListSubmissions(filter filtering.Filter) ([]Sto
 	storedSubmissions := make([]StoredSubmission, 0, len(allData))
 	for key, data := range allData {
 		var ss StoredSubmission
-		if err := json.Unmarshal(data, &ss); err != nil {
+		if err = json.Unmarshal(data, &ss); err != nil {
 			logrus.WithError(err).WithField("key", key).Error("unmarshalling submission")
 		}
 		include, err := shouldInclude(ss)
