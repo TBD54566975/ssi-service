@@ -44,15 +44,11 @@ jobs:
     - name: Install Mage
       run: go install github.com/magefile/mage
 
-    - name: Update to latest spec
-      shell: bash
-      run: |
-        export PATH=$PATH:$(go env GOPATH)/bin
-        mage spec
-
-    - name: Push generated spec file
+    - name: Update spec and push generated spec file
       uses: actions/checkout@v3
     - run: |
+        export PATH=$PATH:$(go env GOPATH)/bin
+        mage spec
         git config --global user.name "${GITHUB_ACTOR}"
         git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
         if (git diff --shortstat | grep '[0-9]'); then \
