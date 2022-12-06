@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-var didWebContext = NewTestContext("DidWeb")
+var didWebContext = NewTestContext("DIDWeb")
 
 func TestCreateIssuerDIDWebIntegration(t *testing.T) {
 	if testing.Short() {
