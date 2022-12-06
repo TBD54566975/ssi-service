@@ -1,7 +1,7 @@
 title = "SSI Service Config"
 
 svn = "0.0.1"
-desc = "Configuration to be used while running the servicd with docker compose."
+desc = "Configuration to be used while running the service with docker compose."
 
 # http service configuration
 [server]
@@ -21,7 +21,7 @@ log_level = "info"
 
 [services]
 storage = "bolt"
-service_endpoint = "http://localhost:8000"
+service_endpoint = "http://localhost:8080"
 
 # per-service configuration
 [services.keystore]

@@ -169,7 +169,7 @@ func (cr CredentialRouter) GetCredentialStatus(ctx context.Context, w http.Respo
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotCredential, err := cr.service.GetCredential(credential.GetCredentialRequest{ID: *id})
+	getCredentialStatusResponse, err := cr.service.GetCredentialStatus(credential.GetCredentialStatusRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -177,7 +177,7 @@ func (cr CredentialRouter) GetCredentialStatus(ctx context.Context, w http.Respo
 	}
 
 	resp := GetCredentialStatusResponse{
-		Revoked: gotCredential.Revoked,
+		Revoked: getCredentialStatusResponse.Revoked,
 	}
 
 	return framework.Respond(ctx, w, resp, http.StatusOK)
