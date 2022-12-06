@@ -67,6 +67,69 @@ func TestOperationsAPI(t *testing.T) {
 				t.Errorf("Mismatch on submissions (-want +got):\n%s", diff)
 			}
 		})
+
+		t.Run("Returns one operation when filtering to include", func(t *testing.T) {
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
+			opRouter := setupOperationsRouter(t, s)
+
+			def := createPresentationDefinition(t, pRouter)
+			holderSigner, holderDID := getSigner(t)
+			submissionOp := createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
+
+			holderSigner2, holderDID2 := getSigner(t)
+			submissionOp2 := createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID2, holderSigner2)
+
+			request := router.GetOperationsRequest{
+				Filter: "done = false",
+			}
+			value := newRequestValue(t, request)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
+			w := httptest.NewRecorder()
+
+			assert.NoError(t, opRouter.GetOperations(newRequestContext(), w, req))
+
+			var resp router.GetOperationsResponse
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+			ops := []router.Operation{submissionOp, submissionOp2}
+			diff := cmp.Diff(ops, resp.Operations,
+				cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
+				cmpopts.SortSlices(func(l, r router.Operation) bool {
+					return l.ID < r.ID
+				}),
+			)
+			if diff != "" {
+				t.Errorf("Mismatch on submissions (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("Returns zero operations when filtering to exclude", func(t *testing.T) {
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
+			opRouter := setupOperationsRouter(t, s)
+
+			def := createPresentationDefinition(t, pRouter)
+			holderSigner, holderDID := getSigner(t)
+			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
+
+			holderSigner2, holderDID2 := getSigner(t)
+			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID2, holderSigner2)
+
+			request := router.GetOperationsRequest{
+				Filter: "done = true",
+			}
+			value := newRequestValue(t, request)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
+			w := httptest.NewRecorder()
+
+			assert.NoError(t, opRouter.GetOperations(newRequestContext(), w, req))
+
+			var resp router.GetOperationsResponse
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+			assert.Empty(t, resp.Operations)
+		})
 	})
 
 }

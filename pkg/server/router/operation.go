@@ -9,6 +9,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
+	"go.einride.tech/aip/filtering"
 	"net/http"
 )
 
@@ -47,15 +48,40 @@ type GetOperationsRequest struct {
 	Parent string `json:"parent"`
 
 	// A standard filter expression conforming to https://google.aip.dev/160.
-	// For example: 'status = done'.
+	// For example: `done = true`.
 	Filter string `json:"filter"`
 }
 
-func (r GetOperationsRequest) ToServiceRequest() operation.GetOperationsRequest {
-	return operation.GetOperationsRequest{
-		Parent: r.Parent,
-		Filter: r.Filter,
+func (r GetOperationsRequest) GetFilter() string {
+	return r.Filter
+}
+
+func (r GetOperationsRequest) ToServiceRequest() (operation.GetOperationsRequest, error) {
+	var opReq operation.GetOperationsRequest
+
+	declarations, err := filtering.NewDeclarations(
+		filtering.DeclareFunction(filtering.FunctionEquals,
+			filtering.NewFunctionOverload(
+				filtering.FunctionOverloadEqualsString, filtering.TypeBool, filtering.TypeBool, filtering.TypeBool)),
+		filtering.DeclareIdent("done", filtering.TypeBool),
+		filtering.DeclareIdent("true", filtering.TypeBool),
+		filtering.DeclareIdent("false", filtering.TypeBool),
+	)
+	if err != nil {
+		panic(err)
 	}
+
+	// Because parsing filters can be expensive, we limit is to 1024 chars. That should be more than enough for most,
+	// if not all, use cases.
+	if len(r.GetFilter()) > 1024 {
+		return opReq, errors.New("filter longer than 1024 chars")
+	}
+	filter, err := filtering.ParseFilter(r, declarations)
+	if err != nil {
+		return opReq, errors.Wrap(err, "parsing filter")
+	}
+	opReq.Filter = filter
+	return opReq, nil
 }
 
 type GetOperationsResponse struct {
@@ -85,7 +111,11 @@ func (pdr OperationRouter) GetOperations(ctx context.Context, w http.ResponseWri
 			util.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
 	}
 
-	req := request.ToServiceRequest()
+	req, err := request.ToServiceRequest()
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
+	}
 
 	ops, err := pdr.service.GetOperations(req)
 	if err != nil {

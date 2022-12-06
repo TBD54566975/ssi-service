@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
+	"go.einride.tech/aip/filtering"
 )
 
 const (
@@ -43,16 +44,24 @@ func (b BoltOperationStorage) GetOperation(id string) (*StoredOperation, error) 
 	return &stored, nil
 }
 
-func (b BoltOperationStorage) GetOperations() ([]StoredOperation, error) {
+func (b BoltOperationStorage) GetOperations(filter filtering.Filter) ([]StoredOperation, error) {
 	operations, err := b.db.ReadAll(namespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get all operations")
+	}
+
+	shouldInclude, err := storage.Evaluator(filter)
+	if err != nil {
+		return nil, err
 	}
 	stored := make([]StoredOperation, 0, len(operations))
 	for i, manifestBytes := range operations {
 		var nextOp StoredOperation
 		if err = json.Unmarshal(manifestBytes, &nextOp); err != nil {
 			logrus.WithError(err).WithField("idx", i).Warnf("Skipping operation")
+		}
+		if !shouldInclude(nextOp) {
+			continue
 		}
 		stored = append(stored, nextOp)
 	}

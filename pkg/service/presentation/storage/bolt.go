@@ -2,11 +2,11 @@ package storage
 
 import (
 	"fmt"
-	"github.com/tbd54566975/ssi-service/internal/util"
-
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/internal/util"
+	"go.einride.tech/aip/filtering"
 
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -20,19 +20,26 @@ type BoltPresentationStorage struct {
 	db *storage.BoltDB
 }
 
-func (b BoltPresentationStorage) ListSubmissions() ([]StoredSubmission, error) {
+func (b BoltPresentationStorage) ListSubmissions(filter filtering.Filter) ([]StoredSubmission, error) {
 	allData, err := b.db.ReadAll(submissionNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all data")
 	}
 
-	storedSubmissions := make([]StoredSubmission, len(allData))
-	i := 0
+	shouldInclude, err := storage.Evaluator(filter)
+	if err != nil {
+		return nil, err
+	}
+	storedSubmissions := make([]StoredSubmission, 0, len(allData))
 	for key, data := range allData {
-		if err := json.Unmarshal(data, &storedSubmissions[i]); err != nil {
-			logrus.WithError(err).WithField("key", key).Errorf("unmarshalling submission")
+		var ss StoredSubmission
+		if err := json.Unmarshal(data, &ss); err != nil {
+			logrus.WithError(err).WithField("key", key).Error("unmarshalling submission")
 		}
-		i++
+		if !shouldInclude(ss) {
+			continue
+		}
+		storedSubmissions = append(storedSubmissions, ss)
 	}
 	return storedSubmissions, nil
 }

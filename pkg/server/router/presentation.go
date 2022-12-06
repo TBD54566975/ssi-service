@@ -14,6 +14,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
+	"go.einride.tech/aip/filtering"
 	"net/http"
 )
 
@@ -306,7 +307,13 @@ func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseW
 }
 
 type ListSubmissionRequest struct {
+	// A standard filter expression conforming to https://google.aip.dev/160.
+	// For example: `status = "done"`.
 	Filter string `json:"filter"`
+}
+
+func (l ListSubmissionRequest) GetFilter() string {
+	return l.Filter
 }
 
 type ListSubmissionResponse struct {
@@ -325,10 +332,38 @@ type ListSubmissionResponse struct {
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/presentations/submissions [get]
 func (pr PresentationRouter) ListSubmissions(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	resp, err := pr.service.ListSubmissions(presentation.ListSubmissionRequest{})
+	var request ListSubmissionRequest
+	if err := framework.Decode(r, &request); err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "invalid list submissions request"), http.StatusBadRequest)
+	}
+
+	declarations, err := filtering.NewDeclarations(
+		filtering.DeclareFunction(filtering.FunctionEquals,
+			filtering.NewFunctionOverload(
+				filtering.FunctionOverloadEqualsString, filtering.TypeBool, filtering.TypeString, filtering.TypeString)),
+		filtering.DeclareIdent("status", filtering.TypeString),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	// Because parsing filters can be expensive, we limit is to 1024 chars. That should be more than enough for most,
+	// if not all, use cases.
+	if len(request.GetFilter()) > 1024 {
+		return framework.NewRequestErrorMsg("filter longer than 1024 chars is not allowed", http.StatusBadRequest)
+	}
+	filter, err := filtering.ParseFilter(request, declarations)
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingNewError("failed listing submissions"), http.StatusInternalServerError)
+			util.LoggingErrorMsg(err, "invalid filter"), http.StatusBadRequest)
+	}
+	resp, err := pr.service.ListSubmissions(presentation.ListSubmissionRequest{
+		Filter: filter,
+	})
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "failed listing submissions"), http.StatusInternalServerError)
 	}
 	return framework.Respond(ctx, w, ListSubmissionResponse{Submissions: resp.Submissions}, http.StatusOK)
 }
