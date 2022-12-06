@@ -26,7 +26,7 @@ func (b BoltPresentationStorage) ListSubmissions(filter filtering.Filter) ([]Sto
 		return nil, errors.Wrap(err, "reading all data")
 	}
 
-	shouldInclude, err := storage.Evaluator(filter)
+	shouldInclude, err := storage.NewIncludeFunc(filter)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,13 @@ func (b BoltPresentationStorage) ListSubmissions(filter filtering.Filter) ([]Sto
 		if err := json.Unmarshal(data, &ss); err != nil {
 			logrus.WithError(err).WithField("key", key).Error("unmarshalling submission")
 		}
-		if shouldInclude(ss) {
+		include, err := shouldInclude(ss)
+		// We explicitly ignore evaluation errors and simply include them in the result.
+		if err != nil {
+			storedSubmissions = append(storedSubmissions, ss)
+			continue
+		}
+		if include {
 			storedSubmissions = append(storedSubmissions, ss)
 		}
 	}

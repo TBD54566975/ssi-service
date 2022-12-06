@@ -50,7 +50,7 @@ func (b BoltOperationStorage) GetOperations(filter filtering.Filter) ([]StoredOp
 		return nil, util.LoggingErrorMsgf(err, "could not get all operations")
 	}
 
-	shouldInclude, err := storage.Evaluator(filter)
+	shouldInclude, err := storage.NewIncludeFunc(filter)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,13 @@ func (b BoltOperationStorage) GetOperations(filter filtering.Filter) ([]StoredOp
 		if err = json.Unmarshal(manifestBytes, &nextOp); err != nil {
 			logrus.WithError(err).WithField("idx", i).Warnf("Skipping operation")
 		}
-		if shouldInclude(nextOp) {
+		include, err := shouldInclude(nextOp)
+		// We explicitly ignore evaluation errors and simply include them in the result.
+		if err != nil {
+			stored = append(stored, nextOp)
+			continue
+		}
+		if include {
 			stored = append(stored, nextOp)
 		}
 	}

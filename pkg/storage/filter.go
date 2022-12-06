@@ -8,20 +8,28 @@ import (
 	"go.einride.tech/aip/filtering"
 )
 
-type foo interface {
+// FilterVarsMapper is an interface that encapsulates the FilterVariablesMap method. This interface is meant to be
+// implemented by any object that wants to include support for filtering.
+type FilterVarsMapper interface {
 	FilterVariablesMap() map[string]interface{}
 }
 
-type IncludeFunc func(foo) bool
+// IncludeFunc is a function that given a mapper object, decides whether the object should be included in the result.
+type IncludeFunc func(FilterVarsMapper) (bool, error)
 
-func Evaluator(filter filtering.Filter) (IncludeFunc, error) {
+// NewIncludeFunc creates an IncludeFunc given a filter object.
+// The result function is constructed as an evaluation of a cel program. The environment created matches standard
+// construction of a filter.
+// The result function runs the program evaluation on a given object that implements the FilterVarsMapper interface.
+// Evaluation errors bubbled up so clients can decide what to do.
+func NewIncludeFunc(filter filtering.Filter) (IncludeFunc, error) {
 	if filter.CheckedExpr == nil {
-		return func(_ foo) bool {
-			return true
+		return func(_ FilterVarsMapper) (bool, error) {
+			return true, nil
 		}, nil
 	}
 
-	env, err := Env()
+	env, err := newCelEnv()
 	if err != nil {
 		return nil, errors.Wrap(err, "creating cel env")
 	}
@@ -31,31 +39,31 @@ func Evaluator(filter filtering.Filter) (IncludeFunc, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "creating program from ast")
 	}
-	return func(f foo) bool {
+	return func(f FilterVarsMapper) (bool, error) {
 		out, det, err := program.Eval(f.FilterVariablesMap())
 		if err != nil {
 			logrus.WithError(err).
 				WithField("details", det).
 				Error("evaluating submission")
-			panic(err)
+			return false, errors.Wrap(err, "evaluating program")
 		}
-		return out.Value() == true
+		return out.Value().(bool), nil
 	}, nil
 }
 
-func Env() (*cel.Env, error) {
+func simpleEquals(lhs ref.Val, rhs ref.Val) ref.Val {
+	return lhs.Equal(rhs)
+}
+
+func newCelEnv() (*cel.Env, error) {
 	return cel.NewEnv(
 		cel.Function("=",
 			cel.Overload("=_bool",
 				[]*cel.Type{cel.BoolType, cel.BoolType},
 				cel.BoolType,
-				cel.BinaryBinding(func(lhs ref.Val, rhs ref.Val) ref.Val {
-					return lhs.Equal(rhs)
-				})),
+				cel.BinaryBinding(simpleEquals)),
 			cel.Overload("=_string",
 				[]*cel.Type{cel.StringType, cel.StringType},
 				cel.BoolType,
-				cel.BinaryBinding(func(lhs ref.Val, rhs ref.Val) ref.Val {
-					return lhs.Equal(rhs)
-				}))))
+				cel.BinaryBinding(simpleEquals))))
 }
