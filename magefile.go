@@ -108,7 +108,12 @@ func Spec() error {
 		logrus.Fatal(err)
 		return err
 	}
-	return sh.Run(swagCommand, "init", "-g", "cmd/main.go", "--pd", "-o", "doc", "-ot", "yaml")
+	// One of the dependencies we have (antlr4) does not play nicely with swaggo, but we need to enable dependencies
+	// because many of our external API objects have ssi-sdk objects. We can work around this by setting depth. You can
+	// see a discussion of this topic in https://github.com/swaggo/swag/issues/948.
+	// We also set parseGoList because it's the only way parseDepth works until the following is fixed:
+	// https://github.com/swaggo/swag/issues/1269
+	return sh.Run(swagCommand, "init", "-g", "cmd/main.go", "--pd", "-o", "doc", "-ot", "yaml", "--parseDepth=3", "--parseGoList=false")
 }
 
 // Integration runs an integration test. Note: the ssi-service must be running for this to work
