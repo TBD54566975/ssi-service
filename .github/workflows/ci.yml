@@ -42,7 +42,7 @@ jobs:
       run: go install github.com/magefile/mage
 
     - name: Update spec and push generated spec file
-      uses: actions/checkout@v3
+      uses: actions/checkout@v2
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.ref }}
