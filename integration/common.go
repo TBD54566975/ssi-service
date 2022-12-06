@@ -167,7 +167,7 @@ func getJSONElement(jsonString string, jsonPath string) (string, error) {
 func get(url string) (string, error) {
 	logrus.Println(fmt.Sprintf("\nPerforming GET request to:  %s\n", url))
 
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) // #nosec: testing only.
 	if err != nil {
 		return "", errors.Wrapf(err, "getting url: %s", url)
 	}
