@@ -34,7 +34,7 @@ func CreateDIDKey() (string, error) {
 	logrus.Println("\n\nCreate a did for the issuer:")
 	output, err := put(endpoint+version+"dids/key", getJSONFromFile("did-input.json"))
 	if err != nil {
-		return "", errors.Wrapf(err, "problem with did endpoint with output: %s", output)
+		return "", errors.Wrapf(err, "did endpoint with output: %s", output)
 	}
 
 	return output, nil
@@ -44,7 +44,7 @@ func CreateDIDWeb() (string, error) {
 	logrus.Println("\n\nCreate a did:web")
 	output, err := put(endpoint+version+"dids/web", getJSONFromFile("did-web-input.json"))
 	if err != nil {
-		return "", errors.Wrapf(err, "problem with did endpoint with output: %s", output)
+		return "", errors.Wrapf(err, "did endpoint with output: %s", output)
 	}
 
 	return output, nil
@@ -54,7 +54,7 @@ func CreateKYCSchema() (string, error) {
 	logrus.Println("\n\nCreate a schema")
 	output, err := put(endpoint+version+"schemas", getJSONFromFile("schema-input.json"))
 	if err != nil {
-		return "", errors.Wrapf(err, "problem with schema endpoint with output: %s", output)
+		return "", errors.Wrapf(err, "schema endpoint with output: %s", output)
 	}
 
 	return output, nil
@@ -75,7 +75,7 @@ func CreateVerifiableCredential(issuerDID, schemaID string, revocable bool) (str
 
 	output, err := put(endpoint+version+"credentials", credentialJSON)
 	if err != nil {
-		return "", errors.Wrapf(err, "problem with credentials endpoint with output: %s", output)
+		return "", errors.Wrapf(err, "credentials endpoint with output: %s", output)
 	}
 
 	return output, nil
@@ -88,7 +88,7 @@ func CreateCredentialManifest(issuerDID, schemaID string) (string, error) {
 	manifestJSON = strings.ReplaceAll(manifestJSON, "<ISSUERID>", issuerDID)
 	output, err := put(endpoint+version+"manifests", manifestJSON)
 	if err != nil {
-		return "", errors.Wrapf(err, "problem with manifest endpoint with output: %s", output)
+		return "", errors.Wrapf(err, "manifest endpoint with output: %s", output)
 	}
 
 	return output, nil
@@ -101,26 +101,26 @@ func CreateCredentialApplicationJWT(presentationDefinitionID, credentialJWT, man
 	applicationJSON = strings.ReplaceAll(applicationJSON, "<VCJWT>", credentialJWT)
 	applicationJSON = strings.ReplaceAll(applicationJSON, "<MANIFESTID>", manifestID)
 
-	alicPrivKeyBytes, err := base58.Decode(aliceDIDPrivateKey)
+	alicePrivKeyBytes, err := base58.Decode(aliceDIDPrivateKey)
 	if err != nil {
-		return "", errors.Wrap(err, "problem base58 decoding")
+		return "", errors.Wrap(err, "base58 decoding")
 	}
 
-	alicePrivKey, err := crypto.BytesToPrivKey(alicPrivKeyBytes, crypto.Ed25519)
+	alicePrivKey, err := crypto.BytesToPrivKey(alicePrivKeyBytes, crypto.Ed25519)
 	if err != nil {
-		return "", errors.Wrap(err, "problem with bytes to priv key")
+		return "", errors.Wrap(err, "bytes to priv key")
 	}
 
 	signer, err := keyaccess.NewJWKKeyAccess(aliceDID, alicePrivKey)
 	if err != nil {
-		return "", errors.Wrap(err, "problem with creating signer")
+		return "", errors.Wrap(err, "creating signer")
 	}
 
 	credAppWrapper := getValidApplicationRequest(applicationJSON, credentialJWT)
 
 	signed, err := signer.SignJSON(credAppWrapper)
 	if err != nil {
-		return "", errors.Wrap(err, "problem signing json")
+		return "", errors.Wrap(err, "signing json")
 	}
 
 	return signed.String(), nil
@@ -133,7 +133,7 @@ func SubmitApplication(credAppJWT string) (string, error) {
 
 	output, err := put(endpoint+version+"manifests/applications", trueApplicationJSON)
 	if err != nil {
-		return "", errors.Wrapf(err, "problem with application endpoint with output: %s", output)
+		return "", errors.Wrapf(err, "application endpoint with output: %s", output)
 	}
 
 	return output, nil
@@ -144,6 +144,7 @@ func compactJSONOutput(json string) string {
 	buffer := new(bytes.Buffer)
 	if err := cmpact.Compact(buffer, jsonBytes); err != nil {
 		logrus.Println(err)
+		panic(err)
 	}
 
 	return buffer.String()
@@ -152,7 +153,7 @@ func compactJSONOutput(json string) string {
 func getJSONElement(jsonString string, jsonPath string) (string, error) {
 	jsonMap := make(map[string]interface{})
 	if err := json.Unmarshal([]byte(jsonString), &jsonMap); err != nil {
-		return "", errors.Wrap(err, "problem with unmarshalling json string")
+		return "", errors.Wrap(err, "unmarshalling json string")
 	}
 
 	element, err := jsonpath.JsonPathLookup(jsonMap, jsonPath)
@@ -177,7 +178,7 @@ func get(url string) (string, error) {
 		return "", errors.Wrap(err, "parsing body")
 	}
 
-	if is200Response(resp.StatusCode) {
+	if is2xxResponse(resp.StatusCode) {
 		return "", fmt.Errorf("status code not in the 200s. body: %s", string(body))
 	}
 
@@ -189,21 +190,21 @@ func put(url string, json string) (string, error) {
 
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer([]byte(json)))
 	if err != nil {
-		return "", errors.Wrap(err, "problem with building http req")
+		return "", errors.Wrap(err, "building http req")
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", errors.Wrap(err, "problem client http client")
+		return "", errors.Wrap(err, "client http client")
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", errors.Wrap(err, "problem with parsing body")
+		return "", errors.Wrap(err, "parsing body")
 	}
 
-	if is200Response(resp.StatusCode) {
+	if is2xxResponse(resp.StatusCode) {
 		return "", fmt.Errorf("status code %v not in the 200s. body: %s", resp.StatusCode, string(body))
 	}
 
@@ -218,7 +219,7 @@ func getJSONFromFile(fileName string) string {
 	return string(b)
 }
 
-func is200Response(statusCode int) bool {
+func is2xxResponse(statusCode int) bool {
 	return statusCode/100 != 2
 }
 
@@ -226,11 +227,13 @@ func getValidApplicationRequest(credAppJSON string, credentialJWT string) manife
 	var createApplication manifestsdk.CredentialApplication
 	if err := json.Unmarshal([]byte(credAppJSON), &createApplication); err != nil {
 		logrus.Println("unmarshal error")
+		panic(err)
 	}
 
 	contain, err := credmodel.NewCredentialContainerFromJWT(credentialJWT)
 	if err != nil {
-		logrus.Println("Problem making NewCredentialContainerFromJWT")
+		logrus.Println("making NewCredentialContainerFromJWT")
+		panic(err)
 	}
 	contains := []credmodel.Container{*contain}
 
