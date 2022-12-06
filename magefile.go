@@ -18,8 +18,6 @@ import (
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 	"golang.org/x/crypto/ssh/terminal"
-
-	steelthread "github.com/tbd54566975/ssi-service/test"
 )
 
 var (
@@ -101,6 +99,12 @@ func CITest() error {
 	return runCITests()
 }
 
+// Test runs unit tests without coverage.
+// The mage `-v` option will trigger a verbose output of the test
+func Integration() error {
+	return runIntegrationTests()
+}
+
 // Spec generates an OpenAPI spec yaml based on code annotations.
 func Spec() error {
 	swagCommand := "swag"
@@ -116,17 +120,6 @@ func Spec() error {
 	return sh.Run(swagCommand, "init", "-g", "cmd/main.go", "--pd", "-o", "doc", "-ot", "yaml", "--parseDepth=3", "--parseGoList=false")
 }
 
-// Integration runs an integration test. Note: the ssi-service must be running for this to work
-func Integration(testName string) error {
-	switch testName {
-	case "steelthread":
-		return steelthread.RunTest()
-	default:
-		fmt.Println("Running all tests")
-		return steelthread.RunTest()
-	}
-}
-
 func runCITests(extraTestArgs ...string) error {
 	args := []string{"test"}
 	if mg.Verbose() {
@@ -136,6 +129,7 @@ func runCITests(extraTestArgs ...string) error {
 	args = append(args, "-covermode=atomic")
 	args = append(args, "-coverprofile=coverage.out")
 	args = append(args, "-race")
+	args = append(args, "-short")
 	args = append(args, extraTestArgs...)
 	args = append(args, "./...")
 	testEnv := map[string]string{
@@ -155,8 +149,28 @@ func runTests(extraTestArgs ...string) error {
 	}
 	args = append(args, "-tags=jwx_es256k")
 	args = append(args, "-race")
+	args = append(args, "-short")
 	args = append(args, extraTestArgs...)
 	args = append(args, "./...")
+	testEnv := map[string]string{
+		"CGO_ENABLED": "1",
+		"GO111MODULE": "on",
+	}
+	writer := ColorizeTestStdout()
+	fmt.Printf("%+v", args)
+	_, err := sh.Exec(testEnv, writer, os.Stderr, Go, args...)
+	return err
+}
+
+func runIntegrationTests(extraTestArgs ...string) error {
+	args := []string{"test"}
+	if mg.Verbose() {
+		args = append(args, "-v")
+	}
+	args = append(args, "-tags=jwx_es256k")
+	args = append(args, "-race")
+	args = append(args, extraTestArgs...)
+	args = append(args, "./integration")
 	testEnv := map[string]string{
 		"CGO_ENABLED": "1",
 		"GO111MODULE": "on",

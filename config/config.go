@@ -19,7 +19,7 @@ const (
 	ServiceName       = "ssi-service"
 	ConfigExtension   = ".toml"
 
-	DefaultServiceEndpoint = "http://localhost:8000"
+	DefaultServiceEndpoint = "http://localhost:8080"
 )
 
 type SSIServiceConfig struct {
