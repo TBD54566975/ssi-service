@@ -7,7 +7,6 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
-	"sort"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -132,12 +131,7 @@ func TestDIDRouter(t *testing.T) {
 		assert.NotEmpty(tt, supported)
 		assert.Len(tt, supported.Methods, 2)
 
-		sort.Slice(supported.Methods, func(i, j int) bool {
-			return supported.Methods[i] < supported.Methods[j]
-		})
-
-		assert.Equal(tt, didsdk.KeyMethod, supported.Methods[0])
-		assert.Equal(tt, didsdk.WebMethod, supported.Methods[1])
+		assert.ElementsMatch(tt, supported.Methods, []didsdk.Method{didsdk.KeyMethod, didsdk.WebMethod})
 
 		// bad key type
 		_, err = didService.CreateDIDByMethod(did.CreateDIDRequest{Method: didsdk.WebMethod, KeyType: "bad", DIDWebID: "did:web:example.com"})
