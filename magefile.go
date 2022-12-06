@@ -108,7 +108,7 @@ func Spec() error {
 		logrus.Fatal(err)
 		return err
 	}
-	return sh.Run(swagCommand, "init", "-g", "cmd/main.go", "--pd", "-o", "doc", "-ot", "yaml")
+	return sh.Run(swagCommand, "init", "-g", "cmd/main.go", "--pd", "-o", "doc", "-ot", "yaml", "--parseDepth=3", "--parseGoList=false")
 }
 
 // Integration runs an integration test. Note: the ssi-service must be running for this to work
