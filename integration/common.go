@@ -3,7 +3,7 @@ package integration
 import (
 	"bytes"
 	"embed"
-	cmpact "encoding/json"
+	cmpact "github.com/goccy/go-json"
 	"github.com/goccy/go-json"
 	"fmt"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
