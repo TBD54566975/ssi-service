@@ -338,20 +338,25 @@ func (pr PresentationRouter) ListSubmissions(ctx context.Context, w http.Respons
 			util.LoggingErrorMsg(err, "invalid list submissions request"), http.StatusBadRequest)
 	}
 
+	const StatusIdentifier = "status"
 	declarations, err := filtering.NewDeclarations(
 		filtering.DeclareFunction(filtering.FunctionEquals,
 			filtering.NewFunctionOverload(
 				filtering.FunctionOverloadEqualsString, filtering.TypeBool, filtering.TypeString, filtering.TypeString)),
-		filtering.DeclareIdent("status", filtering.TypeString),
+		filtering.DeclareIdent(StatusIdentifier, filtering.TypeString),
 	)
 	if err != nil {
-		panic(err)
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "creating filter declarations"), http.StatusInternalServerError)
 	}
 
-	// Because parsing filters can be expensive, we limit is to 1024 chars. That should be more than enough for most,
-	// if not all, use cases.
-	if len(request.GetFilter()) > 1024 {
-		return framework.NewRequestErrorMsg("filter longer than 1024 chars is not allowed", http.StatusBadRequest)
+	// Because parsing filters can be expensive, we limit is to a fixed len of chars. That should be more than enough
+	// for most use cases.
+	if len(request.GetFilter()) > FilterCharacterLimit {
+		err := errors.Errorf("filter longer than %d character size limit", FilterCharacterLimit)
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "invalid filter"), http.StatusBadRequest)
+
 	}
 	filter, err := filtering.ParseFilter(request, declarations)
 	if err != nil {

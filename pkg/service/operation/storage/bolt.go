@@ -60,10 +60,9 @@ func (b BoltOperationStorage) GetOperations(filter filtering.Filter) ([]StoredOp
 		if err = json.Unmarshal(manifestBytes, &nextOp); err != nil {
 			logrus.WithError(err).WithField("idx", i).Warnf("Skipping operation")
 		}
-		if !shouldInclude(nextOp) {
-			continue
+		if shouldInclude(nextOp) {
+			stored = append(stored, nextOp)
 		}
-		stored = append(stored, nextOp)
 	}
 	return stored, nil
 }

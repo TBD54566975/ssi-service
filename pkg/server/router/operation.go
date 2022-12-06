@@ -56,6 +56,14 @@ func (r GetOperationsRequest) GetFilter() string {
 	return r.Filter
 }
 
+const (
+	DoneIdentifier = "done"
+	True           = "true"
+	False          = "false"
+)
+
+const FilterCharacterLimit = 1024
+
 func (r GetOperationsRequest) ToServiceRequest() (operation.GetOperationsRequest, error) {
 	var opReq operation.GetOperationsRequest
 
@@ -63,18 +71,18 @@ func (r GetOperationsRequest) ToServiceRequest() (operation.GetOperationsRequest
 		filtering.DeclareFunction(filtering.FunctionEquals,
 			filtering.NewFunctionOverload(
 				filtering.FunctionOverloadEqualsString, filtering.TypeBool, filtering.TypeBool, filtering.TypeBool)),
-		filtering.DeclareIdent("done", filtering.TypeBool),
-		filtering.DeclareIdent("true", filtering.TypeBool),
-		filtering.DeclareIdent("false", filtering.TypeBool),
+		filtering.DeclareIdent(DoneIdentifier, filtering.TypeBool),
+		filtering.DeclareIdent(True, filtering.TypeBool),
+		filtering.DeclareIdent(False, filtering.TypeBool),
 	)
 	if err != nil {
-		panic(err)
+		return opReq, errors.Wrap(err, "creating new filter declarations")
 	}
 
-	// Because parsing filters can be expensive, we limit is to 1024 chars. That should be more than enough for most,
-	// if not all, use cases.
-	if len(r.GetFilter()) > 1024 {
-		return opReq, errors.New("filter longer than 1024 chars")
+	// Because parsing filters can be expensive, we limit is to a fixed len of chars. That should be more than enough
+	// for most use cases.
+	if len(r.GetFilter()) > FilterCharacterLimit {
+		return opReq, errors.Errorf("filter longer than %d character size limit", FilterCharacterLimit)
 	}
 	filter, err := filtering.ParseFilter(r, declarations)
 	if err != nil {

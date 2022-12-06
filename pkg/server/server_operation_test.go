@@ -68,7 +68,7 @@ func TestOperationsAPI(t *testing.T) {
 			}
 		})
 
-		t.Run("Returns one operation when filtering to include", func(t *testing.T) {
+		t.Run("Returns operation when filtering to include", func(t *testing.T) {
 			s, err := storage.NewBoltDB()
 			assert.NoError(t, err)
 			pRouter := setupPresentationRouter(t, s)
@@ -76,10 +76,7 @@ func TestOperationsAPI(t *testing.T) {
 
 			def := createPresentationDefinition(t, pRouter)
 			holderSigner, holderDID := getSigner(t)
-			submissionOp := createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-
-			holderSigner2, holderDID2 := getSigner(t)
-			submissionOp2 := createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID2, holderSigner2)
+			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			request := router.GetOperationsRequest{
 				Filter: "done = false",
@@ -92,16 +89,8 @@ func TestOperationsAPI(t *testing.T) {
 
 			var resp router.GetOperationsResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-			ops := []router.Operation{submissionOp, submissionOp2}
-			diff := cmp.Diff(ops, resp.Operations,
-				cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
-				cmpopts.SortSlices(func(l, r router.Operation) bool {
-					return l.ID < r.ID
-				}),
-			)
-			if diff != "" {
-				t.Errorf("Mismatch on submissions (-want +got):\n%s", diff)
-			}
+			assert.Len(t, resp.Operations, 1)
+			assert.False(t, resp.Operations[0].Done)
 		})
 
 		t.Run("Returns zero operations when filtering to exclude", func(t *testing.T) {
@@ -113,9 +102,6 @@ func TestOperationsAPI(t *testing.T) {
 			def := createPresentationDefinition(t, pRouter)
 			holderSigner, holderDID := getSigner(t)
 			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-
-			holderSigner2, holderDID2 := getSigner(t)
-			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID2, holderSigner2)
 
 			request := router.GetOperationsRequest{
 				Filter: "done = true",
