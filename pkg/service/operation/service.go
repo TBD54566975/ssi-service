@@ -33,7 +33,7 @@ func (s Service) Status() framework.Status {
 }
 
 func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResponse, error) {
-	ops, err := s.storage.GetOperations()
+	ops, err := s.storage.GetOperations(request.Filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching ops from storage")
 	}

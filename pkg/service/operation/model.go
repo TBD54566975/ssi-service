@@ -1,6 +1,9 @@
 package operation
 
-import "strings"
+import (
+	"go.einride.tech/aip/filtering"
+	"strings"
+)
 
 type Result struct {
 	Error    string      `json:"error,omitempty"`
@@ -25,7 +28,7 @@ func SubmissionID(opID string) string {
 
 type GetOperationsRequest struct {
 	Parent string
-	Filter string
+	Filter filtering.Filter
 }
 
 type GetOperationsResponse struct {

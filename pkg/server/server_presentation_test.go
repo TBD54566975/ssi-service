@@ -293,6 +293,106 @@ func TestPresentationAPI(t *testing.T) {
 				t.Errorf("Mismatch on submissions (-want +got):\n%s", diff)
 			}
 		})
+
+		t.Run("bad filter returns error", func(t *testing.T) {
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
+			request := router.ListSubmissionRequest{
+				Filter: `im a baaad filter that's trying to break a lot of stuff'`,
+			}
+
+			value := newRequestValue(t, request)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
+			w := httptest.NewRecorder()
+
+			err = pRouter.ListSubmissions(newRequestContext(), w, req)
+
+			require.Error(t, err)
+		})
+
+		t.Run("List submissions filters based on status", func(t *testing.T) {
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			op := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(
+				WithCredentialSubject(credential.CredentialSubject{
+					"additionalName": "Mclovin",
+					"dateOfBirth":    "1987-01-02",
+					"familyName":     "Andres",
+					"givenName":      "Uribe",
+					"id":             "did:web:andresuribe.com",
+				})), holderDID, holderSigner)
+
+			request := router.ListSubmissionRequest{
+				Filter: `status="pending"`,
+			}
+
+			value := newRequestValue(t, request)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
+			w := httptest.NewRecorder()
+
+			err = pRouter.ListSubmissions(newRequestContext(), w, req)
+
+			require.NoError(t, err)
+			var resp router.ListSubmissionResponse
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+
+			expectedSubmissions := []presentation.Submission{
+				{
+					Status: "pending",
+					PresentationSubmission: &exchange.PresentationSubmission{
+						ID:           operation.SubmissionID(op.ID),
+						DefinitionID: definition.PresentationDefinition.ID,
+					},
+				},
+			}
+			diff := cmp.Diff(expectedSubmissions, resp.Submissions,
+				cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
+				cmpopts.SortSlices(func(l, r presentation.Submission) bool {
+					return l.PresentationSubmission.ID < r.PresentationSubmission.ID
+				}),
+			)
+			if diff != "" {
+				t.Errorf("Mismatch on submissions (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("List submissions filter returns empty when status does not match", func(t *testing.T) {
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			_ = createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(
+				WithCredentialSubject(credential.CredentialSubject{
+					"additionalName": "Mclovin",
+					"dateOfBirth":    "1987-01-02",
+					"familyName":     "Andres",
+					"givenName":      "Uribe",
+					"id":             "did:web:andresuribe.com",
+				})), holderDID, holderSigner)
+
+			request := router.ListSubmissionRequest{
+				Filter: `status = "done"`,
+			}
+
+			value := newRequestValue(t, request)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
+			w := httptest.NewRecorder()
+
+			err = pRouter.ListSubmissions(newRequestContext(), w, req)
+
+			require.NoError(t, err)
+			var resp router.ListSubmissionResponse
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+
+			assert.Empty(t, resp.Submissions)
+		})
 	})
 
 }
