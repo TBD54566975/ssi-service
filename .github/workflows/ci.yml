@@ -42,10 +42,11 @@ jobs:
       run: go install github.com/magefile/mage
 
     - name: Update spec and push generated spec file
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         fetch-depth: 0
         ref: ${{ github.event.pull_request.head.ref }}
+        repository: ${{ github.event.pull_request.head.repo.full_name }}
     - run: |
         export PATH=$PATH:$(go env GOPATH)/bin
         mage spec
