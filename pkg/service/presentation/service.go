@@ -217,7 +217,7 @@ func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResp
 func (s Service) ListSubmissions(request ListSubmissionRequest) (*ListSubmissionResponse, error) {
 	logrus.Debug("listing presentation submissions")
 
-	subs, err := s.storage.ListSubmissions()
+	subs, err := s.storage.ListSubmissions(request.Filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching submissions from storage")
 	}

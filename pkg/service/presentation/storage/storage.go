@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
+	"go.einride.tech/aip/filtering"
 )
 
 type StoredPresentation struct {
@@ -66,10 +67,16 @@ type StoredSubmission struct {
 	Submission exchange.PresentationSubmission `json:"submission"`
 }
 
+func (s StoredSubmission) FilterVariablesMap() map[string]interface{} {
+	return map[string]interface{}{
+		"status": s.Status.String(),
+	}
+}
+
 type SubmissionStorage interface {
 	StoreSubmission(schema StoredSubmission) error
 	GetSubmission(id string) (*StoredSubmission, error)
-	ListSubmissions() ([]StoredSubmission, error)
+	ListSubmissions(filtering.Filter) ([]StoredSubmission, error)
 }
 
 var ErrSubmissionNotFound = errors.New("submission not found")

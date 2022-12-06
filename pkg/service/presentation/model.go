@@ -6,6 +6,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"go.einride.tech/aip/filtering"
 )
 
 type CreatePresentationDefinitionRequest struct {
@@ -61,6 +62,7 @@ type DeleteSubmissionRequest struct {
 }
 
 type ListSubmissionRequest struct {
+	Filter filtering.Filter
 }
 
 type Submission struct {
