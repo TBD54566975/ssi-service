@@ -6,9 +6,16 @@ import (
 )
 
 type StoredOperation struct {
-	ID    string `json:"id"`
-	Done  bool   `json:"done"`
-	Error string `json:"errorResult"`
+	ID string `json:"id"`
+
+	// Whether this operation has finished.
+	Done bool `json:"done"`
+
+	// Populated when there was an error with the operation.
+	Error string `json:"errorResult,omitempty"`
+
+	// Populated only when Done == true and Error == ""
+	Response interface{} `json:"result,omitempty"`
 }
 
 type Storage interface {
