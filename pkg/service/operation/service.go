@@ -61,11 +61,11 @@ func serviceModel(op opstorage.StoredOperation) Operation {
 	return newOp
 }
 
-type GetOperationRequest struct {
-	ID string `json:"id" validate:"required"`
-}
-
 func (s Service) GetOperation(request GetOperationRequest) (Operation, error) {
+	if err := request.Validate(); err != nil {
+		return Operation{}, errors.Wrap(err, "invalid request")
+	}
+
 	storedOp, err := s.storage.GetOperation(request.ID)
 	if err != nil {
 		return Operation{}, errors.Wrap(err, "fetching from storage")

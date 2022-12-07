@@ -1,6 +1,7 @@
 package operation
 
 import (
+	"github.com/TBD54566975/ssi-sdk/util"
 	"go.einride.tech/aip/filtering"
 	"strings"
 )
@@ -33,4 +34,13 @@ type GetOperationsRequest struct {
 
 type GetOperationsResponse struct {
 	Operations []Operation
+}
+
+type GetOperationRequest struct {
+	ID string `json:"id" validate:"required"`
+}
+
+// Validate does struct validation and returns an error when invalid.
+func (r GetOperationRequest) Validate() error {
+	return util.NewValidator().Struct(r)
 }
