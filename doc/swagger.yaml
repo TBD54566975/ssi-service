@@ -766,8 +766,11 @@ definitions:
         type: array
       id:
         type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
       status:
-        description: One of {`pending`, `done`}.
+        description: One of {`pending`, `approved`, `denied`}.
         type: string
     required:
     - definition_id
@@ -831,8 +834,25 @@ definitions:
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.ReviewSubmissionResponse:
     properties:
-      submission:
-        $ref: '#/definitions/exchange.PresentationSubmission'
+      definition_id:
+        type: string
+      descriptor_map:
+        items:
+          $ref: '#/definitions/exchange.SubmissionDescriptor'
+        type: array
+      id:
+        type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
+      status:
+        description: One of {`pending`, `approved`, `denied`}.
+        type: string
+    required:
+    - definition_id
+    - descriptor_map
+    - id
+    - status
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest:
     properties:
@@ -1318,8 +1338,11 @@ definitions:
         type: array
       id:
         type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
       status:
-        description: One of {`pending`, `done`}.
+        description: One of {`pending`, `approved`, `denied`}.
         type: string
     required:
     - definition_id
@@ -1383,8 +1406,25 @@ definitions:
     type: object
   pkg_server_router.ReviewSubmissionResponse:
     properties:
-      submission:
-        $ref: '#/definitions/exchange.PresentationSubmission'
+      definition_id:
+        type: string
+      descriptor_map:
+        items:
+          $ref: '#/definitions/exchange.SubmissionDescriptor'
+        type: array
+      id:
+        type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
+      status:
+        description: One of {`pending`, `approved`, `denied`}.
+        type: string
+    required:
+    - definition_id
+    - descriptor_map
+    - id
+    - status
     type: object
   pkg_server_router.StoreKeyRequest:
     properties:
@@ -1471,8 +1511,11 @@ definitions:
         type: array
       id:
         type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
       status:
-        description: One of {`pending`, `done`}.
+        description: One of {`pending`, `approved`, `denied`}.
         type: string
     required:
     - definition_id
@@ -1615,7 +1658,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse'
+            $ref: '#/definitions/pkg_server_router.GetHealthCheckResponse'
       summary: Health Check
       tags:
       - HealthCheck
@@ -1871,7 +1914,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDMethodsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDMethodsResponse'
       summary: Get DID Methods
       tags:
       - DecentralizedIdentityAPI
@@ -1892,7 +1935,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDsByMethodResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDsByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -1910,7 +1953,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -1922,7 +1965,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateDIDByMethodResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -1945,7 +1988,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -1962,7 +2005,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDByMethodResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -1987,7 +2030,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.ResolveDIDResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse'
         "400":
           description: Bad request
           schema:
@@ -2006,7 +2049,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.StoreKeyRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest'
       produces:
       - application/json
       responses:
@@ -2040,7 +2083,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetKeyDetailsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetKeyDetailsResponse'
         "400":
           description: Bad request
           schema:
@@ -2492,52 +2535,26 @@ paths:
       summary: Get PresentationDefinition
       tags:
       - PresentationDefinitionAPI
-  /v1/presentations/submission/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Get a submission by its ID
-      parameters:
-      - description: ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/pkg_server_router.GetSubmissionResponse'
-        "400":
-          description: Bad request
-          schema:
-            type: string
-      summary: Get Submission
-      tags:
-      - SubmissionAPI
   /v1/presentations/submissions:
     get:
       consumes:
       - application/json
-      description: Reviews a pending submission. After this method is called, the
-        operation with `id==presentations/submissions/{submission_id}` will be updated
-        with the result of this invocation.
+      description: List existing submissions according to a filtering query. The `filter`
+        field follows the syntax described in https://google.aip.dev/160.
       parameters:
       - description: request body
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.ReviewSubmissionRequest'
+          $ref: '#/definitions/pkg_server_router.ListSubmissionRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.ReviewSubmissionResponse'
+            $ref: '#/definitions/pkg_server_router.ListSubmissionResponse'
         "400":
           description: Bad request
           schema:
@@ -2546,7 +2563,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Review a pending submissions
+      summary: List Submissions
       tags:
       - SubmissionAPI
     put:
@@ -2578,6 +2595,63 @@ paths:
       summary: Create Submission
       tags:
       - SubmissionAPI
+  /v1/presentations/submissions/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a submission by its ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.GetSubmissionResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Get Submission
+      tags:
+      - SubmissionAPI
+  /v1/presentations/submissions/{id}/review:
+    put:
+      consumes:
+      - application/json
+      description: Reviews a pending submission. After this method is called, the
+        operation with `id==presentations/submissions/{submission_id}` will be updated
+        with the result of this invocation.
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.ReviewSubmissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.ReviewSubmissionResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Review a pending submissions
+      tags:
+      - SubmissionAPI
   /v1/schemas:
     get:
       consumes:
@@ -2589,7 +2663,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemasResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemasResponse'
         "500":
           description: Internal server error
           schema:
@@ -2607,14 +2681,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest'
+          $ref: '#/definitions/pkg_server_router.CreateSchemaRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.CreateSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -2671,7 +2745,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -2690,14 +2764,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaRequest'
+          $ref: '#/definitions/pkg_server_router.VerifySchemaRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaResponse'
+            $ref: '#/definitions/pkg_server_router.VerifySchemaResponse'
         "400":
           description: Bad request
           schema:
