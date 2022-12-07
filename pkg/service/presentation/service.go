@@ -240,13 +240,10 @@ func (s Service) ListSubmissions(request ListSubmissionRequest) (*ListSubmission
 	return resp, nil
 }
 
-type ReviewSubmissionRequest struct {
-	ID       string `json:"id" validate:"required"`
-	Approved bool   `json:"approved"`
-	Reason   string `json:"reason"`
-}
-
 func (s Service) ReviewSubmission(request ReviewSubmissionRequest) (*Submission, error) {
+	if err := request.Validate(); err != nil {
+		return nil, errors.Wrap(err, "invalid request")
+	}
 	storedOp, err := s.opsStorage.GetOperation(operationID(request.ID))
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching operation")

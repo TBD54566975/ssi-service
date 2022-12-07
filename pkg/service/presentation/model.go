@@ -76,3 +76,14 @@ type Submission struct {
 type ListSubmissionResponse struct {
 	Submissions []Submission `json:"submissions"`
 }
+
+type ReviewSubmissionRequest struct {
+	ID       string `json:"id" validate:"required"`
+	Approved bool   `json:"approved"`
+	Reason   string `json:"reason"`
+}
+
+// Validate runs validation on the request struct and returns errors when it's invalid.
+func (r ReviewSubmissionRequest) Validate() error {
+	return util.NewValidator().Struct(r)
+}
