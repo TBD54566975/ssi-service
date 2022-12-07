@@ -43,17 +43,34 @@ func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResp
 	}
 	for i, op := range ops {
 		op := op
-		newOp := Operation{
-			ID:   op.ID,
-			Done: op.Done,
-			Result: Result{
-				Error:    op.Error,
-				Response: op.Response,
-			},
-		}
+		newOp := serviceModel(op)
 		resp.Operations[i] = newOp
 	}
 	return resp, nil
+}
+
+func serviceModel(op opstorage.StoredOperation) Operation {
+	newOp := Operation{
+		ID:   op.ID,
+		Done: op.Done,
+		Result: Result{
+			Error:    op.Error,
+			Response: op.Response,
+		},
+	}
+	return newOp
+}
+
+type GetOperationRequest struct {
+	ID string `json:"id" validate:"required"`
+}
+
+func (s Service) GetOperation(request GetOperationRequest) (Operation, error) {
+	storedOp, err := s.storage.GetOperation(request.ID)
+	if err != nil {
+		return Operation{}, errors.Wrap(err, "fetching from storage")
+	}
+	return serviceModel(storedOp), nil
 }
 
 func NewOperationService(s storage.ServiceStorage) (*Service, error) {

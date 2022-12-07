@@ -286,7 +286,7 @@ type GetSubmissionResponse struct {
 // @Param        id   path      string  true  "ID"
 // @Success      200  {object}  GetSubmissionResponse
 // @Failure      400  {string}  string  "Bad request"
-// @Router       /v1/presentations/submission/{id} [get]
+// @Router       /v1/presentations/submissions/{id} [get]
 func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -378,8 +378,16 @@ type ReviewSubmissionRequest struct {
 	Reason   string `json:"reason"`
 }
 
+func (r ReviewSubmissionRequest) toServiceRequest(id string) presentation.ReviewSubmissionRequest {
+	return presentation.ReviewSubmissionRequest{
+		ID:       id,
+		Approved: r.Approved,
+		Reason:   r.Reason,
+	}
+}
+
 type ReviewSubmissionResponse struct {
-	Submission exchange.PresentationSubmission `json:"submission"`
+	*presentation.Submission
 }
 
 // ReviewSubmission godoc
@@ -392,7 +400,27 @@ type ReviewSubmissionResponse struct {
 // @Success      200  {object}  ReviewSubmissionResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
-// @Router       /v1/presentations/submissions [get]
+// @Router       /v1/presentations/submissions/{id}/review [put]
 func (pr PresentationRouter) ReviewSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return framework.Respond(ctx, w, ReviewSubmissionResponse{}, http.StatusOK)
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		return framework.NewRequestError(
+			util.LoggingNewError("review submission request requires id"), http.StatusBadRequest)
+	}
+
+	var request ReviewSubmissionRequest
+	if err := framework.Decode(r, &request); err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "invalid review submissions request"), http.StatusBadRequest)
+	}
+
+	req := request.toServiceRequest(*id)
+	submission, err := pr.service.ReviewSubmission(req)
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "failed reviewing submission"), http.StatusInternalServerError)
+	}
+	return framework.Respond(ctx, w, ReviewSubmissionResponse{
+		Submission: submission,
+	}, http.StatusOK)
 }

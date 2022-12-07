@@ -47,10 +47,12 @@ type Status uint8
 
 func (s Status) String() string {
 	switch s {
-	case StatusDone:
-		return "done"
 	case StatusPending:
 		return "pending"
+	case StatusDenied:
+		return "denied"
+	case StatusApproved:
+		return "approved"
 	default:
 		return "unknown"
 	}
@@ -59,12 +61,14 @@ func (s Status) String() string {
 const (
 	StatusUnknown Status = iota
 	StatusPending
-	StatusDone
+	StatusDenied
+	StatusApproved
 )
 
 type StoredSubmission struct {
 	Status     Status                          `json:"status"`
 	Submission exchange.PresentationSubmission `json:"submission"`
+	Reason     string                          `json:"reason"`
 }
 
 func (s StoredSubmission) FilterVariablesMap() map[string]interface{} {

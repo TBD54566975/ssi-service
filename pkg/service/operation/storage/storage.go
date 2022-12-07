@@ -32,7 +32,7 @@ func (s StoredOperation) FilterVariablesMap() map[string]interface{} {
 
 type Storage interface {
 	StoreOperation(op StoredOperation) error
-	GetOperation(id string) (*StoredOperation, error)
+	GetOperation(id string) (StoredOperation, error)
 	GetOperations(filter filtering.Filter) ([]StoredOperation, error)
 	DeleteOperation(id string) error
 }

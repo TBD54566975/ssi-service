@@ -210,6 +210,39 @@ func TestPresentationAPI(t *testing.T) {
 			assert.Zero(t, resp.Result)
 		})
 
+		t.Run("Review submission returns approved submission", func(t *testing.T) {
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
+
+			request := router.ReviewSubmissionRequest{
+				Approved: true,
+				Reason:   "because I want to",
+			}
+
+			value := newRequestValue(t, request)
+			createdID := operation.SubmissionID(submissionOp.ID)
+			req := httptest.NewRequest(
+				http.MethodPut,
+				fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s/review", createdID),
+				value)
+			w := httptest.NewRecorder()
+
+			err = pRouter.ReviewSubmission(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
+
+			assert.NoError(t, err)
+			var resp router.ReviewSubmissionResponse
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+			assert.Equal(t, "because I want to", resp.Reason)
+			assert.NotEmpty(t, resp.ID)
+			assert.Equal(t, "approved", resp.Status)
+			assert.Equal(t, definition.PresentationDefinition.ID, resp.DefinitionID)
+		})
+
 		t.Run("List submissions returns empty when there are none", func(t *testing.T) {
 			s, err := storage.NewBoltDB()
 			assert.NoError(t, err)

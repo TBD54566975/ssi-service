@@ -29,19 +29,19 @@ func (b BoltOperationStorage) StoreOperation(op StoredOperation) error {
 	return b.db.Write(namespace, id, jsonBytes)
 }
 
-func (b BoltOperationStorage) GetOperation(id string) (*StoredOperation, error) {
+func (b BoltOperationStorage) GetOperation(id string) (StoredOperation, error) {
+	var stored StoredOperation
 	jsonBytes, err := b.db.Read(namespace, id)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "reading operation with id: %s", id)
+		return stored, util.LoggingErrorMsgf(err, "reading operation with id: %s", id)
 	}
 	if len(jsonBytes) == 0 {
-		return nil, util.LoggingNewErrorf("operation not found with id: %s", id)
+		return stored, util.LoggingNewErrorf("operation not found with id: %s", id)
 	}
-	var stored StoredOperation
 	if err := json.Unmarshal(jsonBytes, &stored); err != nil {
-		return nil, util.LoggingErrorMsgf(err, "unmarshalling stored operation: %s", id)
+		return stored, util.LoggingErrorMsgf(err, "unmarshalling stored operation: %s", id)
 	}
-	return &stored, nil
+	return stored, nil
 }
 
 func (b BoltOperationStorage) GetOperations(filter filtering.Filter) ([]StoredOperation, error) {

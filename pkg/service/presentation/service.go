@@ -184,7 +184,7 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 		return nil, errors.Wrap(err, "could not store presentation")
 	}
 
-	opID := fmt.Sprintf("presentations/submissions/%s", storedSubmission.Submission.ID)
+	opID := operationID(storedSubmission.Submission.ID)
 	storedOp := opstorage.StoredOperation{
 		ID:   opID,
 		Done: false,
@@ -199,6 +199,10 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 	}, nil
 }
 
+func operationID(id string) string {
+	return fmt.Sprintf("presentations/submissions/%s", id)
+}
+
 func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResponse, error) {
 	logrus.Debugf("getting presentation submission: %s", request.ID)
 
@@ -207,11 +211,16 @@ func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResp
 		return nil, errors.Wrap(err, "fetching from storage")
 	}
 	return &GetSubmissionResponse{
-		Submission: Submission{
-			Status:                 storedSubmission.Status.String(),
-			PresentationSubmission: &storedSubmission.Submission,
-		},
+		Submission: serviceModel(storedSubmission),
 	}, nil
+}
+
+func serviceModel(storedSubmission *presentationstorage.StoredSubmission) Submission {
+	return Submission{
+		Status:                 storedSubmission.Status.String(),
+		Reason:                 storedSubmission.Reason,
+		PresentationSubmission: &storedSubmission.Submission,
+	}
 }
 
 func (s Service) ListSubmissions(request ListSubmissionRequest) (*ListSubmissionResponse, error) {
@@ -225,11 +234,47 @@ func (s Service) ListSubmissions(request ListSubmissionRequest) (*ListSubmission
 	resp := &ListSubmissionResponse{Submissions: make([]Submission, 0, len(subs))}
 	for _, sub := range subs {
 		sub := sub // What's this?? see https://github.com/golang/go/wiki/CommonMistakes#using-reference-to-loop-iterator-variable
-		resp.Submissions = append(resp.Submissions, Submission{
-			Status:                 sub.Status.String(),
-			PresentationSubmission: &sub.Submission,
-		})
+		resp.Submissions = append(resp.Submissions, serviceModel(&sub))
 	}
 
 	return resp, nil
+}
+
+type ReviewSubmissionRequest struct {
+	ID       string
+	Approved bool
+	Reason   string
+}
+
+func (s Service) ReviewSubmission(request ReviewSubmissionRequest) (*Submission, error) {
+	storedOp, err := s.opsStorage.GetOperation(operationID(request.ID))
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching operation")
+	}
+	if storedOp.Done {
+		return nil, errors.New("operation for submission already done")
+	}
+
+	storedSubmission, err := s.storage.GetSubmission(request.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching submission")
+	}
+	storedOp.Done = true
+
+	storedSubmission.Status = presentationstorage.StatusDenied
+	if request.Approved {
+		storedSubmission.Status = presentationstorage.StatusApproved
+	}
+	storedSubmission.Reason = request.Reason
+
+	if err = s.storage.StoreSubmission(*storedSubmission); err != nil {
+		return nil, errors.Wrap(err, "storing submission")
+	}
+
+	m := serviceModel(storedSubmission)
+	storedOp.Response = m
+	if err = s.opsStorage.StoreOperation(storedOp); err != nil {
+		return nil, errors.Wrap(err, "storing operation")
+	}
+	return &m, nil
 }

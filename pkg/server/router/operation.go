@@ -9,6 +9,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
+	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"go.einride.tech/aip/filtering"
 	"net/http"
 )
@@ -40,7 +41,19 @@ func NewOperationRouter(s svcframework.Service) (*OperationRouter, error) {
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/operations/{id} [get]
 func (pdr OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return nil
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		return framework.NewRequestError(
+			util.LoggingNewError("get operation request requires id"), http.StatusBadRequest)
+	}
+
+	op, err := pdr.service.GetOperation(operation.GetOperationRequest{ID: *id})
+
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "failed getting operation"), http.StatusInternalServerError)
+	}
+	return framework.Respond(ctx, w, routerModel(op), http.StatusOK)
 }
 
 type GetOperationsRequest struct {
@@ -130,14 +143,31 @@ func (pdr OperationRouter) GetOperations(ctx context.Context, w http.ResponseWri
 		logrus.WithError(err).Error("getting operations from service")
 		return framework.NewRequestError(err, http.StatusInternalServerError)
 	}
-	resp := GetOperationsResponse{Operations: make([]Operation, len(ops.Operations))}
-	for i, op := range ops.Operations {
-		resp.Operations[i].ID = op.ID
-		resp.Operations[i].Done = op.Done
-		resp.Operations[i].Result.Error = op.Result.Error
-		resp.Operations[i].Result.Response = op.Result.Response
+	resp := GetOperationsResponse{Operations: make([]Operation, 0, len(ops.Operations))}
+	for _, op := range ops.Operations {
+		resp.Operations = append(resp.Operations, routerModel(op))
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
+
+func routerModel(op operation.Operation) Operation {
+	return Operation{
+		ID:   op.ID,
+		Done: op.Done,
+		Result: OperationResult{
+			Error:    op.Result.Error,
+			Response: serviceToRouterType(op.Result.Response),
+		},
+	}
+}
+
+func serviceToRouterType(result interface{}) any {
+	switch result.(type) {
+	case presentation.Submission:
+		return result
+	default:
+		return result
+	}
 }
 
 // CancelOperation godoc
