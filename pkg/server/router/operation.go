@@ -40,14 +40,14 @@ func NewOperationRouter(s svcframework.Service) (*OperationRouter, error) {
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/operations/{id} [get]
-func (pdr OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (o OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
 			util.LoggingNewError("get operation request requires id"), http.StatusBadRequest)
 	}
 
-	op, err := pdr.service.GetOperation(operation.GetOperationRequest{ID: *id})
+	op, err := o.service.GetOperation(operation.GetOperationRequest{ID: *id})
 
 	if err != nil {
 		return framework.NewRequestError(
@@ -120,7 +120,7 @@ type GetOperationsResponse struct {
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/operations [get]
-func (pdr OperationRouter) GetOperations(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (o OperationRouter) GetOperations(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request GetOperationsRequest
 	if err := framework.Decode(r, &request); err != nil {
 		return framework.NewRequestError(
@@ -138,7 +138,7 @@ func (pdr OperationRouter) GetOperations(ctx context.Context, w http.ResponseWri
 			util.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
 	}
 
-	ops, err := pdr.service.GetOperations(req)
+	ops, err := o.service.GetOperations(req)
 	if err != nil {
 		logrus.WithError(err).Error("getting operations from service")
 		return framework.NewRequestError(err, http.StatusInternalServerError)
@@ -181,6 +181,6 @@ func serviceToRouterType(result interface{}) any {
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/operations [get]
-func (pdr OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (o OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	return nil
 }

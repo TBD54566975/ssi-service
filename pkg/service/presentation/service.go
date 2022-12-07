@@ -241,9 +241,9 @@ func (s Service) ListSubmissions(request ListSubmissionRequest) (*ListSubmission
 }
 
 type ReviewSubmissionRequest struct {
-	ID       string
-	Approved bool
-	Reason   string
+	ID       string `json:"id" validate:"required"`
+	Approved bool   `json:"approved"`
+	Reason   string `json:"reason"`
 }
 
 func (s Service) ReviewSubmission(request ReviewSubmissionRequest) (*Submission, error) {
