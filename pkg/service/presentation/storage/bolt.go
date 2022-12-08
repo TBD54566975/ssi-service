@@ -6,9 +6,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/util"
-	"go.einride.tech/aip/filtering"
-
+	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
+	"go.einride.tech/aip/filtering"
 )
 
 const (
@@ -18,6 +18,50 @@ const (
 
 type BoltPresentationStorage struct {
 	db *storage.BoltDB
+}
+
+type opUpdater struct {
+	storage.UpdaterWithMap
+}
+
+func (u opUpdater) SetUpdatedResponse(first []byte) {
+	u.UpdaterWithMap.Values["response"] = first
+}
+
+var _ storage.ResponseSettingUpdater = (*opUpdater)(nil)
+
+func (b BoltPresentationStorage) UpdateSubmission(id string, approved bool, reason string, opID string) (StoredSubmission, opstorage.StoredOperation, error) {
+	m := map[string]any{
+		"status": StatusDenied,
+		"reason": reason,
+	}
+	if approved {
+		m["status"] = StatusApproved
+	}
+	submissionData, operationData, err := b.db.UpdateValueAndOperation(
+		submissionNamespace,
+		id,
+		storage.NewUpdater(m),
+		opstorage.Namespace,
+		opID,
+		opUpdater{
+			storage.NewUpdater(map[string]any{
+				"done": true,
+			}),
+		})
+	if err != nil {
+		return StoredSubmission{}, opstorage.StoredOperation{}, errors.Wrap(err, "updating submission")
+	}
+
+	var s StoredSubmission
+	if err = json.Unmarshal(submissionData, &s); err != nil {
+		return StoredSubmission{}, opstorage.StoredOperation{}, errors.Wrap(err, "unmarshalling written submission")
+	}
+	var op opstorage.StoredOperation
+	if err = json.Unmarshal(operationData, &op); err != nil {
+		return StoredSubmission{}, opstorage.StoredOperation{}, errors.Wrap(err, "unmarshalling written operation")
+	}
+	return s, op, nil
 }
 
 func (b BoltPresentationStorage) ListSubmissions(filter filtering.Filter) ([]StoredSubmission, error) {

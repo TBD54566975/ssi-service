@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"fmt"
+	"github.com/goccy/go-json"
 	"strings"
 	"time"
 
@@ -139,6 +140,101 @@ func (b *BoltDB) DeleteNamespace(namespace string) error {
 		}
 		return nil
 	})
+}
+
+// UpdaterWithMap is a json map based Updater implementation. The key/values from the map are used to update the
+// unmarshalled JSON representation of the stored data.
+type UpdaterWithMap struct {
+	Values map[string]any
+}
+
+// NewUpdater creates a new UpdaterWithMap with the given map.
+func NewUpdater(values map[string]any) UpdaterWithMap {
+	return UpdaterWithMap{
+		Values: values,
+	}
+}
+
+func (u UpdaterWithMap) Update(v []byte) ([]byte, error) {
+	var model map[string]interface{}
+	if err := json.Unmarshal(v, &model); err != nil {
+		return nil, errors.Wrap(err, "unmarshalling json")
+	}
+	for k, val := range u.Values {
+		model[k] = val
+	}
+	data, err := json.Marshal(model)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling updated struct")
+	}
+	return data, nil
+}
+
+// Updater encapsulates the Update method, which take a slice of bytes, and updates it before it's stored in the DB.
+type Updater interface {
+	Update(v []byte) ([]byte, error)
+}
+
+type ResponseSettingUpdater interface {
+	Updater
+	// SetUpdatedResponse sets the response that the Update method will later use to modify the data.
+	SetUpdatedResponse([]byte)
+}
+
+// UpdateValueAndOperation updates the value stored in (namespace,key) with the new values specified in the map.
+// The updated value is then stored inside the (opNamespace, opKey), and the "done" value is set to true.
+func (b *BoltDB) UpdateValueAndOperation(namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error) {
+	err = b.db.Update(func(tx *bolt.Tx) error {
+		err := updateTxFn(namespace, key, updater, &first)(tx)
+		if err != nil {
+			return err
+		}
+		opUpdater.SetUpdatedResponse(first)
+		err = updateTxFn(opNamespace, opKey, opUpdater, &op)(tx)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	return first, op, err
+}
+
+func (b *BoltDB) Update(namespace string, key string, values map[string]any) ([]byte, error) {
+	var updatedData []byte
+	err := b.db.Update(updateTxFn(namespace, key, NewUpdater(values), &updatedData))
+	return updatedData, err
+}
+
+func updateTxFn(namespace string, key string, updater Updater, updatedData *[]byte) func(tx *bolt.Tx) error {
+	return func(tx *bolt.Tx) error {
+		data, err := updateTx(tx, namespace, key, updater)
+		if err != nil {
+			return err
+		}
+		*updatedData = data
+		return nil
+	}
+}
+
+func updateTx(tx *bolt.Tx, namespace string, key string, updater Updater) ([]byte, error) {
+	bucket := tx.Bucket([]byte(namespace))
+	if bucket == nil {
+		return nil, util.LoggingNewErrorf("namespace<%s> does not exist", namespace)
+	}
+	v := bucket.Get([]byte(key))
+	if v == nil {
+		return nil, util.LoggingNewErrorf("key not found %s", key)
+	}
+	var data []byte
+	var err error
+	data, err = updater.Update(v)
+	if err != nil {
+		return nil, err
+	}
+	if err = bucket.Put([]byte(key), data); err != nil {
+		return nil, errors.Wrap(err, "writing to db")
+	}
+	return data, nil
 }
 
 // MakeNamespace takes a set of possible namespace values and combines them as a convention

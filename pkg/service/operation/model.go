@@ -1,14 +1,15 @@
 package operation
 
 import (
+	"fmt"
 	"github.com/TBD54566975/ssi-sdk/util"
 	"go.einride.tech/aip/filtering"
 	"strings"
 )
 
 type Result struct {
-	Error    string      `json:"error,omitempty"`
-	Response interface{} `json:"response,omitempty"`
+	Error    string `json:"error,omitempty"`
+	Response any    `json:"response,omitempty"`
 }
 
 type Operation struct {
@@ -43,4 +44,9 @@ type GetOperationRequest struct {
 // Validate does struct validation and returns an error when invalid.
 func (r GetOperationRequest) Validate() error {
 	return util.NewValidator().Struct(r)
+}
+
+// IDFromSubmissionID returns a submission operation ID from the submission ID.
+func IDFromSubmissionID(id string) string {
+	return fmt.Sprintf("presentations/submissions/%s", id)
 }

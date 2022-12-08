@@ -9,7 +9,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
-	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
+	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	"go.einride.tech/aip/filtering"
 	"net/http"
 )
@@ -163,7 +163,7 @@ func routerModel(op operation.Operation) Operation {
 
 func serviceToRouterType(result interface{}) any {
 	switch result.(type) {
-	case presentation.Submission:
+	case model.Submission:
 		return result
 	default:
 		return result

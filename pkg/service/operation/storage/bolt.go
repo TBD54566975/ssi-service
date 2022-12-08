@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	namespace = "operation"
+	Namespace = "operation"
 )
 
 type BoltOperationStorage struct {
@@ -26,12 +26,12 @@ func (b BoltOperationStorage) StoreOperation(op StoredOperation) error {
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "marshalling operation with id: %s", id)
 	}
-	return b.db.Write(namespace, id, jsonBytes)
+	return b.db.Write(Namespace, id, jsonBytes)
 }
 
 func (b BoltOperationStorage) GetOperation(id string) (StoredOperation, error) {
 	var stored StoredOperation
-	jsonBytes, err := b.db.Read(namespace, id)
+	jsonBytes, err := b.db.Read(Namespace, id)
 	if err != nil {
 		return stored, util.LoggingErrorMsgf(err, "reading operation with id: %s", id)
 	}
@@ -45,7 +45,7 @@ func (b BoltOperationStorage) GetOperation(id string) (StoredOperation, error) {
 }
 
 func (b BoltOperationStorage) GetOperations(filter filtering.Filter) ([]StoredOperation, error) {
-	operations, err := b.db.ReadAll(namespace)
+	operations, err := b.db.ReadAll(Namespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get all operations")
 	}
@@ -74,7 +74,7 @@ func (b BoltOperationStorage) GetOperations(filter filtering.Filter) ([]StoredOp
 }
 
 func (b BoltOperationStorage) DeleteOperation(id string) error {
-	if err := b.db.Delete(namespace, id); err != nil {
+	if err := b.db.Delete(Namespace, id); err != nil {
 		return util.LoggingErrorMsgf(err, "deleting operation: %s", id)
 	}
 	return nil

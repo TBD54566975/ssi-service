@@ -3,11 +3,15 @@ package operation
 import (
 	"fmt"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
+	prestorage "github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
+	"strings"
 )
 
 type Service struct {
@@ -43,22 +47,37 @@ func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResp
 	}
 	for i, op := range ops {
 		op := op
-		newOp := serviceModel(op)
+		newOp, _ := serviceModel(op)
 		resp.Operations[i] = newOp
 	}
 	return resp, nil
 }
 
-func serviceModel(op opstorage.StoredOperation) Operation {
+type ServiceModelFunc func(any) any
+
+func serviceModel(op opstorage.StoredOperation) (Operation, error) {
 	newOp := Operation{
 		ID:   op.ID,
 		Done: op.Done,
 		Result: Result{
-			Error:    op.Error,
-			Response: op.Response,
+			Error: op.Error,
 		},
 	}
-	return newOp
+
+	if len(op.Response) > 0 {
+		switch {
+		case strings.Contains(op.ID, "submissions"):
+			var s prestorage.StoredSubmission
+			if err := json.Unmarshal(op.Response, &s); err != nil {
+				return Operation{}, err
+			}
+			newOp.Result.Response = model.ServiceModel(&s)
+		default:
+			return Operation{}, errors.New("unknown response type")
+		}
+	}
+
+	return newOp, nil
 }
 
 func (s Service) GetOperation(request GetOperationRequest) (Operation, error) {
@@ -70,7 +89,7 @@ func (s Service) GetOperation(request GetOperationRequest) (Operation, error) {
 	if err != nil {
 		return Operation{}, errors.Wrap(err, "fetching from storage")
 	}
-	return serviceModel(storedOp), nil
+	return serviceModel(storedOp)
 }
 
 func NewOperationService(s storage.ServiceStorage) (*Service, error) {

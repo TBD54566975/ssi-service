@@ -14,6 +14,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
+	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	"go.einride.tech/aip/filtering"
 	"net/http"
 )
@@ -74,7 +75,7 @@ func (pr PresentationRouter) CreatePresentationDefinition(ctx context.Context, w
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
-	serviceResp, err := pr.service.CreatePresentationDefinition(presentation.CreatePresentationDefinitionRequest{PresentationDefinition: *def})
+	serviceResp, err := pr.service.CreatePresentationDefinition(model.CreatePresentationDefinitionRequest{PresentationDefinition: *def})
 	if err != nil {
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
@@ -139,7 +140,7 @@ func (pr PresentationRouter) GetPresentationDefinition(ctx context.Context, w ht
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	def, err := pr.service.GetPresentationDefinition(presentation.GetPresentationDefinitionRequest{ID: *id})
+	def, err := pr.service.GetPresentationDefinition(model.GetPresentationDefinitionRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get presentation with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -171,7 +172,7 @@ func (pr PresentationRouter) DeletePresentationDefinition(ctx context.Context, w
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := pr.service.DeletePresentationDefinition(presentation.DeletePresentationDefinitionRequest{ID: *id}); err != nil {
+	if err := pr.service.DeletePresentationDefinition(model.DeletePresentationDefinitionRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete presentation with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
@@ -184,7 +185,7 @@ type CreateSubmissionRequest struct {
 	SubmissionJWT keyaccess.JWT `json:"submissionJwt" validate:"required"`
 }
 
-func (r CreateSubmissionRequest) toServiceRequest() (*presentation.CreateSubmissionRequest, error) {
+func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequest, error) {
 	sdkVP, err := signing.ParseVerifiablePresentationFromJWT(r.SubmissionJWT.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing presentation from jwt")
@@ -211,7 +212,7 @@ func (r CreateSubmissionRequest) toServiceRequest() (*presentation.CreateSubmiss
 		return nil, errors.Wrap(err, "parsing verifiable credential array")
 	}
 
-	return &presentation.CreateSubmissionRequest{
+	return &model.CreateSubmissionRequest{
 		Presentation:  *sdkVP,
 		SubmissionJWT: r.SubmissionJWT,
 		Submission:    s,
@@ -274,7 +275,7 @@ func (pr PresentationRouter) CreateSubmission(ctx context.Context, w http.Respon
 }
 
 type GetSubmissionResponse struct {
-	*presentation.Submission
+	*model.Submission
 }
 
 // GetSubmission godoc
@@ -294,7 +295,7 @@ func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseW
 			util.LoggingNewError("get submission request requires id"), http.StatusBadRequest)
 	}
 
-	submission, err := pr.service.GetSubmission(presentation.GetSubmissionRequest{ID: *id})
+	submission, err := pr.service.GetSubmission(model.GetSubmissionRequest{ID: *id})
 
 	if err != nil {
 		return framework.NewRequestError(
@@ -317,7 +318,7 @@ func (l ListSubmissionRequest) GetFilter() string {
 }
 
 type ListSubmissionResponse struct {
-	Submissions []presentation.Submission `json:"submissions"`
+	Submissions []model.Submission `json:"submissions"`
 }
 
 // ListSubmissions godoc
@@ -363,7 +364,7 @@ func (pr PresentationRouter) ListSubmissions(ctx context.Context, w http.Respons
 		return framework.NewRequestError(
 			util.LoggingErrorMsg(err, "invalid filter"), http.StatusBadRequest)
 	}
-	resp, err := pr.service.ListSubmissions(presentation.ListSubmissionRequest{
+	resp, err := pr.service.ListSubmissions(model.ListSubmissionRequest{
 		Filter: filter,
 	})
 	if err != nil {
@@ -378,8 +379,8 @@ type ReviewSubmissionRequest struct {
 	Reason   string `json:"reason"`
 }
 
-func (r ReviewSubmissionRequest) toServiceRequest(id string) presentation.ReviewSubmissionRequest {
-	return presentation.ReviewSubmissionRequest{
+func (r ReviewSubmissionRequest) toServiceRequest(id string) model.ReviewSubmissionRequest {
+	return model.ReviewSubmissionRequest{
 		ID:       id,
 		Approved: r.Approved,
 		Reason:   r.Reason,
@@ -387,7 +388,7 @@ func (r ReviewSubmissionRequest) toServiceRequest(id string) presentation.Review
 }
 
 type ReviewSubmissionResponse struct {
-	*presentation.Submission
+	*model.Submission
 }
 
 // ReviewSubmission godoc

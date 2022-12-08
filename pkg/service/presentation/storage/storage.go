@@ -4,6 +4,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"go.einride.tech/aip/filtering"
 )
@@ -81,6 +82,7 @@ type SubmissionStorage interface {
 	StoreSubmission(schema StoredSubmission) error
 	GetSubmission(id string) (*StoredSubmission, error)
 	ListSubmissions(filtering.Filter) ([]StoredSubmission, error)
+	UpdateSubmission(id string, approved bool, reason string, submissionID string) (StoredSubmission, opstorage.StoredOperation, error)
 }
 
 var ErrSubmissionNotFound = errors.New("submission not found")

@@ -16,7 +16,7 @@ type StoredOperation struct {
 	Error string `json:"errorResult,omitempty"`
 
 	// Populated only when Done == true and Error == ""
-	Response interface{} `json:"result,omitempty"`
+	Response []byte `json:"response,omitempty"`
 }
 
 func (s StoredOperation) FilterVariablesMap() map[string]interface{} {
