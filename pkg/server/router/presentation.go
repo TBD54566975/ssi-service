@@ -219,7 +219,7 @@ func (r CreateSubmissionRequest) toServiceRequest() (*presentation.CreateSubmiss
 }
 
 type Operation struct {
-	// The name of the resource related to this operation. E.g. "/presentation/submissions/<uuid>"
+	// The name of the resource related to this operation. E.g. "/presentations/submissions/<uuid>"
 	ID string `json:"id"`
 
 	// Whether this operation has finished.

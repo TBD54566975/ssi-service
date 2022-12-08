@@ -1,6 +1,7 @@
 package operation
 
 import (
+	"github.com/TBD54566975/ssi-sdk/util"
 	"go.einride.tech/aip/filtering"
 	"strings"
 )
@@ -27,8 +28,12 @@ func SubmissionID(opID string) string {
 }
 
 type GetOperationsRequest struct {
-	Parent string
+	Parent string `validate:"required"`
 	Filter filtering.Filter
+}
+
+func (r GetOperationsRequest) Validate() error {
+	return util.NewValidator().Struct(r)
 }
 
 type GetOperationsResponse struct {
