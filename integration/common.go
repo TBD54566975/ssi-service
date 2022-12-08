@@ -3,11 +3,11 @@ package integration
 import (
 	"bytes"
 	"embed"
-	cmpact "github.com/goccy/go-json"
-	"github.com/goccy/go-json"
 	"fmt"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/goccy/go-json"
+	cmpact "github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
 	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
@@ -45,6 +45,16 @@ func CreateDIDWeb() (string, error) {
 	output, err := put(endpoint+version+"dids/web", getJSONFromFile("did-web-input.json"))
 	if err != nil {
 		return "", errors.Wrapf(err, "did endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
+func ResolveDID(did string) (string, error) {
+	logrus.Println("\n\nResolve a did")
+	output, err := get(endpoint + version + "dids/resolver/" + did)
+	if err != nil {
+		return "", errors.Wrapf(err, "did resolver with output: %s", output)
 	}
 
 	return output, nil
