@@ -1,17 +1,18 @@
 package server
 
 import (
+	"github.com/goccy/go-json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
-	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -933,10 +934,12 @@ func TestCredentialAPI(t *testing.T) {
 		credStatusListID := (credStatusMap["statusListCredential"]).(string)
 
 		assert.NotEmpty(tt, credStatusListID)
-		fmt.Println(credStatusListID)
 
-		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://localhost:8080/v1/credentials/status/%s", credStatusListID), nil)
-		err = credRouter.GetCredentialStatusList(newRequestContextWithParams(map[string]string{"id": credStatusListID}), w, req)
+		i := strings.LastIndex(credStatusListID, "/")
+		uuidStringUUID := credStatusListID[i+1:]
+
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://localhost:8080/%s", credStatusListID), nil)
+		err = credRouter.GetCredentialStatusList(newRequestContextWithParams(map[string]string{"id": uuidStringUUID}), w, req)
 		assert.NoError(tt, err)
 
 		var credListResp router.GetCredentialStatusListResponse
