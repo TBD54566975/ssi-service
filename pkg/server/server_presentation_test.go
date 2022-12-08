@@ -244,6 +244,35 @@ func TestPresentationAPI(t *testing.T) {
 			assert.Equal(t, definition.PresentationDefinition.ID, resp.DefinitionID)
 		})
 
+		t.Run("Review submission twice fails", func(t *testing.T) {
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
+			createdID := operation.SubmissionID(submissionOp.ID)
+			_ = reviewSubmission(t, pRouter, createdID)
+
+			request := router.ReviewSubmissionRequest{
+				Approved: true,
+				Reason:   "because I want to review again",
+			}
+
+			value := newRequestValue(t, request)
+			req := httptest.NewRequest(
+				http.MethodPut,
+				fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s/review", createdID),
+				value)
+			w := httptest.NewRecorder()
+
+			err = pRouter.ReviewSubmission(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
+
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "operation already marked as done")
+		})
+
 		t.Run("List submissions returns empty when there are none", func(t *testing.T) {
 			s, err := storage.NewBoltDB()
 			assert.NoError(t, err)

@@ -148,6 +148,10 @@ type UpdaterWithMap struct {
 	Values map[string]any
 }
 
+func (u UpdaterWithMap) Validate(v []byte) error {
+	return nil
+}
+
 // NewUpdater creates a new UpdaterWithMap with the given map.
 func NewUpdater(values map[string]any) UpdaterWithMap {
 	return UpdaterWithMap{
@@ -173,6 +177,8 @@ func (u UpdaterWithMap) Update(v []byte) ([]byte, error) {
 // Updater encapsulates the Update method, which take a slice of bytes, and updates it before it's stored in the DB.
 type Updater interface {
 	Update(v []byte) ([]byte, error)
+	// Validate runs after the data has been loaded from disk, but before the write is actually performed.
+	Validate(v []byte) error
 }
 
 type ResponseSettingUpdater interface {
@@ -225,9 +231,10 @@ func updateTx(tx *bolt.Tx, namespace string, key string, updater Updater) ([]byt
 	if v == nil {
 		return nil, util.LoggingNewErrorf("key not found %s", key)
 	}
-	var data []byte
-	var err error
-	data, err = updater.Update(v)
+	if err := updater.Validate(v); err != nil {
+		return nil, util.LoggingErrorMsg(err, "validating update")
+	}
+	data, err := updater.Update(v)
 	if err != nil {
 		return nil, err
 	}

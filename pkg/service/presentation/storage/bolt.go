@@ -28,6 +28,19 @@ func (u opUpdater) SetUpdatedResponse(first []byte) {
 	u.UpdaterWithMap.Values["response"] = first
 }
 
+func (u opUpdater) Validate(v []byte) error {
+	var op opstorage.StoredOperation
+	if err := json.Unmarshal(v, &op); err != nil {
+		return errors.Wrap(err, "unmarshalling operation")
+	}
+
+	if op.Done {
+		return errors.New("operation already marked as done")
+	}
+
+	return nil
+}
+
 var _ storage.ResponseSettingUpdater = (*opUpdater)(nil)
 
 func (b BoltPresentationStorage) UpdateSubmission(id string, approved bool, reason string, opID string) (StoredSubmission, opstorage.StoredOperation, error) {
@@ -50,7 +63,7 @@ func (b BoltPresentationStorage) UpdateSubmission(id string, approved bool, reas
 			}),
 		})
 	if err != nil {
-		return StoredSubmission{}, opstorage.StoredOperation{}, errors.Wrap(err, "updating submission")
+		return StoredSubmission{}, opstorage.StoredOperation{}, errors.Wrap(err, "updating value and operation")
 	}
 
 	var s StoredSubmission
