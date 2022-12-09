@@ -3,6 +3,7 @@ package operation
 import (
 	"fmt"
 	"github.com/TBD54566975/ssi-sdk/util"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"go.einride.tech/aip/filtering"
 	"strings"
 )
@@ -50,9 +51,7 @@ func (r GetOperationRequest) Validate() error {
 	return util.NewValidator().Struct(r)
 }
 
-const SubmissionOperationPrefix = "/presentations/submissions"
-
 // IDFromSubmissionID returns a submission operation ID from the submission ID.
 func IDFromSubmissionID(id string) string {
-	return fmt.Sprintf("%s/%s", SubmissionOperationPrefix, id)
+	return fmt.Sprintf("%s/%s", storage.SubmissionParentResource, id)
 }

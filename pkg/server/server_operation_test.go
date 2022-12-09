@@ -72,7 +72,7 @@ func TestOperationsAPI(t *testing.T) {
 			var resp router.Operation
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 			assert.False(t, resp.Done)
-			assert.Contains(t, resp.ID, "presentations/submissions/")
+			assert.Contains(t, resp.ID, "/presentations/submissions/")
 		})
 
 		t.Run("Returns error when id doesn't exist", func(t *testing.T) {
@@ -172,8 +172,7 @@ func TestOperationsAPI(t *testing.T) {
 		})
 
 		t.Run("Returns zero operations when filtering to exclude", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -197,8 +196,7 @@ func TestOperationsAPI(t *testing.T) {
 		})
 
 		t.Run("Returns zero operations when wrong parent is specified", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 

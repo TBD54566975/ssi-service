@@ -75,7 +75,7 @@ func serviceModel(op opstorage.StoredOperation) (Operation, error) {
 
 	if len(op.Response) > 0 {
 		switch {
-		case strings.HasPrefix(op.ID, SubmissionOperationPrefix):
+		case strings.HasPrefix(op.ID, opstorage.SubmissionParentResource):
 			var s prestorage.StoredSubmission
 			if err := json.Unmarshal(op.Response, &s); err != nil {
 				return Operation{}, err

@@ -55,7 +55,7 @@ func (b BoltPresentationStorage) UpdateSubmission(id string, approved bool, reas
 		submissionNamespace,
 		id,
 		storage.NewUpdater(m),
-		opstorage.Namespace,
+		opstorage.NamespaceFromID(opID),
 		opID,
 		opUpdater{
 			storage.NewUpdater(map[string]any{
