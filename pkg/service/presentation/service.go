@@ -184,7 +184,7 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 		return nil, errors.Wrap(err, "could not store presentation")
 	}
 
-	opID := fmt.Sprintf("presentations/submissions/%s", storedSubmission.Submission.ID)
+	opID := fmt.Sprintf("%s/%s", opstorage.SubmissionParentResource, storedSubmission.Submission.ID)
 	storedOp := opstorage.StoredOperation{
 		ID:   opID,
 		Done: false,

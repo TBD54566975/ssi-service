@@ -22,7 +22,9 @@ func TestOperationsAPI(t *testing.T) {
 			assert.NoError(t, err)
 			opRouter := setupOperationsRouter(t, s)
 
-			request := router.GetOperationsRequest{}
+			request := router.GetOperationsRequest{
+				Parent: "/presentations/submissions",
+			}
 			value := newRequestValue(t, request)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
 			w := httptest.NewRecorder()
@@ -47,7 +49,9 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner2, holderDID2 := getSigner(t)
 			submissionOp2 := createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID2, holderSigner2)
 
-			request := router.GetOperationsRequest{}
+			request := router.GetOperationsRequest{
+				Parent: "/presentations/submissions",
+			}
 			value := newRequestValue(t, request)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
 			w := httptest.NewRecorder()
@@ -79,6 +83,7 @@ func TestOperationsAPI(t *testing.T) {
 			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			request := router.GetOperationsRequest{
+				Parent: "/presentations/submissions",
 				Filter: "done = false",
 			}
 			value := newRequestValue(t, request)
@@ -104,7 +109,32 @@ func TestOperationsAPI(t *testing.T) {
 			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			request := router.GetOperationsRequest{
+				Parent: "/presentations/submissions",
 				Filter: "done = true",
+			}
+			value := newRequestValue(t, request)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
+			w := httptest.NewRecorder()
+
+			assert.NoError(t, opRouter.GetOperations(newRequestContext(), w, req))
+
+			var resp router.GetOperationsResponse
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+			assert.Empty(t, resp.Operations)
+		})
+
+		t.Run("Returns zero operations when wrong parent is specified", func(t *testing.T) {
+			s, err := storage.NewBoltDB()
+			assert.NoError(t, err)
+			pRouter := setupPresentationRouter(t, s)
+			opRouter := setupOperationsRouter(t, s)
+
+			def := createPresentationDefinition(t, pRouter)
+			holderSigner, holderDID := getSigner(t)
+			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
+
+			request := router.GetOperationsRequest{
+				Parent: "/presentations/other",
 			}
 			value := newRequestValue(t, request)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
