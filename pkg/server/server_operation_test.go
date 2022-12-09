@@ -193,12 +193,15 @@ func TestOperationsAPI(t *testing.T) {
 
 }
 
-func setupTestDB(t *testing.T) *storage.BoltDB {
-	s, err := storage.NewBoltDB()
+func setupTestDB(t *testing.T) storage.ServiceStorage {
+	file, err := os.CreateTemp("", "bolt")
+	require.NoError(t, err)
+	name := file.Name()
+	s, err := storage.NewBoltDBWithFile(name)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = s.Close()
-		_ = os.Remove(storage.DBFile)
+		_ = os.Remove(name)
 	})
 	return s
 }
