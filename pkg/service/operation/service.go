@@ -38,7 +38,11 @@ func (s Service) Status() framework.Status {
 }
 
 func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResponse, error) {
-	ops, err := s.storage.GetOperations(request.Filter)
+	if err := request.Validate(); err != nil {
+		return nil, errors.Wrap(err, "invalid request")
+	}
+
+	ops, err := s.storage.GetOperations(request.Parent, request.Filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching ops from storage")
 	}

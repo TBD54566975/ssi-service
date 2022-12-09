@@ -78,6 +78,7 @@ const FilterCharacterLimit = 1024
 
 func (r GetOperationsRequest) ToServiceRequest() (operation.GetOperationsRequest, error) {
 	var opReq operation.GetOperationsRequest
+	opReq.Parent = r.Parent
 
 	declarations, err := filtering.NewDeclarations(
 		filtering.DeclareFunction(filtering.FunctionEquals,
