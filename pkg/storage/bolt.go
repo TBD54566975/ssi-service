@@ -148,6 +148,8 @@ type UpdaterWithMap struct {
 	Values map[string]any
 }
 
+// Validate is a default implementation for UpdaterWithMap which does no validation. Users can pass embed UpdaterWithMap
+// into a custom struct and redefine this method in order to have custom logic.
 func (u UpdaterWithMap) Validate(v []byte) error {
 	return nil
 }
