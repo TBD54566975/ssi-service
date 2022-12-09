@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -18,8 +19,7 @@ import (
 
 func TestOperationsAPI(t *testing.T) {
 	t.Run("Marks operation as done after reviewing submission", func(t *testing.T) {
-		s, err := storage.NewBoltDB()
-		assert.NoError(t, err)
+		s := setupTestDB(t)
 		pRouter := setupPresentationRouter(t, s)
 		opRouter := setupOperationsRouter(t, s)
 
@@ -35,7 +35,7 @@ func TestOperationsAPI(t *testing.T) {
 			nil)
 		w := httptest.NewRecorder()
 
-		err = opRouter.GetOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
+		err := opRouter.GetOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
 
 		assert.NoError(t, err)
 		var resp router.Operation
@@ -51,8 +51,7 @@ func TestOperationsAPI(t *testing.T) {
 
 	t.Run("GetOperation", func(t *testing.T) {
 		t.Run("Returns operation after submission", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -67,7 +66,7 @@ func TestOperationsAPI(t *testing.T) {
 				nil)
 			w := httptest.NewRecorder()
 
-			err = opRouter.GetOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
+			err := opRouter.GetOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
 
 			assert.NoError(t, err)
 			var resp router.Operation
@@ -77,8 +76,7 @@ func TestOperationsAPI(t *testing.T) {
 		})
 
 		t.Run("Returns error when id doesn't exist", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			opRouter := setupOperationsRouter(t, s)
 
 			req := httptest.NewRequest(
@@ -87,7 +85,7 @@ func TestOperationsAPI(t *testing.T) {
 				nil)
 			w := httptest.NewRecorder()
 
-			err = opRouter.GetOperation(newRequestContextWithParams(map[string]string{"id": "some_fake_id"}), w, req)
+			err := opRouter.GetOperation(newRequestContextWithParams(map[string]string{"id": "some_fake_id"}), w, req)
 
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "operation not found with id")
@@ -96,8 +94,7 @@ func TestOperationsAPI(t *testing.T) {
 
 	t.Run("GetOperations", func(t *testing.T) {
 		t.Run("Returns empty when no operations stored", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			opRouter := setupOperationsRouter(t, s)
 
 			request := router.GetOperationsRequest{}
@@ -113,8 +110,7 @@ func TestOperationsAPI(t *testing.T) {
 		})
 
 		t.Run("Returns one operation for every submission", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -147,8 +143,7 @@ func TestOperationsAPI(t *testing.T) {
 		})
 
 		t.Run("Returns operation when filtering to include", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -198,6 +193,16 @@ func TestOperationsAPI(t *testing.T) {
 
 }
 
+func setupTestDB(t *testing.T) *storage.BoltDB {
+	s, err := storage.NewBoltDB()
+	require.NoError(t, err)
+	t.Cleanup(func() {
+		_ = s.Close()
+		_ = os.Remove(storage.DBFile)
+	})
+	return s
+}
+
 func reviewSubmission(t *testing.T, pRouter *router.PresentationRouter, submissionID string) router.ReviewSubmissionResponse {
 	request := router.ReviewSubmissionRequest{
 		Approved: true,
@@ -220,10 +225,6 @@ func reviewSubmission(t *testing.T, pRouter *router.PresentationRouter, submissi
 }
 
 func setupOperationsRouter(t *testing.T, s storage.ServiceStorage) *router.OperationRouter {
-	t.Cleanup(func() {
-		assert.NoError(t, s.Close())
-		assert.NoError(t, os.Remove(storage.DBFile))
-	})
 	svc, err := operation.NewOperationService(s)
 	assert.NoError(t, err)
 	opRouter, err := router.NewOperationRouter(svc)
