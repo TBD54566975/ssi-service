@@ -46,7 +46,9 @@ func (r GetOperationRequest) Validate() error {
 	return util.NewValidator().Struct(r)
 }
 
+const SubmissionOperationPrefix = "/presentations/submissions"
+
 // IDFromSubmissionID returns a submission operation ID from the submission ID.
 func IDFromSubmissionID(id string) string {
-	return fmt.Sprintf("presentations/submissions/%s", id)
+	return fmt.Sprintf("%s/%s", SubmissionOperationPrefix, id)
 }

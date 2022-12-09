@@ -5,6 +5,7 @@ import (
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -47,7 +48,11 @@ func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResp
 	}
 	for i, op := range ops {
 		op := op
-		newOp, _ := serviceModel(op)
+		newOp, err := serviceModel(op)
+		if err != nil {
+			logrus.WithError(err).WithField("operation_id", op.ID).Error("converting to storage operations to model")
+			continue
+		}
 		resp.Operations[i] = newOp
 	}
 	return resp, nil
@@ -66,14 +71,14 @@ func serviceModel(op opstorage.StoredOperation) (Operation, error) {
 
 	if len(op.Response) > 0 {
 		switch {
-		case strings.Contains(op.ID, "submissions"):
+		case strings.HasPrefix(op.ID, SubmissionOperationPrefix):
 			var s prestorage.StoredSubmission
 			if err := json.Unmarshal(op.Response, &s); err != nil {
 				return Operation{}, err
 			}
 			newOp.Result.Response = model.ServiceModel(&s)
 		default:
-			return Operation{}, errors.New("unknown response type")
+			return newOp, errors.New("unknown response type")
 		}
 	}
 

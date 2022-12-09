@@ -44,7 +44,7 @@ func TestOperationsAPI(t *testing.T) {
 		assert.Empty(t, resp.Result.Error)
 		data, err := json.Marshal(submission)
 		assert.NoError(t, err)
-		var responseAsMap interface{}
+		var responseAsMap map[string]any
 		assert.NoError(t, json.Unmarshal(data, &responseAsMap))
 		assert.Equal(t, responseAsMap, resp.Result.Response)
 	})

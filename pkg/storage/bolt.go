@@ -191,13 +191,11 @@ type ResponseSettingUpdater interface {
 // The updated value is then stored inside the (opNamespace, opKey), and the "done" value is set to true.
 func (b *BoltDB) UpdateValueAndOperation(namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error) {
 	err = b.db.Update(func(tx *bolt.Tx) error {
-		err := updateTxFn(namespace, key, updater, &first)(tx)
-		if err != nil {
+		if err := updateTxFn(namespace, key, updater, &first)(tx); err != nil {
 			return err
 		}
 		opUpdater.SetUpdatedResponse(first)
-		err = updateTxFn(opNamespace, opKey, opUpdater, &op)(tx)
-		if err != nil {
+		if err = updateTxFn(opNamespace, opKey, opUpdater, &op)(tx); err != nil {
 			return err
 		}
 		return nil

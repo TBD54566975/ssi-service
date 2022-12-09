@@ -24,8 +24,8 @@ type opUpdater struct {
 	storage.UpdaterWithMap
 }
 
-func (u opUpdater) SetUpdatedResponse(first []byte) {
-	u.UpdaterWithMap.Values["response"] = first
+func (u opUpdater) SetUpdatedResponse(response []byte) {
+	u.UpdaterWithMap.Values["response"] = response
 }
 
 func (u opUpdater) Validate(v []byte) error {
