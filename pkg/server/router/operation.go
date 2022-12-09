@@ -39,8 +39,20 @@ func NewOperationRouter(s svcframework.Service) (*OperationRouter, error) {
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/operations/{id} [get]
-func (pdr OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return nil
+func (o OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		return framework.NewRequestError(
+			util.LoggingNewError("get operation request requires id"), http.StatusBadRequest)
+	}
+
+	op, err := o.service.GetOperation(operation.GetOperationRequest{ID: *id})
+
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "failed getting operation"), http.StatusInternalServerError)
+	}
+	return framework.Respond(ctx, w, routerModel(op), http.StatusOK)
 }
 
 type GetOperationsRequest struct {
@@ -108,7 +120,7 @@ type GetOperationsResponse struct {
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/operations [get]
-func (pdr OperationRouter) GetOperations(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (o OperationRouter) GetOperations(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request GetOperationsRequest
 	if err := framework.Decode(r, &request); err != nil {
 		return framework.NewRequestError(
@@ -126,19 +138,27 @@ func (pdr OperationRouter) GetOperations(ctx context.Context, w http.ResponseWri
 			util.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
 	}
 
-	ops, err := pdr.service.GetOperations(req)
+	ops, err := o.service.GetOperations(req)
 	if err != nil {
 		logrus.WithError(err).Error("getting operations from service")
 		return framework.NewRequestError(err, http.StatusInternalServerError)
 	}
-	resp := GetOperationsResponse{Operations: make([]Operation, len(ops.Operations))}
-	for i, op := range ops.Operations {
-		resp.Operations[i].ID = op.ID
-		resp.Operations[i].Done = op.Done
-		resp.Operations[i].Result.Error = op.Result.Error
-		resp.Operations[i].Result.Response = op.Result.Response
+	resp := GetOperationsResponse{Operations: make([]Operation, 0, len(ops.Operations))}
+	for _, op := range ops.Operations {
+		resp.Operations = append(resp.Operations, routerModel(op))
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
+}
+
+func routerModel(op operation.Operation) Operation {
+	return Operation{
+		ID:   op.ID,
+		Done: op.Done,
+		Result: OperationResult{
+			Error:    op.Result.Error,
+			Response: op.Result.Response,
+		},
+	}
 }
 
 // CancelOperation godoc
@@ -152,6 +172,6 @@ func (pdr OperationRouter) GetOperations(ctx context.Context, w http.ResponseWri
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/operations [get]
-func (pdr OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (o OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	return nil
 }

@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -12,13 +11,14 @@ import (
 )
 
 const (
-	namespace  = "operation"
-	submission = "submission"
+	namespace = "operation_submission"
 )
 
 const SubmissionParentResource = "/presentations/submissions"
 
-func namespaceFromID(id string) string {
+// NamespaceFromID returns a namespace from a given operation ID. An empty string is returned when the namespace cannot
+// be determined.
+func NamespaceFromID(id string) string {
 	i := strings.LastIndex(id, "/")
 	if i == -1 {
 		return ""
@@ -29,7 +29,7 @@ func namespaceFromID(id string) string {
 func namespaceFromParent(parent string) string {
 	switch parent {
 	case SubmissionParentResource:
-		return fmt.Sprintf("%s_%s", namespace, submission)
+		return namespace
 	default:
 		return ""
 	}
@@ -48,22 +48,22 @@ func (b BoltOperationStorage) StoreOperation(op StoredOperation) error {
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "marshalling operation with id: %s", id)
 	}
-	return b.db.Write(namespaceFromID(id), id, jsonBytes)
+	return b.db.Write(NamespaceFromID(id), id, jsonBytes)
 }
 
-func (b BoltOperationStorage) GetOperation(id string) (*StoredOperation, error) {
-	jsonBytes, err := b.db.Read(namespaceFromID(id), id)
+func (b BoltOperationStorage) GetOperation(id string) (StoredOperation, error) {
+	var stored StoredOperation
+	jsonBytes, err := b.db.Read(NamespaceFromID(id), id)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "reading operation with id: %s", id)
+		return stored, util.LoggingErrorMsgf(err, "reading operation with id: %s", id)
 	}
 	if len(jsonBytes) == 0 {
-		return nil, util.LoggingNewErrorf("operation not found with id: %s", id)
+		return stored, util.LoggingNewErrorf("operation not found with id: %s", id)
 	}
-	var stored StoredOperation
 	if err := json.Unmarshal(jsonBytes, &stored); err != nil {
-		return nil, util.LoggingErrorMsgf(err, "unmarshalling stored operation: %s", id)
+		return stored, util.LoggingErrorMsgf(err, "unmarshalling stored operation: %s", id)
 	}
-	return &stored, nil
+	return stored, nil
 }
 
 func (b BoltOperationStorage) GetOperations(parent string, filter filtering.Filter) ([]StoredOperation, error) {
@@ -96,7 +96,7 @@ func (b BoltOperationStorage) GetOperations(parent string, filter filtering.Filt
 }
 
 func (b BoltOperationStorage) DeleteOperation(id string) error {
-	if err := b.db.Delete(namespaceFromID(id), id); err != nil {
+	if err := b.db.Delete(NamespaceFromID(id), id); err != nil {
 		return util.LoggingErrorMsgf(err, "deleting operation: %s", id)
 	}
 	return nil

@@ -1,11 +1,13 @@
 package server
 
 import (
+	"fmt"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/goccy/go-json"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -16,10 +18,83 @@ import (
 )
 
 func TestOperationsAPI(t *testing.T) {
+	t.Run("Marks operation as done after reviewing submission", func(t *testing.T) {
+		s := setupTestDB(t)
+		pRouter := setupPresentationRouter(t, s)
+		opRouter := setupOperationsRouter(t, s)
+
+		holderSigner, holderDID := getSigner(t)
+		definition := createPresentationDefinition(t, pRouter)
+		submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
+		submission := reviewSubmission(t, pRouter, operation.SubmissionID(submissionOp.ID))
+
+		createdID := submissionOp.ID
+		req := httptest.NewRequest(
+			http.MethodPut,
+			fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID),
+			nil)
+		w := httptest.NewRecorder()
+
+		err := opRouter.GetOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
+
+		assert.NoError(t, err)
+		var resp router.Operation
+		assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+		assert.True(t, resp.Done)
+		assert.Empty(t, resp.Result.Error)
+		data, err := json.Marshal(submission)
+		assert.NoError(t, err)
+		var responseAsMap map[string]any
+		assert.NoError(t, json.Unmarshal(data, &responseAsMap))
+		assert.Equal(t, responseAsMap, resp.Result.Response)
+	})
+
+	t.Run("GetOperation", func(t *testing.T) {
+		t.Run("Returns operation after submission", func(t *testing.T) {
+			s := setupTestDB(t)
+			pRouter := setupPresentationRouter(t, s)
+			opRouter := setupOperationsRouter(t, s)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
+
+			createdID := submissionOp.ID
+			req := httptest.NewRequest(
+				http.MethodPut,
+				fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID),
+				nil)
+			w := httptest.NewRecorder()
+
+			err := opRouter.GetOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
+
+			assert.NoError(t, err)
+			var resp router.Operation
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+			assert.False(t, resp.Done)
+			assert.Contains(t, resp.ID, "/presentations/submissions/")
+		})
+
+		t.Run("Returns error when id doesn't exist", func(t *testing.T) {
+			s := setupTestDB(t)
+			opRouter := setupOperationsRouter(t, s)
+
+			req := httptest.NewRequest(
+				http.MethodPut,
+				"https://ssi-service.com/v1/operations/some_fake_id",
+				nil)
+			w := httptest.NewRecorder()
+
+			err := opRouter.GetOperation(newRequestContextWithParams(map[string]string{"id": "some_fake_id"}), w, req)
+
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "operation not found with id")
+		})
+	})
+
 	t.Run("GetOperations", func(t *testing.T) {
 		t.Run("Returns empty when no operations stored", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			opRouter := setupOperationsRouter(t, s)
 
 			request := router.GetOperationsRequest{
@@ -37,8 +112,7 @@ func TestOperationsAPI(t *testing.T) {
 		})
 
 		t.Run("Returns one operation for every submission", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -73,8 +147,7 @@ func TestOperationsAPI(t *testing.T) {
 		})
 
 		t.Run("Returns operation when filtering to include", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -99,8 +172,7 @@ func TestOperationsAPI(t *testing.T) {
 		})
 
 		t.Run("Returns zero operations when filtering to exclude", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -124,8 +196,7 @@ func TestOperationsAPI(t *testing.T) {
 		})
 
 		t.Run("Returns zero operations when wrong parent is specified", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -150,11 +221,41 @@ func TestOperationsAPI(t *testing.T) {
 
 }
 
-func setupOperationsRouter(t *testing.T, s storage.ServiceStorage) *router.OperationRouter {
+func setupTestDB(t *testing.T) storage.ServiceStorage {
+	file, err := os.CreateTemp("", "bolt")
+	require.NoError(t, err)
+	name := file.Name()
+	s, err := storage.NewBoltDBWithFile(name)
+	require.NoError(t, err)
 	t.Cleanup(func() {
-		assert.NoError(t, s.Close())
-		assert.NoError(t, os.Remove(storage.DBFile))
+		_ = s.Close()
+		_ = os.Remove(name)
 	})
+	return s
+}
+
+func reviewSubmission(t *testing.T, pRouter *router.PresentationRouter, submissionID string) router.ReviewSubmissionResponse {
+	request := router.ReviewSubmissionRequest{
+		Approved: true,
+		Reason:   "because I want to",
+	}
+
+	value := newRequestValue(t, request)
+	req := httptest.NewRequest(
+		http.MethodPut,
+		fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s/review", submissionID),
+		value)
+	w := httptest.NewRecorder()
+
+	err := pRouter.ReviewSubmission(newRequestContextWithParams(map[string]string{"id": submissionID}), w, req)
+
+	assert.NoError(t, err)
+	var resp router.ReviewSubmissionResponse
+	assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+	return resp
+}
+
+func setupOperationsRouter(t *testing.T, s storage.ServiceStorage) *router.OperationRouter {
 	svc, err := operation.NewOperationService(s)
 	assert.NoError(t, err)
 	opRouter, err := router.NewOperationRouter(svc)

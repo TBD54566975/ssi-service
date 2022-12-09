@@ -18,10 +18,10 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
+	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 )
 
@@ -45,8 +45,7 @@ func TestPresentationAPI(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("Create, Get, and Delete PresentationDefinition", func(t *testing.T) {
-		s, err := storage.NewBoltDB()
-		assert.NoError(t, err)
+		s := setupTestDB(t)
 		pRouter := setupPresentationRouter(t, s)
 
 		var createdID string
@@ -106,8 +105,7 @@ func TestPresentationAPI(t *testing.T) {
 	})
 
 	t.Run("Create returns error without input descriptors", func(t *testing.T) {
-		s, err := storage.NewBoltDB()
-		assert.NoError(t, err)
+		s := setupTestDB(t)
 		pRouter := setupPresentationRouter(t, s)
 		request := router.CreatePresentationDefinitionRequest{}
 		value := newRequestValue(t, request)
@@ -120,8 +118,7 @@ func TestPresentationAPI(t *testing.T) {
 	})
 
 	t.Run("Get without an ID returns error", func(t *testing.T) {
-		s, err := storage.NewBoltDB()
-		assert.NoError(t, err)
+		s := setupTestDB(t)
 		pRouter := setupPresentationRouter(t, s)
 		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
@@ -130,8 +127,7 @@ func TestPresentationAPI(t *testing.T) {
 	})
 
 	t.Run("Delete without an ID returns error", func(t *testing.T) {
-		s, err := storage.NewBoltDB()
-		assert.NoError(t, err)
+		s := setupTestDB(t)
 		pRouter := setupPresentationRouter(t, s)
 
 		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
@@ -143,8 +139,7 @@ func TestPresentationAPI(t *testing.T) {
 	t.Run("Submission endpoints", func(t *testing.T) {
 
 		t.Run("Get non-existing ID returns error", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions/myrandomid", nil)
@@ -153,8 +148,7 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("Get returns submission after creation", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 
 			holderSigner, holderDID := getSigner(t)
@@ -181,8 +175,7 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("Create well formed submission returns operation", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 
 			holderSigner, holderDID := getSigner(t)
@@ -210,9 +203,68 @@ func TestPresentationAPI(t *testing.T) {
 			assert.Zero(t, resp.Result)
 		})
 
-		t.Run("List submissions returns empty when there are none", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
+		t.Run("Review submission returns approved submission", func(t *testing.T) {
+			s := setupTestDB(t)
+			pRouter := setupPresentationRouter(t, s)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
+
+			request := router.ReviewSubmissionRequest{
+				Approved: true,
+				Reason:   "because I want to",
+			}
+
+			value := newRequestValue(t, request)
+			createdID := operation.SubmissionID(submissionOp.ID)
+			req := httptest.NewRequest(
+				http.MethodPut,
+				fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s/review", createdID),
+				value)
+			w := httptest.NewRecorder()
+
+			err = pRouter.ReviewSubmission(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
+
 			assert.NoError(t, err)
+			var resp router.ReviewSubmissionResponse
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+			assert.Equal(t, "because I want to", resp.Reason)
+			assert.NotEmpty(t, resp.ID)
+			assert.Equal(t, "approved", resp.Status)
+			assert.Equal(t, definition.PresentationDefinition.ID, resp.DefinitionID)
+		})
+
+		t.Run("Review submission twice fails", func(t *testing.T) {
+			s := setupTestDB(t)
+			pRouter := setupPresentationRouter(t, s)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
+			createdID := operation.SubmissionID(submissionOp.ID)
+			_ = reviewSubmission(t, pRouter, createdID)
+
+			request := router.ReviewSubmissionRequest{
+				Approved: true,
+				Reason:   "because I want to review again",
+			}
+
+			value := newRequestValue(t, request)
+			req := httptest.NewRequest(
+				http.MethodPut,
+				fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s/review", createdID),
+				value)
+			w := httptest.NewRecorder()
+
+			err = pRouter.ReviewSubmission(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
+
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "operation already marked as done")
+		})
+
+		t.Run("List submissions returns empty when there are none", func(t *testing.T) {
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 
 			request := router.ListSubmissionRequest{}
@@ -230,8 +282,7 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("List submissions returns many submissions", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 
 			holderSigner, holderDID := getSigner(t)
@@ -267,7 +318,7 @@ func TestPresentationAPI(t *testing.T) {
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Len(t, resp.Submissions, 2)
 
-			expectedSubmissions := []presentation.Submission{
+			expectedSubmissions := []model.Submission{
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
@@ -285,7 +336,7 @@ func TestPresentationAPI(t *testing.T) {
 			}
 			diff := cmp.Diff(expectedSubmissions, resp.Submissions,
 				cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
-				cmpopts.SortSlices(func(l, r presentation.Submission) bool {
+				cmpopts.SortSlices(func(l, r model.Submission) bool {
 					return l.PresentationSubmission.ID < r.PresentationSubmission.ID
 				}),
 			)
@@ -295,8 +346,7 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("bad filter returns error", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 			request := router.ListSubmissionRequest{
 				Filter: `im a baaad filter that's trying to break a lot of stuff'`,
@@ -312,8 +362,7 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("List submissions filters based on status", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 
 			holderSigner, holderDID := getSigner(t)
@@ -341,7 +390,7 @@ func TestPresentationAPI(t *testing.T) {
 			var resp router.ListSubmissionResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 
-			expectedSubmissions := []presentation.Submission{
+			expectedSubmissions := []model.Submission{
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
@@ -352,7 +401,7 @@ func TestPresentationAPI(t *testing.T) {
 			}
 			diff := cmp.Diff(expectedSubmissions, resp.Submissions,
 				cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
-				cmpopts.SortSlices(func(l, r presentation.Submission) bool {
+				cmpopts.SortSlices(func(l, r model.Submission) bool {
 					return l.PresentationSubmission.ID < r.PresentationSubmission.ID
 				}),
 			)
@@ -362,8 +411,7 @@ func TestPresentationAPI(t *testing.T) {
 		})
 
 		t.Run("List submissions filter returns empty when status does not match", func(t *testing.T) {
-			s, err := storage.NewBoltDB()
-			assert.NoError(t, err)
+			s := setupTestDB(t)
 			pRouter := setupPresentationRouter(t, s)
 
 			holderSigner, holderDID := getSigner(t)
@@ -407,11 +455,6 @@ func setupPresentationRouter(t *testing.T, s storage.ServiceStorage) *router.Pre
 
 	pRouter, err := router.NewPresentationRouter(service)
 	assert.NoError(t, err)
-
-	t.Cleanup(func() {
-		_ = s.Close()
-		_ = os.Remove(storage.DBFile)
-	})
 	return pRouter
 }
 
