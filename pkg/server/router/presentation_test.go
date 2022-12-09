@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
+	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"os"
 	"testing"
@@ -44,17 +45,17 @@ func TestPresentationDefinitionService(t *testing.T) {
 
 	t.Run("Create returns the created definition", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
-		created, err := service.CreatePresentationDefinition(presentation.CreatePresentationDefinitionRequest{PresentationDefinition: *pd})
+		created, err := service.CreatePresentationDefinition(model.CreatePresentationDefinitionRequest{PresentationDefinition: *pd})
 		assert.NoError(t, err)
 		assert.Equal(t, pd, &created.PresentationDefinition)
 	})
 
 	t.Run("Get returns the created definition", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
-		_, err := service.CreatePresentationDefinition(presentation.CreatePresentationDefinitionRequest{PresentationDefinition: *pd})
+		_, err := service.CreatePresentationDefinition(model.CreatePresentationDefinitionRequest{PresentationDefinition: *pd})
 		assert.NoError(t, err)
 
-		getPd, err := service.GetPresentationDefinition(presentation.GetPresentationDefinitionRequest{ID: pd.ID})
+		getPd, err := service.GetPresentationDefinition(model.GetPresentationDefinitionRequest{ID: pd.ID})
 
 		assert.NoError(t, err)
 		assert.Equal(t, pd.ID, getPd.ID)
@@ -63,17 +64,17 @@ func TestPresentationDefinitionService(t *testing.T) {
 
 	t.Run("Get does not return after deletion", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
-		_, err := service.CreatePresentationDefinition(presentation.CreatePresentationDefinitionRequest{PresentationDefinition: *pd})
+		_, err := service.CreatePresentationDefinition(model.CreatePresentationDefinitionRequest{PresentationDefinition: *pd})
 		assert.NoError(t, err)
 
-		assert.NoError(t, service.DeletePresentationDefinition(presentation.DeletePresentationDefinitionRequest{ID: pd.ID}))
+		assert.NoError(t, service.DeletePresentationDefinition(model.DeletePresentationDefinitionRequest{ID: pd.ID}))
 
-		_, err = service.GetPresentationDefinition(presentation.GetPresentationDefinitionRequest{ID: pd.ID})
+		_, err = service.GetPresentationDefinition(model.GetPresentationDefinitionRequest{ID: pd.ID})
 		assert.Error(t, err)
 	})
 
 	t.Run("Delete can be called with any ID", func(t *testing.T) {
-		err := service.DeletePresentationDefinition(presentation.DeletePresentationDefinitionRequest{ID: "some crazy ID"})
+		err := service.DeletePresentationDefinition(model.DeletePresentationDefinitionRequest{ID: "some crazy ID"})
 		assert.NoError(t, err)
 	})
 }
