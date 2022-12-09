@@ -12,7 +12,7 @@ import (
 
 func TestJWKKeyAccessForEachKeyType(t *testing.T) {
 	testKID := "test-kid"
-	testData := map[string]interface{}{
+	testData := map[string]any{
 		"test": "data",
 	}
 
@@ -99,7 +99,7 @@ func TestJWKKeyAccessSignVerify(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, ka)
 
-		data := map[string]interface{}{
+		data := map[string]any{
 			"test": "test",
 		}
 		token, err := ka.Sign(data)
@@ -270,9 +270,9 @@ func getTestCredential() credential.VerifiableCredential {
 	knownType := []string{"VerifiableCredential", "HappyCredential"}
 	knownIssuer := "https://example.com/issuers/565049"
 	knownIssuanceDate := "2010-01-01T19:23:24Z"
-	knownSubject := map[string]interface{}{
+	knownSubject := map[string]any{
 		"id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
-		"happiness": map[string]interface{}{
+		"happiness": map[string]any{
 			"howHappy": "really happy",
 		},
 	}
@@ -296,6 +296,6 @@ func getTestPresentation() credential.VerifiablePresentation {
 		ID:                   knownID,
 		Type:                 knownType,
 		Holder:               knownHolder,
-		VerifiableCredential: []interface{}{getTestCredential()},
+		VerifiableCredential: []any{getTestCredential()},
 	}
 }

@@ -59,7 +59,7 @@ func RouteParams(r *http.Request) map[string]string {
 // The body is decoded into the value provided.
 //
 // The provided value is checked for validation tags if it's a struct.
-func Decode(r *http.Request, val interface{}) error {
+func Decode(r *http.Request, val any) error {
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 
@@ -97,6 +97,6 @@ func Decode(r *http.Request, val interface{}) error {
 	return nil
 }
 
-func ValidateRequest(request interface{}) error {
+func ValidateRequest(request any) error {
 	return util.IsValidStruct(request)
 }

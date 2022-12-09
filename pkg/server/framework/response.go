@@ -9,7 +9,7 @@ import (
 )
 
 // Respond convert a Go value to JSON and sends it to the client.
-func Respond(ctx context.Context, w http.ResponseWriter, data interface{}, statusCode int) error {
+func Respond(ctx context.Context, w http.ResponseWriter, data any, statusCode int) error {
 	// set the status code within the context's request state. Gracefully shutdown if
 	// the request state doesn't exist in the context
 	v, ok := ctx.Value(KeyRequestState).(*RequestState)

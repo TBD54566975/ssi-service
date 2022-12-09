@@ -503,7 +503,7 @@ func updateCredentialStatus(s Service, gotCred *credstorage.StoredCredential, re
 		return nil, util.LoggingErrorMsg(err, "could not store credential")
 	}
 
-	statusListCredentialID := gotCred.Credential.CredentialStatus.(map[string]interface{})["statusListCredential"].(string)
+	statusListCredentialID := gotCred.Credential.CredentialStatus.(map[string]any)["statusListCredential"].(string)
 
 	if len(statusListCredentialID) == 0 {
 		return nil, util.LoggingNewErrorf("problem with getting status list credential id")

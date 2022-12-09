@@ -235,7 +235,7 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 
 	// make sure the known properties are present (Application and Credentials)
 
-	var creds []interface{}
+	var creds []any
 	credentials, ok := token.Get(vcsJSONProperty)
 	if !ok {
 		logrus.Warn("could not find vc in Credential Application token, looking for `verifiableCredentials`")
@@ -243,7 +243,7 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 			return nil, errors.New("could not find vc or verifiableCredentials in Credential Application token")
 		}
 	}
-	creds, ok = credentials.([]interface{})
+	creds, ok = credentials.([]any)
 	if !ok {
 		errMsg := fmt.Sprintf("could not parse Credential Application token, %s is not an array", vcsJSONProperty)
 		logrus.Errorf("%s: %s", errMsg, credentials)
@@ -282,7 +282,7 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 type SubmitApplicationResponse struct {
 	Response manifestsdk.CredentialResponse `json:"credential_response"`
 	// this is an interface type to union Data Integrity and JWT style VCs
-	Credentials []interface{} `json:"verifiableCredentials,omitempty"`
+	Credentials []any         `json:"verifiableCredentials,omitempty"`
 	ResponseJWT keyaccess.JWT `json:"responseJwt,omitempty"`
 }
 

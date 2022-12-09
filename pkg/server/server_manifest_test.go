@@ -63,10 +63,10 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]interface{}{
+		licenseSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"licenseType": map[string]interface{}{
+			"properties": map[string]any{
+				"licenseType": map[string]any{
 					"type": "string",
 				},
 			},
@@ -143,10 +143,10 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]interface{}{
+		licenseSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"licenseType": map[string]interface{}{
+			"properties": map[string]any{
+				"licenseType": map[string]any{
 					"type": "string",
 				},
 			},
@@ -207,10 +207,10 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]interface{}{
+		licenseSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"licenseType": map[string]interface{}{
+			"properties": map[string]any{
+				"licenseType": map[string]any{
 					"type": "string",
 				},
 			},
@@ -278,10 +278,10 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]interface{}{
+		licenseSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"licenseType": map[string]interface{}{
+			"properties": map[string]any{
+				"licenseType": map[string]any{
 					"type": "string",
 				},
 			},
@@ -382,10 +382,10 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]interface{}{
+		licenseSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"licenseType": map[string]interface{}{
+			"properties": map[string]any{
+				"licenseType": map[string]any{
 					"type": "string",
 				},
 			},
@@ -400,7 +400,7 @@ func TestManifestAPI(t *testing.T) {
 			Issuer:     issuerDID.DID.ID,
 			Subject:    applicantDID.DID.ID,
 			JSONSchema: createdSchema.ID,
-			Data:       map[string]interface{}{"licenseType": "WA-DL-CLASS-A"},
+			Data:       map[string]any{"licenseType": "WA-DL-CLASS-A"},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)
@@ -505,10 +505,10 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]interface{}{
+		licenseSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"licenseType": map[string]interface{}{
+			"properties": map[string]any{
+				"licenseType": map[string]any{
 					"type": "string",
 				},
 			},
@@ -523,7 +523,7 @@ func TestManifestAPI(t *testing.T) {
 			Issuer:     issuerDID.DID.ID,
 			Subject:    applicantDID.DID.ID,
 			JSONSchema: createdSchema.ID,
-			Data:       map[string]interface{}{"licenseType": "WA-DL-CLASS-A"},
+			Data:       map[string]any{"licenseType": "WA-DL-CLASS-A"},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)
@@ -650,10 +650,10 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, applicantDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]interface{}{
+		licenseSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"licenseType": map[string]interface{}{
+			"properties": map[string]any{
+				"licenseType": map[string]any{
 					"type": "string",
 				},
 			},
@@ -668,7 +668,7 @@ func TestManifestAPI(t *testing.T) {
 			Issuer:     issuerDID.DID.ID,
 			Subject:    applicantDID.DID.ID,
 			JSONSchema: createdSchema.ID,
-			Data:       map[string]interface{}{"licenseType": "WA-DL-CLASS-A"},
+			Data:       map[string]any{"licenseType": "WA-DL-CLASS-A"},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)
@@ -797,10 +797,10 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]interface{}{
+		licenseSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"licenseType": map[string]interface{}{
+			"properties": map[string]any{
+				"licenseType": map[string]any{
 					"type": "string",
 				},
 			},
@@ -815,7 +815,7 @@ func TestManifestAPI(t *testing.T) {
 			Issuer:     issuerDID.DID.ID,
 			Subject:    applicantDID.DID.ID,
 			JSONSchema: createdSchema.ID,
-			Data:       map[string]interface{}{"licenseType": "WA-DL-CLASS-A"},
+			Data:       map[string]any{"licenseType": "WA-DL-CLASS-A"},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)

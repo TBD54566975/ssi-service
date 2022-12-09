@@ -11,7 +11,7 @@ import (
 // FilterVarsMapper is an interface that encapsulates the FilterVariablesMap method. This interface is meant to be
 // implemented by any object that wants to include support for filtering.
 type FilterVarsMapper interface {
-	FilterVariablesMap() map[string]interface{}
+	FilterVariablesMap() map[string]any
 }
 
 // IncludeFunc is a function that given a mapper object, decides whether the object should be included in the result.

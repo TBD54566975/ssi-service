@@ -161,7 +161,7 @@ func NewUpdater(values map[string]any) UpdaterWithMap {
 }
 
 func (u UpdaterWithMap) Update(v []byte) ([]byte, error) {
-	var model map[string]interface{}
+	var model map[string]any
 	if err := json.Unmarshal(v, &model); err != nil {
 		return nil, errors.Wrap(err, "unmarshalling json")
 	}

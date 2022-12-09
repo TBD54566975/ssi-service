@@ -498,7 +498,7 @@ func createSubmissionRequest(t *testing.T, definitionID string, vc credential.Ve
 		Holder:                 holderDID.String(),
 		Type:                   []string{credential.VerifiablePresentationType},
 		PresentationSubmission: ps,
-		VerifiableCredential:   []interface{}{keyaccess.JWT(vcData)},
+		VerifiableCredential:   []any{keyaccess.JWT(vcData)},
 		Proof:                  nil,
 	}
 

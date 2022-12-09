@@ -59,12 +59,12 @@ type SubmitApplicationRequest struct {
 	Application     manifestsdk.CredentialApplication `json:"application" validate:"required"`
 	Credentials     []cred.Container                  `json:"credentials,omitempty"`
 	ApplicationJWT  keyaccess.JWT                     `json:"applicationJwt,omitempty" validate:"required"`
-	ApplicationJSON map[string]interface{}            `json:"applicationJson,omitempty"`
+	ApplicationJSON map[string]any                    `json:"applicationJson,omitempty"`
 }
 
 type SubmitApplicationResponse struct {
 	Response    manifestsdk.CredentialResponse `json:"response" validate:"required"`
-	Credentials []interface{}                  `json:"credentials,omitempty"`
+	Credentials []any                          `json:"credentials,omitempty"`
 	ResponseJWT keyaccess.JWT                  `json:"responseJwt,omitempty" validate:"required"`
 }
 

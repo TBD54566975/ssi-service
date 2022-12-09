@@ -14,10 +14,10 @@ type CreateCredentialRequest struct {
 	// A context is optional. If not present, we'll apply default, required context values.
 	Context string `json:"context,omitempty"`
 	// A schema is optional. If present, we'll attempt to look it up and validate the data against it.
-	JSONSchema string                 `json:"jsonSchema,omitempty"`
-	Data       map[string]interface{} `json:"data,omitempty"`
-	Expiry     string                 `json:"expiry,omitempty"`
-	Revocable  bool                   `json:"revocable,omitempty"`
+	JSONSchema string         `json:"jsonSchema,omitempty"`
+	Data       map[string]any `json:"data,omitempty"`
+	Expiry     string         `json:"expiry,omitempty"`
+	Revocable  bool           `json:"revocable,omitempty"`
 	// TODO(gabe) support more capabilities like signature type, format, status, and more.
 }
 

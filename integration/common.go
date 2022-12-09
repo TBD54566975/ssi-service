@@ -152,7 +152,7 @@ func compactJSONOutput(json string) string {
 }
 
 func getJSONElement(jsonString string, jsonPath string) (string, error) {
-	jsonMap := make(map[string]interface{})
+	jsonMap := make(map[string]any)
 	if err := json.Unmarshal([]byte(jsonString), &jsonMap); err != nil {
 		return "", errors.Wrap(err, "unmarshalling json string")
 	}
