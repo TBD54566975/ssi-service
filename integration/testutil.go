@@ -1,8 +1,9 @@
 package integration
 
 import (
-	"github.com/pkg/errors"
 	"sync"
+
+	"github.com/pkg/errors"
 )
 
 type TestContext struct {

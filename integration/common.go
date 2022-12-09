@@ -3,20 +3,21 @@ package integration
 import (
 	"bytes"
 	"embed"
-	cmpact "github.com/goccy/go-json"
-	"github.com/goccy/go-json"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/goccy/go-json"
+	cmpact "github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
 	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
-	"io"
-	"net/http"
-	"strings"
 )
 
 const (

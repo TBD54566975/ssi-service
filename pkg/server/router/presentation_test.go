@@ -1,6 +1,9 @@
 package router
 
 import (
+	"os"
+	"testing"
+
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/stretchr/testify/assert"
@@ -8,8 +11,6 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"os"
-	"testing"
 )
 
 func TestPresentationDefinitionRouter(t *testing.T) {

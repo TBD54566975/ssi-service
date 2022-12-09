@@ -3,15 +3,14 @@ package storage
 import (
 	"bytes"
 	"fmt"
-	"github.com/goccy/go-json"
 	"strings"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	bolt "go.etcd.io/bbolt"
-
 	"github.com/tbd54566975/ssi-service/internal/util"
+	bolt "go.etcd.io/bbolt"
 )
 
 const (

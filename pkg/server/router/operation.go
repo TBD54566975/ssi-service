@@ -3,6 +3,8 @@ package router
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -10,7 +12,6 @@ import (
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	"go.einride.tech/aip/filtering"
-	"net/http"
 )
 
 type OperationRouter struct {

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"github.com/goccy/go-json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +8,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/goccy/go-json"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto"

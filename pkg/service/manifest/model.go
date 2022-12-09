@@ -11,8 +11,8 @@ import (
 // Manifest
 
 type CreateManifestRequest struct {
-	Name           *string                          `json:"name,omitempty"`
-	Description    *string                          `json:"description,omitempty"`
+	Name                   *string                          `json:"name,omitempty"`
+	Description            *string                          `json:"description,omitempty"`
 	IssuerDID              string                           `json:"issuerDid" validate:"required"`
 	IssuerName             *string                          `json:"issuerName,omitempty"`
 	OutputDescriptors      []manifestsdk.OutputDescriptor   `json:"outputDescriptors" validate:"required,dive"`

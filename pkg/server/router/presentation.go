@@ -3,6 +3,8 @@ package router
 import (
 	"context"
 	"fmt"
+	"net/http"
+
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/goccy/go-json"
@@ -16,7 +18,6 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	"go.einride.tech/aip/filtering"
-	"net/http"
 )
 
 type PresentationRouter struct {

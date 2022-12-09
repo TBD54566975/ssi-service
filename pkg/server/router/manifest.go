@@ -41,8 +41,8 @@ func NewManifestRouter(s svcframework.Service) (*ManifestRouter, error) {
 // CreateManifestRequest is the request body for creating a manifest, which populates all remaining fields
 // and builds a well-formed manifest object.
 type CreateManifestRequest struct {
-	Name           *string                          `json:"name,omitempty"`
-	Description    *string                          `json:"description,omitempty"`
+	Name                   *string                          `json:"name,omitempty"`
+	Description            *string                          `json:"description,omitempty"`
 	IssuerDID              string                           `json:"issuerDid" validate:"required"`
 	IssuerName             *string                          `json:"issuerName,omitempty"`
 	ClaimFormat            *exchange.ClaimFormat            `json:"format" validate:"required,dive"`
@@ -52,8 +52,8 @@ type CreateManifestRequest struct {
 
 func (c CreateManifestRequest) ToServiceRequest() manifest.CreateManifestRequest {
 	return manifest.CreateManifestRequest{
-		Name:           c.Name,
-		Description:    c.Description,
+		Name:                   c.Name,
+		Description:            c.Description,
 		IssuerDID:              c.IssuerDID,
 		IssuerName:             c.IssuerName,
 		OutputDescriptors:      c.OutputDescriptors,

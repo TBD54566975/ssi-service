@@ -2,10 +2,11 @@ package credential
 
 import (
 	"fmt"
-	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
-	"github.com/google/uuid"
 	"strconv"
 	"time"
+
+	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
+	"github.com/google/uuid"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	schemalib "github.com/TBD54566975/ssi-sdk/credential/schema"
