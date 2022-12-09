@@ -1,5 +1,5 @@
 [![godoc ssi-service](https://img.shields.io/badge/godoc-ssi--service-blue)](https://github.com/TBD54566975/ssi-service)
-[![go version 1.19.2](https://img.shields.io/badge/go_version-1.19.2-brightgreen)](https://go.dev/)
+[![go version 1.19.4](https://img.shields.io/badge/go_version-1.19.4-brightgreen)](https://go.dev/)
 [![license Apache 2](https://img.shields.io/badge/license-Apache%202-black)](https://github.com/TBD54566975/ssi-service/blob/main/LICENSE)
 [![issues](https://img.shields.io/github/issues/TBD54566975/ssi-service)](https://github.com/TBD54566975/ssi-service/issues)
 ![push](https://github.com/TBD54566975/ssi-service/workflows/ssi-service-ci/badge.svg?branch=main&event=push)
