@@ -4,7 +4,7 @@
 SIP: 8
 Title: Webhooks for External Services
 Author(s): Neal (@nitro-neal)
-Comments URI: Link to a GitHub issue, pull request, or forum post for discussion
+Comments URI: https://forums.tbd.website/t/sip-7-webhooks-for-external-services/218
 Status: Draft
 Created: December 8, 2022
 Updated: December 8, 2022
