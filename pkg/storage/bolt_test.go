@@ -1,21 +1,16 @@
 package storage
 
 import (
+	"fmt"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"os"
 	"testing"
 )
 
 func TestBoltDB(t *testing.T) {
-	db, err := NewBoltDBWithFile("test.db")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, db)
-
-	t.Cleanup(func() {
-		_ = db.Close()
-		os.Remove("test.db")
-	})
+	db := setupBoltDB(t)
 
 	// create a name space and a message in it
 	namespace := "F1"
@@ -94,21 +89,14 @@ func TestBoltDB(t *testing.T) {
 }
 
 func TestBoltDBPrefixAndKeys(t *testing.T) {
-	db, err := NewBoltDBWithFile("test.db")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, db)
-
-	t.Cleanup(func() {
-		_ = db.Close()
-		os.Remove("test.db")
-	})
+	db := setupBoltDB(t)
 
 	namespace := "blockchains"
 
 	// set up prefix read test
 
 	dummyData := []byte("dummy")
-	err = db.Write(namespace, "bitcoin-testnet", dummyData)
+	err := db.Write(namespace, "bitcoin-testnet", dummyData)
 	assert.NoError(t, err)
 
 	err = db.Write(namespace, "bitcoin-mainnet", dummyData)
@@ -139,4 +127,212 @@ func TestBoltDBPrefixAndKeys(t *testing.T) {
 	assert.Len(t, allKeys, 4)
 	assert.Contains(t, allKeys, "bitcoin-mainnet")
 	assert.Contains(t, allKeys, "tezos-mainnet")
+}
+
+func setupBoltDB(t *testing.T) *BoltDB {
+	db, err := NewBoltDBWithFile("test.db")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, db)
+
+	t.Cleanup(func() {
+		_ = db.Close()
+		os.Remove("test.db")
+	})
+	return db
+}
+
+type testStruct struct {
+	Status int    `json:"status"`
+	Reason string `json:"reason"`
+}
+
+type operation struct {
+	Done     bool   `json:"done"`
+	Response []byte `json:"response"`
+}
+
+func TestBoltDB_Update(t *testing.T) {
+	db := setupBoltDB(t)
+	namespace := "simple"
+
+	data, err := json.Marshal(testStruct{
+		Status: 0,
+		Reason: "",
+	})
+	require.NoError(t, err)
+	require.NoError(t, db.Write(namespace, "123", data))
+
+	type args struct {
+		key    string
+		values map[string]any
+	}
+	tests := []struct {
+		name          string
+		args          args
+		expectedData  testStruct
+		expectedError assert.ErrorAssertionFunc
+	}{
+		{
+			name: "simple update",
+			args: args{
+				key: "123",
+				values: map[string]any{
+					"status": 1,
+					"reason": "something here",
+				},
+			},
+			expectedData: testStruct{
+				Status: 1,
+				Reason: "something here",
+			},
+			expectedError: assert.NoError,
+		},
+		{
+			name: "other key returns error",
+			args: args{
+				key: "456",
+				values: map[string]any{
+					"status": 1,
+					"reason": "something here",
+				},
+			},
+			expectedData:  testStruct{},
+			expectedError: assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data, err = db.Update(namespace, tt.args.key, tt.args.values)
+			if !tt.expectedError(t, err) {
+				return
+			}
+			var s testStruct
+			if tt.expectedData != s {
+				assert.NoError(t, json.Unmarshal(data, &s))
+				assert.Equal(t, tt.expectedData, s)
+			}
+		})
+	}
+}
+
+type testOpUpdater struct {
+	UpdaterWithMap
+}
+
+func (f testOpUpdater) SetUpdatedResponse(bytes []byte) {
+	f.UpdaterWithMap.Values["response"] = bytes
+}
+
+func TestBoltDB_UpdatedSubmissionAndOperationTxFn(t *testing.T) {
+	db := setupBoltDB(t)
+	namespace := "simple"
+	opNamespace := "operation"
+
+	data, err := json.Marshal(testStruct{
+		Status: 0,
+		Reason: "",
+	})
+	require.NoError(t, err)
+	require.NoError(t, db.Write(namespace, "123", data))
+
+	data, err = json.Marshal(operation{
+		Done:     false,
+		Response: nil,
+	})
+	require.NoError(t, err)
+	require.NoError(t, db.Write(opNamespace, "op123", data))
+
+	type args struct {
+		namespace   string
+		key         string
+		updater     Updater
+		opNamespace string
+		opKey       string
+	}
+	tests := []struct {
+		name           string
+		args           args
+		wantFirst      *testStruct
+		wantOpDone     bool
+		wantOpResponse *testStruct
+		wantErr        assert.ErrorAssertionFunc
+	}{
+		{
+			name: "first and second get updated",
+			args: args{
+				namespace: namespace,
+				key:       "123",
+				updater: NewUpdater(map[string]any{
+					"status": 1,
+					"reason": "hello",
+				}),
+				opNamespace: opNamespace,
+				opKey:       "op123",
+			},
+			wantFirst: &testStruct{
+				Status: 1,
+				Reason: "hello",
+			},
+			wantOpDone: true,
+			wantOpResponse: &testStruct{
+				Status: 1,
+				Reason: "hello",
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "non-existent op key returns error",
+			args: args{
+				namespace: namespace,
+				key:       "123",
+				updater: NewUpdater(map[string]any{
+					"status": 1,
+					"reason": "hello",
+				}),
+				opNamespace: opNamespace,
+				opKey:       "crazy key",
+			},
+			wantErr: assert.Error,
+		},
+		{
+			name: "non-existent key returns error",
+			args: args{
+				namespace: namespace,
+				key:       "crazy key",
+				updater: NewUpdater(map[string]any{
+					"status": 1,
+					"reason": "hello",
+				}),
+				opNamespace: opNamespace,
+				opKey:       "op123",
+			},
+			wantErr: assert.Error,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotFirstData, gotOpData, err := db.UpdateValueAndOperation(tt.args.namespace, tt.args.key, tt.args.updater, tt.args.opNamespace, tt.args.opKey, testOpUpdater{
+				NewUpdater(map[string]any{
+					"done": true,
+				}),
+			})
+			if !tt.wantErr(t, err, fmt.Sprintf("UpdateValueAndOperation(%v, %v, %v, %v, %v)", tt.args.namespace, tt.args.key, tt.args.updater, tt.args.opNamespace, tt.args.opKey)) {
+				return
+			}
+			if tt.wantFirst == nil {
+				return
+			}
+			var gotFirst testStruct
+			assert.NoError(t, json.Unmarshal(gotFirstData, &gotFirst))
+			assert.Equal(t, *tt.wantFirst, gotFirst)
+
+			var gotOp operation
+			assert.NoError(t, json.Unmarshal(gotOpData, &gotOp))
+			assert.Equal(t, tt.wantOpDone, gotOp.Done)
+
+			var gotOpResponse testStruct
+			assert.NoError(t, json.Unmarshal(gotOp.Response, &gotOpResponse))
+			assert.Equal(t, *tt.wantOpResponse, gotOpResponse)
+		})
+	}
 }

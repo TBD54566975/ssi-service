@@ -766,8 +766,11 @@ definitions:
         type: array
       id:
         type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
       status:
-        description: One of {`pending`, `done`}.
+        description: One of {`pending`, `approved`, `denied`}.
         type: string
     required:
     - definition_id
@@ -831,8 +834,25 @@ definitions:
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.ReviewSubmissionResponse:
     properties:
-      submission:
-        $ref: '#/definitions/exchange.PresentationSubmission'
+      definition_id:
+        type: string
+      descriptor_map:
+        items:
+          $ref: '#/definitions/exchange.SubmissionDescriptor'
+        type: array
+      id:
+        type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
+      status:
+        description: One of {`pending`, `approved`, `denied`}.
+        type: string
+    required:
+    - definition_id
+    - descriptor_map
+    - id
+    - status
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest:
     properties:
@@ -1318,8 +1338,11 @@ definitions:
         type: array
       id:
         type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
       status:
-        description: One of {`pending`, `done`}.
+        description: One of {`pending`, `approved`, `denied`}.
         type: string
     required:
     - definition_id
@@ -1383,8 +1406,25 @@ definitions:
     type: object
   pkg_server_router.ReviewSubmissionResponse:
     properties:
-      submission:
-        $ref: '#/definitions/exchange.PresentationSubmission'
+      definition_id:
+        type: string
+      descriptor_map:
+        items:
+          $ref: '#/definitions/exchange.SubmissionDescriptor'
+        type: array
+      id:
+        type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
+      status:
+        description: One of {`pending`, `approved`, `denied`}.
+        type: string
+    required:
+    - definition_id
+    - descriptor_map
+    - id
+    - status
     type: object
   pkg_server_router.StoreKeyRequest:
     properties:
@@ -1471,8 +1511,11 @@ definitions:
         type: array
       id:
         type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
       status:
-        description: One of {`pending`, `done`}.
+        description: One of {`pending`, `approved`, `denied`}.
         type: string
     required:
     - definition_id
@@ -2492,52 +2535,26 @@ paths:
       summary: Get PresentationDefinition
       tags:
       - PresentationDefinitionAPI
-  /v1/presentations/submission/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Get a submission by its ID
-      parameters:
-      - description: ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/pkg_server_router.GetSubmissionResponse'
-        "400":
-          description: Bad request
-          schema:
-            type: string
-      summary: Get Submission
-      tags:
-      - SubmissionAPI
   /v1/presentations/submissions:
     get:
       consumes:
       - application/json
-      description: Reviews a pending submission. After this method is called, the
-        operation with `id==presentations/submissions/{submission_id}` will be updated
-        with the result of this invocation.
+      description: List existing submissions according to a filtering query. The `filter`
+        field follows the syntax described in https://google.aip.dev/160.
       parameters:
       - description: request body
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.ReviewSubmissionRequest'
+          $ref: '#/definitions/pkg_server_router.ListSubmissionRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.ReviewSubmissionResponse'
+            $ref: '#/definitions/pkg_server_router.ListSubmissionResponse'
         "400":
           description: Bad request
           schema:
@@ -2546,7 +2563,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Review a pending submissions
+      summary: List Submissions
       tags:
       - SubmissionAPI
     put:
@@ -2576,6 +2593,63 @@ paths:
           schema:
             type: string
       summary: Create Submission
+      tags:
+      - SubmissionAPI
+  /v1/presentations/submissions/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a submission by its ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.GetSubmissionResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Get Submission
+      tags:
+      - SubmissionAPI
+  /v1/presentations/submissions/{id}/review:
+    put:
+      consumes:
+      - application/json
+      description: Reviews a pending submission. After this method is called, the
+        operation with `id==presentations/submissions/{submission_id}` will be updated
+        with the result of this invocation.
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.ReviewSubmissionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.ReviewSubmissionResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Review a pending submissions
       tags:
       - SubmissionAPI
   /v1/schemas:
