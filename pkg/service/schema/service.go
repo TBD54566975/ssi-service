@@ -133,13 +133,10 @@ func prepareJSONSchema(id, name string, s schema.JSONSchema) schema.JSONSchema {
 		s["$id"] = id
 	}
 	if _, ok := s["$schema"]; !ok {
-		s["$schema"] = "http://json-schema.org/draft-07/schema#"
+		s["$schema"] = "https://json-schema.org/draft/2020-12/schema"
 	}
 	if _, ok := s["description"]; !ok {
 		s["description"] = "schema for " + name
-	}
-	if _, ok := s["required"]; !ok {
-		s["required"] = []string{}
 	}
 	return s
 }
