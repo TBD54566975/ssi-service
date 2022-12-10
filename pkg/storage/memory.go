@@ -1,9 +1,10 @@
 package storage
 
 import (
-	"github.com/pkg/errors"
 	"strings"
 	"sync"
+
+	"github.com/pkg/errors"
 )
 
 // MemoryDB is an in memory implementation of ServiceStorage that is safe for concurrent use.
