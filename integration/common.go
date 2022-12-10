@@ -11,7 +11,6 @@ import (
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
-	cmpact "github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
 	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
@@ -140,10 +139,10 @@ func SubmitApplication(credAppJWT string) (string, error) {
 	return output, nil
 }
 
-func compactJSONOutput(json string) string {
-	jsonBytes := []byte(json)
+func compactJSONOutput(jsonString string) string {
+	jsonBytes := []byte(jsonString)
 	buffer := new(bytes.Buffer)
-	if err := cmpact.Compact(buffer, jsonBytes); err != nil {
+	if err := json.Compact(buffer, jsonBytes); err != nil {
 		logrus.Println(err)
 		panic(err)
 	}
