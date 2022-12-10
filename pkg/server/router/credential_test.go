@@ -74,7 +74,7 @@ func TestCredentialRouter(t *testing.T) {
 		createdCred, err := credService.CreateCredential(credential.CreateCredentialRequest{
 			Issuer:  issuer,
 			Subject: subject,
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Satoshi",
 				"lastName":  "Nakamoto",
 			},
@@ -132,7 +132,7 @@ func TestCredentialRouter(t *testing.T) {
 			Issuer:     issuer,
 			Subject:    "did:abcd:efghi",
 			JSONSchema: "https://test-schema.com",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"email": "satoshi@nakamoto.com",
 			},
 			Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
@@ -141,14 +141,14 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "schema not found with id: https://test-schema.com")
 
 		// create schema
-		emailSchema := map[string]interface{}{
+		emailSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"email": map[string]interface{}{
+			"properties": map[string]any{
+				"email": map[string]any{
 					"type": "string",
 				},
 			},
-			"required":             []interface{}{"email"},
+			"required":             []any{"email"},
 			"additionalProperties": false,
 		}
 		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
@@ -160,7 +160,7 @@ func TestCredentialRouter(t *testing.T) {
 			Issuer:     issuer,
 			Subject:    "did:abcd:efghi",
 			JSONSchema: createdSchema.ID,
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"email": "satoshi@nakamoto.com",
 			},
 			Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
@@ -231,14 +231,14 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema
-		emailSchema := map[string]interface{}{
+		emailSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"email": map[string]interface{}{
+			"properties": map[string]any{
+				"email": map[string]any{
 					"type": "string",
 				},
 			},
-			"required":             []interface{}{"email"},
+			"required":             []any{"email"},
 			"additionalProperties": false,
 		}
 
@@ -253,7 +253,7 @@ func TestCredentialRouter(t *testing.T) {
 			Issuer:     issuer,
 			Subject:    subject,
 			JSONSchema: createdSchema.ID,
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"email": "Satoshi@Nakamoto.btc",
 			},
 			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
@@ -264,7 +264,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, createdCred)
 		assert.NotEmpty(tt, createdCred.CredentialJWT)
 
-		credStatusMap, ok := createdCred.Credential.CredentialStatus.(map[string]interface{})
+		credStatusMap, ok := createdCred.Credential.CredentialStatus.(map[string]any)
 		assert.True(tt, ok)
 
 		assert.Contains(tt, credStatusMap["id"], fmt.Sprintf("v1/credentials/%s/status", createdCred.ID))
@@ -275,7 +275,7 @@ func TestCredentialRouter(t *testing.T) {
 			Issuer:     issuer,
 			Subject:    subject,
 			JSONSchema: createdSchema.ID,
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"email": "Satoshi2@Nakamoto2.btc",
 			},
 			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
@@ -286,7 +286,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, createdCredTwo)
 		assert.NotEmpty(tt, createdCredTwo.CredentialJWT)
 
-		credStatusMapTwo, ok := createdCredTwo.Credential.CredentialStatus.(map[string]interface{})
+		credStatusMapTwo, ok := createdCredTwo.Credential.CredentialStatus.(map[string]any)
 		assert.True(tt, ok)
 
 		assert.Contains(tt, credStatusMapTwo["id"], fmt.Sprintf("v1/credentials/%s/status", createdCredTwo.ID))

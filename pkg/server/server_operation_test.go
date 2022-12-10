@@ -2,6 +2,11 @@ package server
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/goccy/go-json"
 	"github.com/google/go-cmp/cmp"
@@ -11,10 +16,6 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"testing"
 )
 
 func TestOperationsAPI(t *testing.T) {

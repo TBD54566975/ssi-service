@@ -2,12 +2,12 @@ package middleware
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"net/http"
 	"runtime/debug"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 )
 
 // Panics recovers from panics and converts the panic into an error

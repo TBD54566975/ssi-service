@@ -212,7 +212,7 @@ func (s Service) DeleteManifest(request DeleteManifestRequest) error {
 // CredentialResponseContainer represents what is signed over and return for a credential response
 type CredentialResponseContainer struct {
 	Response    manifest.CredentialResponse `json:"credential_response"`
-	Credentials []interface{}               `json:"verifiableCredentials,omitempty"`
+	Credentials []any                       `json:"verifiableCredentials,omitempty"`
 }
 
 func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) (*SubmitApplicationResponse, error) {

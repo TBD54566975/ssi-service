@@ -72,8 +72,8 @@ type StoredSubmission struct {
 	Reason     string                          `json:"reason"`
 }
 
-func (s StoredSubmission) FilterVariablesMap() map[string]interface{} {
-	return map[string]interface{}{
+func (s StoredSubmission) FilterVariablesMap() map[string]any {
+	return map[string]any{
 		"status": s.Status.String(),
 	}
 }

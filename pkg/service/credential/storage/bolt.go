@@ -2,12 +2,13 @@ package storage
 
 import (
 	"fmt"
+	"math/rand"
+	"strings"
+
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"math/rand"
-	"strings"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"

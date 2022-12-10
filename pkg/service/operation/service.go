@@ -2,6 +2,8 @@ package operation
 
 import (
 	"fmt"
+	"strings"
+
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
@@ -12,7 +14,6 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	prestorage "github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"strings"
 )
 
 type Service struct {

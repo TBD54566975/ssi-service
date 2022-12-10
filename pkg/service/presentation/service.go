@@ -2,6 +2,7 @@ package presentation
 
 import (
 	"fmt"
+
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"

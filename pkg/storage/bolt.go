@@ -3,15 +3,14 @@ package storage
 import (
 	"bytes"
 	"fmt"
-	"github.com/goccy/go-json"
 	"strings"
 	"time"
 
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	bolt "go.etcd.io/bbolt"
-
 	"github.com/tbd54566975/ssi-service/internal/util"
+	bolt "go.etcd.io/bbolt"
 )
 
 const (
@@ -162,7 +161,7 @@ func NewUpdater(values map[string]any) UpdaterWithMap {
 }
 
 func (u UpdaterWithMap) Update(v []byte) ([]byte, error) {
-	var model map[string]interface{}
+	var model map[string]any
 	if err := json.Unmarshal(v, &model); err != nil {
 		return nil, errors.Wrap(err, "unmarshalling json")
 	}

@@ -2,11 +2,12 @@ package storage
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"os"
-	"testing"
 )
 
 func TestBoltDB(t *testing.T) {
@@ -136,7 +137,7 @@ func setupBoltDB(t *testing.T) *BoltDB {
 
 	t.Cleanup(func() {
 		_ = db.Close()
-		os.Remove("test.db")
+		_ = os.Remove("test.db")
 	})
 	return db
 }

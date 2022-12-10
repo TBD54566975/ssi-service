@@ -2,6 +2,10 @@ package server
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
@@ -20,9 +24,6 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"net/http"
-	"net/http/httptest"
-	"testing"
 )
 
 func TestPresentationAPI(t *testing.T) {
@@ -497,7 +498,7 @@ func createSubmissionRequest(t *testing.T, definitionID string, vc credential.Ve
 		Holder:                 holderDID.String(),
 		Type:                   []string{credential.VerifiablePresentationType},
 		PresentationSubmission: ps,
-		VerifiableCredential:   []interface{}{keyaccess.JWT(vcData)},
+		VerifiableCredential:   []any{keyaccess.JWT(vcData)},
 		Proof:                  nil,
 	}
 
