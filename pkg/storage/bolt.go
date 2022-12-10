@@ -204,9 +204,9 @@ func (b *BoltDB) UpdateValueAndOperation(namespace, key string, updater Updater,
 	return first, op, err
 }
 
-func (b *BoltDB) Update(namespace string, key string, values map[string]any) ([]byte, error) {
+func (b *BoltDB) Update(namespace string, key string, updater Updater) ([]byte, error) {
 	var updatedData []byte
-	err := b.db.Update(updateTxFn(namespace, key, NewUpdater(values), &updatedData))
+	err := b.db.Update(updateTxFn(namespace, key, updater, &updatedData))
 	return updatedData, err
 }
 

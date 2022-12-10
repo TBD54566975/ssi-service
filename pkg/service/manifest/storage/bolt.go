@@ -18,10 +18,10 @@ const (
 )
 
 type BoltManifestStorage struct {
-	db *storage.BoltDB
+	db storage.ServiceStorage
 }
 
-func NewBoltManifestStorage(db *storage.BoltDB) (*BoltManifestStorage, error) {
+func NewBoltManifestStorage(db storage.ServiceStorage) (*BoltManifestStorage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}

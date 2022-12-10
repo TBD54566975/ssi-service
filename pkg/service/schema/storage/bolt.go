@@ -15,10 +15,10 @@ const (
 )
 
 type BoltSchemaStorage struct {
-	db *storage.BoltDB
+	db storage.ServiceStorage
 }
 
-func NewBoltSchemaStorage(db *storage.BoltDB) (*BoltSchemaStorage, error) {
+func NewBoltSchemaStorage(db storage.ServiceStorage) (*BoltSchemaStorage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}

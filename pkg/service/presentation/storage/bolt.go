@@ -18,7 +18,7 @@ const (
 )
 
 type BoltPresentationStorage struct {
-	db *storage.BoltDB
+	db storage.ServiceStorage
 }
 
 type opUpdater struct {
@@ -107,7 +107,7 @@ func (b BoltPresentationStorage) ListSubmissions(filter filtering.Filter) ([]Sto
 	return storedSubmissions, nil
 }
 
-func NewBoltPresentationStorage(db *storage.BoltDB) (*BoltPresentationStorage, error) {
+func NewBoltPresentationStorage(db storage.ServiceStorage) (*BoltPresentationStorage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}

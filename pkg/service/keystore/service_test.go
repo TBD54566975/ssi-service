@@ -1,7 +1,6 @@
 package keystore
 
 import (
-	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -91,15 +90,7 @@ func TestEncryptDecryptAllKeyTypes(t *testing.T) {
 }
 
 func TestStoreAndGetKey(t *testing.T) {
-	bolt, err := storage.NewBoltDB()
-	assert.NoError(t, err)
-	assert.NotEmpty(t, bolt)
-
-	// remove the db file after the test
-	t.Cleanup(func() {
-		_ = bolt.Close()
-		_ = os.Remove(storage.DBFile)
-	})
+	db := &storage.MemoryDB{}
 
 	keyStore, err := NewKeyStoreService(
 		config.KeyStoreServiceConfig{
@@ -108,7 +99,7 @@ func TestStoreAndGetKey(t *testing.T) {
 			},
 			ServiceKeyPassword: "test-password",
 		},
-		bolt)
+		db)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, keyStore)
 

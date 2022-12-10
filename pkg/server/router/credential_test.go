@@ -40,16 +40,7 @@ func TestCredentialRouter(t *testing.T) {
 	})
 
 	t.Run("Credential Service Test", func(tt *testing.T) {
-
-		bolt, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, bolt)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -203,15 +194,7 @@ func TestCredentialRouter(t *testing.T) {
 	})
 
 	t.Run("Credential Status List Test", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, bolt)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -294,4 +277,8 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, credStatusMapTwo["statusListIndex"])
 
 	})
+}
+
+func setupTestDB(tt *testing.T) storage.ServiceStorage {
+	return &storage.MemoryDB{}
 }

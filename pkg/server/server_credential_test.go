@@ -4,36 +4,24 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/goccy/go-json"
-
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestCredentialAPI(t *testing.T) {
 	t.Run("Test Create Credential", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -108,14 +96,7 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Create Credential with Schema", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -206,14 +187,7 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Credential By ID", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -224,7 +198,7 @@ func TestCredentialAPI(t *testing.T) {
 
 		// get a cred that doesn't exit
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/credentials/bad", nil)
-		err = credRouter.GetCredential(newRequestContext(), w, req)
+		err := credRouter.GetCredential(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "cannot get credential without ID parameter")
 
@@ -282,14 +256,7 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Credential By Schema", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -361,14 +328,7 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Credential By Issuer", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -420,14 +380,7 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Credential By Subject", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -481,14 +434,7 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Delete Credential", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -552,14 +498,7 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Verifying a Credential", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -625,14 +564,7 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Create Revocable Credential", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -801,14 +733,7 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Revoked Status Of Credential", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -879,14 +804,7 @@ func TestCredentialAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Status List Credential", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)

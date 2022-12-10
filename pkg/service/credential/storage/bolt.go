@@ -30,14 +30,14 @@ const (
 )
 
 type BoltCredentialStorage struct {
-	db *storage.BoltDB
+	db storage.ServiceStorage
 }
 
 type StatusListIndex struct {
 	Index int `json:"index"`
 }
 
-func NewBoltCredentialStorage(db *storage.BoltDB) (*BoltCredentialStorage, error) {
+func NewBoltCredentialStorage(db storage.ServiceStorage) (*BoltCredentialStorage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}

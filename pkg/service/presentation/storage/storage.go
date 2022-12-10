@@ -28,20 +28,11 @@ type DefinitionStorage interface {
 
 // NewPresentationStorage finds the presentation storage impl for a given ServiceStorage value
 func NewPresentationStorage(s storage.ServiceStorage) (Storage, error) {
-	switch s.Type() {
-	case storage.Bolt:
-		gotBolt, ok := s.(*storage.BoltDB)
-		if !ok {
-			return nil, util.LoggingNewErrorf("trouble instantiating : %s", s.Type())
-		}
-		boltStorage, err := NewBoltPresentationStorage(gotBolt)
-		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not instantiate schema bolt storage")
-		}
-		return boltStorage, err
-	default:
-		return nil, util.LoggingNewErrorf("unsupported storage type: %s", s.Type())
+	boltStorage, err := NewBoltPresentationStorage(s)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate schema bolt storage")
 	}
+	return boltStorage, err
 }
 
 type Status uint8

@@ -1,14 +1,11 @@
 package router
 
 import (
-	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -17,12 +14,6 @@ import (
 )
 
 func TestSchemaRouter(t *testing.T) {
-
-	// remove the db file after the test
-	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
-	})
-
 	t.Run("Nil Service", func(tt *testing.T) {
 		schemaRouter, err := NewSchemaRouter(nil)
 		assert.Error(tt, err)
@@ -38,14 +29,11 @@ func TestSchemaRouter(t *testing.T) {
 	})
 
 	t.Run("Schema Service Test", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-		require.NotEmpty(tt, bolt)
-
+		db := &storage.MemoryDB{}
 		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
-		keyStoreService := testKeyStoreService(tt, bolt)
-		didService := testDIDService(tt, bolt, keyStoreService)
-		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
+		keyStoreService := testKeyStoreService(tt, db)
+		didService := testDIDService(tt, db, keyStoreService)
+		schemaService, err := schema.NewSchemaService(serviceConfig, db, keyStoreService, didService.GetResolver())
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, schemaService)
 
@@ -123,20 +111,13 @@ func TestSchemaRouter(t *testing.T) {
 }
 
 func TestSchemaSigning(t *testing.T) {
-	// remove the db file after the test
-	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
-	})
-
 	t.Run("Unsigned Schema Test", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-		require.NotEmpty(tt, bolt)
+		db := &storage.MemoryDB{}
 
 		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
-		keyStoreService := testKeyStoreService(tt, bolt)
-		didService := testDIDService(tt, bolt, keyStoreService)
-		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
+		keyStoreService := testKeyStoreService(tt, db)
+		didService := testDIDService(tt, db, keyStoreService)
+		schemaService, err := schema.NewSchemaService(serviceConfig, db, keyStoreService, didService.GetResolver())
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, schemaService)
 

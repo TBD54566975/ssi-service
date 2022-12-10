@@ -63,18 +63,9 @@ type CredentialResponseStorage interface {
 
 // NewManifestStorage finds the manifest storage impl for a given ServiceStorage value
 func NewManifestStorage(s storage.ServiceStorage) (Storage, error) {
-	switch s.Type() {
-	case storage.Bolt:
-		gotBolt, ok := s.(*storage.BoltDB)
-		if !ok {
-			return nil, util.LoggingNewErrorf("trouble instantiating : %s", s.Type())
-		}
-		boltStorage, err := NewBoltManifestStorage(gotBolt)
-		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not instantiate manifest bolt storage")
-		}
-		return boltStorage, err
-	default:
-		return nil, util.LoggingNewErrorf("unsupported storage type: %s", s.Type())
+	boltStorage, err := NewBoltManifestStorage(s)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate manifest bolt storage")
 	}
+	return boltStorage, err
 }

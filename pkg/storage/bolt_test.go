@@ -2,7 +2,6 @@ package storage
 
 import (
 	"fmt"
-	"os"
 	"testing"
 
 	"github.com/goccy/go-json"
@@ -130,16 +129,8 @@ func TestBoltDBPrefixAndKeys(t *testing.T) {
 	assert.Contains(t, allKeys, "tezos-mainnet")
 }
 
-func setupBoltDB(t *testing.T) *BoltDB {
-	db, err := NewBoltDBWithFile("test.db")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, db)
-
-	t.Cleanup(func() {
-		_ = db.Close()
-		_ = os.Remove("test.db")
-	})
-	return db
+func setupBoltDB(t *testing.T) ServiceStorage {
+	return &MemoryDB{}
 }
 
 type testStruct struct {
@@ -203,7 +194,7 @@ func TestBoltDB_Update(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			data, err = db.Update(namespace, tt.args.key, tt.args.values)
+			data, err = db.Update(namespace, tt.args.key, NewUpdater(tt.args.values))
 			if !tt.expectedError(t, err) {
 				return
 			}

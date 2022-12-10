@@ -36,9 +36,7 @@ func TestDIDRouter(t *testing.T) {
 	})
 
 	t.Run("DID Service Test", func(tt *testing.T) {
-		db, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, db)
+		db := &storage.MemoryDB{}
 
 		keyStoreService := testKeyStoreService(tt, db)
 		methods := []string{didsdk.KeyMethod.String()}
@@ -105,11 +103,7 @@ func TestDIDRouter(t *testing.T) {
 	})
 
 	t.Run("DID Web Service Test", func(tt *testing.T) {
-		_ = os.Remove(storage.DBFile)
-
-		db, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, db)
+		db := &storage.MemoryDB{}
 
 		keyStoreService := testKeyStoreService(tt, db)
 		methods := []string{didsdk.KeyMethod.String(), didsdk.WebMethod.String()}

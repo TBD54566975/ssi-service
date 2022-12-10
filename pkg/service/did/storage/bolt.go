@@ -25,10 +25,10 @@ var (
 )
 
 type BoltDIDStorage struct {
-	db *storage.BoltDB
+	db storage.ServiceStorage
 }
 
-func NewBoltDIDStorage(db *storage.BoltDB) (*BoltDIDStorage, error) {
+func NewBoltDIDStorage(db storage.ServiceStorage) (*BoltDIDStorage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}

@@ -19,6 +19,10 @@ type ServiceStorage interface {
 	ReadAll(namespace string) (map[string][]byte, error)
 	Delete(namespace, key string) error
 	DeleteNamespace(namespace string) error
+	UpdateValueAndOperation(namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) ([]byte, []byte, error)
+	ReadPrefix(namespace, prefix string) (map[string][]byte, error)
+	ReadAllKeys(namespace string) ([]string, error)
+	Update(namespace string, key string, updater Updater) ([]byte, error)
 }
 
 // NewStorage creates a new storage provider based on the input

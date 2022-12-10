@@ -37,7 +37,7 @@ func namespaceFromParent(parent string) string {
 }
 
 type BoltOperationStorage struct {
-	db *storage.BoltDB
+	db storage.ServiceStorage
 }
 
 func (b BoltOperationStorage) StoreOperation(op StoredOperation) error {
@@ -103,7 +103,7 @@ func (b BoltOperationStorage) DeleteOperation(id string) error {
 	return nil
 }
 
-func NewBoltOperationStorage(db *storage.BoltDB) (*BoltOperationStorage, error) {
+func NewBoltOperationStorage(db storage.ServiceStorage) (*BoltOperationStorage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}

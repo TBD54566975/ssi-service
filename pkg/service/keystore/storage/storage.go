@@ -36,21 +36,12 @@ type Storage interface {
 }
 
 func NewKeyStoreStorage(s storage.ServiceStorage, serviceKey, serviceKeySalt string) (Storage, error) {
-	switch s.Type() {
-	case storage.Bolt:
-		gotBolt, ok := s.(*storage.BoltDB)
-		if !ok {
-			return nil, util.LoggingNewErrorf("trouble instantiating : %s", s.Type())
-		}
-		boltStorage, err := NewBoltKeyStoreStorage(gotBolt, ServiceKey{
-			Base58Key:  serviceKey,
-			Base58Salt: serviceKeySalt,
-		})
-		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not instantiate key store bolt storage")
-		}
-		return boltStorage, err
-	default:
-		return nil, util.LoggingNewErrorf("unsupported storage type: %s", s.Type())
+	boltStorage, err := NewBoltKeyStoreStorage(s, ServiceKey{
+		Base58Key:  serviceKey,
+		Base58Salt: serviceKeySalt,
+	})
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate key store bolt storage")
 	}
+	return boltStorage, err
 }

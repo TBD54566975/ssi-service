@@ -16,11 +16,11 @@ const (
 )
 
 type BoltKeyStoreStorage struct {
-	db         *storage.BoltDB
+	db         storage.ServiceStorage
 	serviceKey []byte
 }
 
-func NewBoltKeyStoreStorage(db *storage.BoltDB, key ServiceKey) (*BoltKeyStoreStorage, error) {
+func NewBoltKeyStoreStorage(db storage.ServiceStorage, key ServiceKey) (*BoltKeyStoreStorage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}

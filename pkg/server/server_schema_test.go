@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
@@ -12,23 +11,13 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestSchemaAPI(t *testing.T) {
 	t.Run("Test Create Schema", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -40,7 +29,7 @@ func TestSchemaAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		w := httptest.NewRecorder()
 
-		err = schemaService.CreateSchema(newRequestContext(), w, req)
+		err := schemaService.CreateSchema(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid create schema request")
 
@@ -62,14 +51,7 @@ func TestSchemaAPI(t *testing.T) {
 	})
 
 	t.Run("Test Sign & Verify Schema", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -82,7 +64,7 @@ func TestSchemaAPI(t *testing.T) {
 		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema, Sign: true}
 		schemaRequestValue := newRequestValue(tt, schemaRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
-		err = schemaService.CreateSchema(newRequestContext(), w, req)
+		err := schemaService.CreateSchema(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not create schema with authoring DID: did:test")
 
@@ -137,14 +119,7 @@ func TestSchemaAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Schema and Get Schemas", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -153,7 +128,7 @@ func TestSchemaAPI(t *testing.T) {
 		// get schema that doesn't exist
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas/bad", nil)
-		err = schemaService.GetSchema(newRequestContext(), w, req)
+		err := schemaService.GetSchema(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "cannot get schema without ID parameter")
 
@@ -226,14 +201,7 @@ func TestSchemaAPI(t *testing.T) {
 	})
 
 	t.Run("Test Delete Schema", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -243,7 +211,7 @@ func TestSchemaAPI(t *testing.T) {
 
 		// delete a schema that doesn't exist
 		req := httptest.NewRequest(http.MethodDelete, "https://ssi-service.com/v1/schemas/bad", nil)
-		err = schemaService.DeleteSchema(newRequestContextWithParams(map[string]string{"id": "bad"}), w, req)
+		err := schemaService.DeleteSchema(newRequestContextWithParams(map[string]string{"id": "bad"}), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not delete schema with id: bad")
 

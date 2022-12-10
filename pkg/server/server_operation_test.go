@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
@@ -12,7 +11,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -223,16 +221,7 @@ func TestOperationsAPI(t *testing.T) {
 }
 
 func setupTestDB(t *testing.T) storage.ServiceStorage {
-	file, err := os.CreateTemp("", "bolt")
-	require.NoError(t, err)
-	name := file.Name()
-	s, err := storage.NewBoltDBWithFile(name)
-	require.NoError(t, err)
-	t.Cleanup(func() {
-		_ = s.Close()
-		_ = os.Remove(name)
-	})
-	return s
+	return &storage.MemoryDB{}
 }
 
 func reviewSubmission(t *testing.T, pRouter *router.PresentationRouter, submissionID string) router.ReviewSubmissionResponse {

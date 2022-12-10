@@ -1,7 +1,6 @@
 package router
 
 import (
-	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
@@ -23,10 +22,6 @@ import (
 )
 
 func TestManifestRouter(t *testing.T) {
-	// remove the db file after the test
-	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
-	})
 
 	t.Run("Nil Service", func(tt *testing.T) {
 		manifestRouter, err := NewManifestRouter(nil)
@@ -43,16 +38,13 @@ func TestManifestRouter(t *testing.T) {
 	})
 
 	t.Run("Manifest Service Test", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, bolt)
+		db := &storage.MemoryDB{}
 
-		keyStoreService := testKeyStoreService(tt, bolt)
-		didService := testDIDService(tt, bolt, keyStoreService)
-		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
-		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
-		manifestService := testManifestService(tt, bolt, keyStoreService, didService, credentialService)
-		assert.NoError(tt, err)
+		keyStoreService := testKeyStoreService(tt, db)
+		didService := testDIDService(tt, db, keyStoreService)
+		schemaService := testSchemaService(tt, db, keyStoreService, didService)
+		credentialService := testCredentialService(tt, db, keyStoreService, didService, schemaService)
+		manifestService := testManifestService(tt, db, keyStoreService, didService, credentialService)
 		assert.NotEmpty(tt, manifestService)
 
 		// check type and status
