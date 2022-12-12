@@ -2,7 +2,6 @@ package server
 
 import (
 	"fmt"
-	storage2 "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -21,6 +20,7 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
+	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -163,14 +163,14 @@ func TestPresentationAPI(t *testing.T) {
 					"id":             "did:web:andresuribe.com",
 				})), holderDID, holderSigner)
 
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s", storage2.SubmissionID(op.ID)), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s", opstorage.SubmissionID(op.ID)), nil)
 			w := httptest.NewRecorder()
 
-			assert.NoError(t, pRouter.GetSubmission(newRequestContextWithParams(map[string]string{"id": storage2.SubmissionID(op.ID)}), w, req))
+			assert.NoError(t, pRouter.GetSubmission(newRequestContextWithParams(map[string]string{"id": opstorage.SubmissionID(op.ID)}), w, req))
 
 			var resp router.GetSubmissionResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Equal(t, storage2.SubmissionID(op.ID), resp.Submission.ID)
+			assert.Equal(t, opstorage.SubmissionID(op.ID), resp.Submission.ID)
 			assert.Equal(t, definition.PresentationDefinition.ID, resp.Submission.DefinitionID)
 			assert.Equal(t, "pending", resp.Submission.Status)
 		})
@@ -218,7 +218,7 @@ func TestPresentationAPI(t *testing.T) {
 			}
 
 			value := newRequestValue(t, request)
-			createdID := storage2.SubmissionID(submissionOp.ID)
+			createdID := opstorage.SubmissionID(submissionOp.ID)
 			req := httptest.NewRequest(
 				http.MethodPut,
 				fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s/review", createdID),
@@ -243,7 +243,7 @@ func TestPresentationAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(t)
 			definition := createPresentationDefinition(t, pRouter)
 			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-			createdID := storage2.SubmissionID(submissionOp.ID)
+			createdID := opstorage.SubmissionID(submissionOp.ID)
 			_ = reviewSubmission(t, pRouter, createdID)
 
 			request := router.ReviewSubmissionRequest{
@@ -323,14 +323,14 @@ func TestPresentationAPI(t *testing.T) {
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           storage2.SubmissionID(op.ID),
+						ID:           opstorage.SubmissionID(op.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
 					},
 				},
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           storage2.SubmissionID(op2.ID),
+						ID:           opstorage.SubmissionID(op2.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
 					},
 				},
@@ -395,7 +395,7 @@ func TestPresentationAPI(t *testing.T) {
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           storage2.SubmissionID(op.ID),
+						ID:           opstorage.SubmissionID(op.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
 					},
 				},

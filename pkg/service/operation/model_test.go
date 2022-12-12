@@ -1,10 +1,10 @@
 package operation
 
 import (
-	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 )
 
 func TestSubmissionID(t *testing.T) {

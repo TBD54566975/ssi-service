@@ -2,9 +2,9 @@ package operation
 
 import (
 	"fmt"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 
 	"github.com/TBD54566975/ssi-sdk/util"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"go.einride.tech/aip/filtering"
 )
 

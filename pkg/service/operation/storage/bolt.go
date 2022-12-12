@@ -52,6 +52,9 @@ func (b BoltOperationStorage) MarkDone(id string) (StoredOperation, error) {
 					"done": true,
 				}),
 			})
+		if err != nil {
+			return StoredOperation{}, errors.Wrap(err, "updating value and op")
+		}
 		var op StoredOperation
 		if err = json.Unmarshal(opData, &op); err != nil {
 			return op, errors.Wrap(err, "unmarshalling data")
