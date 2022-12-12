@@ -16,11 +16,11 @@ type StoredOperation struct {
 	Error string `json:"errorResult,omitempty"`
 
 	// Populated only when Done == true and Error == ""
-	Response interface{} `json:"result,omitempty"`
+	Response []byte `json:"response,omitempty"`
 }
 
-func (s StoredOperation) FilterVariablesMap() map[string]interface{} {
-	return map[string]interface{}{
+func (s StoredOperation) FilterVariablesMap() map[string]any {
+	return map[string]any{
 		"done": s.Done,
 		// "true" and "false" are currently being parsed as identifiers, so we need to pass in the values that they
 		// evaluate to. Ideally, we should change them to be parsed as constants. That requires an upstream change in
@@ -32,8 +32,8 @@ func (s StoredOperation) FilterVariablesMap() map[string]interface{} {
 
 type Storage interface {
 	StoreOperation(op StoredOperation) error
-	GetOperation(id string) (*StoredOperation, error)
-	GetOperations(filter filtering.Filter) ([]StoredOperation, error)
+	GetOperation(id string) (StoredOperation, error)
+	GetOperations(parent string, filter filtering.Filter) ([]StoredOperation, error)
 	DeleteOperation(id string) error
 }
 

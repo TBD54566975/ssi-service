@@ -130,6 +130,7 @@ func TestDIDRouter(t *testing.T) {
 		supported := didService.GetSupportedMethods()
 		assert.NotEmpty(tt, supported)
 		assert.Len(tt, supported.Methods, 2)
+
 		assert.ElementsMatch(tt, supported.Methods, []didsdk.Method{didsdk.KeyMethod, didsdk.WebMethod})
 
 		// bad key type

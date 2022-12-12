@@ -5,13 +5,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/goccy/go-json"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
-	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -66,7 +68,7 @@ func TestCredentialAPI(t *testing.T) {
 		missingIssuerRequest := router.CreateCredentialRequest{
 			Issuer:  "did:abc:123",
 			Subject: "did:abc:456",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -85,7 +87,7 @@ func TestCredentialAPI(t *testing.T) {
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -130,17 +132,17 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema
-		simpleSchema := map[string]interface{}{
+		simpleSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"firstName": map[string]interface{}{
+			"properties": map[string]any{
+				"firstName": map[string]any{
 					"type": "string",
 				},
-				"lastName": map[string]interface{}{
+				"lastName": map[string]any{
 					"type": "string",
 				},
 			},
-			"required":             []interface{}{"firstName", "lastName"},
+			"required":             []any{"firstName", "lastName"},
 			"additionalProperties": false,
 		}
 		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
@@ -151,7 +153,7 @@ func TestCredentialAPI(t *testing.T) {
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
 			Schema:  createdSchema.ID,
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -190,7 +192,7 @@ func TestCredentialAPI(t *testing.T) {
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
 			Schema:  "bad",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -248,7 +250,7 @@ func TestCredentialAPI(t *testing.T) {
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -304,17 +306,17 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema
-		simpleSchema := map[string]interface{}{
+		simpleSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"firstName": map[string]interface{}{
+			"properties": map[string]any{
+				"firstName": map[string]any{
 					"type": "string",
 				},
-				"lastName": map[string]interface{}{
+				"lastName": map[string]any{
 					"type": "string",
 				},
 			},
-			"required":             []interface{}{"firstName", "lastName"},
+			"required":             []any{"firstName", "lastName"},
 			"additionalProperties": false,
 		}
 		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
@@ -325,7 +327,7 @@ func TestCredentialAPI(t *testing.T) {
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
 			Schema:  createdSchema.ID,
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -385,7 +387,7 @@ func TestCredentialAPI(t *testing.T) {
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -445,7 +447,7 @@ func TestCredentialAPI(t *testing.T) {
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: subjectID,
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -503,7 +505,7 @@ func TestCredentialAPI(t *testing.T) {
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -575,7 +577,7 @@ func TestCredentialAPI(t *testing.T) {
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -657,7 +659,7 @@ func TestCredentialAPI(t *testing.T) {
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -681,7 +683,7 @@ func TestCredentialAPI(t *testing.T) {
 		createRevocableCredRequestOne := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -702,7 +704,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, revocableRespOne.Credential.CredentialStatus)
 		assert.Equal(tt, revocableRespOne.Credential.Issuer, issuerDID.DID.ID)
 
-		credStatusMap, ok := revocableRespOne.Credential.CredentialStatus.(map[string]interface{})
+		credStatusMap, ok := revocableRespOne.Credential.CredentialStatus.(map[string]any)
 		assert.True(tt, ok)
 
 		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
@@ -711,7 +713,7 @@ func TestCredentialAPI(t *testing.T) {
 		createRevocableCredRequestTwo := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -732,7 +734,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, revocableRespTwo.Credential.CredentialStatus)
 		assert.Equal(tt, revocableRespTwo.Credential.Issuer, issuerDID.DID.ID)
 
-		credStatusMap, ok = revocableRespTwo.Credential.CredentialStatus.(map[string]interface{})
+		credStatusMap, ok = revocableRespTwo.Credential.CredentialStatus.(map[string]any)
 		assert.True(tt, ok)
 
 		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
@@ -741,7 +743,7 @@ func TestCredentialAPI(t *testing.T) {
 		createRevocableCredRequestThree := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -762,7 +764,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, revocableRespThree.Credential.CredentialStatus)
 		assert.Equal(tt, revocableRespThree.Credential.Issuer, issuerDID.DID.ID)
 
-		credStatusMap, ok = revocableRespThree.Credential.CredentialStatus.(map[string]interface{})
+		credStatusMap, ok = revocableRespThree.Credential.CredentialStatus.(map[string]any)
 		assert.True(tt, ok)
 
 		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
@@ -771,7 +773,7 @@ func TestCredentialAPI(t *testing.T) {
 		createRevocableCredRequestFour := router.CreateCredentialRequest{
 			Issuer:  issuerDIDTwo.DID.ID,
 			Subject: "did:abc:456",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -792,7 +794,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, revocableRespFour.Credential.CredentialStatus)
 		assert.Equal(tt, revocableRespFour.Credential.Issuer, issuerDIDTwo.DID.ID)
 
-		credStatusMap, ok = revocableRespFour.Credential.CredentialStatus.(map[string]interface{})
+		credStatusMap, ok = revocableRespFour.Credential.CredentialStatus.(map[string]any)
 		assert.True(tt, ok)
 
 		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
@@ -826,7 +828,7 @@ func TestCredentialAPI(t *testing.T) {
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -847,7 +849,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, resp.Credential.CredentialStatus)
 		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
 
-		credStatusMap, ok := resp.Credential.CredentialStatus.(map[string]interface{})
+		credStatusMap, ok := resp.Credential.CredentialStatus.(map[string]any)
 		assert.True(tt, ok)
 
 		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
@@ -904,7 +906,7 @@ func TestCredentialAPI(t *testing.T) {
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:  issuerDID.DID.ID,
 			Subject: "did:abc:456",
-			Data: map[string]interface{}{
+			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
 			},
@@ -925,7 +927,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, resp.Credential.CredentialStatus)
 		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
 
-		credStatusMap, ok := resp.Credential.CredentialStatus.(map[string]interface{})
+		credStatusMap, ok := resp.Credential.CredentialStatus.(map[string]any)
 		assert.True(tt, ok)
 
 		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
@@ -933,10 +935,12 @@ func TestCredentialAPI(t *testing.T) {
 		credStatusListID := (credStatusMap["statusListCredential"]).(string)
 
 		assert.NotEmpty(tt, credStatusListID)
-		fmt.Println(credStatusListID)
 
-		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://localhost:8080/v1/credentials/status/%s", credStatusListID), nil)
-		err = credRouter.GetCredentialStatusList(newRequestContextWithParams(map[string]string{"id": credStatusListID}), w, req)
+		i := strings.LastIndex(credStatusListID, "/")
+		uuidStringUUID := credStatusListID[i+1:]
+
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://localhost:8080/%s", credStatusListID), nil)
+		err = credRouter.GetCredentialStatusList(newRequestContextWithParams(map[string]string{"id": uuidStringUUID}), w, req)
 		assert.NoError(tt, err)
 
 		var credListResp router.GetCredentialStatusListResponse

@@ -64,14 +64,14 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "error getting schema")
 
 		// create a schema
-		simpleSchema := map[string]interface{}{
+		simpleSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"foo": map[string]interface{}{
+			"properties": map[string]any{
+				"foo": map[string]any{
 					"type": "string",
 				},
 			},
-			"required":             []interface{}{"foo"},
+			"required":             []any{"foo"},
 			"additionalProperties": false,
 		}
 		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
@@ -145,14 +145,14 @@ func TestSchemaSigning(t *testing.T) {
 		assert.Equal(tt, framework.StatusReady, schemaService.Status().Status)
 
 		// create a schema and don't sign it
-		simpleSchema := map[string]interface{}{
+		simpleSchema := map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"foo": map[string]interface{}{
+			"properties": map[string]any{
+				"foo": map[string]any{
 					"type": "string",
 				},
 			},
-			"required":             []interface{}{"foo"},
+			"required":             []any{"foo"},
 			"additionalProperties": false,
 		}
 		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})

@@ -2,10 +2,11 @@ package credential
 
 import (
 	"fmt"
-	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
-	"github.com/google/uuid"
 	"strconv"
 	"time"
+
+	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
+	"github.com/google/uuid"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	schemalib "github.com/TBD54566975/ssi-sdk/credential/schema"
@@ -441,7 +442,8 @@ func (s Service) GetCredentialStatus(request GetCredentialStatusRequest) (*GetCr
 func (s Service) GetCredentialStatusList(request GetCredentialStatusListRequest) (*GetCredentialStatusListResponse, error) {
 	logrus.Debugf("getting credential status list: %s", request.ID)
 
-	gotCred, err := s.storage.GetStatusListCredential(request.ID)
+	credStatusListID := fmt.Sprintf(`%s/v1/credentials/status/%s`, s.config.ServiceEndpoint, request.ID)
+	gotCred, err := s.storage.GetStatusListCredential(credStatusListID)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get credential: %s", request.ID)
 	}
@@ -501,9 +503,10 @@ func updateCredentialStatus(s Service, gotCred *credstorage.StoredCredential, re
 		return nil, util.LoggingErrorMsg(err, "could not store credential")
 	}
 
-	storedStatusListCreds, err := s.storage.GetStatusListCredentialsByIssuerAndSchema(gotCred.Issuer, gotCred.Schema)
-	if err != nil {
-		return nil, util.LoggingNewErrorf("problem with getting status list credential for issuer: %s schema: %s", gotCred.Issuer, gotCred.Schema)
+	statusListCredentialID := gotCred.Credential.CredentialStatus.(map[string]any)["statusListCredential"].(string)
+
+	if len(statusListCredentialID) == 0 {
+		return nil, util.LoggingNewErrorf("problem with getting status list credential id")
 	}
 
 	creds, err := s.storage.GetCredentialsByIssuerAndSchema(gotCred.Issuer, gotCred.Schema)
@@ -518,7 +521,7 @@ func updateCredentialStatus(s Service, gotCred *credstorage.StoredCredential, re
 		}
 	}
 
-	generatedStatusListCredential, err := statussdk.GenerateStatusList2021Credential(storedStatusListCreds[0].ID, gotCred.Issuer, statussdk.StatusRevocation, revokedStatusCreds)
+	generatedStatusListCredential, err := statussdk.GenerateStatusList2021Credential(statusListCredentialID, gotCred.Issuer, statussdk.StatusRevocation, revokedStatusCreds)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not generate status list")
 	}

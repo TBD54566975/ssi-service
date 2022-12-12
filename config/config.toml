@@ -19,7 +19,7 @@ log_level = "debug"
 
 [services]
 storage = "bolt"
-service_endpoint = "http://localhost:8000"
+service_endpoint = "http://localhost:8080"
 
 # per-service configuration
 [services.keystore]

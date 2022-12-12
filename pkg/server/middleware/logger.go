@@ -2,20 +2,25 @@ package middleware
 
 import (
 	"context"
-	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"net/http"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 )
 
 // Logger logs request info before and after a handler runs.
 // logs to to stdout in the following format:
 // Before:
-// 		TraceID : (StatusCode) HTTPMethod Path -> IPAddr (latency)
-// 		e.g. 12345 : (200) GET /users/1 -> 192.168.1.0 (4ms)
+//
+//	TraceID : (StatusCode) HTTPMethod Path -> IPAddr (latency)
+//	e.g. 12345 : (200) GET /users/1 -> 192.168.1.0 (4ms)
+//
 // After:
-// 		TODO: add after format
-// 		TODO: add after example
+//
+//	TODO: add after format
+//	TODO: add after example
+//
 // TODO: make logging output configurable
 func Logger() framework.Middleware {
 	mw := func(handler framework.Handler) framework.Handler {

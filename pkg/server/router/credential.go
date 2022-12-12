@@ -46,10 +46,10 @@ type CreateCredentialRequest struct {
 	// A context is optional. If not present, we'll apply default, required context values.
 	Context string `json:"@context"`
 	// A schema is optional. If present, we'll attempt to look it up and validate the data against it.
-	Schema    string                 `json:"schema"`
-	Data      map[string]interface{} `json:"data" validate:"required"`
-	Expiry    string                 `json:"expiry"`
-	Revocable bool                   `json:"revocable"`
+	Schema    string         `json:"schema"`
+	Data      map[string]any `json:"data" validate:"required"`
+	Expiry    string         `json:"expiry"`
+	Revocable bool           `json:"revocable"`
 	// TODO(gabe) support more capabilities like signature type, format, status, and more.
 }
 
@@ -169,7 +169,7 @@ func (cr CredentialRouter) GetCredentialStatus(ctx context.Context, w http.Respo
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotCredential, err := cr.service.GetCredential(credential.GetCredentialRequest{ID: *id})
+	getCredentialStatusResponse, err := cr.service.GetCredentialStatus(credential.GetCredentialStatusRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -177,7 +177,7 @@ func (cr CredentialRouter) GetCredentialStatus(ctx context.Context, w http.Respo
 	}
 
 	resp := GetCredentialStatusResponse{
-		Revoked: gotCredential.Revoked,
+		Revoked: getCredentialStatusResponse.Revoked,
 	}
 
 	return framework.Respond(ctx, w, resp, http.StatusOK)
