@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	namespace = "operation_submission"
+	namespace           = "operation_submission"
+	SubmissionNamespace = "presentation_submission"
 )
 
 const SubmissionParentResource = "/presentations/submissions"

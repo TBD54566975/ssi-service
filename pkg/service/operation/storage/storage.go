@@ -91,5 +91,3 @@ func (u OperationUpdater) Validate(v []byte) error {
 }
 
 var _ storage.ResponseSettingUpdater = (*OperationUpdater)(nil)
-
-const SubmissionNamespace = "presentation_submission"
