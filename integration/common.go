@@ -4,19 +4,19 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	"io"
+	"net/http"
+	"strings"
+
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
-	cmpact "github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
 	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
-	"io"
-	"net/http"
-	"strings"
 )
 
 const (
@@ -149,10 +149,10 @@ func SubmitApplication(credAppJWT string) (string, error) {
 	return output, nil
 }
 
-func compactJSONOutput(json string) string {
-	jsonBytes := []byte(json)
+func compactJSONOutput(jsonString string) string {
+	jsonBytes := []byte(jsonString)
 	buffer := new(bytes.Buffer)
-	if err := cmpact.Compact(buffer, jsonBytes); err != nil {
+	if err := json.Compact(buffer, jsonBytes); err != nil {
 		logrus.Println(err)
 		panic(err)
 	}
@@ -161,7 +161,7 @@ func compactJSONOutput(json string) string {
 }
 
 func getJSONElement(jsonString string, jsonPath string) (string, error) {
-	jsonMap := make(map[string]interface{})
+	jsonMap := make(map[string]any)
 	if err := json.Unmarshal([]byte(jsonString), &jsonMap); err != nil {
 		return "", errors.Wrap(err, "unmarshalling json string")
 	}

@@ -41,8 +41,8 @@ func NewManifestRouter(s svcframework.Service) (*ManifestRouter, error) {
 // CreateManifestRequest is the request body for creating a manifest, which populates all remaining fields
 // and builds a well-formed manifest object.
 type CreateManifestRequest struct {
-	Name           *string                          `json:"name,omitempty"`
-	Description    *string                          `json:"description,omitempty"`
+	Name                   *string                          `json:"name,omitempty"`
+	Description            *string                          `json:"description,omitempty"`
 	IssuerDID              string                           `json:"issuerDid" validate:"required"`
 	IssuerName             *string                          `json:"issuerName,omitempty"`
 	ClaimFormat            *exchange.ClaimFormat            `json:"format" validate:"required,dive"`
@@ -52,8 +52,8 @@ type CreateManifestRequest struct {
 
 func (c CreateManifestRequest) ToServiceRequest() manifest.CreateManifestRequest {
 	return manifest.CreateManifestRequest{
-		Name:           c.Name,
-		Description:    c.Description,
+		Name:                   c.Name,
+		Description:            c.Description,
 		IssuerDID:              c.IssuerDID,
 		IssuerName:             c.IssuerName,
 		OutputDescriptors:      c.OutputDescriptors,
@@ -235,7 +235,7 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 
 	// make sure the known properties are present (Application and Credentials)
 
-	var creds []interface{}
+	var creds []any
 	credentials, ok := token.Get(vcsJSONProperty)
 	if !ok {
 		logrus.Warn("could not find vc in Credential Application token, looking for `verifiableCredentials`")
@@ -243,7 +243,7 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 			return nil, errors.New("could not find vc or verifiableCredentials in Credential Application token")
 		}
 	}
-	creds, ok = credentials.([]interface{})
+	creds, ok = credentials.([]any)
 	if !ok {
 		errMsg := fmt.Sprintf("could not parse Credential Application token, %s is not an array", vcsJSONProperty)
 		logrus.Errorf("%s: %s", errMsg, credentials)
@@ -282,7 +282,7 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 type SubmitApplicationResponse struct {
 	Response manifestsdk.CredentialResponse `json:"credential_response"`
 	// this is an interface type to union Data Integrity and JWT style VCs
-	Credentials []interface{} `json:"verifiableCredentials,omitempty"`
+	Credentials []any         `json:"verifiableCredentials,omitempty"`
 	ResponseJWT keyaccess.JWT `json:"responseJwt,omitempty"`
 }
 

@@ -33,6 +33,7 @@ the [template](sips/sip_template.md), add it to the table below, and open up a p
 | [SIP-2](sips/sip2/README.md) | Credential Issuance Flow                          | [Neal Roessler](https://github.com/nitro-neal)   | Accepted | September 13, 2022 |
 | [SIP-3](sips/sip3/README.md) | Key Access: Signing & Verification                | [Gabe Cohen](https://github.com/decentralgabe)   | Accepted | September 20, 2022 |
 | [SIP-4](sips/sip4/README.md) | DWN Message Processing / Credential Issuance      | [Neal Roessler](https://github.com/nitro-neal)   | Accepted | September 23, 2022 |
-| [SIP-5](sips/sip5/README.md) | Credential Application Processing                 | [Gabe Cohen](https://github.com/decentralgabe)   | Draft    | November 3, 2022   |
-| [SIP-6](sips/sip6/README.md) | Presentation Exchange And Long Running Operations | [Andres Uribe](https://github.com/andresuribe87) | Draft    | November 8, 2022   |
-| [SIP-7](sips/sip7/README.md) | Credential Revocation                             | [Neal Roessler](https://github.com/nitro-neal)   | Draft    | November 7, 2022   |
+| [SIP-5](sips/sip5/README.md) | Credential Application Processing                 | [Gabe Cohen](https://github.com/decentralgabe)   | Accepted | November 3, 2022   |
+| [SIP-6](sips/sip6/README.md) | Presentation Exchange And Long Running Operations | [Andres Uribe](https://github.com/andresuribe87) | Accepted | November 8, 2022   |
+| [SIP-7](sips/sip7/README.md) | Credential Revocation                             | [Neal Roessler](https://github.com/nitro-neal)   | Accepted | November 7, 2022   |
+| [SIP-7](sips/sip8/README.md) | Webhooks for External Services                    | [Neal Roessler](https://github.com/nitro-neal)   | Draft    | December 8, 2022   |

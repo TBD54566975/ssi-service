@@ -57,7 +57,7 @@ func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
 
 // NewCredentialContainerFromMap attempts to parse a data integrity credential from a piece of JSON,
 // which is represented as a map in go, into a Container
-func NewCredentialContainerFromMap(credMap map[string]interface{}) (*Container, error) {
+func NewCredentialContainerFromMap(credMap map[string]any) (*Container, error) {
 	var cred credential.VerifiableCredential
 	credMapBytes, err := json.Marshal(credMap)
 	if err != nil {
@@ -76,8 +76,8 @@ func NewCredentialContainerFromMap(credMap map[string]interface{}) (*Container, 
 	return nil, errors.New("credential does not have a data integrity proof")
 }
 
-func ContainersToInterface(cs []Container) []interface{} {
-	var credentials []interface{}
+func ContainersToInterface(cs []Container) []any {
+	var credentials []any
 	for _, container := range cs {
 		if container.HasDataIntegrityCredential() {
 			credentials = append(credentials, *container.Credential)
@@ -90,7 +90,7 @@ func ContainersToInterface(cs []Container) []interface{} {
 
 // NewCredentialContainerFromArray attempts to parse arrays of credentials of any type (either data integrity or JWT)
 // into an array of CredentialContainers. The method will return an error if any of the credentials are invalid.
-func NewCredentialContainerFromArray(creds []interface{}) ([]Container, error) {
+func NewCredentialContainerFromArray(creds []any) ([]Container, error) {
 	var containers []Container
 	for _, c := range creds {
 		switch v := c.(type) {
@@ -101,7 +101,7 @@ func NewCredentialContainerFromArray(creds []interface{}) ([]Container, error) {
 				return nil, errors.Wrap(err, "could not parse credential from JWT")
 			}
 			containers = append(containers, *container)
-		case map[string]interface{}:
+		case map[string]any:
 			// JSON
 			container, err := NewCredentialContainerFromMap(v)
 			if err != nil {

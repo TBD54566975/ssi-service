@@ -15,6 +15,7 @@ linters:
     - errcheck
     - errorlint
     - gocritic
+    - goimports
     - gosec
     - govet
     - ineffassign

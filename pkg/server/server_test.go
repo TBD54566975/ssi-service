@@ -90,7 +90,7 @@ func TestReadinessAPI(t *testing.T) {
 	assert.Len(t, resp.ServiceStatuses, 0)
 }
 
-func newRequestValue(t *testing.T, data interface{}) io.Reader {
+func newRequestValue(t *testing.T, data any) io.Reader {
 	dataBytes, err := json.Marshal(data)
 	require.NoError(t, err)
 	require.NotEmpty(t, dataBytes)
