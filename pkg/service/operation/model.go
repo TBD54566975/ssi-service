@@ -2,10 +2,9 @@ package operation
 
 import (
 	"fmt"
-	"strings"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 
 	"github.com/TBD54566975/ssi-sdk/util"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"go.einride.tech/aip/filtering"
 )
 
@@ -18,16 +17,6 @@ type Operation struct {
 	ID     string `json:"json"`
 	Done   bool   `json:"done"`
 	Result Result `json:"result,omitempty"`
-}
-
-// SubmissionID attempts to parse the submission id from the ID of the operation. This is done by taking the last word
-// that results from splitting the id by "/". On failures, the empty string is returned.
-func SubmissionID(opID string) string {
-	i := strings.LastIndex(opID, "/")
-	if i == -1 {
-		return ""
-	}
-	return opID[(i + 1):]
 }
 
 type GetOperationsRequest struct {
@@ -49,6 +38,15 @@ type GetOperationRequest struct {
 
 // Validate does struct validation and returns an error when invalid.
 func (r GetOperationRequest) Validate() error {
+	return util.NewValidator().Struct(r)
+}
+
+type CancelOperationRequest struct {
+	ID string `json:"id" validate:"required"`
+}
+
+// Validate does struct validation and returns an error when invalid.
+func (r CancelOperationRequest) Validate() error {
 	return util.NewValidator().Struct(r)
 }
 

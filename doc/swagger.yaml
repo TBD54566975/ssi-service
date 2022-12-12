@@ -479,7 +479,7 @@ definitions:
           context values.
         type: string
       data:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       expiry:
         type: string
@@ -770,7 +770,7 @@ definitions:
         description: The reason why the submission was approved or denied.
         type: string
       status:
-        description: One of {`pending`, `approved`, `denied`}.
+        description: One of {`pending`, `approved`, `denied`, `cancelled`}.
         type: string
     required:
     - definition_id
@@ -790,7 +790,7 @@ definitions:
     properties:
       submissions:
         items:
-          $ref: '#/definitions/presentation.Submission'
+          $ref: '#/definitions/model.Submission'
         type: array
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.Operation:
@@ -846,7 +846,7 @@ definitions:
         description: The reason why the submission was approved or denied.
         type: string
       status:
-        description: One of {`pending`, `approved`, `denied`}.
+        description: One of {`pending`, `approved`, `denied`, `cancelled`}.
         type: string
     required:
     - definition_id
@@ -1044,6 +1044,28 @@ definitions:
     - id
     - schema
     type: object
+  model.Submission:
+    properties:
+      definition_id:
+        type: string
+      descriptor_map:
+        items:
+          $ref: '#/definitions/exchange.SubmissionDescriptor'
+        type: array
+      id:
+        type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
+      status:
+        description: One of {`pending`, `approved`, `denied`, `cancelled`}.
+        type: string
+    required:
+    - definition_id
+    - descriptor_map
+    - id
+    - status
+    type: object
   pkg_server_router.CreateCredentialRequest:
     properties:
       '@context':
@@ -1051,7 +1073,7 @@ definitions:
           context values.
         type: string
       data:
-        additionalProperties: true
+        additionalProperties: {}
         type: object
       expiry:
         type: string
@@ -1342,7 +1364,7 @@ definitions:
         description: The reason why the submission was approved or denied.
         type: string
       status:
-        description: One of {`pending`, `approved`, `denied`}.
+        description: One of {`pending`, `approved`, `denied`, `cancelled`}.
         type: string
     required:
     - definition_id
@@ -1362,7 +1384,7 @@ definitions:
     properties:
       submissions:
         items:
-          $ref: '#/definitions/presentation.Submission'
+          $ref: '#/definitions/model.Submission'
         type: array
     type: object
   pkg_server_router.Operation:
@@ -1418,7 +1440,7 @@ definitions:
         description: The reason why the submission was approved or denied.
         type: string
       status:
-        description: One of {`pending`, `approved`, `denied`}.
+        description: One of {`pending`, `approved`, `denied`, `cancelled`}.
         type: string
     required:
     - definition_id
@@ -1500,28 +1522,6 @@ definitions:
         type: string
       verified:
         type: boolean
-    type: object
-  presentation.Submission:
-    properties:
-      definition_id:
-        type: string
-      descriptor_map:
-        items:
-          $ref: '#/definitions/exchange.SubmissionDescriptor'
-        type: array
-      id:
-        type: string
-      reason:
-        description: The reason why the submission was approved or denied.
-        type: string
-      status:
-        description: One of {`pending`, `approved`, `denied`}.
-        type: string
-    required:
-    - definition_id
-    - descriptor_map
-    - id
-    - status
     type: object
   rendering.ColorResource:
     properties:
@@ -2411,7 +2411,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetOperationsResponse'
+            $ref: '#/definitions/pkg_server_router.Operation'
         "400":
           description: Bad request
           schema:
@@ -2440,7 +2440,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.Operation'
+            $ref: '#/definitions/pkg_server_router.Operation'
         "400":
           description: Bad request
           schema:

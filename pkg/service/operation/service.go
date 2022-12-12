@@ -102,6 +102,18 @@ func (s Service) GetOperation(request GetOperationRequest) (Operation, error) {
 	return serviceModel(storedOp)
 }
 
+func (s Service) CancelOperation(request CancelOperationRequest) (Operation, error) {
+	if err := request.Validate(); err != nil {
+		return Operation{}, errors.Wrap(err, "invalid request")
+	}
+
+	storedOp, err := s.storage.MarkDone(request.ID)
+	if err != nil {
+		return Operation{}, errors.Wrap(err, "marking as done")
+	}
+	return serviceModel(storedOp)
+}
+
 func NewOperationService(s storage.ServiceStorage) (*Service, error) {
 	opStorage, err := opstorage.NewOperationStorage(s)
 	if err != nil {

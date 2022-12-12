@@ -40,6 +40,27 @@ type BoltOperationStorage struct {
 	db *storage.BoltDB
 }
 
+func (b BoltOperationStorage) MarkDone(id string) (StoredOperation, error) {
+	if strings.HasPrefix(id, SubmissionParentResource) {
+		_, opData, err := b.db.UpdateValueAndOperation(
+			SubmissionNamespace, SubmissionID(id), storage.NewUpdater(map[string]any{
+				"status": 2, // TODO: should we move status elsewhere, or pass this in?
+				"reason": "operation cancelled",
+			}),
+			NamespaceFromID(id), id, OperationUpdater{
+				storage.NewUpdater(map[string]any{
+					"done": true,
+				}),
+			})
+		var op StoredOperation
+		if err = json.Unmarshal(opData, &op); err != nil {
+			return op, errors.Wrap(err, "unmarshalling data")
+		}
+		return op, nil
+	}
+	return StoredOperation{}, errors.New("unrecognized id structure")
+}
+
 func (b BoltOperationStorage) StoreOperation(op StoredOperation) error {
 	id := op.ID
 	if id == "" {

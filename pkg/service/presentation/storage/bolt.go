@@ -13,36 +13,12 @@ import (
 )
 
 const (
-	namespace           = "presentation_definition"
-	submissionNamespace = "presentation_submission"
+	namespace = "presentation_definition"
 )
 
 type BoltPresentationStorage struct {
 	db *storage.BoltDB
 }
-
-type opUpdater struct {
-	storage.UpdaterWithMap
-}
-
-func (u opUpdater) SetUpdatedResponse(response []byte) {
-	u.UpdaterWithMap.Values["response"] = response
-}
-
-func (u opUpdater) Validate(v []byte) error {
-	var op opstorage.StoredOperation
-	if err := json.Unmarshal(v, &op); err != nil {
-		return errors.Wrap(err, "unmarshalling operation")
-	}
-
-	if op.Done {
-		return errors.New("operation already marked as done")
-	}
-
-	return nil
-}
-
-var _ storage.ResponseSettingUpdater = (*opUpdater)(nil)
 
 func (b BoltPresentationStorage) UpdateSubmission(id string, approved bool, reason string, opID string) (StoredSubmission, opstorage.StoredOperation, error) {
 	m := map[string]any{
@@ -53,13 +29,13 @@ func (b BoltPresentationStorage) UpdateSubmission(id string, approved bool, reas
 		m["status"] = StatusApproved
 	}
 	submissionData, operationData, err := b.db.UpdateValueAndOperation(
-		submissionNamespace,
+		opstorage.SubmissionNamespace,
 		id,
 		storage.NewUpdater(m),
 		opstorage.NamespaceFromID(opID),
 		opID,
-		opUpdater{
-			storage.NewUpdater(map[string]any{
+		opstorage.OperationUpdater{
+			UpdaterWithMap: storage.NewUpdater(map[string]any{
 				"done": true,
 			}),
 		})
@@ -79,7 +55,7 @@ func (b BoltPresentationStorage) UpdateSubmission(id string, approved bool, reas
 }
 
 func (b BoltPresentationStorage) ListSubmissions(filter filtering.Filter) ([]StoredSubmission, error) {
-	allData, err := b.db.ReadAll(submissionNamespace)
+	allData, err := b.db.ReadAll(opstorage.SubmissionNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all data")
 	}
@@ -163,11 +139,11 @@ func (b BoltPresentationStorage) StoreSubmission(submission StoredSubmission) er
 	if err != nil {
 		return util.LoggingNewErrorf("could not store submission definition: %s", id)
 	}
-	return b.db.Write(submissionNamespace, id, jsonBytes)
+	return b.db.Write(opstorage.SubmissionNamespace, id, jsonBytes)
 }
 
 func (b BoltPresentationStorage) GetSubmission(id string) (*StoredSubmission, error) {
-	jsonBytes, err := b.db.Read(submissionNamespace, id)
+	jsonBytes, err := b.db.Read(opstorage.SubmissionNamespace, id)
 	if err != nil {
 		return nil, util.LoggingNewErrorf("could not get submission definition: %s", id)
 	}

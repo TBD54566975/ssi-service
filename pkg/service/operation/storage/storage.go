@@ -1,9 +1,12 @@
 package storage
 
 import (
+	"github.com/goccy/go-json"
+	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"go.einride.tech/aip/filtering"
+	"strings"
 )
 
 type StoredOperation struct {
@@ -35,6 +38,7 @@ type Storage interface {
 	GetOperation(id string) (StoredOperation, error)
 	GetOperations(parent string, filter filtering.Filter) ([]StoredOperation, error)
 	DeleteOperation(id string) error
+	MarkDone(id string) (StoredOperation, error)
 }
 
 func NewOperationStorage(s storage.ServiceStorage) (Storage, error) {
@@ -53,3 +57,38 @@ func NewOperationStorage(s storage.ServiceStorage) (Storage, error) {
 		return nil, util.LoggingNewErrorf("unsupported storage type: %s", s.Type())
 	}
 }
+
+// SubmissionID attempts to parse the submission id from the ID of the operation. This is done by taking the last word
+// that results from splitting the id by "/". On failures, the empty string is returned.
+func SubmissionID(opID string) string {
+	i := strings.LastIndex(opID, "/")
+	if i == -1 {
+		return ""
+	}
+	return opID[(i + 1):]
+}
+
+type OperationUpdater struct {
+	storage.UpdaterWithMap
+}
+
+func (u OperationUpdater) SetUpdatedResponse(response []byte) {
+	u.UpdaterWithMap.Values["response"] = response
+}
+
+func (u OperationUpdater) Validate(v []byte) error {
+	var op StoredOperation
+	if err := json.Unmarshal(v, &op); err != nil {
+		return errors.Wrap(err, "unmarshalling operation")
+	}
+
+	if op.Done {
+		return errors.New("operation already marked as done")
+	}
+
+	return nil
+}
+
+var _ storage.ResponseSettingUpdater = (*OperationUpdater)(nil)
+
+const SubmissionNamespace = "presentation_submission"

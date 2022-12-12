@@ -54,6 +54,8 @@ func (s Status) String() string {
 		return "denied"
 	case StatusApproved:
 		return "approved"
+	case StatusCancelled:
+		return "cancelled"
 	default:
 		return "unknown"
 	}
@@ -62,6 +64,7 @@ func (s Status) String() string {
 const (
 	StatusUnknown Status = iota
 	StatusPending
+	StatusCancelled
 	StatusDenied
 	StatusApproved
 )
