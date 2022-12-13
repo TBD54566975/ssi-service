@@ -1,8 +1,9 @@
 package integration
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestResolveDIDWebIntegration(t *testing.T) {
@@ -15,7 +16,7 @@ func TestResolveDIDWebIntegration(t *testing.T) {
 	assert.NoError(t, err)
 
 	did, err := getJSONElement(didWebOutput, "$.did.id")
-    assert.NoError(t, err)
+	assert.NoError(t, err)
 	resolvedOutput, err := ResolveDID(did)
 	assert.NoError(t, err)
 
