@@ -50,6 +50,16 @@ func CreateDIDWeb() (string, error) {
 	return output, nil
 }
 
+func ResolveDID(did string) (string, error) {
+	logrus.Println("\n\nResolve a did")
+	output, err := get(endpoint + version + "dids/resolver/" + did)
+	if err != nil {
+		return "", errors.Wrapf(err, "did resolver with output: %s", output)
+	}
+
+	return output, nil
+}
+
 func CreateKYCSchema() (string, error) {
 	logrus.Println("\n\nCreate a schema")
 	output, err := put(endpoint+version+"schemas", getJSONFromFile("schema-input.json"))
