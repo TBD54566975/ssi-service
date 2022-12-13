@@ -17,6 +17,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const (
@@ -27,7 +28,9 @@ const (
 var (
 	//go:embed testdata
 	testVectors embed.FS
-	client      = new(http.Client)
+	client      = http.Client{
+		Timeout: 10 * time.Second,
+	}
 )
 
 func CreateDIDKey() (string, error) {
@@ -199,15 +202,19 @@ func put(url string, json string) (string, error) {
 	logrus.Println(fmt.Sprintf("\nPerforming PUT request to:  %s \n\nwith data: \n%s\n", url, compactJSONOutput(json)))
 
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer([]byte(json)))
+
 	if err != nil {
 		return "", errors.Wrap(err, "building http req")
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	req.Close = true
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", errors.Wrap(err, "client http client")
 	}
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

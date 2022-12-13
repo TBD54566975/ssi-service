@@ -10,11 +10,12 @@ func TestResolveDIDWebIntegration(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	//A .wellKnown exists at https://identity.foundation/.well-known/did.json
+	// A .wellKnown exists at https://identity.foundation/.well-known/did.json
 	didWebOutput, err := put(endpoint+version+"dids/web", `{ "keyType":"Ed25519", "didWebId":"did:web:identity.foundation"}`)
 	assert.NoError(t, err)
 
 	did, err := getJSONElement(didWebOutput, "$.did.id")
+	assert.NoError(t, err)
 
 	resolvedOutput, err := ResolveDID(did)
 	assert.NoError(t, err)

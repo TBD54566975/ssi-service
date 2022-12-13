@@ -3,11 +3,11 @@ package router
 import (
 	"context"
 	"fmt"
-	"net/http"
-
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"net/http"
+	"sync"
 
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -238,6 +238,8 @@ type UpdateCredentialStatusResponse struct {
 	Revoked bool `json:"revoked"`
 }
 
+var mutex sync.Mutex
+
 // UpdateCredentialStatus godoc
 // @Summary      Update Credential Status
 // @Description  Update a credential's status
@@ -250,6 +252,9 @@ type UpdateCredentialStatusResponse struct {
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/credentials/{id}/status [put]
 func (cr CredentialRouter) UpdateCredentialStatus(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	// Acquire the mutex lock.
+	mutex.Lock()
+
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get credential without ID parameter"
@@ -284,6 +289,8 @@ func (cr CredentialRouter) UpdateCredentialStatus(ctx context.Context, w http.Re
 		Revoked: gotCredential.Revoked,
 	}
 
+	// Release the mutex lock.
+	mutex.Unlock()
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
