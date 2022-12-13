@@ -1,9 +1,10 @@
 package integration
 
 import (
-	"github.com/stretchr/testify/assert"
 	"sync"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // This test creates several DID keys and verifiable credentials, then concurrently updates the credential status, and finally checks that the revocation was successful and that each credential has a status list URL.

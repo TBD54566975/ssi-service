@@ -3,11 +3,12 @@ package router
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"sync"
+
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"sync"
 
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
