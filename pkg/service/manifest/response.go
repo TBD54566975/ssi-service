@@ -51,7 +51,7 @@ func (s Service) buildCredentialResponse(applicantDID, manifestID, applicationID
 			Subject:    applicantDID,
 			JSONSchema: od.Schema,
 			// TODO(gabe) need to add in data here to match the request + schema
-			Data: make(map[string]interface{}),
+			Data: make(map[string]any),
 		}
 
 		credentialResponse, err := s.credential.CreateCredential(credentialRequest)

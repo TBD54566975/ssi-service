@@ -20,7 +20,8 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v3
         with:
-          go-version: 1.19.2
+          go-version: 1.19.4
+          cache: true
 
       - name: Install Mage
         run: go install github.com/magefile/mage
@@ -39,7 +40,8 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.19.2
+        go-version: 1.19.4
+        cache: true
 
     - name: Install Mage
       run: go install github.com/magefile/mage
@@ -72,7 +74,8 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.19.2
+        go-version: 1.19.4
+        cache: true
 
     - name: Install mage
       run: go install github.com/magefile/mage

@@ -46,10 +46,10 @@ type CreateCredentialRequest struct {
 	// A context is optional. If not present, we'll apply default, required context values.
 	Context string `json:"@context"`
 	// A schema is optional. If present, we'll attempt to look it up and validate the data against it.
-	Schema    string                 `json:"schema"`
-	Data      map[string]interface{} `json:"data" validate:"required"`
-	Expiry    string                 `json:"expiry"`
-	Revocable bool                   `json:"revocable"`
+	Schema    string         `json:"schema"`
+	Data      map[string]any `json:"data" validate:"required"`
+	Expiry    string         `json:"expiry"`
+	Revocable bool           `json:"revocable"`
 	// TODO(gabe) support more capabilities like signature type, format, status, and more.
 }
 

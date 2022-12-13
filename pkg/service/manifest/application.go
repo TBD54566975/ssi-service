@@ -2,8 +2,9 @@ package manifest
 
 import (
 	"fmt"
-	"github.com/tbd54566975/ssi-service/pkg/jwt"
 	"strings"
+
+	"github.com/tbd54566975/ssi-service/pkg/jwt"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	errresp "github.com/TBD54566975/ssi-sdk/error"

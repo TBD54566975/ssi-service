@@ -71,7 +71,7 @@ func JWTPtr(j string) *JWT {
 }
 
 // SignJSON takes an object that is either itself json or json-serializable and signs it.
-func (ka JWKKeyAccess) SignJSON(data interface{}) (*JWT, error) {
+func (ka JWKKeyAccess) SignJSON(data any) (*JWT, error) {
 	if ka.JWTSigner == nil {
 		return nil, errors.New("cannot sign with nil signer")
 	}
@@ -79,14 +79,14 @@ func (ka JWKKeyAccess) SignJSON(data interface{}) (*JWT, error) {
 	if err != nil {
 		return nil, err
 	}
-	payload := make(map[string]interface{})
+	payload := make(map[string]any)
 	if err = json.Unmarshal(jsonBytes, &payload); err != nil {
 		return nil, err
 	}
 	return ka.Sign(payload)
 }
 
-func (ka JWKKeyAccess) Sign(payload map[string]interface{}) (*JWT, error) {
+func (ka JWKKeyAccess) Sign(payload map[string]any) (*JWT, error) {
 	if ka.JWTSigner == nil {
 		return nil, errors.New("cannot sign with nil signer")
 	}

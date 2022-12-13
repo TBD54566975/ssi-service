@@ -4,9 +4,10 @@ import (
 	"crypto"
 	"crypto/ed25519"
 	"fmt"
+	"testing"
+
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestGetVerificationInformation(t *testing.T) {

@@ -288,17 +288,17 @@ func TestSchemaAPI(t *testing.T) {
 }
 
 func getTestSchema() schema.JSONSchema {
-	return map[string]interface{}{
+	return map[string]any{
 		"$id":         "https://example.com/foo.schema.json",
 		"$schema":     "http://json-schema.org/draft-07/schema#",
 		"description": "foo schema",
 		"type":        "object",
-		"properties": map[string]interface{}{
-			"foo": map[string]interface{}{
+		"properties": map[string]any{
+			"foo": map[string]any{
 				"type": "string",
 			},
 		},
-		"required":             []interface{}{"foo"},
+		"required":             []any{"foo"},
 		"additionalProperties": false,
 	}
 }

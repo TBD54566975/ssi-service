@@ -4,6 +4,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"go.einride.tech/aip/filtering"
 )
@@ -47,10 +48,12 @@ type Status uint8
 
 func (s Status) String() string {
 	switch s {
-	case StatusDone:
-		return "done"
 	case StatusPending:
 		return "pending"
+	case StatusDenied:
+		return "denied"
+	case StatusApproved:
+		return "approved"
 	default:
 		return "unknown"
 	}
@@ -59,16 +62,18 @@ func (s Status) String() string {
 const (
 	StatusUnknown Status = iota
 	StatusPending
-	StatusDone
+	StatusDenied
+	StatusApproved
 )
 
 type StoredSubmission struct {
 	Status     Status                          `json:"status"`
 	Submission exchange.PresentationSubmission `json:"submission"`
+	Reason     string                          `json:"reason"`
 }
 
-func (s StoredSubmission) FilterVariablesMap() map[string]interface{} {
-	return map[string]interface{}{
+func (s StoredSubmission) FilterVariablesMap() map[string]any {
+	return map[string]any{
 		"status": s.Status.String(),
 	}
 }
@@ -77,6 +82,7 @@ type SubmissionStorage interface {
 	StoreSubmission(schema StoredSubmission) error
 	GetSubmission(id string) (*StoredSubmission, error)
 	ListSubmissions(filtering.Filter) ([]StoredSubmission, error)
+	UpdateSubmission(id string, approved bool, reason string, submissionID string) (StoredSubmission, opstorage.StoredOperation, error)
 }
 
 var ErrSubmissionNotFound = errors.New("submission not found")
