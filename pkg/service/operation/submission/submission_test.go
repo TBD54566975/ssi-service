@@ -1,10 +1,9 @@
-package operation
+package submission
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 )
 
 func TestSubmissionID(t *testing.T) {
@@ -31,7 +30,7 @@ func TestSubmissionID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, storage.SubmissionID(tt.opID))
+			assert.Equal(t, tt.want, ResourceID(tt.opID))
 		})
 	}
 }

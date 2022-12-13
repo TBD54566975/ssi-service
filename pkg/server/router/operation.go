@@ -162,10 +162,6 @@ func routerModel(op operation.Operation) Operation {
 	}
 }
 
-type GetCancelOperationResponse struct {
-	Operation operation.Operation
-}
-
 // CancelOperation godoc
 // @Summary      Cancel an ongoing operation
 // @Description  Cancels an ongoing operation, if possible.

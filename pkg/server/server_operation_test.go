@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
-	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -28,7 +28,7 @@ func TestOperationsAPI(t *testing.T) {
 		holderSigner, holderDID := getSigner(t)
 		definition := createPresentationDefinition(t, pRouter)
 		submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-		submission := reviewSubmission(t, pRouter, opstorage.SubmissionID(submissionOp.ID))
+		sub := reviewSubmission(t, pRouter, submission.ResourceID(submissionOp.ID))
 
 		createdID := submissionOp.ID
 		req := httptest.NewRequest(
@@ -44,7 +44,7 @@ func TestOperationsAPI(t *testing.T) {
 		assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 		assert.True(t, resp.Done)
 		assert.Empty(t, resp.Result.Error)
-		data, err := json.Marshal(submission)
+		data, err := json.Marshal(sub)
 		assert.NoError(t, err)
 		var responseAsMap map[string]any
 		assert.NoError(t, json.Unmarshal(data, &responseAsMap))
@@ -257,7 +257,7 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(t)
 			definition := createPresentationDefinition(t, pRouter)
 			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-			_ = reviewSubmission(t, pRouter, opstorage.SubmissionID(submissionOp.ID))
+			_ = reviewSubmission(t, pRouter, submission.ResourceID(submissionOp.ID))
 
 			createdID := submissionOp.ID
 			req := httptest.NewRequest(

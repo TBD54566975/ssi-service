@@ -1,10 +1,7 @@
 package operation
 
 import (
-	"fmt"
-
 	"github.com/TBD54566975/ssi-sdk/util"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"go.einride.tech/aip/filtering"
 )
 
@@ -48,9 +45,4 @@ type CancelOperationRequest struct {
 // Validate does struct validation and returns an error when invalid.
 func (r CancelOperationRequest) Validate() error {
 	return util.NewValidator().Struct(r)
-}
-
-// IDFromSubmissionID returns a submission operation ID from the submission ID.
-func IDFromSubmissionID(id string) string {
-	return fmt.Sprintf("%s/%s", storage.SubmissionParentResource, id)
 }

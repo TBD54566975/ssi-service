@@ -11,6 +11,7 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	prestorage "github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -76,7 +77,7 @@ func serviceModel(op opstorage.StoredOperation) (Operation, error) {
 
 	if len(op.Response) > 0 {
 		switch {
-		case strings.HasPrefix(op.ID, opstorage.SubmissionParentResource):
+		case strings.HasPrefix(op.ID, submission.ParentResource):
 			var s prestorage.StoredSubmission
 			if err := json.Unmarshal(op.Response, &s); err != nil {
 				return Operation{}, err
@@ -107,7 +108,7 @@ func (s Service) CancelOperation(request CancelOperationRequest) (Operation, err
 		return Operation{}, errors.Wrap(err, "invalid request")
 	}
 
-	storedOp, err := s.storage.MarkDone(request.ID)
+	storedOp, err := s.storage.CancelOperation(request.ID)
 	if err != nil {
 		return Operation{}, errors.Wrap(err, "marking as done")
 	}
@@ -115,7 +116,7 @@ func (s Service) CancelOperation(request CancelOperationRequest) (Operation, err
 }
 
 func NewOperationService(s storage.ServiceStorage) (*Service, error) {
-	opStorage, err := opstorage.NewOperationStorage(s)
+	opStorage, err := NewOperationStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "creating operation storage")
 	}
