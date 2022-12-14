@@ -25,6 +25,7 @@ const (
 	V1Prefix            = "/v1"
 	OperationPrefix     = "/operations"
 	DIDsPrefix          = "/dids"
+	ResolverPrefix      = "/resolver"
 	SchemasPrefix       = "/schemas"
 	CredentialsPrefix   = "/credentials"
 	StatusPrefix        = "/status"
@@ -124,6 +125,8 @@ func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) (err 
 	s.Handle(http.MethodPut, path.Join(handlerPath, "/:method"), didRouter.CreateDIDByMethod)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method"), didRouter.GetDIDsByMethod)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method/:id"), didRouter.GetDIDByMethod)
+
+	s.Handle(http.MethodGet, path.Join(path.Join(handlerPath, ResolverPrefix), "/:id"), didRouter.ResolveDID)
 	return
 }
 
