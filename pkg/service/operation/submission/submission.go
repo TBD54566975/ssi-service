@@ -25,11 +25,12 @@ func ResourceID(opID string) string {
 	return opID[(i + 1):]
 }
 
-// Namespace is the namespace to be used for storing submissions.
-const Namespace = "presentation_submission"
-
-// ParentResource is the prefix of the submission parent resource.
-const ParentResource = "/presentations/submissions"
+const (
+	// Namespace is the namespace to be used for storing submissions.
+	Namespace = "presentation_submission"
+	// ParentResource is the prefix of the submission parent resource.
+	ParentResource = "/presentations/submissions"
+)
 
 // Status indicates the current state of a submission.
 type Status uint8
@@ -64,6 +65,9 @@ type OperationUpdater struct {
 }
 
 func (u OperationUpdater) SetUpdatedResponse(response []byte) {
+	if u.UpdaterWithMap.Values == nil {
+		return
+	}
 	u.UpdaterWithMap.Values["response"] = response
 }
 

@@ -33,5 +33,5 @@ type Storage interface {
 	GetOperation(id string) (StoredOperation, error)
 	GetOperations(parent string, filter filtering.Filter) ([]StoredOperation, error)
 	DeleteOperation(id string) error
-	CancelOperation(id string) (StoredOperation, error)
+	CancelOperation(id string) (*StoredOperation, error)
 }

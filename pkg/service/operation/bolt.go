@@ -22,7 +22,15 @@ type BoltOperationStorage struct {
 	db *storage.BoltDB
 }
 
-func (b BoltOperationStorage) CancelOperation(id string) (opstorage.StoredOperation, error) {
+func NewBoltOperationStorage(db *storage.BoltDB) (*BoltOperationStorage, error) {
+	if db == nil {
+		return nil, errors.New("bolt db reference is nil")
+	}
+	return &BoltOperationStorage{db: db}, nil
+
+}
+
+func (b BoltOperationStorage) CancelOperation(id string) (*opstorage.StoredOperation, error) {
 	if strings.HasPrefix(id, submission.ParentResource) {
 		_, opData, err := b.db.UpdateValueAndOperation(
 			submission.Namespace, submission.ResourceID(id), storage.NewUpdater(map[string]any{
@@ -35,15 +43,15 @@ func (b BoltOperationStorage) CancelOperation(id string) (opstorage.StoredOperat
 				}),
 			})
 		if err != nil {
-			return opstorage.StoredOperation{}, errors.Wrap(err, "updating value and op")
+			return nil, errors.Wrap(err, "updating value and op")
 		}
 		var op opstorage.StoredOperation
 		if err = json.Unmarshal(opData, &op); err != nil {
-			return op, errors.Wrap(err, "unmarshalling data")
+			return nil, errors.Wrap(err, "unmarshalling data")
 		}
-		return op, nil
+		return &op, nil
 	}
-	return opstorage.StoredOperation{}, errors.New("unrecognized id structure")
+	return nil, errors.New("unrecognized id structure")
 }
 
 func (b BoltOperationStorage) StoreOperation(op opstorage.StoredOperation) error {
@@ -55,7 +63,10 @@ func (b BoltOperationStorage) StoreOperation(op opstorage.StoredOperation) error
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "marshalling operation with id: %s", id)
 	}
-	return b.db.Write(namespace.FromID(id), id, jsonBytes)
+	if err = b.db.Write(namespace.FromID(id), id, jsonBytes); err != nil {
+		return util.LoggingErrorMsg(err, "writing to db")
+	}
+	return nil
 }
 
 func (b BoltOperationStorage) GetOperation(id string) (opstorage.StoredOperation, error) {
@@ -91,11 +102,7 @@ func (b BoltOperationStorage) GetOperations(parent string, filter filtering.Filt
 		}
 		include, err := shouldInclude(nextOp)
 		// We explicitly ignore evaluation errors and simply include them in the result.
-		if err != nil {
-			stored = append(stored, nextOp)
-			continue
-		}
-		if include {
+		if err != nil || include {
 			stored = append(stored, nextOp)
 		}
 	}
@@ -107,14 +114,6 @@ func (b BoltOperationStorage) DeleteOperation(id string) error {
 		return util.LoggingErrorMsgf(err, "deleting operation: %s", id)
 	}
 	return nil
-}
-
-func NewBoltOperationStorage(db *storage.BoltDB) (*BoltOperationStorage, error) {
-	if db == nil {
-		return nil, errors.New("bolt db reference is nil")
-	}
-	return &BoltOperationStorage{db: db}, nil
-
 }
 
 func NewOperationStorage(s storage.ServiceStorage) (opstorage.Storage, error) {

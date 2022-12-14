@@ -112,7 +112,7 @@ func (s Service) CancelOperation(request CancelOperationRequest) (Operation, err
 	if err != nil {
 		return Operation{}, errors.Wrap(err, "marking as done")
 	}
-	return serviceModel(storedOp)
+	return serviceModel(*storedOp)
 }
 
 func NewOperationService(s storage.ServiceStorage) (*Service, error) {
