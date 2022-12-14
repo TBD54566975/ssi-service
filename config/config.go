@@ -30,15 +30,16 @@ type SSIServiceConfig struct {
 
 // ServerConfig represents configurable properties for the HTTP server
 type ServerConfig struct {
-	APIHost         string        `toml:"api_host" conf:"default:0.0.0.0:3000"`
-	DebugHost       string        `toml:"debug_host" conf:"default:0.0.0.0:4000"`
-	JagerHost       string        `toml:"jager_host" conf:"http://jaeger:14268/api/traces"`
-	JagerEnabled    bool          `toml:"jager_enabled" conf:"default:false"`
-	ReadTimeout     time.Duration `toml:"read_timeout" conf:"default:5s"`
-	WriteTimeout    time.Duration `toml:"write_timeout" conf:"default:5s"`
-	ShutdownTimeout time.Duration `toml:"shutdown_timeout" conf:"default:5s"`
-	LogLocation     string        `toml:"log_location" conf:"default:log"`
-	LogLevel        string        `toml:"log_level" conf:"default:debug"`
+	APIHost             string        `toml:"api_host" conf:"default:0.0.0.0:3000"`
+	DebugHost           string        `toml:"debug_host" conf:"default:0.0.0.0:4000"`
+	JagerHost           string        `toml:"jager_host" conf:"http://jaeger:14268/api/traces"`
+	JagerEnabled        bool          `toml:"jager_enabled" conf:"default:false"`
+	ReadTimeout         time.Duration `toml:"read_timeout" conf:"default:5s"`
+	WriteTimeout        time.Duration `toml:"write_timeout" conf:"default:5s"`
+	ShutdownTimeout     time.Duration `toml:"shutdown_timeout" conf:"default:5s"`
+	LogLocation         string        `toml:"log_location" conf:"default:log"`
+	LogLevel            string        `toml:"log_level" conf:"default:debug"`
+	EnableSchemaCaching bool          `toml:"enable_schema_caching" conf:"default:true"`
 }
 
 // ServicesConfig represents configurable properties for the components of the SSI Service

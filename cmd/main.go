@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/TBD54566975/ssi-sdk/schema"
 	"github.com/ardanlabs/conf"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -80,6 +81,20 @@ func run() error {
 		defer file.Close()
 	}
 
+	// set up schema caching based on config
+	if cfg.Server.EnableSchemaCaching {
+		localSchemas, err := schema.GetAllLocalSchemas()
+		if err != nil {
+			logrus.WithError(err).Error("could not load local schemas")
+		} else {
+			cl, err := schema.NewCachingLoader(localSchemas)
+			if err != nil {
+				logrus.WithError(err).Error("could not create caching loader")
+			}
+			cl.EnableHTTPCache()
+		}
+	}
+
 	expvar.NewString("build").Set(cfg.Version.SVN)
 
 	logrus.Infof("main: Started : Service initializing : version %q", cfg.Version.SVN)
@@ -125,7 +140,7 @@ func run() error {
 	}()
 
 	select {
-	case err := <-serverErrors:
+	case err = <-serverErrors:
 		return errors.Wrap(err, "server error")
 	case sig := <-shutdown:
 		logrus.Infof("main: shutdown signal received -> %v", sig)
@@ -138,8 +153,10 @@ func run() error {
 			logrus.Errorf("main: failed to shutdown tracer: %s", err)
 		}
 
-		if err := api.Shutdown(ctx); err != nil {
-			api.Close()
+		if err = api.Shutdown(ctx); err != nil {
+			if err = api.Close(); err != nil {
+				return err
+			}
 			return errors.Wrap(err, "main: failed to stop server gracefully")
 		}
 	}

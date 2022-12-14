@@ -2,6 +2,8 @@ github.com/BurntSushi/toml v1.2.1 h1:9F2/+DoOYIOksmaJFPw1tGFy1eDnIJXg+UHjuD8lTak
 github.com/BurntSushi/toml v1.2.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221209214116-fb01f46e7429 h1:YPGYl5SdnVF+b+7ccut1IuQ1xC4rEHuBqIXoy+379DE=
 github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221209214116-fb01f46e7429/go.mod h1:h5Oa7RbqAzeGBlK3UR5qyCqU42+SMn0hb8hxjjAMkGs=
+github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221214220628-e2badfb960fa h1:d1O2F8c/AwCHmOOeQQFPySEz+Jou0EayyjM/66m6Vck=
+github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221214220628-e2badfb960fa/go.mod h1:GIfJZUiXKxnyFJs3H0SLoFL5tVezav6p5Zcs8TddKJE=
 github.com/antlr/antlr4/runtime/Go/antlr v1.4.10 h1:yL7+Jz0jTC6yykIK/Wh74gnTJnrGr5AyrNMXuA0gves=
 github.com/antlr/antlr4/runtime/Go/antlr v1.4.10/go.mod h1:F7bn7fEU90QkQ3tnmaTx3LTKLEDqnwWODIYppRQ5hnY=
 github.com/ardanlabs/conf v1.5.0 h1:5TwP6Wu9Xi07eLFEpiCUF3oQXh9UzHMDVnD3u/I5d5c=
