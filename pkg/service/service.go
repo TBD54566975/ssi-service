@@ -35,7 +35,7 @@ func InstantiateSSIService(config config.ServicesConfig) (*SSIService, error) {
 }
 
 func validateServiceConfig(config config.ServicesConfig) error {
-	if !storage.IsStorageAvailable(config.StorageProvider) {
+	if !storage.IsStorageAvailable(storage.Type(config.StorageProvider)) {
 		return fmt.Errorf("%s storage provider configured, but not available", config.StorageProvider)
 	}
 	if config.KeyStoreConfig.IsEmpty() {
