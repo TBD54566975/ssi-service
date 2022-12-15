@@ -13,7 +13,6 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/jwt"
-	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -148,7 +147,7 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 		return nil, errors.Wrap(err, "verifying token from did")
 	}
 
-	if _, err := s.storage.GetSubmission(request.Submission.ID); !errors.Is(err, common.ErrSubmissionNotFound) {
+	if _, err := s.storage.GetSubmission(request.Submission.ID); !errors.Is(err, submission.ErrSubmissionNotFound) {
 		return nil, errors.Errorf("submission with id %s already present", request.Submission.ID)
 	}
 
@@ -211,7 +210,7 @@ func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResp
 		return nil, errors.Wrap(err, "fetching from storage")
 	}
 	return &GetSubmissionResponse{
-		Submission: common.ServiceModel(storedSubmission),
+		Submission: submission.ServiceModel(storedSubmission),
 	}, nil
 }
 
@@ -223,16 +222,16 @@ func (s Service) ListSubmissions(request ListSubmissionRequest) (*ListSubmission
 		return nil, errors.Wrap(err, "fetching submissions from storage")
 	}
 
-	resp := &ListSubmissionResponse{Submissions: make([]common.Submission, 0, len(subs))}
+	resp := &ListSubmissionResponse{Submissions: make([]submission.Submission, 0, len(subs))}
 	for _, sub := range subs {
 		sub := sub // What's this?? see https://github.com/golang/go/wiki/CommonMistakes#using-reference-to-loop-iterator-variable
-		resp.Submissions = append(resp.Submissions, common.ServiceModel(&sub))
+		resp.Submissions = append(resp.Submissions, submission.ServiceModel(&sub))
 	}
 
 	return resp, nil
 }
 
-func (s Service) ReviewSubmission(request ReviewSubmissionRequest) (*common.Submission, error) {
+func (s Service) ReviewSubmission(request ReviewSubmissionRequest) (*submission.Submission, error) {
 	if err := request.Validate(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
@@ -242,6 +241,6 @@ func (s Service) ReviewSubmission(request ReviewSubmissionRequest) (*common.Subm
 		return nil, errors.Wrap(err, "updating submission")
 	}
 
-	m := common.ServiceModel(&updatedSubmission)
+	m := submission.ServiceModel(&updatedSubmission)
 	return &m, nil
 }

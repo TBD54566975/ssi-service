@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/util"
-	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
@@ -83,7 +82,7 @@ func serviceModel(op StoredOperation) (*Operation, error) {
 			if err := json.Unmarshal(op.Response, &s); err != nil {
 				return nil, err
 			}
-			newOp.Result.Response = common.ServiceModel(&s)
+			newOp.Result.Response = submission.ServiceModel(&s)
 		default:
 			return nil, errors.New("unknown response type")
 		}

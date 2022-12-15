@@ -48,21 +48,21 @@ func (b PresentationStorage) UpdateSubmission(id string, approved bool, reason s
 			}),
 		})
 	if err != nil {
-		return common.StoredSubmission{}, operation.StoredOperation{}, errors.Wrap(err, "updating value and operation")
+		return submission.StoredSubmission{}, operation.StoredOperation{}, errors.Wrap(err, "updating value and operation")
 	}
 
-	var s common.StoredSubmission
+	var s submission.StoredSubmission
 	if err = json.Unmarshal(submissionData, &s); err != nil {
-		return common.StoredSubmission{}, operation.StoredOperation{}, errors.Wrap(err, "unmarshalling written submission")
+		return submission.StoredSubmission{}, operation.StoredOperation{}, errors.Wrap(err, "unmarshalling written submission")
 	}
 	var op operation.StoredOperation
 	if err = json.Unmarshal(operationData, &op); err != nil {
-		return common.StoredSubmission{}, operation.StoredOperation{}, errors.Wrap(err, "unmarshalling written operation")
+		return submission.StoredSubmission{}, operation.StoredOperation{}, errors.Wrap(err, "unmarshalling written operation")
 	}
 	return s, op, nil
 }
 
-func (ps *PresentationStorage) ListSubmissions(filter filtering.Filter) ([]common.StoredSubmission, error) {
+func (ps *PresentationStorage) ListSubmissions(filter filtering.Filter) ([]submission.StoredSubmission, error) {
 	allData, err := ps.db.ReadAll(submission.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all data")
@@ -72,9 +72,9 @@ func (ps *PresentationStorage) ListSubmissions(filter filtering.Filter) ([]commo
 	if err != nil {
 		return nil, err
 	}
-	storedSubmissions := make([]common.StoredSubmission, 0, len(allData))
+	storedSubmissions := make([]submission.StoredSubmission, 0, len(allData))
 	for key, data := range allData {
-		var ss common.StoredSubmission
+		var ss submission.StoredSubmission
 		if err = json.Unmarshal(data, &ss); err != nil {
 			logrus.WithError(err).WithField("key", key).Error("unmarshalling submission")
 		}
@@ -150,15 +150,15 @@ func (ps PresentationStorage) StoreSubmission(s StoredSubmission) error {
 	return ps.db.Write(submission.Namespace, id, jsonBytes)
 }
 
-func (ps *PresentationStorage) GetSubmission(id string) (*common.StoredSubmission, error) {
+func (ps *PresentationStorage) GetSubmission(id string) (*submission.StoredSubmission, error) {
 	jsonBytes, err := ps.db.Read(submission.Namespace, id)
 	if err != nil {
 		return nil, util.LoggingNewErrorf("could not get submission definition: %s", id)
 	}
 	if len(jsonBytes) == 0 {
-		return nil, util.LoggingErrorMsgf(common.ErrSubmissionNotFound, "reading submission with id: %s", id)
+		return nil, util.LoggingErrorMsgf(submission.ErrSubmissionNotFound, "reading submission with id: %s", id)
 	}
-	var stored common.StoredSubmission
+	var stored submission.StoredSubmission
 	if err := json.Unmarshal(jsonBytes, &stored); err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored submission definition: %s", id)
 	}

@@ -6,7 +6,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
-	"github.com/tbd54566975/ssi-service/pkg/service/common"
+	"github.com/tbd54566975/ssi-service/pkg/service/submission"
 	"go.einride.tech/aip/filtering"
 )
 
@@ -55,7 +55,7 @@ type GetSubmissionRequest struct {
 }
 
 type GetSubmissionResponse struct {
-	Submission common.Submission `json:"submission"`
+	Submission submission.Submission `json:"submission"`
 }
 
 type DeleteSubmissionRequest struct {
@@ -75,7 +75,7 @@ type Submission struct {
 }
 
 type ListSubmissionResponse struct {
-	Submissions []common.Submission `json:"submissions"`
+	Submissions []submission.Submission `json:"submissions"`
 }
 
 type ReviewSubmissionRequest struct {
