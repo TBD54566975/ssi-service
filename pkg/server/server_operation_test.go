@@ -28,7 +28,7 @@ func TestOperationsAPI(t *testing.T) {
 		holderSigner, holderDID := getSigner(t)
 		definition := createPresentationDefinition(t, pRouter)
 		submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-		sub := reviewSubmission(t, pRouter, submission.ResourceID(submissionOp.ID))
+		sub := reviewSubmission(t, pRouter, submission.ID(submissionOp.ID))
 
 		createdID := submissionOp.ID
 		req := httptest.NewRequest(
@@ -257,7 +257,7 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(t)
 			definition := createPresentationDefinition(t, pRouter)
 			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-			_ = reviewSubmission(t, pRouter, submission.ResourceID(submissionOp.ID))
+			_ = reviewSubmission(t, pRouter, submission.ID(submissionOp.ID))
 
 			createdID := submissionOp.ID
 			req := httptest.NewRequest(

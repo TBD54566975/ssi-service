@@ -163,14 +163,14 @@ func TestPresentationAPI(t *testing.T) {
 					"id":             "did:web:andresuribe.com",
 				})), holderDID, holderSigner)
 
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s", submission.ResourceID(op.ID)), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s", submission.ID(op.ID)), nil)
 			w := httptest.NewRecorder()
 
-			assert.NoError(t, pRouter.GetSubmission(newRequestContextWithParams(map[string]string{"id": submission.ResourceID(op.ID)}), w, req))
+			assert.NoError(t, pRouter.GetSubmission(newRequestContextWithParams(map[string]string{"id": submission.ID(op.ID)}), w, req))
 
 			var resp router.GetSubmissionResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Equal(t, submission.ResourceID(op.ID), resp.Submission.ID)
+			assert.Equal(t, submission.ID(op.ID), resp.Submission.ID)
 			assert.Equal(t, definition.PresentationDefinition.ID, resp.Submission.DefinitionID)
 			assert.Equal(t, "pending", resp.Submission.Status)
 		})
@@ -218,7 +218,7 @@ func TestPresentationAPI(t *testing.T) {
 			}
 
 			value := newRequestValue(t, request)
-			createdID := submission.ResourceID(submissionOp.ID)
+			createdID := submission.ID(submissionOp.ID)
 			req := httptest.NewRequest(
 				http.MethodPut,
 				fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s/review", createdID),
@@ -243,7 +243,7 @@ func TestPresentationAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(t)
 			definition := createPresentationDefinition(t, pRouter)
 			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-			createdID := submission.ResourceID(submissionOp.ID)
+			createdID := submission.ID(submissionOp.ID)
 			_ = reviewSubmission(t, pRouter, createdID)
 
 			request := router.ReviewSubmissionRequest{
@@ -323,14 +323,14 @@ func TestPresentationAPI(t *testing.T) {
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           submission.ResourceID(op.ID),
+						ID:           submission.ID(op.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
 					},
 				},
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           submission.ResourceID(op2.ID),
+						ID:           submission.ID(op2.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
 					},
 				},
@@ -395,7 +395,7 @@ func TestPresentationAPI(t *testing.T) {
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           submission.ResourceID(op.ID),
+						ID:           submission.ID(op.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
 					},
 				},

@@ -30,7 +30,7 @@ func TestSubmissionID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, ResourceID(tt.opID))
+			assert.Equal(t, tt.want, ID(tt.opID))
 		})
 	}
 }

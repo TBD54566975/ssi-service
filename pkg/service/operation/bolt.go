@@ -33,7 +33,7 @@ func NewBoltOperationStorage(db *storage.BoltDB) (*BoltOperationStorage, error) 
 func (b BoltOperationStorage) CancelOperation(id string) (*opstorage.StoredOperation, error) {
 	if strings.HasPrefix(id, submission.ParentResource) {
 		_, opData, err := b.db.UpdateValueAndOperation(
-			submission.Namespace, submission.ResourceID(id), storage.NewUpdater(map[string]any{
+			submission.Namespace, submission.ID(id), storage.NewUpdater(map[string]any{
 				"status": submission.StatusCancelled,
 				"reason": cancelledReason,
 			}),
