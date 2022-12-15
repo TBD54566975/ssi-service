@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"go.einride.tech/aip/filtering"
 )
@@ -44,30 +45,8 @@ func NewPresentationStorage(s storage.ServiceStorage) (Storage, error) {
 	}
 }
 
-type Status uint8
-
-func (s Status) String() string {
-	switch s {
-	case StatusPending:
-		return "pending"
-	case StatusDenied:
-		return "denied"
-	case StatusApproved:
-		return "approved"
-	default:
-		return "unknown"
-	}
-}
-
-const (
-	StatusUnknown Status = iota
-	StatusPending
-	StatusDenied
-	StatusApproved
-)
-
 type StoredSubmission struct {
-	Status     Status                          `json:"status"`
+	Status     submission.Status               `json:"status"`
 	Submission exchange.PresentationSubmission `json:"submission"`
 	Reason     string                          `json:"reason"`
 }

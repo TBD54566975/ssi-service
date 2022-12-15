@@ -11,6 +11,7 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	prestorage "github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -58,15 +59,15 @@ func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResp
 			logrus.WithError(err).WithField("operation_id", op.ID).Error("converting to storage operations to model")
 			continue
 		}
-		resp.Operations[i] = newOp
+		resp.Operations[i] = *newOp
 	}
 	return resp, nil
 }
 
 type ServiceModelFunc func(any) any
 
-func serviceModel(op opstorage.StoredOperation) (Operation, error) {
-	newOp := Operation{
+func serviceModel(op opstorage.StoredOperation) (*Operation, error) {
+	newOp := &Operation{
 		ID:   op.ID,
 		Done: op.Done,
 		Result: Result{
@@ -76,34 +77,46 @@ func serviceModel(op opstorage.StoredOperation) (Operation, error) {
 
 	if len(op.Response) > 0 {
 		switch {
-		case strings.HasPrefix(op.ID, opstorage.SubmissionParentResource):
+		case strings.HasPrefix(op.ID, submission.ParentResource):
 			var s prestorage.StoredSubmission
 			if err := json.Unmarshal(op.Response, &s); err != nil {
-				return Operation{}, err
+				return nil, err
 			}
 			newOp.Result.Response = model.ServiceModel(&s)
 		default:
-			return newOp, errors.New("unknown response type")
+			return nil, errors.New("unknown response type")
 		}
 	}
 
 	return newOp, nil
 }
 
-func (s Service) GetOperation(request GetOperationRequest) (Operation, error) {
+func (s Service) GetOperation(request GetOperationRequest) (*Operation, error) {
 	if err := request.Validate(); err != nil {
-		return Operation{}, errors.Wrap(err, "invalid request")
+		return nil, errors.Wrap(err, "invalid request")
 	}
 
 	storedOp, err := s.storage.GetOperation(request.ID)
 	if err != nil {
-		return Operation{}, errors.Wrap(err, "fetching from storage")
+		return nil, errors.Wrap(err, "fetching from storage")
 	}
 	return serviceModel(storedOp)
 }
 
+func (s Service) CancelOperation(request CancelOperationRequest) (*Operation, error) {
+	if err := request.Validate(); err != nil {
+		return nil, errors.Wrap(err, "invalid request")
+	}
+
+	storedOp, err := s.storage.CancelOperation(request.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "marking as done")
+	}
+	return serviceModel(*storedOp)
+}
+
 func NewOperationService(s storage.ServiceStorage) (*Service, error) {
-	opStorage, err := opstorage.NewOperationStorage(s)
+	opStorage, err := NewOperationStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "creating operation storage")
 	}

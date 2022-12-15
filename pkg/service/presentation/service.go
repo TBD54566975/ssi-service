@@ -16,6 +16,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	presentationstorage "github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -58,7 +59,7 @@ func NewPresentationService(config config.PresentationServiceConfig, s storage.S
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate definition storage for the presentation service")
 	}
-	opsStorage, err := opstorage.NewOperationStorage(s)
+	opsStorage, err := operation.NewOperationStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the operations")
 	}
@@ -177,7 +178,7 @@ func (s Service) CreateSubmission(request model.CreateSubmissionRequest) (*opera
 	}
 
 	storedSubmission := presentationstorage.StoredSubmission{
-		Status:     presentationstorage.StatusPending,
+		Status:     submission.StatusPending,
 		Submission: request.Submission,
 	}
 
@@ -186,7 +187,7 @@ func (s Service) CreateSubmission(request model.CreateSubmissionRequest) (*opera
 		return nil, errors.Wrap(err, "could not store presentation")
 	}
 
-	opID := operation.IDFromSubmissionID(storedSubmission.Submission.ID)
+	opID := submission.IDFromSubmissionID(storedSubmission.Submission.ID)
 	storedOp := opstorage.StoredOperation{
 		ID:   opID,
 		Done: false,
@@ -235,7 +236,7 @@ func (s Service) ReviewSubmission(request model.ReviewSubmissionRequest) (*model
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
-	updatedSubmission, _, err := s.storage.UpdateSubmission(request.ID, request.Approved, request.Reason, operation.IDFromSubmissionID(request.ID))
+	updatedSubmission, _, err := s.storage.UpdateSubmission(request.ID, request.Approved, request.Reason, submission.IDFromSubmissionID(request.ID))
 	if err != nil {
 		return nil, errors.Wrap(err, "updating submission")
 	}

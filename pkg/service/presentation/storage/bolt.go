@@ -8,58 +8,36 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage/namespace"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"go.einride.tech/aip/filtering"
 )
 
 const (
-	namespace           = "presentation_definition"
-	submissionNamespace = "presentation_submission"
+	presentationDefinitionNamespace = "presentation_definition"
 )
 
 type BoltPresentationStorage struct {
 	db *storage.BoltDB
 }
 
-type opUpdater struct {
-	storage.UpdaterWithMap
-}
-
-func (u opUpdater) SetUpdatedResponse(response []byte) {
-	u.UpdaterWithMap.Values["response"] = response
-}
-
-func (u opUpdater) Validate(v []byte) error {
-	var op opstorage.StoredOperation
-	if err := json.Unmarshal(v, &op); err != nil {
-		return errors.Wrap(err, "unmarshalling operation")
-	}
-
-	if op.Done {
-		return errors.New("operation already marked as done")
-	}
-
-	return nil
-}
-
-var _ storage.ResponseSettingUpdater = (*opUpdater)(nil)
-
 func (b BoltPresentationStorage) UpdateSubmission(id string, approved bool, reason string, opID string) (StoredSubmission, opstorage.StoredOperation, error) {
 	m := map[string]any{
-		"status": StatusDenied,
+		"status": submission.StatusDenied,
 		"reason": reason,
 	}
 	if approved {
-		m["status"] = StatusApproved
+		m["status"] = submission.StatusApproved
 	}
 	submissionData, operationData, err := b.db.UpdateValueAndOperation(
-		submissionNamespace,
+		submission.Namespace,
 		id,
 		storage.NewUpdater(m),
-		opstorage.NamespaceFromID(opID),
+		namespace.FromID(opID),
 		opID,
-		opUpdater{
-			storage.NewUpdater(map[string]any{
+		submission.OperationUpdater{
+			UpdaterWithMap: storage.NewUpdater(map[string]any{
 				"done": true,
 			}),
 		})
@@ -79,7 +57,7 @@ func (b BoltPresentationStorage) UpdateSubmission(id string, approved bool, reas
 }
 
 func (b BoltPresentationStorage) ListSubmissions(filter filtering.Filter) ([]StoredSubmission, error) {
-	allData, err := b.db.ReadAll(submissionNamespace)
+	allData, err := b.db.ReadAll(submission.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all data")
 	}
@@ -127,11 +105,11 @@ func (b BoltPresentationStorage) StorePresentation(presentation StoredPresentati
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)
 	}
-	return b.db.Write(namespace, id, jsonBytes)
+	return b.db.Write(presentationDefinitionNamespace, id, jsonBytes)
 }
 
 func (b BoltPresentationStorage) GetPresentation(id string) (*StoredPresentation, error) {
-	jsonBytes, err := b.db.Read(namespace, id)
+	jsonBytes, err := b.db.Read(presentationDefinitionNamespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get presentation definition: %s", id)
 	}
@@ -146,28 +124,28 @@ func (b BoltPresentationStorage) GetPresentation(id string) (*StoredPresentation
 }
 
 func (b BoltPresentationStorage) DeletePresentation(id string) error {
-	if err := b.db.Delete(namespace, id); err != nil {
+	if err := b.db.Delete(presentationDefinitionNamespace, id); err != nil {
 		return util.LoggingNewErrorf("could not delete presentation definition: %s", id)
 	}
 	return nil
 }
 
-func (b BoltPresentationStorage) StoreSubmission(submission StoredSubmission) error {
-	id := submission.Submission.ID
+func (b BoltPresentationStorage) StoreSubmission(s StoredSubmission) error {
+	id := s.Submission.ID
 	if id == "" {
 		err := errors.New("could not store submission definition without an ID")
 		logrus.WithError(err).Error()
 		return err
 	}
-	jsonBytes, err := json.Marshal(submission)
+	jsonBytes, err := json.Marshal(s)
 	if err != nil {
 		return util.LoggingNewErrorf("could not store submission definition: %s", id)
 	}
-	return b.db.Write(submissionNamespace, id, jsonBytes)
+	return b.db.Write(submission.Namespace, id, jsonBytes)
 }
 
 func (b BoltPresentationStorage) GetSubmission(id string) (*StoredSubmission, error) {
-	jsonBytes, err := b.db.Read(submissionNamespace, id)
+	jsonBytes, err := b.db.Read(submission.Namespace, id)
 	if err != nil {
 		return nil, util.LoggingNewErrorf("could not get submission definition: %s", id)
 	}
