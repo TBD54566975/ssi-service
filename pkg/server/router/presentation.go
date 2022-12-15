@@ -186,7 +186,7 @@ type CreateSubmissionRequest struct {
 	SubmissionJWT keyaccess.JWT `json:"submissionJwt" validate:"required"`
 }
 
-func (r CreateSubmissionRequest) toServiceRequest() (*presentation.CreateSubmissionRequest, error) {
+func (r CreateSubmissionRequest) toServiceRequest() (*submission.CreateSubmissionRequest, error) {
 	sdkVP, err := signing.ParseVerifiablePresentationFromJWT(r.SubmissionJWT.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing presentation from jwt")
@@ -213,7 +213,7 @@ func (r CreateSubmissionRequest) toServiceRequest() (*presentation.CreateSubmiss
 		return nil, errors.Wrap(err, "parsing verifiable credential array")
 	}
 
-	return &presentation.CreateSubmissionRequest{
+	return &submission.CreateSubmissionRequest{
 		Presentation:  *sdkVP,
 		SubmissionJWT: r.SubmissionJWT,
 		Submission:    s,
@@ -296,7 +296,7 @@ func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseW
 			util.LoggingNewError("get submission request requires id"), http.StatusBadRequest)
 	}
 
-	submission, err := pr.service.GetSubmission(presentation.GetSubmissionRequest{ID: *id})
+	submission, err := pr.service.GetSubmission(submission.GetSubmissionRequest{ID: *id})
 
 	if err != nil {
 		return framework.NewRequestError(
@@ -365,7 +365,7 @@ func (pr PresentationRouter) ListSubmissions(ctx context.Context, w http.Respons
 		return framework.NewRequestError(
 			util.LoggingErrorMsg(err, "invalid filter"), http.StatusBadRequest)
 	}
-	resp, err := pr.service.ListSubmissions(presentation.ListSubmissionRequest{
+	resp, err := pr.service.ListSubmissions(submission.ListSubmissionRequest{
 		Filter: filter,
 	})
 	if err != nil {
@@ -380,8 +380,8 @@ type ReviewSubmissionRequest struct {
 	Reason   string `json:"reason"`
 }
 
-func (r ReviewSubmissionRequest) toServiceRequest(id string) presentation.ReviewSubmissionRequest {
-	return presentation.ReviewSubmissionRequest{
+func (r ReviewSubmissionRequest) toServiceRequest(id string) submission.ReviewSubmissionRequest {
+	return submission.ReviewSubmissionRequest{
 		ID:       id,
 		Approved: r.Approved,
 		Reason:   r.Reason,
