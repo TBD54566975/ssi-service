@@ -22,7 +22,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
-	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
+	"github.com/tbd54566975/ssi-service/pkg/service/submission"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -319,7 +319,7 @@ func TestPresentationAPI(t *testing.T) {
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Len(ttt, resp.Submissions, 2)
 
-			expectedSubmissions := []model.Submission{
+			expectedSubmissions := []submission.Submission{
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
@@ -337,7 +337,7 @@ func TestPresentationAPI(t *testing.T) {
 			}
 			diff := cmp.Diff(expectedSubmissions, resp.Submissions,
 				cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
-				cmpopts.SortSlices(func(l, r model.Submission) bool {
+				cmpopts.SortSlices(func(l, r submission.Submission) bool {
 					return l.PresentationSubmission.ID < r.PresentationSubmission.ID
 				}),
 			)
@@ -391,7 +391,7 @@ func TestPresentationAPI(t *testing.T) {
 			var resp router.ListSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 
-			expectedSubmissions := []model.Submission{
+			expectedSubmissions := []submission.Submission{
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
@@ -402,7 +402,7 @@ func TestPresentationAPI(t *testing.T) {
 			}
 			diff := cmp.Diff(expectedSubmissions, resp.Submissions,
 				cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
-				cmpopts.SortSlices(func(l, r model.Submission) bool {
+				cmpopts.SortSlices(func(l, r submission.Submission) bool {
 					return l.PresentationSubmission.ID < r.PresentationSubmission.ID
 				}),
 			)
