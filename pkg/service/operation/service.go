@@ -9,8 +9,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/util"
-	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/submission"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -75,11 +75,11 @@ func serviceModel(op StoredOperation) (Operation, error) {
 	if len(op.Response) > 0 {
 		switch {
 		case strings.HasPrefix(op.ID, SubmissionParentResource):
-			var s common.StoredSubmission
+			var s submission.StoredSubmission
 			if err := json.Unmarshal(op.Response, &s); err != nil {
 				return Operation{}, err
 			}
-			newOp.Result.Response = common.ServiceModel(&s)
+			newOp.Result.Response = submission.ServiceModel(&s)
 		default:
 			return newOp, errors.New("unknown response type")
 		}
