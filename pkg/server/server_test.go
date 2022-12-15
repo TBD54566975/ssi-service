@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	schemalib "github.com/TBD54566975/ssi-sdk/schema"
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -32,6 +33,25 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
+
+func TestMain(t *testing.M) {
+	EnableSchemaCaching()
+	os.Exit(t.Run())
+}
+
+func EnableSchemaCaching() {
+	s, err := schemalib.GetAllLocalSchemas()
+	if err != nil {
+		println(err)
+		os.Exit(1)
+	}
+	l, err := schemalib.NewCachingLoader(s)
+	if err != nil {
+		println(err)
+		os.Exit(1)
+	}
+	l.EnableHTTPCache()
+}
 
 func TestHealthCheckAPI(t *testing.T) {
 	// remove the db file after the test
