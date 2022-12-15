@@ -1,9 +1,11 @@
 package router
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/tbd54566975/ssi-service/pkg/testutil"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
@@ -13,6 +15,11 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
+
+func TestMain(t *testing.M) {
+	testutil.EnableSchemaCaching()
+	os.Exit(t.Run())
+}
 
 func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Service {
 	serviceConfig := config.KeyStoreServiceConfig{ServiceKeyPassword: "test-password"}

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/tbd54566975/ssi-service/pkg/testutil"
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -32,6 +33,11 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
+
+func TestMain(t *testing.M) {
+	testutil.EnableSchemaCaching()
+	os.Exit(t.Run())
+}
 
 func TestHealthCheckAPI(t *testing.T) {
 	shutdown := make(chan os.Signal, 1)
