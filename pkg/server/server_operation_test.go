@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -27,7 +28,7 @@ func TestOperationsAPI(t *testing.T) {
 		holderSigner, holderDID := getSigner(t)
 		definition := createPresentationDefinition(t, pRouter)
 		submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-		submission := reviewSubmission(t, pRouter, operation.SubmissionID(submissionOp.ID))
+		sub := reviewSubmission(t, pRouter, submission.ID(submissionOp.ID))
 
 		createdID := submissionOp.ID
 		req := httptest.NewRequest(
@@ -43,7 +44,7 @@ func TestOperationsAPI(t *testing.T) {
 		assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 		assert.True(t, resp.Done)
 		assert.Empty(t, resp.Result.Error)
-		data, err := json.Marshal(submission)
+		data, err := json.Marshal(sub)
 		assert.NoError(t, err)
 		var responseAsMap map[string]any
 		assert.NoError(t, json.Unmarshal(data, &responseAsMap))
@@ -217,6 +218,57 @@ func TestOperationsAPI(t *testing.T) {
 			var resp router.GetOperationsResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Empty(t, resp.Operations)
+		})
+	})
+
+	t.Run("CancelOperation", func(t *testing.T) {
+		t.Run("Marks an operation as done", func(t *testing.T) {
+			s := setupTestDB(t)
+			pRouter := setupPresentationRouter(t, s)
+			opRouter := setupOperationsRouter(t, s)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
+
+			createdID := submissionOp.ID
+			req := httptest.NewRequest(
+				http.MethodPut,
+				fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID),
+				nil)
+			w := httptest.NewRecorder()
+
+			err := opRouter.CancelOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
+
+			assert.NoError(t, err)
+			var resp router.Operation
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+			assert.True(t, resp.Done)
+			assert.Contains(t, resp.Result.Response, "definition_id")
+			assert.Contains(t, resp.Result.Response, "descriptor_map")
+			assert.Equal(t, "cancelled", resp.Result.Response.(map[string]any)["status"])
+		})
+
+		t.Run("Returns error when operation is done already", func(t *testing.T) {
+			s := setupTestDB(t)
+			pRouter := setupPresentationRouter(t, s)
+			opRouter := setupOperationsRouter(t, s)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
+			_ = reviewSubmission(t, pRouter, submission.ID(submissionOp.ID))
+
+			createdID := submissionOp.ID
+			req := httptest.NewRequest(
+				http.MethodPut,
+				fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID),
+				nil)
+			w := httptest.NewRecorder()
+
+			err := opRouter.CancelOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
+
+			assert.Error(t, err)
 		})
 	})
 

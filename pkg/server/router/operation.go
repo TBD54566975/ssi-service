@@ -53,7 +53,7 @@ func (o OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(
 			util.LoggingErrorMsg(err, "failed getting operation"), http.StatusInternalServerError)
 	}
-	return framework.Respond(ctx, w, routerModel(op), http.StatusOK)
+	return framework.Respond(ctx, w, routerModel(*op), http.StatusOK)
 }
 
 type GetOperationsRequest struct {
@@ -169,10 +169,22 @@ func routerModel(op operation.Operation) Operation {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      string  true  "ID"
-// @Success      200  {object}  GetOperationsResponse  "OK"
+// @Success      200  {object}  Operation  "OK"
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/operations [get]
 func (o OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return nil
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		return framework.NewRequestError(
+			util.LoggingNewError("get operation request requires id"), http.StatusBadRequest)
+	}
+
+	op, err := o.service.CancelOperation(operation.CancelOperationRequest{ID: *id})
+
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "failed cancelling operation"), http.StatusInternalServerError)
+	}
+	return framework.Respond(ctx, w, routerModel(*op), http.StatusOK)
 }

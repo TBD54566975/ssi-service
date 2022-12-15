@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"github.com/tbd54566975/ssi-service/internal/util"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"go.einride.tech/aip/filtering"
 )
 
@@ -35,21 +33,5 @@ type Storage interface {
 	GetOperation(id string) (StoredOperation, error)
 	GetOperations(parent string, filter filtering.Filter) ([]StoredOperation, error)
 	DeleteOperation(id string) error
-}
-
-func NewOperationStorage(s storage.ServiceStorage) (Storage, error) {
-	switch s.Type() {
-	case storage.Bolt:
-		gotBolt, ok := s.(*storage.BoltDB)
-		if !ok {
-			return nil, util.LoggingNewErrorf("trouble instantiating : %s", s.Type())
-		}
-		boltStorage, err := NewBoltOperationStorage(gotBolt)
-		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not instantiate schema bolt storage")
-		}
-		return boltStorage, err
-	default:
-		return nil, util.LoggingNewErrorf("unsupported storage type: %s", s.Type())
-	}
+	CancelOperation(id string) (*StoredOperation, error)
 }
