@@ -1,4 +1,4 @@
-package storage
+package schema
 
 import (
 	"fmt"
@@ -7,25 +7,34 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
+
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 )
 
 const (
 	namespace = "schema"
 )
 
-type BoltSchemaStorage struct {
-	db *storage.BoltDB
+type StoredSchema struct {
+	ID        string              `json:"id"`
+	Schema    schema.VCJSONSchema `json:"schema"`
+	SchemaJWT *keyaccess.JWT      `json:"token,omitempty"`
 }
 
-func NewBoltSchemaStorage(db *storage.BoltDB) (*BoltSchemaStorage, error) {
+type Storage struct {
+	db storage.ServiceStorage
+}
+
+func NewSchemaStorage(db storage.ServiceStorage) (*Storage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}
-	return &BoltSchemaStorage{db: db}, nil
+	return &Storage{db: db}, nil
 }
 
-func (b BoltSchemaStorage) StoreSchema(schema StoredSchema) error {
+func (ss *Storage) StoreSchema(schema StoredSchema) error {
 	id := schema.ID
 	if id == "" {
 		err := errors.New("could not store schema without an ID")
@@ -38,11 +47,11 @@ func (b BoltSchemaStorage) StoreSchema(schema StoredSchema) error {
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)
 	}
-	return b.db.Write(namespace, id, schemaBytes)
+	return ss.db.Write(namespace, id, schemaBytes)
 }
 
-func (b BoltSchemaStorage) GetSchema(id string) (*StoredSchema, error) {
-	schemaBytes, err := b.db.Read(namespace, id)
+func (ss *Storage) GetSchema(id string) (*StoredSchema, error) {
+	schemaBytes, err := ss.db.Read(namespace, id)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get schema: %s", id)
 		logrus.WithError(err).Error(errMsg)
@@ -63,8 +72,8 @@ func (b BoltSchemaStorage) GetSchema(id string) (*StoredSchema, error) {
 }
 
 // GetSchemas attempts to get all stored schemas. It will return those it can even if it has trouble with some.
-func (b BoltSchemaStorage) GetSchemas() ([]StoredSchema, error) {
-	gotSchemas, err := b.db.ReadAll(namespace)
+func (ss *Storage) GetSchemas() ([]StoredSchema, error) {
+	gotSchemas, err := ss.db.ReadAll(namespace)
 	if err != nil {
 		errMsg := "could not get all schemas"
 		logrus.WithError(err).Error(errMsg)
@@ -84,8 +93,8 @@ func (b BoltSchemaStorage) GetSchemas() ([]StoredSchema, error) {
 	return stored, nil
 }
 
-func (b BoltSchemaStorage) DeleteSchema(id string) error {
-	if err := b.db.Delete(namespace, id); err != nil {
+func (ss *Storage) DeleteSchema(id string) error {
+	if err := ss.db.Delete(namespace, id); err != nil {
 		errMsg := fmt.Sprintf("could not delete schema: %s", id)
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)

@@ -35,7 +35,7 @@ func InstantiateSSIService(config config.ServicesConfig) (*SSIService, error) {
 }
 
 func validateServiceConfig(config config.ServicesConfig) error {
-	if !storage.IsStorageAvailable(config.StorageProvider) {
+	if !storage.IsStorageAvailable(storage.Type(config.StorageProvider)) {
 		return fmt.Errorf("%s storage provider configured, but not available", config.StorageProvider)
 	}
 	if config.KeyStoreConfig.IsEmpty() {
@@ -66,7 +66,7 @@ func (ssi *SSIService) GetServices() []framework.Service {
 
 // instantiateServices begins all instantiates and their dependencies
 func instantiateServices(config config.ServicesConfig) ([]framework.Service, error) {
-	storageProvider, err := storage.NewStorage(storage.Storage(config.StorageProvider))
+	storageProvider, err := storage.NewStorage(storage.Type(config.StorageProvider), config.StorageOption)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not instantiate storage provider: %s", config.StorageProvider)
 	}

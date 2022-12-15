@@ -18,19 +18,11 @@ const (
 	cancelledReason = "operation cancelled"
 )
 
-type BoltOperationStorage struct {
-	db *storage.BoltDB
+type Storage struct {
+	db storage.ServiceStorage
 }
 
-func NewBoltOperationStorage(db *storage.BoltDB) (*BoltOperationStorage, error) {
-	if db == nil {
-		return nil, errors.New("bolt db reference is nil")
-	}
-	return &BoltOperationStorage{db: db}, nil
-
-}
-
-func (b BoltOperationStorage) CancelOperation(id string) (*opstorage.StoredOperation, error) {
+func (b Storage) CancelOperation(id string) (*opstorage.StoredOperation, error) {
 	if strings.HasPrefix(id, submission.ParentResource) {
 		_, opData, err := b.db.UpdateValueAndOperation(
 			submission.Namespace, submission.ID(id), storage.NewUpdater(map[string]any{
@@ -54,7 +46,7 @@ func (b BoltOperationStorage) CancelOperation(id string) (*opstorage.StoredOpera
 	return nil, errors.New("unrecognized id structure")
 }
 
-func (b BoltOperationStorage) StoreOperation(op opstorage.StoredOperation) error {
+func (b Storage) StoreOperation(op opstorage.StoredOperation) error {
 	id := op.ID
 	if id == "" {
 		return util.LoggingNewError("ID is required for storing operations")
@@ -69,7 +61,7 @@ func (b BoltOperationStorage) StoreOperation(op opstorage.StoredOperation) error
 	return nil
 }
 
-func (b BoltOperationStorage) GetOperation(id string) (opstorage.StoredOperation, error) {
+func (b Storage) GetOperation(id string) (opstorage.StoredOperation, error) {
 	var stored opstorage.StoredOperation
 	jsonBytes, err := b.db.Read(namespace.FromID(id), id)
 	if err != nil {
@@ -84,7 +76,7 @@ func (b BoltOperationStorage) GetOperation(id string) (opstorage.StoredOperation
 	return stored, nil
 }
 
-func (b BoltOperationStorage) GetOperations(parent string, filter filtering.Filter) ([]opstorage.StoredOperation, error) {
+func (b Storage) GetOperations(parent string, filter filtering.Filter) ([]opstorage.StoredOperation, error) {
 	operations, err := b.db.ReadAll(namespace.FromParent(parent))
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get all operations")
@@ -109,26 +101,16 @@ func (b BoltOperationStorage) GetOperations(parent string, filter filtering.Filt
 	return stored, nil
 }
 
-func (b BoltOperationStorage) DeleteOperation(id string) error {
+func (b Storage) DeleteOperation(id string) error {
 	if err := b.db.Delete(namespace.FromID(id), id); err != nil {
 		return util.LoggingErrorMsgf(err, "deleting operation: %s", id)
 	}
 	return nil
 }
 
-func NewOperationStorage(s storage.ServiceStorage) (opstorage.Storage, error) {
-	switch s.Type() {
-	case storage.Bolt:
-		gotBolt, ok := s.(*storage.BoltDB)
-		if !ok {
-			return nil, util.LoggingNewErrorf("trouble instantiating : %s", s.Type())
-		}
-		boltStorage, err := NewBoltOperationStorage(gotBolt)
-		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not instantiate schema bolt storage")
-		}
-		return boltStorage, err
-	default:
-		return nil, util.LoggingNewErrorf("unsupported storage type: %s", s.Type())
+func NewOperationStorage(db storage.ServiceStorage) (*Storage, error) {
+	if db == nil {
+		return nil, errors.New("bolt db reference is nil")
 	}
+	return &Storage{db: db}, nil
 }

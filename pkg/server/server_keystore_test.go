@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -14,19 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestKeyStoreAPI(t *testing.T) {
 	t.Run("Test Store Key", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		keyStoreRouter, _ := testKeyStore(tt, bolt)
 		w := httptest.NewRecorder()
@@ -40,7 +32,7 @@ func TestKeyStoreAPI(t *testing.T) {
 		}
 		badRequestValue := newRequestValue(tt, badKeyStoreRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", badRequestValue)
-		err = keyStoreRouter.StoreKey(newRequestContext(), w, req)
+		err := keyStoreRouter.StoreKey(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "unsupported key type: bad")
 
@@ -69,14 +61,8 @@ func TestKeyStoreAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Key Details", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		keyStoreService, _ := testKeyStore(tt, bolt)
 		w := httptest.NewRecorder()

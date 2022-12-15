@@ -24,8 +24,8 @@ import (
 )
 
 type Service struct {
-	storage    presentationstorage.Storage
-	opsStorage opstorage.Storage
+	storage    *Storage
+	opsStorage *operation.Storage
 	config     config.PresentationServiceConfig
 	resolver   *didsdk.Resolver
 	schema     *schema.Service
@@ -55,7 +55,7 @@ func (s Service) Config() config.PresentationServiceConfig {
 }
 
 func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage, resolver *didsdk.Resolver, schema *schema.Service) (*Service, error) {
-	presentationStorage, err := presentationstorage.NewPresentationStorage(s)
+	presentationStorage, err := NewPresentationStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate definition storage for the presentation service")
 	}
@@ -94,7 +94,7 @@ func (s Service) CreatePresentationDefinition(request model.CreatePresentationDe
 		return nil, util.LoggingErrorMsg(err, "provided value is not a valid presentation definition")
 	}
 
-	storedPresentation := presentationstorage.StoredPresentation{ID: request.PresentationDefinition.ID, PresentationDefinition: request.PresentationDefinition}
+	storedPresentation := StoredPresentation{ID: request.PresentationDefinition.ID, PresentationDefinition: request.PresentationDefinition}
 
 	if err := s.storage.StorePresentation(storedPresentation); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store presentation")

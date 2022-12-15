@@ -164,7 +164,7 @@ func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter
 	gotManifests, err := mr.service.GetManifests()
 
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get manifests")
+		errMsg := "could not get manifests"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
@@ -384,7 +384,7 @@ func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWri
 	gotApplications, err := mr.service.GetApplications()
 
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get applications")
+		errMsg := "could not get applications"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
@@ -479,7 +479,7 @@ func (mr ManifestRouter) GetResponses(ctx context.Context, w http.ResponseWriter
 	gotResponses, err := mr.service.GetResponses()
 
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get responses")
+		errMsg := "could not get responses"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}

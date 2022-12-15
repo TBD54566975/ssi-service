@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -21,19 +20,12 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	manifestsvc "github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestManifestAPI(t *testing.T) {
 	t.Run("Test Create Manifest", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -47,7 +39,7 @@ func TestManifestAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", badRequestValue)
 		w := httptest.NewRecorder()
 
-		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
+		err := manifestRouter.CreateManifest(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid create manifest request")
 
@@ -99,14 +91,8 @@ func TestManifestAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Manifest By ID", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -118,7 +104,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// get a manifest that doesn't exit
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/bad", nil)
-		err = manifestRouter.GetManifest(newRequestContext(), w, req)
+		err := manifestRouter.GetManifest(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "cannot get manifest without ID parameter")
 
@@ -181,14 +167,8 @@ func TestManifestAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Manifests", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -233,7 +213,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// get manifest by id
-		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests"), nil)
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests", nil)
 		err = manifestRouter.GetManifests(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
@@ -254,14 +234,8 @@ func TestManifestAPI(t *testing.T) {
 	})
 
 	t.Run("Test Delete Manifest", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -334,14 +308,8 @@ func TestManifestAPI(t *testing.T) {
 	})
 
 	t.Run("Test Submit Application", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -358,7 +326,7 @@ func TestManifestAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", badRequestValue)
 		w := httptest.NewRecorder()
 
-		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
+		err := manifestRouter.SubmitApplication(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid submit application request")
 
@@ -457,14 +425,8 @@ func TestManifestAPI(t *testing.T) {
 	})
 
 	t.Run("Test Denied Application", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -481,7 +443,7 @@ func TestManifestAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", badRequestValue)
 		w := httptest.NewRecorder()
 
-		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
+		err := manifestRouter.SubmitApplication(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid submit application request")
 
@@ -608,14 +570,8 @@ func TestManifestAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get Application By ID and Get Applications", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -626,7 +582,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// get a application that doesn't exit
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications/bad", nil)
-		err = manifestRouter.GetApplication(newRequestContext(), w, req)
+		err := manifestRouter.GetApplication(newRequestContext(), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "cannot get application without ID parameter")
 
@@ -763,14 +719,8 @@ func TestManifestAPI(t *testing.T) {
 	})
 
 	t.Run("Test Delete Application", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)

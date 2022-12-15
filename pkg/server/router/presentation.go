@@ -133,7 +133,7 @@ type GetPresentationDefinitionResponse struct {
 // @Success      200  {object}  GetPresentationDefinitionResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/presentation/definition/{id} [get]
-func (pr PresentationRouter) GetPresentationDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (pr PresentationRouter) GetPresentationDefinition(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get presentation without ID parameter"
@@ -289,7 +289,7 @@ type GetSubmissionResponse struct {
 // @Success      200  {object}  GetSubmissionResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/presentations/submissions/{id} [get]
-func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(

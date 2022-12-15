@@ -20,12 +20,12 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
-	schemastorage "github.com/tbd54566975/ssi-service/pkg/service/schema/storage"
+
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 type Service struct {
-	storage schemastorage.Storage
+	storage *Storage
 	config  config.SchemaServiceConfig
 
 	// external dependencies
@@ -62,7 +62,7 @@ func (s Service) Config() config.SchemaServiceConfig {
 }
 
 func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, resolver *didsdk.Resolver) (*Service, error) {
-	schemaStorage, err := schemastorage.NewSchemaStorage(s)
+	schemaStorage, err := NewSchemaStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the schema service")
 	}
@@ -109,7 +109,7 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 		Schema:   prepareJSONSchema(schemaID, request.Name, request.Schema),
 	}
 
-	storedSchema := schemastorage.StoredSchema{ID: schemaID, Schema: schemaValue}
+	storedSchema := StoredSchema{ID: schemaID, Schema: schemaValue}
 
 	// sign the schema
 	if request.Sign {

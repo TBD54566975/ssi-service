@@ -40,11 +40,6 @@ func TestMain(t *testing.M) {
 }
 
 func TestHealthCheckAPI(t *testing.T) {
-	// remove the db file after the test
-	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
-	})
-
 	shutdown := make(chan os.Signal, 1)
 	serviceConfig, err := config.LoadConfig("")
 	assert.NoError(t, err)
@@ -67,14 +62,16 @@ func TestHealthCheckAPI(t *testing.T) {
 }
 
 func TestReadinessAPI(t *testing.T) {
+	dbFile := "test_readiness_api.db"
 	// remove the db file after the test
 	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
+		_ = os.Remove(dbFile)
 	})
 
 	shutdown := make(chan os.Signal, 1)
 	serviceConfig, err := config.LoadConfig("")
 	assert.NoError(t, err)
+	serviceConfig.Services.StorageOption = dbFile
 
 	server, err := NewSSIServer(shutdown, *serviceConfig)
 	assert.NoError(t, err)
@@ -190,7 +187,7 @@ func getValidApplicationRequest(manifestID, presDefID, submissionDescriptorID st
 	}
 }
 
-func testKeyStore(t *testing.T, bolt *storage.BoltDB) (*router.KeyStoreRouter, *keystore.Service) {
+func testKeyStore(t *testing.T, bolt storage.ServiceStorage) (*router.KeyStoreRouter, *keystore.Service) {
 	keyStoreService := testKeyStoreService(t, bolt)
 
 	// create router for service
@@ -228,7 +225,7 @@ func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystor
 	return didService
 }
 
-func testDIDRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *router.DIDRouter {
+func testDIDRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service) *router.DIDRouter {
 	didService := testDIDService(t, bolt, keyStore)
 
 	// create router for service
@@ -245,7 +242,7 @@ func testSchemaService(t *testing.T, bolt storage.ServiceStorage, keyStore *keys
 	return schemaService
 }
 
-func testSchemaRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service, did *did.Service) *router.SchemaRouter {
+func testSchemaRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, did *did.Service) *router.SchemaRouter {
 	schemaService := testSchemaService(t, bolt, keyStore, did)
 
 	// create router for service
@@ -265,7 +262,7 @@ func testCredentialService(t *testing.T, db storage.ServiceStorage, keyStore *ke
 	return credentialService
 }
 
-func testCredentialRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *router.CredentialRouter {
+func testCredentialRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *router.CredentialRouter {
 	credentialService := testCredentialService(t, bolt, keyStore, did, schema)
 
 	// create router for service
@@ -276,7 +273,7 @@ func testCredentialRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore
 	return credentialRouter
 }
 
-func testManifest(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service, credential *credential.Service) (*router.ManifestRouter, *manifest.Service) {
+func testManifest(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, credential *credential.Service) (*router.ManifestRouter, *manifest.Service) {
 	serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
 	// create a manifest service
 	manifestService, err := manifest.NewManifestService(serviceConfig, db, keyStore, did.GetResolver(), credential)

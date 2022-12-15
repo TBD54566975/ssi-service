@@ -18,7 +18,7 @@ import (
 )
 
 type Service struct {
-	storage opstorage.Storage
+	storage *Storage
 }
 
 func (s Service) Type() framework.Type {

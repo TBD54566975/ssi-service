@@ -54,7 +54,7 @@ func testSchemaService(t *testing.T, db storage.ServiceStorage, keyStore *keysto
 	return schemaService
 }
 
-func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
+func testCredentialService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
 	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 	// create a credential service
 	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver(), schema)
@@ -63,7 +63,7 @@ func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.
 	return credentialService
 }
 
-func testManifestService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service, credential *credential.Service) *manifest.Service {
+func testManifestService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, credential *credential.Service) *manifest.Service {
 	serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
 	// create a manifest service
 	manifestService, err := manifest.NewManifestService(serviceConfig, db, keyStore, did.GetResolver(), credential)
