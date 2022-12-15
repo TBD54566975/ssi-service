@@ -10,7 +10,6 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/util"
-	didstorage "github.com/tbd54566975/ssi-service/pkg/service/did/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -18,7 +17,7 @@ import (
 
 type Service struct {
 	config   config.DIDServiceConfig
-	storage  didstorage.Storage
+	storage  *DIDStorage
 	resolver *didsdk.Resolver
 
 	// supported DID methods
@@ -65,7 +64,7 @@ func (s *Service) GetResolver() *didsdk.Resolver {
 }
 
 func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
-	didStorage, err := didstorage.NewDIDStorage(s)
+	didStorage, err := NewDIDStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
 	}

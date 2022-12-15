@@ -1,4 +1,4 @@
-package storage
+package manifest
 
 import (
 	"fmt"
@@ -7,6 +7,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/TBD54566975/ssi-sdk/credential/manifest"
+
+	cred "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -17,18 +21,43 @@ const (
 	responseNamespace    = "response"
 )
 
-type BoltManifestStorage struct {
-	db *storage.BoltDB
+type StoredManifest struct {
+	ID          string                      `json:"id"`
+	Issuer      string                      `json:"issuer"`
+	Manifest    manifest.CredentialManifest `json:"manifest"`
+	ManifestJWT keyaccess.JWT               `json:"manifestJwt"`
 }
 
-func NewBoltManifestStorage(db *storage.BoltDB) (*BoltManifestStorage, error) {
+type StoredApplication struct {
+	ID             string                         `json:"id"`
+	ManifestID     string                         `json:"manifestId"`
+	ApplicantDID   string                         `json:"applicantDid"`
+	Application    manifest.CredentialApplication `json:"application"`
+	Credentials    []cred.Container               `json:"credentials"`
+	ApplicationJWT keyaccess.JWT                  `json:"applicationJwt"`
+}
+
+type StoredResponse struct {
+	ID           string                      `json:"id"`
+	ManifestID   string                      `json:"manifestId"`
+	ApplicantDID string                      `json:"applicantId"`
+	Response     manifest.CredentialResponse `json:"response"`
+	Credentials  []cred.Container            `json:"credentials"`
+	ResponseJWT  keyaccess.JWT               `json:"responseJwt"`
+}
+
+type ManifestStorage struct {
+	db storage.ServiceStorage
+}
+
+func NewManifestStorage(db storage.ServiceStorage) (*ManifestStorage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}
-	return &BoltManifestStorage{db: db}, nil
+	return &ManifestStorage{db: db}, nil
 }
 
-func (b BoltManifestStorage) StoreManifest(manifest StoredManifest) error {
+func (ms *ManifestStorage) StoreManifest(manifest StoredManifest) error {
 	id := manifest.Manifest.ID
 	if id == "" {
 		err := errors.New("could not store manifest without an ID")
@@ -41,11 +70,11 @@ func (b BoltManifestStorage) StoreManifest(manifest StoredManifest) error {
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)
 	}
-	return b.db.Write(manifestNamespace, id, manifestBytes)
+	return ms.db.Write(manifestNamespace, id, manifestBytes)
 }
 
-func (b BoltManifestStorage) GetManifest(id string) (*StoredManifest, error) {
-	manifestBytes, err := b.db.Read(manifestNamespace, id)
+func (ms *ManifestStorage) GetManifest(id string) (*StoredManifest, error) {
+	manifestBytes, err := ms.db.Read(manifestNamespace, id)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get manifest: %s", id)
 		logrus.WithError(err).Error(errMsg)
@@ -66,8 +95,8 @@ func (b BoltManifestStorage) GetManifest(id string) (*StoredManifest, error) {
 }
 
 // GetManifests attempts to get all stored manifests. It will return those it can even if it has trouble with some.
-func (b BoltManifestStorage) GetManifests() ([]StoredManifest, error) {
-	gotManifests, err := b.db.ReadAll(manifestNamespace)
+func (ms *ManifestStorage) GetManifests() ([]StoredManifest, error) {
+	gotManifests, err := ms.db.ReadAll(manifestNamespace)
 	if err != nil {
 		errMsg := "could not get all manifests"
 		logrus.WithError(err).Error(errMsg)
@@ -87,14 +116,14 @@ func (b BoltManifestStorage) GetManifests() ([]StoredManifest, error) {
 	return stored, nil
 }
 
-func (b BoltManifestStorage) DeleteManifest(id string) error {
-	if err := b.db.Delete(manifestNamespace, id); err != nil {
+func (ms *ManifestStorage) DeleteManifest(id string) error {
+	if err := ms.db.Delete(manifestNamespace, id); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete manifest: %s", id)
 	}
 	return nil
 }
 
-func (b BoltManifestStorage) StoreApplication(application StoredApplication) error {
+func (ms *ManifestStorage) StoreApplication(application StoredApplication) error {
 	id := application.Application.ID
 	if id == "" {
 		return util.LoggingNewError("could not store application without an ID")
@@ -103,11 +132,11 @@ func (b BoltManifestStorage) StoreApplication(application StoredApplication) err
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "could not store application: %s", id)
 	}
-	return b.db.Write(applicationNamespace, id, applicationBytes)
+	return ms.db.Write(applicationNamespace, id, applicationBytes)
 }
 
-func (b BoltManifestStorage) GetApplication(id string) (*StoredApplication, error) {
-	applicationBytes, err := b.db.Read(applicationNamespace, id)
+func (ms *ManifestStorage) GetApplication(id string) (*StoredApplication, error) {
+	applicationBytes, err := ms.db.Read(applicationNamespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get application: %s", id)
 	}
@@ -122,8 +151,8 @@ func (b BoltManifestStorage) GetApplication(id string) (*StoredApplication, erro
 }
 
 // GetApplications attempts to get all stored applications. It will return those it can even if it has trouble with some.
-func (b BoltManifestStorage) GetApplications() ([]StoredApplication, error) {
-	gotApplications, err := b.db.ReadAll(applicationNamespace)
+func (ms *ManifestStorage) GetApplications() ([]StoredApplication, error) {
+	gotApplications, err := ms.db.ReadAll(applicationNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get all applications")
 	}
@@ -143,14 +172,14 @@ func (b BoltManifestStorage) GetApplications() ([]StoredApplication, error) {
 	return stored, nil
 }
 
-func (b BoltManifestStorage) DeleteApplication(id string) error {
-	if err := b.db.Delete(applicationNamespace, id); err != nil {
+func (ms *ManifestStorage) DeleteApplication(id string) error {
+	if err := ms.db.Delete(applicationNamespace, id); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete application: %s", id)
 	}
 	return nil
 }
 
-func (b BoltManifestStorage) StoreResponse(response StoredResponse) error {
+func (ms *ManifestStorage) StoreResponse(response StoredResponse) error {
 	id := response.Response.ID
 	if id == "" {
 		return util.LoggingNewError("could not store response without an ID")
@@ -159,11 +188,11 @@ func (b BoltManifestStorage) StoreResponse(response StoredResponse) error {
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "could not store response: %s", id)
 	}
-	return b.db.Write(responseNamespace, id, responseBytes)
+	return ms.db.Write(responseNamespace, id, responseBytes)
 }
 
-func (b BoltManifestStorage) GetResponse(id string) (*StoredResponse, error) {
-	responseBytes, err := b.db.Read(responseNamespace, id)
+func (ms *ManifestStorage) GetResponse(id string) (*StoredResponse, error) {
+	responseBytes, err := ms.db.Read(responseNamespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get response: %s", id)
 	}
@@ -178,8 +207,8 @@ func (b BoltManifestStorage) GetResponse(id string) (*StoredResponse, error) {
 }
 
 // GetResponses attempts to get all stored responses. It will return those it can even if it has trouble with some.
-func (b BoltManifestStorage) GetResponses() ([]StoredResponse, error) {
-	gotResponses, err := b.db.ReadAll(responseNamespace)
+func (ms *ManifestStorage) GetResponses() ([]StoredResponse, error) {
+	gotResponses, err := ms.db.ReadAll(responseNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get all responses")
 	}
@@ -199,8 +228,8 @@ func (b BoltManifestStorage) GetResponses() ([]StoredResponse, error) {
 	return stored, nil
 }
 
-func (b BoltManifestStorage) DeleteResponse(id string) error {
-	if err := b.db.Delete(responseNamespace, id); err != nil {
+func (ms *ManifestStorage) DeleteResponse(id string) error {
+	if err := ms.db.Delete(responseNamespace, id); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete response: %s", id)
 	}
 	return nil

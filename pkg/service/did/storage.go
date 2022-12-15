@@ -1,8 +1,9 @@
-package storage
+package did
 
 import (
 	"fmt"
 
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -24,18 +25,23 @@ var (
 	}
 )
 
-type BoltDIDStorage struct {
-	db *storage.BoltDB
+type StoredDID struct {
+	ID  string          `json:"id"`
+	DID did.DIDDocument `json:"did"`
 }
 
-func NewBoltDIDStorage(db *storage.BoltDB) (*BoltDIDStorage, error) {
+type DIDStorage struct {
+	db storage.ServiceStorage
+}
+
+func NewDIDStorage(db storage.ServiceStorage) (*DIDStorage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}
-	return &BoltDIDStorage{db: db}, nil
+	return &DIDStorage{db: db}, nil
 }
 
-func (b BoltDIDStorage) StoreDID(did StoredDID) error {
+func (ds *DIDStorage) StoreDID(did StoredDID) error {
 	couldNotStoreDIDErr := fmt.Sprintf("could not store DID: %s", did.ID)
 	ns, err := getNamespaceForDID(did.ID)
 	if err != nil {
@@ -45,16 +51,16 @@ func (b BoltDIDStorage) StoreDID(did StoredDID) error {
 	if err != nil {
 		return util.LoggingErrorMsg(err, couldNotStoreDIDErr)
 	}
-	return b.db.Write(ns, did.ID, didBytes)
+	return ds.db.Write(ns, did.ID, didBytes)
 }
 
-func (b BoltDIDStorage) GetDID(id string) (*StoredDID, error) {
+func (ds *DIDStorage) GetDID(id string) (*StoredDID, error) {
 	couldNotGetDIDErr := fmt.Sprintf("could not get DID: %s", id)
 	ns, err := getNamespaceForDID(id)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
-	docBytes, err := b.db.Read(ns, id)
+	docBytes, err := ds.db.Read(ns, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
@@ -70,13 +76,13 @@ func (b BoltDIDStorage) GetDID(id string) (*StoredDID, error) {
 }
 
 // GetDIDs attempts to get all DIDs for a given method. It will return those it can even if it has trouble with some.
-func (b BoltDIDStorage) GetDIDs(method string) ([]StoredDID, error) {
+func (ds *DIDStorage) GetDIDs(method string) ([]StoredDID, error) {
 	couldNotGetDIDsErr := fmt.Sprintf("could not get DIDs for method: %s", method)
 	ns, err := getNamespaceForMethod(method)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, couldNotGetDIDsErr)
 	}
-	gotDIDs, err := b.db.ReadAll(ns)
+	gotDIDs, err := ds.db.ReadAll(ns)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, couldNotGetDIDsErr)
 	}
@@ -94,13 +100,13 @@ func (b BoltDIDStorage) GetDIDs(method string) ([]StoredDID, error) {
 	return stored, nil
 }
 
-func (b BoltDIDStorage) DeleteDID(id string) error {
+func (ds *DIDStorage) DeleteDID(id string) error {
 	couldNotGetDIDErr := fmt.Sprintf("could not delete DID: %s", id)
 	ns, err := getNamespaceForDID(id)
 	if err != nil {
 		return util.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
-	if err = b.db.Delete(ns, id); err != nil {
+	if err = ds.db.Delete(ns, id); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete DID: %s", id)
 	}
 	return nil

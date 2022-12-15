@@ -9,16 +9,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"github.com/tbd54566975/ssi-service/pkg/service/did/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func newKeyDIDHandler(s storage.Storage, ks *keystore.Service) MethodHandler {
+func newKeyDIDHandler(s *DIDStorage, ks *keystore.Service) MethodHandler {
 	return &keyDIDHandler{storage: s, keyStore: ks}
 }
 
 type keyDIDHandler struct {
-	storage  storage.Storage
+	storage  *DIDStorage
 	keyStore *keystore.Service
 }
 
@@ -40,7 +39,7 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 
 	// store metadata in DID storage
 	id := doc.String()
-	storedDID := storage.StoredDID{
+	storedDID := StoredDID{
 		ID:  id,
 		DID: *expanded,
 	}

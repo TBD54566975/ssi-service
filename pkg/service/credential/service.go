@@ -19,7 +19,6 @@ import (
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
-	credstorage "github.com/tbd54566975/ssi-service/pkg/service/credential/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -27,7 +26,7 @@ import (
 )
 
 type Service struct {
-	storage  credstorage.Storage
+	storage  *CredentialStorage
 	config   config.CredentialServiceConfig
 	verifier *credint.Verifier
 
@@ -68,7 +67,7 @@ func (s Service) Config() config.CredentialServiceConfig {
 }
 
 func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver *didsdk.Resolver, schema *schema.Service) (*Service, error) {
-	credentialStorage, err := credstorage.NewCredentialStorage(s)
+	credentialStorage, err := NewCredentialStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the credential service")
 	}
@@ -205,7 +204,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		Revoked:       false,
 	}
 
-	storageRequest := credstorage.StoreCredentialRequest{
+	storageRequest := StoreCredentialRequest{
 		Container: container,
 	}
 
@@ -251,7 +250,7 @@ func getStatusListCredential(s Service, issuerID string, schemaID string) (*cred
 			CredentialJWT: statusListCredJWT,
 		}
 
-		storageRequest := credstorage.StoreCredentialRequest{
+		storageRequest := StoreCredentialRequest{
 			Container: statusListContainer,
 		}
 
@@ -486,7 +485,7 @@ func (s Service) UpdateCredentialStatus(request UpdateCredentialStatusRequest) (
 	return &response, nil
 }
 
-func updateCredentialStatus(s Service, gotCred *credstorage.StoredCredential, request UpdateCredentialStatusRequest) (*credint.Container, error) {
+func updateCredentialStatus(s Service, gotCred *StoredCredential, request UpdateCredentialStatusRequest) (*credint.Container, error) {
 	// store the credential with updated status
 	container := credint.Container{
 		ID:            gotCred.ID,
@@ -495,7 +494,7 @@ func updateCredentialStatus(s Service, gotCred *credstorage.StoredCredential, re
 		Revoked:       request.Revoked,
 	}
 
-	storageRequest := credstorage.StoreCredentialRequest{
+	storageRequest := StoreCredentialRequest{
 		Container: container,
 	}
 
@@ -538,7 +537,7 @@ func updateCredentialStatus(s Service, gotCred *credstorage.StoredCredential, re
 		CredentialJWT: statusListCredJWT,
 	}
 
-	storageRequest = credstorage.StoreCredentialRequest{
+	storageRequest = StoreCredentialRequest{
 		Container: statusListContainer,
 	}
 

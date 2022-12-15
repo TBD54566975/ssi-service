@@ -14,12 +14,11 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	keystorestorage "github.com/tbd54566975/ssi-service/pkg/service/keystore/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 type Service struct {
-	storage keystorestorage.Storage
+	storage *KeyStoreStorage
 	config  config.KeyStoreServiceConfig
 }
 
@@ -53,7 +52,10 @@ func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceSt
 	}
 
 	// Next, instantiate the key storage
-	keyStoreStorage, err := keystorestorage.NewKeyStoreStorage(s, serviceKey, serviceKeySalt)
+	keyStoreStorage, err := NewKeyStoreStorage(s, ServiceKey{
+		Base58Key:  serviceKey,
+		Base58Salt: serviceKeySalt,
+	})
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the keystore service")
 	}
@@ -78,7 +80,7 @@ func (s Service) StoreKey(request StoreKeyRequest) error {
 		return util.LoggingNewErrorf("unsupported key type: %s", request.Type)
 	}
 
-	key := keystorestorage.StoredKey{
+	key := StoredKey{
 		ID:         request.ID,
 		Controller: request.Controller,
 		KeyType:    request.Type,

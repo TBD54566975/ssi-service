@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
@@ -18,7 +19,7 @@ import (
 )
 
 type Service struct {
-	storage opstorage.Storage
+	storage *OperationStorage
 }
 
 func (s Service) Type() framework.Type {
@@ -66,7 +67,7 @@ func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResp
 
 type ServiceModelFunc func(any) any
 
-func serviceModel(op opstorage.StoredOperation) (*Operation, error) {
+func serviceModel(op StoredOperation) (*Operation, error) {
 	newOp := &Operation{
 		ID:   op.ID,
 		Done: op.Done,
@@ -82,7 +83,7 @@ func serviceModel(op opstorage.StoredOperation) (*Operation, error) {
 			if err := json.Unmarshal(op.Response, &s); err != nil {
 				return nil, err
 			}
-			newOp.Result.Response = model.ServiceModel(&s)
+			newOp.Result.Response = common.ServiceModel(&s)
 		default:
 			return nil, errors.New("unknown response type")
 		}
