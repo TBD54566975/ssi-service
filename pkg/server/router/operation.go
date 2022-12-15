@@ -53,7 +53,7 @@ func (o OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(
 			util.LoggingErrorMsg(err, "failed getting operation"), http.StatusInternalServerError)
 	}
-	return framework.Respond(ctx, w, routerModel(op), http.StatusOK)
+	return framework.Respond(ctx, w, routerModel(*op), http.StatusOK)
 }
 
 type GetOperationsRequest struct {
@@ -186,5 +186,5 @@ func (o OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWri
 		return framework.NewRequestError(
 			util.LoggingErrorMsg(err, "failed cancelling operation"), http.StatusInternalServerError)
 	}
-	return framework.Respond(ctx, w, routerModel(op), http.StatusOK)
+	return framework.Respond(ctx, w, routerModel(*op), http.StatusOK)
 }
