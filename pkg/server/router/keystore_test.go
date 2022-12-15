@@ -1,7 +1,6 @@
 package router
 
 import (
-	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -11,15 +10,9 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestKeyStoreRouter(t *testing.T) {
-
-	// remove the db file after the test
-	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
-	})
 
 	t.Run("Nil Service", func(tt *testing.T) {
 		keyStoreRouter, err := NewKeyStoreRouter(nil)
@@ -36,9 +29,8 @@ func TestKeyStoreRouter(t *testing.T) {
 	})
 
 	t.Run("Key Store Service Test", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, bolt)
+		bolt := setupTestDB(tt)
+		assert.NotNil(tt, bolt)
 
 		serviceConfig := config.KeyStoreServiceConfig{
 			BaseServiceConfig:  &config.BaseServiceConfig{Name: "keystore"},

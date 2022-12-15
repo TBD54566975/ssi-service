@@ -1,27 +1,19 @@
 package router
 
 import (
-	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestSchemaRouter(t *testing.T) {
-
-	// remove the db file after the test
-	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
-	})
 
 	t.Run("Nil Service", func(tt *testing.T) {
 		schemaRouter, err := NewSchemaRouter(nil)
@@ -38,9 +30,8 @@ func TestSchemaRouter(t *testing.T) {
 	})
 
 	t.Run("Schema Service Test", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-		require.NotEmpty(tt, bolt)
+		bolt := setupTestDB(tt)
+		assert.NotNil(tt, bolt)
 
 		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -123,15 +114,10 @@ func TestSchemaRouter(t *testing.T) {
 }
 
 func TestSchemaSigning(t *testing.T) {
-	// remove the db file after the test
-	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
-	})
 
 	t.Run("Unsigned Schema Test", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-		require.NotEmpty(tt, bolt)
+		bolt := setupTestDB(tt)
+		assert.NotNil(tt, bolt)
 
 		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 		keyStoreService := testKeyStoreService(tt, bolt)

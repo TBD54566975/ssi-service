@@ -11,15 +11,14 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestDIDRouter(t *testing.T) {
 
-	// remove the db file after the test
-	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
-	})
+	// // remove the db file after the test
+	// t.Cleanup(func() {
+	// 	_ = os.Remove(storage.DBFile)
+	// })
 
 	t.Run("Nil Service", func(tt *testing.T) {
 		didRouter, err := NewDIDRouter(nil)
@@ -36,9 +35,9 @@ func TestDIDRouter(t *testing.T) {
 	})
 
 	t.Run("DID Service Test", func(tt *testing.T) {
-		db, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, db)
+
+		db := setupTestDB(tt)
+		assert.NotNil(tt, db)
 
 		keyStoreService := testKeyStoreService(tt, db)
 		methods := []string{didsdk.KeyMethod.String()}
@@ -105,11 +104,9 @@ func TestDIDRouter(t *testing.T) {
 	})
 
 	t.Run("DID Web Service Test", func(tt *testing.T) {
-		_ = os.Remove(storage.DBFile)
 
-		db, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, db)
+		db := setupTestDB(tt)
+		assert.NotNil(tt, db)
 
 		keyStoreService := testKeyStoreService(tt, db)
 		methods := []string{didsdk.KeyMethod.String(), didsdk.WebMethod.String()}
@@ -117,6 +114,12 @@ func TestDIDRouter(t *testing.T) {
 		didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didService)
+
+		// remove the db file after the test
+		tt.Cleanup(func() {
+			_ = db.Close()
+			_ = os.Remove(db.Uri())
+		})
 
 		// check type and status
 		assert.Equal(tt, framework.DID, didService.Type())

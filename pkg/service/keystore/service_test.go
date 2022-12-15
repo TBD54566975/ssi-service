@@ -7,6 +7,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -91,14 +92,18 @@ func TestEncryptDecryptAllKeyTypes(t *testing.T) {
 }
 
 func TestStoreAndGetKey(t *testing.T) {
-	bolt, err := storage.NewBoltDB()
+	file, err := os.CreateTemp("", "bolt")
+	require.NoError(t, err)
+	name := file.Name()
+	file.Close()
+	bolt, err := storage.NewStorage(storage.Bolt, name)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, bolt)
 
 	// remove the db file after the test
 	t.Cleanup(func() {
 		_ = bolt.Close()
-		_ = os.Remove(storage.DBFile)
+		_ = os.Remove(bolt.Uri())
 	})
 
 	keyStore, err := NewKeyStoreService(
