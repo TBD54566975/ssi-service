@@ -9,16 +9,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"github.com/tbd54566975/ssi-service/pkg/service/did/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func newKeyDIDHandler(s storage.Storage, ks *keystore.Service) MethodHandler {
+func newKeyDIDHandler(s *Storage, ks *keystore.Service) MethodHandler {
 	return &keyDIDHandler{storage: s, keyStore: ks}
 }
 
 type keyDIDHandler struct {
-	storage  storage.Storage
+	storage  *Storage
 	keyStore *keystore.Service
 }
 
@@ -40,7 +39,7 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 
 	// store metadata in DID storage
 	id := doc.String()
-	storedDID := storage.StoredDID{
+	storedDID := StoredDID{
 		ID:  id,
 		DID: *expanded,
 	}
@@ -98,8 +97,8 @@ func (h *keyDIDHandler) GetDIDs(method did.Method) (*GetDIDsResponse, error) {
 		return nil, fmt.Errorf("error getting DIDs for method: %s", method)
 	}
 	dids := make([]did.DIDDocument, 0, len(gotDIDs))
-	for _, did := range gotDIDs {
-		dids = append(dids, did.DID)
+	for _, gotDID := range gotDIDs {
+		dids = append(dids, gotDID.DID)
 	}
 	return &GetDIDsResponse{DIDs: dids}, nil
 }

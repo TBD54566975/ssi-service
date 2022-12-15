@@ -15,12 +15,11 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
-	manifeststorage "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 type Service struct {
-	storage manifeststorage.Storage
+	storage *Storage
 	config  config.ManifestServiceConfig
 
 	// external dependencies
@@ -61,7 +60,7 @@ func (s Service) Config() config.ManifestServiceConfig {
 }
 
 func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver *didsdk.Resolver, credential *credential.Service) (*Service, error) {
-	manifestStorage, err := manifeststorage.NewManifestStorage(s)
+	manifestStorage, err := NewManifestStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the manifest service")
 	}
@@ -139,7 +138,7 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 	}
 
 	// store the manifest
-	storageRequest := manifeststorage.StoredManifest{
+	storageRequest := StoredManifest{
 		ID:          m.ID,
 		Issuer:      m.Issuer.ID,
 		Manifest:    *m,
@@ -243,7 +242,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 
 	// store the application
 	applicantDID := request.ApplicantDID
-	storageRequest := manifeststorage.StoredApplication{
+	storageRequest := StoredApplication{
 		ID:             applicationID,
 		ManifestID:     manifestID,
 		ApplicantDID:   applicantDID,
@@ -274,7 +273,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	}
 
 	// store the response we've generated
-	storeResponseRequest := manifeststorage.StoredResponse{
+	storeResponseRequest := StoredResponse{
 		ID:           credResp.ID,
 		ManifestID:   manifestID,
 		ApplicantDID: applicantDID,

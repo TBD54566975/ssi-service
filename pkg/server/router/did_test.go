@@ -1,7 +1,6 @@
 package router
 
 import (
-	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -11,16 +10,9 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestDIDRouter(t *testing.T) {
-
-	// remove the db file after the test
-	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
-	})
-
 	t.Run("Nil Service", func(tt *testing.T) {
 		didRouter, err := NewDIDRouter(nil)
 		assert.Error(tt, err)
@@ -36,9 +28,9 @@ func TestDIDRouter(t *testing.T) {
 	})
 
 	t.Run("DID Service Test", func(tt *testing.T) {
-		db, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, db)
+
+		db := setupTestDB(tt)
+		assert.NotNil(tt, db)
 
 		keyStoreService := testKeyStoreService(tt, db)
 		methods := []string{didsdk.KeyMethod.String()}
@@ -94,22 +86,20 @@ func TestDIDRouter(t *testing.T) {
 		assert.Len(tt, getDIDsResponse.DIDs, 2)
 
 		knownDIDs := map[string]bool{createDIDResponse.DID.ID: true, createDIDResponse2.DID.ID: true}
-		for _, did := range getDIDsResponse.DIDs {
-			if _, ok := knownDIDs[did.ID]; !ok {
+		for _, gotDID := range getDIDsResponse.DIDs {
+			if _, ok := knownDIDs[gotDID.ID]; !ok {
 				tt.Error("got unknown DID")
 			} else {
-				delete(knownDIDs, did.ID)
+				delete(knownDIDs, gotDID.ID)
 			}
 		}
 		assert.Len(tt, knownDIDs, 0)
 	})
 
 	t.Run("DID Web Service Test", func(tt *testing.T) {
-		_ = os.Remove(storage.DBFile)
 
-		db, err := storage.NewBoltDB()
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, db)
+		db := setupTestDB(tt)
+		assert.NotNil(tt, db)
 
 		keyStoreService := testKeyStoreService(tt, db)
 		methods := []string{didsdk.KeyMethod.String(), didsdk.WebMethod.String()}
@@ -166,11 +156,11 @@ func TestDIDRouter(t *testing.T) {
 		assert.Len(tt, getDIDsResponse.DIDs, 2)
 
 		knownDIDs := map[string]bool{createDIDResponse.DID.ID: true, createDIDResponse2.DID.ID: true}
-		for _, did := range getDIDsResponse.DIDs {
-			if _, ok := knownDIDs[did.ID]; !ok {
+		for _, gotDID := range getDIDsResponse.DIDs {
+			if _, ok := knownDIDs[gotDID.ID]; !ok {
 				tt.Error("got unknown DID")
 			} else {
-				delete(knownDIDs, did.ID)
+				delete(knownDIDs, gotDID.ID)
 			}
 		}
 		assert.Len(tt, knownDIDs, 0)

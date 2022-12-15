@@ -47,8 +47,9 @@ type ServicesConfig struct {
 	// at present, it is assumed that a single storage provider works for all services
 	// in the future it may make sense to have per-service storage providers (e.g. mysql for one service,
 	// mongo for another)
-	StorageProvider string `toml:"storage"`
-	ServiceEndpoint string `toml:"service_endpoint"`
+	StorageProvider string      `toml:"storage"`
+	StorageOption   interface{} `toml:"storage_option"`
+	ServiceEndpoint string      `toml:"service_endpoint"`
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
 	KeyStoreConfig     KeyStoreServiceConfig     `toml:"keystore,omitempty"`
