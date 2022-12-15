@@ -130,7 +130,7 @@ func (s Service) DeletePresentationDefinition(request DeletePresentationDefiniti
 
 // CreateSubmission houses the main service logic for presentation submission creation. It validates the input, and
 // produces a presentation submission value that conforms with the Submission specification.
-func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.Operation, error) {
+func (s Service) CreateSubmission(request submission.CreateSubmissionRequest) (*operation.Operation, error) {
 	if !request.IsValid() {
 		return nil, errors.Errorf("invalid create presentation submission request: %+v", request)
 	}
@@ -202,19 +202,19 @@ func (s Service) CreateSubmission(request CreateSubmissionRequest) (*operation.O
 	}, nil
 }
 
-func (s Service) GetSubmission(request GetSubmissionRequest) (*GetSubmissionResponse, error) {
+func (s Service) GetSubmission(request submission.GetSubmissionRequest) (*submission.GetSubmissionResponse, error) {
 	logrus.Debugf("getting presentation submission: %s", request.ID)
 
 	storedSubmission, err := s.storage.GetSubmission(request.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching from storage")
 	}
-	return &GetSubmissionResponse{
+	return &submission.GetSubmissionResponse{
 		Submission: submission.ServiceModel(storedSubmission),
 	}, nil
 }
 
-func (s Service) ListSubmissions(request ListSubmissionRequest) (*ListSubmissionResponse, error) {
+func (s Service) ListSubmissions(request submission.ListSubmissionRequest) (*submission.ListSubmissionResponse, error) {
 	logrus.Debug("listing presentation submissions")
 
 	subs, err := s.storage.ListSubmissions(request.Filter)
@@ -222,7 +222,7 @@ func (s Service) ListSubmissions(request ListSubmissionRequest) (*ListSubmission
 		return nil, errors.Wrap(err, "fetching submissions from storage")
 	}
 
-	resp := &ListSubmissionResponse{Submissions: make([]submission.Submission, 0, len(subs))}
+	resp := &submission.ListSubmissionResponse{Submissions: make([]submission.Submission, 0, len(subs))}
 	for _, sub := range subs {
 		sub := sub // What's this?? see https://github.com/golang/go/wiki/CommonMistakes#using-reference-to-loop-iterator-variable
 		resp.Submissions = append(resp.Submissions, submission.ServiceModel(&sub))
@@ -231,7 +231,7 @@ func (s Service) ListSubmissions(request ListSubmissionRequest) (*ListSubmission
 	return resp, nil
 }
 
-func (s Service) ReviewSubmission(request ReviewSubmissionRequest) (*submission.Submission, error) {
+func (s Service) ReviewSubmission(request submission.ReviewSubmissionRequest) (*submission.Submission, error) {
 	if err := request.Validate(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}

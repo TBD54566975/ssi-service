@@ -1,34 +1,59 @@
-package presentation
+package submission
 
 import (
+	"errors"
+
+	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/util"
+	"github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"go.einride.tech/aip/filtering"
 )
 
-type CreatePresentationDefinitionRequest struct {
-	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition" validate:"required"`
+type Status uint8
+
+func (s Status) String() string {
+	switch s {
+	case StatusPending:
+		return "pending"
+	case StatusDenied:
+		return "denied"
+	case StatusApproved:
+		return "approved"
+	default:
+		return "unknown"
+	}
 }
 
-func (cpr CreatePresentationDefinitionRequest) IsValid() bool {
-	return util.IsValidStruct(cpr) == nil
+const (
+	StatusUnknown Status = iota
+	StatusPending
+	StatusDenied
+	StatusApproved
+)
+
+type StoredSubmission struct {
+	Status     Status                          `json:"status"`
+	Submission exchange.PresentationSubmission `json:"submission"`
+	Reason     string                          `json:"reason"`
 }
 
-type CreatePresentationDefinitionResponse struct {
-	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
+func (s StoredSubmission) FilterVariablesMap() map[string]any {
+	return map[string]any{
+		"status": s.Status.String(),
+	}
 }
 
-type GetPresentationDefinitionRequest struct {
-	ID string `json:"id" validate:"required"`
+type Submission struct {
+	// One of {`pending`, `approved`, `denied`}.
+	Status string `json:"status" validate:"required"`
+	// The reason why the submission was approved or denied.
+	Reason string `json:"reason"`
+	*exchange.PresentationSubmission
 }
 
-type GetPresentationDefinitionResponse struct {
-	ID                     string                          `json:"id"`
-	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
-}
-
-type DeletePresentationDefinitionRequest struct {
-	ID string `json:"id" validate:"required"`
-}
+var ErrSubmissionNotFound = errors.New("submission not found")
 
 type CreateSubmissionRequest struct {
 	Presentation  credsdk.VerifiablePresentation  `json:"presentation" validate:"required"`
@@ -50,7 +75,7 @@ type GetSubmissionRequest struct {
 }
 
 type GetSubmissionResponse struct {
-	Submission submission.Submission `json:"submission"`
+	Submission Submission `json:"submission"`
 }
 
 type DeleteSubmissionRequest struct {
@@ -61,16 +86,8 @@ type ListSubmissionRequest struct {
 	Filter filtering.Filter
 }
 
-type Submission struct {
-	// One of {`pending`, `approved`, `denied`, `cancelled`}.
-	Status string `json:"status" validate:"required"`
-	// The reason why the submission was approved or denied.
-	Reason string `json:"reason"`
-	*exchange.PresentationSubmission
-}
-
 type ListSubmissionResponse struct {
-	Submissions []submission.Submission `json:"submissions"`
+	Submissions []Submission `json:"submissions"`
 }
 
 type ReviewSubmissionRequest struct {
