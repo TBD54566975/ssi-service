@@ -26,3 +26,6 @@ vendor/
 
 # Log files
 log/*.log
+
+# VSCode
+.vscode

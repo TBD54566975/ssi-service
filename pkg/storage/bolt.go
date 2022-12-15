@@ -14,28 +14,41 @@ import (
 )
 
 const (
-	DBFile = "ssi-service.db"
+	DBFilePrefix = "ssi-service"
 )
 
 type BoltDB struct {
 	db *bolt.DB
 }
 
+// Init instantiates a file-based storage instance for Bolt https://github.com/boltdb/bolt
+func (b *BoltDB) Init(options interface{}) error {
+	if b.db != nil {
+		return fmt.Errorf("bolit db already opened with name %s", b.Uri())
+	}
+	dbFilePath := fmt.Sprintf("%s_%s.db", DBFilePrefix, b.Type())
+	if options != nil {
+		customPath, ok := options.(string)
+		if !ok {
+			return fmt.Errorf("options should be a string value")
+		}
+		dbFilePath = customPath
+	}
+	db, err := bolt.Open(dbFilePath, 0600, &bolt.Options{Timeout: 3 * time.Second})
+	if err != nil {
+		return err
+	}
+	b.db = db
+	return nil
+}
+
+// Uri return filepath of boltDB,
+func (b *BoltDB) Uri() string {
+	return b.db.Path()
+}
+
 func (b *BoltDB) Type() Storage {
 	return Bolt
-}
-
-// NewBoltDB instantiates a file-based storage instance for Bolt https://github.com/boltdb/bolt
-func NewBoltDB() (*BoltDB, error) {
-	return NewBoltDBWithFile(DBFile)
-}
-
-func NewBoltDBWithFile(filePath string) (*BoltDB, error) {
-	db, err := bolt.Open(filePath, 0600, &bolt.Options{Timeout: 3 * time.Second})
-	if err != nil {
-		return nil, err
-	}
-	return &BoltDB{db: db}, nil
 }
 
 func (b *BoltDB) Close() error {
