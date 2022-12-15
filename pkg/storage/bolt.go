@@ -61,7 +61,7 @@ func (b *BoltDB) IsOpen() bool {
 	return b.db.Path() != ""
 }
 
-func (b *BoltDB) Type() Storage {
+func (b *BoltDB) Type() Type {
 	return Bolt
 }
 

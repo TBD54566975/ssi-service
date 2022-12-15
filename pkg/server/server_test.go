@@ -34,11 +34,6 @@ import (
 )
 
 func TestHealthCheckAPI(t *testing.T) {
-	// // remove the db file after the test
-	// t.Cleanup(func() {
-	// 	_ = os.Remove(storage.DBFile)
-	// })
-
 	shutdown := make(chan os.Signal, 1)
 	serviceConfig, err := config.LoadConfig("")
 	assert.NoError(t, err)

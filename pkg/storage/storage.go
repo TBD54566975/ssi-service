@@ -5,20 +5,20 @@ import (
 	"reflect"
 )
 
-type Storage string
+type Type string
 
 const (
-	Bolt Storage = "bolt"
+	Bolt Type = "bolt"
 )
 
 var (
-	availableStorages = make(map[Storage]ServiceStorage)
+	availableStorages = make(map[Type]ServiceStorage)
 )
 
 // ServiceStorage describes the api for storage independent of DB providers
 type ServiceStorage interface {
 	Init(interface{}) error
-	Type() Storage
+	Type() Type
 	URI() string
 	IsOpen() bool
 	Close() error
@@ -33,8 +33,9 @@ type ServiceStorage interface {
 	UpdateValueAndOperation(namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error)
 }
 
-// NewStorage creates a new or use exists storage provider and provider specify param based on the input
-func NewStorage(storageProvider Storage, option interface{}) (ServiceStorage, error) {
+// NewStorage returns the instance of the given storageProvider. If it doesn't exist, then a default implementation
+// is created with the given option parameter.
+func NewStorage(storageProvider Type, option interface{}) (ServiceStorage, error) {
 	impl := GetStorage(storageProvider)
 	if impl == nil {
 		return impl, fmt.Errorf("unsupported storage provider: %s", storageProvider)
@@ -43,7 +44,7 @@ func NewStorage(storageProvider Storage, option interface{}) (ServiceStorage, er
 	return impl, err
 }
 
-// RegisterStorage resister a storage dynamically
+// RegisterStorage registers a storage dynamically by its Type.
 func RegisterStorage(storage ServiceStorage) error {
 	if availableStorages[storage.Type()] != nil {
 		return fmt.Errorf("storage implementation for %s already exists", storage.Type())
@@ -52,24 +53,24 @@ func RegisterStorage(storage ServiceStorage) error {
 	return nil
 }
 
-// AvailableStorage returns the supported storage providers
-func AvailableStorage() []Storage {
-	return []Storage{Bolt}
+// AvailableStorage returns the supported storage providers.
+func AvailableStorage() []Type {
+	return []Type{Bolt}
 }
 
-// IsStorageAvailable determines whether a given storage provider is available for instantiation
-func IsStorageAvailable(storage string) bool {
+// IsStorageAvailable determines whether a given storage provider is available for instantiation.
+func IsStorageAvailable(storage Type) bool {
 	all := AvailableStorage()
 	for _, s := range all {
-		if storage == string(s) {
+		if storage == s {
 			return true
 		}
 	}
 	return false
 }
 
-// GetStorage create a new storage by stroage type
-func GetStorage(storageType Storage) ServiceStorage {
+// GetStorage fetches a previously registered storage by storage type.
+func GetStorage(storageType Type) ServiceStorage {
 	tmp := availableStorages[storageType]
 	if tmp == nil {
 		return tmp

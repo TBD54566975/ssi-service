@@ -1,7 +1,6 @@
 package router
 
 import (
-	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -14,12 +13,6 @@ import (
 )
 
 func TestDIDRouter(t *testing.T) {
-
-	// // remove the db file after the test
-	// t.Cleanup(func() {
-	// 	_ = os.Remove(storage.DBFile)
-	// })
-
 	t.Run("Nil Service", func(tt *testing.T) {
 		didRouter, err := NewDIDRouter(nil)
 		assert.Error(tt, err)
@@ -114,12 +107,6 @@ func TestDIDRouter(t *testing.T) {
 		didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didService)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = db.Close()
-			_ = os.Remove(db.URI())
-		})
 
 		// check type and status
 		assert.Equal(tt, framework.DID, didService.Type())

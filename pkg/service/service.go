@@ -66,7 +66,7 @@ func (ssi *SSIService) GetServices() []framework.Service {
 
 // instantiateServices begins all instantiates and their dependencies
 func instantiateServices(config config.ServicesConfig) ([]framework.Service, error) {
-	storageProvider, err := storage.NewStorage(storage.Storage(config.StorageProvider), config.StorageOption)
+	storageProvider, err := storage.NewStorage(storage.Type(config.StorageProvider), config.StorageOption)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not instantiate storage provider: %s", config.StorageProvider)
 	}

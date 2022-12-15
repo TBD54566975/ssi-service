@@ -44,7 +44,7 @@ func setupTestDB(t *testing.T) storage.ServiceStorage {
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = s.Close()
-		_ = os.Remove(name)
+		_ = os.Remove(s.URI())
 	})
 	return s
 }
