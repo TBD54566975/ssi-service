@@ -9,16 +9,15 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"github.com/tbd54566975/ssi-service/pkg/service/did/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func newWebDIDHandler(s storage.Storage, ks *keystore.Service) MethodHandler {
+func newWebDIDHandler(s *DIDStorage, ks *keystore.Service) MethodHandler {
 	return &webDIDHandler{storage: s, keyStore: ks}
 }
 
 type webDIDHandler struct {
-	storage  storage.Storage
+	storage  *DIDStorage
 	keyStore *keystore.Service
 }
 
@@ -52,7 +51,7 @@ func (h *webDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 
 	// store metadata in DID storage
 	id := didWeb.String()
-	storedDID := storage.StoredDID{
+	storedDID := StoredDID{
 		ID:  id,
 		DID: *doc,
 	}

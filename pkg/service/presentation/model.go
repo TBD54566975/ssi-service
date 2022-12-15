@@ -1,4 +1,4 @@
-package model
+package presentation
 
 import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
@@ -6,7 +6,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
-	"github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"go.einride.tech/aip/filtering"
 )
 
@@ -55,7 +55,7 @@ type GetSubmissionRequest struct {
 }
 
 type GetSubmissionResponse struct {
-	Submission Submission `json:"submission"`
+	Submission common.Submission `json:"submission"`
 }
 
 type DeleteSubmissionRequest struct {
@@ -66,16 +66,8 @@ type ListSubmissionRequest struct {
 	Filter filtering.Filter
 }
 
-type Submission struct {
-	// One of {`pending`, `approved`, `denied`}.
-	Status string `json:"status" validate:"required"`
-	// The reason why the submission was approved or denied.
-	Reason string `json:"reason"`
-	*exchange.PresentationSubmission
-}
-
 type ListSubmissionResponse struct {
-	Submissions []Submission `json:"submissions"`
+	Submissions []common.Submission `json:"submissions"`
 }
 
 type ReviewSubmissionRequest struct {
@@ -87,13 +79,4 @@ type ReviewSubmissionRequest struct {
 // Validate runs validation on the request struct and returns errors when it's invalid.
 func (r ReviewSubmissionRequest) Validate() error {
 	return util.NewValidator().Struct(r)
-}
-
-// ServiceModel creates a Submission from a given StoredSubmission.
-func ServiceModel(storedSubmission *storage.StoredSubmission) Submission {
-	return Submission{
-		Status:                 storedSubmission.Status.String(),
-		Reason:                 storedSubmission.Reason,
-		PresentationSubmission: &storedSubmission.Submission,
-	}
 }

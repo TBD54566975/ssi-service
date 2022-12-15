@@ -1,4 +1,4 @@
-package storage
+package operation
 
 import (
 	"strings"
@@ -16,6 +16,30 @@ const (
 )
 
 const SubmissionParentResource = "/presentations/submissions"
+
+type StoredOperation struct {
+	ID string `json:"id"`
+
+	// Whether this operation has finished.
+	Done bool `json:"done"`
+
+	// Populated when there was an error with the operation.
+	Error string `json:"errorResult,omitempty"`
+
+	// Populated only when Done == true and Error == ""
+	Response []byte `json:"response,omitempty"`
+}
+
+func (s StoredOperation) FilterVariablesMap() map[string]any {
+	return map[string]any{
+		"done": s.Done,
+		// "true" and "false" are currently being parsed as identifiers, so we need to pass in the values that they
+		// evaluate to. Ideally, we should change them to be parsed as constants. That requires an upstream change in
+		// the filtering library.
+		"true":  true,
+		"false": false,
+	}
+}
 
 // NamespaceFromID returns a namespace from a given operation ID. An empty string is returned when the namespace cannot
 // be determined.
@@ -36,11 +60,11 @@ func namespaceFromParent(parent string) string {
 	}
 }
 
-type BoltOperationStorage struct {
-	db *storage.BoltDB
+type OperationStorage struct {
+	db storage.ServiceStorage
 }
 
-func (b BoltOperationStorage) StoreOperation(op StoredOperation) error {
+func (os *OperationStorage) StoreOperation(op StoredOperation) error {
 	id := op.ID
 	if id == "" {
 		return util.LoggingNewError("ID is required for storing operations")
@@ -49,12 +73,12 @@ func (b BoltOperationStorage) StoreOperation(op StoredOperation) error {
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "marshalling operation with id: %s", id)
 	}
-	return b.db.Write(NamespaceFromID(id), id, jsonBytes)
+	return os.db.Write(NamespaceFromID(id), id, jsonBytes)
 }
 
-func (b BoltOperationStorage) GetOperation(id string) (StoredOperation, error) {
+func (os *OperationStorage) GetOperation(id string) (StoredOperation, error) {
 	var stored StoredOperation
-	jsonBytes, err := b.db.Read(NamespaceFromID(id), id)
+	jsonBytes, err := os.db.Read(NamespaceFromID(id), id)
 	if err != nil {
 		return stored, util.LoggingErrorMsgf(err, "reading operation with id: %s", id)
 	}
@@ -67,8 +91,8 @@ func (b BoltOperationStorage) GetOperation(id string) (StoredOperation, error) {
 	return stored, nil
 }
 
-func (b BoltOperationStorage) GetOperations(parent string, filter filtering.Filter) ([]StoredOperation, error) {
-	operations, err := b.db.ReadAll(namespaceFromParent(parent))
+func (os *OperationStorage) GetOperations(parent string, filter filtering.Filter) ([]StoredOperation, error) {
+	operations, err := os.db.ReadAll(namespaceFromParent(parent))
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get all operations")
 	}
@@ -96,17 +120,17 @@ func (b BoltOperationStorage) GetOperations(parent string, filter filtering.Filt
 	return stored, nil
 }
 
-func (b BoltOperationStorage) DeleteOperation(id string) error {
-	if err := b.db.Delete(NamespaceFromID(id), id); err != nil {
+func (os *OperationStorage) DeleteOperation(id string) error {
+	if err := os.db.Delete(NamespaceFromID(id), id); err != nil {
 		return util.LoggingErrorMsgf(err, "deleting operation: %s", id)
 	}
 	return nil
 }
 
-func NewBoltOperationStorage(db *storage.BoltDB) (*BoltOperationStorage, error) {
+func NewOperationStorage(db storage.ServiceStorage) (*OperationStorage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}
-	return &BoltOperationStorage{db: db}, nil
+	return &OperationStorage{db: db}, nil
 
 }

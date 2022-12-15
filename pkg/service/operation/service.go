@@ -9,15 +9,13 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
-	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
-	prestorage "github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 type Service struct {
-	storage opstorage.Storage
+	storage *OperationStorage
 }
 
 func (s Service) Type() framework.Type {
@@ -65,7 +63,7 @@ func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResp
 
 type ServiceModelFunc func(any) any
 
-func serviceModel(op opstorage.StoredOperation) (Operation, error) {
+func serviceModel(op StoredOperation) (Operation, error) {
 	newOp := Operation{
 		ID:   op.ID,
 		Done: op.Done,
@@ -76,12 +74,12 @@ func serviceModel(op opstorage.StoredOperation) (Operation, error) {
 
 	if len(op.Response) > 0 {
 		switch {
-		case strings.HasPrefix(op.ID, opstorage.SubmissionParentResource):
-			var s prestorage.StoredSubmission
+		case strings.HasPrefix(op.ID, SubmissionParentResource):
+			var s common.StoredSubmission
 			if err := json.Unmarshal(op.Response, &s); err != nil {
 				return Operation{}, err
 			}
-			newOp.Result.Response = model.ServiceModel(&s)
+			newOp.Result.Response = common.ServiceModel(&s)
 		default:
 			return newOp, errors.New("unknown response type")
 		}
@@ -103,7 +101,7 @@ func (s Service) GetOperation(request GetOperationRequest) (Operation, error) {
 }
 
 func NewOperationService(s storage.ServiceStorage) (*Service, error) {
-	opStorage, err := opstorage.NewOperationStorage(s)
+	opStorage, err := NewOperationStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "creating operation storage")
 	}

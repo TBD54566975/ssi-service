@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/TBD54566975/ssi-sdk/util"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"go.einride.tech/aip/filtering"
 )
 
@@ -54,5 +53,5 @@ func (r GetOperationRequest) Validate() error {
 
 // IDFromSubmissionID returns a submission operation ID from the submission ID.
 func IDFromSubmissionID(id string) string {
-	return fmt.Sprintf("%s/%s", storage.SubmissionParentResource, id)
+	return fmt.Sprintf("%s/%s", SubmissionParentResource, id)
 }
