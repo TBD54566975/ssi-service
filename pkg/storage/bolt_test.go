@@ -131,7 +131,7 @@ func TestBoltDBPrefixAndKeys(t *testing.T) {
 }
 
 func setupBoltDB(t *testing.T) *BoltDB {
-	db, err := NewBoltDBWithFile("test.db")
+	db, err := NewStorage(Bolt, "test.db")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, db)
 
@@ -139,7 +139,7 @@ func setupBoltDB(t *testing.T) *BoltDB {
 		_ = db.Close()
 		_ = os.Remove("test.db")
 	})
-	return db
+	return db.(*BoltDB)
 }
 
 type testStruct struct {

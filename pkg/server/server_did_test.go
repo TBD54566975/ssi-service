@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -14,19 +13,12 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestDIDAPI(t *testing.T) {
 	t.Run("Test Get DID Methods", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		_, keyStoreService := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStoreService)
@@ -35,7 +27,7 @@ func TestDIDAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids", nil)
 		w := httptest.NewRecorder()
 
-		err = didService.GetDIDMethods(newRequestContext(), w, req)
+		err := didService.GetDIDMethods(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 		assert.Equal(tt, http.StatusOK, w.Result().StatusCode)
 
@@ -48,14 +40,8 @@ func TestDIDAPI(t *testing.T) {
 	})
 
 	t.Run("Test Create DID By Method: Key", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		_, keyStoreService := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStoreService)
@@ -67,7 +53,7 @@ func TestDIDAPI(t *testing.T) {
 			"method": "key",
 		}
 
-		err = didService.CreateDIDByMethod(newRequestContextWithParams(params), w, req)
+		err := didService.CreateDIDByMethod(newRequestContextWithParams(params), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid create DID request")
 
@@ -102,14 +88,8 @@ func TestDIDAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get DID By Method", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		_, keyStore := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStore)
@@ -123,7 +103,7 @@ func TestDIDAPI(t *testing.T) {
 			"method": "bad",
 			"id":     "worse",
 		}
-		err = didService.GetDIDByMethod(newRequestContextWithParams(badParams), w, req)
+		err := didService.GetDIDByMethod(newRequestContextWithParams(badParams), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not get DID for method<bad>")
 
@@ -177,15 +157,8 @@ func TestDIDAPI(t *testing.T) {
 	})
 
 	t.Run("Test Get DIDs By Method", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
-
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 		_, keyStore := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStore)
 
@@ -197,7 +170,7 @@ func TestDIDAPI(t *testing.T) {
 		badParams := map[string]string{
 			"method": "bad",
 		}
-		err = didService.GetDIDsByMethod(newRequestContextWithParams(badParams), w, req)
+		err := didService.GetDIDsByMethod(newRequestContextWithParams(badParams), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not get DIDs for method: bad")
 
@@ -266,14 +239,8 @@ func TestDIDAPI(t *testing.T) {
 	})
 
 	t.Run("Test Resolve DIDs", func(tt *testing.T) {
-		bolt, err := storage.NewBoltDB()
-		require.NoError(tt, err)
-
-		// remove the db file after the test
-		tt.Cleanup(func() {
-			_ = bolt.Close()
-			_ = os.Remove(storage.DBFile)
-		})
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
 
 		_, keyStore := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStore)
@@ -285,7 +252,7 @@ func TestDIDAPI(t *testing.T) {
 		badParams := map[string]string{
 			"id": "bad",
 		}
-		err = didService.ResolveDID(newRequestContextWithParams(badParams), w, req)
+		err := didService.ResolveDID(newRequestContextWithParams(badParams), w, req)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "not a valid did: bad")
 

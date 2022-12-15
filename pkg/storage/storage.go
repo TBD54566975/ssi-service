@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"reflect"
 )
 
 type Storage string
@@ -67,7 +68,16 @@ func IsStorageAvailable(storage string) bool {
 	return false
 }
 
-// GetStorage get storage by stroage type
+// GetStorage create a new storage by stroage type
 func GetStorage(storageType Storage) ServiceStorage {
-	return availableStorages[storageType]
+	tmp := availableStorages[storageType]
+	if tmp == nil {
+		return tmp
+	}
+	if reflect.TypeOf(tmp).Kind() == reflect.Ptr {
+		// Pointer:
+		return reflect.New(reflect.ValueOf(tmp).Elem().Type()).Interface().(ServiceStorage)
+	}
+	// Not pointer:
+	return reflect.New(reflect.TypeOf(tmp)).Elem().Interface().(ServiceStorage)
 }

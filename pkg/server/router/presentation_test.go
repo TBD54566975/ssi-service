@@ -1,7 +1,6 @@
 package router
 
 import (
-	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
@@ -10,7 +9,6 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestPresentationDefinitionRouter(t *testing.T) {
@@ -30,12 +28,9 @@ func TestPresentationDefinitionRouter(t *testing.T) {
 }
 
 func TestPresentationDefinitionService(t *testing.T) {
-	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
-	})
 
-	s, err := storage.NewStorage(storage.Bolt)
-	assert.NoError(t, err)
+	s := setupTestDB(t)
+	assert.NotNil(t, s)
 
 	keyStoreService := testKeyStoreService(t, s)
 	didService := testDIDService(t, s, keyStoreService)

@@ -13,6 +13,10 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+func init() {
+	RegisterStorage(&BoltDB{})
+}
+
 const (
 	DBFilePrefix = "ssi-service"
 )
@@ -23,7 +27,7 @@ type BoltDB struct {
 
 // Init instantiates a file-based storage instance for Bolt https://github.com/boltdb/bolt
 func (b *BoltDB) Init(options interface{}) error {
-	if b.db != nil {
+	if b.db != nil && b.IsOpen() {
 		return fmt.Errorf("bolit db already opened with name %s", b.Uri())
 	}
 	dbFilePath := fmt.Sprintf("%s_%s.db", DBFilePrefix, b.Type())
@@ -32,7 +36,9 @@ func (b *BoltDB) Init(options interface{}) error {
 		if !ok {
 			return fmt.Errorf("options should be a string value")
 		}
-		dbFilePath = customPath
+		if customPath != "" {
+			dbFilePath = customPath
+		}
 	}
 	db, err := bolt.Open(dbFilePath, 0600, &bolt.Options{Timeout: 3 * time.Second})
 	if err != nil {
@@ -45,6 +51,14 @@ func (b *BoltDB) Init(options interface{}) error {
 // Uri return filepath of boltDB,
 func (b *BoltDB) Uri() string {
 	return b.db.Path()
+}
+
+// IsOpen return if db was opened
+func (b *BoltDB) IsOpen() bool {
+	if b.db == nil {
+		return false
+	}
+	return b.db.Path() != ""
 }
 
 func (b *BoltDB) Type() Storage {

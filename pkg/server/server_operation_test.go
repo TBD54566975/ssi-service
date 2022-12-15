@@ -20,8 +20,8 @@ import (
 )
 
 func TestOperationsAPI(t *testing.T) {
-	t.Run("Marks operation as done after reviewing submission", func(t *testing.T) {
-		s := setupTestDB(t)
+	t.Run("Marks operation as done after reviewing submission", func(tt *testing.T) {
+		s := setupTestDB(tt)
 		pRouter := setupPresentationRouter(t, s)
 		opRouter := setupOperationsRouter(t, s)
 
@@ -52,8 +52,8 @@ func TestOperationsAPI(t *testing.T) {
 	})
 
 	t.Run("GetOperation", func(t *testing.T) {
-		t.Run("Returns operation after submission", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns operation after submission", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -77,8 +77,8 @@ func TestOperationsAPI(t *testing.T) {
 			assert.Contains(t, resp.ID, "/presentations/submissions/")
 		})
 
-		t.Run("Returns error when id doesn't exist", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns error when id doesn't exist", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			opRouter := setupOperationsRouter(t, s)
 
 			req := httptest.NewRequest(
@@ -95,8 +95,8 @@ func TestOperationsAPI(t *testing.T) {
 	})
 
 	t.Run("GetOperations", func(t *testing.T) {
-		t.Run("Returns empty when no operations stored", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns empty when no operations stored", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			opRouter := setupOperationsRouter(t, s)
 
 			request := router.GetOperationsRequest{
@@ -113,8 +113,8 @@ func TestOperationsAPI(t *testing.T) {
 			assert.Empty(t, resp.Operations)
 		})
 
-		t.Run("Returns one operation for every submission", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns one operation for every submission", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -148,8 +148,8 @@ func TestOperationsAPI(t *testing.T) {
 			}
 		})
 
-		t.Run("Returns operation when filtering to include", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns operation when filtering to include", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -173,8 +173,8 @@ func TestOperationsAPI(t *testing.T) {
 			assert.False(t, resp.Operations[0].Done)
 		})
 
-		t.Run("Returns zero operations when filtering to exclude", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns zero operations when filtering to exclude", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -197,8 +197,8 @@ func TestOperationsAPI(t *testing.T) {
 			assert.Empty(t, resp.Operations)
 		})
 
-		t.Run("Returns zero operations when wrong parent is specified", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns zero operations when wrong parent is specified", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -278,7 +278,8 @@ func setupTestDB(t *testing.T) storage.ServiceStorage {
 	file, err := os.CreateTemp("", "bolt")
 	require.NoError(t, err)
 	name := file.Name()
-	s, err := storage.NewBoltDBWithFile(name)
+	file.Close()
+	s, err := storage.NewStorage(storage.Bolt, name)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = s.Close()
