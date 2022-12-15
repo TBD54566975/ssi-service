@@ -34,13 +34,15 @@ import (
 )
 
 func TestHealthCheckAPI(t *testing.T) {
-	// // remove the db file after the test
-	// t.Cleanup(func() {
-	// 	_ = os.Remove(storage.DBFile)
-	// })
+	dbFile := "test_health_check_api.db"
+	// remove the db file after the test
+	t.Cleanup(func() {
+		_ = os.Remove(dbFile)
+	})
 
 	shutdown := make(chan os.Signal, 1)
 	serviceConfig, err := config.LoadConfig("")
+	serviceConfig.Services.StorageOption = dbFile
 	assert.NoError(t, err)
 	server, err := NewSSIServer(shutdown, *serviceConfig)
 	assert.NoError(t, err)
@@ -61,14 +63,16 @@ func TestHealthCheckAPI(t *testing.T) {
 }
 
 func TestReadinessAPI(t *testing.T) {
-	// // remove the db file after the test
-	// t.Cleanup(func() {
-	// 	_ = os.Remove(storage.DBFile)
-	// })
+	dbFile := "test_readiness_api.db"
+	// remove the db file after the test
+	t.Cleanup(func() {
+		_ = os.Remove(dbFile)
+	})
 
 	shutdown := make(chan os.Signal, 1)
 	serviceConfig, err := config.LoadConfig("")
 	assert.NoError(t, err)
+	serviceConfig.Services.StorageOption = dbFile
 
 	server, err := NewSSIServer(shutdown, *serviceConfig)
 	assert.NoError(t, err)
