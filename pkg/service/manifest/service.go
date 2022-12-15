@@ -19,7 +19,7 @@ import (
 )
 
 type Service struct {
-	storage *ManifestStorage
+	storage *Storage
 	config  config.ManifestServiceConfig
 
 	// external dependencies

@@ -18,7 +18,7 @@ import (
 )
 
 type Service struct {
-	storage *OperationStorage
+	storage *Storage
 }
 
 func (s Service) Type() framework.Type {
@@ -66,7 +66,7 @@ func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResp
 
 type ServiceModelFunc func(any) any
 
-func serviceModel(op StoredOperation) (*Operation, error) {
+func serviceModel(op opstorage.StoredOperation) (*Operation, error) {
 	newOp := &Operation{
 		ID:   op.ID,
 		Done: op.Done,
@@ -82,7 +82,7 @@ func serviceModel(op StoredOperation) (*Operation, error) {
 			if err := json.Unmarshal(op.Response, &s); err != nil {
 				return nil, err
 			}
-			newOp.Result.Response = submission.ServiceModel(&s)
+			newOp.Result.Response = model.ServiceModel(&s)
 		default:
 			return nil, errors.New("unknown response type")
 		}

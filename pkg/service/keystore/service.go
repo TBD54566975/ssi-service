@@ -18,7 +18,7 @@ import (
 )
 
 type Service struct {
-	storage *KeyStoreStorage
+	storage *Storage
 	config  config.KeyStoreServiceConfig
 }
 

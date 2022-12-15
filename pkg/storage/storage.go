@@ -19,7 +19,7 @@ var (
 type ServiceStorage interface {
 	Init(interface{}) error
 	Type() Storage
-	Uri() string
+	URI() string
 	IsOpen() bool
 	Close() error
 	Write(namespace, key string, value []byte) error
@@ -33,7 +33,7 @@ type ServiceStorage interface {
 	UpdateValueAndOperation(namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error)
 }
 
-//  NewStorage creates a new or use exists storage provider and provider specify param based on the input
+// NewStorage creates a new or use exists storage provider and provider specify param based on the input
 func NewStorage(storageProvider Storage, option interface{}) (ServiceStorage, error) {
 	impl := GetStorage(storageProvider)
 	if impl == nil {

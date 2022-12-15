@@ -25,7 +25,7 @@ import (
 )
 
 type Service struct {
-	storage *SchemaStorage
+	storage *Storage
 	config  config.SchemaServiceConfig
 
 	// external dependencies

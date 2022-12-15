@@ -17,7 +17,7 @@ import (
 
 type Service struct {
 	config   config.DIDServiceConfig
-	storage  *DIDStorage
+	storage  *Storage
 	resolver *didsdk.Resolver
 
 	// supported DID methods

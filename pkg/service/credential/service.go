@@ -26,7 +26,7 @@ import (
 )
 
 type Service struct {
-	storage  *CredentialStorage
+	storage  *Storage
 	config   config.CredentialServiceConfig
 	verifier *credint.Verifier
 

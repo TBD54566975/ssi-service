@@ -10,7 +10,8 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage/namespace"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
+	opsubmission "github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
+	prestorage "github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"go.einride.tech/aip/filtering"
 )
@@ -24,46 +25,46 @@ type StoredPresentation struct {
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
 }
 
-type PresentationStorage struct {
+type Storage struct {
 	db storage.ServiceStorage
 }
 
-func (b PresentationStorage) UpdateSubmission(id string, approved bool, reason string, opID string) (StoredSubmission, opstorage.StoredOperation, error) {
+func (ps Storage) UpdateSubmission(id string, approved bool, reason string, opID string) (prestorage.StoredSubmission, opstorage.StoredOperation, error) {
 	m := map[string]any{
-		"status": submission.StatusDenied,
+		"status": opsubmission.StatusDenied,
 		"reason": reason,
 	}
 	if approved {
-		m["status"] = submission.StatusApproved
+		m["status"] = opsubmission.StatusApproved
 	}
 	submissionData, operationData, err := ps.db.UpdateValueAndOperation(
-		submission.Namespace,
+		opsubmission.Namespace,
 		id,
 		storage.NewUpdater(m),
 		namespace.FromID(opID),
 		opID,
-		submission.OperationUpdater{
+		opsubmission.OperationUpdater{
 			UpdaterWithMap: storage.NewUpdater(map[string]any{
 				"done": true,
 			}),
 		})
 	if err != nil {
-		return submission.StoredSubmission{}, operation.StoredOperation{}, errors.Wrap(err, "updating value and operation")
+		return prestorage.StoredSubmission{}, opstorage.StoredOperation{}, errors.Wrap(err, "updating value and operation")
 	}
 
-	var s submission.StoredSubmission
+	var s prestorage.StoredSubmission
 	if err = json.Unmarshal(submissionData, &s); err != nil {
-		return submission.StoredSubmission{}, operation.StoredOperation{}, errors.Wrap(err, "unmarshalling written submission")
+		return prestorage.StoredSubmission{}, opstorage.StoredOperation{}, errors.Wrap(err, "unmarshalling written submission")
 	}
-	var op operation.StoredOperation
+	var op opstorage.StoredOperation
 	if err = json.Unmarshal(operationData, &op); err != nil {
-		return submission.StoredSubmission{}, operation.StoredOperation{}, errors.Wrap(err, "unmarshalling written operation")
+		return prestorage.StoredSubmission{}, opstorage.StoredOperation{}, errors.Wrap(err, "unmarshalling written operation")
 	}
 	return s, op, nil
 }
 
-func (ps *PresentationStorage) ListSubmissions(filter filtering.Filter) ([]submission.StoredSubmission, error) {
-	allData, err := ps.db.ReadAll(submission.Namespace)
+func (ps *Storage) ListSubmissions(filter filtering.Filter) ([]prestorage.StoredSubmission, error) {
+	allData, err := ps.db.ReadAll(opsubmission.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all data")
 	}
@@ -72,9 +73,9 @@ func (ps *PresentationStorage) ListSubmissions(filter filtering.Filter) ([]submi
 	if err != nil {
 		return nil, err
 	}
-	storedSubmissions := make([]submission.StoredSubmission, 0, len(allData))
+	storedSubmissions := make([]prestorage.StoredSubmission, 0, len(allData))
 	for key, data := range allData {
-		var ss submission.StoredSubmission
+		var ss prestorage.StoredSubmission
 		if err = json.Unmarshal(data, &ss); err != nil {
 			logrus.WithError(err).WithField("key", key).Error("unmarshalling submission")
 		}
@@ -91,14 +92,14 @@ func (ps *PresentationStorage) ListSubmissions(filter filtering.Filter) ([]submi
 	return storedSubmissions, nil
 }
 
-func NewPresentationStorage(db storage.ServiceStorage) (*PresentationStorage, error) {
+func NewPresentationStorage(db storage.ServiceStorage) (*Storage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}
-	return &PresentationStorage{db: db}, nil
+	return &Storage{db: db}, nil
 }
 
-func (ps *PresentationStorage) StorePresentation(presentation StoredPresentation) error {
+func (ps *Storage) StorePresentation(presentation StoredPresentation) error {
 	id := presentation.ID
 	if id == "" {
 		err := errors.New("could not store presentation definition without an ID")
@@ -114,7 +115,7 @@ func (ps *PresentationStorage) StorePresentation(presentation StoredPresentation
 	return ps.db.Write(presentationDefinitionNamespace, id, jsonBytes)
 }
 
-func (ps *PresentationStorage) GetPresentation(id string) (*StoredPresentation, error) {
+func (ps *Storage) GetPresentation(id string) (*StoredPresentation, error) {
 	jsonBytes, err := ps.db.Read(presentationDefinitionNamespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get presentation definition: %s", id)
@@ -129,14 +130,14 @@ func (ps *PresentationStorage) GetPresentation(id string) (*StoredPresentation, 
 	return &stored, nil
 }
 
-func (ps *PresentationStorage) DeletePresentation(id string) error {
+func (ps *Storage) DeletePresentation(id string) error {
 	if err := ps.db.Delete(presentationDefinitionNamespace, id); err != nil {
 		return util.LoggingNewErrorf("could not delete presentation definition: %s", id)
 	}
 	return nil
 }
 
-func (ps PresentationStorage) StoreSubmission(s StoredSubmission) error {
+func (ps Storage) StoreSubmission(s prestorage.StoredSubmission) error {
 	id := s.Submission.ID
 	if id == "" {
 		err := errors.New("could not store submission definition without an ID")
@@ -147,18 +148,18 @@ func (ps PresentationStorage) StoreSubmission(s StoredSubmission) error {
 	if err != nil {
 		return util.LoggingNewErrorf("could not store submission definition: %s", id)
 	}
-	return ps.db.Write(submission.Namespace, id, jsonBytes)
+	return ps.db.Write(opsubmission.Namespace, id, jsonBytes)
 }
 
-func (ps *PresentationStorage) GetSubmission(id string) (*submission.StoredSubmission, error) {
-	jsonBytes, err := ps.db.Read(submission.Namespace, id)
+func (ps *Storage) GetSubmission(id string) (*prestorage.StoredSubmission, error) {
+	jsonBytes, err := ps.db.Read(opsubmission.Namespace, id)
 	if err != nil {
 		return nil, util.LoggingNewErrorf("could not get submission definition: %s", id)
 	}
 	if len(jsonBytes) == 0 {
-		return nil, util.LoggingErrorMsgf(submission.ErrSubmissionNotFound, "reading submission with id: %s", id)
+		return nil, util.LoggingErrorMsgf(prestorage.ErrSubmissionNotFound, "reading submission with id: %s", id)
 	}
-	var stored submission.StoredSubmission
+	var stored prestorage.StoredSubmission
 	if err := json.Unmarshal(jsonBytes, &stored); err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored submission definition: %s", id)
 	}

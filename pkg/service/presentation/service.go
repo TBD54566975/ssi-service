@@ -24,8 +24,8 @@ import (
 )
 
 type Service struct {
-	storage    *PresentationStorage
-	opsStorage *operation.OperationStorage
+	storage    *Storage
+	opsStorage *operation.Storage
 	config     config.PresentationServiceConfig
 	resolver   *didsdk.Resolver
 	schema     *schema.Service
@@ -83,7 +83,7 @@ func NewPresentationService(config config.PresentationServiceConfig, s storage.S
 
 // CreatePresentationDefinition houses the main service logic for presentation definition creation. It validates the input, and
 // produces a presentation definition value that conforms with the PresentationDefinition specification.
-func (s Service) CreatePresentationDefinition(request CreatePresentationDefinitionRequest) (*CreatePresentationDefinitionResponse, error) {
+func (s Service) CreatePresentationDefinition(request model.CreatePresentationDefinitionRequest) (*model.CreatePresentationDefinitionResponse, error) {
 	logrus.Debugf("creating presentation definition: %+v", request)
 
 	if !request.IsValid() {
@@ -100,12 +100,12 @@ func (s Service) CreatePresentationDefinition(request CreatePresentationDefiniti
 		return nil, util.LoggingErrorMsg(err, "could not store presentation")
 	}
 
-	return &CreatePresentationDefinitionResponse{
+	return &model.CreatePresentationDefinitionResponse{
 		PresentationDefinition: storedPresentation.PresentationDefinition,
 	}, nil
 }
 
-func (s Service) GetPresentationDefinition(request GetPresentationDefinitionRequest) (*GetPresentationDefinitionResponse, error) {
+func (s Service) GetPresentationDefinition(request model.GetPresentationDefinitionRequest) (*model.GetPresentationDefinitionResponse, error) {
 	logrus.Debugf("getting presentation definition: %s", request.ID)
 
 	storedPresentation, err := s.storage.GetPresentation(request.ID)
@@ -115,10 +115,10 @@ func (s Service) GetPresentationDefinition(request GetPresentationDefinitionRequ
 	if storedPresentation == nil {
 		return nil, util.LoggingNewErrorf("presentation definition with id<%s> could not be found", request.ID)
 	}
-	return &GetPresentationDefinitionResponse{ID: storedPresentation.ID, PresentationDefinition: storedPresentation.PresentationDefinition}, nil
+	return &model.GetPresentationDefinitionResponse{ID: storedPresentation.ID, PresentationDefinition: storedPresentation.PresentationDefinition}, nil
 }
 
-func (s Service) DeletePresentationDefinition(request DeletePresentationDefinitionRequest) error {
+func (s Service) DeletePresentationDefinition(request model.DeletePresentationDefinitionRequest) error {
 	logrus.Debugf("deleting presentation definition: %s", request.ID)
 
 	if err := s.storage.DeletePresentation(request.ID); err != nil {
@@ -130,7 +130,7 @@ func (s Service) DeletePresentationDefinition(request DeletePresentationDefiniti
 
 // CreateSubmission houses the main service logic for presentation submission creation. It validates the input, and
 // produces a presentation submission value that conforms with the Submission specification.
-func (s Service) CreateSubmission(request submission.CreateSubmissionRequest) (*operation.Operation, error) {
+func (s Service) CreateSubmission(request model.CreateSubmissionRequest) (*operation.Operation, error) {
 	if !request.IsValid() {
 		return nil, errors.Errorf("invalid create presentation submission request: %+v", request)
 	}
@@ -147,7 +147,7 @@ func (s Service) CreateSubmission(request submission.CreateSubmissionRequest) (*
 		return nil, errors.Wrap(err, "verifying token from did")
 	}
 
-	if _, err := s.storage.GetSubmission(request.Submission.ID); !errors.Is(err, submission.ErrSubmissionNotFound) {
+	if _, err := s.storage.GetSubmission(request.Submission.ID); !errors.Is(err, presentationstorage.ErrSubmissionNotFound) {
 		return nil, errors.Errorf("submission with id %s already present", request.Submission.ID)
 	}
 
@@ -188,7 +188,7 @@ func (s Service) CreateSubmission(request submission.CreateSubmissionRequest) (*
 	}
 
 	opID := submission.IDFromSubmissionID(storedSubmission.Submission.ID)
-	storedOp := operation.StoredOperation{
+	storedOp := opstorage.StoredOperation{
 		ID:   opID,
 		Done: false,
 	}
@@ -202,19 +202,19 @@ func (s Service) CreateSubmission(request submission.CreateSubmissionRequest) (*
 	}, nil
 }
 
-func (s Service) GetSubmission(request submission.GetSubmissionRequest) (*submission.GetSubmissionResponse, error) {
+func (s Service) GetSubmission(request model.GetSubmissionRequest) (*model.GetSubmissionResponse, error) {
 	logrus.Debugf("getting presentation submission: %s", request.ID)
 
 	storedSubmission, err := s.storage.GetSubmission(request.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching from storage")
 	}
-	return &submission.GetSubmissionResponse{
-		Submission: submission.ServiceModel(storedSubmission),
+	return &model.GetSubmissionResponse{
+		Submission: model.ServiceModel(storedSubmission),
 	}, nil
 }
 
-func (s Service) ListSubmissions(request submission.ListSubmissionRequest) (*submission.ListSubmissionResponse, error) {
+func (s Service) ListSubmissions(request model.ListSubmissionRequest) (*model.ListSubmissionResponse, error) {
 	logrus.Debug("listing presentation submissions")
 
 	subs, err := s.storage.ListSubmissions(request.Filter)
@@ -222,16 +222,16 @@ func (s Service) ListSubmissions(request submission.ListSubmissionRequest) (*sub
 		return nil, errors.Wrap(err, "fetching submissions from storage")
 	}
 
-	resp := &submission.ListSubmissionResponse{Submissions: make([]submission.Submission, 0, len(subs))}
+	resp := &model.ListSubmissionResponse{Submissions: make([]model.Submission, 0, len(subs))}
 	for _, sub := range subs {
 		sub := sub // What's this?? see https://github.com/golang/go/wiki/CommonMistakes#using-reference-to-loop-iterator-variable
-		resp.Submissions = append(resp.Submissions, submission.ServiceModel(&sub))
+		resp.Submissions = append(resp.Submissions, model.ServiceModel(&sub))
 	}
 
 	return resp, nil
 }
 
-func (s Service) ReviewSubmission(request submission.ReviewSubmissionRequest) (*submission.Submission, error) {
+func (s Service) ReviewSubmission(request model.ReviewSubmissionRequest) (*model.Submission, error) {
 	if err := request.Validate(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
@@ -241,6 +241,6 @@ func (s Service) ReviewSubmission(request submission.ReviewSubmissionRequest) (*
 		return nil, errors.Wrap(err, "updating submission")
 	}
 
-	m := submission.ServiceModel(&updatedSubmission)
+	m := model.ServiceModel(&updatedSubmission)
 	return &m, nil
 }

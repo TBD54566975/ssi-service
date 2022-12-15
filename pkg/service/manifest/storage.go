@@ -46,18 +46,18 @@ type StoredResponse struct {
 	ResponseJWT  keyaccess.JWT               `json:"responseJwt"`
 }
 
-type ManifestStorage struct {
+type Storage struct {
 	db storage.ServiceStorage
 }
 
-func NewManifestStorage(db storage.ServiceStorage) (*ManifestStorage, error) {
+func NewManifestStorage(db storage.ServiceStorage) (*Storage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}
-	return &ManifestStorage{db: db}, nil
+	return &Storage{db: db}, nil
 }
 
-func (ms *ManifestStorage) StoreManifest(manifest StoredManifest) error {
+func (ms *Storage) StoreManifest(manifest StoredManifest) error {
 	id := manifest.Manifest.ID
 	if id == "" {
 		err := errors.New("could not store manifest without an ID")
@@ -73,7 +73,7 @@ func (ms *ManifestStorage) StoreManifest(manifest StoredManifest) error {
 	return ms.db.Write(manifestNamespace, id, manifestBytes)
 }
 
-func (ms *ManifestStorage) GetManifest(id string) (*StoredManifest, error) {
+func (ms *Storage) GetManifest(id string) (*StoredManifest, error) {
 	manifestBytes, err := ms.db.Read(manifestNamespace, id)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get manifest: %s", id)
@@ -95,7 +95,7 @@ func (ms *ManifestStorage) GetManifest(id string) (*StoredManifest, error) {
 }
 
 // GetManifests attempts to get all stored manifests. It will return those it can even if it has trouble with some.
-func (ms *ManifestStorage) GetManifests() ([]StoredManifest, error) {
+func (ms *Storage) GetManifests() ([]StoredManifest, error) {
 	gotManifests, err := ms.db.ReadAll(manifestNamespace)
 	if err != nil {
 		errMsg := "could not get all manifests"
@@ -116,14 +116,14 @@ func (ms *ManifestStorage) GetManifests() ([]StoredManifest, error) {
 	return stored, nil
 }
 
-func (ms *ManifestStorage) DeleteManifest(id string) error {
+func (ms *Storage) DeleteManifest(id string) error {
 	if err := ms.db.Delete(manifestNamespace, id); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete manifest: %s", id)
 	}
 	return nil
 }
 
-func (ms *ManifestStorage) StoreApplication(application StoredApplication) error {
+func (ms *Storage) StoreApplication(application StoredApplication) error {
 	id := application.Application.ID
 	if id == "" {
 		return util.LoggingNewError("could not store application without an ID")
@@ -135,7 +135,7 @@ func (ms *ManifestStorage) StoreApplication(application StoredApplication) error
 	return ms.db.Write(applicationNamespace, id, applicationBytes)
 }
 
-func (ms *ManifestStorage) GetApplication(id string) (*StoredApplication, error) {
+func (ms *Storage) GetApplication(id string) (*StoredApplication, error) {
 	applicationBytes, err := ms.db.Read(applicationNamespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get application: %s", id)
@@ -151,7 +151,7 @@ func (ms *ManifestStorage) GetApplication(id string) (*StoredApplication, error)
 }
 
 // GetApplications attempts to get all stored applications. It will return those it can even if it has trouble with some.
-func (ms *ManifestStorage) GetApplications() ([]StoredApplication, error) {
+func (ms *Storage) GetApplications() ([]StoredApplication, error) {
 	gotApplications, err := ms.db.ReadAll(applicationNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get all applications")
@@ -172,14 +172,14 @@ func (ms *ManifestStorage) GetApplications() ([]StoredApplication, error) {
 	return stored, nil
 }
 
-func (ms *ManifestStorage) DeleteApplication(id string) error {
+func (ms *Storage) DeleteApplication(id string) error {
 	if err := ms.db.Delete(applicationNamespace, id); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete application: %s", id)
 	}
 	return nil
 }
 
-func (ms *ManifestStorage) StoreResponse(response StoredResponse) error {
+func (ms *Storage) StoreResponse(response StoredResponse) error {
 	id := response.Response.ID
 	if id == "" {
 		return util.LoggingNewError("could not store response without an ID")
@@ -191,7 +191,7 @@ func (ms *ManifestStorage) StoreResponse(response StoredResponse) error {
 	return ms.db.Write(responseNamespace, id, responseBytes)
 }
 
-func (ms *ManifestStorage) GetResponse(id string) (*StoredResponse, error) {
+func (ms *Storage) GetResponse(id string) (*StoredResponse, error) {
 	responseBytes, err := ms.db.Read(responseNamespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get response: %s", id)
@@ -207,7 +207,7 @@ func (ms *ManifestStorage) GetResponse(id string) (*StoredResponse, error) {
 }
 
 // GetResponses attempts to get all stored responses. It will return those it can even if it has trouble with some.
-func (ms *ManifestStorage) GetResponses() ([]StoredResponse, error) {
+func (ms *Storage) GetResponses() ([]StoredResponse, error) {
 	gotResponses, err := ms.db.ReadAll(responseNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get all responses")
@@ -228,7 +228,7 @@ func (ms *ManifestStorage) GetResponses() ([]StoredResponse, error) {
 	return stored, nil
 }
 
-func (ms *ManifestStorage) DeleteResponse(id string) error {
+func (ms *Storage) DeleteResponse(id string) error {
 	if err := ms.db.Delete(responseNamespace, id); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete response: %s", id)
 	}

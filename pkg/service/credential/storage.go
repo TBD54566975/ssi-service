@@ -11,14 +11,14 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
-	cred "github.com/tbd54566975/ssi-service/internal/credential"
+	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 type StoreCredentialRequest struct {
-	cred.Container
+	credint.Container
 }
 
 type StoredCredential struct {
@@ -65,7 +65,7 @@ const (
 	credentialNotFoundErrMsg = "credential not found"
 )
 
-type CredentialStorage struct {
+type Storage struct {
 	db storage.ServiceStorage
 }
 
@@ -73,7 +73,7 @@ type StatusListIndex struct {
 	Index int `json:"index"`
 }
 
-func NewCredentialStorage(db storage.ServiceStorage) (*CredentialStorage, error) {
+func NewCredentialStorage(db storage.ServiceStorage) (*Storage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}
@@ -116,10 +116,10 @@ func NewCredentialStorage(db storage.ServiceStorage) (*CredentialStorage, error)
 		return nil, util.LoggingErrorMsg(err, "problem writing current list index to db")
 	}
 
-	return &CredentialStorage{db: db}, nil
+	return &Storage{db: db}, nil
 }
 
-func (cs *CredentialStorage) GetNextStatusListRandomIndex() (int, error) {
+func (cs *Storage) GetNextStatusListRandomIndex() (int, error) {
 
 	gotUniqueNumBytes, err := cs.db.Read(statusListIndexNamespace, statusListIndexesKey)
 	if err != nil {
@@ -157,15 +157,15 @@ func (cs *CredentialStorage) GetNextStatusListRandomIndex() (int, error) {
 	return uniqueNums[statusListIndex.Index], nil
 }
 
-func (cs *CredentialStorage) StoreCredential(request StoreCredentialRequest) error {
+func (cs *Storage) StoreCredential(request StoreCredentialRequest) error {
 	return cs.storeCredential(request, credentialNamespace)
 }
 
-func (cs *CredentialStorage) StoreStatusListCredential(request StoreCredentialRequest) error {
+func (cs *Storage) StoreStatusListCredential(request StoreCredentialRequest) error {
 	return cs.storeCredential(request, statusListCredentialNamespace)
 }
 
-func (cs *CredentialStorage) storeCredential(request StoreCredentialRequest, namespace string) error {
+func (cs *Storage) storeCredential(request StoreCredentialRequest, namespace string) error {
 	if !request.IsValid() {
 		return util.LoggingNewError("store request request is not valid")
 	}
@@ -221,15 +221,15 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 	}, nil
 }
 
-func (cs *CredentialStorage) GetCredential(id string) (*StoredCredential, error) {
+func (cs *Storage) GetCredential(id string) (*StoredCredential, error) {
 	return cs.getCredential(id, credentialNamespace)
 }
 
-func (cs *CredentialStorage) GetStatusListCredential(id string) (*StoredCredential, error) {
+func (cs *Storage) GetStatusListCredential(id string) (*StoredCredential, error) {
 	return cs.getCredential(id, statusListCredentialNamespace)
 }
 
-func (cs *CredentialStorage) getCredential(id string, namespace string) (*StoredCredential, error) {
+func (cs *Storage) getCredential(id string, namespace string) (*StoredCredential, error) {
 	prefixValues, err := cs.db.ReadPrefix(namespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get credential from storage: %s", id)
@@ -262,7 +262,7 @@ func (cs *CredentialStorage) getCredential(id string, namespace string) (*Stored
 // GetCredentialsByIssuer gets all credentials stored with a prefix key containing the issuer value
 // The method is greedy, meaning if multiple values are found and some fail during processing, we will
 // return only the successful values and log an error for the failures.
-func (cs *CredentialStorage) GetCredentialsByIssuer(issuer string) ([]StoredCredential, error) {
+func (cs *Storage) GetCredentialsByIssuer(issuer string) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(credentialNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
@@ -304,7 +304,7 @@ func (cs *CredentialStorage) GetCredentialsByIssuer(issuer string) ([]StoredCred
 // GetCredentialsBySubject gets all credentials stored with a prefix key containing the subject value
 // The method is greedy, meaning if multiple values are found...and some fail during processing, we will
 // return only the successful values and log an error for the failures.
-func (cs *CredentialStorage) GetCredentialsBySubject(subject string) ([]StoredCredential, error) {
+func (cs *Storage) GetCredentialsBySubject(subject string) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(credentialNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for subject: %s", subject)
@@ -347,7 +347,7 @@ func (cs *CredentialStorage) GetCredentialsBySubject(subject string) ([]StoredCr
 // GetCredentialsBySchema gets all credentials stored with a prefix key containing the schema value
 // The method is greedy, meaning if multiple values are found...and some fail during processing, we will
 // return only the successful values and log an error for the failures.
-func (cs *CredentialStorage) GetCredentialsBySchema(schema string) ([]StoredCredential, error) {
+func (cs *Storage) GetCredentialsBySchema(schema string) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(credentialNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for schema: %s", schema)
@@ -391,15 +391,15 @@ func (cs *CredentialStorage) GetCredentialsBySchema(schema string) ([]StoredCred
 // GetCredentialsByIssuerAndSchema gets all credentials stored with a prefix key containing the issuer value
 // The method is greedy, meaning if multiple values are found...and some fail during processing, we will
 // return only the successful values and log an error for the failures.
-func (cs *CredentialStorage) GetCredentialsByIssuerAndSchema(issuer string, schema string) ([]StoredCredential, error) {
+func (cs *Storage) GetCredentialsByIssuerAndSchema(issuer string, schema string) ([]StoredCredential, error) {
 	return cs.getCredentialsByIssuerAndSchema(issuer, schema, credentialNamespace)
 }
 
-func (cs *CredentialStorage) GetStatusListCredentialsByIssuerAndSchema(issuer string, schema string) ([]StoredCredential, error) {
+func (cs *Storage) GetStatusListCredentialsByIssuerAndSchema(issuer string, schema string) ([]StoredCredential, error) {
 	return cs.getCredentialsByIssuerAndSchema(issuer, schema, statusListCredentialNamespace)
 }
 
-func (cs *CredentialStorage) getCredentialsByIssuerAndSchema(issuer string, schema string, namespace string) ([]StoredCredential, error) {
+func (cs *Storage) getCredentialsByIssuerAndSchema(issuer string, schema string, namespace string) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(namespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
@@ -440,15 +440,15 @@ func (cs *CredentialStorage) getCredentialsByIssuerAndSchema(issuer string, sche
 	return storedCreds, nil
 }
 
-func (cs *CredentialStorage) DeleteCredential(id string) error {
+func (cs *Storage) DeleteCredential(id string) error {
 	return cs.deleteCredential(id, credentialNamespace)
 }
 
-func (cs *CredentialStorage) DeleteStatusListCredential(id string) error {
+func (cs *Storage) DeleteStatusListCredential(id string) error {
 	return cs.deleteCredential(id, statusListCredentialNamespace)
 }
 
-func (cs *CredentialStorage) deleteCredential(id string, namespace string) error {
+func (cs *Storage) deleteCredential(id string, namespace string) error {
 	credDoesNotExistMsg := fmt.Sprintf("credential does not exist, cannot delete: %s", id)
 
 	// first get the credential to regenerate the prefix key

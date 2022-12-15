@@ -30,18 +30,18 @@ type StoredDID struct {
 	DID did.DIDDocument `json:"did"`
 }
 
-type DIDStorage struct {
+type Storage struct {
 	db storage.ServiceStorage
 }
 
-func NewDIDStorage(db storage.ServiceStorage) (*DIDStorage, error) {
+func NewDIDStorage(db storage.ServiceStorage) (*Storage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}
-	return &DIDStorage{db: db}, nil
+	return &Storage{db: db}, nil
 }
 
-func (ds *DIDStorage) StoreDID(did StoredDID) error {
+func (ds *Storage) StoreDID(did StoredDID) error {
 	couldNotStoreDIDErr := fmt.Sprintf("could not store DID: %s", did.ID)
 	ns, err := getNamespaceForDID(did.ID)
 	if err != nil {
@@ -54,7 +54,7 @@ func (ds *DIDStorage) StoreDID(did StoredDID) error {
 	return ds.db.Write(ns, did.ID, didBytes)
 }
 
-func (ds *DIDStorage) GetDID(id string) (*StoredDID, error) {
+func (ds *Storage) GetDID(id string) (*StoredDID, error) {
 	couldNotGetDIDErr := fmt.Sprintf("could not get DID: %s", id)
 	ns, err := getNamespaceForDID(id)
 	if err != nil {
@@ -76,7 +76,7 @@ func (ds *DIDStorage) GetDID(id string) (*StoredDID, error) {
 }
 
 // GetDIDs attempts to get all DIDs for a given method. It will return those it can even if it has trouble with some.
-func (ds *DIDStorage) GetDIDs(method string) ([]StoredDID, error) {
+func (ds *Storage) GetDIDs(method string) ([]StoredDID, error) {
 	couldNotGetDIDsErr := fmt.Sprintf("could not get DIDs for method: %s", method)
 	ns, err := getNamespaceForMethod(method)
 	if err != nil {
@@ -100,7 +100,7 @@ func (ds *DIDStorage) GetDIDs(method string) ([]StoredDID, error) {
 	return stored, nil
 }
 
-func (ds *DIDStorage) DeleteDID(id string) error {
+func (ds *Storage) DeleteDID(id string) error {
 	couldNotGetDIDErr := fmt.Sprintf("could not delete DID: %s", id)
 	ns, err := getNamespaceForDID(id)
 	if err != nil {

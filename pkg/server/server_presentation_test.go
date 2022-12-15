@@ -20,9 +20,9 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
+	opsubmission "github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
-	"github.com/tbd54566975/ssi-service/pkg/service/submission"
+	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -163,14 +163,14 @@ func TestPresentationAPI(t *testing.T) {
 					"id":             "did:web:andresuribe.com",
 				})), holderDID, holderSigner)
 
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s", submission.ID(op.ID)), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s", opsubmission.ID(op.ID)), nil)
 			w := httptest.NewRecorder()
 
-			assert.NoError(ttt, pRouter.GetSubmission(newRequestContextWithParams(map[string]string{"id": submission.ID(op.ID)}), w, req))
+			assert.NoError(ttt, pRouter.GetSubmission(newRequestContextWithParams(map[string]string{"id": opsubmission.ID(op.ID)}), w, req))
 
 			var resp router.GetSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Equal(ttt, submission.ID(op.ID), resp.Submission.ID)
+			assert.Equal(ttt, opsubmission.ID(op.ID), resp.Submission.ID)
 			assert.Equal(ttt, definition.PresentationDefinition.ID, resp.Submission.DefinitionID)
 			assert.Equal(ttt, "pending", resp.Submission.Status)
 		})
@@ -218,7 +218,7 @@ func TestPresentationAPI(t *testing.T) {
 			}
 
 			value := newRequestValue(ttt, request)
-			createdID := submission.ID(submissionOp.ID)
+			createdID := opsubmission.ID(submissionOp.ID)
 			req := httptest.NewRequest(
 				http.MethodPut,
 				fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s/review", createdID),
@@ -243,7 +243,7 @@ func TestPresentationAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(ttt)
 			definition := createPresentationDefinition(ttt, pRouter)
 			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-			createdID := submission.ID(submissionOp.ID)
+			createdID := opsubmission.ID(submissionOp.ID)
 			_ = reviewSubmission(ttt, pRouter, createdID)
 
 			request := router.ReviewSubmissionRequest{
@@ -319,25 +319,25 @@ func TestPresentationAPI(t *testing.T) {
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Len(ttt, resp.Submissions, 2)
 
-			expectedSubmissions := []submission.Submission{
+			expectedSubmissions := []model.Submission{
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           submission.ID(op.ID),
+						ID:           opsubmission.ID(op.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
 					},
 				},
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           submission.ID(op2.ID),
+						ID:           opsubmission.ID(op2.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
 					},
 				},
 			}
 			diff := cmp.Diff(expectedSubmissions, resp.Submissions,
 				cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
-				cmpopts.SortSlices(func(l, r submission.Submission) bool {
+				cmpopts.SortSlices(func(l, r model.Submission) bool {
 					return l.PresentationSubmission.ID < r.PresentationSubmission.ID
 				}),
 			)
@@ -391,18 +391,18 @@ func TestPresentationAPI(t *testing.T) {
 			var resp router.ListSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 
-			expectedSubmissions := []submission.Submission{
+			expectedSubmissions := []model.Submission{
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           submission.ID(op.ID),
+						ID:           opsubmission.ID(op.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
 					},
 				},
 			}
 			diff := cmp.Diff(expectedSubmissions, resp.Submissions,
 				cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
-				cmpopts.SortSlices(func(l, r submission.Submission) bool {
+				cmpopts.SortSlices(func(l, r model.Submission) bool {
 					return l.PresentationSubmission.ID < r.PresentationSubmission.ID
 				}),
 			)

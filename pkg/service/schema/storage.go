@@ -23,18 +23,18 @@ type StoredSchema struct {
 	SchemaJWT *keyaccess.JWT      `json:"token,omitempty"`
 }
 
-type SchemaStorage struct {
+type Storage struct {
 	db storage.ServiceStorage
 }
 
-func NewSchemaStorage(db storage.ServiceStorage) (*SchemaStorage, error) {
+func NewSchemaStorage(db storage.ServiceStorage) (*Storage, error) {
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}
-	return &SchemaStorage{db: db}, nil
+	return &Storage{db: db}, nil
 }
 
-func (ss *SchemaStorage) StoreSchema(schema StoredSchema) error {
+func (ss *Storage) StoreSchema(schema StoredSchema) error {
 	id := schema.ID
 	if id == "" {
 		err := errors.New("could not store schema without an ID")
@@ -50,7 +50,7 @@ func (ss *SchemaStorage) StoreSchema(schema StoredSchema) error {
 	return ss.db.Write(namespace, id, schemaBytes)
 }
 
-func (ss *SchemaStorage) GetSchema(id string) (*StoredSchema, error) {
+func (ss *Storage) GetSchema(id string) (*StoredSchema, error) {
 	schemaBytes, err := ss.db.Read(namespace, id)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get schema: %s", id)
@@ -72,7 +72,7 @@ func (ss *SchemaStorage) GetSchema(id string) (*StoredSchema, error) {
 }
 
 // GetSchemas attempts to get all stored schemas. It will return those it can even if it has trouble with some.
-func (ss *SchemaStorage) GetSchemas() ([]StoredSchema, error) {
+func (ss *Storage) GetSchemas() ([]StoredSchema, error) {
 	gotSchemas, err := ss.db.ReadAll(namespace)
 	if err != nil {
 		errMsg := "could not get all schemas"
@@ -93,7 +93,7 @@ func (ss *SchemaStorage) GetSchemas() ([]StoredSchema, error) {
 	return stored, nil
 }
 
-func (ss *SchemaStorage) DeleteSchema(id string) error {
+func (ss *Storage) DeleteSchema(id string) error {
 	if err := ss.db.Delete(namespace, id); err != nil {
 		errMsg := fmt.Sprintf("could not delete schema: %s", id)
 		logrus.WithError(err).Error(errMsg)

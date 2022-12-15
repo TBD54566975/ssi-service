@@ -12,12 +12,12 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func newKeyDIDHandler(s *DIDStorage, ks *keystore.Service) MethodHandler {
+func newKeyDIDHandler(s *Storage, ks *keystore.Service) MethodHandler {
 	return &keyDIDHandler{storage: s, keyStore: ks}
 }
 
 type keyDIDHandler struct {
-	storage  *DIDStorage
+	storage  *Storage
 	keyStore *keystore.Service
 }
 
@@ -97,8 +97,8 @@ func (h *keyDIDHandler) GetDIDs(method did.Method) (*GetDIDsResponse, error) {
 		return nil, fmt.Errorf("error getting DIDs for method: %s", method)
 	}
 	dids := make([]did.DIDDocument, 0, len(gotDIDs))
-	for _, did := range gotDIDs {
-		dids = append(dids, did.DID)
+	for _, gotDID := range gotDIDs {
+		dids = append(dids, gotDID.DID)
 	}
 	return &GetDIDsResponse{DIDs: dids}, nil
 }

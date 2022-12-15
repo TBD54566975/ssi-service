@@ -61,14 +61,16 @@ func TestHealthCheckAPI(t *testing.T) {
 }
 
 func TestReadinessAPI(t *testing.T) {
-	// // remove the db file after the test
-	// t.Cleanup(func() {
-	// 	_ = os.Remove(storage.DBFile)
-	// })
+	dbFile := "test_readiness_api.db"
+	// remove the db file after the test
+	t.Cleanup(func() {
+		_ = os.Remove(dbFile)
+	})
 
 	shutdown := make(chan os.Signal, 1)
 	serviceConfig, err := config.LoadConfig("")
 	assert.NoError(t, err)
+	serviceConfig.Services.StorageOption = dbFile
 
 	server, err := NewSSIServer(shutdown, *serviceConfig)
 	assert.NoError(t, err)

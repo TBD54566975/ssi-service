@@ -1,8 +1,13 @@
-package presentation
+package model
 
 import (
+	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/util"
+	"github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
+	"go.einride.tech/aip/filtering"
 )
 
 type CreatePresentationDefinitionRequest struct {
@@ -50,7 +55,7 @@ type GetSubmissionRequest struct {
 }
 
 type GetSubmissionResponse struct {
-	Submission submission.Submission `json:"submission"`
+	Submission Submission `json:"submission"`
 }
 
 type DeleteSubmissionRequest struct {
@@ -70,7 +75,7 @@ type Submission struct {
 }
 
 type ListSubmissionResponse struct {
-	Submissions []submission.Submission `json:"submissions"`
+	Submissions []Submission `json:"submissions"`
 }
 
 type ReviewSubmissionRequest struct {
@@ -82,4 +87,13 @@ type ReviewSubmissionRequest struct {
 // Validate runs validation on the request struct and returns errors when it's invalid.
 func (r ReviewSubmissionRequest) Validate() error {
 	return util.NewValidator().Struct(r)
+}
+
+// ServiceModel creates a Submission from a given StoredSubmission.
+func ServiceModel(storedSubmission *storage.StoredSubmission) Submission {
+	return Submission{
+		Status:                 storedSubmission.Status.String(),
+		Reason:                 storedSubmission.Reason,
+		PresentationSubmission: &storedSubmission.Submission,
+	}
 }

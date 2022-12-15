@@ -38,17 +38,17 @@ const (
 	keyNotFoundErrMsg = "key not found"
 )
 
-type KeyStoreStorage struct {
+type Storage struct {
 	db         storage.ServiceStorage
 	serviceKey []byte
 }
 
-func NewKeyStoreStorage(db storage.ServiceStorage, key ServiceKey) (*KeyStoreStorage, error) {
+func NewKeyStoreStorage(db storage.ServiceStorage, key ServiceKey) (*Storage, error) {
 	keyBytes, err := base58.Decode(key.Base58Key)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not decode service key")
 	}
-	bolt := &KeyStoreStorage{db: db, serviceKey: keyBytes}
+	bolt := &Storage{db: db, serviceKey: keyBytes}
 
 	// first, store the service key
 	if err = bolt.storeServiceKey(key); err != nil {
@@ -58,7 +58,7 @@ func NewKeyStoreStorage(db storage.ServiceStorage, key ServiceKey) (*KeyStoreSto
 }
 
 // TODO(gabe): support more robust service key operations, including rotation, and caching
-func (kss *KeyStoreStorage) storeServiceKey(key ServiceKey) error {
+func (kss *Storage) storeServiceKey(key ServiceKey) error {
 	keyBytes, err := json.Marshal(key)
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not marshal service key")
@@ -70,7 +70,7 @@ func (kss *KeyStoreStorage) storeServiceKey(key ServiceKey) error {
 }
 
 // getAndSetServiceKey attempts to get the service key from memory, and if not available rehydrates it from the DB
-func (kss *KeyStoreStorage) getAndSetServiceKey() ([]byte, error) {
+func (kss *Storage) getAndSetServiceKey() ([]byte, error) {
 	if len(kss.serviceKey) != 0 {
 		return kss.serviceKey, nil
 	}
@@ -97,7 +97,7 @@ func (kss *KeyStoreStorage) getAndSetServiceKey() ([]byte, error) {
 	return keyBytes, nil
 }
 
-func (kss *KeyStoreStorage) StoreKey(key StoredKey) error {
+func (kss *Storage) StoreKey(key StoredKey) error {
 	id := key.ID
 	if id == "" {
 		return util.LoggingNewError("could not store key without an ID")
@@ -123,7 +123,7 @@ func (kss *KeyStoreStorage) StoreKey(key StoredKey) error {
 	return kss.db.Write(namespace, id, encryptedKey)
 }
 
-func (kss *KeyStoreStorage) GetKey(id string) (*StoredKey, error) {
+func (kss *Storage) GetKey(id string) (*StoredKey, error) {
 	storedKeyBytes, err := kss.db.Read(namespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key details for key: %s", id)
@@ -151,7 +151,7 @@ func (kss *KeyStoreStorage) GetKey(id string) (*StoredKey, error) {
 	return &stored, nil
 }
 
-func (kss *KeyStoreStorage) GetKeyDetails(id string) (*KeyDetails, error) {
+func (kss *Storage) GetKeyDetails(id string) (*KeyDetails, error) {
 	stored, err := kss.GetKey(id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key details for key: %s", id)

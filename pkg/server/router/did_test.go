@@ -93,11 +93,11 @@ func TestDIDRouter(t *testing.T) {
 		assert.Len(tt, getDIDsResponse.DIDs, 2)
 
 		knownDIDs := map[string]bool{createDIDResponse.DID.ID: true, createDIDResponse2.DID.ID: true}
-		for _, did := range getDIDsResponse.DIDs {
-			if _, ok := knownDIDs[did.ID]; !ok {
+		for _, gotDID := range getDIDsResponse.DIDs {
+			if _, ok := knownDIDs[gotDID.ID]; !ok {
 				tt.Error("got unknown DID")
 			} else {
-				delete(knownDIDs, did.ID)
+				delete(knownDIDs, gotDID.ID)
 			}
 		}
 		assert.Len(tt, knownDIDs, 0)
@@ -118,7 +118,7 @@ func TestDIDRouter(t *testing.T) {
 		// remove the db file after the test
 		tt.Cleanup(func() {
 			_ = db.Close()
-			_ = os.Remove(db.Uri())
+			_ = os.Remove(db.URI())
 		})
 
 		// check type and status
@@ -169,11 +169,11 @@ func TestDIDRouter(t *testing.T) {
 		assert.Len(tt, getDIDsResponse.DIDs, 2)
 
 		knownDIDs := map[string]bool{createDIDResponse.DID.ID: true, createDIDResponse2.DID.ID: true}
-		for _, did := range getDIDsResponse.DIDs {
-			if _, ok := knownDIDs[did.ID]; !ok {
+		for _, gotDID := range getDIDsResponse.DIDs {
+			if _, ok := knownDIDs[gotDID.ID]; !ok {
 				tt.Error("got unknown DID")
 			} else {
-				delete(knownDIDs, did.ID)
+				delete(knownDIDs, gotDID.ID)
 			}
 		}
 		assert.Len(tt, knownDIDs, 0)
