@@ -7,10 +7,10 @@
       ]
     }
   },
-  "manifest_id":"<MANIFESTID>",
+  "manifest_id":"{{.ManifestID}}",
   "presentation_submission":{
     "id":"psid",
-    "definition_id":"<DEFINITIONID>",
+    "definition_id":"{{.DefinitionID}}",
     "descriptor_map":[
       {
         "id":"kyc1",
