@@ -278,14 +278,16 @@ func setupTestDB(t *testing.T) storage.ServiceStorage {
 	file, err := os.CreateTemp("", "bolt")
 	require.NoError(t, err)
 	name := file.Name()
-	s, err := storage.NewStorage(storage.Bolt, name)
-	require.NoError(t, err)
+
+	db, err := storage.NewStorage(storageProvider, name)
+	assert.NoError(t, err)
+
 	t.Cleanup(func() {
-		_ = s.Close()
+		_ = db.Close()
 		_ = file.Close()
 		_ = os.Remove(name)
 	})
-	return s
+	return db
 }
 
 func reviewSubmission(t *testing.T, pRouter *router.PresentationRouter, submissionID string) router.ReviewSubmissionResponse {

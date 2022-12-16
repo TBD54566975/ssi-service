@@ -34,9 +34,17 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
+var storageProvider storage.Type
+
 func TestMain(t *testing.M) {
 	testutil.EnableSchemaCaching()
-	os.Exit(t.Run())
+	providersToTest := []storage.Type{storage.Bolt, storage.InMemory}
+	for i, p := range providersToTest {
+		storageProvider = p
+		if c := t.Run(); c != 0 || i == (len(providersToTest)-1) {
+			os.Exit(c)
+		}
+	}
 }
 
 func TestHealthCheckAPI(t *testing.T) {

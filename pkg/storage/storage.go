@@ -29,7 +29,6 @@ type ServiceStorage interface {
 	ReadAllKeys(namespace string) ([]string, error)
 	Delete(namespace, key string) error
 	DeleteNamespace(namespace string) error
-	Update(namespace string, key string, values map[string]any) ([]byte, error)
 	UpdateValueAndOperation(namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error)
 }
 

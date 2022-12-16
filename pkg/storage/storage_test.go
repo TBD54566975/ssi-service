@@ -10,8 +10,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var storageProvider Type
+
+func TestMain(m *testing.M) {
+	providersToTest := []Type{Bolt, InMemory}
+	for i, p := range providersToTest {
+		storageProvider = p
+		if c := m.Run(); c != 0 || i == (len(providersToTest)-1) {
+			os.Exit(c)
+		}
+	}
+}
+
 func TestBoltDB(t *testing.T) {
-	db := setupBoltDB(t)
+	db := setupDB(t)
 
 	// create a name space and a message in it
 	namespace := "F1"
@@ -90,7 +102,7 @@ func TestBoltDB(t *testing.T) {
 }
 
 func TestBoltDBPrefixAndKeys(t *testing.T) {
-	db := setupBoltDB(t)
+	db := setupDB(t)
 
 	namespace := "blockchains"
 
@@ -130,16 +142,15 @@ func TestBoltDBPrefixAndKeys(t *testing.T) {
 	assert.Contains(t, allKeys, "tezos-mainnet")
 }
 
-func setupBoltDB(t *testing.T) *BoltDB {
-	db, err := NewStorage(Bolt, "test.db")
+func setupDB(t *testing.T) ServiceStorage {
+	db, err := NewStorage(storageProvider, "test.db")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, db)
 
 	t.Cleanup(func() {
 		_ = db.Close()
 		_ = os.Remove("test.db")
 	})
-	return db.(*BoltDB)
+	return db
 }
 
 type testStruct struct {
@@ -152,70 +163,6 @@ type operation struct {
 	Response []byte `json:"response"`
 }
 
-func TestBoltDB_Update(t *testing.T) {
-	db := setupBoltDB(t)
-	namespace := "simple"
-
-	data, err := json.Marshal(testStruct{
-		Status: 0,
-		Reason: "",
-	})
-	require.NoError(t, err)
-	require.NoError(t, db.Write(namespace, "123", data))
-
-	type args struct {
-		key    string
-		values map[string]any
-	}
-	tests := []struct {
-		name          string
-		args          args
-		expectedData  testStruct
-		expectedError assert.ErrorAssertionFunc
-	}{
-		{
-			name: "simple update",
-			args: args{
-				key: "123",
-				values: map[string]any{
-					"status": 1,
-					"reason": "something here",
-				},
-			},
-			expectedData: testStruct{
-				Status: 1,
-				Reason: "something here",
-			},
-			expectedError: assert.NoError,
-		},
-		{
-			name: "other key returns error",
-			args: args{
-				key: "456",
-				values: map[string]any{
-					"status": 1,
-					"reason": "something here",
-				},
-			},
-			expectedData:  testStruct{},
-			expectedError: assert.Error,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			data, err = db.Update(namespace, tt.args.key, tt.args.values)
-			if !tt.expectedError(t, err) {
-				return
-			}
-			var s testStruct
-			if tt.expectedData != s {
-				assert.NoError(t, json.Unmarshal(data, &s))
-				assert.Equal(t, tt.expectedData, s)
-			}
-		})
-	}
-}
-
 type testOpUpdater struct {
 	UpdaterWithMap
 }
@@ -225,7 +172,7 @@ func (f testOpUpdater) SetUpdatedResponse(bytes []byte) {
 }
 
 func TestBoltDB_UpdatedSubmissionAndOperationTxFn(t *testing.T) {
-	db := setupBoltDB(t)
+	db := setupDB(t)
 	namespace := "simple"
 	opNamespace := "operation"
 
