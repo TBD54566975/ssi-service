@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 	}
 }
 
-func TestBoltDB(t *testing.T) {
+func TestDB(t *testing.T) {
 	db := setupDB(t)
 
 	// create a name space and a message in it
@@ -101,7 +101,7 @@ func TestBoltDB(t *testing.T) {
 	assert.Empty(t, res)
 }
 
-func TestBoltDBPrefixAndKeys(t *testing.T) {
+func TestPrefixAndKeys(t *testing.T) {
 	db := setupDB(t)
 
 	namespace := "blockchains"
@@ -171,7 +171,7 @@ func (f testOpUpdater) SetUpdatedResponse(bytes []byte) {
 	f.UpdaterWithMap.Values["response"] = bytes
 }
 
-func TestBoltDB_UpdatedSubmissionAndOperationTxFn(t *testing.T) {
+func TestUpdatedSubmissionAndOperationTxFn(t *testing.T) {
 	db := setupDB(t)
 	namespace := "simple"
 	opNamespace := "operation"
