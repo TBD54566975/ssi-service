@@ -170,7 +170,7 @@ func (b *RedisDB) Delete(namespace, key string) error {
 	nameSpaceKey := getRedisKey(namespace, key)
 
 	if err := b.mutex.Lock(); err != nil {
-		return errors.Wrap(err, "cannot obtain mutex lock")
+		return errors.Wrap(err, "locking")
 	}
 	defer func() {
 		ok, unlockErr := b.mutex.Unlock()
