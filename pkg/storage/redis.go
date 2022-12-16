@@ -12,12 +12,17 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const PONG = "PONG"
-const RedisScanBatchSize = 1000
-const RedisMutex = "redis-mutex"
+const (
+	PONG               = "PONG"
+	RedisScanBatchSize = 1000
+	RedisMutex         = "redis-mutex"
+)
 
 func init() {
-	_ = RegisterStorage(&RedisDB{})
+	err := RegisterStorage(&RedisDB{})
+	if err != nil {
+		panic(err)
+	}
 }
 
 type RedisDB struct {
@@ -86,6 +91,7 @@ func (b *RedisDB) Write(namespace, key string, value []byte) error {
 		}
 	}()
 
+	// Zero expiration means the key has no expiration time.
 	return b.db.Set(b.ctx, nameSpaceKey, value, 0).Err()
 }
 
@@ -114,6 +120,7 @@ func (b *RedisDB) ReadAll(namespace string) (map[string][]byte, error) {
 	return readAll(keys, b)
 }
 
+// TODO: This potentially could dangerous as it might run out of memory as we populate result
 func readAll(keys []string, b *RedisDB) (map[string][]byte, error) {
 	result := make(map[string][]byte)
 
@@ -127,7 +134,7 @@ func readAll(keys []string, b *RedisDB) (map[string][]byte, error) {
 	}
 
 	if len(keys) != len(values) {
-		panic("key length does not equal value length")
+		return nil, errors.New("key length does not match value length")
 	}
 
 	for i, val := range values {
@@ -143,6 +150,7 @@ func (b *RedisDB) ReadAllKeys(namespace string) ([]string, error) {
 	return readAllKeys(namespace, b)
 }
 
+// TODO: This potentially could dangerous as it might run out of memory as we populate allKeys
 func readAllKeys(match string, b *RedisDB) ([]string, error) {
 	var cursor uint64
 
