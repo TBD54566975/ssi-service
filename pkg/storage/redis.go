@@ -123,7 +123,7 @@ func readAll(keys []string, b *RedisDB) (map[string][]byte, error) {
 
 	values, err := b.db.MGet(b.ctx, keys...).Result()
 	if err != nil {
-		return nil, errors.Wrap(err, "mget error, read all error")
+		return nil, errors.Wrap(err, "getting multiple keys")
 	}
 
 	if len(keys) != len(values) {
