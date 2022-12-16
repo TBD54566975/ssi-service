@@ -11,6 +11,7 @@ import (
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
+	"github.com/google/uuid"
 	"github.com/mr-tron/base58"
 	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
@@ -100,6 +101,22 @@ func CreateVerifiableCredential(credentialInput credInputParams, revocable bool)
 	return output, nil
 }
 
+func CreateSubmissionCredential(issuerDID, subjectDID string) (string, error) {
+	logrus.Println("\n\nCreate a submission credential")
+
+	credentialJSON := getJSONFromFile("submission-credential-input.json")
+
+	credentialJSON = strings.ReplaceAll(credentialJSON, "<CREDISSUERID>", issuerDID)
+	credentialJSON = strings.ReplaceAll(credentialJSON, "<CREDSUBJECTID>", subjectDID)
+
+	output, err := put(endpoint+version+"credentials", credentialJSON)
+	if err != nil {
+		return "", errors.Wrapf(err, "credentials endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
 func resolveTemplate(input any, fileName string) (string, error) {
 	t, err := template.ParseFiles("testdata/" + fileName)
 	if err != nil {
@@ -168,6 +185,74 @@ func CreateCredentialApplicationJWT(credApplication credApplicationParams, crede
 	}
 
 	return signed.String(), nil
+}
+
+func CreatePresentationDefinition() (string, error) {
+	logrus.Println("\n\nCreate our Presentation Definition:")
+	definitionJSON := getJSONFromFile("presentation-definition-input.json")
+	output, err := put(endpoint+version+"presentations/definitions", definitionJSON)
+	if err != nil {
+		return "", errors.Wrapf(err, "presentation definition endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
+func ReviewSubmission(id string) (string, error) {
+	logrus.Println("\n\nCreate our review submission request:")
+	reviewJSON := getJSONFromFile("review-submission-input.json")
+	output, err := put(endpoint+version+"presentations/submissions/"+id+"/review", reviewJSON)
+	if err != nil {
+		return "", errors.Wrapf(err, "review submission endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
+func CreateSubmission(definitionID, holderDID, holderPrivateKey, credentialJWT string) (string, error) {
+	logrus.Println("\n\nCreate our Submission:")
+	submissionJSON := getJSONFromFile("presentation-submission-input.json")
+
+	submissionJSON = strings.ReplaceAll(submissionJSON, "<DEFINITIONID>", definitionID)
+	submissionJSON = strings.ReplaceAll(submissionJSON, "<SUBMISSIONID>", uuid.NewString())
+	submissionJSON = strings.ReplaceAll(submissionJSON, "<HOLDERID>", holderDID)
+	submissionJSON = strings.ReplaceAll(submissionJSON, "<CREDENTIALJWT>", credentialJWT)
+
+	pkBytes, err := base58.Decode(holderPrivateKey)
+	if err != nil {
+		return "", errors.Wrap(err, "base58 decoding")
+	}
+
+	pkCrypto, err := crypto.BytesToPrivKey(pkBytes, crypto.Ed25519)
+	if err != nil {
+		return "", errors.Wrap(err, "bytes to priv key")
+	}
+
+	signer, err := keyaccess.NewJWKKeyAccess(holderDID, pkCrypto)
+	if err != nil {
+		return "", errors.Wrap(err, "creating signer")
+	}
+
+	var submission any
+	if err := json.Unmarshal([]byte(submissionJSON), &submission); err != nil {
+		return "", err
+	}
+
+	signed, err := signer.SignJSON(submission)
+	if err != nil {
+		logrus.Println("Failed signing: " + submissionJSON)
+		return "", errors.Wrap(err, "signing json")
+	}
+
+	submissionJSONWrapper := getJSONFromFile("presentation-submission-input-jwt.json")
+	submissionJSONWrapper = strings.ReplaceAll(submissionJSONWrapper, "<APPLICATIONJWT>", signed.String())
+
+	output, err := put(endpoint+version+"presentations/submissions", submissionJSONWrapper)
+	if err != nil {
+		return "", errors.Wrapf(err, "presentation submission endpoint with output: %s", output)
+	}
+
+	return output, nil
 }
 
 type applicationParams struct {
