@@ -18,16 +18,8 @@ func TestCreateParticipants(t *testing.T) {
 	assert.NoError(t, err)
 
 	issuerDID, err := getJSONElement(didKeyOutput, "$.did.id")
-	SetValue(presentationExchangeContext, "issuerDID", issuerDID)
-
 	assert.NoError(t, err)
 	assert.Contains(t, issuerDID, "did:key")
-}
-
-func TestCreateHolderDID(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping integration test")
-	}
 
 	holderOutput, err := CreateDIDKey()
 	assert.NoError(t, err)
@@ -39,6 +31,7 @@ func TestCreateHolderDID(t *testing.T) {
 	holderPrivateKey, err := getJSONElement(holderOutput, "$.privateKeyBase58")
 	assert.NoError(t, err)
 
+	SetValue(presentationExchangeContext, "issuerDID", issuerDID)
 	SetValue(presentationExchangeContext, "holderDID", holderDID)
 	SetValue(presentationExchangeContext, "holderPrivateKey", holderPrivateKey)
 }
