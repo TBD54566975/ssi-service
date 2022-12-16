@@ -212,9 +212,9 @@ func (s *SSIServer) OperationAPI(service svcframework.Service) (err error) {
 
 	handlerPath := V1Prefix + OperationPrefix
 
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), operationRouter.GetOperation)
 	s.Handle(http.MethodGet, handlerPath, operationRouter.GetOperations)
-	s.Handle(http.MethodPut, path.Join(handlerPath, "/:id/cancel"), operationRouter.CancelOperation)
+	s.Handle(http.MethodPut, path.Join(handlerPath, "/cancel/*id"), operationRouter.CancelOperation)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/*id"), operationRouter.GetOperation)
 
 	return
 }

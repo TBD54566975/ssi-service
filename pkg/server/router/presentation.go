@@ -221,7 +221,7 @@ func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequ
 }
 
 type Operation struct {
-	// The name of the resource related to this operation. E.g. "/presentations/submissions/<uuid>"
+	// The name of the resource related to this operation. E.g. "presentations/submissions/<uuid>"
 	ID string `json:"id"`
 
 	// Whether this operation has finished.

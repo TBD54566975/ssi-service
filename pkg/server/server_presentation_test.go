@@ -513,7 +513,7 @@ func VerifiableCredential(options ...VCOption) credential.VerifiableCredential {
 	vc := credential.VerifiableCredential{
 		Context:          []string{credential.VerifiableCredentialsLinkedDataContext},
 		ID:               uuid.NewString(),
-		Type:             []string{credential.VerifiablePresentationType},
+		Type:             []string{credential.VerifiableCredentialType},
 		Issuer:           "did:key:z4oJ8bFEFv7E3omhuK5LrAtL29Nmd8heBey9HtJCSvodSb7nrfaMrd6zb7fjYSRxrfSgBSDeM6Bs59KRKFgXSDWJcfcjs",
 		IssuanceDate:     "2022-11-07T21:28:57Z",
 		ExpirationDate:   "2051-10-05T14:48:00.000Z",

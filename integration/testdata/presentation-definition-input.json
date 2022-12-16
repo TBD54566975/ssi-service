@@ -1,0 +1,24 @@
+{
+  "name": "name",
+  "purpose": "purpose",
+  "inputDescriptors": [
+    {
+      "id": "wa_driver_license",
+      "name": "washington state business license",
+      "purpose": "some testing stuff",
+      "constraints": {
+        "fields": [
+          {
+            "id": "date_of_birth",
+            "path": [
+              "$.credentialSubject.dateOfBirth",
+              "$.credentialSubject.dob",
+              "$.vc.credentialSubject.dateOfBirth",
+              "$.vc.credentialSubject.dob"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
