@@ -1,0 +1,25 @@
+{
+  "vp": {
+    "@context": [
+      "https://www.w3.org/2018/credentials/v1"
+    ],
+    "holder": "<HOLDERID>",
+    "type": [
+      "VerifiablePresentation"
+    ],
+    "presentation_submission": {
+      "id": "<SUBMISSIONID>",
+      "definition_id": "<DEFINITIONID>",
+      "descriptor_map": [
+        {
+          "id": "wa_driver_license",
+          "format": "jwt_vp",
+          "path": "$.verifiableCredential[0]"
+        }
+      ]
+    },
+    "verifiableCredential": [
+      "<CREDENTIALJWT>"
+    ]
+  }
+}

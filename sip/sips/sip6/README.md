@@ -246,7 +246,7 @@ Upon a submission, the following steps will be performed:
 9. Check that the paths are resolvable to fields in the claims. This should follow the spec as described in [https://identity.foundation/presentation-exchange/#processing-of-submission-entries](https://identity.foundation/presentation-exchange/#processing-of-submission-entries)
 10. A `Submission` is stored in the DB.
 11. An operation ID is generated, and an operation is stored in a KV database.
-12. A response of type `Operation` is sent back to the client with `id := "/presentations/submissions/{submission_id}"`
+12. A response of type `Operation` is sent back to the client with `id := "presentations/submissions/{submission_id}"`
 13. Bask in the glory of a successful submission.
 
 ### GET
@@ -280,7 +280,7 @@ The URL is `/v1/presentations/submissions/:id/review`. This endpoint enables adm
 }
 ```
 
-Ideally, only the `TBD Admin` should have authorization to perform this. After this method is called, the operation with `id==/presentations/submissions/{submission_id}` will be updated with the result of this invocation (and the `done` field will be set to true). The `submission` object’s review state will be updated as well.
+Ideally, only the `TBD Admin` should have authorization to perform this. After this method is called, the operation with `id==presentations/submissions/{submission_id}` will be updated with the result of this invocation (and the `done` field will be set to true). The `submission` object’s review state will be updated as well.
 
 The response of this endpoint will contain a `Submission` object with `status != 'pending'`.
 
@@ -292,7 +292,7 @@ An object of type `Operation` and will look as follows
 
 ```json
 {
-  "id": "/{namespace}/{unique_id}", // example: "/presentations/submissions/a30e3b91-fb77-4d22-95fa-871689c322e2"
+  "id": "/{namespace}/{unique_id}", // example: "presentations/submissions/a30e3b91-fb77-4d22-95fa-871689c322e2"
   "done": true, // when "false", then "result" will be empty as it's still being calculated.
   "result": { // only present when "done" == true. When present only one of ["error", "response"] will be populated.
     "error": "some string with the error",
@@ -315,7 +315,7 @@ The request will look as follows
 
 ```json
 {
-  "parent": "/presentations/submissions/", // represents the name of the parent's resource
+  "parent": "presentations/submissions/", // represents the name of the parent's resource
   "filter": "done:false", // a filter expression, for any filtering needs
 }
 ```

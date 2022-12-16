@@ -29,7 +29,7 @@ const (
 	// Namespace is the namespace to be used for storing submissions.
 	Namespace = "presentation_submission"
 	// ParentResource is the prefix of the submission parent resource.
-	ParentResource = "/presentations/submissions"
+	ParentResource = "presentations/submissions"
 )
 
 // Status indicates the current state of a submission.

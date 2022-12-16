@@ -18,7 +18,7 @@ func FromID(id string) string {
 	return FromParent(id[:i])
 }
 
-// FromParent returns a namespace from a given parent resource name like "/presentations/submissions". Empty is returned
+// FromParent returns a namespace from a given parent resource name like "presentations/submissions". Empty is returned
 // when the parent resource cannot be resolved.
 func FromParent(parent string) string {
 	switch parent {
