@@ -1,3 +1,3 @@
 {
-  "submissionJwt":"<APPLICATIONJWT>"
+  "submissionJwt":"{{.SubmissionJWT}}"
 }

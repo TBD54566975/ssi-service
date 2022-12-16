@@ -11,7 +11,6 @@ import (
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
-	"github.com/google/uuid"
 	"github.com/mr-tron/base58"
 	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
@@ -101,13 +100,13 @@ func CreateVerifiableCredential(credentialInput credInputParams, revocable bool)
 	return output, nil
 }
 
-func CreateSubmissionCredential(issuerDID, subjectDID string) (string, error) {
+func CreateSubmissionCredential(params credInputParams) (string, error) {
 	logrus.Println("\n\nCreate a submission credential")
 
-	credentialJSON := getJSONFromFile("submission-credential-input.json")
-
-	credentialJSON = strings.ReplaceAll(credentialJSON, "<CREDISSUERID>", issuerDID)
-	credentialJSON = strings.ReplaceAll(credentialJSON, "<CREDSUBJECTID>", subjectDID)
+	credentialJSON, err := resolveTemplate(params, "submission-credential-input.json")
+	if err != nil {
+		return "", err
+	}
 
 	output, err := put(endpoint+version+"credentials", credentialJSON)
 	if err != nil {
@@ -209,14 +208,23 @@ func ReviewSubmission(id string) (string, error) {
 	return output, nil
 }
 
-func CreateSubmission(definitionID, holderDID, holderPrivateKey, credentialJWT string) (string, error) {
-	logrus.Println("\n\nCreate our Submission:")
-	submissionJSON := getJSONFromFile("presentation-submission-input.json")
+type submissionParams struct {
+	HolderID      string
+	DefinitionID  string
+	CredentialJWT string
+	SubmissionID  string
+}
 
-	submissionJSON = strings.ReplaceAll(submissionJSON, "<DEFINITIONID>", definitionID)
-	submissionJSON = strings.ReplaceAll(submissionJSON, "<SUBMISSIONID>", uuid.NewString())
-	submissionJSON = strings.ReplaceAll(submissionJSON, "<HOLDERID>", holderDID)
-	submissionJSON = strings.ReplaceAll(submissionJSON, "<CREDENTIALJWT>", credentialJWT)
+type submissionJWTParams struct {
+	SubmissionJWT string
+}
+
+func CreateSubmission(params submissionParams, holderPrivateKey string) (string, error) {
+	logrus.Println("\n\nCreate our Submission:")
+	submissionJSON, err := resolveTemplate(params, "presentation-submission-input.json")
+	if err != nil {
+		return "", err
+	}
 
 	pkBytes, err := base58.Decode(holderPrivateKey)
 	if err != nil {
@@ -228,7 +236,7 @@ func CreateSubmission(definitionID, holderDID, holderPrivateKey, credentialJWT s
 		return "", errors.Wrap(err, "bytes to priv key")
 	}
 
-	signer, err := keyaccess.NewJWKKeyAccess(holderDID, pkCrypto)
+	signer, err := keyaccess.NewJWKKeyAccess(params.HolderID, pkCrypto)
 	if err != nil {
 		return "", errors.Wrap(err, "creating signer")
 	}
@@ -244,8 +252,12 @@ func CreateSubmission(definitionID, holderDID, holderPrivateKey, credentialJWT s
 		return "", errors.Wrap(err, "signing json")
 	}
 
-	submissionJSONWrapper := getJSONFromFile("presentation-submission-input-jwt.json")
-	submissionJSONWrapper = strings.ReplaceAll(submissionJSONWrapper, "<APPLICATIONJWT>", signed.String())
+	submissionJSONWrapper, err := resolveTemplate(
+		submissionJWTParams{SubmissionJWT: signed.String()},
+		"presentation-submission-input-jwt.json")
+	if err != nil {
+		return "", err
+	}
 
 	output, err := put(endpoint+version+"presentations/submissions", submissionJSONWrapper)
 	if err != nil {

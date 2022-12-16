@@ -3,13 +3,13 @@
     "@context": [
       "https://www.w3.org/2018/credentials/v1"
     ],
-    "holder": "<HOLDERID>",
+    "holder": "{{.HolderID}}",
     "type": [
       "VerifiablePresentation"
     ],
     "presentation_submission": {
-      "id": "<SUBMISSIONID>",
-      "definition_id": "<DEFINITIONID>",
+      "id": "{{.SubmissionID}}",
+      "definition_id": "{{.DefinitionID}}",
       "descriptor_map": [
         {
           "id": "wa_driver_license",
@@ -19,7 +19,7 @@
       ]
     },
     "verifiableCredential": [
-      "<CREDENTIALJWT>"
+      "{{.CredentialJWT}}"
     ]
   }
 }
