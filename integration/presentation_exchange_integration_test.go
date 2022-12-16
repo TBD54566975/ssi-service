@@ -3,6 +3,7 @@ package integration
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 )
@@ -66,13 +67,21 @@ func TestSubmissionFlow(t *testing.T) {
 	issuerDID, err := GetValue(presentationExchangeContext, "issuerDID")
 	assert.NoError(t, err)
 
-	credOutput, err := CreateSubmissionCredential(issuerDID.(string), holderDID.(string))
+	credOutput, err := CreateSubmissionCredential(credInputParams{
+		IssuerID:  issuerDID.(string),
+		SubjectID: holderDID.(string),
+	})
 	assert.NoError(t, err)
 
 	credentialJWT, err := getJSONElement(credOutput, "$.credentialJwt")
 	assert.NoError(t, err)
 
-	toBeCancelledOp, err := CreateSubmission(definitionID.(string), holderDID.(string), holderPrivateKey.(string), credentialJWT)
+	toBeCancelledOp, err := CreateSubmission(submissionParams{
+		HolderID:      holderDID.(string),
+		DefinitionID:  definitionID.(string),
+		CredentialJWT: credentialJWT,
+		SubmissionID:  uuid.NewString(),
+	}, holderPrivateKey.(string))
 	assert.NoError(t, err)
 
 	cancelOpID, err := getJSONElement(toBeCancelledOp, "$.id")
@@ -83,7 +92,12 @@ func TestSubmissionFlow(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "true", cancelDone)
 
-	submissionOpOutput, err := CreateSubmission(definitionID.(string), holderDID.(string), holderPrivateKey.(string), credentialJWT)
+	submissionOpOutput, err := CreateSubmission(submissionParams{
+		HolderID:      holderDID.(string),
+		DefinitionID:  definitionID.(string),
+		CredentialJWT: credentialJWT,
+		SubmissionID:  uuid.NewString(),
+	}, holderPrivateKey.(string))
 	assert.NoError(t, err)
 
 	opID, err := getJSONElement(submissionOpOutput, "$.id")

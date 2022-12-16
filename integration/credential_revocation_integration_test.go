@@ -52,7 +52,11 @@ func TestRevocationCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
-	vcOutput, err := CreateVerifiableCredential(issuerDID.(string), schemaID.(string), true)
+	vcOutput, err := CreateVerifiableCredential(credInputParams{
+		IssuerID:  issuerDID.(string),
+		SchemaID:  schemaID.(string),
+		SubjectID: issuerDID.(string),
+	}, true)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vcOutput)
 
