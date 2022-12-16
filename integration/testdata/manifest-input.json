@@ -1,5 +1,5 @@
 {
-  "issuerDID":"<ISSUERID>",
+  "issuerDID":"{{.IssuerID}}",
   "issuerName":"Issuer Name Lol",
   "format":{
     "jwt":{
@@ -11,7 +11,7 @@
   "outputDescriptors":[
     {
       "id":"kyc_credential",
-      "schema":"<SCHEMAID>"
+      "schema":"{{.SchemaID}}"
     }
   ],
   "presentationDefinition":{

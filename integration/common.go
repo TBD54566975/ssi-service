@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
+	"text/template"
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -70,18 +70,27 @@ func CreateKYCSchema() (string, error) {
 	return output, nil
 }
 
-func CreateVerifiableCredential(issuerDID, schemaID string, revocable bool) (string, error) {
+type credInputParams struct {
+	IssuerID  string
+	SchemaID  string
+	SubjectID string
+}
+
+func CreateVerifiableCredential(credentialInput credInputParams, revocable bool) (string, error) {
 	logrus.Println("\n\nCreate a verifiable credential")
 
-	credentialJSON := getJSONFromFile("credential-input.json")
-
-	if revocable == true {
-		credentialJSON = getJSONFromFile("credential-revocable-input.json")
+	if credentialInput.SubjectID == "" {
+		credentialInput.SubjectID = credentialInput.IssuerID
 	}
 
-	credentialJSON = strings.ReplaceAll(credentialJSON, "<CREDISSUERID>", issuerDID)
-	credentialJSON = strings.ReplaceAll(credentialJSON, "<CREDSUBJECTID>", issuerDID)
-	credentialJSON = strings.ReplaceAll(credentialJSON, "<SCHEMAID>", schemaID)
+	fileName := "credential-input.json"
+	if revocable {
+		fileName = "credential-revocable-input.json"
+	}
+	credentialJSON, err := resolveTemplate(credentialInput, fileName)
+	if err != nil {
+		return "", err
+	}
 
 	output, err := put(endpoint+version+"credentials", credentialJSON)
 	if err != nil {
@@ -91,11 +100,47 @@ func CreateVerifiableCredential(issuerDID, schemaID string, revocable bool) (str
 	return output, nil
 }
 
-func CreateCredentialManifest(issuerDID, schemaID string) (string, error) {
+func CreateSubmissionCredential(params credInputParams) (string, error) {
+	logrus.Println("\n\nCreate a submission credential")
+
+	credentialJSON, err := resolveTemplate(params, "submission-credential-input.json")
+	if err != nil {
+		return "", err
+	}
+
+	output, err := put(endpoint+version+"credentials", credentialJSON)
+	if err != nil {
+		return "", errors.Wrapf(err, "credentials endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
+func resolveTemplate(input any, fileName string) (string, error) {
+	t, err := template.ParseFiles("testdata/" + fileName)
+	if err != nil {
+		return "", errors.Wrap(err, "parsing input file")
+	}
+
+	var b bytes.Buffer
+	if err = t.Execute(&b, input); err != nil {
+		return "", err
+	}
+	credentialJSON := b.String()
+	return credentialJSON, nil
+}
+
+type credManifestParams struct {
+	IssuerID string
+	SchemaID string
+}
+
+func CreateCredentialManifest(credManifest credManifestParams) (string, error) {
 	logrus.Println("\n\nCreate our Credential Manifest:")
-	manifestJSON := getJSONFromFile("manifest-input.json")
-	manifestJSON = strings.ReplaceAll(manifestJSON, "<SCHEMAID>", schemaID)
-	manifestJSON = strings.ReplaceAll(manifestJSON, "<ISSUERID>", issuerDID)
+	manifestJSON, err := resolveTemplate(credManifest, "manifest-input.json")
+	if err != nil {
+		return "", err
+	}
 	output, err := put(endpoint+version+"manifests", manifestJSON)
 	if err != nil {
 		return "", errors.Wrapf(err, "manifest endpoint with output: %s", output)
@@ -104,12 +149,17 @@ func CreateCredentialManifest(issuerDID, schemaID string) (string, error) {
 	return output, nil
 }
 
-func CreateCredentialApplicationJWT(presentationDefinitionID, credentialJWT, manifestID, aliceDID, aliceDIDPrivateKey string) (string, error) {
+type credApplicationParams struct {
+	DefinitionID string
+	ManifestID   string
+}
+
+func CreateCredentialApplicationJWT(credApplication credApplicationParams, credentialJWT, aliceDID, aliceDIDPrivateKey string) (string, error) {
 	logrus.Println("\n\nCreate an Application JWT:")
-	applicationJSON := getJSONFromFile("application-input.json")
-	applicationJSON = strings.ReplaceAll(applicationJSON, "<DEFINITIONID>", presentationDefinitionID)
-	applicationJSON = strings.ReplaceAll(applicationJSON, "<VCJWT>", credentialJWT)
-	applicationJSON = strings.ReplaceAll(applicationJSON, "<MANIFESTID>", manifestID)
+	applicationJSON, err := resolveTemplate(credApplication, "application-input.json")
+	if err != nil {
+		return "", err
+	}
 
 	alicePrivKeyBytes, err := base58.Decode(aliceDIDPrivateKey)
 	if err != nil {
@@ -136,10 +186,96 @@ func CreateCredentialApplicationJWT(presentationDefinitionID, credentialJWT, man
 	return signed.String(), nil
 }
 
-func SubmitApplication(credAppJWT string) (string, error) {
+func CreatePresentationDefinition() (string, error) {
+	logrus.Println("\n\nCreate our Presentation Definition:")
+	definitionJSON := getJSONFromFile("presentation-definition-input.json")
+	output, err := put(endpoint+version+"presentations/definitions", definitionJSON)
+	if err != nil {
+		return "", errors.Wrapf(err, "presentation definition endpoint with output: %s", output)
+	}
 
-	trueApplicationJSON := getJSONFromFile("application-input-jwt.json")
-	trueApplicationJSON = strings.ReplaceAll(trueApplicationJSON, "<APPLICATIONJWT>", credAppJWT)
+	return output, nil
+}
+
+func ReviewSubmission(id string) (string, error) {
+	logrus.Println("\n\nCreate our review submission request:")
+	reviewJSON := getJSONFromFile("review-submission-input.json")
+	output, err := put(endpoint+version+"presentations/submissions/"+id+"/review", reviewJSON)
+	if err != nil {
+		return "", errors.Wrapf(err, "review submission endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
+type submissionParams struct {
+	HolderID      string
+	DefinitionID  string
+	CredentialJWT string
+	SubmissionID  string
+}
+
+type submissionJWTParams struct {
+	SubmissionJWT string
+}
+
+func CreateSubmission(params submissionParams, holderPrivateKey string) (string, error) {
+	logrus.Println("\n\nCreate our Submission:")
+	submissionJSON, err := resolveTemplate(params, "presentation-submission-input.json")
+	if err != nil {
+		return "", err
+	}
+
+	pkBytes, err := base58.Decode(holderPrivateKey)
+	if err != nil {
+		return "", errors.Wrap(err, "base58 decoding")
+	}
+
+	pkCrypto, err := crypto.BytesToPrivKey(pkBytes, crypto.Ed25519)
+	if err != nil {
+		return "", errors.Wrap(err, "bytes to priv key")
+	}
+
+	signer, err := keyaccess.NewJWKKeyAccess(params.HolderID, pkCrypto)
+	if err != nil {
+		return "", errors.Wrap(err, "creating signer")
+	}
+
+	var submission any
+	if err := json.Unmarshal([]byte(submissionJSON), &submission); err != nil {
+		return "", err
+	}
+
+	signed, err := signer.SignJSON(submission)
+	if err != nil {
+		logrus.Println("Failed signing: " + submissionJSON)
+		return "", errors.Wrap(err, "signing json")
+	}
+
+	submissionJSONWrapper, err := resolveTemplate(
+		submissionJWTParams{SubmissionJWT: signed.String()},
+		"presentation-submission-input-jwt.json")
+	if err != nil {
+		return "", err
+	}
+
+	output, err := put(endpoint+version+"presentations/submissions", submissionJSONWrapper)
+	if err != nil {
+		return "", errors.Wrapf(err, "presentation submission endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
+type applicationParams struct {
+	ApplicationJWT string
+}
+
+func SubmitApplication(app applicationParams) (string, error) {
+	trueApplicationJSON, err := resolveTemplate(app, "application-input-jwt.json")
+	if err != nil {
+		return "", err
+	}
 
 	output, err := put(endpoint+version+"manifests/applications", trueApplicationJSON)
 	if err != nil {

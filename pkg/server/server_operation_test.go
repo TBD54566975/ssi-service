@@ -74,7 +74,7 @@ func TestOperationsAPI(t *testing.T) {
 			var resp router.Operation
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 			assert.False(t, resp.Done)
-			assert.Contains(t, resp.ID, "/presentations/submissions/")
+			assert.Contains(t, resp.ID, "presentations/submissions/")
 		})
 
 		t.Run("Returns error when id doesn't exist", func(tt *testing.T) {
@@ -100,7 +100,7 @@ func TestOperationsAPI(t *testing.T) {
 			opRouter := setupOperationsRouter(t, s)
 
 			request := router.GetOperationsRequest{
-				Parent: "/presentations/submissions",
+				Parent: "presentations/submissions",
 			}
 			value := newRequestValue(t, request)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
@@ -126,7 +126,7 @@ func TestOperationsAPI(t *testing.T) {
 			submissionOp2 := createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID2, holderSigner2)
 
 			request := router.GetOperationsRequest{
-				Parent: "/presentations/submissions",
+				Parent: "presentations/submissions",
 			}
 			value := newRequestValue(t, request)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
@@ -158,7 +158,7 @@ func TestOperationsAPI(t *testing.T) {
 			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			request := router.GetOperationsRequest{
-				Parent: "/presentations/submissions",
+				Parent: "presentations/submissions",
 				Filter: "done = false",
 			}
 			value := newRequestValue(t, request)
@@ -183,7 +183,7 @@ func TestOperationsAPI(t *testing.T) {
 			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			request := router.GetOperationsRequest{
-				Parent: "/presentations/submissions",
+				Parent: "presentations/submissions",
 				Filter: "done = true",
 			}
 			value := newRequestValue(t, request)
@@ -278,11 +278,11 @@ func setupTestDB(t *testing.T) storage.ServiceStorage {
 	file, err := os.CreateTemp("", "bolt")
 	require.NoError(t, err)
 	name := file.Name()
-	file.Close()
 	s, err := storage.NewStorage(storage.Bolt, name)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = s.Close()
+		_ = file.Close()
 		_ = os.Remove(name)
 	})
 	return s

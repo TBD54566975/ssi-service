@@ -172,7 +172,7 @@ func routerModel(op operation.Operation) Operation {
 // @Success      200  {object}  Operation  "OK"
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
-// @Router       /v1/operations [get]
+// @Router       /v1/operations/cancel/{id} [get]
 func (o OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
