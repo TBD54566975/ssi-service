@@ -151,7 +151,7 @@ func readAllKeys(match string, b *RedisDB) ([]string, error) {
 	for {
 		keys, nextCursor, err := b.db.Scan(b.ctx, cursor, match+"*", RedisScanBatchSize).Result()
 		if err != nil {
-			return nil, errors.Wrap(err, "redis scan error")
+			return nil, errors.Wrap(err, "scan error")
 		}
 
 		allKeys = append(allKeys, keys...)
