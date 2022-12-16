@@ -185,7 +185,7 @@ func (b *RedisDB) Delete(namespace, key string) error {
 func (b *RedisDB) DeleteNamespace(namespace string) error {
 	keys, err := readAllKeys(namespace, b)
 	if err != nil {
-		return errors.Wrap(err, "read all keys error")
+		return errors.Wrap(err, "read all keys")
 	}
 
 	if err := b.mutex.Lock(); err != nil {
