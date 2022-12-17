@@ -54,7 +54,7 @@ type ServicesConfig struct {
 	ServiceEndpoint string      `toml:"service_endpoint"`
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
-	KeyStoreConfig     KeyStoreServiceConfig     `toml:"keystore" comment:"per-service configuration"`
+	KeyStoreConfig     KeyStoreServiceConfig     `toml:"keystore,omitempty" comment:"per-service configuration"`
 	DIDConfig          DIDServiceConfig          `toml:"did,omitempty"`
 	SchemaConfig       SchemaServiceConfig       `toml:"schema,omitempty"`
 	CredentialConfig   CredentialServiceConfig   `toml:"credential,omitempty"`
@@ -176,7 +176,7 @@ var defaultConfig = SSIServiceConfig{
 			BaseServiceConfig: BaseServiceConfig{Name: "schema"},
 		},
 		CredentialConfig: CredentialServiceConfig{
-			BaseServiceConfig: BaseServiceConfig{Name: "credential"},
+			BaseServiceConfig: BaseServiceConfig{Name: "credential", ServiceEndpoint: DefaultServiceEndpoint},
 		},
 		ManifestConfig: ManifestServiceConfig{
 			BaseServiceConfig: BaseServiceConfig{Name: "manifest"},
