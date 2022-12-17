@@ -108,7 +108,7 @@ func TestStoreAndGetKey(t *testing.T) {
 
 	keyStore, err := NewKeyStoreService(
 		config.KeyStoreServiceConfig{
-			BaseServiceConfig: &config.BaseServiceConfig{
+			BaseServiceConfig: config.BaseServiceConfig{
 				Name: "test-keyStore",
 			},
 			ServiceKeyPassword: "test-password",

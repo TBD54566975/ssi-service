@@ -41,7 +41,7 @@ func TestMain(t *testing.M) {
 
 func TestHealthCheckAPI(t *testing.T) {
 	shutdown := make(chan os.Signal, 1)
-	serviceConfig, err := config.LoadConfig("")
+	serviceConfig, err := config.LoadConfig("/tmp/test_health_check")
 	assert.NoError(t, err)
 	server, err := NewSSIServer(shutdown, *serviceConfig)
 	assert.NoError(t, err)
@@ -69,7 +69,7 @@ func TestReadinessAPI(t *testing.T) {
 	})
 
 	shutdown := make(chan os.Signal, 1)
-	serviceConfig, err := config.LoadConfig("")
+	serviceConfig, err := config.LoadConfig("/tmp/test_readiness_api")
 	assert.NoError(t, err)
 	serviceConfig.Services.StorageOption = dbFile
 
@@ -200,7 +200,7 @@ func testKeyStore(t *testing.T, bolt storage.ServiceStorage) (*router.KeyStoreRo
 
 func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Service {
 	serviceConfig := config.KeyStoreServiceConfig{
-		BaseServiceConfig:  &config.BaseServiceConfig{Name: "test-keystore"},
+		BaseServiceConfig:  config.BaseServiceConfig{Name: "test-keystore"},
 		ServiceKeyPassword: "test-password",
 	}
 
@@ -213,7 +213,7 @@ func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Serv
 
 func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service) *did.Service {
 	serviceConfig := config.DIDServiceConfig{
-		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-did"},
+		BaseServiceConfig: config.BaseServiceConfig{Name: "test-did"},
 		Methods:           []string{"key"},
 		ResolutionMethods: []string{"key"},
 	}
@@ -236,7 +236,7 @@ func testDIDRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore
 }
 
 func testSchemaService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, did *did.Service) *schema.Service {
-	schemaService, err := schema.NewSchemaService(config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-schema"}}, bolt, keyStore, did.GetResolver())
+	schemaService, err := schema.NewSchemaService(config.SchemaServiceConfig{BaseServiceConfig: config.BaseServiceConfig{Name: "test-schema"}}, bolt, keyStore, did.GetResolver())
 	require.NoError(t, err)
 	require.NotEmpty(t, schemaService)
 	return schemaService
@@ -253,7 +253,7 @@ func testSchemaRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keyst
 }
 
 func testCredentialService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
-	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: config.BaseServiceConfig{Name: "credential"}}
 
 	// create a credential service
 	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver(), schema)
@@ -274,7 +274,7 @@ func testCredentialRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *k
 }
 
 func testManifest(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, credential *credential.Service) (*router.ManifestRouter, *manifest.Service) {
-	serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
+	serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: config.BaseServiceConfig{Name: "manifest"}}
 	// create a manifest service
 	manifestService, err := manifest.NewManifestService(serviceConfig, db, keyStore, did.GetResolver(), credential)
 	require.NoError(t, err)

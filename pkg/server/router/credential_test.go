@@ -38,7 +38,7 @@ func TestCredentialRouter(t *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotNil(tt, bolt)
 
-		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: config.BaseServiceConfig{Name: "credential"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
@@ -193,7 +193,7 @@ func TestCredentialRouter(t *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotNil(tt, bolt)
 
-		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: config.BaseServiceConfig{Name: "credential"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)

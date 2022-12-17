@@ -11,7 +11,7 @@ import (
 
 const (
 	defaultConfigPath = "config"
-	ConfigFileName    = "config.toml"
+	configFileName    = "config.toml"
 	ServiceName       = "ssi-service"
 	ConfigExtension   = ".toml"
 
@@ -193,7 +193,7 @@ func LoadConfig(home string) (*SSIServiceConfig, error) {
 	if home == "" {
 		home = "."
 	}
-	parser := conf.NewConfigureParser(home, path.Join(defaultConfigPath, ConfigFileName))
+	parser := conf.NewConfigureParser(home, path.Join(defaultConfigPath, configFileName))
 	ret := &SSIServiceConfig{}
 	err := parser.LoadWithMerge(ret, defaultConfig)
 	if err != nil {

@@ -33,7 +33,7 @@ func TestSchemaRouter(t *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotNil(tt, bolt)
 
-		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
+		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: config.BaseServiceConfig{Name: "schema"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
@@ -119,7 +119,7 @@ func TestSchemaSigning(t *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotNil(tt, bolt)
 
-		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
+		serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: config.BaseServiceConfig{Name: "schema"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService, err := schema.NewSchemaService(serviceConfig, bolt, keyStoreService, didService.GetResolver())
