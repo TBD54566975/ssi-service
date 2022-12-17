@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -21,6 +22,10 @@ const (
 	DBFilePrefix = "ssi-service"
 )
 
+const (
+	Bolt Type = "bolt"
+)
+
 type BoltDB struct {
 	db *bolt.DB
 }
@@ -30,7 +35,14 @@ func (b *BoltDB) Init(options interface{}) error {
 	if b.db != nil && b.IsOpen() {
 		return fmt.Errorf("bolit db already opened with name %s", b.URI())
 	}
-	dbFilePath := fmt.Sprintf("%s_%s.db", DBFilePrefix, b.Type())
+	_, err := os.Stat(DBRootPath)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(DBRootPath, 0766)
+		if err != nil {
+			panic(err)
+		}
+	}
+	dbFilePath := fmt.Sprintf("%s/%s_%s.db", DBRootPath, DBFilePrefix, b.Type())
 	if options != nil {
 		customPath, ok := options.(string)
 		if !ok {

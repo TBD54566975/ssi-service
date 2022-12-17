@@ -1,20 +1,16 @@
 package config
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
+	"path"
 	"reflect"
 	"time"
 
-	"github.com/BurntSushi/toml"
-	"github.com/ardanlabs/conf"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+	"github.com/suutaku/nice-config/pkg/conf"
 )
 
 const (
-	DefaultConfigPath = "config/config.toml"
+	defaultConfigPath = "config"
 	ConfigFileName    = "config.toml"
 	ServiceName       = "ssi-service"
 	ConfigExtension   = ".toml"
@@ -22,24 +18,30 @@ const (
 	DefaultServiceEndpoint = "http://localhost:8080"
 )
 
+type Info struct {
+	Title string `toml:"title"`
+	Svn   string `toml:"svn"`
+	Desc  string `toml:"desc"`
+}
+
 type SSIServiceConfig struct {
-	conf.Version
-	Server   ServerConfig   `toml:"server"`
+	Info
+	Server   ServerConfig   `toml:"server" comment:"http service configuration"`
 	Services ServicesConfig `toml:"services"`
 }
 
 // ServerConfig represents configurable properties for the HTTP server
 type ServerConfig struct {
-	APIHost             string        `toml:"api_host" conf:"default:0.0.0.0:3000"`
-	DebugHost           string        `toml:"debug_host" conf:"default:0.0.0.0:4000"`
-	JagerHost           string        `toml:"jager_host" conf:"http://jaeger:14268/api/traces"`
-	JagerEnabled        bool          `toml:"jager_enabled" conf:"default:false"`
-	ReadTimeout         time.Duration `toml:"read_timeout" conf:"default:5s"`
-	WriteTimeout        time.Duration `toml:"write_timeout" conf:"default:5s"`
-	ShutdownTimeout     time.Duration `toml:"shutdown_timeout" conf:"default:5s"`
-	LogLocation         string        `toml:"log_location" conf:"default:log"`
-	LogLevel            string        `toml:"log_level" conf:"default:debug"`
-	EnableSchemaCaching bool          `toml:"enable_schema_caching" conf:"default:true"`
+	APIHost             string        `toml:"api_host"`
+	DebugHost           string        `toml:"debug_host"`
+	JagerHost           string        `toml:"jager_host"`
+	JagerEnabled        bool          `toml:"jager_enabled"`
+	ReadTimeout         time.Duration `toml:"read_timeout" comment:"5 seconds, time is in nanoseconds"`
+	WriteTimeout        time.Duration `toml:"write_timeout"`
+	ShutdownTimeout     time.Duration `toml:"shutdown_timeout"`
+	LogLocation         string        `toml:"log_location"`
+	LogLevel            string        `toml:"log_level" comment:"options: trace, debug, info, warning, error, fatal, panic"`
+	EnableSchemaCaching bool          `toml:"enable_schema_caching"`
 }
 
 // ServicesConfig represents configurable properties for the components of the SSI Service
@@ -47,12 +49,12 @@ type ServicesConfig struct {
 	// at present, it is assumed that a single storage provider works for all services
 	// in the future it may make sense to have per-service storage providers (e.g. mysql for one service,
 	// mongo for another)
-	StorageProvider string      `toml:"storage"`
-	StorageOption   interface{} `toml:"storage_option"`
+	StorageProvider string      `toml:"storage" comment:"a implementation type of github.com/tbd54566975/ssi-service/pkg/storage.ServiceStorage"`
+	StorageOption   interface{} `toml:"storage_option" comment:"this is a sotrage implementation specify option can be any struct"`
 	ServiceEndpoint string      `toml:"service_endpoint"`
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
-	KeyStoreConfig     KeyStoreServiceConfig     `toml:"keystore,omitempty"`
+	KeyStoreConfig     KeyStoreServiceConfig     `toml:"keystore" comment:"per-service configuration"`
 	DIDConfig          DIDServiceConfig          `toml:"did,omitempty"`
 	SchemaConfig       SchemaServiceConfig       `toml:"schema,omitempty"`
 	CredentialConfig   CredentialServiceConfig   `toml:"credential,omitempty"`
@@ -63,15 +65,15 @@ type ServicesConfig struct {
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
 // Can be wrapped and extended for any specific service config
 type BaseServiceConfig struct {
-	Name            string `toml:"name"`
-	ServiceEndpoint string `toml:"service_endpoint"`
+	Name            string `toml:"name,omitempty"`
+	ServiceEndpoint string `toml:"service_endpoint,omitempty"`
 }
 
 type KeyStoreServiceConfig struct {
-	*BaseServiceConfig
+	BaseServiceConfig
 	// Service key password. Used by a KDF whose key is used by a symmetric cypher for key encryption.
 	// The password is salted before usage.
-	ServiceKeyPassword string `toml:"password"`
+	ServiceKeyPassword string `toml:"password,omitempty"`
 }
 
 func (k *KeyStoreServiceConfig) IsEmpty() bool {
@@ -82,7 +84,7 @@ func (k *KeyStoreServiceConfig) IsEmpty() bool {
 }
 
 type DIDServiceConfig struct {
-	*BaseServiceConfig
+	BaseServiceConfig
 	Methods           []string `toml:"methods"`
 	ResolutionMethods []string `toml:"resolution_methods"`
 }
@@ -95,7 +97,7 @@ func (d *DIDServiceConfig) IsEmpty() bool {
 }
 
 type SchemaServiceConfig struct {
-	*BaseServiceConfig
+	BaseServiceConfig
 }
 
 func (s *SchemaServiceConfig) IsEmpty() bool {
@@ -106,7 +108,7 @@ func (s *SchemaServiceConfig) IsEmpty() bool {
 }
 
 type CredentialServiceConfig struct {
-	*BaseServiceConfig
+	BaseServiceConfig
 
 	// TODO(gabe) supported key and signature types
 }
@@ -119,7 +121,7 @@ func (c *CredentialServiceConfig) IsEmpty() bool {
 }
 
 type ManifestServiceConfig struct {
-	*BaseServiceConfig
+	BaseServiceConfig
 }
 
 func (m *ManifestServiceConfig) IsEmpty() bool {
@@ -130,7 +132,7 @@ func (m *ManifestServiceConfig) IsEmpty() bool {
 }
 
 type PresentationServiceConfig struct {
-	*BaseServiceConfig
+	BaseServiceConfig
 }
 
 func (p *PresentationServiceConfig) IsEmpty() bool {
@@ -140,84 +142,63 @@ func (p *PresentationServiceConfig) IsEmpty() bool {
 	return reflect.DeepEqual(p, &PresentationServiceConfig{})
 }
 
-// LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
-// Before loading, defaults are applied on certain properties, which are overwritten if specified in the TOML file.
-func LoadConfig(path string) (*SSIServiceConfig, error) {
-	// no path, load default config
-	defaultConfig := false
-	if path == "" {
-		logrus.Info("no config path provided, loading default config...")
-		defaultConfig = true
-	} else if filepath.Ext(path) != ConfigExtension {
-		return nil, fmt.Errorf("path<%s> did not match the expected TOML format", path)
+var defaultConfig = SSIServiceConfig{
+	Info: Info{
+		Title: "SSI Service Config",
+		Svn:   "0.0.1",
+		Desc:  "Default configuration to be used while running the service as a single go process.",
+	},
+	Server: ServerConfig{
+		APIHost:             "0.0.0.0:3000",
+		DebugHost:           "0.0.0.0:3000",
+		JagerHost:           "http://jaeger:14268/api/traces",
+		JagerEnabled:        false,
+		ReadTimeout:         5 * time.Second,
+		WriteTimeout:        5 * time.Second,
+		ShutdownTimeout:     5 * time.Second,
+		LogLocation:         "logs",
+		LogLevel:            "debug",
+		EnableSchemaCaching: true,
+	},
+	Services: ServicesConfig{
+		StorageProvider: "bolt",
+		ServiceEndpoint: DefaultServiceEndpoint,
+		KeyStoreConfig: KeyStoreServiceConfig{
+			BaseServiceConfig:  BaseServiceConfig{Name: "keystore"},
+			ServiceKeyPassword: "default-password",
+		},
+		DIDConfig: DIDServiceConfig{
+			BaseServiceConfig: BaseServiceConfig{Name: "did"},
+			Methods:           []string{"key", "web"},
+			ResolutionMethods: []string{"key", "peer", "web", "pkh"},
+		},
+		SchemaConfig: SchemaServiceConfig{
+			BaseServiceConfig: BaseServiceConfig{Name: "schema"},
+		},
+		CredentialConfig: CredentialServiceConfig{
+			BaseServiceConfig: BaseServiceConfig{Name: "credential"},
+		},
+		ManifestConfig: ManifestServiceConfig{
+			BaseServiceConfig: BaseServiceConfig{Name: "manifest"},
+		},
+		PresentationConfig: PresentationServiceConfig{
+			BaseServiceConfig: BaseServiceConfig{Name: "presentation"},
+		},
+	},
+}
+
+// LoadConfig attempts to load a TOML config file from the given home path, and coerce it into our object model.
+// If config file not exists, create a deault config.toml
+func LoadConfig(home string) (*SSIServiceConfig, error) {
+	if home == "" {
+		home = "."
 	}
-
-	// create the config object
-	var config SSIServiceConfig
-
-	// parse and apply defaults
-	if err := conf.Parse(os.Args[1:], ServiceName, &config); err != nil {
-		switch {
-		case errors.Is(err, conf.ErrHelpWanted):
-			usage, err := conf.Usage(ServiceName, &config)
-			if err != nil {
-				return nil, errors.Wrap(err, "parsing config")
-			}
-			fmt.Println(usage)
-
-			return nil, nil
-
-		case errors.Is(err, conf.ErrVersionWanted):
-			version, err := conf.VersionString(ServiceName, &config)
-			if err != nil {
-				return nil, errors.Wrap(err, "generating config version")
-			}
-
-			fmt.Println(version)
-			return nil, nil
-		}
-
-		return nil, errors.Wrap(err, "parsing config")
+	parser := conf.NewConfigureParser(home, path.Join(defaultConfigPath, ConfigFileName))
+	ret := &SSIServiceConfig{}
+	err := parser.LoadWithMerge(ret, defaultConfig)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not load config: %s/config.toml", home)
 	}
-
-	if defaultConfig {
-		config.Services = ServicesConfig{
-			StorageProvider: "bolt",
-			ServiceEndpoint: DefaultServiceEndpoint,
-			KeyStoreConfig: KeyStoreServiceConfig{
-				BaseServiceConfig:  &BaseServiceConfig{Name: "keystore"},
-				ServiceKeyPassword: "default-password",
-			},
-			DIDConfig: DIDServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "did"},
-				Methods:           []string{"key", "web"},
-				ResolutionMethods: []string{"key", "peer", "web", "pkh"},
-			},
-			SchemaConfig: SchemaServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "schema"},
-			},
-			CredentialConfig: CredentialServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "credential", ServiceEndpoint: DefaultServiceEndpoint},
-			},
-			ManifestConfig: ManifestServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "manifest"},
-			},
-			PresentationConfig: PresentationServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "presentation"},
-			},
-		}
-	} else {
-		// load from TOML file
-		if _, err := toml.DecodeFile(path, &config); err != nil {
-			return nil, errors.Wrapf(err, "could not load config: %s", path)
-		}
-
-		// apply defaults if not included in toml file
-		if config.Services.CredentialConfig.BaseServiceConfig.ServiceEndpoint == "" {
-			config.Services.CredentialConfig.BaseServiceConfig.ServiceEndpoint = config.Services.ServiceEndpoint
-		}
-
-	}
-
-	return &config, nil
+	err = parser.Save(ret)
+	return ret, err
 }

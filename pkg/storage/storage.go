@@ -7,12 +7,9 @@ import (
 
 type Type string
 
-const (
-	Bolt Type = "bolt"
-)
-
 var (
 	availableStorages = make(map[Type]ServiceStorage)
+	DBRootPath        = "data"
 )
 
 // ServiceStorage describes the api for storage independent of DB providers

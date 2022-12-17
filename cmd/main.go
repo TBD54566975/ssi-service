@@ -56,7 +56,7 @@ func main() {
 
 // startup and shutdown logic
 func run() error {
-	cfg, err := config.LoadConfig(config.DefaultConfigPath)
+	cfg, err := config.LoadConfig(os.Getenv("SSI_HOME"))
 	if err != nil {
 		logrus.Fatalf("could not instantiate config: %s", err.Error())
 	}
@@ -76,7 +76,7 @@ func run() error {
 		if err == nil {
 			logrus.SetOutput(file)
 		} else {
-			logrus.Info("Failed to log to file, using default stdout")
+			logrus.Info("Failed to log to file, using default stdout", err)
 		}
 		defer file.Close()
 	}
@@ -95,9 +95,9 @@ func run() error {
 		}
 	}
 
-	expvar.NewString("build").Set(cfg.Version.SVN)
+	expvar.NewString("build").Set(cfg.Svn)
 
-	logrus.Infof("main: Started : Service initializing : version %q", cfg.Version.SVN)
+	logrus.Infof("main: Started : Service initializing : version %q", cfg.Svn)
 	defer logrus.Info("main: Completed")
 
 	out, err := conf.String(cfg)
@@ -185,12 +185,19 @@ func newTracerProvider(cfg config.SSIServiceConfig) (*sdktrace.TracerProvider, e
 		sdktrace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceNameKey.String(config.ServiceName),
-			semconv.ServiceVersionKey.String(cfg.Version.SVN),
+			semconv.ServiceVersionKey.String(cfg.Svn),
 		)),
 	)
 	return tp, nil
 }
 
 func createLogFile(location string) string {
+	_, err := os.Stat(location)
+	if os.IsNotExist(err) {
+		err = os.MkdirAll(location, 0766)
+		if err != nil {
+			panic(err)
+		}
+	}
 	return location + "/" + config.ServiceName + "-" + time.Now().Format(time.RFC3339) + ".log"
 }
