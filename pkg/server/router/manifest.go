@@ -294,7 +294,7 @@ type SubmitApplicationResponse struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body      SubmitApplicationRequest  true  "request body"
-// @Success      201      {object}  Operation
+// @Success      201      {object}  Operation "Operation with a SubmitApplicationResponse type in the `result.response` field."
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests/applications [put]
