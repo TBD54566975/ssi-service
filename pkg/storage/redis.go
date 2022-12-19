@@ -95,6 +95,42 @@ func (b *RedisDB) Write(namespace, key string, value []byte) error {
 	return b.db.Set(b.ctx, nameSpaceKey, value, 0).Err()
 }
 
+// TODO Add this to interface and replace UpdateValueAndOperation with this
+func (b *RedisDB) WriteMany(namespaces, keys []string, values [][]byte) error {
+	if len(namespaces) != len(keys) && len(namespaces) != len(values) {
+		return errors.New("namespaces, keys, and values, are not of equal length")
+	}
+
+	if err := b.mutex.Lock(); err != nil {
+		return errors.Wrap(err, "cannot obtain mutex lock")
+	}
+	defer func() {
+		ok, unlockErr := b.mutex.Unlock()
+		if !ok || unlockErr != nil {
+			logrus.Error(unlockErr)
+		}
+	}()
+
+	// The Pipeliner interface provided by the go-redis library guarantees that all the commands queued in the pipeline will either succeed or fail together.
+	_, err := b.db.TxPipelined(b.ctx, func(pipe goredislib.Pipeliner) error {
+		for i := range namespaces {
+			namespace := namespaces[i]
+			key := keys[i]
+			value := values[i]
+
+			nameSpaceKey := getRedisKey(namespace, key)
+			err := pipe.Set(b.ctx, nameSpaceKey, value, 0).Err()
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
+
+	return err
+}
+
 func (b *RedisDB) Read(namespace, key string) ([]byte, error) {
 	nameSpaceKey := getRedisKey(namespace, key)
 	return b.db.Get(b.ctx, nameSpaceKey).Bytes()
