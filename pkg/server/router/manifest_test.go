@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -122,8 +123,10 @@ func TestManifestRouter(t *testing.T) {
 		submitApplicationRequest := SubmitApplicationRequest{ApplicationJWT: *signed}
 		sar, err := submitApplicationRequest.ToServiceRequest()
 		assert.NoError(tt, err)
-		createdApplicationResponse, err := manifestService.ProcessApplicationSubmission(*sar)
+		createdApplicationResponseOp, err := manifestService.ProcessApplicationSubmission(*sar)
 		assert.NoError(tt, err)
+		createdApplicationResponse, ok := createdApplicationResponseOp.Result.Response.(manifest.SubmitApplicationResponse)
+		require.True(tt, ok)
 		assert.NotEmpty(tt, createdManifest)
 		assert.NotEmpty(tt, createdApplicationResponse.Response.ID)
 		assert.NotEmpty(tt, createdApplicationResponse.Response.Fulfillment)

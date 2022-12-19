@@ -10,6 +10,7 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
+	manifest2 "github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	"go.einride.tech/aip/filtering"
 )
@@ -152,14 +153,26 @@ func (o OperationRouter) GetOperations(ctx context.Context, w http.ResponseWrite
 }
 
 func routerModel(op operation.Operation) Operation {
-	return Operation{
+	routerOp := Operation{
 		ID:   op.ID,
 		Done: op.Done,
 		Result: OperationResult{
-			Error:    op.Result.Error,
-			Response: op.Result.Response,
+			Error: op.Result.Error,
 		},
 	}
+	if op.Result.Response != nil {
+		switch r := op.Result.Response.(type) {
+		case manifest2.SubmitApplicationResponse:
+			routerOp.Result.Response = SubmitApplicationResponse{
+				Response:    r.Response,
+				Credentials: r.Credentials,
+				ResponseJWT: r.ResponseJWT,
+			}
+		default:
+			routerOp.Result.Response = r
+		}
+	}
+	return routerOp
 }
 
 // CancelOperation godoc
@@ -187,4 +200,23 @@ func (o OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWri
 			util.LoggingErrorMsg(err, "failed cancelling operation"), http.StatusInternalServerError)
 	}
 	return framework.Respond(ctx, w, routerModel(*op), http.StatusOK)
+}
+
+type Operation struct {
+	// The name of the resource related to this operation. E.g. "presentations/submissions/<uuid>"
+	ID string `json:"id"`
+
+	// Whether this operation has finished.
+	Done bool `json:"done"`
+
+	// Populated Done == true.
+	Result OperationResult `json:"result,omitempty"`
+}
+
+type OperationResult struct {
+	// Populated when there was an error with the operation.
+	Error string `json:"error,omitempty"`
+
+	// Populated iff Error == "". The type should be specified in the calling APIs documentation.
+	Response any `json:"response,omitempty"`
 }

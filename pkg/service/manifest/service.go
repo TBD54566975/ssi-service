@@ -8,6 +8,8 @@ import (
 	errresp "github.com/TBD54566975/ssi-sdk/error"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/application"
 
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
@@ -214,7 +216,7 @@ type CredentialResponseContainer struct {
 	Credentials []any                       `json:"verifiableCredentials,omitempty"`
 }
 
-func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) (*SubmitApplicationResponse, error) {
+func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) (*operation.Operation, error) {
 	// get the manifest associated with the application
 	manifestID := request.Application.ManifestID
 	gotManifest, err := s.storage.GetManifest(manifestID)
@@ -235,7 +237,13 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 			if err != nil {
 				return nil, util.LoggingErrorMsg(err, "could not build denial credential response")
 			}
-			return &SubmitApplicationResponse{Response: *denialResp}, nil
+			return &operation.Operation{
+				ID:   application.IDFromApplicationID(applicationID),
+				Done: true,
+				Result: operation.Result{
+					Response: SubmitApplicationResponse{Response: *denialResp},
+				},
+			}, nil
 		}
 		return nil, util.LoggingErrorMsg(validationErr, "could not validate application")
 	}
@@ -286,7 +294,13 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	}
 
 	response := SubmitApplicationResponse{Response: *credResp, Credentials: credentials, ResponseJWT: *responseJWT}
-	return &response, nil
+	return &operation.Operation{
+		ID:   application.IDFromApplicationID(applicationID),
+		Done: true,
+		Result: operation.Result{
+			Response: response,
+		},
+	}, nil
 }
 
 func (s Service) GetApplication(request GetApplicationRequest) (*GetApplicationResponse, error) {

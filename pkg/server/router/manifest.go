@@ -294,7 +294,7 @@ type SubmitApplicationResponse struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body      SubmitApplicationRequest  true  "request body"
-// @Success      201      {object}  SubmitApplicationResponse
+// @Success      201      {object}  Operation
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests/applications [put]
@@ -313,20 +313,14 @@ func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	submitApplicationResponse, err := mr.service.ProcessApplicationSubmission(*req)
+	op, err := mr.service.ProcessApplicationSubmission(*req)
 	if err != nil {
 		errMsg := "could not submit application"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := SubmitApplicationResponse{
-		Response:    submitApplicationResponse.Response,
-		Credentials: submitApplicationResponse.Credentials,
-		ResponseJWT: submitApplicationResponse.ResponseJWT,
-	}
-
-	return framework.Respond(ctx, w, resp, http.StatusCreated)
+	return framework.Respond(ctx, w, routerModel(*op), http.StatusCreated)
 }
 
 type GetApplicationResponse struct {

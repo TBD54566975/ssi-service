@@ -412,8 +412,14 @@ func TestManifestAPI(t *testing.T) {
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
+		var op router.Operation
+		err = json.NewDecoder(w.Body).Decode(&op)
+		assert.NoError(tt, err)
+
 		var appResp router.SubmitApplicationResponse
-		err = json.NewDecoder(w.Body).Decode(&appResp)
+		respData, err := json.Marshal(op.Result.Response)
+		assert.NoError(tt, err)
+		err = json.Unmarshal(respData, &appResp)
 		assert.NoError(tt, err)
 
 		assert.NotEmpty(tt, appResp.Response)
@@ -533,8 +539,14 @@ func TestManifestAPI(t *testing.T) {
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
+		var op router.Operation
+		err = json.NewDecoder(w.Body).Decode(&op)
+		assert.NoError(tt, err)
+
 		var appResp router.SubmitApplicationResponse
-		err = json.NewDecoder(w.Body).Decode(&appResp)
+		respData, err := json.Marshal(op.Result.Response)
+		assert.NoError(tt, err)
+		err = json.Unmarshal(respData, &appResp)
 		assert.NoError(tt, err)
 
 		assert.NotEmpty(tt, appResp.Response)
@@ -558,7 +570,12 @@ func TestManifestAPI(t *testing.T) {
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
-		err = json.NewDecoder(w.Body).Decode(&appResp)
+		err = json.NewDecoder(w.Body).Decode(&op)
+		assert.NoError(tt, err)
+
+		respData, err = json.Marshal(op.Result.Response)
+		assert.NoError(tt, err)
+		err = json.Unmarshal(respData, &appResp)
 		assert.NoError(tt, err)
 
 		assert.NotEmpty(tt, appResp.Response)
@@ -664,8 +681,14 @@ func TestManifestAPI(t *testing.T) {
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
+		var op router.Operation
+		err = json.NewDecoder(w.Body).Decode(&op)
+		assert.NoError(tt, err)
+
 		var appResp router.SubmitApplicationResponse
-		err = json.NewDecoder(w.Body).Decode(&appResp)
+		respData, err := json.Marshal(op.Result.Response)
+		assert.NoError(tt, err)
+		err = json.Unmarshal(respData, &appResp)
 		assert.NoError(tt, err)
 
 		assert.NotEmpty(tt, appResp.Response.Fulfillment)
