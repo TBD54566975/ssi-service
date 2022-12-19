@@ -72,7 +72,11 @@ func run() error {
 	}
 	// set log config from config file
 	if cfg.Server.LogLocation != "" {
-		file, err := os.OpenFile(createLogFile(cfg.Server.LogLocation), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		logFilePath, err := createLogFile(cfg.Server.LogLocation)
+		if err != nil {
+			return err
+		}
+		file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err == nil {
 			logrus.SetOutput(file)
 		} else {
@@ -191,13 +195,11 @@ func newTracerProvider(cfg config.SSIServiceConfig) (*sdktrace.TracerProvider, e
 	return tp, nil
 }
 
-func createLogFile(location string) string {
-	_, err := os.Stat(location)
-	if os.IsNotExist(err) {
-		err = os.MkdirAll(location, 0766)
-		if err != nil {
-			panic(err)
+func createLogFile(location string) (string, error) {
+	if _, err := os.Stat(location); os.IsNotExist(err) {
+		if err = os.MkdirAll(location, 0766); err != nil {
+			return "", err
 		}
 	}
-	return location + "/" + config.ServiceName + "-" + time.Now().Format(time.RFC3339) + ".log"
+	return location + "/" + config.ServiceName + "-" + time.Now().Format(time.RFC3339) + ".log", nil
 }
