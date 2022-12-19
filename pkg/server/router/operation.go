@@ -10,7 +10,7 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
-	manifest2 "github.com/tbd54566975/ssi-service/pkg/service/manifest"
+	manifestsvc "github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	"go.einride.tech/aip/filtering"
 )
@@ -162,7 +162,7 @@ func routerModel(op operation.Operation) Operation {
 	}
 	if op.Result.Response != nil {
 		switch r := op.Result.Response.(type) {
-		case manifest2.SubmitApplicationResponse:
+		case manifestsvc.SubmitApplicationResponse:
 			routerOp.Result.Response = SubmitApplicationResponse{
 				Response:    r.Response,
 				Credentials: r.Credentials,
