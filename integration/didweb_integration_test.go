@@ -156,11 +156,11 @@ func TestDidWebSubmitApplicationIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credentialResponseOutput)
 
-	crManifestID, err := getJSONElement(credentialResponseOutput, "$.credential_response.manifest_id")
+	crManifestID, err := getJSONElement(credentialResponseOutput, "$.result.response.credential_response.manifest_id")
 	assert.NoError(t, err)
 	assert.Equal(t, manifestID, crManifestID)
 
-	vc, err := getJSONElement(credentialResponseOutput, "$.verifiableCredentials[0]")
+	vc, err := getJSONElement(credentialResponseOutput, "$.result.response.verifiableCredentials[0]")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vc)
 }
