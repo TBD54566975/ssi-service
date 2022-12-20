@@ -53,7 +53,7 @@ func (ir IssuanceRouter) CreateIssuanceTemplate(ctx context.Context, w http.Resp
 // DeleteIssuanceTemplate godoc
 // @Summary      Delete issuance template
 // @Description  Delete issuance template by ID
-// @Tags         IssuanceAPI
+// @Tags         IssuingAPI
 // @Accept       json
 // @Produce      json
 // @Param        id   path      string  true  "ID"
@@ -72,7 +72,7 @@ type ListIssuanceTemplatesResponse struct {
 // ListIssuanceTemplates godoc
 // @Summary      Lists issuance templates
 // @Description  Lists all issuangce templates stored in this service.
-// @Tags         IssuanceAPI
+// @Tags         IssuingAPI
 // @Accept       json
 // @Produce      json
 // @Success      200      {object}  ListIssuanceTemplatesResponse
