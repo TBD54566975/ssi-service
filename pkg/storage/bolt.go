@@ -37,7 +37,7 @@ func (b *BoltDB) Init(options interface{}) error {
 	}
 	_, err := os.Stat(DBRootPath)
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(DBRootPath, 0766)
+		err = os.MkdirAll(DBRootPath, os.ModePerm)
 		if err != nil {
 			panic(err)
 		}

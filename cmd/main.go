@@ -197,7 +197,7 @@ func newTracerProvider(cfg config.SSIServiceConfig) (*sdktrace.TracerProvider, e
 
 func createLogFile(location string) (string, error) {
 	if _, err := os.Stat(location); os.IsNotExist(err) {
-		if err = os.MkdirAll(location, 0766); err != nil {
+		if err = os.MkdirAll(location, os.ModePerm); err != nil {
 			return "", err
 		}
 	}
