@@ -80,7 +80,7 @@ func run() error {
 		if err == nil {
 			logrus.SetOutput(file)
 		} else {
-			logrus.Info("Failed to log to file, using default stdout", err)
+			logrus.WithError(err).Error("Failed to log to file, using default stdout")
 		}
 		defer file.Close()
 	}
