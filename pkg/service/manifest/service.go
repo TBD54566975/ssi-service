@@ -7,9 +7,14 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/goccy/go-json"
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
+	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation/application"
+	opcredential "github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
+	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
@@ -21,8 +26,9 @@ import (
 )
 
 type Service struct {
-	storage *Storage
-	config  config.ManifestServiceConfig
+	storage    *manifeststg.Storage
+	opsStorage *operation.Storage
+	config     config.ManifestServiceConfig
 
 	// external dependencies
 	keyStore    *keystore.Service
@@ -62,12 +68,17 @@ func (s Service) Config() config.ManifestServiceConfig {
 }
 
 func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver *didsdk.Resolver, credential *credential.Service) (*Service, error) {
-	manifestStorage, err := NewManifestStorage(s)
+	manifestStorage, err := manifeststg.NewManifestStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the manifest service")
 	}
+	opsStorage, err := operation.NewOperationStorage(s)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the operations")
+	}
 	return &Service{
 		storage:     manifestStorage,
+		opsStorage:  opsStorage,
 		config:      config,
 		keyStore:    keyStore,
 		didResolver: didResolver,
@@ -80,7 +91,7 @@ type CredentialManifestContainer struct {
 	Manifest manifest.CredentialManifest `json:"credential_manifest"`
 }
 
-func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestResponse, error) {
+func (s Service) CreateManifest(request model.CreateManifestRequest) (*model.CreateManifestResponse, error) {
 
 	logrus.Debugf("creating manifest: %+v", request)
 
@@ -140,7 +151,7 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 	}
 
 	// store the manifest
-	storageRequest := StoredManifest{
+	storageRequest := manifeststg.StoredManifest{
 		ID:          m.ID,
 		Issuer:      m.Issuer.ID,
 		Manifest:    *m,
@@ -152,25 +163,25 @@ func (s Service) CreateManifest(request CreateManifestRequest) (*CreateManifestR
 	}
 
 	// return the result
-	response := CreateManifestResponse{Manifest: *m, ManifestJWT: *manifestJWT}
+	response := model.CreateManifestResponse{Manifest: *m, ManifestJWT: *manifestJWT}
 	return &response, nil
 }
 
 // VerifyManifest verifies a manifest's signature and makes sure the manifest is compliant with the specification
-func (s Service) VerifyManifest(request VerifyManifestRequest) (*VerifyManifestResponse, error) {
+func (s Service) VerifyManifest(request model.VerifyManifestRequest) (*model.VerifyManifestResponse, error) {
 	m, err := s.verifyManifestJWT(request.ManifestJWT)
 	if err != nil {
-		return &VerifyManifestResponse{Verified: false, Reason: "could not verify manifest's signature: " + err.Error()}, nil
+		return &model.VerifyManifestResponse{Verified: false, Reason: "could not verify manifest's signature: " + err.Error()}, nil
 	}
 
 	// check the manifest is valid against its specification
 	if err := m.IsValid(); err != nil {
-		return &VerifyManifestResponse{Verified: false, Reason: "manifest is not valid: " + err.Error()}, nil
+		return &model.VerifyManifestResponse{Verified: false, Reason: "manifest is not valid: " + err.Error()}, nil
 	}
-	return &VerifyManifestResponse{Verified: true}, nil
+	return &model.VerifyManifestResponse{Verified: true}, nil
 }
 
-func (s Service) GetManifest(request GetManifestRequest) (*GetManifestResponse, error) {
+func (s Service) GetManifest(request model.GetManifestRequest) (*model.GetManifestResponse, error) {
 
 	logrus.Debugf("getting manifest: %s", request.ID)
 
@@ -179,27 +190,27 @@ func (s Service) GetManifest(request GetManifestRequest) (*GetManifestResponse, 
 		return nil, util.LoggingErrorMsgf(err, "could not get manifest: %s", request.ID)
 	}
 
-	response := GetManifestResponse{Manifest: gotManifest.Manifest, ManifestJWT: gotManifest.ManifestJWT}
+	response := model.GetManifestResponse{Manifest: gotManifest.Manifest, ManifestJWT: gotManifest.ManifestJWT}
 	return &response, nil
 }
 
-func (s Service) GetManifests() (*GetManifestsResponse, error) {
+func (s Service) GetManifests() (*model.GetManifestsResponse, error) {
 	gotManifests, err := s.storage.GetManifests()
 
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get manifests(s)")
 	}
 
-	manifests := make([]GetManifestResponse, 0, len(gotManifests))
+	manifests := make([]model.GetManifestResponse, 0, len(gotManifests))
 	for _, m := range gotManifests {
-		response := GetManifestResponse{Manifest: m.Manifest, ManifestJWT: m.ManifestJWT}
+		response := model.GetManifestResponse{Manifest: m.Manifest, ManifestJWT: m.ManifestJWT}
 		manifests = append(manifests, response)
 	}
-	response := GetManifestsResponse{Manifests: manifests}
+	response := model.GetManifestsResponse{Manifests: manifests}
 	return &response, nil
 }
 
-func (s Service) DeleteManifest(request DeleteManifestRequest) error {
+func (s Service) DeleteManifest(request model.DeleteManifestRequest) error {
 
 	logrus.Debugf("deleting manifest: %s", request.ID)
 
@@ -216,7 +227,7 @@ type CredentialResponseContainer struct {
 	Credentials []any                       `json:"verifiableCredentials,omitempty"`
 }
 
-func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) (*operation.Operation, error) {
+func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationRequest) (*operation.Operation, error) {
 	// get the manifest associated with the application
 	manifestID := request.Application.ManifestID
 	gotManifest, err := s.storage.GetManifest(manifestID)
@@ -229,6 +240,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	}
 	credManifest := gotManifest.Manifest
 
+	opID := opcredential.IDFromResponseID(applicationID)
 	// validate the application
 	if unfulfilledInputDescriptorIDs, validationErr := s.validateCredentialApplication(gotManifest.Manifest, request); validationErr != nil {
 		resp := errresp.GetErrorResponse(validationErr)
@@ -237,20 +249,27 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 			if err != nil {
 				return nil, util.LoggingErrorMsg(err, "could not build denial credential response")
 			}
-			return &operation.Operation{
-				ID:   application.IDFromApplicationID(applicationID),
-				Done: true,
-				Result: operation.Result{
-					Response: SubmitApplicationResponse{Response: *denialResp},
-				},
-			}, nil
+			sarData, err := json.Marshal(manifeststg.StoredResponse{Response: *denialResp})
+			if err != nil {
+				return nil, errors.Wrap(err, "marshalling response")
+			}
+			storedOp := opstorage.StoredOperation{
+				ID:       opID,
+				Done:     true,
+				Response: sarData,
+			}
+			if err := s.opsStorage.StoreOperation(storedOp); err != nil {
+				return nil, errors.Wrap(err, "storing operation")
+			}
+
+			return operation.ServiceModel(storedOp)
 		}
 		return nil, util.LoggingErrorMsg(validationErr, "could not validate application")
 	}
 
 	// store the application
 	applicantDID := request.ApplicantDID
-	storageRequest := StoredApplication{
+	storageRequest := manifeststg.StoredApplication{
 		ID:             applicationID,
 		ManifestID:     manifestID,
 		ApplicantDID:   applicantDID,
@@ -281,7 +300,7 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 	}
 
 	// store the response we've generated
-	storeResponseRequest := StoredResponse{
+	storeResponseRequest := manifeststg.StoredResponse{
 		ID:           credResp.ID,
 		ManifestID:   manifestID,
 		ApplicantDID: applicantDID,
@@ -293,17 +312,22 @@ func (s Service) ProcessApplicationSubmission(request SubmitApplicationRequest) 
 		return nil, util.LoggingErrorMsg(err, "could not store manifest response")
 	}
 
-	response := SubmitApplicationResponse{Response: *credResp, Credentials: credentials, ResponseJWT: *responseJWT}
-	return &operation.Operation{
-		ID:   application.IDFromApplicationID(applicationID),
-		Done: true,
-		Result: operation.Result{
-			Response: response,
-		},
-	}, nil
+	sarData, err := json.Marshal(storeResponseRequest)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling response")
+	}
+	storedOp := opstorage.StoredOperation{
+		ID:       opID,
+		Done:     true,
+		Response: sarData,
+	}
+	if err = s.opsStorage.StoreOperation(storedOp); err != nil {
+		return nil, errors.Wrap(err, "storing operation")
+	}
+	return operation.ServiceModel(storedOp)
 }
 
-func (s Service) GetApplication(request GetApplicationRequest) (*GetApplicationResponse, error) {
+func (s Service) GetApplication(request model.GetApplicationRequest) (*model.GetApplicationResponse, error) {
 
 	logrus.Debugf("getting application: %s", request.ID)
 
@@ -312,11 +336,11 @@ func (s Service) GetApplication(request GetApplicationRequest) (*GetApplicationR
 		return nil, util.LoggingErrorMsgf(err, "could not get application: %s", request.ID)
 	}
 
-	response := GetApplicationResponse{Application: gotApp.Application}
+	response := model.GetApplicationResponse{Application: gotApp.Application}
 	return &response, nil
 }
 
-func (s Service) GetApplications() (*GetApplicationsResponse, error) {
+func (s Service) GetApplications() (*model.GetApplicationsResponse, error) {
 
 	logrus.Debugf("getting application(s)")
 
@@ -330,11 +354,11 @@ func (s Service) GetApplications() (*GetApplicationsResponse, error) {
 		apps = append(apps, cred.Application)
 	}
 
-	response := GetApplicationsResponse{Applications: apps}
+	response := model.GetApplicationsResponse{Applications: apps}
 	return &response, nil
 }
 
-func (s Service) DeleteApplication(request DeleteApplicationRequest) error {
+func (s Service) DeleteApplication(request model.DeleteApplicationRequest) error {
 
 	logrus.Debugf("deleting application: %s", request.ID)
 
@@ -345,7 +369,7 @@ func (s Service) DeleteApplication(request DeleteApplicationRequest) error {
 	return nil
 }
 
-func (s Service) GetResponse(request GetResponseRequest) (*GetResponseResponse, error) {
+func (s Service) GetResponse(request model.GetResponseRequest) (*model.GetResponseResponse, error) {
 
 	logrus.Debugf("getting response: %s", request.ID)
 
@@ -354,11 +378,11 @@ func (s Service) GetResponse(request GetResponseRequest) (*GetResponseResponse, 
 		return nil, util.LoggingErrorMsgf(err, "could not get response: %s", request.ID)
 	}
 
-	response := GetResponseResponse{Response: gotResponse.Response}
+	response := model.GetResponseResponse{Response: gotResponse.Response}
 	return &response, nil
 }
 
-func (s Service) GetResponses() (*GetResponsesResponse, error) {
+func (s Service) GetResponses() (*model.GetResponsesResponse, error) {
 
 	logrus.Debugf("getting response(s)")
 
@@ -372,11 +396,11 @@ func (s Service) GetResponses() (*GetResponsesResponse, error) {
 		responses = append(responses, res.Response)
 	}
 
-	response := GetResponsesResponse{Responses: responses}
+	response := model.GetResponsesResponse{Responses: responses}
 	return &response, nil
 }
 
-func (s Service) DeleteResponse(request DeleteResponseRequest) error {
+func (s Service) DeleteResponse(request model.DeleteResponseRequest) error {
 
 	logrus.Debugf("deleting response: %s", request.ID)
 

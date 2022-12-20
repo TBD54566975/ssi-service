@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
@@ -119,8 +120,8 @@ func newRequestContextWithParams(params map[string]string) context.Context {
 	return httptreemux.AddParamsToContext(ctx, params)
 }
 
-func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifestRequest {
-	createManifestRequest := manifest.CreateManifestRequest{
+func getValidManifestRequest(issuerDID, schemaID string) model.CreateManifestRequest {
+	createManifestRequest := model.CreateManifestRequest{
 		IssuerDID: issuerDID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
