@@ -209,7 +209,7 @@ type Operation struct {
 	// Whether this operation has finished.
 	Done bool `json:"done"`
 
-	// Populated Done == true.
+	// Populated if Done == true.
 	Result OperationResult `json:"result,omitempty"`
 }
 
