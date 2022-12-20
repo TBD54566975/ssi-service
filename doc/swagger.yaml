@@ -924,7 +924,14 @@ definitions:
       verified:
         type: boolean
     type: object
-  issuing.Claims:
+  issuing.ClaimTemplates:
+    properties:
+      data:
+        additionalProperties: {}
+        description: |-
+          Values may be json path like strings, or any other JSON primitive. Each entry will be used to come up with a
+          claim about the credentialSubject in the credential that will be issued.
+        type: object
     type: object
   issuing.CreateIssuanceTemplateRequest:
     properties:
@@ -935,24 +942,33 @@ definitions:
     required:
     - id
     type: object
-  issuing.Credential:
+  issuing.CredentialTemplate:
     properties:
       data:
-        $ref: '#/definitions/issuing.CredentialData'
+        $ref: '#/definitions/issuing.CredentialTemplateData'
+        description: Date that will be used to determine credential claims.
       expiry:
         $ref: '#/definitions/issuing.TimeLike'
+        description: Parameter to determine the expiry of the credential.
       id:
+        description: ID corresponding to an OutputDescriptor.ID from the manifest.
         type: string
       revocable:
+        description: Whether the credentials created should be revocable.
         type: boolean
       schema:
+        description: ID of the CredentialSchema to be used for the issued credential.
         type: string
     type: object
-  issuing.CredentialData:
+  issuing.CredentialTemplateData:
     properties:
       claims:
-        $ref: '#/definitions/issuing.Claims'
+        $ref: '#/definitions/issuing.ClaimTemplates'
+        description: The set of information that will be used to create claims.
       credentialInputDescriptor:
+        description: |-
+          ID of the input descriptor in the application. Correponds to one of the
+          PresentationDefinition.InputDescriptors[].ID in the credential manifest.
         type: string
     type: object
   issuing.GetIssuanceTemplateResponse:
@@ -963,12 +979,16 @@ definitions:
   issuing.IssuanceTemplate:
     properties:
       credentialManifest:
+        description: ID of the credential manifest that this template corresponds
+          to.
         type: string
       credentials:
+        description: Info required to create a credential from a credential application.
         items:
-          $ref: '#/definitions/issuing.Credential'
+          $ref: '#/definitions/issuing.CredentialTemplate'
         type: array
       issuer:
+        description: ID of the issuer that will be issuing the credentials.
         type: string
     type: object
   issuing.TimeLike:
@@ -1702,7 +1722,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse'
+            $ref: '#/definitions/pkg_server_router.GetHealthCheckResponse'
       summary: Health Check
       tags:
       - HealthCheck
@@ -1958,7 +1978,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDMethodsResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDMethodsResponse'
       summary: Get DID Methods
       tags:
       - DecentralizedIdentityAPI
@@ -1979,7 +1999,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDsByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDsByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -1997,7 +2017,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -2009,7 +2029,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.CreateDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -2032,7 +2052,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -2049,7 +2069,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.GetDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -2074,7 +2094,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse'
+            $ref: '#/definitions/pkg_server_router.ResolveDIDResponse'
         "400":
           description: Bad request
           schema:
@@ -2140,7 +2160,7 @@ paths:
             type: string
       summary: Delete issuance template
       tags:
-      - IssuanceAPI
+      - IssuingAPI
     get:
       consumes:
       - application/json
@@ -2176,7 +2196,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest'
+          $ref: '#/definitions/pkg_server_router.StoreKeyRequest'
       produces:
       - application/json
       responses:
@@ -2210,7 +2230,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetKeyDetailsResponse'
+            $ref: '#/definitions/pkg_server_router.GetKeyDetailsResponse'
         "400":
           description: Bad request
           schema:
@@ -2821,7 +2841,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemasResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemasResponse'
         "500":
           description: Internal server error
           schema:
@@ -2839,14 +2859,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest'
+          $ref: '#/definitions/pkg_server_router.CreateSchemaRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.CreateSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -2903,7 +2923,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -2922,14 +2942,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaRequest'
+          $ref: '#/definitions/pkg_server_router.VerifySchemaRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaResponse'
+            $ref: '#/definitions/pkg_server_router.VerifySchemaResponse'
         "400":
           description: Bad request
           schema:

@@ -13,9 +13,13 @@ type GetIssuanceTemplateRequest struct {
 	ID string `json:"id" validate:"required"`
 }
 
-type CredentialData struct {
+type CredentialTemplateData struct {
+	// ID of the input descriptor in the application. Correponds to one of the
+	// PresentationDefinition.InputDescriptors[].ID in the credential manifest.
 	CredentialInputDescriptor string `json:"credentialInputDescriptor"`
-	Claims                    Claims
+
+	// The set of information that will be used to create claims.
+	Claims ClaimTemplates
 }
 
 type TimeLike struct {
@@ -26,23 +30,38 @@ type TimeLike struct {
 	*time.Duration
 }
 
-type Claims struct {
-	// Values may be json path like strings, or any other JSON primitive.
+type ClaimTemplates struct {
+	// Values may be json path like strings, or any other JSON primitive. Each entry will be used to come up with a
+	// claim about the credentialSubject in the credential that will be issued.
 	Data map[string]any
 }
 
-type Credential struct {
-	ID        string         `json:"id"`
-	Schema    string         `json:"schema"`
-	Data      CredentialData `json:"data"`
-	Expiry    TimeLike       `json:"expiry"`
-	Revocable bool           `json:"revocable"`
+type CredentialTemplate struct {
+	// ID corresponding to an OutputDescriptor.ID from the manifest.
+	ID string `json:"id"`
+
+	// ID of the CredentialSchema to be used for the issued credential.
+	Schema string `json:"schema"`
+
+	// Date that will be used to determine credential claims.
+	Data CredentialTemplateData `json:"data"`
+
+	// Parameter to determine the expiry of the credential.
+	Expiry TimeLike `json:"expiry"`
+
+	// Whether the credentials created should be revocable.
+	Revocable bool `json:"revocable"`
 }
 
 type IssuanceTemplate struct {
-	CredentialManifest string       `json:"credentialManifest"`
-	Issuer             string       `json:"issuer"`
-	Credentials        []Credential `json:"credentials"`
+	// ID of the credential manifest that this template corresponds to.
+	CredentialManifest string `json:"credentialManifest"`
+
+	// ID of the issuer that will be issuing the credentials.
+	Issuer string `json:"issuer"`
+
+	// Info required to create a credential from a credential application.
+	Credentials []CredentialTemplate `json:"credentials"`
 }
 
 type GetIssuanceTemplateResponse struct {
