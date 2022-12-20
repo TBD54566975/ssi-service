@@ -12,13 +12,13 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	manifestsvc "github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
-	manifestsvc "github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 )
 
@@ -412,8 +412,14 @@ func TestManifestAPI(t *testing.T) {
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
+		var op router.Operation
+		err = json.NewDecoder(w.Body).Decode(&op)
+		assert.NoError(tt, err)
+
 		var appResp router.SubmitApplicationResponse
-		err = json.NewDecoder(w.Body).Decode(&appResp)
+		respData, err := json.Marshal(op.Result.Response)
+		assert.NoError(tt, err)
+		err = json.Unmarshal(respData, &appResp)
 		assert.NoError(tt, err)
 
 		assert.NotEmpty(tt, appResp.Response)
@@ -533,8 +539,14 @@ func TestManifestAPI(t *testing.T) {
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
+		var op router.Operation
+		err = json.NewDecoder(w.Body).Decode(&op)
+		assert.NoError(tt, err)
+
 		var appResp router.SubmitApplicationResponse
-		err = json.NewDecoder(w.Body).Decode(&appResp)
+		respData, err := json.Marshal(op.Result.Response)
+		assert.NoError(tt, err)
+		err = json.Unmarshal(respData, &appResp)
 		assert.NoError(tt, err)
 
 		assert.NotEmpty(tt, appResp.Response)
@@ -558,7 +570,12 @@ func TestManifestAPI(t *testing.T) {
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
-		err = json.NewDecoder(w.Body).Decode(&appResp)
+		err = json.NewDecoder(w.Body).Decode(&op)
+		assert.NoError(tt, err)
+
+		respData, err = json.Marshal(op.Result.Response)
+		assert.NoError(tt, err)
+		err = json.Unmarshal(respData, &appResp)
 		assert.NoError(tt, err)
 
 		assert.NotEmpty(tt, appResp.Response)
@@ -664,8 +681,14 @@ func TestManifestAPI(t *testing.T) {
 		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
 		assert.NoError(tt, err)
 
+		var op router.Operation
+		err = json.NewDecoder(w.Body).Decode(&op)
+		assert.NoError(tt, err)
+
 		var appResp router.SubmitApplicationResponse
-		err = json.NewDecoder(w.Body).Decode(&appResp)
+		respData, err := json.Marshal(op.Result.Response)
+		assert.NoError(tt, err)
+		err = json.Unmarshal(respData, &appResp)
 		assert.NoError(tt, err)
 
 		assert.NotEmpty(tt, appResp.Response.Fulfillment)

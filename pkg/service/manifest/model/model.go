@@ -1,11 +1,11 @@
-package manifest
+package model
 
 import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
-
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
 )
 
 // Manifest
@@ -73,6 +73,9 @@ type GetApplicationRequest struct {
 }
 
 type GetApplicationResponse struct {
+	// One of "pending", "fulfilled", "rejected". When Status is either fulfilled or rejected, a corresponding
+	// SubmissionApplicationResponse is guaranteed to exist.
+	Status      string
 	Application manifestsdk.CredentialApplication `json:"application"`
 }
 
@@ -100,4 +103,13 @@ type GetResponsesResponse struct {
 
 type DeleteResponseRequest struct {
 	ID string `json:"id" validate:"required"`
+}
+
+// ServiceModel creates a SubmitApplicationResponse from a given StoredResponse.
+func ServiceModel(storedResponse *storage.StoredResponse) SubmitApplicationResponse {
+	return SubmitApplicationResponse{
+		Response:    storedResponse.Response,
+		Credentials: cred.ContainersToInterface(storedResponse.Credentials),
+		ResponseJWT: storedResponse.ResponseJWT,
+	}
 }

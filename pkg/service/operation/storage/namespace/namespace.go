@@ -3,10 +3,14 @@ package namespace
 import (
 	"strings"
 
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 )
 
-const namespace = "operation_submission"
+const (
+	namespace                   = "operation_submission"
+	credentialResponseNamespace = "operation_credential_response"
+)
 
 // FromID returns a namespace from a given operation ID. An empty string is returned when the namespace cannot
 // be determined.
@@ -24,6 +28,8 @@ func FromParent(parent string) string {
 	switch parent {
 	case submission.ParentResource:
 		return namespace
+	case credential.ParentResource:
+		return credentialResponseNamespace
 	default:
 		return ""
 	}

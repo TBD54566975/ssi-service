@@ -8,6 +8,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/goccy/go-json"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -50,8 +51,8 @@ type CreateManifestRequest struct {
 	PresentationDefinition *exchange.PresentationDefinition `json:"presentationDefinition,omitempty" validate:"omitempty,dive"`
 }
 
-func (c CreateManifestRequest) ToServiceRequest() manifest.CreateManifestRequest {
-	return manifest.CreateManifestRequest{
+func (c CreateManifestRequest) ToServiceRequest() model.CreateManifestRequest {
+	return model.CreateManifestRequest{
 		Name:                   c.Name,
 		Description:            c.Description,
 		IssuerDID:              c.IssuerDID,
@@ -128,7 +129,7 @@ func (mr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter,
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotManifest, err := mr.service.GetManifest(manifest.GetManifestRequest{ID: *id})
+	gotManifest, err := mr.service.GetManifest(model.GetManifestRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get manifest with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -201,7 +202,7 @@ func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := mr.service.DeleteManifest(manifest.DeleteManifestRequest{ID: *id}); err != nil {
+	if err := mr.service.DeleteManifest(model.DeleteManifestRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete manifest with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
@@ -222,7 +223,7 @@ const (
 	verifiableCredentialsJSONProperty = "verifiableCredentials"
 )
 
-func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicationRequest, error) {
+func (sar SubmitApplicationRequest) ToServiceRequest() (*model.SubmitApplicationRequest, error) {
 	signature, token, err := util.ParseJWT(sar.ApplicationJWT)
 	if err != nil {
 		logrus.WithError(err).Error("could not parse application JWT")
@@ -270,7 +271,7 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*manifest.SubmitApplicat
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse submitted credentials")
 	}
-	return &manifest.SubmitApplicationRequest{
+	return &model.SubmitApplicationRequest{
 		ApplicantDID:    kid,
 		Application:     application,
 		Credentials:     credContainer,
@@ -294,7 +295,7 @@ type SubmitApplicationResponse struct {
 // @Accept       json
 // @Produce      json
 // @Param        request  body      SubmitApplicationRequest  true  "request body"
-// @Success      201      {object}  SubmitApplicationResponse
+// @Success      201      {object}  Operation "Operation with a SubmitApplicationResponse type in the `result.response` field."
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests/applications [put]
@@ -313,20 +314,14 @@ func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	submitApplicationResponse, err := mr.service.ProcessApplicationSubmission(*req)
+	op, err := mr.service.ProcessApplicationSubmission(*req)
 	if err != nil {
 		errMsg := "could not submit application"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := SubmitApplicationResponse{
-		Response:    submitApplicationResponse.Response,
-		Credentials: submitApplicationResponse.Credentials,
-		ResponseJWT: submitApplicationResponse.ResponseJWT,
-	}
-
-	return framework.Respond(ctx, w, resp, http.StatusCreated)
+	return framework.Respond(ctx, w, routerModel(*op), http.StatusCreated)
 }
 
 type GetApplicationResponse struct {
@@ -352,7 +347,7 @@ func (mr ManifestRouter) GetApplication(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotApplication, err := mr.service.GetApplication(manifest.GetApplicationRequest{ID: *id})
+	gotApplication, err := mr.service.GetApplication(model.GetApplicationRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get application with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -415,7 +410,7 @@ func (mr ManifestRouter) DeleteApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := mr.service.DeleteApplication(manifest.DeleteApplicationRequest{ID: *id}); err != nil {
+	if err := mr.service.DeleteApplication(model.DeleteApplicationRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete application with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
@@ -447,7 +442,7 @@ func (mr ManifestRouter) GetResponse(ctx context.Context, w http.ResponseWriter,
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotResponse, err := mr.service.GetResponse(manifest.GetResponseRequest{ID: *id})
+	gotResponse, err := mr.service.GetResponse(model.GetResponseRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get response with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -510,7 +505,7 @@ func (mr ManifestRouter) DeleteResponse(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := mr.service.DeleteResponse(manifest.DeleteResponseRequest{ID: *id}); err != nil {
+	if err := mr.service.DeleteResponse(model.DeleteResponseRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete response with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
