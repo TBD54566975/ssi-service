@@ -20,23 +20,24 @@ import (
 )
 
 const (
-	HealthPrefix        = "/health"
-	ReadinessPrefix     = "/readiness"
-	V1Prefix            = "/v1"
-	OperationPrefix     = "/operations"
-	DIDsPrefix          = "/dids"
-	ResolverPrefix      = "/resolver"
-	SchemasPrefix       = "/schemas"
-	CredentialsPrefix   = "/credentials"
-	StatusPrefix        = "/status"
-	PresentationsPrefix = "/presentations"
-	DefinitionsPrefix   = "/definitions"
-	SubmissionsPrefix   = "/submissions"
-	ManifestsPrefix     = "/manifests"
-	ApplicationsPrefix  = "/applications"
-	ResponsesPrefix     = "/responses"
-	KeyStorePrefix      = "/keys"
-	VerificationPath    = "/verification"
+	HealthPrefix           = "/health"
+	ReadinessPrefix        = "/readiness"
+	V1Prefix               = "/v1"
+	OperationPrefix        = "/operations"
+	DIDsPrefix             = "/dids"
+	ResolverPrefix         = "/resolver"
+	SchemasPrefix          = "/schemas"
+	CredentialsPrefix      = "/credentials"
+	StatusPrefix           = "/status"
+	PresentationsPrefix    = "/presentations"
+	DefinitionsPrefix      = "/definitions"
+	SubmissionsPrefix      = "/submissions"
+	IssuanceTemplatePrefix = "/issuancetemplates"
+	ManifestsPrefix        = "/manifests"
+	ApplicationsPrefix     = "/applications"
+	ResponsesPrefix        = "/responses"
+	KeyStorePrefix         = "/keys"
+	VerificationPath       = "/verification"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -107,6 +108,8 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 		return s.PresentationAPI(service)
 	case svcframework.Operation:
 		return s.OperationAPI(service)
+	case svcframework.Issuing:
+		return s.IssuanceAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
@@ -247,4 +250,18 @@ func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodGet, path.Join(responsesHandlerPath, "/:id"), manifestRouter.GetResponse)
 	s.Handle(http.MethodDelete, path.Join(responsesHandlerPath, "/:id"), manifestRouter.DeleteResponse)
 	return
+}
+
+func (s *SSIServer) IssuanceAPI(service svcframework.Service) error {
+	issuanceRouter, err := router.NewIssuanceRouter(service)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not create issuance router")
+	}
+
+	issuanceHandlerPath := V1Prefix + IssuanceTemplatePrefix
+	s.Handle(http.MethodPut, issuanceHandlerPath, issuanceRouter.CreateIssuanceTemplate)
+	s.Handle(http.MethodGet, issuanceHandlerPath, issuanceRouter.ListIssuanceTemplates)
+	s.Handle(http.MethodGet, path.Join(issuanceHandlerPath, "/:id"), issuanceRouter.GetIssuanceTemplate)
+	s.Handle(http.MethodDelete, path.Join(issuanceHandlerPath, "/:id"), issuanceRouter.DeleteIssuanceTemplate)
+	return nil
 }

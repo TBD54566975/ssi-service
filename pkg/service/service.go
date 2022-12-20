@@ -8,6 +8,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
@@ -43,6 +44,9 @@ func validateServiceConfig(config config.ServicesConfig) error {
 	}
 	if config.DIDConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.DID)
+	}
+	if config.IssuingServiceConfig.IsEmpty() {
+		return fmt.Errorf("%s no config provided", framework.Issuing)
 	}
 	if config.SchemaConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.Schema)
@@ -87,6 +91,11 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the schema service")
 	}
 
+	issuingService, err := issuing.NewIssuingService(config.IssuingServiceConfig, storageProvider)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate the issuing service")
+	}
+
 	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider, keyStoreService, didResolver, schemaService)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the credential service")
@@ -107,5 +116,5 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the operation service")
 	}
 
-	return []framework.Service{keyStoreService, didService, schemaService, credentialService, manifestService, presentationService, operationService}, nil
+	return []framework.Service{keyStoreService, didService, schemaService, issuingService, credentialService, manifestService, presentationService, operationService}, nil
 }

@@ -10,6 +10,7 @@ const (
 
 	DID          Type = "did"
 	Schema       Type = "schema"
+	Issuing      Type = "issuing"
 	Credential   Type = "credential"
 	KeyStore     Type = "keystore"
 	Manifest     Type = "manifest"
