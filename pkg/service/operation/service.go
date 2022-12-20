@@ -69,6 +69,8 @@ func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResp
 
 type ServiceModelFunc func(any) any
 
+// ServiceModel converts a storage.StoredOperation to an Operation. The Result.Response field is introspected and
+// converted into the service layer's model.
 func ServiceModel(op opstorage.StoredOperation) (*Operation, error) {
 	newOp := &Operation{
 		ID:   op.ID,
