@@ -10,13 +10,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 )
 
@@ -94,7 +95,7 @@ func TestManifestRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
 
-		verificationResponse, err := manifestService.VerifyManifest(manifest.VerifyManifestRequest{ManifestJWT: createdManifest.ManifestJWT})
+		verificationResponse, err := manifestService.VerifyManifest(model.VerifyManifestRequest{ManifestJWT: createdManifest.ManifestJWT})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, verificationResponse)
 		assert.True(tt, verificationResponse.Verified)
@@ -122,8 +123,10 @@ func TestManifestRouter(t *testing.T) {
 		submitApplicationRequest := SubmitApplicationRequest{ApplicationJWT: *signed}
 		sar, err := submitApplicationRequest.ToServiceRequest()
 		assert.NoError(tt, err)
-		createdApplicationResponse, err := manifestService.ProcessApplicationSubmission(*sar)
+		createdApplicationResponseOp, err := manifestService.ProcessApplicationSubmission(*sar)
 		assert.NoError(tt, err)
+		createdApplicationResponse, ok := createdApplicationResponseOp.Result.Response.(model.SubmitApplicationResponse)
+		require.True(tt, ok)
 		assert.NotEmpty(tt, createdManifest)
 		assert.NotEmpty(tt, createdApplicationResponse.Response.ID)
 		assert.NotEmpty(tt, createdApplicationResponse.Response.Fulfillment)
@@ -133,8 +136,8 @@ func TestManifestRouter(t *testing.T) {
 }
 
 // getValidManifestRequest returns a valid manifest request, expecting a single JWT-VC EdDSA credential
-func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifestRequest {
-	createManifestRequest := manifest.CreateManifestRequest{
+func getValidManifestRequest(issuerDID, schemaID string) model.CreateManifestRequest {
+	createManifestRequest := model.CreateManifestRequest{
 		IssuerDID: issuerDID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},

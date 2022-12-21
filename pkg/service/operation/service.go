@@ -10,6 +10,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	manifestmodel "github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
+	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
@@ -54,7 +57,7 @@ func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResp
 	}
 	for i, op := range ops {
 		op := op
-		newOp, err := serviceModel(op)
+		newOp, err := ServiceModel(op)
 		if err != nil {
 			logrus.WithError(err).WithField("operation_id", op.ID).Error("converting to storage operations to model")
 			continue
@@ -66,7 +69,9 @@ func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResp
 
 type ServiceModelFunc func(any) any
 
-func serviceModel(op opstorage.StoredOperation) (*Operation, error) {
+// ServiceModel converts a storage.StoredOperation to an Operation. The Result.Response field is introspected and
+// converted into the service layer's model.
+func ServiceModel(op opstorage.StoredOperation) (*Operation, error) {
 	newOp := &Operation{
 		ID:   op.ID,
 		Done: op.Done,
@@ -80,9 +85,15 @@ func serviceModel(op opstorage.StoredOperation) (*Operation, error) {
 		case strings.HasPrefix(op.ID, submission.ParentResource):
 			var s prestorage.StoredSubmission
 			if err := json.Unmarshal(op.Response, &s); err != nil {
-				return nil, err
+				return nil, errors.Wrap(err, "unmarshalling submission response")
 			}
 			newOp.Result.Response = model.ServiceModel(&s)
+		case strings.HasPrefix(op.ID, credential.ParentResource):
+			var s manifeststg.StoredResponse
+			if err := json.Unmarshal(op.Response, &s); err != nil {
+				return nil, errors.Wrap(err, "unmarshalling cred response")
+			}
+			newOp.Result.Response = manifestmodel.ServiceModel(&s)
 		default:
 			return nil, errors.New("unknown response type")
 		}
@@ -100,7 +111,7 @@ func (s Service) GetOperation(request GetOperationRequest) (*Operation, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching from storage")
 	}
-	return serviceModel(storedOp)
+	return ServiceModel(storedOp)
 }
 
 func (s Service) CancelOperation(request CancelOperationRequest) (*Operation, error) {
@@ -112,7 +123,7 @@ func (s Service) CancelOperation(request CancelOperationRequest) (*Operation, er
 	if err != nil {
 		return nil, errors.Wrap(err, "marking as done")
 	}
-	return serviceModel(*storedOp)
+	return ServiceModel(*storedOp)
 }
 
 func NewOperationService(s storage.ServiceStorage) (*Service, error) {

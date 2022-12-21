@@ -220,25 +220,6 @@ func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequ
 		Credentials:   credContainers}, nil
 }
 
-type Operation struct {
-	// The name of the resource related to this operation. E.g. "presentations/submissions/<uuid>"
-	ID string `json:"id"`
-
-	// Whether this operation has finished.
-	Done bool `json:"done"`
-
-	// Populated Done == true.
-	Result OperationResult `json:"result,omitempty"`
-}
-
-type OperationResult struct {
-	// Populated when there was an error with the operation.
-	Error string `json:"error,omitempty"`
-
-	// Populated iff Error == "". The type should be specified in the calling APIs documentation.
-	Response any `json:"response,omitempty"`
-}
-
 // CreateSubmission godoc
 // @Summary      Create Submission
 // @Description  Creates a submission in this server ready to be reviewed.
