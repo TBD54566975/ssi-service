@@ -523,6 +523,21 @@ definitions:
       privateKeyBase58:
         type: string
     type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateIssuanceTemplateRequest:
+    properties:
+      credentialManifest:
+        description: ID of the credential manifest that this template corresponds
+          to.
+        type: string
+      credentials:
+        description: Info required to create a credential from a credential application.
+        items:
+          $ref: '#/definitions/issuing.CredentialTemplate'
+        type: array
+      issuer:
+        description: ID of the issuer that will be issuing the credentials.
+        type: string
+    type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest:
     properties:
       description:
@@ -778,6 +793,13 @@ definitions:
     - id
     - status
     type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.ListIssuanceTemplatesResponse:
+    properties:
+      issuanceTemplates:
+        items:
+          $ref: '#/definitions/issuing.IssuanceTemplate'
+        type: array
+    type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.ListSubmissionRequest:
     properties:
       filter:
@@ -803,7 +825,7 @@ definitions:
         type: string
       result:
         $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.OperationResult'
-        description: Populated Done == true.
+        description: Populated if Done == true.
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.OperationResult:
     properties:
@@ -916,6 +938,72 @@ definitions:
         type: string
       verified:
         type: boolean
+    type: object
+  issuing.ClaimTemplates:
+    properties:
+      data:
+        additionalProperties: {}
+        description: |-
+          Values may be json path like strings, or any other JSON primitive. Each entry will be used to come up with a
+          claim about the credentialSubject in the credential that will be issued.
+        type: object
+    type: object
+  issuing.CredentialTemplate:
+    properties:
+      data:
+        $ref: '#/definitions/issuing.CredentialTemplateData'
+        description: Date that will be used to determine credential claims.
+      expiry:
+        $ref: '#/definitions/issuing.TimeLike'
+        description: Parameter to determine the expiry of the credential.
+      id:
+        description: ID corresponding to an OutputDescriptor.ID from the manifest.
+        type: string
+      revocable:
+        description: Whether the credentials created should be revocable.
+        type: boolean
+      schema:
+        description: ID of the CredentialSchema to be used for the issued credential.
+        type: string
+    type: object
+  issuing.CredentialTemplateData:
+    properties:
+      claims:
+        $ref: '#/definitions/issuing.ClaimTemplates'
+        description: The set of information that will be used to create claims.
+      credentialInputDescriptor:
+        description: |-
+          ID of the input descriptor in the application. Correponds to one of the
+          PresentationDefinition.InputDescriptors[].ID in the credential manifest.
+        type: string
+    type: object
+  issuing.GetIssuanceTemplateResponse:
+    properties:
+      issuanceTemplate:
+        $ref: '#/definitions/issuing.IssuanceTemplate'
+        description: The template that was requested.
+    type: object
+  issuing.IssuanceTemplate:
+    properties:
+      credentialManifest:
+        description: ID of the credential manifest that this template corresponds
+          to.
+        type: string
+      credentials:
+        description: Info required to create a credential from a credential application.
+        items:
+          $ref: '#/definitions/issuing.CredentialTemplate'
+        type: array
+      issuer:
+        description: ID of the issuer that will be issuing the credentials.
+        type: string
+    type: object
+  issuing.TimeLike:
+    properties:
+      time.Duration:
+        type: integer
+      time.Time:
+        type: string
     type: object
   manifest.CredentialApplication:
     properties:
@@ -1103,6 +1191,21 @@ definitions:
       keyType:
         type: string
       privateKeyBase58:
+        type: string
+    type: object
+  pkg_server_router.CreateIssuanceTemplateRequest:
+    properties:
+      credentialManifest:
+        description: ID of the credential manifest that this template corresponds
+          to.
+        type: string
+      credentials:
+        description: Info required to create a credential from a credential application.
+        items:
+          $ref: '#/definitions/issuing.CredentialTemplate'
+        type: array
+      issuer:
+        description: ID of the issuer that will be issuing the credentials.
         type: string
     type: object
   pkg_server_router.CreateManifestRequest:
@@ -1360,6 +1463,13 @@ definitions:
     - id
     - status
     type: object
+  pkg_server_router.ListIssuanceTemplatesResponse:
+    properties:
+      issuanceTemplates:
+        items:
+          $ref: '#/definitions/issuing.IssuanceTemplate'
+        type: array
+    type: object
   pkg_server_router.ListSubmissionRequest:
     properties:
       filter:
@@ -1385,7 +1495,7 @@ definitions:
         type: string
       result:
         $ref: '#/definitions/pkg_server_router.OperationResult'
-        description: Populated Done == true.
+        description: Populated if Done == true.
     type: object
   pkg_server_router.OperationResult:
     properties:
@@ -2014,6 +2124,89 @@ paths:
       summary: Resolve a DID
       tags:
       - DecentralizedIdentityAPI
+  /v1/issuancetemplates:
+    put:
+      consumes:
+      - application/json
+      description: Create issuance template
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.CreateIssuanceTemplateRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/issuing.IssuanceTemplate'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create issuance template
+      tags:
+      - IssuingAPI
+  /v1/issuancetemplates/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete issuance template by ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete issuance template
+      tags:
+      - IssuingAPI
+    get:
+      consumes:
+      - application/json
+      description: Get an issuance template by its id
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/issuing.GetIssuanceTemplateResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Get issuance template
+      tags:
+      - IssuingAPI
   /v1/keys:
     put:
       consumes:
@@ -2025,7 +2218,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.StoreKeyRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest'
       produces:
       - application/json
       responses:
@@ -2059,7 +2252,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetKeyDetailsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetKeyDetailsResponse'
         "400":
           description: Bad request
           schema:
@@ -2092,7 +2285,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetManifestsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestsResponse'
         "400":
           description: Bad request
           schema:
@@ -2114,14 +2307,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateManifestRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateManifestResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -2178,7 +2371,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetManifestResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -2198,7 +2391,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetApplicationsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationsResponse'
         "400":
           description: Bad request
           schema:
@@ -2221,7 +2414,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.SubmitApplicationRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationRequest'
       produces:
       - application/json
       responses:
@@ -2229,7 +2422,7 @@ paths:
           description: Operation with a SubmitApplicationResponse type in the `result.response`
             field.
           schema:
-            $ref: '#/definitions/pkg_server_router.Operation'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.Operation'
         "400":
           description: Bad request
           schema:
@@ -2286,7 +2479,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetApplicationResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationResponse'
         "400":
           description: Bad request
           schema:
@@ -2306,7 +2499,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetResponsesResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetResponsesResponse'
         "400":
           description: Bad request
           schema:
@@ -2363,7 +2556,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetResponseResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetResponseResponse'
         "400":
           description: Bad request
           schema:
@@ -2382,14 +2575,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetOperationsRequest'
+          $ref: '#/definitions/pkg_server_router.GetOperationsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetOperationsResponse'
+            $ref: '#/definitions/pkg_server_router.GetOperationsResponse'
         "400":
           description: Bad request
           schema:
@@ -2418,7 +2611,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.Operation'
+            $ref: '#/definitions/pkg_server_router.Operation'
         "400":
           description: Bad request
           schema:
@@ -2447,7 +2640,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.Operation'
+            $ref: '#/definitions/pkg_server_router.Operation'
         "400":
           description: Bad request
           schema:
