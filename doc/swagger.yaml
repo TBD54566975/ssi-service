@@ -523,6 +523,21 @@ definitions:
       privateKeyBase58:
         type: string
     type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateIssuanceTemplateRequest:
+    properties:
+      credentialManifest:
+        description: ID of the credential manifest that this template corresponds
+          to.
+        type: string
+      credentials:
+        description: Info required to create a credential from a credential application.
+        items:
+          $ref: '#/definitions/issuing.CredentialTemplate'
+        type: array
+      issuer:
+        description: ID of the issuer that will be issuing the credentials.
+        type: string
+    type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest:
     properties:
       description:
@@ -933,19 +948,6 @@ definitions:
           claim about the credentialSubject in the credential that will be issued.
         type: object
     type: object
-  issuing.CreateIssuanceTemplateRequest:
-    properties:
-      id:
-        description: |-
-          ID to be used when creating the issuance template. Must be unique.
-          Required.
-        type: string
-      issuanceTemplate:
-        $ref: '#/definitions/issuing.IssuanceTemplate'
-        description: The template to create.
-    required:
-    - id
-    type: object
   issuing.CredentialTemplate:
     properties:
       data:
@@ -1189,6 +1191,21 @@ definitions:
       keyType:
         type: string
       privateKeyBase58:
+        type: string
+    type: object
+  pkg_server_router.CreateIssuanceTemplateRequest:
+    properties:
+      credentialManifest:
+        description: ID of the credential manifest that this template corresponds
+          to.
+        type: string
+      credentials:
+        description: Info required to create a credential from a credential application.
+        items:
+          $ref: '#/definitions/issuing.CredentialTemplate'
+        type: array
+      issuer:
+        description: ID of the issuer that will be issuing the credentials.
         type: string
     type: object
   pkg_server_router.CreateManifestRequest:
@@ -2118,7 +2135,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/issuing.CreateIssuanceTemplateRequest'
+          $ref: '#/definitions/pkg_server_router.CreateIssuanceTemplateRequest'
       produces:
       - application/json
       responses:
@@ -2201,7 +2218,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.StoreKeyRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest'
       produces:
       - application/json
       responses:
@@ -2235,7 +2252,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetKeyDetailsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetKeyDetailsResponse'
         "400":
           description: Bad request
           schema:
@@ -2846,7 +2863,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemasResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemasResponse'
         "500":
           description: Internal server error
           schema:
@@ -2864,14 +2881,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest'
+          $ref: '#/definitions/pkg_server_router.CreateSchemaRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.CreateSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -2928,7 +2945,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -2947,14 +2964,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaRequest'
+          $ref: '#/definitions/pkg_server_router.VerifySchemaRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaResponse'
+            $ref: '#/definitions/pkg_server_router.VerifySchemaResponse'
         "400":
           description: Bad request
           schema:

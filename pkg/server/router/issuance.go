@@ -35,13 +35,17 @@ func (ir IssuanceRouter) GetIssuanceTemplate(ctx context.Context, w http.Respons
 	return nil
 }
 
+type CreateIssuanceTemplateRequest struct {
+	issuing.IssuanceTemplate
+}
+
 // CreateIssuanceTemplate godoc
 // @Summary      Create issuance template
 // @Description  Create issuance template
 // @Tags         IssuingAPI
 // @Accept       json
 // @Produce      json
-// @Param        request  body      issuing.CreateIssuanceTemplateRequest  true  "request body"
+// @Param        request  body      CreateIssuanceTemplateRequest  true  "request body"
 // @Success      201      {object}  issuing.IssuanceTemplate
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
