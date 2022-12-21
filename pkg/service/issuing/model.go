@@ -7,6 +7,7 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
+	"go.einride.tech/aip/filtering"
 )
 
 type GetIssuanceTemplateRequest struct {
@@ -65,16 +66,33 @@ type IssuanceTemplate struct {
 }
 
 type GetIssuanceTemplateResponse struct {
+	// The template that was requested.
 	IssuanceTemplate IssuanceTemplate `json:"issuanceTemplate"`
 }
 
 type CreateIssuanceTemplateRequest struct {
-	ID               string           `json:"id" validate:"required"`
+	// ID to be used when creating the issuance template. Must be unique.
+	// Required.
+	ID string `json:"id" validate:"required"`
+
+	// The template to create.
 	IssuanceTemplate IssuanceTemplate `json:"issuanceTemplate"`
 }
 
 type DeleteIssuanceTemplateRequest struct {
+	// ID of the template that will be deleted.
+	// Required.
 	ID string `json:"id" validate:"required"`
+}
+
+type ListIssuanceTemplatesRequest struct {
+	// A parsed filter expression conforming to https://google.aip.dev/160.
+	Filter filtering.Filter
+}
+
+type ListIssuanceTemplatesResponse struct {
+	// The issuance templates that satisfy the query conditions.
+	IssuanceTemplates []IssuanceTemplate `json:"issuanceTemplates"`
 }
 
 type Service struct {
@@ -124,4 +142,8 @@ func (s *Service) CreateIssuanceTemplate(request *CreateIssuanceTemplateRequest)
 
 func (s *Service) DeleteIssuanceTemplate(request *DeleteIssuanceTemplateRequest) error {
 	return nil
+}
+
+func (s *Service) ListIssuanceTemplates(request *ListIssuanceTemplatesRequest) (*ListIssuanceTemplatesResponse, error) {
+	return nil, nil
 }
