@@ -278,6 +278,24 @@ func TestIssuanceRouter(t *testing.T) {
 				t.Errorf("IssuanceTemplate mismatch (-want +got):\n%s", diff)
 			}
 		}
+
+		{
+			value := newRequestValue(t, nil)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates/"+issuanceTemplate.ID, value)
+			w := httptest.NewRecorder()
+			err := r.DeleteIssuanceTemplate(newRequestContextWithParams(map[string]string{"id": issuanceTemplate.ID}), w, req)
+			assert.NoError(t, err)
+		}
+
+		{
+			value := newRequestValue(t, nil)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates/"+issuanceTemplate.ID, value)
+			w := httptest.NewRecorder()
+			err := r.GetIssuanceTemplate(newRequestContextWithParams(map[string]string{"id": issuanceTemplate.ID}), w, req)
+
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "issuance template not found")
+		}
 	})
 
 	t.Run("GetIssuanceTemplate returns error for unknown ID", func(t *testing.T) {

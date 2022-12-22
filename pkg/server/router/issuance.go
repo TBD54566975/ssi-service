@@ -99,8 +99,19 @@ func (ir IssuanceRouter) CreateIssuanceTemplate(ctx context.Context, w http.Resp
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/issuancetemplates/{id} [delete]
-func (ir IssuanceRouter) DeleteIssuanceTemplate(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return nil
+func (ir IssuanceRouter) DeleteIssuanceTemplate(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		return framework.NewRequestError(
+			util.LoggingNewError("cannot delete a presentation without an ID parameter"), http.StatusBadRequest)
+	}
+
+	if err := ir.service.DeleteIssuanceTemplate(&issuing.DeleteIssuanceTemplateRequest{ID: *id}); err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsgf(err, "could not delete presentation with id: %s", *id), http.StatusInternalServerError)
+	}
+
+	return framework.Respond(ctx, w, nil, http.StatusOK)
 }
 
 type ListIssuanceTemplatesResponse struct {

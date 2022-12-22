@@ -53,3 +53,13 @@ func (s Storage) GetIssuanceTemplate(id string) (*StoredIssuanceTemplate, error)
 	}
 	return &st, nil
 }
+
+func (s Storage) DeleteIssuanceTemplate(id string) error {
+	if id == "" {
+		return nil
+	}
+	if err := s.db.Delete(namespace, id); err != nil {
+		return errors.Wrap(err, "deleting from db")
+	}
+	return nil
+}

@@ -87,6 +87,9 @@ func serviceModel(template StoredIssuanceTemplate) *IssuanceTemplate {
 }
 
 func (s *Service) DeleteIssuanceTemplate(request *DeleteIssuanceTemplateRequest) error {
+	if err := s.storage.DeleteIssuanceTemplate(request.ID); err != nil {
+		return errors.Wrap(err, "deleting template from storage")
+	}
 	return nil
 }
 
