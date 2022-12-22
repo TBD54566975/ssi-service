@@ -31,11 +31,22 @@ func NewIssuanceRouter(svc svcframework.Service) (*IssuanceRouter, error) {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      string  true  "ID"
-// @Success      200  {object}  issuing.GetIssuanceTemplateResponse
+// @Success      200  {object}  issuing.IssuanceTemplate
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/issuancetemplates/{id} [get]
 func (ir IssuanceRouter) GetIssuanceTemplate(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
-	return nil
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		return framework.NewRequestError(
+			util.LoggingNewError("cannot get issuance template without an ID"), http.StatusBadRequest)
+	}
+
+	issuanceTemplate, err := ir.service.GetIssuanceTemplate(&issuing.GetIssuanceTemplateRequest{ID: *id})
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "getting issuance template"), http.StatusInternalServerError)
+	}
+	return framework.Respond(ctx, w, issuanceTemplate.IssuanceTemplate, http.StatusOK)
 }
 
 type CreateIssuanceTemplateRequest struct {

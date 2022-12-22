@@ -10,6 +10,8 @@ import (
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
@@ -17,6 +19,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
+	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestIssuanceRouter(t *testing.T) {
@@ -218,6 +221,77 @@ func TestIssuanceRouter(t *testing.T) {
 
 		}
 	})
+
+	t.Run("Create, Get, Delete work as expected", func(t *testing.T) {
+		issuerResp, createdSchema, manifest, r := setupAllThings(t)
+
+		inputTemplate := issuing.IssuanceTemplate{
+			CredentialManifest: manifest.Manifest.ID,
+			Issuer:             issuerResp.DID.ID,
+			Credentials: []issuing.CredentialTemplate{
+				{
+					ID:     "output_descriptor_1",
+					Schema: createdSchema.Schema.ID,
+					Data: issuing.CredentialTemplateData{
+						Claims: issuing.ClaimTemplates{
+							Data: map[string]any{
+								"foo":   "bar",
+								"hello": "$.vcsomething.something",
+							},
+						},
+					},
+					Expiry: issuing.TimeLike{
+						Time: &now,
+					},
+				},
+			},
+		}
+		var issuanceTemplate issuing.IssuanceTemplate
+
+		{
+			request := router.CreateIssuanceTemplateRequest{
+				IssuanceTemplate: inputTemplate,
+			}
+			value := newRequestValue(t, request)
+			req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/issuancetemplates", value)
+			w := httptest.NewRecorder()
+
+			err := r.CreateIssuanceTemplate(newRequestContext(), w, req)
+			assert.NoError(t, err)
+
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&issuanceTemplate))
+			if diff := cmp.Diff(inputTemplate, issuanceTemplate, cmpopts.IgnoreFields(issuing.IssuanceTemplate{}, "ID")); diff != "" {
+				t.Errorf("IssuanceTemplate mismatch (-want +got):\n%s", diff)
+			}
+		}
+
+		{
+			value := newRequestValue(t, nil)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates/"+issuanceTemplate.ID, value)
+			w := httptest.NewRecorder()
+			err := r.GetIssuanceTemplate(newRequestContextWithParams(map[string]string{"id": issuanceTemplate.ID}), w, req)
+			assert.NoError(t, err)
+
+			var getIssuanceTemplate issuing.IssuanceTemplate
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
+			if diff := cmp.Diff(issuanceTemplate, getIssuanceTemplate); diff != "" {
+				t.Errorf("IssuanceTemplate mismatch (-want +got):\n%s", diff)
+			}
+		}
+	})
+
+	t.Run("GetIssuanceTemplate returns error for unknown ID", func(t *testing.T) {
+		s := setupTestDB(t)
+		r := testIssuanceRouter(t, s)
+
+		value := newRequestValue(t, nil)
+		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates/where-is-it", value)
+		w := httptest.NewRecorder()
+		err := r.GetIssuanceTemplate(newRequestContextWithParams(map[string]string{"id": "where-is-it"}), w, req)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "issuance template not found")
+	})
 }
 
 func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaResponse, *model.CreateManifestResponse, *router.IssuanceRouter) {
@@ -262,6 +336,11 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 	})
 	assert.NoError(t, err)
 
+	r := testIssuanceRouter(t, s)
+	return issuerResp, createdSchema, manifest, r
+}
+
+func testIssuanceRouter(t *testing.T, s storage.ServiceStorage) *router.IssuanceRouter {
 	svc, err := issuing.NewIssuingService(config.IssuingServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{
 		Name: "test-issuing",
 	}}, s)
@@ -269,5 +348,5 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 
 	r, err := router.NewIssuanceRouter(svc)
 	assert.NoError(t, err)
-	return issuerResp, createdSchema, manifest, r
+	return r
 }

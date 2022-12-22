@@ -67,7 +67,7 @@ type IssuanceTemplate struct {
 
 type GetIssuanceTemplateResponse struct {
 	// The template that was requested.
-	IssuanceTemplate IssuanceTemplate `json:"issuanceTemplate"`
+	IssuanceTemplate *IssuanceTemplate `json:"issuanceTemplate"`
 }
 
 type CreateIssuanceTemplateRequest struct {

@@ -1,7 +1,6 @@
 package issuing
 
 import (
-	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -38,19 +37,16 @@ func NewIssuingService(config config.IssuingServiceConfig, s storage2.ServiceSto
 	}, nil
 }
 
-func (s Storage) StoreIssuanceTemplate(template StoredIssuanceTemplate) error {
-	if template.IssuanceTemplate.ID == "" {
-		return errors.New("cannot store issuance template without an ID")
-	}
-	data, err := json.Marshal(template)
-	if err != nil {
-		return errors.Wrap(err, "marshalling template")
-	}
-	return s.db.Write(namespace, template.IssuanceTemplate.ID, data)
-}
-
 func (s *Service) GetIssuanceTemplate(request *GetIssuanceTemplateRequest) (*GetIssuanceTemplateResponse, error) {
-	return nil, nil
+	storedIssuanceTemplate, err := s.storage.GetIssuanceTemplate(request.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting issuance template with id: %s", request.ID)
+	}
+	if storedIssuanceTemplate == nil {
+		return nil, errors.Errorf("issuance template with id<%s> not be found", request.ID)
+	}
+	return &GetIssuanceTemplateResponse{
+		IssuanceTemplate: serviceModel(*storedIssuanceTemplate)}, nil
 }
 
 func (s *Service) CreateIssuanceTemplate(request *CreateIssuanceTemplateRequest) (*IssuanceTemplate, error) {
