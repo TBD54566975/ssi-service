@@ -42,6 +42,17 @@ type ServerConfig struct {
 	EnableSchemaCaching bool          `toml:"enable_schema_caching" conf:"default:true"`
 }
 
+type IssuingServiceConfig struct {
+	*BaseServiceConfig
+}
+
+func (s *IssuingServiceConfig) IsEmpty() bool {
+	if s == nil {
+		return true
+	}
+	return reflect.DeepEqual(s, &IssuingServiceConfig{})
+}
+
 // ServicesConfig represents configurable properties for the components of the SSI Service
 type ServicesConfig struct {
 	// at present, it is assumed that a single storage provider works for all services
@@ -52,12 +63,13 @@ type ServicesConfig struct {
 	ServiceEndpoint string      `toml:"service_endpoint"`
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
-	KeyStoreConfig     KeyStoreServiceConfig     `toml:"keystore,omitempty"`
-	DIDConfig          DIDServiceConfig          `toml:"did,omitempty"`
-	SchemaConfig       SchemaServiceConfig       `toml:"schema,omitempty"`
-	CredentialConfig   CredentialServiceConfig   `toml:"credential,omitempty"`
-	ManifestConfig     ManifestServiceConfig     `toml:"manifest,omitempty"`
-	PresentationConfig PresentationServiceConfig `toml:"presentation,omitempty"`
+	KeyStoreConfig       KeyStoreServiceConfig     `toml:"keystore,omitempty"`
+	DIDConfig            DIDServiceConfig          `toml:"did,omitempty"`
+	IssuingServiceConfig IssuingServiceConfig      `toml:"issuing,omitempty"`
+	SchemaConfig         SchemaServiceConfig       `toml:"schema,omitempty"`
+	CredentialConfig     CredentialServiceConfig   `toml:"credential,omitempty"`
+	ManifestConfig       ManifestServiceConfig     `toml:"manifest,omitempty"`
+	PresentationConfig   PresentationServiceConfig `toml:"presentation,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
@@ -204,6 +216,9 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 			},
 			PresentationConfig: PresentationServiceConfig{
 				BaseServiceConfig: &BaseServiceConfig{Name: "presentation"},
+			},
+			IssuingServiceConfig: IssuingServiceConfig{
+				BaseServiceConfig: &BaseServiceConfig{Name: "issuing"},
 			},
 		}
 	} else {

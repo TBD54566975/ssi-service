@@ -47,6 +47,9 @@ resolution_methods = ["key", "web", "pkh", "peer"]
 [services.schema]
 name = "schema"
 
+[services.issuing]
+name = "issuing"
+
 [services.credential]
 name = "credential"
 
