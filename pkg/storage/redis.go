@@ -8,8 +8,6 @@ import (
 	goredislib "github.com/go-redis/redis/v8"
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/goredis/v8"
-	"github.com/tbd54566975/ssi-service/internal/util"
-
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -137,7 +135,7 @@ func (b *RedisDB) Read(namespace, key string) ([]byte, error) {
 	res, err := b.db.Get(b.ctx, nameSpaceKey).Bytes()
 
 	// Nil reply returned by Redis when key does not exist.
-	if err == goredislib.Nil {
+	if errors.Is(err, goredislib.Nil) {
 		return res, nil
 	}
 
@@ -250,7 +248,7 @@ func (b *RedisDB) Delete(namespace, key string) error {
 	}()
 
 	if !namespaceExists(namespace, b) {
-		return errors.New(fmt.Sprintf("namespace<%s> does not exist", namespace))
+		return fmt.Errorf("namespace<%s> does not exist", namespace)
 	}
 
 	res, err := b.db.GetDel(b.ctx, nameSpaceKey).Result()
@@ -279,7 +277,7 @@ func (b *RedisDB) DeleteNamespace(namespace string) error {
 	}()
 
 	if len(keys) == 0 {
-		return errors.New(fmt.Sprintf("could not delete namespace<%s>, namespace does not exist", namespace))
+		return fmt.Errorf("could not delete namespace<%s>, namespace does not exist", namespace)
 	}
 
 	return b.db.Del(b.ctx, keys...).Err()
@@ -331,11 +329,14 @@ func (b *RedisDB) UpdateValueAndOperation(namespace, key string, updater Updater
 func txWithUpdater(namespace, key string, updater Updater, b *RedisDB) ([]byte, error) {
 	nameSpaceKey := getRedisKey(namespace, key)
 	v, err := b.db.Get(b.ctx, nameSpaceKey).Bytes()
+	if err != nil {
+		return nil, errors.Wrapf(err, "get error with namespace: %s key: %s", namespace, key)
+	}
 	if v == nil {
-		return nil, util.LoggingNewErrorf("key not found %s", key)
+		return nil, fmt.Errorf("key not found %s", key)
 	}
 	if err := updater.Validate(v); err != nil {
-		return nil, util.LoggingErrorMsg(err, "validating update")
+		return nil, errors.Wrapf(err, "validating update")
 	}
 
 	data, err := updater.Update(v)
