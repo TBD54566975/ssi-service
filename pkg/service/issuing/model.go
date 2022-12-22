@@ -3,10 +3,7 @@ package issuing
 import (
 	"time"
 
-	"github.com/pkg/errors"
-	"github.com/tbd54566975/ssi-service/config"
-	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
+	"github.com/TBD54566975/ssi-sdk/util"
 	"go.einride.tech/aip/filtering"
 )
 
@@ -15,7 +12,7 @@ type GetIssuanceTemplateRequest struct {
 }
 
 type CredentialTemplateData struct {
-	// ID of the input descriptor in the application. Correponds to one of the
+	// Optional. When present, it's the ID of the input descriptor in the application. Corresponds to one of the
 	// PresentationDefinition.InputDescriptors[].ID in the credential manifest.
 	CredentialInputDescriptor string `json:"credentialInputDescriptor"`
 
@@ -25,10 +22,10 @@ type CredentialTemplateData struct {
 
 type TimeLike struct {
 	// For fixed time in the future.
-	*time.Time
+	Time *time.Time
 
 	// For a fixed offset from when it was issued.
-	*time.Duration
+	Duration *time.Duration
 }
 
 type ClaimTemplates struct {
@@ -55,11 +52,14 @@ type CredentialTemplate struct {
 }
 
 type IssuanceTemplate struct {
+	// ID of this template.
+	ID string `json:"id"`
+
 	// ID of the credential manifest that this template corresponds to.
-	CredentialManifest string `json:"credentialManifest"`
+	CredentialManifest string `json:"credentialManifest" validate:"required"`
 
 	// ID of the issuer that will be issuing the credentials.
-	Issuer string `json:"issuer"`
+	Issuer string `json:"issuer" validate:"required"`
 
 	// Info required to create a credential from a credential application.
 	Credentials []CredentialTemplate `json:"credentials"`
@@ -79,6 +79,10 @@ type CreateIssuanceTemplateRequest struct {
 	IssuanceTemplate IssuanceTemplate `json:"issuanceTemplate"`
 }
 
+func (r CreateIssuanceTemplateRequest) IsValid() bool {
+	return util.IsValidStruct(r) == nil
+}
+
 type DeleteIssuanceTemplateRequest struct {
 	// ID of the template that will be deleted.
 	// Required.
@@ -93,57 +97,4 @@ type ListIssuanceTemplatesRequest struct {
 type ListIssuanceTemplatesResponse struct {
 	// The issuance templates that satisfy the query conditions.
 	IssuanceTemplates []IssuanceTemplate `json:"issuanceTemplates"`
-}
-
-type Service struct {
-	config  config.IssuingServiceConfig
-	storage Storage
-}
-
-func (s *Service) Type() framework.Type {
-	return framework.Issuing
-}
-
-func (s *Service) Status() framework.Status {
-	return framework.Status{Status: framework.StatusReady}
-}
-
-func NewIssuingService(config config.IssuingServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	issuingStorage, err := NewIssuingStorage(s)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating issuing storage")
-	}
-	return &Service{
-		storage: *issuingStorage,
-		config:  config,
-	}, nil
-}
-
-type Storage struct {
-	db storage.ServiceStorage
-}
-
-func NewIssuingStorage(s storage.ServiceStorage) (*Storage, error) {
-	if s == nil {
-		return nil, errors.New("s cannot be nil")
-	}
-	return &Storage{
-		db: s,
-	}, nil
-}
-
-func (s *Service) GetIssuanceTemplate(request *GetIssuanceTemplateRequest) (*GetIssuanceTemplateResponse, error) {
-	return nil, nil
-}
-
-func (s *Service) CreateIssuanceTemplate(request *CreateIssuanceTemplateRequest) (*IssuanceTemplate, error) {
-	return nil, nil
-}
-
-func (s *Service) DeleteIssuanceTemplate(request *DeleteIssuanceTemplateRequest) error {
-	return nil
-}
-
-func (s *Service) ListIssuanceTemplates(request *ListIssuanceTemplatesRequest) (*ListIssuanceTemplatesResponse, error) {
-	return nil, nil
 }

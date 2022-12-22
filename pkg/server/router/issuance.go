@@ -4,8 +4,11 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/pkg/server/framework"
+	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 )
 
@@ -13,7 +16,7 @@ type IssuanceRouter struct {
 	service issuing.Service
 }
 
-func NewIssuanceRouter(svc framework.Service) (*IssuanceRouter, error) {
+func NewIssuanceRouter(svc svcframework.Service) (*IssuanceRouter, error) {
 	service, ok := svc.(*issuing.Service)
 	if !ok {
 		return nil, errors.New("could not cast to issuing service type")
@@ -39,6 +42,13 @@ type CreateIssuanceTemplateRequest struct {
 	issuing.IssuanceTemplate
 }
 
+func (r CreateIssuanceTemplateRequest) ToServiceRequest() *issuing.CreateIssuanceTemplateRequest {
+	return &issuing.CreateIssuanceTemplateRequest{
+		ID:               uuid.NewString(),
+		IssuanceTemplate: r.IssuanceTemplate,
+	}
+}
+
 // CreateIssuanceTemplate godoc
 // @Summary      Create issuance template
 // @Description  Create issuance template
@@ -51,7 +61,20 @@ type CreateIssuanceTemplateRequest struct {
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/issuancetemplates [put]
 func (ir IssuanceRouter) CreateIssuanceTemplate(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return nil
+	var request CreateIssuanceTemplateRequest
+	errMsg := "Invalid Issuance Template Request"
+	if err := framework.Decode(r, &request); err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, errMsg), http.StatusBadRequest)
+	}
+
+	template, err := ir.service.CreateIssuanceTemplate(request.ToServiceRequest())
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "creating issuance template"), http.StatusInternalServerError)
+	}
+
+	return framework.Respond(ctx, w, template, http.StatusCreated)
 }
 
 // DeleteIssuanceTemplate godoc
