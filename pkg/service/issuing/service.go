@@ -61,8 +61,10 @@ func (s *Service) CreateIssuanceTemplate(request *CreateIssuanceTemplateRequest)
 		if c.ID == "" {
 			return nil, errors.Errorf("ID cannot be empty at index %d", i)
 		}
-		if _, err := s.schemaStorage.GetSchema(c.Schema); err != nil {
-			return nil, errors.Wrapf(err, "getting schema at index %d", i)
+		if c.Schema != "" {
+			if _, err := s.schemaStorage.GetSchema(c.Schema); err != nil {
+				return nil, errors.Wrapf(err, "getting schema at index %d", i)
+			}
 		}
 	}
 
