@@ -34,7 +34,7 @@ func NewIssuanceRouter(svc svcframework.Service) (*IssuanceRouter, error) {
 // @Success      200  {object}  issuing.IssuanceTemplate
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/issuancetemplates/{id} [get]
-func (ir IssuanceRouter) GetIssuanceTemplate(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
+func (ir IssuanceRouter) GetIssuanceTemplate(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
@@ -120,7 +120,7 @@ type ListIssuanceTemplatesResponse struct {
 
 // ListIssuanceTemplates godoc
 // @Summary      Lists issuance templates
-// @Description  Lists all issuangce templates stored in this service.
+// @Description  Lists all issuance templates stored in this service.
 // @Tags         IssuingAPI
 // @Accept       json
 // @Produce      json
@@ -128,6 +128,14 @@ type ListIssuanceTemplatesResponse struct {
 // @Failure      400      {string}  string  "Bad request"
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests [get]
-func (ir IssuanceRouter) ListIssuanceTemplates(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return nil
+func (ir IssuanceRouter) ListIssuanceTemplates(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	gotManifests, err := ir.service.ListIssuanceTemplates(&issuing.ListIssuanceTemplatesRequest{})
+
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "could not get manifests"), http.StatusBadRequest)
+	}
+
+	resp := ListIssuanceTemplatesResponse{IssuanceTemplates: gotManifests.IssuanceTemplates}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
 }

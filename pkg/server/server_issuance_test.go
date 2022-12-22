@@ -310,6 +310,72 @@ func TestIssuanceRouter(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "issuance template not found")
 	})
+
+	t.Run("ListIssuanceTemplates returns empty when there aren't templates", func(t *testing.T) {
+		s := setupTestDB(t)
+		r := testIssuanceRouter(t, s)
+
+		value := newRequestValue(t, nil)
+		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates", value)
+		w := httptest.NewRecorder()
+		err := r.ListIssuanceTemplates(newRequestContext(), w, req)
+
+		assert.NoError(t, err)
+		var getIssuanceTemplate router.ListIssuanceTemplatesResponse
+		assert.NoError(t, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
+		assert.Empty(t, getIssuanceTemplate.IssuanceTemplates)
+	})
+
+	t.Run("ListIssuanceTemplates returns all created templates", func(t *testing.T) {
+		issuerResp, createdSchema, manifest, r := setupAllThings(t)
+
+		createSimpleTemplate(t, manifest, issuerResp, createdSchema, now, r)
+		createSimpleTemplate(t, manifest, issuerResp, createdSchema, now, r)
+
+		value := newRequestValue(t, nil)
+		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates", value)
+		w := httptest.NewRecorder()
+		err := r.ListIssuanceTemplates(newRequestContext(), w, req)
+
+		assert.NoError(t, err)
+		var getIssuanceTemplate router.ListIssuanceTemplatesResponse
+		assert.NoError(t, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
+		assert.Len(t, getIssuanceTemplate.IssuanceTemplates, 2)
+	})
+}
+
+func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, issuerResp *did.CreateDIDResponse, createdSchema *schema.CreateSchemaResponse, now time.Time, r *router.IssuanceRouter) {
+	{
+		request := router.CreateIssuanceTemplateRequest{
+			IssuanceTemplate: issuing.IssuanceTemplate{
+				CredentialManifest: manifest.Manifest.ID,
+				Issuer:             issuerResp.DID.ID,
+				Credentials: []issuing.CredentialTemplate{
+					{
+						ID:     "output_descriptor_1",
+						Schema: createdSchema.Schema.ID,
+						Data: issuing.CredentialTemplateData{
+							Claims: issuing.ClaimTemplates{
+								Data: map[string]any{
+									"foo":   "bar",
+									"hello": "$.vcsomething.something",
+								},
+							},
+						},
+						Expiry: issuing.TimeLike{
+							Time: &now,
+						},
+					},
+				},
+			},
+		}
+		value := newRequestValue(t, request)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/issuancetemplates", value)
+		w := httptest.NewRecorder()
+
+		err := r.CreateIssuanceTemplate(newRequestContext(), w, req)
+		assert.NoError(t, err)
+	}
 }
 
 func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaResponse, *model.CreateManifestResponse, *router.IssuanceRouter) {

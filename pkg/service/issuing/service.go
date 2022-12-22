@@ -94,7 +94,19 @@ func (s *Service) DeleteIssuanceTemplate(request *DeleteIssuanceTemplateRequest)
 }
 
 func (s *Service) ListIssuanceTemplates(request *ListIssuanceTemplatesRequest) (*ListIssuanceTemplatesResponse, error) {
-	return nil, nil
+	if err := request.Validate(); err != nil {
+		return nil, errors.Wrap(err, "invalid request")
+	}
+
+	ops, err := s.storage.ListIssuanceTemplates()
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching ops from storage")
+	}
+
+	resp := &ListIssuanceTemplatesResponse{
+		IssuanceTemplates: ops,
+	}
+	return resp, nil
 }
 
 func (s *Service) Type() framework.Type {

@@ -94,6 +94,10 @@ type ListIssuanceTemplatesRequest struct {
 	Filter filtering.Filter
 }
 
+func (r ListIssuanceTemplatesRequest) Validate() error {
+	return util.NewValidator().Struct(r)
+}
+
 type ListIssuanceTemplatesResponse struct {
 	// The issuance templates that satisfy the query conditions.
 	IssuanceTemplates []IssuanceTemplate `json:"issuanceTemplates"`

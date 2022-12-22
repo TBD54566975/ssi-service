@@ -63,3 +63,19 @@ func (s Storage) DeleteIssuanceTemplate(id string) error {
 	}
 	return nil
 }
+
+func (s Storage) ListIssuanceTemplates() ([]IssuanceTemplate, error) {
+	m, err := s.db.ReadAll(namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading all")
+	}
+	ts := make([]IssuanceTemplate, len(m))
+	i := 0
+	for k, v := range m {
+		if err = json.Unmarshal(v, &ts[i]); err != nil {
+			return nil, errors.Wrapf(err, "unmarshalling template with key <%s>", k)
+		}
+		i++
+	}
+	return ts, nil
+}
