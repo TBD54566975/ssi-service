@@ -4,24 +4,24 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
+	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
-	storage2 "github.com/tbd54566975/ssi-service/pkg/storage"
+	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 type Service struct {
 	config          config.IssuingServiceConfig
 	storage         Storage
-	manifestStorage storage.Storage
+	manifestStorage manifeststg.Storage
 	schemaStorage   schema.Storage
 }
 
-func NewIssuingService(config config.IssuingServiceConfig, s storage2.ServiceStorage) (*Service, error) {
+func NewIssuingService(config config.IssuingServiceConfig, s storage.ServiceStorage) (*Service, error) {
 	issuingStorage, err := NewIssuingStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating issuing storage")
 	}
-	manifestStorage, err := storage.NewManifestStorage(s)
+	manifestStorage, err := manifeststg.NewManifestStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating manifest storage")
 	}
