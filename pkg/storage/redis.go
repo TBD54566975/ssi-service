@@ -333,7 +333,7 @@ func txWithUpdater(namespace, key string, updater Updater, b *RedisDB) ([]byte, 
 		return nil, errors.Wrapf(err, "get error with namespace: %s key: %s", namespace, key)
 	}
 	if v == nil {
-		return nil, fmt.Errorf("key not found %s", key)
+		return nil, errors.Errorf("key not found %s", key)
 	}
 	if err := updater.Validate(v); err != nil {
 		return nil, errors.Wrapf(err, "validating update")
