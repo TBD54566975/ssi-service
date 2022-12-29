@@ -43,3 +43,5 @@ services:
     image: redis:alpine
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
+    # This allows for data to not be persisted on new runs
+    command: [sh, -c, "rm -f /data/dump.rdb && redis-server --save ''"]

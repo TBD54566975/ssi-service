@@ -183,7 +183,7 @@ type operation struct {
 	Response []byte `json:"response"`
 }
 
-func TestBoltDB_Update(t *testing.T) {
+func TestDB_Update(t *testing.T) {
 	for _, dbImpl := range getDBImplementations(t) {
 		db := dbImpl
 		namespace := "simple"
@@ -257,7 +257,7 @@ func (f testOpUpdater) SetUpdatedResponse(bytes []byte) {
 	f.UpdaterWithMap.Values["response"] = bytes
 }
 
-func TestBoltDB_UpdatedSubmissionAndOperationTxFn(t *testing.T) {
+func TestDB_UpdatedSubmissionAndOperationTxFn(t *testing.T) {
 	for _, dbImpl := range getDBImplementations(t) {
 		db := dbImpl
 		namespace := "simple"
