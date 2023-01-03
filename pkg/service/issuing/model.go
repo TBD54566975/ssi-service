@@ -71,10 +71,6 @@ type GetIssuanceTemplateResponse struct {
 }
 
 type CreateIssuanceTemplateRequest struct {
-	// ID to be used when creating the issuance template. Must be unique.
-	// Required.
-	ID string `json:"id" validate:"required"`
-
 	// The template to create.
 	IssuanceTemplate IssuanceTemplate `json:"issuanceTemplate"`
 }

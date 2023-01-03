@@ -1,6 +1,7 @@
 package issuing
 
 import (
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -75,7 +76,7 @@ func (s *Service) CreateIssuanceTemplate(request *CreateIssuanceTemplateRequest)
 	storedTemplate := StoredIssuanceTemplate{
 		IssuanceTemplate: request.IssuanceTemplate,
 	}
-	storedTemplate.IssuanceTemplate.ID = request.ID
+	storedTemplate.IssuanceTemplate.ID = uuid.NewString()
 
 	if err := s.storage.StoreIssuanceTemplate(storedTemplate); err != nil {
 		return nil, errors.Wrap(err, "storing issuance template")

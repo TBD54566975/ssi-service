@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -55,7 +54,6 @@ type CreateIssuanceTemplateRequest struct {
 
 func (r CreateIssuanceTemplateRequest) ToServiceRequest() *issuing.CreateIssuanceTemplateRequest {
 	return &issuing.CreateIssuanceTemplateRequest{
-		ID:               uuid.NewString(),
 		IssuanceTemplate: r.IssuanceTemplate,
 	}
 }
