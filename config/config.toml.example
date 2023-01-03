@@ -19,10 +19,20 @@ log_level = "debug"
 
 enable_schema_caching = true
 
+# Uncomment one of the following database configurations
 # Bolt Configuration
-[services]
-service_endpoint = "http://localhost:8080"
-storage = "bolt"
+# [services]
+# service_endpoint = "http://localhost:8080"
+# storage = "bolt"
+
+# Redis Configuration
+# [services]
+# service_endpoint = "http://localhost:8080"
+# storage = "redis"
+
+# [services.storage_option]
+# address = "redis:6379"
+# password = ""
 
 # per-service configuration
 [services.keystore]

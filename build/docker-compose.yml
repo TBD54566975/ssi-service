@@ -1,4 +1,5 @@
 version: "3.98"
+
 services:
   web:
     build:
@@ -10,8 +11,11 @@ services:
       - JAEGER_HTTP_URL=http://jaeger:14268/api/traces
     depends_on:
       - jaeger
+      - redis
     volumes:
       - ../config/compose.toml:/app/config/config.toml
+    networks:
+      - ssi_network
   swagger-ui:
     build:
       context: ../
@@ -35,3 +39,14 @@ services:
       - "6831:6831/udp"
       - "16686:16686"
       - "14268:14268"
+  redis:
+    image: redis:alpine
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    # This allows for data to not be persisted on new runs
+    command: [sh, -c, "rm -f /data/dump.rdb && redis-server --save ''"]
+    networks:
+      - ssi_network
+
+networks:
+  ssi_network:
