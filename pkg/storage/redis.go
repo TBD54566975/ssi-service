@@ -6,8 +6,6 @@ import (
 	"strings"
 
 	goredislib "github.com/go-redis/redis/v8"
-	"github.com/go-redsync/redsync/v4"
-	"github.com/go-redsync/redsync/v4/redis/goredis/v8"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
@@ -16,7 +14,6 @@ const (
 	NamespaceKeySeparator = ":"
 	Pong                  = "PONG"
 	RedisScanBatchSize    = 1000
-	RedisMutex            = "redis-mutex"
 )
 
 func init() {
@@ -27,9 +24,8 @@ func init() {
 }
 
 type RedisDB struct {
-	db    *goredislib.Client
-	ctx   context.Context
-	mutex *redsync.Mutex
+	db  *goredislib.Client
+	ctx context.Context
 }
 
 func (b *RedisDB) Init(i interface{}) error {
@@ -40,11 +36,7 @@ func (b *RedisDB) Init(i interface{}) error {
 		Password: options["password"].(string),
 	})
 
-	pool := goredis.NewPool(client)
-	rs := redsync.New(pool)
-
 	b.db = client
-	b.mutex = rs.NewMutex(RedisMutex)
 	b.ctx = context.Background()
 
 	return nil
@@ -229,16 +221,6 @@ func (b *RedisDB) Update(namespace string, key string, values map[string]any) ([
 }
 
 func (b *RedisDB) UpdateValueAndOperation(namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error) {
-	if err := b.mutex.Lock(); err != nil {
-		return nil, nil, errors.Wrap(err, "cannot obtain mutex lock")
-	}
-	defer func() {
-		ok, unlockErr := b.mutex.Unlock()
-		if !ok || unlockErr != nil {
-			logrus.Error(unlockErr)
-		}
-	}()
-
 	// The Pipeliner interface provided by the go-redis library guarantees that all the commands queued in the pipeline will either succeed or fail together.
 	_, err = b.db.TxPipelined(b.ctx, func(pipe goredislib.Pipeliner) error {
 
