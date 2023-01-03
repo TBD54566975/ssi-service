@@ -38,7 +38,7 @@ type Storage interface {
 	CancelOperation(id string) (*StoredOperation, error)
 }
 
-// StatusObjectID attempts to parse the submission id from the StatusObjectID of the operation. This is done by taking the last word
+// StatusObjectID attempts to parse the submission id from the ID of the operation. This is done by taking the last word
 // that results from splitting the id by "/". On failures, the empty string is returned.
 func StatusObjectID(opID string) string {
 	i := strings.LastIndex(opID, "/")
