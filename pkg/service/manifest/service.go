@@ -271,6 +271,7 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 	applicantDID := request.ApplicantDID
 	storageRequest := manifeststg.StoredApplication{
 		ID:             applicationID,
+		Status:         opcredential.StatusFulfilled,
 		ManifestID:     manifestID,
 		ApplicantDID:   applicantDID,
 		Application:    request.Application,

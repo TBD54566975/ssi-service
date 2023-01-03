@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 )
 
 var presentationExchangeContext = NewTestContext("PresentationExchange")
@@ -109,7 +109,7 @@ func TestSubmissionFlow(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "false", done)
 
-	reviewOutput, err := ReviewSubmission(submission.ID(opID))
+	reviewOutput, err := ReviewSubmission(storage.StatusObjectID(opID))
 	assert.NoError(t, err)
 	status, err := getJSONElement(reviewOutput, "$.status")
 	assert.NoError(t, err)

@@ -20,7 +20,7 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
-	opsubmission "github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
+	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -163,14 +163,14 @@ func TestPresentationAPI(t *testing.T) {
 					"id":             "did:web:andresuribe.com",
 				})), holderDID, holderSigner)
 
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s", opsubmission.ID(op.ID)), nil)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s", opstorage.StatusObjectID(op.ID)), nil)
 			w := httptest.NewRecorder()
 
-			assert.NoError(ttt, pRouter.GetSubmission(newRequestContextWithParams(map[string]string{"id": opsubmission.ID(op.ID)}), w, req))
+			assert.NoError(ttt, pRouter.GetSubmission(newRequestContextWithParams(map[string]string{"id": opstorage.StatusObjectID(op.ID)}), w, req))
 
 			var resp router.GetSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Equal(ttt, opsubmission.ID(op.ID), resp.Submission.ID)
+			assert.Equal(ttt, opstorage.StatusObjectID(op.ID), resp.Submission.ID)
 			assert.Equal(ttt, definition.PresentationDefinition.ID, resp.Submission.DefinitionID)
 			assert.Equal(ttt, "pending", resp.Submission.Status)
 		})
@@ -218,7 +218,7 @@ func TestPresentationAPI(t *testing.T) {
 			}
 
 			value := newRequestValue(ttt, request)
-			createdID := opsubmission.ID(submissionOp.ID)
+			createdID := opstorage.StatusObjectID(submissionOp.ID)
 			req := httptest.NewRequest(
 				http.MethodPut,
 				fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s/review", createdID),
@@ -243,7 +243,7 @@ func TestPresentationAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(ttt)
 			definition := createPresentationDefinition(ttt, pRouter)
 			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-			createdID := opsubmission.ID(submissionOp.ID)
+			createdID := opstorage.StatusObjectID(submissionOp.ID)
 			_ = reviewSubmission(ttt, pRouter, createdID)
 
 			request := router.ReviewSubmissionRequest{
@@ -323,14 +323,14 @@ func TestPresentationAPI(t *testing.T) {
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           opsubmission.ID(op.ID),
+						ID:           opstorage.StatusObjectID(op.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
 					},
 				},
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           opsubmission.ID(op2.ID),
+						ID:           opstorage.StatusObjectID(op2.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
 					},
 				},
@@ -395,7 +395,7 @@ func TestPresentationAPI(t *testing.T) {
 				{
 					Status: "pending",
 					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           opsubmission.ID(op.ID),
+						ID:           opstorage.StatusObjectID(op.ID),
 						DefinitionID: definition.PresentationDefinition.ID,
 					},
 				},

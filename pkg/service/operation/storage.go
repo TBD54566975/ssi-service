@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage/namespace"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
@@ -23,9 +24,12 @@ type Storage struct {
 }
 
 func (b Storage) CancelOperation(id string) (*opstorage.StoredOperation, error) {
-	if strings.HasPrefix(id, submission.ParentResource) {
-		_, opData, err := b.db.UpdateValueAndOperation(
-			submission.Namespace, submission.ID(id), storage.NewUpdater(map[string]any{
+	var opData []byte
+	var err error
+	switch {
+	case strings.HasPrefix(id, submission.ParentResource):
+		_, opData, err = b.db.UpdateValueAndOperation(
+			submission.Namespace, opstorage.StatusObjectID(id), storage.NewUpdater(map[string]any{
 				"status": submission.StatusCancelled,
 				"reason": cancelledReason,
 			}),
@@ -34,16 +38,30 @@ func (b Storage) CancelOperation(id string) (*opstorage.StoredOperation, error) 
 					"done": true,
 				}),
 			})
-		if err != nil {
-			return nil, errors.Wrap(err, "updating value and op")
-		}
-		var op opstorage.StoredOperation
-		if err = json.Unmarshal(opData, &op); err != nil {
-			return nil, errors.Wrap(err, "unmarshalling data")
-		}
-		return &op, nil
+	case strings.HasPrefix(id, credential.ParentResource):
+		_, opData, err = b.db.UpdateValueAndOperation(
+			credential.ApplicationNamespace, opstorage.StatusObjectID(id), storage.NewUpdater(map[string]any{
+				"status": credential.StatusCancelled,
+				"reason": cancelledReason,
+			}),
+			namespace.FromID(id), id, submission.OperationUpdater{
+				UpdaterWithMap: storage.NewUpdater(map[string]any{
+					"done": true,
+				}),
+			},
+		)
+	default:
+		return nil, errors.New("unrecognized id structure")
 	}
-	return nil, errors.New("unrecognized id structure")
+
+	if err != nil {
+		return nil, errors.Wrap(err, "updating value and op")
+	}
+	var op opstorage.StoredOperation
+	if err = json.Unmarshal(opData, &op); err != nil {
+		return nil, errors.Wrap(err, "unmarshalling data")
+	}
+	return &op, nil
 }
 
 func (b Storage) StoreOperation(op opstorage.StoredOperation) error {
