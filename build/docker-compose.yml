@@ -14,8 +14,8 @@ services:
       - redis
     volumes:
       - ../config/compose.toml:/app/config/config.toml
-    links:
-      - redis
+    networks:
+      - ssi_network
   swagger-ui:
     build:
       context: ../
@@ -45,3 +45,8 @@ services:
       - ALLOW_EMPTY_PASSWORD=yes
     # This allows for data to not be persisted on new runs
     command: [sh, -c, "rm -f /data/dump.rdb && redis-server --save ''"]
+    networks:
+      - ssi_network
+
+networks:
+  ssi_network:

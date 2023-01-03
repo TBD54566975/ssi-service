@@ -33,7 +33,6 @@ enable_schema_caching = true
 # [services.storage_option]
 # address = "redis:6379"
 # password = ""
-# flush = true
 
 # per-service configuration
 [services.keystore]
