@@ -5,10 +5,12 @@ go 1.19
 require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/TBD54566975/ssi-sdk v0.0.2-alpha.0.20221214220628-e2badfb960fa
+	github.com/alicebob/miniredis/v2 v2.23.1
 	github.com/ardanlabs/conf v1.5.0
 	github.com/dimfeld/httptreemux/v5 v5.5.0
 	github.com/go-playground/locales v0.14.0
 	github.com/go-playground/universal-translator v0.18.0
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/goccy/go-json v0.10.0
 	github.com/google/cel-go v0.13.0
 	github.com/google/go-cmp v0.5.9
@@ -33,10 +35,13 @@ require (
 )
 
 require (
+	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a // indirect
 	github.com/antlr/antlr4/runtime/Go/antlr v1.4.10 // indirect
 	github.com/bits-and-blooms/bitset v1.4.0 // indirect
+	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.1.0 // indirect
+	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-playground/validator/v10 v10.11.1 // indirect
@@ -49,12 +54,14 @@ require (
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.1.0 // indirect
 	github.com/multiformats/go-multicodec v0.7.0 // indirect
+	github.com/onsi/gomega v1.20.0 // indirect
 	github.com/piprate/json-gold v0.5.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.1.1 // indirect
 	github.com/stoewer/go-strcase v1.2.0 // indirect
+	github.com/yuin/gopher-lua v0.0.0-20220504180219-658193537a64 // indirect
 	golang.org/x/sys v0.3.0 // indirect
 	golang.org/x/term v0.3.0 // indirect
 	golang.org/x/text v0.5.0 // indirect

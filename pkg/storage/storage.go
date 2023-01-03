@@ -8,7 +8,8 @@ import (
 type Type string
 
 const (
-	Bolt Type = "bolt"
+	Bolt  Type = "bolt"
+	Redis Type = "redis"
 )
 
 var (
@@ -55,7 +56,7 @@ func RegisterStorage(storage ServiceStorage) error {
 
 // AvailableStorage returns the supported storage providers.
 func AvailableStorage() []Type {
-	return []Type{Bolt}
+	return []Type{Bolt, Redis}
 }
 
 // IsStorageAvailable determines whether a given storage provider is available for instantiation.

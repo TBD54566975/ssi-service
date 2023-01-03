@@ -14,7 +14,10 @@ import (
 )
 
 func init() {
-	_ = RegisterStorage(&BoltDB{})
+	err := RegisterStorage(&BoltDB{})
+	if err != nil {
+		panic(err)
+	}
 }
 
 const (
