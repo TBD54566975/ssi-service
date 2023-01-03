@@ -103,12 +103,12 @@ func (ir IssuanceRouter) DeleteIssuanceTemplate(ctx context.Context, w http.Resp
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
-			util.LoggingNewError("cannot delete a presentation without an ID parameter"), http.StatusBadRequest)
+			util.LoggingNewError("cannot delete an issuance template without an ID parameter"), http.StatusBadRequest)
 	}
 
 	if err := ir.service.DeleteIssuanceTemplate(&issuing.DeleteIssuanceTemplateRequest{ID: *id}); err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsgf(err, "could not delete presentation with id: %s", *id), http.StatusInternalServerError)
+			util.LoggingErrorMsgf(err, "could not delete issuance template with id: %s", *id), http.StatusInternalServerError)
 	}
 
 	return framework.Respond(ctx, w, nil, http.StatusOK)
@@ -133,7 +133,7 @@ func (ir IssuanceRouter) ListIssuanceTemplates(ctx context.Context, w http.Respo
 
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "could not get manifests"), http.StatusBadRequest)
+			util.LoggingErrorMsg(err, "could not get templates"), http.StatusBadRequest)
 	}
 
 	resp := ListIssuanceTemplatesResponse{IssuanceTemplates: gotManifests.IssuanceTemplates}
