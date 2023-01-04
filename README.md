@@ -31,6 +31,13 @@ sets of configuration values for the server (e.g. which port to listen on), the 
 and each service. Each service may define specific configuration, such as which DID methods are enabled for the DID
 service.
 
+Here is the sequence of events on how the SSI-Service consumes it's configuration
+* On startup, the SSI-Service loads default values into the SSIServiceConfig
+* It then checks for a toml config file
+  * If one exists, it loads the toml file
+  * If one does not exist, it uses a default config defined in the code inline
+* Finally, it loads the config/.env file and adds the env variables defined in this file to the final SSIServiceConfig
+
 ## Build & Test
 
 This project uses [mage](https://magefile.org/), please

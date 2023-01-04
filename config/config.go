@@ -21,10 +21,13 @@ const (
 	ServiceName       = "ssi-service"
 	ConfigExtension   = ".toml"
 
-	DefaultServiceEndpoint      = "http://localhost:8080"
-	EnvVariableKeystorePassword = "KEYSTORE_PASSWORD"
-	EnvVariableDBPassword       = "DB_PASSWORD"
+	DefaultServiceEndpoint = "http://localhost:8080"
+
+	KeystorePassword EnvironmentVariable = "KEYSTORE_PASSWORD"
+	DBPassword       EnvironmentVariable = "DB_PASSWORD"
 )
+
+type EnvironmentVariable string
 
 type SSIServiceConfig struct {
 	conf.Version
@@ -171,11 +174,11 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 		return nil, errors.Wrap(err, "parse and apply defaults")
 	}
 
-	if loadDefaultConfig == true {
+	if loadDefaultConfig {
 		loadDefaultServicesConfig(&config)
 	} else {
-		if err := loadTomlFileConfig(path, &config); err != nil {
-			return nil, errors.Wrap(err, "load toml config ")
+		if err := loadTOMLConfig(path, &config); err != nil {
+			return nil, errors.Wrap(err, "load toml config")
 		}
 	}
 
@@ -261,7 +264,7 @@ func loadDefaultServicesConfig(config *SSIServiceConfig) {
 	config.Services = servicesConfig
 }
 
-func loadTomlFileConfig(path string, config *SSIServiceConfig) error {
+func loadTOMLConfig(path string, config *SSIServiceConfig) error {
 	// load from TOML file
 	if _, err := toml.DecodeFile(path, &config); err != nil {
 		return errors.Wrapf(err, "could not load config: %s", path)
@@ -287,13 +290,13 @@ func applyEnvVariables(config *SSIServiceConfig) error {
 		return errors.Wrap(err, "dotenv parsing")
 	}
 
-	keystorePassword, present := os.LookupEnv(EnvVariableKeystorePassword)
+	keystorePassword, present := os.LookupEnv(string(KeystorePassword))
 
 	if present {
 		config.Services.KeyStoreConfig.ServiceKeyPassword = keystorePassword
 	}
 
-	dbPassword, present := os.LookupEnv(EnvVariableDBPassword)
+	dbPassword, present := os.LookupEnv(string(DBPassword))
 
 	if present {
 		if config.Services.StorageOption == nil {
@@ -301,8 +304,8 @@ func applyEnvVariables(config *SSIServiceConfig) error {
 		}
 
 		storageOptionMap, ok := config.Services.StorageOption.(map[string]interface{})
-		if ok == false {
-			return errors.New("storage option casting")
+		if !ok {
+			return errors.New("storage option must be of type map[string]interface{}")
 		}
 
 		storageOptionMap["password"] = dbPassword
