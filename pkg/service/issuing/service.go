@@ -97,7 +97,7 @@ func (s *Service) DeleteIssuanceTemplate(request *DeleteIssuanceTemplateRequest)
 }
 
 func (s *Service) ListIssuanceTemplates(request *ListIssuanceTemplatesRequest) (*ListIssuanceTemplatesResponse, error) {
-	if err := request.Validate(); err != nil {
+	if err := request.IsValid(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
 

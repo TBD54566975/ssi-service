@@ -90,7 +90,7 @@ type ListIssuanceTemplatesRequest struct {
 	Filter filtering.Filter
 }
 
-func (r ListIssuanceTemplatesRequest) Validate() error {
+func (r ListIssuanceTemplatesRequest) IsValid() error {
 	return util.NewValidator().Struct(r)
 }
 

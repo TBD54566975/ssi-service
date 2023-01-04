@@ -43,7 +43,7 @@ func (s Service) Status() framework.Status {
 }
 
 func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResponse, error) {
-	if err := request.Validate(); err != nil {
+	if err := request.IsValid(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
@@ -103,7 +103,7 @@ func ServiceModel(op opstorage.StoredOperation) (*Operation, error) {
 }
 
 func (s Service) GetOperation(request GetOperationRequest) (*Operation, error) {
-	if err := request.Validate(); err != nil {
+	if err := request.IsValid(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
@@ -115,7 +115,7 @@ func (s Service) GetOperation(request GetOperationRequest) (*Operation, error) {
 }
 
 func (s Service) CancelOperation(request CancelOperationRequest) (*Operation, error) {
-	if err := request.Validate(); err != nil {
+	if err := request.IsValid(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
 

@@ -232,7 +232,7 @@ func (s Service) ListSubmissions(request model.ListSubmissionRequest) (*model.Li
 }
 
 func (s Service) ReviewSubmission(request model.ReviewSubmissionRequest) (*model.Submission, error) {
-	if err := request.Validate(); err != nil {
+	if err := request.IsValid(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
 

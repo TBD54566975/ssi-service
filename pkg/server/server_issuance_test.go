@@ -65,8 +65,7 @@ func TestIssuanceRouter(t *testing.T) {
 						Issuer:             issuerResp.DID.ID,
 						Credentials: []issuing.CredentialTemplate{
 							{
-								ID:     "output_descriptor_1",
-								Schema: "",
+								ID: "output_descriptor_1",
 								Data: issuing.CredentialTemplateData{
 									Claims: issuing.ClaimTemplates{
 										Data: map[string]any{
@@ -115,7 +114,6 @@ func TestIssuanceRouter(t *testing.T) {
 						Issuer:             issuerResp.DID.ID,
 						Credentials: []issuing.CredentialTemplate{
 							{
-								ID:     "",
 								Schema: createdSchema.Schema.ID,
 								Data: issuing.CredentialTemplateData{
 									Claims: issuing.ClaimTemplates{

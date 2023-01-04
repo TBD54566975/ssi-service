@@ -84,8 +84,8 @@ type ReviewSubmissionRequest struct {
 	Reason   string `json:"reason"`
 }
 
-// Validate runs validation on the request struct and returns errors when it's invalid.
-func (r ReviewSubmissionRequest) Validate() error {
+// IsValid runs validation on the request struct and returns errors when it's invalid.
+func (r ReviewSubmissionRequest) IsValid() error {
 	return util.NewValidator().Struct(r)
 }
 

@@ -21,7 +21,7 @@ type GetOperationsRequest struct {
 	Filter filtering.Filter
 }
 
-func (r GetOperationsRequest) Validate() error {
+func (r GetOperationsRequest) IsValid() error {
 	return util.NewValidator().Struct(r)
 }
 
@@ -33,8 +33,8 @@ type GetOperationRequest struct {
 	ID string `json:"id" validate:"required"`
 }
 
-// Validate does struct validation and returns an error when invalid.
-func (r GetOperationRequest) Validate() error {
+// IsValid does struct validation and returns an error when invalid.
+func (r GetOperationRequest) IsValid() error {
 	return util.NewValidator().Struct(r)
 }
 
@@ -42,7 +42,7 @@ type CancelOperationRequest struct {
 	ID string `json:"id" validate:"required"`
 }
 
-// Validate does struct validation and returns an error when invalid.
-func (r CancelOperationRequest) Validate() error {
+// IsValid does struct validation and returns an error when invalid.
+func (r CancelOperationRequest) IsValid() error {
 	return util.NewValidator().Struct(r)
 }
