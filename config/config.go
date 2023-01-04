@@ -9,17 +9,21 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/ardanlabs/conf"
+	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 const (
 	DefaultConfigPath = "config/config.toml"
+	DefaultEnvPath    = "config/.env"
 	ConfigFileName    = "config.toml"
 	ServiceName       = "ssi-service"
 	ConfigExtension   = ".toml"
 
-	DefaultServiceEndpoint = "http://localhost:8080"
+	DefaultServiceEndpoint      = "http://localhost:8080"
+	EnvVariableKeystorePassword = "KEYSTORE_PASSWORD"
+	EnvVariableDBPassword       = "DB_PASSWORD"
 )
 
 type SSIServiceConfig struct {
@@ -155,84 +159,155 @@ func (p *PresentationServiceConfig) IsEmpty() bool {
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
 // Before loading, defaults are applied on certain properties, which are overwritten if specified in the TOML file.
 func LoadConfig(path string) (*SSIServiceConfig, error) {
+	loadDefaultConfig, err := checkValidConfigPath(path)
+	if err != nil {
+		return nil, errors.Wrap(err, "validate config path")
+	}
+
+	// create the config object
+	var config SSIServiceConfig
+
+	if err := parseAndApplyDefaults(config); err != nil {
+		return nil, errors.Wrap(err, "parse and apply defaults")
+	}
+
+	if loadDefaultConfig == true {
+		loadDefaultServicesConfig(&config)
+	} else {
+		if err := loadTomlFileConfig(path, &config); err != nil {
+			return nil, errors.Wrap(err, "load toml config ")
+		}
+	}
+
+	if err := applyEnvVariables(&config); err != nil {
+		return nil, errors.Wrap(err, "apply env variables")
+	}
+
+	return &config, nil
+}
+
+func checkValidConfigPath(path string) (bool, error) {
 	// no path, load default config
 	defaultConfig := false
 	if path == "" {
 		logrus.Info("no config path provided, loading default config...")
 		defaultConfig = true
 	} else if filepath.Ext(path) != ConfigExtension {
-		return nil, fmt.Errorf("path<%s> did not match the expected TOML format", path)
+		return false, fmt.Errorf("path<%s> did not match the expected TOML format", path)
 	}
 
-	// create the config object
-	var config SSIServiceConfig
+	return defaultConfig, nil
+}
 
+func parseAndApplyDefaults(config SSIServiceConfig) error {
 	// parse and apply defaults
 	if err := conf.Parse(os.Args[1:], ServiceName, &config); err != nil {
 		switch {
 		case errors.Is(err, conf.ErrHelpWanted):
 			usage, err := conf.Usage(ServiceName, &config)
 			if err != nil {
-				return nil, errors.Wrap(err, "parsing config")
+				return errors.Wrap(err, "parsing config")
 			}
 			fmt.Println(usage)
 
-			return nil, nil
+			return nil
 
 		case errors.Is(err, conf.ErrVersionWanted):
 			version, err := conf.VersionString(ServiceName, &config)
 			if err != nil {
-				return nil, errors.Wrap(err, "generating config version")
+				return errors.Wrap(err, "generating config version")
 			}
 
 			fmt.Println(version)
-			return nil, nil
+			return nil
 		}
 
-		return nil, errors.Wrap(err, "parsing config")
+		return errors.Wrap(err, "parsing config")
 	}
 
-	if defaultConfig {
-		config.Services = ServicesConfig{
-			StorageProvider: "bolt",
-			ServiceEndpoint: DefaultServiceEndpoint,
-			KeyStoreConfig: KeyStoreServiceConfig{
-				BaseServiceConfig:  &BaseServiceConfig{Name: "keystore"},
-				ServiceKeyPassword: "default-password",
-			},
-			DIDConfig: DIDServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "did"},
-				Methods:           []string{"key", "web"},
-				ResolutionMethods: []string{"key", "peer", "web", "pkh"},
-			},
-			SchemaConfig: SchemaServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "schema"},
-			},
-			CredentialConfig: CredentialServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "credential", ServiceEndpoint: DefaultServiceEndpoint},
-			},
-			ManifestConfig: ManifestServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "manifest"},
-			},
-			PresentationConfig: PresentationServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "presentation"},
-			},
-			IssuingServiceConfig: IssuingServiceConfig{
-				BaseServiceConfig: &BaseServiceConfig{Name: "issuing"},
-			},
-		}
-	} else {
-		// load from TOML file
-		if _, err := toml.DecodeFile(path, &config); err != nil {
-			return nil, errors.Wrapf(err, "could not load config: %s", path)
-		}
+	return nil
+}
 
-		// apply defaults if not included in toml file
-		if config.Services.CredentialConfig.BaseServiceConfig.ServiceEndpoint == "" {
-			config.Services.CredentialConfig.BaseServiceConfig.ServiceEndpoint = config.Services.ServiceEndpoint
-		}
-
+func loadDefaultServicesConfig(config *SSIServiceConfig) {
+	servicesConfig := ServicesConfig{
+		StorageProvider: "bolt",
+		ServiceEndpoint: DefaultServiceEndpoint,
+		KeyStoreConfig: KeyStoreServiceConfig{
+			BaseServiceConfig:  &BaseServiceConfig{Name: "keystore"},
+			ServiceKeyPassword: "default-password",
+		},
+		DIDConfig: DIDServiceConfig{
+			BaseServiceConfig: &BaseServiceConfig{Name: "did"},
+			Methods:           []string{"key", "web"},
+			ResolutionMethods: []string{"key", "peer", "web", "pkh"},
+		},
+		SchemaConfig: SchemaServiceConfig{
+			BaseServiceConfig: &BaseServiceConfig{Name: "schema"},
+		},
+		CredentialConfig: CredentialServiceConfig{
+			BaseServiceConfig: &BaseServiceConfig{Name: "credential", ServiceEndpoint: DefaultServiceEndpoint},
+		},
+		ManifestConfig: ManifestServiceConfig{
+			BaseServiceConfig: &BaseServiceConfig{Name: "manifest"},
+		},
+		PresentationConfig: PresentationServiceConfig{
+			BaseServiceConfig: &BaseServiceConfig{Name: "presentation"},
+		},
+		IssuingServiceConfig: IssuingServiceConfig{
+			BaseServiceConfig: &BaseServiceConfig{Name: "issuing"},
+		},
 	}
 
-	return &config, nil
+	config.Services = servicesConfig
+}
+
+func loadTomlFileConfig(path string, config *SSIServiceConfig) error {
+	// load from TOML file
+	if _, err := toml.DecodeFile(path, &config); err != nil {
+		return errors.Wrapf(err, "could not load config: %s", path)
+	}
+
+	// apply defaults if not included in toml file
+	if config.Services.CredentialConfig.BaseServiceConfig.ServiceEndpoint == "" {
+		config.Services.CredentialConfig.BaseServiceConfig.ServiceEndpoint = config.Services.ServiceEndpoint
+	}
+
+	return nil
+}
+
+func applyEnvVariables(config *SSIServiceConfig) error {
+	if err := godotenv.Load(DefaultEnvPath); err != nil {
+
+		// The error indicates that the file or directory does not exist.
+		if os.IsNotExist(err) {
+			logrus.Info("no .env file found, skipping apply env variables...")
+			return nil
+		}
+
+		return errors.Wrap(err, "dotenv parsing")
+	}
+
+	keystorePassword, present := os.LookupEnv(EnvVariableKeystorePassword)
+
+	if present {
+		config.Services.KeyStoreConfig.ServiceKeyPassword = keystorePassword
+	}
+
+	dbPassword, present := os.LookupEnv(EnvVariableDBPassword)
+
+	if present {
+		if config.Services.StorageOption == nil {
+			config.Services.StorageOption = make(map[string]interface{})
+		}
+
+		storageOptionMap, ok := config.Services.StorageOption.(map[string]interface{})
+		if ok == false {
+			return errors.New("storage option casting")
+		}
+
+		storageOptionMap["password"] = dbPassword
+		config.Services.StorageOption = storageOptionMap
+	}
+
+	return nil
 }
