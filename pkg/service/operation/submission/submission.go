@@ -2,7 +2,6 @@ package submission
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
@@ -13,16 +12,6 @@ import (
 // IDFromSubmissionID returns a submission operation ID from the submission ID.
 func IDFromSubmissionID(id string) string {
 	return fmt.Sprintf("%s/%s", ParentResource, id)
-}
-
-// ID attempts to parse the submission id from the ID of the operation. This is done by taking the last word
-// that results from splitting the id by "/". On failures, the empty string is returned.
-func ID(opID string) string {
-	i := strings.LastIndex(opID, "/")
-	if i == -1 {
-		return ""
-	}
-	return opID[(i + 1):]
 }
 
 const (

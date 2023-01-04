@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"strings"
+
 	"go.einride.tech/aip/filtering"
 )
 
@@ -34,4 +36,14 @@ type Storage interface {
 	GetOperations(parent string, filter filtering.Filter) ([]StoredOperation, error)
 	DeleteOperation(id string) error
 	CancelOperation(id string) (*StoredOperation, error)
+}
+
+// StatusObjectID attempts to parse the submission id from the ID of the operation. This is done by taking the last word
+// that results from splitting the id by "/". On failures, the empty string is returned.
+func StatusObjectID(opID string) string {
+	i := strings.LastIndex(opID, "/")
+	if i == -1 {
+		return ""
+	}
+	return opID[(i + 1):]
 }

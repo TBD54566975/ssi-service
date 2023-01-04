@@ -6,6 +6,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 
@@ -16,9 +17,9 @@ import (
 )
 
 const (
-	manifestNamespace    = "manifest"
-	applicationNamespace = "application"
-	responseNamespace    = "response"
+	manifestNamespace = "manifest"
+
+	responseNamespace = "response"
 )
 
 type StoredManifest struct {
@@ -30,6 +31,8 @@ type StoredManifest struct {
 
 type StoredApplication struct {
 	ID             string                         `json:"id"`
+	Status         credential.Status              `json:"status"`
+	Reason         string                         `json:"reason"`
 	ManifestID     string                         `json:"manifestId"`
 	ApplicantDID   string                         `json:"applicantDid"`
 	Application    manifest.CredentialApplication `json:"application"`
@@ -132,11 +135,11 @@ func (ms *Storage) StoreApplication(application StoredApplication) error {
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "could not store application: %s", id)
 	}
-	return ms.db.Write(applicationNamespace, id, applicationBytes)
+	return ms.db.Write(credential.ApplicationNamespace, id, applicationBytes)
 }
 
 func (ms *Storage) GetApplication(id string) (*StoredApplication, error) {
-	applicationBytes, err := ms.db.Read(applicationNamespace, id)
+	applicationBytes, err := ms.db.Read(credential.ApplicationNamespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get application: %s", id)
 	}
@@ -152,7 +155,7 @@ func (ms *Storage) GetApplication(id string) (*StoredApplication, error) {
 
 // GetApplications attempts to get all stored applications. It will return those it can even if it has trouble with some.
 func (ms *Storage) GetApplications() ([]StoredApplication, error) {
-	gotApplications, err := ms.db.ReadAll(applicationNamespace)
+	gotApplications, err := ms.db.ReadAll(credential.ApplicationNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get all applications")
 	}
@@ -173,7 +176,7 @@ func (ms *Storage) GetApplications() ([]StoredApplication, error) {
 }
 
 func (ms *Storage) DeleteApplication(id string) error {
-	if err := ms.db.Delete(applicationNamespace, id); err != nil {
+	if err := ms.db.Delete(credential.ApplicationNamespace, id); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete application: %s", id)
 	}
 	return nil

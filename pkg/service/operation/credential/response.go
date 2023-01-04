@@ -22,6 +22,8 @@ func (s Status) String() string {
 		return "fulfilled"
 	case StatusRejected:
 		return "rejected"
+	case StatusCancelled:
+		return "cancelled"
 	default:
 		return "unknown"
 	}
@@ -32,4 +34,7 @@ const (
 	StatusPending
 	StatusFulfilled
 	StatusRejected
+	StatusCancelled
 )
+
+const ApplicationNamespace = "application"

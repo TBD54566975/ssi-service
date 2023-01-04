@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
+	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -28,7 +28,7 @@ func TestOperationsAPI(t *testing.T) {
 		holderSigner, holderDID := getSigner(t)
 		definition := createPresentationDefinition(t, pRouter)
 		submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-		sub := reviewSubmission(t, pRouter, submission.ID(submissionOp.ID))
+		sub := reviewSubmission(t, pRouter, opstorage.StatusObjectID(submissionOp.ID))
 
 		createdID := submissionOp.ID
 		req := httptest.NewRequest(
@@ -257,7 +257,7 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(t)
 			definition := createPresentationDefinition(t, pRouter)
 			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-			_ = reviewSubmission(t, pRouter, submission.ID(submissionOp.ID))
+			_ = reviewSubmission(t, pRouter, opstorage.StatusObjectID(submissionOp.ID))
 
 			createdID := submissionOp.ID
 			req := httptest.NewRequest(
