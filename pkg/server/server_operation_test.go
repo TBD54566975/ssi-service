@@ -15,19 +15,20 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
+	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func TestOperationsAPI(t *testing.T) {
-	t.Run("Marks operation as done after reviewing submission", func(t *testing.T) {
-		s := setupTestDB(t)
+	t.Run("Marks operation as done after reviewing submission", func(tt *testing.T) {
+		s := setupTestDB(tt)
 		pRouter := setupPresentationRouter(t, s)
 		opRouter := setupOperationsRouter(t, s)
 
 		holderSigner, holderDID := getSigner(t)
 		definition := createPresentationDefinition(t, pRouter)
 		submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
-		submission := reviewSubmission(t, pRouter, operation.SubmissionID(submissionOp.ID))
+		sub := reviewSubmission(t, pRouter, opstorage.StatusObjectID(submissionOp.ID))
 
 		createdID := submissionOp.ID
 		req := httptest.NewRequest(
@@ -43,7 +44,7 @@ func TestOperationsAPI(t *testing.T) {
 		assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 		assert.True(t, resp.Done)
 		assert.Empty(t, resp.Result.Error)
-		data, err := json.Marshal(submission)
+		data, err := json.Marshal(sub)
 		assert.NoError(t, err)
 		var responseAsMap map[string]any
 		assert.NoError(t, json.Unmarshal(data, &responseAsMap))
@@ -51,8 +52,8 @@ func TestOperationsAPI(t *testing.T) {
 	})
 
 	t.Run("GetOperation", func(t *testing.T) {
-		t.Run("Returns operation after submission", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns operation after submission", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -73,11 +74,11 @@ func TestOperationsAPI(t *testing.T) {
 			var resp router.Operation
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 			assert.False(t, resp.Done)
-			assert.Contains(t, resp.ID, "/presentations/submissions/")
+			assert.Contains(t, resp.ID, "presentations/submissions/")
 		})
 
-		t.Run("Returns error when id doesn't exist", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns error when id doesn't exist", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			opRouter := setupOperationsRouter(t, s)
 
 			req := httptest.NewRequest(
@@ -94,12 +95,12 @@ func TestOperationsAPI(t *testing.T) {
 	})
 
 	t.Run("GetOperations", func(t *testing.T) {
-		t.Run("Returns empty when no operations stored", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns empty when no operations stored", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			opRouter := setupOperationsRouter(t, s)
 
 			request := router.GetOperationsRequest{
-				Parent: "/presentations/submissions",
+				Parent: "presentations/submissions",
 			}
 			value := newRequestValue(t, request)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
@@ -112,8 +113,8 @@ func TestOperationsAPI(t *testing.T) {
 			assert.Empty(t, resp.Operations)
 		})
 
-		t.Run("Returns one operation for every submission", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns one operation for every submission", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -125,7 +126,7 @@ func TestOperationsAPI(t *testing.T) {
 			submissionOp2 := createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID2, holderSigner2)
 
 			request := router.GetOperationsRequest{
-				Parent: "/presentations/submissions",
+				Parent: "presentations/submissions",
 			}
 			value := newRequestValue(t, request)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
@@ -147,8 +148,8 @@ func TestOperationsAPI(t *testing.T) {
 			}
 		})
 
-		t.Run("Returns operation when filtering to include", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns operation when filtering to include", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -157,7 +158,7 @@ func TestOperationsAPI(t *testing.T) {
 			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			request := router.GetOperationsRequest{
-				Parent: "/presentations/submissions",
+				Parent: "presentations/submissions",
 				Filter: "done = false",
 			}
 			value := newRequestValue(t, request)
@@ -172,8 +173,8 @@ func TestOperationsAPI(t *testing.T) {
 			assert.False(t, resp.Operations[0].Done)
 		})
 
-		t.Run("Returns zero operations when filtering to exclude", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns zero operations when filtering to exclude", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -182,7 +183,7 @@ func TestOperationsAPI(t *testing.T) {
 			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			request := router.GetOperationsRequest{
-				Parent: "/presentations/submissions",
+				Parent: "presentations/submissions",
 				Filter: "done = true",
 			}
 			value := newRequestValue(t, request)
@@ -196,8 +197,8 @@ func TestOperationsAPI(t *testing.T) {
 			assert.Empty(t, resp.Operations)
 		})
 
-		t.Run("Returns zero operations when wrong parent is specified", func(t *testing.T) {
-			s := setupTestDB(t)
+		t.Run("Returns zero operations when wrong parent is specified", func(tt *testing.T) {
+			s := setupTestDB(tt)
 			pRouter := setupPresentationRouter(t, s)
 			opRouter := setupOperationsRouter(t, s)
 
@@ -220,16 +221,68 @@ func TestOperationsAPI(t *testing.T) {
 		})
 	})
 
+	t.Run("CancelOperation", func(t *testing.T) {
+		t.Run("Marks an operation as done", func(t *testing.T) {
+			s := setupTestDB(t)
+			pRouter := setupPresentationRouter(t, s)
+			opRouter := setupOperationsRouter(t, s)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
+
+			createdID := submissionOp.ID
+			req := httptest.NewRequest(
+				http.MethodPut,
+				fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID),
+				nil)
+			w := httptest.NewRecorder()
+
+			err := opRouter.CancelOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
+
+			assert.NoError(t, err)
+			var resp router.Operation
+			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+			assert.True(t, resp.Done)
+			assert.Contains(t, resp.Result.Response, "definition_id")
+			assert.Contains(t, resp.Result.Response, "descriptor_map")
+			assert.Equal(t, "cancelled", resp.Result.Response.(map[string]any)["status"])
+		})
+
+		t.Run("Returns error when operation is done already", func(t *testing.T) {
+			s := setupTestDB(t)
+			pRouter := setupPresentationRouter(t, s)
+			opRouter := setupOperationsRouter(t, s)
+
+			holderSigner, holderDID := getSigner(t)
+			definition := createPresentationDefinition(t, pRouter)
+			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
+			_ = reviewSubmission(t, pRouter, opstorage.StatusObjectID(submissionOp.ID))
+
+			createdID := submissionOp.ID
+			req := httptest.NewRequest(
+				http.MethodPut,
+				fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID),
+				nil)
+			w := httptest.NewRecorder()
+
+			err := opRouter.CancelOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
+
+			assert.Error(t, err)
+		})
+	})
+
 }
 
 func setupTestDB(t *testing.T) storage.ServiceStorage {
 	file, err := os.CreateTemp("", "bolt")
 	require.NoError(t, err)
 	name := file.Name()
-	s, err := storage.NewBoltDBWithFile(name)
+	s, err := storage.NewStorage(storage.Bolt, name)
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = s.Close()
+		_ = file.Close()
 		_ = os.Remove(name)
 	})
 	return s

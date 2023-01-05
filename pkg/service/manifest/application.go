@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/tbd54566975/ssi-service/pkg/jwt"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
@@ -20,7 +21,7 @@ func (s Service) verifyApplicationJWT(did string, token keyaccess.JWT) error {
 // validateCredentialApplication validates the credential application's signature(s) in addition to making sure it
 // is a valid credential application, and complies with its corresponding manifest. it returns the ids of unfulfilled
 // input descriptors along with an error if validation fails.
-func (s Service) validateCredentialApplication(credManifest manifest.CredentialManifest, request SubmitApplicationRequest) (inputDescriptorIDs []string, err error) {
+func (s Service) validateCredentialApplication(credManifest manifest.CredentialManifest, request model.SubmitApplicationRequest) (inputDescriptorIDs []string, err error) {
 	// validate the payload's signature
 	if verificationErr := s.verifyApplicationJWT(request.ApplicantDID, request.ApplicationJWT); verificationErr != nil {
 		err = util.LoggingErrorMsgf(err, "could not verify application<%s>'s signature", request.Application.ID)

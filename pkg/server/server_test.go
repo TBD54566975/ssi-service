@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
+	"github.com/tbd54566975/ssi-service/pkg/testutil"
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -33,12 +35,12 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
-func TestHealthCheckAPI(t *testing.T) {
-	// remove the db file after the test
-	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
-	})
+func TestMain(t *testing.M) {
+	testutil.EnableSchemaCaching()
+	os.Exit(t.Run())
+}
 
+func TestHealthCheckAPI(t *testing.T) {
 	shutdown := make(chan os.Signal, 1)
 	serviceConfig, err := config.LoadConfig("")
 	assert.NoError(t, err)
@@ -61,14 +63,16 @@ func TestHealthCheckAPI(t *testing.T) {
 }
 
 func TestReadinessAPI(t *testing.T) {
+	dbFile := "test_readiness_api.db"
 	// remove the db file after the test
 	t.Cleanup(func() {
-		_ = os.Remove(storage.DBFile)
+		_ = os.Remove(dbFile)
 	})
 
 	shutdown := make(chan os.Signal, 1)
 	serviceConfig, err := config.LoadConfig("")
 	assert.NoError(t, err)
+	serviceConfig.Services.StorageOption = dbFile
 
 	server, err := NewSSIServer(shutdown, *serviceConfig)
 	assert.NoError(t, err)
@@ -116,8 +120,8 @@ func newRequestContextWithParams(params map[string]string) context.Context {
 	return httptreemux.AddParamsToContext(ctx, params)
 }
 
-func getValidManifestRequest(issuerDID, schemaID string) manifest.CreateManifestRequest {
-	createManifestRequest := manifest.CreateManifestRequest{
+func getValidManifestRequest(issuerDID, schemaID string) model.CreateManifestRequest {
+	createManifestRequest := model.CreateManifestRequest{
 		IssuerDID: issuerDID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
@@ -184,7 +188,7 @@ func getValidApplicationRequest(manifestID, presDefID, submissionDescriptorID st
 	}
 }
 
-func testKeyStore(t *testing.T, bolt *storage.BoltDB) (*router.KeyStoreRouter, *keystore.Service) {
+func testKeyStore(t *testing.T, bolt storage.ServiceStorage) (*router.KeyStoreRouter, *keystore.Service) {
 	keyStoreService := testKeyStoreService(t, bolt)
 
 	// create router for service
@@ -222,7 +226,7 @@ func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystor
 	return didService
 }
 
-func testDIDRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service) *router.DIDRouter {
+func testDIDRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service) *router.DIDRouter {
 	didService := testDIDService(t, bolt, keyStore)
 
 	// create router for service
@@ -239,7 +243,7 @@ func testSchemaService(t *testing.T, bolt storage.ServiceStorage, keyStore *keys
 	return schemaService
 }
 
-func testSchemaRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service, did *did.Service) *router.SchemaRouter {
+func testSchemaRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, did *did.Service) *router.SchemaRouter {
 	schemaService := testSchemaService(t, bolt, keyStore, did)
 
 	// create router for service
@@ -259,7 +263,7 @@ func testCredentialService(t *testing.T, db storage.ServiceStorage, keyStore *ke
 	return credentialService
 }
 
-func testCredentialRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *router.CredentialRouter {
+func testCredentialRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *router.CredentialRouter {
 	credentialService := testCredentialService(t, bolt, keyStore, did, schema)
 
 	// create router for service
@@ -270,7 +274,7 @@ func testCredentialRouter(t *testing.T, bolt *storage.BoltDB, keyStore *keystore
 	return credentialRouter
 }
 
-func testManifest(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service, credential *credential.Service) (*router.ManifestRouter, *manifest.Service) {
+func testManifest(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, credential *credential.Service) (*router.ManifestRouter, *manifest.Service) {
 	serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
 	// create a manifest service
 	manifestService, err := manifest.NewManifestService(serviceConfig, db, keyStore, did.GetResolver(), credential)

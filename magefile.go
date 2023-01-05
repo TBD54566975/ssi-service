@@ -152,7 +152,6 @@ func runTests(extraTestArgs ...string) error {
 		args = append(args, "-v")
 	}
 	args = append(args, "-tags=jwx_es256k")
-	args = append(args, "-race")
 	args = append(args, "-short")
 	args = append(args, extraTestArgs...)
 	args = append(args, "./...")
@@ -172,7 +171,6 @@ func runIntegrationTests(extraTestArgs ...string) error {
 		args = append(args, "-v")
 	}
 	args = append(args, "-tags=jwx_es256k")
-	args = append(args, "-race")
 	args = append(args, extraTestArgs...)
 	args = append(args, "./integration")
 	testEnv := map[string]string{

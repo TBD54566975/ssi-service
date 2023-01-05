@@ -3,9 +3,8 @@ package storage
 import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/ssi-service/internal/util"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"go.einride.tech/aip/filtering"
 )
 
@@ -26,48 +25,8 @@ type DefinitionStorage interface {
 	DeletePresentation(id string) error
 }
 
-// NewPresentationStorage finds the presentation storage impl for a given ServiceStorage value
-func NewPresentationStorage(s storage.ServiceStorage) (Storage, error) {
-	switch s.Type() {
-	case storage.Bolt:
-		gotBolt, ok := s.(*storage.BoltDB)
-		if !ok {
-			return nil, util.LoggingNewErrorf("trouble instantiating : %s", s.Type())
-		}
-		boltStorage, err := NewBoltPresentationStorage(gotBolt)
-		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not instantiate schema bolt storage")
-		}
-		return boltStorage, err
-	default:
-		return nil, util.LoggingNewErrorf("unsupported storage type: %s", s.Type())
-	}
-}
-
-type Status uint8
-
-func (s Status) String() string {
-	switch s {
-	case StatusPending:
-		return "pending"
-	case StatusDenied:
-		return "denied"
-	case StatusApproved:
-		return "approved"
-	default:
-		return "unknown"
-	}
-}
-
-const (
-	StatusUnknown Status = iota
-	StatusPending
-	StatusDenied
-	StatusApproved
-)
-
 type StoredSubmission struct {
-	Status     Status                          `json:"status"`
+	Status     submission.Status               `json:"status"`
 	Submission exchange.PresentationSubmission `json:"submission"`
 	Reason     string                          `json:"reason"`
 }

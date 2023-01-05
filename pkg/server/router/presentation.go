@@ -133,7 +133,7 @@ type GetPresentationDefinitionResponse struct {
 // @Success      200  {object}  GetPresentationDefinitionResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/presentation/definition/{id} [get]
-func (pr PresentationRouter) GetPresentationDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (pr PresentationRouter) GetPresentationDefinition(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get presentation without ID parameter"
@@ -220,25 +220,6 @@ func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequ
 		Credentials:   credContainers}, nil
 }
 
-type Operation struct {
-	// The name of the resource related to this operation. E.g. "/presentations/submissions/<uuid>"
-	ID string `json:"id"`
-
-	// Whether this operation has finished.
-	Done bool `json:"done"`
-
-	// Populated Done == true.
-	Result OperationResult `json:"result,omitempty"`
-}
-
-type OperationResult struct {
-	// Populated when there was an error with the operation.
-	Error string `json:"error,omitempty"`
-
-	// Populated iff Error == "". The type should be specified in the calling APIs documentation.
-	Response any `json:"response,omitempty"`
-}
-
 // CreateSubmission godoc
 // @Summary      Create Submission
 // @Description  Creates a submission in this server ready to be reviewed.
@@ -289,7 +270,7 @@ type GetSubmissionResponse struct {
 // @Success      200  {object}  GetSubmissionResponse
 // @Failure      400  {string}  string  "Bad request"
 // @Router       /v1/presentations/submissions/{id} [get]
-func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(

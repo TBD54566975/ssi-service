@@ -19,9 +19,12 @@ log_location = "logs"
 # options: trace, debug, info, warning, error, fatal, panic
 log_level = "info"
 
+enable_schema_caching = true
+
+# Bolt Configuration
 [services]
-storage = "bolt"
 service_endpoint = "http://localhost:8080"
+storage = "bolt"
 
 # per-service configuration
 [services.keystore]

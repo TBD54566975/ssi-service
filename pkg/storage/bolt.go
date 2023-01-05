@@ -13,29 +13,59 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+func init() {
+	err := RegisterStorage(&BoltDB{})
+	if err != nil {
+		panic(err)
+	}
+}
+
 const (
-	DBFile = "ssi-service.db"
+	DBFilePrefix = "ssi-service"
 )
 
 type BoltDB struct {
 	db *bolt.DB
 }
 
-func (b *BoltDB) Type() Storage {
-	return Bolt
-}
-
-// NewBoltDB instantiates a file-based storage instance for Bolt https://github.com/boltdb/bolt
-func NewBoltDB() (*BoltDB, error) {
-	return NewBoltDBWithFile(DBFile)
-}
-
-func NewBoltDBWithFile(filePath string) (*BoltDB, error) {
-	db, err := bolt.Open(filePath, 0600, &bolt.Options{Timeout: 3 * time.Second})
-	if err != nil {
-		return nil, err
+// Init instantiates a file-based storage instance for Bolt https://github.com/boltdb/bolt
+func (b *BoltDB) Init(options interface{}) error {
+	if b.db != nil && b.IsOpen() {
+		return fmt.Errorf("bolit db already opened with name %s", b.URI())
 	}
-	return &BoltDB{db: db}, nil
+	dbFilePath := fmt.Sprintf("%s_%s.db", DBFilePrefix, b.Type())
+	if options != nil {
+		customPath, ok := options.(string)
+		if !ok {
+			return fmt.Errorf("options should be a string value")
+		}
+		if customPath != "" {
+			dbFilePath = customPath
+		}
+	}
+	db, err := bolt.Open(dbFilePath, 0600, &bolt.Options{Timeout: 3 * time.Second})
+	if err != nil {
+		return err
+	}
+	b.db = db
+	return nil
+}
+
+// URI return filepath of boltDB,
+func (b *BoltDB) URI() string {
+	return b.db.Path()
+}
+
+// IsOpen return if db was opened
+func (b *BoltDB) IsOpen() bool {
+	if b.db == nil {
+		return false
+	}
+	return b.db.Path() != ""
+}
+
+func (b *BoltDB) Type() Type {
+	return Bolt
 }
 
 func (b *BoltDB) Close() error {
@@ -149,7 +179,7 @@ type UpdaterWithMap struct {
 
 // Validate is a default implementation for UpdaterWithMap which does no validation. Users can pass embed UpdaterWithMap
 // into a custom struct and redefine this method in order to have custom logic.
-func (u UpdaterWithMap) Validate(v []byte) error {
+func (u UpdaterWithMap) Validate(_ []byte) error {
 	return nil
 }
 

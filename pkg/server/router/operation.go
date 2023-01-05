@@ -10,6 +10,7 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
+	manifestsvc "github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	"go.einride.tech/aip/filtering"
 )
@@ -53,7 +54,7 @@ func (o OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(
 			util.LoggingErrorMsg(err, "failed getting operation"), http.StatusInternalServerError)
 	}
-	return framework.Respond(ctx, w, routerModel(op), http.StatusOK)
+	return framework.Respond(ctx, w, routerModel(*op), http.StatusOK)
 }
 
 type GetOperationsRequest struct {
@@ -152,14 +153,26 @@ func (o OperationRouter) GetOperations(ctx context.Context, w http.ResponseWrite
 }
 
 func routerModel(op operation.Operation) Operation {
-	return Operation{
+	routerOp := Operation{
 		ID:   op.ID,
 		Done: op.Done,
 		Result: OperationResult{
-			Error:    op.Result.Error,
-			Response: op.Result.Response,
+			Error: op.Result.Error,
 		},
 	}
+	if op.Result.Response != nil {
+		switch r := op.Result.Response.(type) {
+		case manifestsvc.SubmitApplicationResponse:
+			routerOp.Result.Response = SubmitApplicationResponse{
+				Response:    r.Response,
+				Credentials: r.Credentials,
+				ResponseJWT: r.ResponseJWT,
+			}
+		default:
+			routerOp.Result.Response = r
+		}
+	}
+	return routerOp
 }
 
 // CancelOperation godoc
@@ -169,10 +182,41 @@ func routerModel(op operation.Operation) Operation {
 // @Accept       json
 // @Produce      json
 // @Param        id   path      string  true  "ID"
-// @Success      200  {object}  GetOperationsResponse  "OK"
+// @Success      200  {object}  Operation  "OK"
 // @Failure      400  {string}  string  "Bad request"
 // @Failure      500  {string}  string  "Internal server error"
-// @Router       /v1/operations [get]
+// @Router       /v1/operations/cancel/{id} [get]
 func (o OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	return nil
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		return framework.NewRequestError(
+			util.LoggingNewError("get operation request requires id"), http.StatusBadRequest)
+	}
+
+	op, err := o.service.CancelOperation(operation.CancelOperationRequest{ID: *id})
+
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "failed cancelling operation"), http.StatusInternalServerError)
+	}
+	return framework.Respond(ctx, w, routerModel(*op), http.StatusOK)
+}
+
+type Operation struct {
+	// The name of the resource related to this operation. E.g. "presentations/submissions/<uuid>"
+	ID string `json:"id"`
+
+	// Whether this operation has finished.
+	Done bool `json:"done"`
+
+	// Populated if Done == true.
+	Result OperationResult `json:"result,omitempty"`
+}
+
+type OperationResult struct {
+	// Populated when there was an error with the operation.
+	Error string `json:"error,omitempty"`
+
+	// Populated iff Error == "". The type should be specified in the calling APIs documentation.
+	Response any `json:"response,omitempty"`
 }

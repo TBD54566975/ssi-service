@@ -74,7 +74,11 @@ func TestCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
-	vcOutput, err := CreateVerifiableCredential(issuerDID.(string), schemaID.(string), false)
+	vcOutput, err := CreateVerifiableCredential(credInputParams{
+		IssuerID:  issuerDID.(string),
+		SchemaID:  schemaID.(string),
+		SubjectID: issuerDID.(string),
+	}, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vcOutput)
 
@@ -97,7 +101,10 @@ func TestCreateCredentialManifestIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
-	cmOutput, err := CreateCredentialManifest(issuerDID.(string), schemaID.(string))
+	cmOutput, err := CreateCredentialManifest(credManifestParams{
+		IssuerID: issuerDID.(string),
+		SchemaID: schemaID.(string),
+	})
 	assert.NoError(t, err)
 
 	presentationDefinitionID, err := getJSONElement(cmOutput, "$.credential_manifest.presentation_definition.id")
@@ -136,19 +143,24 @@ func TestSubmitApplicationIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDIDPrivateKey)
 
-	credAppJWT, err := CreateCredentialApplicationJWT(presentationDefinitionID.(string), credentialJWT.(string), manifestID.(string), aliceDID.(string), aliceDIDPrivateKey.(string))
+	credAppJWT, err := CreateCredentialApplicationJWT(credApplicationParams{
+		DefinitionID: presentationDefinitionID.(string),
+		ManifestID:   manifestID.(string),
+	}, credentialJWT.(string), aliceDID.(string), aliceDIDPrivateKey.(string))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credAppJWT)
 
-	credentialResponseOutput, err := SubmitApplication(credAppJWT)
+	credentialResponseOutput, err := SubmitApplication(applicationParams{
+		ApplicationJWT: credAppJWT,
+	})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credentialResponseOutput)
 
-	crManifestID, err := getJSONElement(credentialResponseOutput, "$.credential_response.manifest_id")
+	crManifestID, err := getJSONElement(credentialResponseOutput, "$.result.response.credential_response.manifest_id")
 	assert.NoError(t, err)
 	assert.Equal(t, manifestID, crManifestID)
 
-	vc, err := getJSONElement(credentialResponseOutput, "$.verifiableCredentials[0]")
+	vc, err := getJSONElement(credentialResponseOutput, "$.result.response.verifiableCredentials[0]")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vc)
 }

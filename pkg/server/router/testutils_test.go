@@ -1,9 +1,11 @@
 package router
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"github.com/tbd54566975/ssi-service/pkg/testutil"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
@@ -13,6 +15,11 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
+
+func TestMain(t *testing.M) {
+	testutil.EnableSchemaCaching()
+	os.Exit(t.Run())
+}
 
 func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Service {
 	serviceConfig := config.KeyStoreServiceConfig{ServiceKeyPassword: "test-password"}
@@ -47,7 +54,7 @@ func testSchemaService(t *testing.T, db storage.ServiceStorage, keyStore *keysto
 	return schemaService
 }
 
-func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
+func testCredentialService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
 	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 	// create a credential service
 	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver(), schema)
@@ -56,7 +63,7 @@ func testCredentialService(t *testing.T, db *storage.BoltDB, keyStore *keystore.
 	return credentialService
 }
 
-func testManifestService(t *testing.T, db *storage.BoltDB, keyStore *keystore.Service, did *did.Service, credential *credential.Service) *manifest.Service {
+func testManifestService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, credential *credential.Service) *manifest.Service {
 	serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
 	// create a manifest service
 	manifestService, err := manifest.NewManifestService(serviceConfig, db, keyStore, did.GetResolver(), credential)

@@ -67,7 +67,7 @@ type ListSubmissionRequest struct {
 }
 
 type Submission struct {
-	// One of {`pending`, `approved`, `denied`}.
+	// One of {`pending`, `approved`, `denied`, `cancelled`}.
 	Status string `json:"status" validate:"required"`
 	// The reason why the submission was approved or denied.
 	Reason string `json:"reason"`

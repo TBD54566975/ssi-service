@@ -1,0 +1,60 @@
+title = "SSI Service Config"
+
+svn = "0.0.1"
+desc = "Default configuration to be used while running the service as a single go process."
+
+# http service configuration
+[server]
+api_host = "0.0.0.0:3000"
+debug_host = "0.0.0.0:4000"
+
+# 5 seconds, time is in nanoseconds
+read_timeout = 5000000000
+write_timeout = 5000000000
+shutdown_timeout = 5000000000
+
+log_location = "logs"
+# options: trace, debug, info, warning, error, fatal, panic
+log_level = "debug"
+
+enable_schema_caching = true
+
+# Uncomment one of the following database configurations
+# Bolt Configuration
+# [services]
+# service_endpoint = "http://localhost:8080"
+# storage = "bolt"
+
+# Redis Configuration
+# [services]
+# service_endpoint = "http://localhost:8080"
+# storage = "redis"
+
+# [services.storage_option]
+# address = "redis:6379"
+# password = ""
+
+# per-service configuration
+[services.keystore]
+name = "keystore"
+password = "default-password"
+
+[services.did]
+name = "did"
+methods = ["key", "web"]
+resolution_methods = ["key", "web", "pkh", "peer"]
+
+[services.schema]
+name = "schema"
+
+[services.issuing]
+name = "issuing"
+
+[services.credential]
+name = "credential"
+
+[services.manifest]
+name = "manifest"
+
+[services.presentation]
+name = "presentation"
