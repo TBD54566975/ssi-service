@@ -33,6 +33,8 @@ services:
       - "8081:8501"
     depends_on:
       - web
+    networks:
+      - ssi_network
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
