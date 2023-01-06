@@ -1,0 +1,4 @@
+{
+  "approved": {{.Approved}},
+  "reason": "{{.Reason}}"
+}
