@@ -78,25 +78,6 @@ func NewCredentialStorage(db storage.ServiceStorage) (*Storage, error) {
 		return nil, errors.New("bolt db reference is nil")
 	}
 
-	// TODO: (Neal) there is a current bug with our Bolt implementation where if we do a GET without anything in the db it will throw an error
-	// Doing initial writes and then deleting will "warm up" our database and when we do a GET after that it will not crash and return empty list
-	// https://github.com/TBD54566975/ssi-service/issues/176
-	if err := db.Write(credentialNamespace, fakeKey, nil); err != nil {
-		return nil, util.LoggingErrorMsg(err, "problem writing status initial write to db")
-
-	}
-	if err := db.Delete(credentialNamespace, fakeKey); err != nil {
-		return nil, util.LoggingErrorMsg(err, "problem with initial delete to db")
-	}
-
-	if err := db.Write(statusListCredentialNamespace, fakeKey, nil); err != nil {
-		return nil, util.LoggingErrorMsg(err, "problem writing status initial write to db")
-	}
-
-	if err := db.Delete(statusListCredentialNamespace, fakeKey); err != nil {
-		return nil, util.LoggingErrorMsg(err, "problem with initial delete to db")
-	}
-
 	randUniqueList := randomUniqueNum(bitStringLength)
 	uniqueNumBytes, err := json.Marshal(randUniqueList)
 	if err != nil {

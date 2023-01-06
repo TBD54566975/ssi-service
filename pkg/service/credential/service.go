@@ -220,7 +220,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 func getStatusListCredential(s Service, issuerID string, schemaID string) (*credential.VerifiableCredential, error) {
 	storedStatusListCreds, err := s.storage.GetStatusListCredentialsByIssuerAndSchema(issuerID, schemaID)
 	if err != nil {
-		return nil, util.LoggingNewErrorf("problem with getting status list credential for issuer: %s schema: %s", issuerID, schemaID)
+		logrus.Warnf("problem with getting status list credential for issuer: %s schema: %s. Continuing because this could be first time accessing this pair...", issuerID, schemaID)
 	}
 
 	// This should never happen, there should always be only 1 status list credential per <issuer,schema> pair
