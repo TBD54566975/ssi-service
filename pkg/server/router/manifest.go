@@ -529,7 +529,7 @@ func (r ReviewApplicationRequest) toServiceRequest(id string) model.ReviewApplic
 
 // ReviewApplication godoc
 // @Summary      Reviews an application
-// @Description  Reviewing an application either fulfills or denys the credential.
+// @Description  Reviewing an application either fulfills or denies the credential.
 // @Tags         ApplicationAPI
 // @Accept       json
 // @Produce      json
