@@ -45,16 +45,16 @@ type CreateSchemaResponse struct {
 }
 
 // CreateSchema godoc
-// @Summary      Create Schema
-// @Description  Create schema
-// @Tags         SchemaAPI
-// @Accept       json
-// @Produce      json
-// @Param        request  body      CreateSchemaRequest  true  "request body"
-// @Success      201      {object}  CreateSchemaResponse
-// @Failure      400      {string}  string  "Bad request"
-// @Failure      500      {string}  string  "Internal server error"
-// @Router       /v1/schemas [put]
+// @Summary     Create Schema
+// @Description Create schema
+// @Tags        SchemaAPI
+// @Accept      json
+// @Produce     json
+// @Param       request body     CreateSchemaRequest true "request body"
+// @Success     201     {object} CreateSchemaResponse
+// @Failure     400     {string} string "Bad request"
+// @Failure     500     {string} string "Internal server error"
+// @Router      /v1/schemas [put]
 func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreateSchemaRequest
 	invalidCreateSchemaRequest := "invalid create schema request"
@@ -83,15 +83,15 @@ func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, 
 }
 
 // GetSchema godoc
-// @Summary      Get Schema
-// @Description  Get a schema by its ID
-// @Tags         SchemaAPI
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "ID"
-// @Success      200  {object}  GetSchemaResponse
-// @Failure      400  {string}  string  "Bad request"
-// @Router       /v1/schemas/{id} [get]
+// @Summary     Get Schema
+// @Description Get a schema by its ID
+// @Tags        SchemaAPI
+// @Accept      json
+// @Produce     json
+// @Param       id  path     string true "ID"
+// @Success     200 {object} GetSchemaResponse
+// @Failure     400 {string} string "Bad request"
+// @Router      /v1/schemas/{id} [get]
 func (sr SchemaRouter) GetSchema(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -117,14 +117,14 @@ type GetSchemasResponse struct {
 }
 
 // GetSchemas godoc
-// @Summary      Get Schemas
-// @Description  Get schemas
-// @Tags         SchemaAPI
-// @Accept       json
-// @Produce      json
-// @Success      200  {object}  GetSchemasResponse
-// @Failure      500  {string}  string  "Internal server error"
-// @Router       /v1/schemas [get]
+// @Summary     Get Schemas
+// @Description Get schemas
+// @Tags        SchemaAPI
+// @Accept      json
+// @Produce     json
+// @Success     200 {object} GetSchemasResponse
+// @Failure     500 {string} string "Internal server error"
+// @Router      /v1/schemas [get]
 func (sr SchemaRouter) GetSchemas(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	gotSchemas, err := sr.service.GetSchemas()
 	if err != nil {
@@ -157,15 +157,15 @@ type VerifySchemaResponse struct {
 }
 
 // VerifySchema godoc
-// @Summary      Verify Schema
-// @Description  Verify a given schema by its id
-// @Tags         SchemaAPI
-// @Accept       json
-// @Produce      json
-// @Param        request  body      VerifySchemaRequest  true  "request body"
-// @Success      200  {object}  VerifySchemaResponse
-// @Failure      400  {string}  string  "Bad request"
-// @Router       /v1/schemas/verification [put]
+// @Summary     Verify Schema
+// @Description Verify a given schema by its id
+// @Tags        SchemaAPI
+// @Accept      json
+// @Produce     json
+// @Param       request body     VerifySchemaRequest true "request body"
+// @Success     200     {object} VerifySchemaResponse
+// @Failure     400     {string} string "Bad request"
+// @Router      /v1/schemas/verification [put]
 func (sr SchemaRouter) VerifySchema(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request VerifySchemaRequest
 	if err := framework.Decode(r, &request); err != nil {
@@ -186,16 +186,16 @@ func (sr SchemaRouter) VerifySchema(ctx context.Context, w http.ResponseWriter, 
 }
 
 // DeleteSchema godoc
-// @Summary      Delete Schema
-// @Description  Delete a schema by its ID
-// @Tags         SchemaAPI
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "ID"
-// @Success      200  {string}  string  "OK"
-// @Failure      400  {string}  string  "Bad request"
-// @Failure      500  {string}  string  "Internal server error"
-// @Router       /v1/schemas/{id} [delete]
+// @Summary     Delete Schema
+// @Description Delete a schema by its ID
+// @Tags        SchemaAPI
+// @Accept      json
+// @Produce     json
+// @Param       id  path     string true "ID"
+// @Success     200 {string} string "OK"
+// @Failure     400 {string} string "Bad request"
+// @Failure     500 {string} string "Internal server error"
+// @Router      /v1/schemas/{id} [delete]
 func (sr SchemaRouter) DeleteSchema(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {

@@ -534,9 +534,15 @@ definitions:
         items:
           $ref: '#/definitions/issuing.CredentialTemplate'
         type: array
+      id:
+        description: ID of this template.
+        type: string
       issuer:
         description: ID of the issuer that will be issuing the credentials.
         type: string
+    required:
+    - credentialManifest
+    - issuer
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest:
     properties:
@@ -973,15 +979,9 @@ definitions:
         description: The set of information that will be used to create claims.
       credentialInputDescriptor:
         description: |-
-          ID of the input descriptor in the application. Correponds to one of the
+          Optional. When present, it's the ID of the input descriptor in the application. Corresponds to one of the
           PresentationDefinition.InputDescriptors[].ID in the credential manifest.
         type: string
-    type: object
-  issuing.GetIssuanceTemplateResponse:
-    properties:
-      issuanceTemplate:
-        $ref: '#/definitions/issuing.IssuanceTemplate'
-        description: The template that was requested.
     type: object
   issuing.IssuanceTemplate:
     properties:
@@ -994,15 +994,23 @@ definitions:
         items:
           $ref: '#/definitions/issuing.CredentialTemplate'
         type: array
+      id:
+        description: ID of this template.
+        type: string
       issuer:
         description: ID of the issuer that will be issuing the credentials.
         type: string
+    required:
+    - credentialManifest
+    - issuer
     type: object
   issuing.TimeLike:
     properties:
-      time.Duration:
+      duration:
+        description: For a fixed offset from when it was issued.
         type: integer
-      time.Time:
+      time:
+        description: For fixed time in the future.
         type: string
     type: object
   manifest.CredentialApplication:
@@ -1204,9 +1212,15 @@ definitions:
         items:
           $ref: '#/definitions/issuing.CredentialTemplate'
         type: array
+      id:
+        description: ID of this template.
+        type: string
       issuer:
         description: ID of the issuer that will be issuing the credentials.
         type: string
+    required:
+    - credentialManifest
+    - issuer
     type: object
   pkg_server_router.CreateManifestRequest:
     properties:
@@ -1744,7 +1758,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetHealthCheckResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse'
       summary: Health Check
       tags:
       - HealthCheck
@@ -2000,7 +2014,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDMethodsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDMethodsResponse'
       summary: Get DID Methods
       tags:
       - DecentralizedIdentityAPI
@@ -2021,7 +2035,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDsByMethodResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDsByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -2039,7 +2053,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -2051,7 +2065,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateDIDByMethodResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -2074,7 +2088,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -2091,7 +2105,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDByMethodResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -2116,7 +2130,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.ResolveDIDResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse'
         "400":
           description: Bad request
           schema:
@@ -2199,7 +2213,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/issuing.GetIssuanceTemplateResponse'
+            $ref: '#/definitions/issuing.IssuanceTemplate'
         "400":
           description: Bad request
           schema:
@@ -2849,7 +2863,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Review a pending submissions
+      summary: Review a pending submission
       tags:
       - SubmissionAPI
   /v1/schemas:
