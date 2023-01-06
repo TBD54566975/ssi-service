@@ -59,7 +59,6 @@ with st.expander("(optional) Show DID detail"):
 
 st.subheader("Choose a schema to issue a  Verifiable Credential against:")
 
-
 @st.cache
 def load_schemas():
     schemas = requests.get('https://schema.org/version/latest/schemaorg-current-https.jsonld').json()
@@ -89,11 +88,41 @@ data = {
 data = st.text_area("Data for credential (depends on schema):", value=json.dumps(data), height=None, max_chars=None,
                     key=None, help=None)
 
+# TODO: Add dynamic schema payload from dropdown
+if st.button("Create Schema"):
+    sch = {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "description": "postal address",
+        "type": "object",
+        "properties": {
+            "addressLocality": {
+                "type": "string"
+            },
+            "postalCode": {
+                "type": "string"
+            },
+            "streetAddress": {
+                "type": "string"
+            }
+        },
+        "additionalProperties": False
+    }
+
+    payload = {
+        "author": did['did']['id'],
+        "name": "name",
+        "schema": sch
+    }
+
+    schema_output = requests.put('http://web:3000/v1/schemas', data=json.dumps(payload)).json()
+    st.write(schema_output)
+    st.session_state.schema_id = schema_output['id']
+
 if st.button("Issue Verifiable Credential"):
     payload = {
         "Issuer": did['did']['id'],
         "Subject": did['did']['id'],
-        "Schema": "https://schema.org/" + schema.split(":")[1],
+        "Schema": st.session_state.schema_id,
         "Data": json.loads(data),
         "Expiry": str(expiry) + "T00:00:00+00:00"
     }
