@@ -307,7 +307,23 @@ func getJSONElement(jsonString string, jsonPath string) (string, error) {
 		return "", errors.Wrap(err, "finding element in json string")
 	}
 
-	elementStr := fmt.Sprintf("%v", element)
+	if element == nil {
+		return "<nil>", nil
+	}
+	var elementStr string
+	switch element.(type) {
+	case bool:
+		elementStr = fmt.Sprintf("%v", element)
+	case string:
+		elementStr = fmt.Sprintf("%v", element)
+	case map[string]any:
+		data, err := json.Marshal(element)
+		if err != nil {
+			return "", err
+		}
+		elementStr = compactJSONOutput(string(data))
+	}
+
 	return elementStr, nil
 }
 
@@ -328,6 +344,7 @@ func get(url string) (string, error) {
 		return "", fmt.Errorf("status code not in the 200s. body: %s", string(body))
 	}
 
+	logrus.Infof("Received:  %s", string(body))
 	return string(body), err
 }
 
@@ -388,4 +405,24 @@ func getValidApplicationRequest(credAppJSON string, credentialJWT string) manife
 		CredentialApplication: createApplication,
 		Credentials:           creds,
 	}
+}
+
+type reviewApplicationParams struct {
+	ID       string
+	Approved bool
+	Reason   string
+}
+
+func ReviewApplication(params reviewApplicationParams) (string, error) {
+	trueApplicationJSON, err := resolveTemplate(params, "review-application-input.json")
+	if err != nil {
+		return "", err
+	}
+
+	output, err := put(endpoint+version+"manifests/applications/"+params.ID+"/review", trueApplicationJSON)
+	if err != nil {
+		return "", errors.Wrapf(err, "application endpoint with output: %s", output)
+	}
+
+	return output, nil
 }

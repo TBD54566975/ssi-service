@@ -10,18 +10,17 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
-	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation"
-	opcredential "github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
-	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
-
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
+	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation"
+	opcredential "github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
+	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -227,6 +226,11 @@ type CredentialResponseContainer struct {
 	Credentials []any                       `json:"verifiableCredentials,omitempty"`
 }
 
+// ProcessApplicationSubmission stores the application in a pending state, along with an operation. Once the operation
+// is done, the Operation.Response field will be of type model.SubmitApplicationResponse.
+// Invalid applications return an operation marked as done, with Response that represents denial.
+// The state of the application can be updated by calling CancelOperation, or by calling ReviewApplicationSubmission.
+// When the state is updated, the operation is marked as done.
 func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationRequest) (*operation.Operation, error) {
 	// get the manifest associated with the application
 	manifestID := request.Application.ManifestID
@@ -238,7 +242,6 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 	if gotManifest == nil {
 		return nil, util.LoggingNewErrorf("application<%s> is not valid; a manifest does not exist with id: %s", applicationID, manifestID)
 	}
-	credManifest := gotManifest.Manifest
 
 	opID := opcredential.IDFromResponseID(applicationID)
 	// validate the application
@@ -271,7 +274,7 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 	applicantDID := request.ApplicantDID
 	storageRequest := manifeststg.StoredApplication{
 		ID:             applicationID,
-		Status:         opcredential.StatusFulfilled,
+		Status:         opcredential.StatusPending,
 		ManifestID:     manifestID,
 		ApplicantDID:   applicantDID,
 		Application:    request.Application,
@@ -282,8 +285,37 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 		return nil, util.LoggingErrorMsg(err, "could not store application")
 	}
 
+	storedOp := opstorage.StoredOperation{
+		ID: opID,
+	}
+	if err = s.opsStorage.StoreOperation(storedOp); err != nil {
+		return nil, errors.Wrap(err, "storing operation")
+	}
+	return operation.ServiceModel(storedOp)
+}
+
+// ReviewApplication moves an application state and marks the operation associated with it as done. A credential
+// response is stored.
+func (s Service) ReviewApplication(request model.ReviewApplicationRequest) (*model.SubmitApplicationResponse, error) {
+	application, err := s.storage.GetApplication(request.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching application")
+	}
+
+	manifestID := application.ManifestID
+	gotManifest, err := s.storage.GetManifest(manifestID)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching manifest")
+	}
+	applicationID := application.ID
+	if gotManifest == nil {
+		return nil, util.LoggingNewErrorf("application<%s> is not valid; a manifest does not exist with id: %s", applicationID, manifestID)
+	}
+	credManifest := gotManifest.Manifest
+	applicantDID := application.ApplicantDID
+
 	// build the credential response
-	credResp, creds, err := s.buildCredentialResponse(applicantDID, manifestID, applicationID, credManifest)
+	credResp, creds, err := s.buildCredentialResponse(applicantDID, manifestID, applicationID, credManifest, request.Approved, request.Reason)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not build credential response")
 	}
@@ -309,23 +341,13 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 		Credentials:  creds,
 		ResponseJWT:  *responseJWT,
 	}
-	if err = s.storage.StoreResponse(storeResponseRequest); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not store manifest response")
+	storedResponse, _, err := s.storage.ReviewApplication(request.ID, request.Approved, request.Reason, opcredential.IDFromResponseID(request.ID), storeResponseRequest)
+	if err != nil {
+		return nil, errors.Wrap(err, "updating submission")
 	}
 
-	sarData, err := json.Marshal(storeResponseRequest)
-	if err != nil {
-		return nil, errors.Wrap(err, "marshalling response")
-	}
-	storedOp := opstorage.StoredOperation{
-		ID:       opID,
-		Done:     true,
-		Response: sarData,
-	}
-	if err = s.opsStorage.StoreOperation(storedOp); err != nil {
-		return nil, errors.Wrap(err, "storing operation")
-	}
-	return operation.ServiceModel(storedOp)
+	m := model.ServiceModel(storedResponse)
+	return &m, nil
 }
 
 func (s Service) GetApplication(request model.GetApplicationRequest) (*model.GetApplicationResponse, error) {
