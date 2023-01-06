@@ -87,6 +87,14 @@ type DeleteApplicationRequest struct {
 	ID string `json:"id,omitempty" validate:"required"`
 }
 
+// ReviewApplicationRequest is something foobar
+type ReviewApplicationRequest struct {
+	// ID of the application.
+	ID       string `json:"id" validate:"required"`
+	Approved bool   `json:"approved"`
+	Reason   string `json:"reason"`
+}
+
 // Response
 
 type GetResponseRequest struct {

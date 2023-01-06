@@ -10,8 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -125,8 +125,14 @@ func TestManifestRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		createdApplicationResponseOp, err := manifestService.ProcessApplicationSubmission(*sar)
 		assert.NoError(tt, err)
-		createdApplicationResponse, ok := createdApplicationResponseOp.Result.Response.(model.SubmitApplicationResponse)
-		require.True(tt, ok)
+		assert.False(tt, createdApplicationResponseOp.Done)
+
+		createdApplicationResponse, err := manifestService.ReviewApplication(model.ReviewApplicationRequest{
+			ID:       storage.StatusObjectID(createdApplicationResponseOp.ID),
+			Approved: true,
+			Reason:   "ApprovalMan is here",
+		})
+		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
 		assert.NotEmpty(tt, createdApplicationResponse.Response.ID)
 		assert.NotEmpty(tt, createdApplicationResponse.Response.Fulfillment)
