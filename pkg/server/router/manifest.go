@@ -528,16 +528,16 @@ func (r ReviewApplicationRequest) toServiceRequest(id string) model.ReviewApplic
 }
 
 // ReviewApplication godoc
-// @Summary      Reviews an application
-// @Description  Reviewing an application either fulfills or denies the credential.
-// @Tags         ApplicationAPI
-// @Accept       json
-// @Produce      json
-// @Param        request  body      ReviewApplicationRequest  true  "request body"
-// @Success      201      {object}  SubmitApplicationResponse "Credential Response"
-// @Failure      400      {string}  string  "Bad request"
-// @Failure      500      {string}  string  "Internal server error"
-// @Router       /v1/manifests/applications/{id}/review [put]
+// @Summary     Reviews an application
+// @Description Reviewing an application either fulfills or denies the credential.
+// @Tags        ApplicationAPI
+// @Accept      json
+// @Produce     json
+// @Param       request body     ReviewApplicationRequest  true "request body"
+// @Success     201     {object} SubmitApplicationResponse "Credential Response"
+// @Failure     400     {string} string                    "Bad request"
+// @Failure     500     {string} string                    "Internal server error"
+// @Router      /v1/manifests/applications/{id}/review [put]
 func (mr ManifestRouter) ReviewApplication(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
