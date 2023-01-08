@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 )
 
 var didWebContext = NewTestContext("DIDWeb")
@@ -118,7 +119,7 @@ func TestDidWebCreateCredentialManifestIntegration(t *testing.T) {
 	assert.NotEmpty(t, manifestID)
 }
 
-func TestDidWebSubmitApplicationIntegration(t *testing.T) {
+func TestDidWebSubmitAndReviewApplicationIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
@@ -150,17 +151,39 @@ func TestDidWebSubmitApplicationIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credAppJWT)
 
-	credentialResponseOutput, err := SubmitApplication(applicationParams{
+	submitApplicationOutput, err := SubmitApplication(applicationParams{
 		ApplicationJWT: credAppJWT,
 	})
 	assert.NoError(t, err)
-	assert.NotEmpty(t, credentialResponseOutput)
+	assert.NotEmpty(t, submitApplicationOutput)
 
-	crManifestID, err := getJSONElement(credentialResponseOutput, "$.result.response.credential_response.manifest_id")
+	isDone, err := getJSONElement(submitApplicationOutput, "$.done")
+	assert.NoError(t, err)
+	assert.Equal(t, "false", isDone)
+	opID, err := getJSONElement(submitApplicationOutput, "$.id")
+	assert.NoError(t, err)
+
+	reviewApplicationOutput, err := ReviewApplication(reviewApplicationParams{
+		ID:       storage.StatusObjectID(opID),
+		Approved: true,
+		Reason:   "oh yeah im testing",
+	})
+	assert.NoError(t, err)
+	crManifestID, err := getJSONElement(reviewApplicationOutput, "$.credential_response.manifest_id")
 	assert.NoError(t, err)
 	assert.Equal(t, manifestID, crManifestID)
 
-	vc, err := getJSONElement(credentialResponseOutput, "$.result.response.verifiableCredentials[0]")
+	vc, err := getJSONElement(reviewApplicationOutput, "$.verifiableCredentials[0]")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vc)
+
+	operationOutput, err := get(endpoint + version + "operations/" + opID)
+	assert.NoError(t, err)
+	isDone, err = getJSONElement(operationOutput, "$.done")
+	assert.NoError(t, err)
+	assert.Equal(t, "true", isDone)
+
+	opCredentialResponse, err := getJSONElement(operationOutput, "$.result.response")
+	assert.NoError(t, err)
+	assert.JSONEq(t, reviewApplicationOutput, opCredentialResponse)
 }

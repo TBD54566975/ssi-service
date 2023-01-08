@@ -3,16 +3,17 @@ package storage
 import (
 	"fmt"
 
+	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
-
-	"github.com/TBD54566975/ssi-sdk/credential/manifest"
-
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
+	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage/namespace"
+	opsubmission "github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -236,4 +237,55 @@ func (ms *Storage) DeleteResponse(id string) error {
 		return util.LoggingErrorMsgf(err, "could not delete response: %s", id)
 	}
 	return nil
+}
+
+// ReviewApplication does the following:
+//  1. Updates the application status according to the approved parameter.
+//  2. Creates a Credential Response corresponding to the approved parameter and with the given reason.
+//  3. Marks the operation with id == opID as done, and sets operation.Response to the StoredResponse from the object
+//     creates in step 2.
+//
+// The operation and it's response (from 3) are returned.
+func (ms *Storage) ReviewApplication(id string, approved bool, reason string, opID string, response StoredResponse) (*StoredResponse, *opstorage.StoredOperation, error) {
+	// TODO: everything should be in a single Tx.
+	m := map[string]any{
+		"status": opsubmission.StatusDenied,
+		"reason": reason,
+	}
+	if approved {
+		m["status"] = opsubmission.StatusApproved
+	}
+	if _, err := ms.db.Update(credential.ApplicationNamespace, id, m); err != nil {
+		return nil, nil, errors.Wrap(err, "updating application")
+	}
+
+	if err := ms.StoreResponse(response); err != nil {
+		return nil, nil, errors.Wrap(err, "storing credential response")
+	}
+
+	responseData, operationData, err := ms.db.UpdateValueAndOperation(
+		responseNamespace,
+		response.ID,
+		storage.NewUpdater(m),
+		namespace.FromID(opID),
+		opID,
+		opsubmission.OperationUpdater{
+			UpdaterWithMap: storage.NewUpdater(map[string]any{
+				"done": true,
+			}),
+		})
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "updating value and operation")
+	}
+
+	var s StoredResponse
+	if err = json.Unmarshal(responseData, &s); err != nil {
+		return nil, nil, errors.Wrap(err, "unmarshalling written credential response")
+	}
+	var op opstorage.StoredOperation
+	if err = json.Unmarshal(operationData, &op); err != nil {
+		return nil, nil, errors.Wrap(err, "unmarshalling written operation")
+	}
+
+	return &s, &op, nil
 }

@@ -283,7 +283,7 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*model.SubmitApplication
 type SubmitApplicationResponse struct {
 	Response manifestsdk.CredentialResponse `json:"credential_response"`
 	// this is an interface type to union Data Integrity and JWT style VCs
-	Credentials []any         `json:"verifiableCredentials,omitempty"`
+	Credentials any           `json:"verifiableCredentials,omitempty"`
 	ResponseJWT keyaccess.JWT `json:"responseJwt,omitempty"`
 }
 
@@ -512,4 +512,53 @@ func (mr ManifestRouter) DeleteResponse(ctx context.Context, w http.ResponseWrit
 	}
 
 	return framework.Respond(ctx, w, nil, http.StatusOK)
+}
+
+type ReviewApplicationRequest struct {
+	Approved bool   `json:"approved"`
+	Reason   string `json:"reason"`
+}
+
+func (r ReviewApplicationRequest) toServiceRequest(id string) model.ReviewApplicationRequest {
+	return model.ReviewApplicationRequest{
+		ID:       id,
+		Approved: r.Approved,
+		Reason:   r.Reason,
+	}
+}
+
+// ReviewApplication godoc
+// @Summary      Reviews an application
+// @Description  Reviewing an application either fulfills or denies the credential.
+// @Tags         ApplicationAPI
+// @Accept       json
+// @Produce      json
+// @Param        request  body      ReviewApplicationRequest  true  "request body"
+// @Success      201      {object}  SubmitApplicationResponse "Credential Response"
+// @Failure      400      {string}  string  "Bad request"
+// @Failure      500      {string}  string  "Internal server error"
+// @Router       /v1/manifests/applications/{id}/review [put]
+func (mr ManifestRouter) ReviewApplication(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		return framework.NewRequestError(
+			util.LoggingNewError("review application request requires id"), http.StatusBadRequest)
+	}
+
+	var request ReviewApplicationRequest
+	if err := framework.Decode(r, &request); err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "invalid review application request"), http.StatusBadRequest)
+	}
+
+	applicationResponse, err := mr.service.ReviewApplication(request.toServiceRequest(*id))
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "failed reviewing application"), http.StatusInternalServerError)
+	}
+	return framework.Respond(ctx, w, SubmitApplicationResponse{
+		Response:    applicationResponse.Response,
+		Credentials: applicationResponse.Credentials,
+		ResponseJWT: applicationResponse.ResponseJWT,
+	}, http.StatusOK)
 }
