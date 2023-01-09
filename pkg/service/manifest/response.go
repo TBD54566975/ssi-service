@@ -21,8 +21,8 @@ const (
 	DenialResponse errresp.Type = "DenialResponse"
 )
 
-func (s Service) signCredentialResponseJWT(signingDID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
-	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: signingDID})
+func (s Service) signCredentialResponseJWT(ctx context.Context, signingDID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: signingDID})
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key for signing response with key<%s>", signingDID)
 	}

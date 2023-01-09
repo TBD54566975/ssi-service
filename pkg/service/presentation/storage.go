@@ -30,7 +30,7 @@ type Storage struct {
 	db storage.ServiceStorage
 }
 
-func (ps Storage) UpdateSubmission(id string, approved bool, reason string, opID string) (prestorage.StoredSubmission, opstorage.StoredOperation, error) {
+func (ps Storage) UpdateSubmission(ctx context.Context, id string, approved bool, reason string, opID string) (prestorage.StoredSubmission, opstorage.StoredOperation, error) {
 	m := map[string]any{
 		"status": opsubmission.StatusDenied,
 		"reason": reason,
@@ -39,6 +39,7 @@ func (ps Storage) UpdateSubmission(id string, approved bool, reason string, opID
 		m["status"] = opsubmission.StatusApproved
 	}
 	submissionData, operationData, err := ps.db.UpdateValueAndOperation(
+		ctx,
 		opsubmission.Namespace,
 		id,
 		storage.NewUpdater(m),
@@ -64,8 +65,8 @@ func (ps Storage) UpdateSubmission(id string, approved bool, reason string, opID
 	return s, op, nil
 }
 
-func (ps *Storage) ListSubmissions(filter filtering.Filter) ([]prestorage.StoredSubmission, error) {
-	allData, err := ps.db.ReadAll(opsubmission.Namespace)
+func (ps *Storage) ListSubmissions(ctx context.Context, filter filtering.Filter) ([]prestorage.StoredSubmission, error) {
+	allData, err := ps.db.ReadAll(ctx, opsubmission.Namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all data")
 	}
@@ -116,8 +117,8 @@ func (ps *Storage) StorePresentation(ctx context.Context, presentation StoredPre
 	return ps.db.Write(ctx, presentationDefinitionNamespace, id, jsonBytes)
 }
 
-func (ps *Storage) GetPresentation(id string) (*StoredPresentation, error) {
-	jsonBytes, err := ps.db.Read(presentationDefinitionNamespace, id)
+func (ps *Storage) GetPresentation(ctx context.Context, id string) (*StoredPresentation, error) {
+	jsonBytes, err := ps.db.Read(ctx, presentationDefinitionNamespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get presentation definition: %s", id)
 	}
@@ -131,8 +132,8 @@ func (ps *Storage) GetPresentation(id string) (*StoredPresentation, error) {
 	return &stored, nil
 }
 
-func (ps *Storage) DeletePresentation(id string) error {
-	if err := ps.db.Delete(presentationDefinitionNamespace, id); err != nil {
+func (ps *Storage) DeletePresentation(ctx context.Context, id string) error {
+	if err := ps.db.Delete(ctx, presentationDefinitionNamespace, id); err != nil {
 		return util.LoggingNewErrorf("could not delete presentation definition: %s", id)
 	}
 	return nil
@@ -152,8 +153,8 @@ func (ps Storage) StoreSubmission(ctx context.Context, s prestorage.StoredSubmis
 	return ps.db.Write(ctx, opsubmission.Namespace, id, jsonBytes)
 }
 
-func (ps *Storage) GetSubmission(id string) (*prestorage.StoredSubmission, error) {
-	jsonBytes, err := ps.db.Read(opsubmission.Namespace, id)
+func (ps *Storage) GetSubmission(ctx context.Context, id string) (*prestorage.StoredSubmission, error) {
+	jsonBytes, err := ps.db.Read(ctx, opsubmission.Namespace, id)
 	if err != nil {
 		return nil, util.LoggingNewErrorf("could not get submission definition: %s", id)
 	}

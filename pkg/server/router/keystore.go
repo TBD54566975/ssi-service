@@ -114,7 +114,7 @@ func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWri
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotKeyDetails, err := ksr.service.GetKeyDetails(keystore.GetKeyDetailsRequest{ID: *id})
+	gotKeyDetails, err := ksr.service.GetKeyDetails(ctx, keystore.GetKeyDetailsRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get key details for id: %s", *id)
 		logrus.WithError(err).Error(errMsg)

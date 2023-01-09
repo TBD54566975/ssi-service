@@ -38,11 +38,11 @@ func (s Storage) StoreIssuanceTemplate(ctx context.Context, template StoredIssua
 	return s.db.Write(ctx, namespace, template.IssuanceTemplate.ID, data)
 }
 
-func (s Storage) GetIssuanceTemplate(id string) (*StoredIssuanceTemplate, error) {
+func (s Storage) GetIssuanceTemplate(ctx context.Context, id string) (*StoredIssuanceTemplate, error) {
 	if id == "" {
 		return nil, errors.New("cannot fetch issuance template without an ID")
 	}
-	data, err := s.db.Read(namespace, id)
+	data, err := s.db.Read(ctx, namespace, id)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading from db")
 	}
@@ -56,18 +56,18 @@ func (s Storage) GetIssuanceTemplate(id string) (*StoredIssuanceTemplate, error)
 	return &st, nil
 }
 
-func (s Storage) DeleteIssuanceTemplate(id string) error {
+func (s Storage) DeleteIssuanceTemplate(ctx context.Context, id string) error {
 	if id == "" {
 		return nil
 	}
-	if err := s.db.Delete(namespace, id); err != nil {
+	if err := s.db.Delete(ctx, namespace, id); err != nil {
 		return errors.Wrap(err, "deleting from db")
 	}
 	return nil
 }
 
-func (s Storage) ListIssuanceTemplates() ([]IssuanceTemplate, error) {
-	m, err := s.db.ReadAll(namespace)
+func (s Storage) ListIssuanceTemplates(ctx context.Context) ([]IssuanceTemplate, error) {
+	m, err := s.db.ReadAll(ctx, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all")
 	}

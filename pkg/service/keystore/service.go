@@ -94,12 +94,12 @@ func (s Service) StoreKey(ctx context.Context, request StoreKeyRequest) error {
 	return nil
 }
 
-func (s Service) GetKey(request GetKeyRequest) (*GetKeyResponse, error) {
+func (s Service) GetKey(ctx context.Context, request GetKeyRequest) (*GetKeyResponse, error) {
 
 	logrus.Debugf("getting key: %+v", request)
 
 	id := request.ID
-	gotKey, err := s.storage.GetKey(id)
+	gotKey, err := s.storage.GetKey(ctx, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key for key: %s", id)
 	}
@@ -126,12 +126,12 @@ func (s Service) GetKey(request GetKeyRequest) (*GetKeyResponse, error) {
 	}, nil
 }
 
-func (s Service) GetKeyDetails(request GetKeyDetailsRequest) (*GetKeyDetailsResponse, error) {
+func (s Service) GetKeyDetails(ctx context.Context, request GetKeyDetailsRequest) (*GetKeyDetailsResponse, error) {
 
 	logrus.Debugf("getting key: %+v", request)
 
 	id := request.ID
-	gotKeyDetails, err := s.storage.GetKeyDetails(id)
+	gotKeyDetails, err := s.storage.GetKeyDetails(ctx, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key details for key: %s", id)
 	}

@@ -74,12 +74,12 @@ func (h *keyDIDHandler) CreateDID(ctx context.Context, request CreateDIDRequest)
 	}, nil
 }
 
-func (h *keyDIDHandler) GetDID(request GetDIDRequest) (*GetDIDResponse, error) {
+func (h *keyDIDHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {
 
 	logrus.Debugf("getting DID: %+v", request)
 
 	id := request.ID
-	gotDID, err := h.storage.GetDID(id)
+	gotDID, err := h.storage.GetDID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("error getting DID: %s", id)
 	}
@@ -89,11 +89,11 @@ func (h *keyDIDHandler) GetDID(request GetDIDRequest) (*GetDIDResponse, error) {
 	return &GetDIDResponse{DID: gotDID.DID}, nil
 }
 
-func (h *keyDIDHandler) GetDIDs(method did.Method) (*GetDIDsResponse, error) {
+func (h *keyDIDHandler) GetDIDs(ctx context.Context, method did.Method) (*GetDIDsResponse, error) {
 
 	logrus.Debugf("getting DIDs for method: %s", method)
 
-	gotDIDs, err := h.storage.GetDIDs(string(method))
+	gotDIDs, err := h.storage.GetDIDs(ctx, string(method))
 	if err != nil {
 		return nil, fmt.Errorf("error getting DIDs for method: %s", method)
 	}

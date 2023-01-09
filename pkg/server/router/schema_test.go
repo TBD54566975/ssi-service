@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -45,12 +46,12 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Equal(tt, framework.StatusReady, schemaService.Status().Status)
 
 		// get all schemas (none)
-		gotSchemas, err := schemaService.GetSchemas()
+		gotSchemas, err := schemaService.GetSchemas(context.Background())
 		assert.NoError(tt, err)
 		assert.Empty(tt, gotSchemas.Schemas)
 
 		// get schema that doesn't exist
-		_, err = schemaService.GetSchema(schema.GetSchemaRequest{ID: "bad"})
+		_, err = schemaService.GetSchema(context.Background(), schema.GetSchemaRequest{ID: "bad"})
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "error getting schema")
 
@@ -65,7 +66,7 @@ func TestSchemaRouter(t *testing.T) {
 			"required":             []any{"foo"},
 			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.ID)
@@ -73,19 +74,19 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Equal(tt, "simple schema", createdSchema.Schema.Name)
 
 		// get schema by ID
-		gotSchema, err := schemaService.GetSchema(schema.GetSchemaRequest{ID: createdSchema.ID})
+		gotSchema, err := schemaService.GetSchema(context.Background(), schema.GetSchemaRequest{ID: createdSchema.ID})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, gotSchema)
 		assert.EqualValues(tt, createdSchema.Schema, gotSchema.Schema)
 
 		// get all schemas, expect one
-		gotSchemas, err = schemaService.GetSchemas()
+		gotSchemas, err = schemaService.GetSchemas(context.Background())
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, gotSchemas.Schemas)
 		assert.Len(tt, gotSchemas.Schemas, 1)
 
 		// store another
-		createdSchema, err = schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema 2", Schema: simpleSchema})
+		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema 2", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.ID)
@@ -93,7 +94,7 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Equal(tt, "simple schema 2", createdSchema.Schema.Name)
 
 		// get all schemas, expect two
-		gotSchemas, err = schemaService.GetSchemas()
+		gotSchemas, err = schemaService.GetSchemas(context.Background())
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, gotSchemas.Schemas)
 		assert.Len(tt, gotSchemas.Schemas, 2)
@@ -102,11 +103,11 @@ func TestSchemaRouter(t *testing.T) {
 		assert.True(tt, gotSchemas.Schemas[0].ID != gotSchemas.Schemas[1].ID)
 
 		// delete the first schema
-		err = schemaService.DeleteSchema(schema.DeleteSchemaRequest{ID: gotSchemas.Schemas[0].ID})
+		err = schemaService.DeleteSchema(context.Background(), schema.DeleteSchemaRequest{ID: gotSchemas.Schemas[0].ID})
 		assert.NoError(tt, err)
 
 		// get all schemas, expect one
-		gotSchemas, err = schemaService.GetSchemas()
+		gotSchemas, err = schemaService.GetSchemas(context.Background())
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, gotSchemas.Schemas)
 		assert.Len(tt, gotSchemas.Schemas, 1)
@@ -141,7 +142,7 @@ func TestSchemaSigning(t *testing.T) {
 			"required":             []any{"foo"},
 			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.ID)
@@ -150,20 +151,20 @@ func TestSchemaSigning(t *testing.T) {
 		assert.Equal(tt, "simple schema", createdSchema.Schema.Name)
 
 		// missing DID
-		createdSchema, err = schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema, Sign: true})
+		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema, Sign: true})
 		assert.Error(tt, err)
 		assert.Empty(tt, createdSchema)
 		assert.Contains(tt, err.Error(), "could not get key for signing schema for author<me>")
 
 		// create an author DID
-		authorDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		authorDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, authorDID)
 
-		createdSchema, err = schemaService.CreateSchema(schema.CreateSchemaRequest{Author: authorDID.DID.ID, Name: "simple schema", Schema: simpleSchema, Sign: true})
+		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: authorDID.DID.ID, Name: "simple schema", Schema: simpleSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.SchemaJWT)

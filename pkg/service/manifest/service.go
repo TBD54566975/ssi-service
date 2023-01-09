@@ -145,7 +145,7 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 	}
 
 	// sign the manifest
-	manifestJWT, err := s.signManifestJWT(CredentialManifestContainer{Manifest: *m})
+	manifestJWT, err := s.signManifestJWT(ctx, CredentialManifestContainer{Manifest: *m})
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not sign manifest")
 	}
@@ -181,11 +181,11 @@ func (s Service) VerifyManifest(request model.VerifyManifestRequest) (*model.Ver
 	return &model.VerifyManifestResponse{Verified: true}, nil
 }
 
-func (s Service) GetManifest(request model.GetManifestRequest) (*model.GetManifestResponse, error) {
+func (s Service) GetManifest(ctx context.Context, request model.GetManifestRequest) (*model.GetManifestResponse, error) {
 
 	logrus.Debugf("getting manifest: %s", request.ID)
 
-	gotManifest, err := s.storage.GetManifest(request.ID)
+	gotManifest, err := s.storage.GetManifest(ctx, request.ID)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get manifest: %s", request.ID)
 	}
@@ -194,8 +194,8 @@ func (s Service) GetManifest(request model.GetManifestRequest) (*model.GetManife
 	return &response, nil
 }
 
-func (s Service) GetManifests() (*model.GetManifestsResponse, error) {
-	gotManifests, err := s.storage.GetManifests()
+func (s Service) GetManifests(ctx context.Context) (*model.GetManifestsResponse, error) {
+	gotManifests, err := s.storage.GetManifests(ctx)
 
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get manifests(s)")
@@ -210,11 +210,11 @@ func (s Service) GetManifests() (*model.GetManifestsResponse, error) {
 	return &response, nil
 }
 
-func (s Service) DeleteManifest(request model.DeleteManifestRequest) error {
+func (s Service) DeleteManifest(ctx context.Context, request model.DeleteManifestRequest) error {
 
 	logrus.Debugf("deleting manifest: %s", request.ID)
 
-	if err := s.storage.DeleteManifest(request.ID); err != nil {
+	if err := s.storage.DeleteManifest(ctx, request.ID); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete manifest with id: %s", request.ID)
 	}
 
@@ -235,7 +235,7 @@ type CredentialResponseContainer struct {
 func (s Service) ProcessApplicationSubmission(ctx context.Context, request model.SubmitApplicationRequest) (*operation.Operation, error) {
 	// get the manifest associated with the application
 	manifestID := request.Application.ManifestID
-	gotManifest, err := s.storage.GetManifest(manifestID)
+	gotManifest, err := s.storage.GetManifest(ctx, manifestID)
 	applicationID := request.Application.ID
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "problem with retrieving manifest<%s> during application<%s>'s validation", manifestID, applicationID)
@@ -246,7 +246,7 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 
 	opID := opcredential.IDFromResponseID(applicationID)
 	// validate the application
-	if unfulfilledInputDescriptorIDs, validationErr := s.validateCredentialApplication(gotManifest.Manifest, request); validationErr != nil {
+	if unfulfilledInputDescriptorIDs, validationErr := s.validateCredentialApplication(ctx, gotManifest.Manifest, request); validationErr != nil {
 		resp := errresp.GetErrorResponse(validationErr)
 		if resp.ErrorType == DenialResponse {
 			denialResp, err := buildDenialCredentialResponse(manifestID, applicationID, resp.Err.Error(), unfulfilledInputDescriptorIDs...)
@@ -298,13 +298,13 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 // ReviewApplication moves an application state and marks the operation associated with it as done. A credential
 // response is stored.
 func (s Service) ReviewApplication(ctx context.Context, request model.ReviewApplicationRequest) (*model.SubmitApplicationResponse, error) {
-	application, err := s.storage.GetApplication(request.ID)
+	application, err := s.storage.GetApplication(ctx, request.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching application")
 	}
 
 	manifestID := application.ManifestID
-	gotManifest, err := s.storage.GetManifest(manifestID)
+	gotManifest, err := s.storage.GetManifest(ctx, manifestID)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching manifest")
 	}
@@ -325,7 +325,7 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 	credentials := credint.ContainersToInterface(creds)
 
 	// sign the response before returning
-	responseJWT, err := s.signCredentialResponseJWT(gotManifest.Issuer, CredentialResponseContainer{
+	responseJWT, err := s.signCredentialResponseJWT(ctx, gotManifest.Issuer, CredentialResponseContainer{
 		Response:    *credResp,
 		Credentials: credentials,
 	})
@@ -352,11 +352,11 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 	return &m, nil
 }
 
-func (s Service) GetApplication(request model.GetApplicationRequest) (*model.GetApplicationResponse, error) {
+func (s Service) GetApplication(ctx context.Context, request model.GetApplicationRequest) (*model.GetApplicationResponse, error) {
 
 	logrus.Debugf("getting application: %s", request.ID)
 
-	gotApp, err := s.storage.GetApplication(request.ID)
+	gotApp, err := s.storage.GetApplication(ctx, request.ID)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get application: %s", request.ID)
 	}
@@ -365,11 +365,11 @@ func (s Service) GetApplication(request model.GetApplicationRequest) (*model.Get
 	return &response, nil
 }
 
-func (s Service) GetApplications() (*model.GetApplicationsResponse, error) {
+func (s Service) GetApplications(ctx context.Context) (*model.GetApplicationsResponse, error) {
 
 	logrus.Debugf("getting application(s)")
 
-	gotApps, err := s.storage.GetApplications()
+	gotApps, err := s.storage.GetApplications(ctx)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get application(s)")
 	}
@@ -383,22 +383,22 @@ func (s Service) GetApplications() (*model.GetApplicationsResponse, error) {
 	return &response, nil
 }
 
-func (s Service) DeleteApplication(request model.DeleteApplicationRequest) error {
+func (s Service) DeleteApplication(ctx context.Context, request model.DeleteApplicationRequest) error {
 
 	logrus.Debugf("deleting application: %s", request.ID)
 
-	if err := s.storage.DeleteApplication(request.ID); err != nil {
+	if err := s.storage.DeleteApplication(ctx, request.ID); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete application with id: %s", request.ID)
 	}
 
 	return nil
 }
 
-func (s Service) GetResponse(request model.GetResponseRequest) (*model.GetResponseResponse, error) {
+func (s Service) GetResponse(ctx context.Context, request model.GetResponseRequest) (*model.GetResponseResponse, error) {
 
 	logrus.Debugf("getting response: %s", request.ID)
 
-	gotResponse, err := s.storage.GetResponse(request.ID)
+	gotResponse, err := s.storage.GetResponse(ctx, request.ID)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get response: %s", request.ID)
 	}
@@ -407,11 +407,11 @@ func (s Service) GetResponse(request model.GetResponseRequest) (*model.GetRespon
 	return &response, nil
 }
 
-func (s Service) GetResponses() (*model.GetResponsesResponse, error) {
+func (s Service) GetResponses(ctx context.Context) (*model.GetResponsesResponse, error) {
 
 	logrus.Debugf("getting response(s)")
 
-	gotResponses, err := s.storage.GetResponses()
+	gotResponses, err := s.storage.GetResponses(ctx)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get response(s)")
 	}
@@ -425,11 +425,11 @@ func (s Service) GetResponses() (*model.GetResponsesResponse, error) {
 	return &response, nil
 }
 
-func (s Service) DeleteResponse(request model.DeleteResponseRequest) error {
+func (s Service) DeleteResponse(ctx context.Context, request model.DeleteResponseRequest) error {
 
 	logrus.Debugf("deleting response: %s", request.ID)
 
-	if err := s.storage.DeleteResponse(request.ID); err != nil {
+	if err := s.storage.DeleteResponse(ctx, request.ID); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete response with id: %s", request.ID)
 	}
 

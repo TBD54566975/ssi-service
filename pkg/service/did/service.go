@@ -99,8 +99,8 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 // MethodHandler describes the functionality of *all* possible DID service, regardless of method
 type MethodHandler interface {
 	CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error)
-	GetDID(request GetDIDRequest) (*GetDIDResponse, error)
-	GetDIDs(method didsdk.Method) (*GetDIDsResponse, error)
+	GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error)
+	GetDIDs(ctx context.Context, method didsdk.Method) (*GetDIDsResponse, error)
 }
 
 func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
@@ -146,21 +146,21 @@ func (s *Service) CreateDIDByMethod(ctx context.Context, request CreateDIDReques
 	return handler.CreateDID(ctx, request)
 }
 
-func (s *Service) GetDIDByMethod(request GetDIDRequest) (*GetDIDResponse, error) {
+func (s *Service) GetDIDByMethod(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
 	}
-	return handler.GetDID(request)
+	return handler.GetDID(ctx, request)
 }
 
-func (s *Service) GetDIDsByMethod(request GetDIDsRequest) (*GetDIDsResponse, error) {
+func (s *Service) GetDIDsByMethod(ctx context.Context, request GetDIDsRequest) (*GetDIDsResponse, error) {
 	method := request.Method
 	handler, err := s.getHandler(method)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get handler for method<%s>", method)
 	}
-	return handler.GetDIDs(method)
+	return handler.GetDIDs(ctx, method)
 }
 
 func (s *Service) getHandler(method didsdk.Method) (MethodHandler, error) {

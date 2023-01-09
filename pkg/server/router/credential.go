@@ -132,7 +132,7 @@ func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWri
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotCredential, err := cr.service.GetCredential(credential.GetCredentialRequest{ID: *id})
+	gotCredential, err := cr.service.GetCredential(ctx, credential.GetCredentialRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -169,7 +169,7 @@ func (cr CredentialRouter) GetCredentialStatus(ctx context.Context, w http.Respo
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	getCredentialStatusResponse, err := cr.service.GetCredentialStatus(credential.GetCredentialStatusRequest{ID: *id})
+	getCredentialStatusResponse, err := cr.service.GetCredentialStatus(ctx, credential.GetCredentialStatusRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -207,7 +207,7 @@ func (cr CredentialRouter) GetCredentialStatusList(ctx context.Context, w http.R
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotCredential, err := cr.service.GetCredentialStatusList(credential.GetCredentialStatusListRequest{ID: *id})
+	gotCredential, err := cr.service.GetCredentialStatusList(ctx, credential.GetCredentialStatusListRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential status list with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -326,7 +326,7 @@ func (cr CredentialRouter) VerifyCredential(ctx context.Context, w http.Response
 		return framework.NewRequestError(err, http.StatusBadRequest)
 	}
 
-	verificationResult, err := cr.service.VerifyCredential(credential.VerifyCredentialRequest{
+	verificationResult, err := cr.service.VerifyCredential(ctx, credential.VerifyCredentialRequest{
 		DataIntegrityCredential: request.DataIntegrityCredential,
 		CredentialJWT:           request.CredentialJWT,
 	})
@@ -382,7 +382,7 @@ func (cr CredentialRouter) GetCredentials(ctx context.Context, w http.ResponseWr
 }
 
 func (cr CredentialRouter) getCredentialsByIssuer(ctx context.Context, issuer string, w http.ResponseWriter, _ *http.Request) error {
-	gotCredentials, err := cr.service.GetCredentialsByIssuer(credential.GetCredentialByIssuerRequest{Issuer: issuer})
+	gotCredentials, err := cr.service.GetCredentialsByIssuer(ctx, credential.GetCredentialByIssuerRequest{Issuer: issuer})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for issuer: %s", util.SanitizeLog(issuer))
 		logrus.WithError(err).Error(errMsg)
@@ -394,7 +394,7 @@ func (cr CredentialRouter) getCredentialsByIssuer(ctx context.Context, issuer st
 }
 
 func (cr CredentialRouter) getCredentialsBySubject(ctx context.Context, subject string, w http.ResponseWriter, _ *http.Request) error {
-	gotCredentials, err := cr.service.GetCredentialsBySubject(credential.GetCredentialBySubjectRequest{Subject: subject})
+	gotCredentials, err := cr.service.GetCredentialsBySubject(ctx, credential.GetCredentialBySubjectRequest{Subject: subject})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for subject: %s", util.SanitizeLog(subject))
 		logrus.WithError(err).Error(errMsg)
@@ -406,7 +406,7 @@ func (cr CredentialRouter) getCredentialsBySubject(ctx context.Context, subject 
 }
 
 func (cr CredentialRouter) getCredentialsBySchema(ctx context.Context, schema string, w http.ResponseWriter, _ *http.Request) error {
-	gotCredentials, err := cr.service.GetCredentialsBySchema(credential.GetCredentialBySchemaRequest{Schema: schema})
+	gotCredentials, err := cr.service.GetCredentialsBySchema(ctx, credential.GetCredentialBySchemaRequest{Schema: schema})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for schema: %s", util.SanitizeLog(schema))
 		logrus.WithError(err).Error(errMsg)
@@ -436,7 +436,7 @@ func (cr CredentialRouter) DeleteCredential(ctx context.Context, w http.Response
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := cr.service.DeleteCredential(credential.DeleteCredentialRequest{ID: *id}); err != nil {
+	if err := cr.service.DeleteCredential(ctx, credential.DeleteCredentialRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete credential with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)

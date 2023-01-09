@@ -1,6 +1,7 @@
 package operation
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -42,12 +43,12 @@ func (s Service) Status() framework.Status {
 	return framework.Status{Status: framework.StatusReady}
 }
 
-func (s Service) GetOperations(request GetOperationsRequest) (*GetOperationsResponse, error) {
+func (s Service) GetOperations(ctx context.Context, request GetOperationsRequest) (*GetOperationsResponse, error) {
 	if err := request.Validate(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
-	ops, err := s.storage.GetOperations(request.Parent, request.Filter)
+	ops, err := s.storage.GetOperations(ctx, request.Parent, request.Filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching ops from storage")
 	}
@@ -102,24 +103,24 @@ func ServiceModel(op opstorage.StoredOperation) (*Operation, error) {
 	return newOp, nil
 }
 
-func (s Service) GetOperation(request GetOperationRequest) (*Operation, error) {
+func (s Service) GetOperation(ctx context.Context, request GetOperationRequest) (*Operation, error) {
 	if err := request.Validate(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
-	storedOp, err := s.storage.GetOperation(request.ID)
+	storedOp, err := s.storage.GetOperation(ctx, request.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching from storage")
 	}
 	return ServiceModel(storedOp)
 }
 
-func (s Service) CancelOperation(request CancelOperationRequest) (*Operation, error) {
+func (s Service) CancelOperation(ctx context.Context, request CancelOperationRequest) (*Operation, error) {
 	if err := request.Validate(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
-	storedOp, err := s.storage.CancelOperation(request.ID)
+	storedOp, err := s.storage.CancelOperation(ctx, request.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "marking as done")
 	}

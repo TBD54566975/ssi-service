@@ -40,8 +40,8 @@ func NewIssuingService(config config.IssuingServiceConfig, s storage.ServiceStor
 	}, nil
 }
 
-func (s *Service) GetIssuanceTemplate(request *GetIssuanceTemplateRequest) (*GetIssuanceTemplateResponse, error) {
-	storedIssuanceTemplate, err := s.storage.GetIssuanceTemplate(request.ID)
+func (s *Service) GetIssuanceTemplate(ctx context.Context, request *GetIssuanceTemplateRequest) (*GetIssuanceTemplateResponse, error) {
+	storedIssuanceTemplate, err := s.storage.GetIssuanceTemplate(ctx, request.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting issuance template with id: %s", request.ID)
 	}
@@ -65,13 +65,13 @@ func (s *Service) CreateIssuanceTemplate(ctx context.Context, request *CreateIss
 			return nil, errors.Errorf("ID cannot be empty at index %d", i)
 		}
 		if c.Schema != "" {
-			if _, err := s.schemaStorage.GetSchema(c.Schema); err != nil {
+			if _, err := s.schemaStorage.GetSchema(ctx, c.Schema); err != nil {
 				return nil, errors.Wrapf(err, "getting schema at index %d", i)
 			}
 		}
 	}
 
-	if _, err := s.manifestStorage.GetManifest(request.IssuanceTemplate.CredentialManifest); err != nil {
+	if _, err := s.manifestStorage.GetManifest(ctx, request.IssuanceTemplate.CredentialManifest); err != nil {
 		return nil, errors.Wrap(err, "getting manifest")
 	}
 
@@ -91,19 +91,19 @@ func serviceModel(template StoredIssuanceTemplate) *IssuanceTemplate {
 	return &template.IssuanceTemplate
 }
 
-func (s *Service) DeleteIssuanceTemplate(request *DeleteIssuanceTemplateRequest) error {
-	if err := s.storage.DeleteIssuanceTemplate(request.ID); err != nil {
+func (s *Service) DeleteIssuanceTemplate(ctx context.Context, request *DeleteIssuanceTemplateRequest) error {
+	if err := s.storage.DeleteIssuanceTemplate(ctx, request.ID); err != nil {
 		return errors.Wrap(err, "deleting template from storage")
 	}
 	return nil
 }
 
-func (s *Service) ListIssuanceTemplates(request *ListIssuanceTemplatesRequest) (*ListIssuanceTemplatesResponse, error) {
+func (s *Service) ListIssuanceTemplates(ctx context.Context, request *ListIssuanceTemplatesRequest) (*ListIssuanceTemplatesResponse, error) {
 	if err := request.Validate(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
-	ops, err := s.storage.ListIssuanceTemplates()
+	ops, err := s.storage.ListIssuanceTemplates(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching ops from storage")
 	}

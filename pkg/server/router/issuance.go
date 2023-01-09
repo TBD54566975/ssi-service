@@ -40,7 +40,7 @@ func (ir IssuanceRouter) GetIssuanceTemplate(ctx context.Context, w http.Respons
 			util.LoggingNewError("cannot get issuance template without an ID"), http.StatusBadRequest)
 	}
 
-	issuanceTemplate, err := ir.service.GetIssuanceTemplate(&issuing.GetIssuanceTemplateRequest{ID: *id})
+	issuanceTemplate, err := ir.service.GetIssuanceTemplate(ctx, &issuing.GetIssuanceTemplateRequest{ID: *id})
 	if err != nil {
 		return framework.NewRequestError(
 			util.LoggingErrorMsg(err, "getting issuance template"), http.StatusInternalServerError)
@@ -104,7 +104,7 @@ func (ir IssuanceRouter) DeleteIssuanceTemplate(ctx context.Context, w http.Resp
 			util.LoggingNewError("cannot delete an issuance template without an ID parameter"), http.StatusBadRequest)
 	}
 
-	if err := ir.service.DeleteIssuanceTemplate(&issuing.DeleteIssuanceTemplateRequest{ID: *id}); err != nil {
+	if err := ir.service.DeleteIssuanceTemplate(ctx, &issuing.DeleteIssuanceTemplateRequest{ID: *id}); err != nil {
 		return framework.NewRequestError(
 			util.LoggingErrorMsgf(err, "could not delete issuance template with id: %s", *id), http.StatusInternalServerError)
 	}
@@ -127,7 +127,7 @@ type ListIssuanceTemplatesResponse struct {
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests [get]
 func (ir IssuanceRouter) ListIssuanceTemplates(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	gotManifests, err := ir.service.ListIssuanceTemplates(&issuing.ListIssuanceTemplatesRequest{})
+	gotManifests, err := ir.service.ListIssuanceTemplates(ctx, &issuing.ListIssuanceTemplatesRequest{})
 
 	if err != nil {
 		return framework.NewRequestError(

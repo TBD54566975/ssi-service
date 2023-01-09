@@ -106,10 +106,10 @@ func (s Service) CreatePresentationDefinition(ctx context.Context, request model
 	}, nil
 }
 
-func (s Service) GetPresentationDefinition(request model.GetPresentationDefinitionRequest) (*model.GetPresentationDefinitionResponse, error) {
+func (s Service) GetPresentationDefinition(ctx context.Context, request model.GetPresentationDefinitionRequest) (*model.GetPresentationDefinitionResponse, error) {
 	logrus.Debugf("getting presentation definition: %s", request.ID)
 
-	storedPresentation, err := s.storage.GetPresentation(request.ID)
+	storedPresentation, err := s.storage.GetPresentation(ctx, request.ID)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "error getting presentation definition: %s", request.ID)
 	}
@@ -119,10 +119,10 @@ func (s Service) GetPresentationDefinition(request model.GetPresentationDefiniti
 	return &model.GetPresentationDefinitionResponse{ID: storedPresentation.ID, PresentationDefinition: storedPresentation.PresentationDefinition}, nil
 }
 
-func (s Service) DeletePresentationDefinition(request model.DeletePresentationDefinitionRequest) error {
+func (s Service) DeletePresentationDefinition(ctx context.Context, request model.DeletePresentationDefinitionRequest) error {
 	logrus.Debugf("deleting presentation definition: %s", request.ID)
 
-	if err := s.storage.DeletePresentation(request.ID); err != nil {
+	if err := s.storage.DeletePresentation(ctx, request.ID); err != nil {
 		return util.LoggingNewErrorf("could not delete presentation definition with id: %s", request.ID)
 	}
 
@@ -148,11 +148,11 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 		return nil, errors.Wrap(err, "verifying token from did")
 	}
 
-	if _, err := s.storage.GetSubmission(request.Submission.ID); !errors.Is(err, presentationstorage.ErrSubmissionNotFound) {
+	if _, err := s.storage.GetSubmission(ctx, request.Submission.ID); !errors.Is(err, presentationstorage.ErrSubmissionNotFound) {
 		return nil, errors.Errorf("submission with id %s already present", request.Submission.ID)
 	}
 
-	definition, err := s.storage.GetPresentation(request.Submission.DefinitionID)
+	definition, err := s.storage.GetPresentation(ctx, request.Submission.DefinitionID)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting presentation definition")
 	}
@@ -162,12 +162,12 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 			return nil, errors.Errorf("invalid credential %+v", cred)
 		}
 		if cred.CredentialJWT != nil {
-			if err := s.verifier.VerifyJWTCredential(*cred.CredentialJWT); err != nil {
+			if err := s.verifier.VerifyJWTCredential(ctx, *cred.CredentialJWT); err != nil {
 				return nil, errors.Wrapf(err, "verifying jwt credential %s", cred.CredentialJWT)
 			}
 		} else {
 			if cred.HasDataIntegrityCredential() {
-				if err := s.verifier.VerifyDataIntegrityCredential(*cred.Credential); err != nil {
+				if err := s.verifier.VerifyDataIntegrityCredential(ctx, *cred.Credential); err != nil {
 					return nil, errors.Wrapf(err, "verifying data integrity credential %+v", cred.Credential)
 				}
 			}
@@ -203,10 +203,10 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 	}, nil
 }
 
-func (s Service) GetSubmission(request model.GetSubmissionRequest) (*model.GetSubmissionResponse, error) {
+func (s Service) GetSubmission(ctx context.Context, request model.GetSubmissionRequest) (*model.GetSubmissionResponse, error) {
 	logrus.Debugf("getting presentation submission: %s", request.ID)
 
-	storedSubmission, err := s.storage.GetSubmission(request.ID)
+	storedSubmission, err := s.storage.GetSubmission(ctx, request.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching from storage")
 	}
@@ -215,10 +215,10 @@ func (s Service) GetSubmission(request model.GetSubmissionRequest) (*model.GetSu
 	}, nil
 }
 
-func (s Service) ListSubmissions(request model.ListSubmissionRequest) (*model.ListSubmissionResponse, error) {
+func (s Service) ListSubmissions(ctx context.Context, request model.ListSubmissionRequest) (*model.ListSubmissionResponse, error) {
 	logrus.Debug("listing presentation submissions")
 
-	subs, err := s.storage.ListSubmissions(request.Filter)
+	subs, err := s.storage.ListSubmissions(ctx, request.Filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching submissions from storage")
 	}
@@ -232,12 +232,12 @@ func (s Service) ListSubmissions(request model.ListSubmissionRequest) (*model.Li
 	return resp, nil
 }
 
-func (s Service) ReviewSubmission(request model.ReviewSubmissionRequest) (*model.Submission, error) {
+func (s Service) ReviewSubmission(ctx context.Context, request model.ReviewSubmissionRequest) (*model.Submission, error) {
 	if err := request.Validate(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
-	updatedSubmission, _, err := s.storage.UpdateSubmission(request.ID, request.Approved, request.Reason, submission.IDFromSubmissionID(request.ID))
+	updatedSubmission, _, err := s.storage.UpdateSubmission(ctx, request.ID, request.Approved, request.Reason, submission.IDFromSubmissionID(request.ID))
 	if err != nil {
 		return nil, errors.Wrap(err, "updating submission")
 	}

@@ -24,12 +24,13 @@ type Storage struct {
 	db storage.ServiceStorage
 }
 
-func (b Storage) CancelOperation(id string) (*opstorage.StoredOperation, error) {
+func (b Storage) CancelOperation(ctx context.Context, id string) (*opstorage.StoredOperation, error) {
 	var opData []byte
 	var err error
 	switch {
 	case strings.HasPrefix(id, submission.ParentResource):
 		_, opData, err = b.db.UpdateValueAndOperation(
+			ctx,
 			submission.Namespace, opstorage.StatusObjectID(id), storage.NewUpdater(map[string]any{
 				"status": submission.StatusCancelled,
 				"reason": cancelledReason,
@@ -41,6 +42,7 @@ func (b Storage) CancelOperation(id string) (*opstorage.StoredOperation, error) 
 			})
 	case strings.HasPrefix(id, credential.ParentResource):
 		_, opData, err = b.db.UpdateValueAndOperation(
+			ctx,
 			credential.ApplicationNamespace, opstorage.StatusObjectID(id), storage.NewUpdater(map[string]any{
 				"status": credential.StatusCancelled,
 				"reason": cancelledReason,
@@ -80,9 +82,9 @@ func (b Storage) StoreOperation(ctx context.Context, op opstorage.StoredOperatio
 	return nil
 }
 
-func (b Storage) GetOperation(id string) (opstorage.StoredOperation, error) {
+func (b Storage) GetOperation(ctx context.Context, id string) (opstorage.StoredOperation, error) {
 	var stored opstorage.StoredOperation
-	jsonBytes, err := b.db.Read(namespace.FromID(id), id)
+	jsonBytes, err := b.db.Read(ctx, namespace.FromID(id), id)
 	if err != nil {
 		return stored, util.LoggingErrorMsgf(err, "reading operation with id: %s", id)
 	}
@@ -95,8 +97,8 @@ func (b Storage) GetOperation(id string) (opstorage.StoredOperation, error) {
 	return stored, nil
 }
 
-func (b Storage) GetOperations(parent string, filter filtering.Filter) ([]opstorage.StoredOperation, error) {
-	operations, err := b.db.ReadAll(namespace.FromParent(parent))
+func (b Storage) GetOperations(ctx context.Context, parent string, filter filtering.Filter) ([]opstorage.StoredOperation, error) {
+	operations, err := b.db.ReadAll(ctx, namespace.FromParent(parent))
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get all operations")
 	}
@@ -120,8 +122,8 @@ func (b Storage) GetOperations(parent string, filter filtering.Filter) ([]opstor
 	return stored, nil
 }
 
-func (b Storage) DeleteOperation(id string) error {
-	if err := b.db.Delete(namespace.FromID(id), id); err != nil {
+func (b Storage) DeleteOperation(ctx context.Context, id string) error {
+	if err := b.db.Delete(ctx, namespace.FromID(id), id); err != nil {
 		return util.LoggingErrorMsgf(err, "deleting operation: %s", id)
 	}
 	return nil

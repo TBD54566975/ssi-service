@@ -129,7 +129,7 @@ func (mr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter,
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotManifest, err := mr.service.GetManifest(model.GetManifestRequest{ID: *id})
+	gotManifest, err := mr.service.GetManifest(ctx, model.GetManifestRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get manifest with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -162,7 +162,7 @@ type GetManifestsResponse struct {
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests [get]
 func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	gotManifests, err := mr.service.GetManifests()
+	gotManifests, err := mr.service.GetManifests(ctx)
 
 	if err != nil {
 		errMsg := "could not get manifests"
@@ -202,7 +202,7 @@ func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := mr.service.DeleteManifest(model.DeleteManifestRequest{ID: *id}); err != nil {
+	if err := mr.service.DeleteManifest(ctx, model.DeleteManifestRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete manifest with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
@@ -347,7 +347,7 @@ func (mr ManifestRouter) GetApplication(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotApplication, err := mr.service.GetApplication(model.GetApplicationRequest{ID: *id})
+	gotApplication, err := mr.service.GetApplication(ctx, model.GetApplicationRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get application with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -376,7 +376,7 @@ type GetApplicationsResponse struct {
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests/applications [get]
 func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	gotApplications, err := mr.service.GetApplications()
+	gotApplications, err := mr.service.GetApplications(ctx)
 
 	if err != nil {
 		errMsg := "could not get applications"
@@ -410,7 +410,7 @@ func (mr ManifestRouter) DeleteApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := mr.service.DeleteApplication(model.DeleteApplicationRequest{ID: *id}); err != nil {
+	if err := mr.service.DeleteApplication(ctx, model.DeleteApplicationRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete application with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
@@ -442,7 +442,7 @@ func (mr ManifestRouter) GetResponse(ctx context.Context, w http.ResponseWriter,
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotResponse, err := mr.service.GetResponse(model.GetResponseRequest{ID: *id})
+	gotResponse, err := mr.service.GetResponse(ctx, model.GetResponseRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get response with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -471,7 +471,7 @@ type GetResponsesResponse struct {
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests/responses [get]
 func (mr ManifestRouter) GetResponses(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	gotResponses, err := mr.service.GetResponses()
+	gotResponses, err := mr.service.GetResponses(ctx)
 
 	if err != nil {
 		errMsg := "could not get responses"
@@ -505,7 +505,7 @@ func (mr ManifestRouter) DeleteResponse(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := mr.service.DeleteResponse(model.DeleteResponseRequest{ID: *id}); err != nil {
+	if err := mr.service.DeleteResponse(ctx, model.DeleteResponseRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete response with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
