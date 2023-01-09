@@ -181,19 +181,19 @@ func TestDBEmptyNamespace(t *testing.T) {
 		namespace := "dne"
 		key := "doesnotexist"
 
-		prefixValues, err := db.ReadPrefix(namespace, key)
+		prefixValues, err := db.ReadPrefix(context.Background(), namespace, key)
 		assert.NoError(t, err)
 		assert.Len(t, prefixValues, 0)
 
-		allKeys, err := db.ReadAllKeys(namespace)
+		allKeys, err := db.ReadAllKeys(context.Background(), namespace)
 		assert.NoError(t, err)
 		assert.Len(t, allKeys, 0)
 
-		allValues, err := db.ReadAll(namespace)
+		allValues, err := db.ReadAll(context.Background(), namespace)
 		assert.NoError(t, err)
 		assert.Len(t, allValues, 0)
 
-		value, err := db.Read(namespace, key)
+		value, err := db.Read(context.Background(), namespace, key)
 		assert.NoError(t, err)
 		assert.Nil(t, value)
 	}
