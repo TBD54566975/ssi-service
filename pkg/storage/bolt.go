@@ -90,7 +90,7 @@ func (b *BoltDB) Read(namespace, key string) ([]byte, error) {
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
 		if bucket == nil {
-			logrus.Infof("namespace<%s> does not exist", namespace)
+			logrus.Warnf("namespace<%s> does not exist", namespace)
 			return nil
 		}
 		result = bucket.Get([]byte(key))
@@ -105,9 +105,8 @@ func (b *BoltDB) ReadPrefix(namespace, prefix string) (map[string][]byte, error)
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
 		if bucket == nil {
-			errMsg := fmt.Sprintf("namespace<%s> does not exist", namespace)
-			logrus.Error(errMsg)
-			return errors.New(errMsg)
+			logrus.Warnf("namespace<%s> does not exist", namespace)
+			return nil
 		}
 		cursor := bucket.Cursor()
 		prefix := []byte(prefix)
@@ -124,7 +123,7 @@ func (b *BoltDB) ReadAll(namespace string) (map[string][]byte, error) {
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
 		if bucket == nil {
-			logrus.Errorf("namespace<%s> does not exist", namespace)
+			logrus.Warnf("namespace<%s> does not exist", namespace)
 			return nil
 		}
 		cursor := bucket.Cursor()
@@ -141,7 +140,8 @@ func (b *BoltDB) ReadAllKeys(namespace string) ([]string, error) {
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
 		if bucket == nil {
-			return util.LoggingNewErrorf("namespace<%s> does not exist", namespace)
+			logrus.Warnf("namespace<%s> does not exist", namespace)
+			return nil
 		}
 		cursor := bucket.Cursor()
 		for k, _ := cursor.First(); k != nil; k, _ = cursor.Next() {
