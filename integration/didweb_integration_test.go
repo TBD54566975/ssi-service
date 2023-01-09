@@ -47,7 +47,7 @@ func TestCreateAliceDIDWebIntegration(t *testing.T) {
 
 }
 
-func TestDidWebCreateSchemaIntegration(t *testing.T) {
+func TestDIDWebCreateSchemaIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
@@ -62,7 +62,7 @@ func TestDidWebCreateSchemaIntegration(t *testing.T) {
 	assert.NotEmpty(t, schemaID)
 }
 
-func TestDidWebCreateVerifiableCredentialIntegration(t *testing.T) {
+func TestDIDWebCreateVerifiableCredentialIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
@@ -89,7 +89,7 @@ func TestDidWebCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NotEmpty(t, credentialJWT)
 }
 
-func TestDidWebCreateCredentialManifestIntegration(t *testing.T) {
+func TestDIDWebCreateCredentialManifestIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
@@ -119,7 +119,7 @@ func TestDidWebCreateCredentialManifestIntegration(t *testing.T) {
 	assert.NotEmpty(t, manifestID)
 }
 
-func TestDidWebSubmitAndReviewApplicationIntegration(t *testing.T) {
+func TestDIDWebSubmitAndReviewApplicationIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
