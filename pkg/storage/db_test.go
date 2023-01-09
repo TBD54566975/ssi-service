@@ -173,6 +173,31 @@ func TestDBPrefixAndKeys(t *testing.T) {
 	}
 }
 
+func TestDBEmptyNamespace(t *testing.T) {
+	for _, dbImpl := range getDBImplementations(t) {
+		db := dbImpl
+
+		namespace := "dne"
+		key := "doesnotexist"
+
+		prefixValues, err := db.ReadPrefix(namespace, key)
+		assert.NoError(t, err)
+		assert.Len(t, prefixValues, 0)
+
+		allKeys, err := db.ReadAllKeys(namespace)
+		assert.NoError(t, err)
+		assert.Len(t, allKeys, 0)
+
+		allValues, err := db.ReadAll(namespace)
+		assert.NoError(t, err)
+		assert.Len(t, allValues, 0)
+
+		value, err := db.Read(namespace, key)
+		assert.NoError(t, err)
+		assert.Nil(t, value)
+	}
+}
+
 type testStruct struct {
 	Status int    `json:"status"`
 	Reason string `json:"reason"`
