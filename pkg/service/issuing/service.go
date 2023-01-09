@@ -1,6 +1,8 @@
 package issuing
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/config"
@@ -50,7 +52,7 @@ func (s *Service) GetIssuanceTemplate(request *GetIssuanceTemplateRequest) (*Get
 		IssuanceTemplate: serviceModel(*storedIssuanceTemplate)}, nil
 }
 
-func (s *Service) CreateIssuanceTemplate(request *CreateIssuanceTemplateRequest) (*IssuanceTemplate, error) {
+func (s *Service) CreateIssuanceTemplate(ctx context.Context, request *CreateIssuanceTemplateRequest) (*IssuanceTemplate, error) {
 	if !request.IsValid() {
 		return nil, errors.New("invalid create issuance template request")
 	}
@@ -78,7 +80,7 @@ func (s *Service) CreateIssuanceTemplate(request *CreateIssuanceTemplateRequest)
 	}
 	storedTemplate.IssuanceTemplate.ID = uuid.NewString()
 
-	if err := s.storage.StoreIssuanceTemplate(storedTemplate); err != nil {
+	if err := s.storage.StoreIssuanceTemplate(ctx, storedTemplate); err != nil {
 		return nil, errors.Wrap(err, "storing issuance template")
 	}
 

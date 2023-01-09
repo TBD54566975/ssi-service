@@ -1,6 +1,7 @@
 package presentation
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
@@ -99,7 +100,7 @@ func NewPresentationStorage(db storage.ServiceStorage) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (ps *Storage) StorePresentation(presentation StoredPresentation) error {
+func (ps *Storage) StorePresentation(ctx context.Context, presentation StoredPresentation) error {
 	id := presentation.ID
 	if id == "" {
 		err := errors.New("could not store presentation definition without an ID")
@@ -112,7 +113,7 @@ func (ps *Storage) StorePresentation(presentation StoredPresentation) error {
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)
 	}
-	return ps.db.Write(presentationDefinitionNamespace, id, jsonBytes)
+	return ps.db.Write(ctx, presentationDefinitionNamespace, id, jsonBytes)
 }
 
 func (ps *Storage) GetPresentation(id string) (*StoredPresentation, error) {
@@ -137,7 +138,7 @@ func (ps *Storage) DeletePresentation(id string) error {
 	return nil
 }
 
-func (ps Storage) StoreSubmission(s prestorage.StoredSubmission) error {
+func (ps Storage) StoreSubmission(ctx context.Context, s prestorage.StoredSubmission) error {
 	id := s.Submission.ID
 	if id == "" {
 		err := errors.New("could not store submission definition without an ID")
@@ -148,7 +149,7 @@ func (ps Storage) StoreSubmission(s prestorage.StoredSubmission) error {
 	if err != nil {
 		return util.LoggingNewErrorf("could not store submission definition: %s", id)
 	}
-	return ps.db.Write(opsubmission.Namespace, id, jsonBytes)
+	return ps.db.Write(ctx, opsubmission.Namespace, id, jsonBytes)
 }
 
 func (ps *Storage) GetSubmission(id string) (*prestorage.StoredSubmission, error) {

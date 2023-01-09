@@ -2,6 +2,7 @@ package storage
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -72,7 +73,7 @@ func (b *BoltDB) Close() error {
 	return b.db.Close()
 }
 
-func (b *BoltDB) Write(namespace string, key string, value []byte) error {
+func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value []byte) error {
 	return b.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists([]byte(namespace))
 		if err != nil {

@@ -76,7 +76,7 @@ func (pr PresentationRouter) CreatePresentationDefinition(ctx context.Context, w
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
-	serviceResp, err := pr.service.CreatePresentationDefinition(model.CreatePresentationDefinitionRequest{PresentationDefinition: *def})
+	serviceResp, err := pr.service.CreatePresentationDefinition(ctx, model.CreatePresentationDefinitionRequest{PresentationDefinition: *def})
 	if err != nil {
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
@@ -244,7 +244,7 @@ func (pr PresentationRouter) CreateSubmission(ctx context.Context, w http.Respon
 			util.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
 	}
 
-	operation, err := pr.service.CreateSubmission(*req)
+	operation, err := pr.service.CreateSubmission(ctx, *req)
 	if err != nil {
 		return framework.NewRequestError(
 			util.LoggingErrorMsg(err, "cannot create submission"), http.StatusInternalServerError)

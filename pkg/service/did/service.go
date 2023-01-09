@@ -1,6 +1,7 @@
 package did
 
 import (
+	"context"
 	"fmt"
 
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
@@ -97,7 +98,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 
 // MethodHandler describes the functionality of *all* possible DID service, regardless of method
 type MethodHandler interface {
-	CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error)
+	CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error)
 	GetDID(request GetDIDRequest) (*GetDIDResponse, error)
 	GetDIDs(method didsdk.Method) (*GetDIDsResponse, error)
 }
@@ -137,12 +138,12 @@ func (s *Service) GetSupportedMethods() GetSupportedMethodsResponse {
 	return GetSupportedMethodsResponse{Methods: methods}
 }
 
-func (s *Service) CreateDIDByMethod(request CreateDIDRequest) (*CreateDIDResponse, error) {
+func (s *Service) CreateDIDByMethod(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
 	}
-	return handler.CreateDID(request)
+	return handler.CreateDID(ctx, request)
 }
 
 func (s *Service) GetDIDByMethod(request GetDIDRequest) (*GetDIDResponse, error) {

@@ -77,7 +77,7 @@ func (ir IssuanceRouter) CreateIssuanceTemplate(ctx context.Context, w http.Resp
 			util.LoggingErrorMsg(err, errMsg), http.StatusBadRequest)
 	}
 
-	template, err := ir.service.CreateIssuanceTemplate(request.ToServiceRequest())
+	template, err := ir.service.CreateIssuanceTemplate(ctx, request.ToServiceRequest())
 	if err != nil {
 		return framework.NewRequestError(
 			util.LoggingErrorMsg(err, "creating issuance template"), http.StatusInternalServerError)

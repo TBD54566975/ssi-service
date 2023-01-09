@@ -94,7 +94,7 @@ func (mr ManifestRouter) CreateManifest(ctx context.Context, w http.ResponseWrit
 	}
 
 	req := request.ToServiceRequest()
-	createManifestResponse, err := mr.service.CreateManifest(req)
+	createManifestResponse, err := mr.service.CreateManifest(ctx, req)
 	if err != nil {
 		errMsg := "could not create manifest"
 		logrus.WithError(err).Error(errMsg)
@@ -314,7 +314,7 @@ func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	op, err := mr.service.ProcessApplicationSubmission(*req)
+	op, err := mr.service.ProcessApplicationSubmission(ctx, *req)
 	if err != nil {
 		errMsg := "could not submit application"
 		logrus.WithError(err).Error(errMsg)

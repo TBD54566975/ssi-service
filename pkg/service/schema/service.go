@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -81,7 +82,7 @@ func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorag
 // CreateSchema houses the main service logic for schema creation. It validates the input, and
 // produces a schema value that conforms with the VC JSON JSONSchema specification.
 // TODO(gabe) support data integrity proof generation on schemas, versioning, and more
-func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaResponse, error) {
+func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) (*CreateSchemaResponse, error) {
 
 	logrus.Debugf("creating schema: %+v", request)
 
@@ -120,7 +121,7 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 		storedSchema.SchemaJWT = signedSchema
 	}
 
-	if err = s.storage.StoreSchema(storedSchema); err != nil {
+	if err = s.storage.StoreSchema(ctx, storedSchema); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store schema")
 	}
 

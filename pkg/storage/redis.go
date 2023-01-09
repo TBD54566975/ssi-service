@@ -64,10 +64,10 @@ func (b *RedisDB) Close() error {
 	return b.db.Close()
 }
 
-func (b *RedisDB) Write(namespace, key string, value []byte) error {
+func (b *RedisDB) Write(ctx context.Context, namespace, key string, value []byte) error {
 	nameSpaceKey := getRedisKey(namespace, key)
 	// Zero expiration means the key has no expiration time.
-	return b.db.Set(b.ctx, nameSpaceKey, value, 0).Err()
+	return b.db.Set(ctx, nameSpaceKey, value, 0).Err()
 }
 
 func (b *RedisDB) WriteMany(namespaces, keys []string, values [][]byte) error {

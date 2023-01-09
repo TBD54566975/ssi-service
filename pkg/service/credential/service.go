@@ -1,6 +1,7 @@
 package credential
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -88,7 +89,7 @@ func NewCredentialService(config config.CredentialServiceConfig, s storage.Servi
 	return &service, nil
 }
 
-func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCredentialResponse, error) {
+func (s Service) CreateCredential(ctx context.Context, request CreateCredentialRequest) (*CreateCredentialResponse, error) {
 
 	logrus.Debugf("creating credential: %+v", request)
 
@@ -154,12 +155,12 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		issuerID := request.Issuer
 		schemaID := request.JSONSchema
 
-		statusListCredential, err := getStatusListCredential(s, issuerID, schemaID)
+		statusListCredential, err := getStatusListCredential(ctx, s, issuerID, schemaID)
 		if err != nil {
 			return nil, util.LoggingErrorMsgf(err, "problem with getting status list credential")
 		}
 
-		statusListIndex, err := s.storage.GetNextStatusListRandomIndex()
+		statusListIndex, err := s.storage.GetNextStatusListRandomIndex(ctx)
 		if err != nil {
 			return nil, util.LoggingErrorMsg(err, "problem with getting status list index")
 		}
@@ -208,7 +209,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		Container: container,
 	}
 
-	if err = s.storage.StoreCredential(storageRequest); err != nil {
+	if err = s.storage.StoreCredential(ctx, storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store credential")
 	}
 
@@ -217,7 +218,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	return &response, nil
 }
 
-func getStatusListCredential(s Service, issuerID string, schemaID string) (*credential.VerifiableCredential, error) {
+func getStatusListCredential(ctx context.Context, s Service, issuerID string, schemaID string) (*credential.VerifiableCredential, error) {
 	storedStatusListCreds, err := s.storage.GetStatusListCredentialsByIssuerAndSchema(issuerID, schemaID)
 	if err != nil {
 		return nil, util.LoggingNewErrorf("problem with getting status list credential for issuer: %s schema: %s", issuerID, schemaID)
@@ -254,7 +255,7 @@ func getStatusListCredential(s Service, issuerID string, schemaID string) (*cred
 			Container: statusListContainer,
 		}
 
-		if err = s.storage.StoreStatusListCredential(storageRequest); err != nil {
+		if err = s.storage.StoreStatusListCredential(ctx, storageRequest); err != nil {
 			return nil, util.LoggingErrorMsg(err, "could not store credential")
 		}
 
@@ -459,7 +460,7 @@ func (s Service) GetCredentialStatusList(request GetCredentialStatusListRequest)
 	return &response, nil
 }
 
-func (s Service) UpdateCredentialStatus(request UpdateCredentialStatusRequest) (*UpdateCredentialStatusResponse, error) {
+func (s Service) UpdateCredentialStatus(ctx context.Context, request UpdateCredentialStatusRequest) (*UpdateCredentialStatusResponse, error) {
 	logrus.Debugf("updating credential status: %s to Revoked: %v", request.ID, request.Revoked)
 
 	gotCred, err := s.storage.GetCredential(request.ID)
@@ -476,7 +477,7 @@ func (s Service) UpdateCredentialStatus(request UpdateCredentialStatusRequest) (
 		return &response, nil
 	}
 
-	container, err := updateCredentialStatus(s, gotCred, request)
+	container, err := updateCredentialStatus(ctx, s, gotCred, request)
 	if err != nil {
 		return nil, util.LoggingNewError("problem updating credential")
 	}
@@ -485,7 +486,7 @@ func (s Service) UpdateCredentialStatus(request UpdateCredentialStatusRequest) (
 	return &response, nil
 }
 
-func updateCredentialStatus(s Service, gotCred *StoredCredential, request UpdateCredentialStatusRequest) (*credint.Container, error) {
+func updateCredentialStatus(ctx context.Context, s Service, gotCred *StoredCredential, request UpdateCredentialStatusRequest) (*credint.Container, error) {
 	// store the credential with updated status
 	container := credint.Container{
 		ID:            gotCred.ID,
@@ -498,7 +499,7 @@ func updateCredentialStatus(s Service, gotCred *StoredCredential, request Update
 		Container: container,
 	}
 
-	if err := s.storage.StoreCredential(storageRequest); err != nil {
+	if err := s.storage.StoreCredential(ctx, storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store credential")
 	}
 
@@ -541,7 +542,7 @@ func updateCredentialStatus(s Service, gotCred *StoredCredential, request Update
 		Container: statusListContainer,
 	}
 
-	if err = s.storage.StoreStatusListCredential(storageRequest); err != nil {
+	if err = s.storage.StoreStatusListCredential(ctx, storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store credential status list")
 	}
 

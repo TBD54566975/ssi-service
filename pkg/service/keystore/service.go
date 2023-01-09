@@ -1,6 +1,7 @@
 package keystore
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -70,7 +71,7 @@ func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceSt
 	return &service, nil
 }
 
-func (s Service) StoreKey(request StoreKeyRequest) error {
+func (s Service) StoreKey(ctx context.Context, request StoreKeyRequest) error {
 
 	logrus.Debugf("storing key: %+v", request)
 
@@ -87,7 +88,7 @@ func (s Service) StoreKey(request StoreKeyRequest) error {
 		Base58Key:  request.PrivateKeyBase58,
 		CreatedAt:  time.Now().Format(time.RFC3339),
 	}
-	if err := s.storage.StoreKey(key); err != nil {
+	if err := s.storage.StoreKey(ctx, key); err != nil {
 		return util.LoggingErrorMsgf(err, "could not store key: %s", request.ID)
 	}
 	return nil

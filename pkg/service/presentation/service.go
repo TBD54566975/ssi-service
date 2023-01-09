@@ -1,6 +1,7 @@
 package presentation
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
@@ -83,7 +84,7 @@ func NewPresentationService(config config.PresentationServiceConfig, s storage.S
 
 // CreatePresentationDefinition houses the main service logic for presentation definition creation. It validates the input, and
 // produces a presentation definition value that conforms with the PresentationDefinition specification.
-func (s Service) CreatePresentationDefinition(request model.CreatePresentationDefinitionRequest) (*model.CreatePresentationDefinitionResponse, error) {
+func (s Service) CreatePresentationDefinition(ctx context.Context, request model.CreatePresentationDefinitionRequest) (*model.CreatePresentationDefinitionResponse, error) {
 	logrus.Debugf("creating presentation definition: %+v", request)
 
 	if !request.IsValid() {
@@ -96,7 +97,7 @@ func (s Service) CreatePresentationDefinition(request model.CreatePresentationDe
 
 	storedPresentation := StoredPresentation{ID: request.PresentationDefinition.ID, PresentationDefinition: request.PresentationDefinition}
 
-	if err := s.storage.StorePresentation(storedPresentation); err != nil {
+	if err := s.storage.StorePresentation(ctx, storedPresentation); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store presentation")
 	}
 
@@ -130,7 +131,7 @@ func (s Service) DeletePresentationDefinition(request model.DeletePresentationDe
 
 // CreateSubmission houses the main service logic for presentation submission creation. It validates the input, and
 // produces a presentation submission value that conforms with the Submission specification.
-func (s Service) CreateSubmission(request model.CreateSubmissionRequest) (*operation.Operation, error) {
+func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmissionRequest) (*operation.Operation, error) {
 	if !request.IsValid() {
 		return nil, errors.Errorf("invalid create presentation submission request: %+v", request)
 	}
@@ -183,7 +184,7 @@ func (s Service) CreateSubmission(request model.CreateSubmissionRequest) (*opera
 	}
 
 	// TODO(andres): IO requests should be done in parallel, once we have context wired up.
-	if err := s.storage.StoreSubmission(storedSubmission); err != nil {
+	if err := s.storage.StoreSubmission(ctx, storedSubmission); err != nil {
 		return nil, errors.Wrap(err, "could not store presentation")
 	}
 
@@ -192,7 +193,7 @@ func (s Service) CreateSubmission(request model.CreateSubmissionRequest) (*opera
 		ID:   opID,
 		Done: false,
 	}
-	if err := s.opsStorage.StoreOperation(storedOp); err != nil {
+	if err := s.opsStorage.StoreOperation(ctx, storedOp); err != nil {
 		return nil, errors.Wrap(err, "could not store operation")
 	}
 

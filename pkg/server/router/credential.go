@@ -97,7 +97,7 @@ func (cr CredentialRouter) CreateCredential(ctx context.Context, w http.Response
 	}
 
 	req := request.ToServiceRequest()
-	createCredentialResponse, err := cr.service.CreateCredential(req)
+	createCredentialResponse, err := cr.service.CreateCredential(ctx, req)
 	if err != nil {
 		errMsg := "could not create credential"
 		logrus.WithError(err).Error(errMsg)
@@ -272,7 +272,7 @@ func (cr CredentialRouter) UpdateCredentialStatus(ctx context.Context, w http.Re
 	}
 
 	req := request.ToServiceRequest(*id)
-	gotCredential, err := cr.service.UpdateCredentialStatus(req)
+	gotCredential, err := cr.service.UpdateCredentialStatus(ctx, req)
 
 	if err != nil {
 		errMsg := fmt.Sprintf("could not update credential with id: %s", req.ID)

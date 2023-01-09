@@ -1,6 +1,8 @@
 package issuing
 
 import (
+	"context"
+
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -25,7 +27,7 @@ type StoredIssuanceTemplate struct {
 	IssuanceTemplate IssuanceTemplate
 }
 
-func (s Storage) StoreIssuanceTemplate(template StoredIssuanceTemplate) error {
+func (s Storage) StoreIssuanceTemplate(ctx context.Context, template StoredIssuanceTemplate) error {
 	if template.IssuanceTemplate.ID == "" {
 		return errors.New("cannot store issuance template without an ID")
 	}
@@ -33,7 +35,7 @@ func (s Storage) StoreIssuanceTemplate(template StoredIssuanceTemplate) error {
 	if err != nil {
 		return errors.Wrap(err, "marshalling template")
 	}
-	return s.db.Write(namespace, template.IssuanceTemplate.ID, data)
+	return s.db.Write(ctx, namespace, template.IssuanceTemplate.ID, data)
 }
 
 func (s Storage) GetIssuanceTemplate(id string) (*StoredIssuanceTemplate, error) {

@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
@@ -91,7 +92,7 @@ type CredentialManifestContainer struct {
 	Manifest manifest.CredentialManifest `json:"credential_manifest"`
 }
 
-func (s Service) CreateManifest(request model.CreateManifestRequest) (*model.CreateManifestResponse, error) {
+func (s Service) CreateManifest(ctx context.Context, request model.CreateManifestRequest) (*model.CreateManifestResponse, error) {
 
 	logrus.Debugf("creating manifest: %+v", request)
 
@@ -158,7 +159,7 @@ func (s Service) CreateManifest(request model.CreateManifestRequest) (*model.Cre
 		ManifestJWT: *manifestJWT,
 	}
 
-	if err = s.storage.StoreManifest(storageRequest); err != nil {
+	if err = s.storage.StoreManifest(ctx, storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store manifest")
 	}
 
@@ -227,7 +228,7 @@ type CredentialResponseContainer struct {
 	Credentials []any                       `json:"verifiableCredentials,omitempty"`
 }
 
-func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationRequest) (*operation.Operation, error) {
+func (s Service) ProcessApplicationSubmission(ctx context.Context, request model.SubmitApplicationRequest) (*operation.Operation, error) {
 	// get the manifest associated with the application
 	manifestID := request.Application.ManifestID
 	gotManifest, err := s.storage.GetManifest(manifestID)
@@ -258,7 +259,7 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 				Done:     true,
 				Response: sarData,
 			}
-			if err := s.opsStorage.StoreOperation(storedOp); err != nil {
+			if err := s.opsStorage.StoreOperation(ctx, storedOp); err != nil {
 				return nil, errors.Wrap(err, "storing operation")
 			}
 
@@ -278,12 +279,12 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 		Credentials:    request.Credentials,
 		ApplicationJWT: request.ApplicationJWT,
 	}
-	if err = s.storage.StoreApplication(storageRequest); err != nil {
+	if err = s.storage.StoreApplication(ctx, storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store application")
 	}
 
 	// build the credential response
-	credResp, creds, err := s.buildCredentialResponse(applicantDID, manifestID, applicationID, credManifest)
+	credResp, creds, err := s.buildCredentialResponse(ctx, applicantDID, manifestID, applicationID, credManifest)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not build credential response")
 	}
@@ -309,7 +310,7 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 		Credentials:  creds,
 		ResponseJWT:  *responseJWT,
 	}
-	if err = s.storage.StoreResponse(storeResponseRequest); err != nil {
+	if err = s.storage.StoreResponse(ctx, storeResponseRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store manifest response")
 	}
 
@@ -322,7 +323,7 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 		Done:     true,
 		Response: sarData,
 	}
-	if err = s.opsStorage.StoreOperation(storedOp); err != nil {
+	if err = s.opsStorage.StoreOperation(ctx, storedOp); err != nil {
 		return nil, errors.Wrap(err, "storing operation")
 	}
 	return operation.ServiceModel(storedOp)

@@ -1,6 +1,7 @@
 package operation
 
 import (
+	"context"
 	"strings"
 
 	"github.com/goccy/go-json"
@@ -64,7 +65,7 @@ func (b Storage) CancelOperation(id string) (*opstorage.StoredOperation, error) 
 	return &op, nil
 }
 
-func (b Storage) StoreOperation(op opstorage.StoredOperation) error {
+func (b Storage) StoreOperation(ctx context.Context, op opstorage.StoredOperation) error {
 	id := op.ID
 	if id == "" {
 		return util.LoggingNewError("ID is required for storing operations")
@@ -73,7 +74,7 @@ func (b Storage) StoreOperation(op opstorage.StoredOperation) error {
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "marshalling operation with id: %s", id)
 	}
-	if err = b.db.Write(namespace.FromID(id), id, jsonBytes); err != nil {
+	if err = b.db.Write(ctx, namespace.FromID(id), id, jsonBytes); err != nil {
 		return util.LoggingErrorMsg(err, "writing to db")
 	}
 	return nil

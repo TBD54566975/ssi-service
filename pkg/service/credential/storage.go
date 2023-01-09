@@ -1,6 +1,7 @@
 package credential
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -78,32 +79,13 @@ func NewCredentialStorage(db storage.ServiceStorage) (*Storage, error) {
 		return nil, errors.New("bolt db reference is nil")
 	}
 
-	// TODO: (Neal) there is a current bug with our Bolt implementation where if we do a GET without anything in the db it will throw an error
-	// Doing initial writes and then deleting will "warm up" our database and when we do a GET after that it will not crash and return empty list
-	// https://github.com/TBD54566975/ssi-service/issues/176
-	if err := db.Write(credentialNamespace, fakeKey, nil); err != nil {
-		return nil, util.LoggingErrorMsg(err, "problem writing status initial write to db")
-
-	}
-	if err := db.Delete(credentialNamespace, fakeKey); err != nil {
-		return nil, util.LoggingErrorMsg(err, "problem with initial delete to db")
-	}
-
-	if err := db.Write(statusListCredentialNamespace, fakeKey, nil); err != nil {
-		return nil, util.LoggingErrorMsg(err, "problem writing status initial write to db")
-	}
-
-	if err := db.Delete(statusListCredentialNamespace, fakeKey); err != nil {
-		return nil, util.LoggingErrorMsg(err, "problem with initial delete to db")
-	}
-
 	randUniqueList := randomUniqueNum(bitStringLength)
 	uniqueNumBytes, err := json.Marshal(randUniqueList)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not marshal random unique numbers")
 	}
 
-	if err := db.Write(statusListIndexNamespace, statusListIndexesKey, uniqueNumBytes); err != nil {
+	if err := db.Write(context.Background(), statusListIndexNamespace, statusListIndexesKey, uniqueNumBytes); err != nil {
 		return nil, util.LoggingErrorMsg(err, "problem writing status list indexes to db")
 	}
 
@@ -112,14 +94,14 @@ func NewCredentialStorage(db storage.ServiceStorage) (*Storage, error) {
 		return nil, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
 	}
 
-	if err := db.Write(statusListIndexNamespace, currentListIndexKey, statusListIndexBytes); err != nil {
+	if err := db.Write(context.Background(), statusListIndexNamespace, currentListIndexKey, statusListIndexBytes); err != nil {
 		return nil, util.LoggingErrorMsg(err, "problem writing current list index to db")
 	}
 
 	return &Storage{db: db}, nil
 }
 
-func (cs *Storage) GetNextStatusListRandomIndex() (int, error) {
+func (cs *Storage) GetNextStatusListRandomIndex(ctx context.Context) (int, error) {
 
 	gotUniqueNumBytes, err := cs.db.Read(statusListIndexNamespace, statusListIndexesKey)
 	if err != nil {
@@ -150,22 +132,22 @@ func (cs *Storage) GetNextStatusListRandomIndex() (int, error) {
 		return -1, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
 	}
 
-	if err := cs.db.Write(statusListIndexNamespace, currentListIndexKey, statusListIndexBytes); err != nil {
+	if err := cs.db.Write(ctx, statusListIndexNamespace, currentListIndexKey, statusListIndexBytes); err != nil {
 		return -1, util.LoggingErrorMsg(err, "problem writing current list index to db")
 	}
 
 	return uniqueNums[statusListIndex.Index], nil
 }
 
-func (cs *Storage) StoreCredential(request StoreCredentialRequest) error {
-	return cs.storeCredential(request, credentialNamespace)
+func (cs *Storage) StoreCredential(ctx context.Context, request StoreCredentialRequest) error {
+	return cs.storeCredential(ctx, request, credentialNamespace)
 }
 
-func (cs *Storage) StoreStatusListCredential(request StoreCredentialRequest) error {
-	return cs.storeCredential(request, statusListCredentialNamespace)
+func (cs *Storage) StoreStatusListCredential(ctx context.Context, request StoreCredentialRequest) error {
+	return cs.storeCredential(ctx, request, statusListCredentialNamespace)
 }
 
-func (cs *Storage) storeCredential(request StoreCredentialRequest, namespace string) error {
+func (cs *Storage) storeCredential(ctx context.Context, request StoreCredentialRequest, namespace string) error {
 	if !request.IsValid() {
 		return util.LoggingNewError("store request request is not valid")
 	}
@@ -181,7 +163,7 @@ func (cs *Storage) storeCredential(request StoreCredentialRequest, namespace str
 		return util.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.CredentialID)
 	}
 	// TODO(gabe) conflict checking?
-	return cs.db.Write(namespace, storedCredential.ID, storedCredBytes)
+	return cs.db.Write(ctx, namespace, storedCredential.ID, storedCredBytes)
 }
 
 // buildStoredCredential generically parses a store credential request and returns the object to be stored

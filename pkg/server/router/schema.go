@@ -71,7 +71,7 @@ func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	req := schema.CreateSchemaRequest{Author: request.Author, Name: request.Name, Schema: request.Schema, Sign: request.Sign}
-	createSchemaResponse, err := sr.service.CreateSchema(req)
+	createSchemaResponse, err := sr.service.CreateSchema(ctx, req)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create schema with authoring DID: %s", request.Author)
 		logrus.WithError(err).Error(errMsg)

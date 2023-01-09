@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 )
@@ -23,7 +24,7 @@ type ServiceStorage interface {
 	URI() string
 	IsOpen() bool
 	Close() error
-	Write(namespace, key string, value []byte) error
+	Write(ctx context.Context, namespace, key string, value []byte) error
 	Read(namespace, key string) ([]byte, error)
 	ReadAll(namespace string) (map[string][]byte, error)
 	ReadPrefix(namespace, prefix string) (map[string][]byte, error)

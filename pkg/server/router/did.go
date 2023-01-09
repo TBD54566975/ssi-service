@@ -104,7 +104,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 
 	// TODO(gabe) check if the key type is supported for the method, to tell whether this is a bad req or internal error
 	createDIDRequest := did.CreateDIDRequest{Method: didsdk.Method(*method), KeyType: request.KeyType, DIDWebID: request.DIDWebID}
-	createDIDResponse, err := dr.service.CreateDIDByMethod(createDIDRequest)
+	createDIDResponse, err := dr.service.CreateDIDByMethod(ctx, createDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)
 		logrus.WithError(err).Error(errMsg)

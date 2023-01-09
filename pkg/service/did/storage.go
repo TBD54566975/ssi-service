@@ -1,6 +1,7 @@
 package did
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/did"
@@ -41,7 +42,7 @@ func NewDIDStorage(db storage.ServiceStorage) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (ds *Storage) StoreDID(did StoredDID) error {
+func (ds *Storage) StoreDID(ctx context.Context, did StoredDID) error {
 	couldNotStoreDIDErr := fmt.Sprintf("could not store DID: %s", did.ID)
 	ns, err := getNamespaceForDID(did.ID)
 	if err != nil {
@@ -51,7 +52,7 @@ func (ds *Storage) StoreDID(did StoredDID) error {
 	if err != nil {
 		return util.LoggingErrorMsg(err, couldNotStoreDIDErr)
 	}
-	return ds.db.Write(ns, did.ID, didBytes)
+	return ds.db.Write(ctx, ns, did.ID, didBytes)
 }
 
 func (ds *Storage) GetDID(id string) (*StoredDID, error) {

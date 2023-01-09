@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/goccy/go-json"
@@ -60,7 +61,7 @@ func NewManifestStorage(db storage.ServiceStorage) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (ms *Storage) StoreManifest(manifest StoredManifest) error {
+func (ms *Storage) StoreManifest(ctx context.Context, manifest StoredManifest) error {
 	id := manifest.Manifest.ID
 	if id == "" {
 		err := errors.New("could not store manifest without an ID")
@@ -73,7 +74,7 @@ func (ms *Storage) StoreManifest(manifest StoredManifest) error {
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)
 	}
-	return ms.db.Write(manifestNamespace, id, manifestBytes)
+	return ms.db.Write(ctx, manifestNamespace, id, manifestBytes)
 }
 
 func (ms *Storage) GetManifest(id string) (*StoredManifest, error) {
@@ -126,7 +127,7 @@ func (ms *Storage) DeleteManifest(id string) error {
 	return nil
 }
 
-func (ms *Storage) StoreApplication(application StoredApplication) error {
+func (ms *Storage) StoreApplication(ctx context.Context, application StoredApplication) error {
 	id := application.Application.ID
 	if id == "" {
 		return util.LoggingNewError("could not store application without an ID")
@@ -135,7 +136,7 @@ func (ms *Storage) StoreApplication(application StoredApplication) error {
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "could not store application: %s", id)
 	}
-	return ms.db.Write(credential.ApplicationNamespace, id, applicationBytes)
+	return ms.db.Write(ctx, credential.ApplicationNamespace, id, applicationBytes)
 }
 
 func (ms *Storage) GetApplication(id string) (*StoredApplication, error) {
@@ -182,7 +183,7 @@ func (ms *Storage) DeleteApplication(id string) error {
 	return nil
 }
 
-func (ms *Storage) StoreResponse(response StoredResponse) error {
+func (ms *Storage) StoreResponse(ctx context.Context, response StoredResponse) error {
 	id := response.Response.ID
 	if id == "" {
 		return util.LoggingNewError("could not store response without an ID")
@@ -191,7 +192,7 @@ func (ms *Storage) StoreResponse(response StoredResponse) error {
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "could not store response: %s", id)
 	}
-	return ms.db.Write(responseNamespace, id, responseBytes)
+	return ms.db.Write(ctx, responseNamespace, id, responseBytes)
 }
 
 func (ms *Storage) GetResponse(id string) (*StoredResponse, error) {

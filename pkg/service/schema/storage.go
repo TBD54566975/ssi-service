@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/goccy/go-json"
@@ -34,7 +35,7 @@ func NewSchemaStorage(db storage.ServiceStorage) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (ss *Storage) StoreSchema(schema StoredSchema) error {
+func (ss *Storage) StoreSchema(ctx context.Context, schema StoredSchema) error {
 	id := schema.ID
 	if id == "" {
 		err := errors.New("could not store schema without an ID")
@@ -47,7 +48,7 @@ func (ss *Storage) StoreSchema(schema StoredSchema) error {
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)
 	}
-	return ss.db.Write(namespace, id, schemaBytes)
+	return ss.db.Write(ctx, namespace, id, schemaBytes)
 }
 
 func (ss *Storage) GetSchema(id string) (*StoredSchema, error) {
