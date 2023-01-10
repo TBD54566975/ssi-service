@@ -1,6 +1,7 @@
 package did
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/did"
@@ -41,7 +42,7 @@ func NewDIDStorage(db storage.ServiceStorage) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (ds *Storage) StoreDID(did StoredDID) error {
+func (ds *Storage) StoreDID(ctx context.Context, did StoredDID) error {
 	couldNotStoreDIDErr := fmt.Sprintf("could not store DID: %s", did.ID)
 	ns, err := getNamespaceForDID(did.ID)
 	if err != nil {
@@ -51,16 +52,16 @@ func (ds *Storage) StoreDID(did StoredDID) error {
 	if err != nil {
 		return util.LoggingErrorMsg(err, couldNotStoreDIDErr)
 	}
-	return ds.db.Write(ns, did.ID, didBytes)
+	return ds.db.Write(ctx, ns, did.ID, didBytes)
 }
 
-func (ds *Storage) GetDID(id string) (*StoredDID, error) {
+func (ds *Storage) GetDID(ctx context.Context, id string) (*StoredDID, error) {
 	couldNotGetDIDErr := fmt.Sprintf("could not get DID: %s", id)
 	ns, err := getNamespaceForDID(id)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
-	docBytes, err := ds.db.Read(ns, id)
+	docBytes, err := ds.db.Read(ctx, ns, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
@@ -76,13 +77,13 @@ func (ds *Storage) GetDID(id string) (*StoredDID, error) {
 }
 
 // GetDIDs attempts to get all DIDs for a given method. It will return those it can even if it has trouble with some.
-func (ds *Storage) GetDIDs(method string) ([]StoredDID, error) {
+func (ds *Storage) GetDIDs(ctx context.Context, method string) ([]StoredDID, error) {
 	couldNotGetDIDsErr := fmt.Sprintf("could not get DIDs for method: %s", method)
 	ns, err := getNamespaceForMethod(method)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, couldNotGetDIDsErr)
 	}
-	gotDIDs, err := ds.db.ReadAll(ns)
+	gotDIDs, err := ds.db.ReadAll(ctx, ns)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, couldNotGetDIDsErr)
 	}
@@ -100,13 +101,13 @@ func (ds *Storage) GetDIDs(method string) ([]StoredDID, error) {
 	return stored, nil
 }
 
-func (ds *Storage) DeleteDID(id string) error {
+func (ds *Storage) DeleteDID(ctx context.Context, id string) error {
 	couldNotGetDIDErr := fmt.Sprintf("could not delete DID: %s", id)
 	ns, err := getNamespaceForDID(id)
 	if err != nil {
 		return util.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
-	if err = ds.db.Delete(ns, id); err != nil {
+	if err = ds.db.Delete(ctx, ns, id); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete DID: %s", id)
 	}
 	return nil

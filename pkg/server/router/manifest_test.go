@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
@@ -57,11 +58,11 @@ func TestManifestRouter(t *testing.T) {
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		}
-		issuerDID, err := didService.CreateDIDByMethod(createDIDRequest)
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), createDIDRequest)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
-		applicantDID, err := didService.CreateDIDByMethod(createDIDRequest)
+		applicantDID, err := didService.CreateDIDByMethod(context.Background(), createDIDRequest)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, applicantDID)
 
@@ -75,12 +76,12 @@ func TestManifestRouter(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
-		createdCred, err := credentialService.CreateCredential(credential.CreateCredentialRequest{
+		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:     issuerDID.DID.ID,
 			Subject:    applicantDID.DID.ID,
 			JSONSchema: createdSchema.ID,
@@ -91,7 +92,7 @@ func TestManifestRouter(t *testing.T) {
 
 		// good manifest request, which asks for a single verifiable credential in the VC-JWT format
 		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
-		createdManifest, err := manifestService.CreateManifest(createManifestRequest)
+		createdManifest, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
 
@@ -123,11 +124,11 @@ func TestManifestRouter(t *testing.T) {
 		submitApplicationRequest := SubmitApplicationRequest{ApplicationJWT: *signed}
 		sar, err := submitApplicationRequest.ToServiceRequest()
 		assert.NoError(tt, err)
-		createdApplicationResponseOp, err := manifestService.ProcessApplicationSubmission(*sar)
+		createdApplicationResponseOp, err := manifestService.ProcessApplicationSubmission(context.Background(), *sar)
 		assert.NoError(tt, err)
 		assert.False(tt, createdApplicationResponseOp.Done)
 
-		createdApplicationResponse, err := manifestService.ReviewApplication(model.ReviewApplicationRequest{
+		createdApplicationResponse, err := manifestService.ReviewApplication(context.Background(), model.ReviewApplicationRequest{
 			ID:       storage.StatusObjectID(createdApplicationResponseOp.ID),
 			Approved: true,
 			Reason:   "ApprovalMan is here",

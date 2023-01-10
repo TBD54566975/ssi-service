@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -73,7 +74,7 @@ func TestSchemaAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create schema with authoring DID: did:test")
 
 		// create a DID
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})

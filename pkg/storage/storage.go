@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 )
@@ -23,15 +24,15 @@ type ServiceStorage interface {
 	URI() string
 	IsOpen() bool
 	Close() error
-	Write(namespace, key string, value []byte) error
-	Read(namespace, key string) ([]byte, error)
-	ReadAll(namespace string) (map[string][]byte, error)
-	ReadPrefix(namespace, prefix string) (map[string][]byte, error)
-	ReadAllKeys(namespace string) ([]string, error)
-	Delete(namespace, key string) error
-	DeleteNamespace(namespace string) error
-	Update(namespace string, key string, values map[string]any) ([]byte, error)
-	UpdateValueAndOperation(namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error)
+	Write(ctx context.Context, namespace, key string, value []byte) error
+	Read(ctx context.Context, namespace, key string) ([]byte, error)
+	ReadAll(ctx context.Context, namespace string) (map[string][]byte, error)
+	ReadPrefix(ctx context.Context, namespace, prefix string) (map[string][]byte, error)
+	ReadAllKeys(ctx context.Context, namespace string) ([]string, error)
+	Delete(ctx context.Context, namespace, key string) error
+	DeleteNamespace(ctx context.Context, namespace string) error
+	Update(ctx context.Context, namespace string, key string, values map[string]any) ([]byte, error)
+	UpdateValueAndOperation(ctx context.Context, namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error)
 }
 
 // NewStorage returns the instance of the given storageProvider. If it doesn't exist, then a default implementation
