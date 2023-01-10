@@ -1,6 +1,8 @@
 package keystore
 
 import (
+	"context"
+
 	"github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
@@ -51,31 +53,31 @@ func NewKeyStoreStorage(db storage.ServiceStorage, key ServiceKey) (*Storage, er
 	bolt := &Storage{db: db, serviceKey: keyBytes}
 
 	// first, store the service key
-	if err = bolt.storeServiceKey(key); err != nil {
+	if err = bolt.storeServiceKey(context.Background(), key); err != nil {
 		return nil, errors.Wrap(err, "could not store service key")
 	}
 	return bolt, nil
 }
 
 // TODO(gabe): support more robust service key operations, including rotation, and caching
-func (kss *Storage) storeServiceKey(key ServiceKey) error {
+func (kss *Storage) storeServiceKey(ctx context.Context, key ServiceKey) error {
 	keyBytes, err := json.Marshal(key)
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not marshal service key")
 	}
-	if err = kss.db.Write(namespace, skKey, keyBytes); err != nil {
+	if err = kss.db.Write(ctx, namespace, skKey, keyBytes); err != nil {
 		return util.LoggingErrorMsg(err, "could store marshal service key")
 	}
 	return nil
 }
 
 // getAndSetServiceKey attempts to get the service key from memory, and if not available rehydrates it from the DB
-func (kss *Storage) getAndSetServiceKey() ([]byte, error) {
+func (kss *Storage) getAndSetServiceKey(ctx context.Context) ([]byte, error) {
 	if len(kss.serviceKey) != 0 {
 		return kss.serviceKey, nil
 	}
 
-	storedKeyBytes, err := kss.db.Read(namespace, skKey)
+	storedKeyBytes, err := kss.db.Read(ctx, namespace, skKey)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get service key")
 	}
@@ -97,7 +99,7 @@ func (kss *Storage) getAndSetServiceKey() ([]byte, error) {
 	return keyBytes, nil
 }
 
-func (kss *Storage) StoreKey(key StoredKey) error {
+func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 	id := key.ID
 	if id == "" {
 		return util.LoggingNewError("could not store key without an ID")
@@ -109,7 +111,7 @@ func (kss *Storage) StoreKey(key StoredKey) error {
 	}
 
 	// get service key
-	serviceKey, err := kss.getAndSetServiceKey()
+	serviceKey, err := kss.getAndSetServiceKey(ctx)
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "could not get service key while storing key: %s", id)
 	}
@@ -120,11 +122,11 @@ func (kss *Storage) StoreKey(key StoredKey) error {
 		return util.LoggingErrorMsgf(err, "could not encrypt key: %s", key.ID)
 	}
 
-	return kss.db.Write(namespace, id, encryptedKey)
+	return kss.db.Write(ctx, namespace, id, encryptedKey)
 }
 
-func (kss *Storage) GetKey(id string) (*StoredKey, error) {
-	storedKeyBytes, err := kss.db.Read(namespace, id)
+func (kss *Storage) GetKey(ctx context.Context, id string) (*StoredKey, error) {
+	storedKeyBytes, err := kss.db.Read(ctx, namespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key details for key: %s", id)
 	}
@@ -133,7 +135,7 @@ func (kss *Storage) GetKey(id string) (*StoredKey, error) {
 	}
 
 	// get service key
-	serviceKey, err := kss.getAndSetServiceKey()
+	serviceKey, err := kss.getAndSetServiceKey(ctx)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get service key while getting key: %s", id)
 	}
@@ -151,8 +153,8 @@ func (kss *Storage) GetKey(id string) (*StoredKey, error) {
 	return &stored, nil
 }
 
-func (kss *Storage) GetKeyDetails(id string) (*KeyDetails, error) {
-	stored, err := kss.GetKey(id)
+func (kss *Storage) GetKeyDetails(ctx context.Context, id string) (*KeyDetails, error) {
+	stored, err := kss.GetKey(ctx, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key details for key: %s", id)
 	}
