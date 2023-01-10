@@ -1,6 +1,7 @@
 package did
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -21,7 +22,7 @@ type keyDIDHandler struct {
 	keyStore *keystore.Service
 }
 
-func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse, error) {
+func (h *keyDIDHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
 
 	logrus.Debugf("creating DID: %+v", request)
 
@@ -43,7 +44,7 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 		ID:  id,
 		DID: *expanded,
 	}
-	if err = h.storage.StoreDID(storedDID); err != nil {
+	if err = h.storage.StoreDID(ctx, storedDID); err != nil {
 		return nil, errors.Wrap(err, "could not store did:key value")
 	}
 
@@ -62,7 +63,7 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 		PrivateKeyBase58: privKeyBase58,
 	}
 
-	if err = h.keyStore.StoreKey(keyStoreRequest); err != nil {
+	if err = h.keyStore.StoreKey(ctx, keyStoreRequest); err != nil {
 		return nil, errors.Wrap(err, "could not store did:key private key")
 	}
 
@@ -73,12 +74,12 @@ func (h *keyDIDHandler) CreateDID(request CreateDIDRequest) (*CreateDIDResponse,
 	}, nil
 }
 
-func (h *keyDIDHandler) GetDID(request GetDIDRequest) (*GetDIDResponse, error) {
+func (h *keyDIDHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {
 
 	logrus.Debugf("getting DID: %+v", request)
 
 	id := request.ID
-	gotDID, err := h.storage.GetDID(id)
+	gotDID, err := h.storage.GetDID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("error getting DID: %s", id)
 	}
@@ -88,11 +89,11 @@ func (h *keyDIDHandler) GetDID(request GetDIDRequest) (*GetDIDResponse, error) {
 	return &GetDIDResponse{DID: gotDID.DID}, nil
 }
 
-func (h *keyDIDHandler) GetDIDs(method did.Method) (*GetDIDsResponse, error) {
+func (h *keyDIDHandler) GetDIDs(ctx context.Context, method did.Method) (*GetDIDsResponse, error) {
 
 	logrus.Debugf("getting DIDs for method: %s", method)
 
-	gotDIDs, err := h.storage.GetDIDs(string(method))
+	gotDIDs, err := h.storage.GetDIDs(ctx, string(method))
 	if err != nil {
 		return nil, fmt.Errorf("error getting DIDs for method: %s", method)
 	}

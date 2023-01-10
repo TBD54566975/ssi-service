@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -21,7 +22,7 @@ func (s Service) verifyApplicationJWT(did string, token keyaccess.JWT) error {
 // validateCredentialApplication validates the credential application's signature(s) in addition to making sure it
 // is a valid credential application, and complies with its corresponding manifest. it returns the ids of unfulfilled
 // input descriptors along with an error if validation fails.
-func (s Service) validateCredentialApplication(credManifest manifest.CredentialManifest, request model.SubmitApplicationRequest) (inputDescriptorIDs []string, err error) {
+func (s Service) validateCredentialApplication(ctx context.Context, credManifest manifest.CredentialManifest, request model.SubmitApplicationRequest) (inputDescriptorIDs []string, err error) {
 	// validate the payload's signature
 	if verificationErr := s.verifyApplicationJWT(request.ApplicantDID, request.ApplicationJWT); verificationErr != nil {
 		err = util.LoggingErrorMsgf(err, "could not verify application<%s>'s signature", request.Application.ID)
@@ -61,7 +62,7 @@ func (s Service) validateCredentialApplication(credManifest manifest.CredentialM
 
 	// signature and validity checks for each credential submitted with the application
 	for _, credentialContainer := range request.Credentials {
-		verificationResult, verificationErr := s.credential.VerifyCredential(credential.VerifyCredentialRequest{
+		verificationResult, verificationErr := s.credential.VerifyCredential(ctx, credential.VerifyCredentialRequest{
 			DataIntegrityCredential: credentialContainer.Credential,
 			CredentialJWT:           credentialContainer.CredentialJWT,
 		})
