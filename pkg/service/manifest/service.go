@@ -374,17 +374,7 @@ func (s Service) maybeIssueAutomatically(
 		logrus.Warnf("found multiple issuance templates, using first entry only")
 	}
 
-	credResp, creds, err := s.buildCredentialResponse(
-		ctx,
-		applicantDID,
-		manifestID,
-		gotManifest.Manifest,
-		true,
-		"automatic creation via issuance template",
-		&issuanceTemplate,
-		request.Application,
-		request.ApplicationJSON,
-	)
+	credResp, creds, err := s.buildCredentialResponse(ctx, applicantDID, manifestID, gotManifest.Manifest, true, "automatic creation via issuance template", &issuanceTemplate, request.Application, request.ApplicationJSON, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -458,6 +448,7 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 		nil,
 		application.Application,
 		nil,
+		request.CredentialOverrides,
 	)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not build credential response")
