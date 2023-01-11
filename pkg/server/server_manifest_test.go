@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -52,7 +53,7 @@ func TestManifestAPI(t *testing.T) {
 		w.Flush()
 
 		// create an issuer
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -69,7 +70,7 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -126,7 +127,7 @@ func TestManifestAPI(t *testing.T) {
 		w.Flush()
 
 		// create an issuer
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -143,7 +144,7 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -184,7 +185,7 @@ func TestManifestAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		// create an issuer
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -201,7 +202,7 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -249,7 +250,7 @@ func TestManifestAPI(t *testing.T) {
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, didService, credentialService)
 
 		// create an issuer
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -266,7 +267,7 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -520,7 +521,7 @@ func TestManifestAPI(t *testing.T) {
 		w.Flush()
 
 		// create an issuer
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -528,7 +529,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create an applicant
-		applicantDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		applicantDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -545,12 +546,12 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
-		createdCred, err := credentialService.CreateCredential(credential.CreateCredentialRequest{
+		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:     issuerDID.DID.ID,
 			Subject:    applicantDID.DID.ID,
 			JSONSchema: createdSchema.ID,
@@ -651,7 +652,7 @@ func TestManifestAPI(t *testing.T) {
 		w.Flush()
 
 		// create an issuer
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -659,7 +660,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create an applicant
-		applicantDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		applicantDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -676,12 +677,12 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
-		createdCred, err := credentialService.CreateCredential(credential.CreateCredentialRequest{
+		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:     issuerDID.DID.ID,
 			Subject:    applicantDID.DID.ID,
 			JSONSchema: createdSchema.ID,
@@ -801,7 +802,7 @@ func TestManifestAPI(t *testing.T) {
 		w.Flush()
 
 		// create an issuer
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -809,7 +810,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create an applicant
-		applicantDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		applicantDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -826,12 +827,12 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
-		createdCred, err := credentialService.CreateCredential(credential.CreateCredentialRequest{
+		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:     issuerDID.DID.ID,
 			Subject:    applicantDID.DID.ID,
 			JSONSchema: createdSchema.ID,
@@ -953,7 +954,7 @@ func TestManifestAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		// create an issuer
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -961,7 +962,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create an applicant
-		applicantDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		applicantDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -978,12 +979,12 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
-		createdCred, err := credentialService.CreateCredential(credential.CreateCredentialRequest{
+		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:     issuerDID.DID.ID,
 			Subject:    applicantDID.DID.ID,
 			JSONSchema: createdSchema.ID,

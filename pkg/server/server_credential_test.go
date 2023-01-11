@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -32,7 +33,7 @@ func TestCredentialAPI(t *testing.T) {
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
 
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -110,7 +111,7 @@ func TestCredentialAPI(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -131,7 +132,7 @@ func TestCredentialAPI(t *testing.T) {
 			"required":             []any{"firstName", "lastName"},
 			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -220,7 +221,7 @@ func TestCredentialAPI(t *testing.T) {
 		// reset recorder between calls
 		w.Flush()
 
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -272,7 +273,7 @@ func TestCredentialAPI(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -293,7 +294,7 @@ func TestCredentialAPI(t *testing.T) {
 			"required":             []any{"firstName", "lastName"},
 			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -345,7 +346,7 @@ func TestCredentialAPI(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -398,7 +399,7 @@ func TestCredentialAPI(t *testing.T) {
 
 		w := httptest.NewRecorder()
 
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -451,7 +452,7 @@ func TestCredentialAPI(t *testing.T) {
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
 
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -516,7 +517,7 @@ func TestCredentialAPI(t *testing.T) {
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
 
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -583,14 +584,14 @@ func TestCredentialAPI(t *testing.T) {
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
 
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
-		issuerDIDTwo, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDIDTwo, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -753,7 +754,7 @@ func TestCredentialAPI(t *testing.T) {
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
 
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})
@@ -825,7 +826,7 @@ func TestCredentialAPI(t *testing.T) {
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
 
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
 			KeyType: crypto.Ed25519,
 		})

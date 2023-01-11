@@ -1,6 +1,7 @@
 package keystore
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -120,7 +121,7 @@ func TestStoreAndGetKey(t *testing.T) {
 	// store the key
 	_, privKey, err := crypto.GenerateEd25519Key()
 	assert.NoError(t, err)
-	err = keyStore.StoreKey(StoreKeyRequest{
+	err = keyStore.StoreKey(context.Background(), StoreKeyRequest{
 		ID:               "test-id",
 		Type:             crypto.Ed25519,
 		Controller:       "test-controller",
@@ -129,7 +130,7 @@ func TestStoreAndGetKey(t *testing.T) {
 	assert.NoError(t, err)
 
 	// get it back
-	keyResponse, err := keyStore.GetKey(GetKeyRequest{ID: "test-id"})
+	keyResponse, err := keyStore.GetKey(context.Background(), GetKeyRequest{ID: "test-id"})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, keyResponse)
 	assert.Equal(t, privKey, keyResponse.Key)

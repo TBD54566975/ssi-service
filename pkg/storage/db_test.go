@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
@@ -61,11 +62,11 @@ func TestDB(t *testing.T) {
 		p1Bytes, err := json.Marshal(players1)
 		assert.NoError(t, err)
 
-		err = db.Write(namespace, team1, p1Bytes)
+		err = db.Write(context.Background(), namespace, team1, p1Bytes)
 		assert.NoError(t, err)
 
 		// get it back
-		gotPlayers1, err := db.Read(namespace, team1)
+		gotPlayers1, err := db.Read(context.Background(), namespace, team1)
 		assert.NoError(t, err)
 
 		var players1Result []string
@@ -74,12 +75,12 @@ func TestDB(t *testing.T) {
 		assert.EqualValues(t, players1, players1Result)
 
 		// get a value from a namespace that doesn't exist
-		res, err := db.Read("bad", "worse")
+		res, err := db.Read(context.Background(), "bad", "worse")
 		assert.NoError(t, err)
 		assert.Empty(t, res)
 
 		// get a value that doesn't exist in the namespace
-		noValue, err := db.Read(namespace, "Porsche")
+		noValue, err := db.Read(context.Background(), namespace, "Porsche")
 		assert.NoError(t, err)
 		assert.Empty(t, noValue)
 
@@ -89,11 +90,11 @@ func TestDB(t *testing.T) {
 		p2Bytes, err := json.Marshal(players2)
 		assert.NoError(t, err)
 
-		err = db.Write(namespace, team2, p2Bytes)
+		err = db.Write(context.Background(), namespace, team2, p2Bytes)
 		assert.NoError(t, err)
 
 		// get all values from the namespace
-		gotAll, err := db.ReadAll(namespace)
+		gotAll, err := db.ReadAll(context.Background(), namespace)
 		assert.NoError(t, err)
 		assert.True(t, len(gotAll) == 2)
 
@@ -104,27 +105,27 @@ func TestDB(t *testing.T) {
 		assert.True(t, gotMcLaren)
 
 		// delete value in the namespace
-		err = db.Delete(namespace, team2)
+		err = db.Delete(context.Background(), namespace, team2)
 		assert.NoError(t, err)
 
-		gotPlayers2, err := db.Read(namespace, team2)
+		gotPlayers2, err := db.Read(context.Background(), namespace, team2)
 		assert.NoError(t, err)
 		assert.Empty(t, gotPlayers2)
 
 		// delete value in a namespace that doesn't exist
-		err = db.Delete("bad", team2)
+		err = db.Delete(context.Background(), "bad", team2)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "namespace<bad> does not exist")
 
 		// delete a namespace that doesn't exist
-		err = db.DeleteNamespace("bad")
+		err = db.DeleteNamespace(context.Background(), "bad")
 		assert.Contains(t, err.Error(), "could not delete namespace<bad>")
 
 		// delete namespace
-		err = db.DeleteNamespace(namespace)
+		err = db.DeleteNamespace(context.Background(), namespace)
 		assert.NoError(t, err)
 
-		res, err = db.Read(namespace, team1)
+		res, err = db.Read(context.Background(), namespace, team1)
 		assert.NoError(t, err)
 		assert.Empty(t, res)
 	}
@@ -139,19 +140,19 @@ func TestDBPrefixAndKeys(t *testing.T) {
 		// set up prefix read test
 
 		dummyData := []byte("dummy")
-		err := db.Write(namespace, "bitcoin-testnet", dummyData)
+		err := db.Write(context.Background(), namespace, "bitcoin-testnet", dummyData)
 		assert.NoError(t, err)
 
-		err = db.Write(namespace, "bitcoin-mainnet", dummyData)
+		err = db.Write(context.Background(), namespace, "bitcoin-mainnet", dummyData)
 		assert.NoError(t, err)
 
-		err = db.Write(namespace, "tezos-testnet", dummyData)
+		err = db.Write(context.Background(), namespace, "tezos-testnet", dummyData)
 		assert.NoError(t, err)
 
-		err = db.Write(namespace, "tezos-mainnet", dummyData)
+		err = db.Write(context.Background(), namespace, "tezos-mainnet", dummyData)
 		assert.NoError(t, err)
 
-		prefixValues, err := db.ReadPrefix(namespace, "bitcoin")
+		prefixValues, err := db.ReadPrefix(context.Background(), namespace, "bitcoin")
 		assert.NoError(t, err)
 		assert.Len(t, prefixValues, 2)
 
@@ -163,13 +164,38 @@ func TestDBPrefixAndKeys(t *testing.T) {
 		assert.Contains(t, keys, "bitcoin-mainnet")
 
 		// read all keys
-		allKeys, err := db.ReadAllKeys(namespace)
+		allKeys, err := db.ReadAllKeys(context.Background(), namespace)
 
 		assert.NoError(t, err)
 		assert.NotEmpty(t, allKeys)
 		assert.Len(t, allKeys, 4)
 		assert.Contains(t, allKeys, "bitcoin-mainnet")
 		assert.Contains(t, allKeys, "tezos-mainnet")
+	}
+}
+
+func TestDBEmptyNamespace(t *testing.T) {
+	for _, dbImpl := range getDBImplementations(t) {
+		db := dbImpl
+
+		namespace := "dne"
+		key := "doesnotexist"
+
+		prefixValues, err := db.ReadPrefix(context.Background(), namespace, key)
+		assert.NoError(t, err)
+		assert.Len(t, prefixValues, 0)
+
+		allKeys, err := db.ReadAllKeys(context.Background(), namespace)
+		assert.NoError(t, err)
+		assert.Len(t, allKeys, 0)
+
+		allValues, err := db.ReadAll(context.Background(), namespace)
+		assert.NoError(t, err)
+		assert.Len(t, allValues, 0)
+
+		value, err := db.Read(context.Background(), namespace, key)
+		assert.NoError(t, err)
+		assert.Nil(t, value)
 	}
 }
 
@@ -193,7 +219,7 @@ func TestDB_Update(t *testing.T) {
 			Reason: "",
 		})
 		require.NoError(t, err)
-		require.NoError(t, db.Write(namespace, "123", data))
+		require.NoError(t, db.Write(context.Background(), namespace, "123", data))
 
 		type args struct {
 			key    string
@@ -235,7 +261,7 @@ func TestDB_Update(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				data, err = db.Update(namespace, tt.args.key, tt.args.values)
+				data, err = db.Update(context.Background(), namespace, tt.args.key, tt.args.values)
 				if !tt.expectedError(t, err) {
 					return
 				}
@@ -268,14 +294,14 @@ func TestDB_UpdatedSubmissionAndOperationTxFn(t *testing.T) {
 			Reason: "",
 		})
 		require.NoError(t, err)
-		require.NoError(t, db.Write(namespace, "123", data))
+		require.NoError(t, db.Write(context.Background(), namespace, "123", data))
 
 		data, err = json.Marshal(operation{
 			Done:     false,
 			Response: nil,
 		})
 		require.NoError(t, err)
-		require.NoError(t, db.Write(opNamespace, "op123", data))
+		require.NoError(t, db.Write(context.Background(), opNamespace, "op123", data))
 
 		type args struct {
 			namespace   string
@@ -346,7 +372,7 @@ func TestDB_UpdatedSubmissionAndOperationTxFn(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				gotFirstData, gotOpData, err := db.UpdateValueAndOperation(tt.args.namespace, tt.args.key, tt.args.updater, tt.args.opNamespace, tt.args.opKey, testOpUpdater{
+				gotFirstData, gotOpData, err := db.UpdateValueAndOperation(context.Background(), tt.args.namespace, tt.args.key, tt.args.updater, tt.args.opNamespace, tt.args.opKey, testOpUpdater{
 					NewUpdater(map[string]any{
 						"done": true,
 					}),

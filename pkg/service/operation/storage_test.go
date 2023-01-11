@@ -1,6 +1,7 @@
 package operation
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -33,7 +34,7 @@ func TestStorage_CancelOperation(t *testing.T) {
 	s := setupTestDB(t)
 	data, err := json.Marshal(manifeststg.StoredApplication{})
 	require.NoError(t, err)
-	require.NoError(t, s.Write(credential.ApplicationNamespace, "hello", data))
+	require.NoError(t, s.Write(context.Background(), credential.ApplicationNamespace, "hello", data))
 
 	type fields struct {
 		db storage.ServiceStorage
@@ -92,12 +93,12 @@ func TestStorage_CancelOperation(t *testing.T) {
 				Done: tt.done,
 			})
 			require.NoError(t, err)
-			require.NoError(t, s.Write(namespace.FromParent("credentials/responses"), "credentials/responses/hello", opData))
+			require.NoError(t, s.Write(context.Background(), namespace.FromParent("credentials/responses"), "credentials/responses/hello", opData))
 
 			b := Storage{
 				db: tt.fields.db,
 			}
-			got, err := b.CancelOperation(tt.args.id)
+			got, err := b.CancelOperation(context.Background(), tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CancelOperation() error = %v, wantErr %v", err, tt.wantErr)
 				return

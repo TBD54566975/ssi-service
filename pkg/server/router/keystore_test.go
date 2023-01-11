@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -45,7 +46,7 @@ func TestKeyStoreRouter(t *testing.T) {
 		assert.Equal(tt, framework.StatusReady, keyStoreService.Status().Status)
 
 		// store an invalid key type
-		err = keyStoreService.StoreKey(keystore.StoreKeyRequest{
+		err = keyStoreService.StoreKey(context.Background(), keystore.StoreKeyRequest{
 			ID:               "test-kid",
 			Type:             "bad",
 			Controller:       "me",
@@ -62,7 +63,7 @@ func TestKeyStoreRouter(t *testing.T) {
 		keyID := "did:test:me#key-1"
 		privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
 		assert.NoError(tt, err)
-		err = keyStoreService.StoreKey(keystore.StoreKeyRequest{
+		err = keyStoreService.StoreKey(context.Background(), keystore.StoreKeyRequest{
 			ID:               keyID,
 			Type:             crypto.Ed25519,
 			Controller:       "did:test:me",
@@ -71,13 +72,13 @@ func TestKeyStoreRouter(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// get a key that doesn't exist
-		gotDetails, err := keyStoreService.GetKeyDetails(keystore.GetKeyDetailsRequest{ID: "bad"})
+		gotDetails, err := keyStoreService.GetKeyDetails(context.Background(), keystore.GetKeyDetailsRequest{ID: "bad"})
 		assert.Error(tt, err)
 		assert.Empty(tt, gotDetails)
 		assert.Contains(tt, err.Error(), "could not get key details for key: bad")
 
 		// get a key that exists
-		gotDetails, err = keyStoreService.GetKeyDetails(keystore.GetKeyDetailsRequest{ID: keyID})
+		gotDetails, err = keyStoreService.GetKeyDetails(context.Background(), keystore.GetKeyDetailsRequest{ID: keyID})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, gotDetails)
 
