@@ -41,7 +41,7 @@ type CredentialTemplate struct {
 	// ID of the CredentialSchema to be used for the issued credential.
 	Schema string `json:"schema"`
 
-	// Date that will be used to determine credential claims.
+	// Data that will be used to determine credential claims.
 	Data CredentialTemplateData `json:"data"`
 
 	// Parameter to determine the expiry of the credential.
