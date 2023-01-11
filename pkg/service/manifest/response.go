@@ -70,9 +70,9 @@ func (s Service) buildCredentialResponse(
 
 	templateMap := make(map[string]*issuing.CredentialTemplate)
 	if template != nil {
-		for _, v := range template.Credentials {
-			v := v
-			templateMap[v.ID] = &v
+		for _, templateCred := range template.Credentials {
+			templateCred := templateCred
+			templateMap[templateCred.ID] = &templateCred
 		}
 	}
 	creds := make([]cred.Container, 0, len(credManifest.OutputDescriptors))
@@ -168,8 +168,7 @@ func applyIssuanceTemplate(
 	}
 	for k, v := range ct.Data.Claims.Data {
 		claimValue := v
-		vs, ok := v.(string)
-		if ok {
+		if vs, ok := v.(string); ok {
 			if strings.HasPrefix(vs, "$") {
 				claimValue, err = jsonpath.JsonPathLookup(c, vs)
 				if err != nil {
@@ -198,46 +197,49 @@ func getCredential(
 	credManifest manifest.CredentialManifest,
 	submission *exchange.PresentationSubmission,
 ) (any, error) {
-	if ct.Data.CredentialInputDescriptor != "" {
-		if credManifest.PresentationDefinition == nil {
-			return nil, errors.New("cannot provide input descriptor when manifest does not have presentation definition")
-		}
-
-		// Lookup the claim that's sent in the submission.
-		for _, descriptor := range submission.DescriptorMap {
-			if descriptor.ID == ct.Data.CredentialInputDescriptor {
-				c, err := jsonpath.JsonPathLookup(applicationJSON, descriptor.Path)
-				if err != nil {
-					return nil, errors.Wrapf(
-						err,
-						"looking up json path \"%s\" for submission=\"%s\"",
-						descriptor.Path,
-						descriptor.ID,
-					)
-				}
-				claim, err := fromFormat(exchange.JWTFormat(descriptor.Format), c)
-				if err != nil {
-					return nil, err
-				}
-				return claim, nil
-			}
-		}
-		return nil, errors.Errorf(
-			"could not find credential for input_descriptor=\"%s\"",
-			ct.Data.CredentialInputDescriptor,
-		)
+	if ct.Data.CredentialInputDescriptor == "" {
+		return nil, nil
 	}
-	return nil, nil
+
+	if credManifest.PresentationDefinition == nil {
+		return nil, errors.New("cannot provide input descriptor when manifest does not have presentation definition")
+	}
+
+	// Lookup the claim that's sent in the submission.
+	for _, descriptor := range submission.DescriptorMap {
+		if descriptor.ID == ct.Data.CredentialInputDescriptor {
+			c, err := jsonpath.JsonPathLookup(applicationJSON, descriptor.Path)
+			if err != nil {
+				return nil, errors.Wrapf(
+					err,
+					"looking up json path \"%s\" for submission=\"%s\"",
+					descriptor.Path,
+					descriptor.ID,
+				)
+			}
+			return fromFormat(exchange.CredentialFormat(descriptor.Format), c)
+		}
+	}
+	return nil, errors.Errorf(
+		"could not find credential for input_descriptor=\"%s\"",
+		ct.Data.CredentialInputDescriptor,
+	)
 }
 
-func fromFormat(format exchange.JWTFormat, claim any) (any, error) {
+func fromFormat(format exchange.CredentialFormat, claim any) (any, error) {
 	switch format {
-	case exchange.JWTVC:
+	case exchange.JWTVC.CredentialFormat():
 		_, token, err := util.ParseJWT(keyaccess.JWT(claim.(string)))
 		if err != nil {
 			return nil, errors.Wrapf(err, "parsing jwt as %s", exchange.JWTVC)
 		}
-		return token.PrivateClaims()["vc"], nil
+
+		claims, ok := token.PrivateClaims()["vc"]
+		if !ok {
+			return nil, errors.New("\"vc\" field not found in claim")
+		}
+
+		return claims, nil
 	default:
 		return nil, errors.Errorf("unsupported format %s", format)
 	}

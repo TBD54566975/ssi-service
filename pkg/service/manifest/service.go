@@ -445,7 +445,8 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 
 	// build the credential response
 	credResp, creds, err := s.buildCredentialResponse(
-		ctx, applicantDID,
+		ctx,
+		applicantDID,
 		manifestID,
 		credManifest,
 		request.Approved,

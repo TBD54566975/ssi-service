@@ -10,7 +10,7 @@ import (
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
-	"github.com/TBD54566975/ssi-sdk/credential/signing"
+	"github.com/TBD54566975/ssi-sdk/credential/util"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
@@ -432,7 +432,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		assert.Len(tt, appResp.Credentials, 2, "each output_descriptor in the definition should result in a credential")
-		vc, err := signing.ParseVerifiableCredentialFromJWT(appResp.Credentials.([]any)[0].(string))
+		vc, err := util.CredentialsFromInterface(appResp.Credentials.([]any)[0])
 		assert.NoError(tt, err)
 		assert.Equal(tt, credsdk.CredentialSubject{
 			"id":        applicantDID.DID.ID,
@@ -444,7 +444,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.Equal(tt, createdSchema.ID, vc.CredentialSchema.ID)
 		assert.Empty(tt, vc.CredentialStatus)
 
-		vc2, err := signing.ParseVerifiableCredentialFromJWT(appResp.Credentials.([]any)[1].(string))
+		vc2, err := util.CredentialsFromInterface(appResp.Credentials.([]any)[1])
 		assert.NoError(tt, err)
 		assert.Equal(tt, credsdk.CredentialSubject{
 			"id": applicantDID.DID.ID,
