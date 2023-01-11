@@ -29,31 +29,6 @@ jobs:
       - name: Check Vulnerabilities
         run: mage -v vuln
 
-  generate-spec:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v3
-
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.19.4
-        cache: true
-
-    - name: Install Mage
-      run: go install github.com/magefile/mage
-
-    - name: Update spec and push generated spec file
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.ref }}
-        repository: ${{ github.event.pull_request.head.repo.full_name }}
-    - name: Push changes
-          uses: ad-m/github-push-action@master
-          with:
-            github_token: ${{ secrets.DOC_PUBLISH }}        
-
   build:
     runs-on: ubuntu-latest
     steps:
