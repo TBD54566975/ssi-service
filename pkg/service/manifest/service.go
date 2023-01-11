@@ -384,10 +384,8 @@ func (s Service) maybeIssueAutomatically(
 	if err != nil {
 		return nil, err
 	}
-	// prepare credentials for the response
 	credentials := credint.ContainersToInterface(creds)
 
-	// sign the response before returning
 	responseJWT, err := s.signCredentialResponseJWT(
 		ctx,
 		gotManifest.Issuer, CredentialResponseContainer{
@@ -399,7 +397,6 @@ func (s Service) maybeIssueAutomatically(
 		return nil, errors.Wrap(err, "signing credential response")
 	}
 
-	// store the response we've generated
 	storeResponseRequest := manifeststg.StoredResponse{
 		ID:           credResp.ID,
 		ManifestID:   manifestID,

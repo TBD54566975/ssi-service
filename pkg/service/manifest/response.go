@@ -168,8 +168,8 @@ func applyIssuanceTemplate(
 	}
 	for k, v := range ct.Data.Claims.Data {
 		claimValue := v
-		switch vs := v.(type) {
-		case string:
+		vs, ok := v.(string)
+		if ok {
 			if strings.HasPrefix(vs, "$") {
 				claimValue, err = jsonpath.JsonPathLookup(c, vs)
 				if err != nil {

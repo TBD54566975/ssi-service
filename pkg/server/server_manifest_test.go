@@ -9,6 +9,7 @@ import (
 	"time"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
@@ -410,52 +411,7 @@ func TestManifestAPI(t *testing.T) {
 		duration := 5 * time.Second
 		issuanceTemplate, err := issuanceService.CreateIssuanceTemplate(
 			context.Background(),
-			&issuing.CreateIssuanceTemplateRequest{
-				IssuanceTemplate: issuing.IssuanceTemplate{
-					ID:                 uuid.NewString(),
-					CredentialManifest: m.ID,
-					Issuer:             issuerDID.DID.ID,
-					Credentials: []issuing.CredentialTemplate{
-						{
-							ID:     "id1",
-							Schema: createdSchema.ID,
-							Data: issuing.CredentialTemplateData{
-								CredentialInputDescriptor: "test-id",
-								Claims: issuing.ClaimTemplates{
-									Data: map[string]any{
-										"firstName": "$.credentialSubject.firstName",
-										"lastName":  "$.credentialSubject.lastName",
-										"state":     "CA",
-									},
-								},
-							},
-							Expiry: issuing.TimeLike{
-								Time: &now,
-							},
-						},
-						{
-							ID:     "id2",
-							Schema: createdSchema.ID,
-							Data: issuing.CredentialTemplateData{
-								CredentialInputDescriptor: "test-id",
-								Claims: issuing.ClaimTemplates{
-									Data: map[string]any{
-										"someCrazyObject": map[string]any{
-											"foo": 123,
-											"bar": false,
-											"baz": []any{
-												"yay", 123, nil,
-											},
-										},
-									},
-								},
-							},
-							Expiry:    issuing.TimeLike{Duration: &duration},
-							Revocable: true,
-						},
-					},
-				},
-			})
+			getValidIssuanceTemplateRequest(m, issuerDID, createdSchema, now, duration))
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuanceTemplate)
 
@@ -1078,4 +1034,53 @@ func TestManifestAPI(t *testing.T) {
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), fmt.Sprintf("could not get application with id: %s", appResp.Response.ID))
 	})
+}
+
+func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *did.CreateDIDResponse, createdSchema *schema.CreateSchemaResponse, now time.Time, duration time.Duration) *issuing.CreateIssuanceTemplateRequest {
+	return &issuing.CreateIssuanceTemplateRequest{
+		IssuanceTemplate: issuing.IssuanceTemplate{
+			ID:                 uuid.NewString(),
+			CredentialManifest: m.ID,
+			Issuer:             issuerDID.DID.ID,
+			Credentials: []issuing.CredentialTemplate{
+				{
+					ID:     "id1",
+					Schema: createdSchema.ID,
+					Data: issuing.CredentialTemplateData{
+						CredentialInputDescriptor: "test-id",
+						Claims: issuing.ClaimTemplates{
+							Data: map[string]any{
+								"firstName": "$.credentialSubject.firstName",
+								"lastName":  "$.credentialSubject.lastName",
+								"state":     "CA",
+							},
+						},
+					},
+					Expiry: issuing.TimeLike{
+						Time: &now,
+					},
+				},
+				{
+					ID:     "id2",
+					Schema: createdSchema.ID,
+					Data: issuing.CredentialTemplateData{
+						CredentialInputDescriptor: "test-id",
+						Claims: issuing.ClaimTemplates{
+							Data: map[string]any{
+								"someCrazyObject": map[string]any{
+									"foo": 123,
+									"bar": false,
+									"baz": []any{
+										"yay", 123, nil,
+									},
+								},
+							},
+						},
+					},
+					Expiry:    issuing.TimeLike{Duration: &duration},
+					Revocable: true,
+				},
+			},
+		},
+	}
 }
