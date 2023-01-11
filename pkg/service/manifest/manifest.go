@@ -1,6 +1,8 @@
 package manifest
 
 import (
+	"context"
+
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/goccy/go-json"
 	"github.com/lestrrat-go/jwx/jwt"
@@ -11,9 +13,9 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func (s Service) signManifestJWT(m CredentialManifestContainer) (*keyaccess.JWT, error) {
+func (s Service) signManifestJWT(ctx context.Context, m CredentialManifestContainer) (*keyaccess.JWT, error) {
 	issuerID := m.Manifest.Issuer.ID
-	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: issuerID})
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: issuerID})
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key for signing manifest with key<%s>", issuerID)
 	}

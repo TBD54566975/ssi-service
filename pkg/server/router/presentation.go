@@ -76,7 +76,7 @@ func (pr PresentationRouter) CreatePresentationDefinition(ctx context.Context, w
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
-	serviceResp, err := pr.service.CreatePresentationDefinition(model.CreatePresentationDefinitionRequest{PresentationDefinition: *def})
+	serviceResp, err := pr.service.CreatePresentationDefinition(ctx, model.CreatePresentationDefinitionRequest{PresentationDefinition: *def})
 	if err != nil {
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
@@ -141,7 +141,7 @@ func (pr PresentationRouter) GetPresentationDefinition(ctx context.Context, w ht
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	def, err := pr.service.GetPresentationDefinition(model.GetPresentationDefinitionRequest{ID: *id})
+	def, err := pr.service.GetPresentationDefinition(ctx, model.GetPresentationDefinitionRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get presentation with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -173,7 +173,7 @@ func (pr PresentationRouter) DeletePresentationDefinition(ctx context.Context, w
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := pr.service.DeletePresentationDefinition(model.DeletePresentationDefinitionRequest{ID: *id}); err != nil {
+	if err := pr.service.DeletePresentationDefinition(ctx, model.DeletePresentationDefinitionRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete presentation with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
@@ -244,7 +244,7 @@ func (pr PresentationRouter) CreateSubmission(ctx context.Context, w http.Respon
 			util.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
 	}
 
-	operation, err := pr.service.CreateSubmission(*req)
+	operation, err := pr.service.CreateSubmission(ctx, *req)
 	if err != nil {
 		return framework.NewRequestError(
 			util.LoggingErrorMsg(err, "cannot create submission"), http.StatusInternalServerError)
@@ -277,7 +277,7 @@ func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseW
 			util.LoggingNewError("get submission request requires id"), http.StatusBadRequest)
 	}
 
-	submission, err := pr.service.GetSubmission(model.GetSubmissionRequest{ID: *id})
+	submission, err := pr.service.GetSubmission(ctx, model.GetSubmissionRequest{ID: *id})
 
 	if err != nil {
 		return framework.NewRequestError(
@@ -346,7 +346,7 @@ func (pr PresentationRouter) ListSubmissions(ctx context.Context, w http.Respons
 		return framework.NewRequestError(
 			util.LoggingErrorMsg(err, "invalid filter"), http.StatusBadRequest)
 	}
-	resp, err := pr.service.ListSubmissions(model.ListSubmissionRequest{
+	resp, err := pr.service.ListSubmissions(ctx, model.ListSubmissionRequest{
 		Filter: filter,
 	})
 	if err != nil {
@@ -398,7 +398,7 @@ func (pr PresentationRouter) ReviewSubmission(ctx context.Context, w http.Respon
 	}
 
 	req := request.toServiceRequest(*id)
-	submission, err := pr.service.ReviewSubmission(req)
+	submission, err := pr.service.ReviewSubmission(ctx, req)
 	if err != nil {
 		return framework.NewRequestError(
 			util.LoggingErrorMsg(err, "failed reviewing submission"), http.StatusInternalServerError)

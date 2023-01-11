@@ -1,6 +1,7 @@
 package credential
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"time"
@@ -88,7 +89,7 @@ func NewCredentialService(config config.CredentialServiceConfig, s storage.Servi
 	return &service, nil
 }
 
-func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCredentialResponse, error) {
+func (s Service) CreateCredential(ctx context.Context, request CreateCredentialRequest) (*CreateCredentialResponse, error) {
 
 	logrus.Debugf("creating credential: %+v", request)
 
@@ -122,7 +123,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	var knownSchema *schemalib.VCJSONSchema
 	if request.JSONSchema != "" {
 		// resolve schema and save it for validation later
-		gotSchema, err := s.schema.GetSchema(schema.GetSchemaRequest{ID: request.JSONSchema})
+		gotSchema, err := s.schema.GetSchema(ctx, schema.GetSchemaRequest{ID: request.JSONSchema})
 		if err != nil {
 			return nil, util.LoggingErrorMsgf(err, "failed to create credential; could not get schema: %s", request.JSONSchema)
 		}
@@ -154,12 +155,12 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		issuerID := request.Issuer
 		schemaID := request.JSONSchema
 
-		statusListCredential, err := getStatusListCredential(s, issuerID, schemaID)
+		statusListCredential, err := getStatusListCredential(ctx, s, issuerID, schemaID)
 		if err != nil {
 			return nil, util.LoggingErrorMsgf(err, "problem with getting status list credential")
 		}
 
-		statusListIndex, err := s.storage.GetNextStatusListRandomIndex()
+		statusListIndex, err := s.storage.GetNextStatusListRandomIndex(ctx)
 		if err != nil {
 			return nil, util.LoggingErrorMsg(err, "problem with getting status list index")
 		}
@@ -191,7 +192,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 
 	// TODO(gabe) support Data Integrity creds too https://github.com/TBD54566975/ssi-service/issues/105
 	// sign the credential
-	credJWT, err := s.signCredentialJWT(request.Issuer, *cred)
+	credJWT, err := s.signCredentialJWT(ctx, request.Issuer, *cred)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not sign credential")
 	}
@@ -208,7 +209,7 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 		Container: container,
 	}
 
-	if err = s.storage.StoreCredential(storageRequest); err != nil {
+	if err = s.storage.StoreCredential(ctx, storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store credential")
 	}
 
@@ -217,8 +218,8 @@ func (s Service) CreateCredential(request CreateCredentialRequest) (*CreateCrede
 	return &response, nil
 }
 
-func getStatusListCredential(s Service, issuerID string, schemaID string) (*credential.VerifiableCredential, error) {
-	storedStatusListCreds, err := s.storage.GetStatusListCredentialsByIssuerAndSchema(issuerID, schemaID)
+func getStatusListCredential(ctx context.Context, s Service, issuerID string, schemaID string) (*credential.VerifiableCredential, error) {
+	storedStatusListCreds, err := s.storage.GetStatusListCredentialsByIssuerAndSchema(ctx, issuerID, schemaID)
 	if err != nil {
 		return nil, util.LoggingNewErrorf("problem with getting status list credential for issuer: %s schema: %s", issuerID, schemaID)
 	}
@@ -238,7 +239,7 @@ func getStatusListCredential(s Service, issuerID string, schemaID string) (*cred
 			return nil, util.LoggingErrorMsg(err, "could not generate status list")
 		}
 
-		statusListCredJWT, err := s.signCredentialJWT(issuerID, *generatedStatusListCredential)
+		statusListCredJWT, err := s.signCredentialJWT(ctx, issuerID, *generatedStatusListCredential)
 		if err != nil {
 			return nil, util.LoggingErrorMsg(err, "could not sign status list credential")
 		}
@@ -254,7 +255,7 @@ func getStatusListCredential(s Service, issuerID string, schemaID string) (*cred
 			Container: statusListContainer,
 		}
 
-		if err = s.storage.StoreStatusListCredential(storageRequest); err != nil {
+		if err = s.storage.StoreStatusListCredential(ctx, storageRequest); err != nil {
 			return nil, util.LoggingErrorMsg(err, "could not store credential")
 		}
 
@@ -268,8 +269,8 @@ func getStatusListCredential(s Service, issuerID string, schemaID string) (*cred
 }
 
 // signCredentialJWT signs a credential and returns it as a vc-jwt
-func (s Service) signCredentialJWT(issuer string, cred credential.VerifiableCredential) (*keyaccess.JWT, error) {
-	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: issuer})
+func (s Service) signCredentialJWT(ctx context.Context, issuer string, cred credential.VerifiableCredential) (*keyaccess.JWT, error) {
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: issuer})
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key for signing credential with key<%s>", issuer)
 	}
@@ -313,7 +314,7 @@ type VerifyCredentialResponse struct {
 // 4. If the credential has a schema, makes sure its data complies with the schema
 // LATER: Makes sure the credential has not been revoked, other checks.
 // Note: https://github.com/TBD54566975/ssi-sdk/issues/213
-func (s Service) VerifyCredential(request VerifyCredentialRequest) (*VerifyCredentialResponse, error) {
+func (s Service) VerifyCredential(ctx context.Context, request VerifyCredentialRequest) (*VerifyCredentialResponse, error) {
 
 	logrus.Debugf("verifying credential: %+v", request)
 
@@ -322,11 +323,11 @@ func (s Service) VerifyCredential(request VerifyCredentialRequest) (*VerifyCrede
 	}
 
 	if request.CredentialJWT != nil {
-		if err := s.verifier.VerifyJWTCredential(*request.CredentialJWT); err != nil {
+		if err := s.verifier.VerifyJWTCredential(ctx, *request.CredentialJWT); err != nil {
 			return &VerifyCredentialResponse{Verified: false, Reason: err.Error()}, nil
 		}
 	} else {
-		if err := s.verifier.VerifyDataIntegrityCredential(*request.DataIntegrityCredential); err != nil {
+		if err := s.verifier.VerifyDataIntegrityCredential(ctx, *request.DataIntegrityCredential); err != nil {
 			return &VerifyCredentialResponse{Verified: false, Reason: err.Error()}, nil
 		}
 	}
@@ -334,11 +335,11 @@ func (s Service) VerifyCredential(request VerifyCredentialRequest) (*VerifyCrede
 	return &VerifyCredentialResponse{Verified: true}, nil
 }
 
-func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResponse, error) {
+func (s Service) GetCredential(ctx context.Context, request GetCredentialRequest) (*GetCredentialResponse, error) {
 
 	logrus.Debugf("getting credential: %s", request.ID)
 
-	gotCred, err := s.storage.GetCredential(request.ID)
+	gotCred, err := s.storage.GetCredential(ctx, request.ID)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get credential: %s", request.ID)
 	}
@@ -355,11 +356,11 @@ func (s Service) GetCredential(request GetCredentialRequest) (*GetCredentialResp
 	return &response, nil
 }
 
-func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*GetCredentialsResponse, error) {
+func (s Service) GetCredentialsByIssuer(ctx context.Context, request GetCredentialByIssuerRequest) (*GetCredentialsResponse, error) {
 
 	logrus.Debugf("getting credential(s) for issuer: %s", util.SanitizeLog(request.Issuer))
 
-	gotCreds, err := s.storage.GetCredentialsByIssuer(request.Issuer)
+	gotCreds, err := s.storage.GetCredentialsByIssuer(ctx, request.Issuer)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get credential(s) for issuer: %s", request.Issuer)
 	}
@@ -378,11 +379,11 @@ func (s Service) GetCredentialsByIssuer(request GetCredentialByIssuerRequest) (*
 	return &response, nil
 }
 
-func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) (*GetCredentialsResponse, error) {
+func (s Service) GetCredentialsBySubject(ctx context.Context, request GetCredentialBySubjectRequest) (*GetCredentialsResponse, error) {
 
 	logrus.Debugf("getting credential(s) for subject: %s", util.SanitizeLog(request.Subject))
 
-	gotCreds, err := s.storage.GetCredentialsBySubject(request.Subject)
+	gotCreds, err := s.storage.GetCredentialsBySubject(ctx, request.Subject)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get credential(s) for subject: %s", request.Subject)
 	}
@@ -400,11 +401,11 @@ func (s Service) GetCredentialsBySubject(request GetCredentialBySubjectRequest) 
 	return &response, nil
 }
 
-func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*GetCredentialsResponse, error) {
+func (s Service) GetCredentialsBySchema(ctx context.Context, request GetCredentialBySchemaRequest) (*GetCredentialsResponse, error) {
 
 	logrus.Debugf("getting credential(s) for schema: %s", util.SanitizeLog(request.Schema))
 
-	gotCreds, err := s.storage.GetCredentialsBySchema(request.Schema)
+	gotCreds, err := s.storage.GetCredentialsBySchema(ctx, request.Schema)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get credential(s) for schema: %s", request.Schema)
 	}
@@ -422,10 +423,10 @@ func (s Service) GetCredentialsBySchema(request GetCredentialBySchemaRequest) (*
 	return &response, nil
 }
 
-func (s Service) GetCredentialStatus(request GetCredentialStatusRequest) (*GetCredentialStatusResponse, error) {
+func (s Service) GetCredentialStatus(ctx context.Context, request GetCredentialStatusRequest) (*GetCredentialStatusResponse, error) {
 	logrus.Debugf("getting credential status: %s", request.ID)
 
-	gotCred, err := s.storage.GetCredential(request.ID)
+	gotCred, err := s.storage.GetCredential(ctx, request.ID)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get credential: %s", request.ID)
 	}
@@ -438,11 +439,11 @@ func (s Service) GetCredentialStatus(request GetCredentialStatusRequest) (*GetCr
 	return &response, nil
 }
 
-func (s Service) GetCredentialStatusList(request GetCredentialStatusListRequest) (*GetCredentialStatusListResponse, error) {
+func (s Service) GetCredentialStatusList(ctx context.Context, request GetCredentialStatusListRequest) (*GetCredentialStatusListResponse, error) {
 	logrus.Debugf("getting credential status list: %s", request.ID)
 
 	credStatusListID := fmt.Sprintf(`%s/v1/credentials/status/%s`, s.config.ServiceEndpoint, request.ID)
-	gotCred, err := s.storage.GetStatusListCredential(credStatusListID)
+	gotCred, err := s.storage.GetStatusListCredential(ctx, credStatusListID)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get credential: %s", request.ID)
 	}
@@ -459,10 +460,10 @@ func (s Service) GetCredentialStatusList(request GetCredentialStatusListRequest)
 	return &response, nil
 }
 
-func (s Service) UpdateCredentialStatus(request UpdateCredentialStatusRequest) (*UpdateCredentialStatusResponse, error) {
+func (s Service) UpdateCredentialStatus(ctx context.Context, request UpdateCredentialStatusRequest) (*UpdateCredentialStatusResponse, error) {
 	logrus.Debugf("updating credential status: %s to Revoked: %v", request.ID, request.Revoked)
 
-	gotCred, err := s.storage.GetCredential(request.ID)
+	gotCred, err := s.storage.GetCredential(ctx, request.ID)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get credential: %s", request.ID)
 	}
@@ -476,7 +477,7 @@ func (s Service) UpdateCredentialStatus(request UpdateCredentialStatusRequest) (
 		return &response, nil
 	}
 
-	container, err := updateCredentialStatus(s, gotCred, request)
+	container, err := updateCredentialStatus(ctx, s, gotCred, request)
 	if err != nil {
 		return nil, util.LoggingNewError("problem updating credential")
 	}
@@ -485,7 +486,7 @@ func (s Service) UpdateCredentialStatus(request UpdateCredentialStatusRequest) (
 	return &response, nil
 }
 
-func updateCredentialStatus(s Service, gotCred *StoredCredential, request UpdateCredentialStatusRequest) (*credint.Container, error) {
+func updateCredentialStatus(ctx context.Context, s Service, gotCred *StoredCredential, request UpdateCredentialStatusRequest) (*credint.Container, error) {
 	// store the credential with updated status
 	container := credint.Container{
 		ID:            gotCred.ID,
@@ -498,7 +499,7 @@ func updateCredentialStatus(s Service, gotCred *StoredCredential, request Update
 		Container: container,
 	}
 
-	if err := s.storage.StoreCredential(storageRequest); err != nil {
+	if err := s.storage.StoreCredential(ctx, storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store credential")
 	}
 
@@ -508,7 +509,7 @@ func updateCredentialStatus(s Service, gotCred *StoredCredential, request Update
 		return nil, util.LoggingNewErrorf("problem with getting status list credential id")
 	}
 
-	creds, err := s.storage.GetCredentialsByIssuerAndSchema(gotCred.Issuer, gotCred.Schema)
+	creds, err := s.storage.GetCredentialsByIssuerAndSchema(ctx, gotCred.Issuer, gotCred.Schema)
 	if err != nil {
 		return nil, util.LoggingNewErrorf("problem with getting status list credential for issuer: %s schema: %s", gotCred.Issuer, gotCred.Schema)
 	}
@@ -525,7 +526,7 @@ func updateCredentialStatus(s Service, gotCred *StoredCredential, request Update
 		return nil, util.LoggingErrorMsg(err, "could not generate status list")
 	}
 
-	statusListCredJWT, err := s.signCredentialJWT(gotCred.Issuer, *generatedStatusListCredential)
+	statusListCredJWT, err := s.signCredentialJWT(ctx, gotCred.Issuer, *generatedStatusListCredential)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not sign status list credential")
 	}
@@ -541,15 +542,15 @@ func updateCredentialStatus(s Service, gotCred *StoredCredential, request Update
 		Container: statusListContainer,
 	}
 
-	if err = s.storage.StoreStatusListCredential(storageRequest); err != nil {
+	if err = s.storage.StoreStatusListCredential(ctx, storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store credential status list")
 	}
 
 	return &container, nil
 }
 
-func (s Service) GetCredentialsByIssuerAndSchemaWithStatus(issuer string, schema string) ([]credential.VerifiableCredential, error) {
-	gotCreds, err := s.storage.GetCredentialsByIssuerAndSchema(issuer, schema)
+func (s Service) GetCredentialsByIssuerAndSchemaWithStatus(ctx context.Context, issuer string, schema string) ([]credential.VerifiableCredential, error) {
+	gotCreds, err := s.storage.GetCredentialsByIssuerAndSchema(ctx, issuer, schema)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get credential(s) for issuer: %s", issuer)
 	}
@@ -564,11 +565,11 @@ func (s Service) GetCredentialsByIssuerAndSchemaWithStatus(issuer string, schema
 	return creds, nil
 }
 
-func (s Service) DeleteCredential(request DeleteCredentialRequest) error {
+func (s Service) DeleteCredential(ctx context.Context, request DeleteCredentialRequest) error {
 
 	logrus.Debugf("deleting credential: %s", request.ID)
 
-	if err := s.storage.DeleteCredential(request.ID); err != nil {
+	if err := s.storage.DeleteCredential(ctx, request.ID); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete credential with id: %s", request.ID)
 	}
 

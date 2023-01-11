@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -423,7 +424,7 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 	credSvc := testCredentialService(t, s, keyStoreSvc, didSvc, schemaSvc)
 	_, manifestSvc := testManifest(t, s, keyStoreSvc, didSvc, credSvc)
 
-	issuerResp, err := didSvc.CreateDIDByMethod(did.CreateDIDRequest{
+	issuerResp, err := didSvc.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 		Method:  "key",
 		KeyType: crypto.Ed25519,
 	})
@@ -438,10 +439,10 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 		},
 		"additionalProperties": true,
 	}
-	createdSchema, err := schemaSvc.CreateSchema(schema.CreateSchemaRequest{Author: issuerResp.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+	createdSchema, err := schemaSvc.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerResp.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
 	assert.NoError(t, err)
 	sillyName := "some silly name"
-	manifest, err := manifestSvc.CreateManifest(model.CreateManifestRequest{
+	manifest, err := manifestSvc.CreateManifest(context.Background(), model.CreateManifestRequest{
 		Name:      &sillyName,
 		IssuerDID: issuerResp.DID.ID,
 		ClaimFormat: &exchange.ClaimFormat{

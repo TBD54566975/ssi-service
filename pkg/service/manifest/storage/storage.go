@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
@@ -61,7 +62,7 @@ func NewManifestStorage(db storage.ServiceStorage) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (ms *Storage) StoreManifest(manifest StoredManifest) error {
+func (ms *Storage) StoreManifest(ctx context.Context, manifest StoredManifest) error {
 	id := manifest.Manifest.ID
 	if id == "" {
 		err := errors.New("could not store manifest without an ID")
@@ -74,11 +75,11 @@ func (ms *Storage) StoreManifest(manifest StoredManifest) error {
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)
 	}
-	return ms.db.Write(manifestNamespace, id, manifestBytes)
+	return ms.db.Write(ctx, manifestNamespace, id, manifestBytes)
 }
 
-func (ms *Storage) GetManifest(id string) (*StoredManifest, error) {
-	manifestBytes, err := ms.db.Read(manifestNamespace, id)
+func (ms *Storage) GetManifest(ctx context.Context, id string) (*StoredManifest, error) {
+	manifestBytes, err := ms.db.Read(ctx, manifestNamespace, id)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get manifest: %s", id)
 		logrus.WithError(err).Error(errMsg)
@@ -99,8 +100,8 @@ func (ms *Storage) GetManifest(id string) (*StoredManifest, error) {
 }
 
 // GetManifests attempts to get all stored manifests. It will return those it can even if it has trouble with some.
-func (ms *Storage) GetManifests() ([]StoredManifest, error) {
-	gotManifests, err := ms.db.ReadAll(manifestNamespace)
+func (ms *Storage) GetManifests(ctx context.Context) ([]StoredManifest, error) {
+	gotManifests, err := ms.db.ReadAll(ctx, manifestNamespace)
 	if err != nil {
 		errMsg := "could not get all manifests"
 		logrus.WithError(err).Error(errMsg)
@@ -120,14 +121,14 @@ func (ms *Storage) GetManifests() ([]StoredManifest, error) {
 	return stored, nil
 }
 
-func (ms *Storage) DeleteManifest(id string) error {
-	if err := ms.db.Delete(manifestNamespace, id); err != nil {
+func (ms *Storage) DeleteManifest(ctx context.Context, id string) error {
+	if err := ms.db.Delete(ctx, manifestNamespace, id); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete manifest: %s", id)
 	}
 	return nil
 }
 
-func (ms *Storage) StoreApplication(application StoredApplication) error {
+func (ms *Storage) StoreApplication(ctx context.Context, application StoredApplication) error {
 	id := application.Application.ID
 	if id == "" {
 		return util.LoggingNewError("could not store application without an ID")
@@ -136,11 +137,11 @@ func (ms *Storage) StoreApplication(application StoredApplication) error {
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "could not store application: %s", id)
 	}
-	return ms.db.Write(credential.ApplicationNamespace, id, applicationBytes)
+	return ms.db.Write(ctx, credential.ApplicationNamespace, id, applicationBytes)
 }
 
-func (ms *Storage) GetApplication(id string) (*StoredApplication, error) {
-	applicationBytes, err := ms.db.Read(credential.ApplicationNamespace, id)
+func (ms *Storage) GetApplication(ctx context.Context, id string) (*StoredApplication, error) {
+	applicationBytes, err := ms.db.Read(ctx, credential.ApplicationNamespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get application: %s", id)
 	}
@@ -155,8 +156,8 @@ func (ms *Storage) GetApplication(id string) (*StoredApplication, error) {
 }
 
 // GetApplications attempts to get all stored applications. It will return those it can even if it has trouble with some.
-func (ms *Storage) GetApplications() ([]StoredApplication, error) {
-	gotApplications, err := ms.db.ReadAll(credential.ApplicationNamespace)
+func (ms *Storage) GetApplications(ctx context.Context) ([]StoredApplication, error) {
+	gotApplications, err := ms.db.ReadAll(ctx, credential.ApplicationNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get all applications")
 	}
@@ -176,14 +177,14 @@ func (ms *Storage) GetApplications() ([]StoredApplication, error) {
 	return stored, nil
 }
 
-func (ms *Storage) DeleteApplication(id string) error {
-	if err := ms.db.Delete(credential.ApplicationNamespace, id); err != nil {
+func (ms *Storage) DeleteApplication(ctx context.Context, id string) error {
+	if err := ms.db.Delete(ctx, credential.ApplicationNamespace, id); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete application: %s", id)
 	}
 	return nil
 }
 
-func (ms *Storage) StoreResponse(response StoredResponse) error {
+func (ms *Storage) StoreResponse(ctx context.Context, response StoredResponse) error {
 	id := response.Response.ID
 	if id == "" {
 		return util.LoggingNewError("could not store response without an ID")
@@ -192,11 +193,11 @@ func (ms *Storage) StoreResponse(response StoredResponse) error {
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "could not store response: %s", id)
 	}
-	return ms.db.Write(responseNamespace, id, responseBytes)
+	return ms.db.Write(ctx, responseNamespace, id, responseBytes)
 }
 
-func (ms *Storage) GetResponse(id string) (*StoredResponse, error) {
-	responseBytes, err := ms.db.Read(responseNamespace, id)
+func (ms *Storage) GetResponse(ctx context.Context, id string) (*StoredResponse, error) {
+	responseBytes, err := ms.db.Read(ctx, responseNamespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get response: %s", id)
 	}
@@ -211,8 +212,8 @@ func (ms *Storage) GetResponse(id string) (*StoredResponse, error) {
 }
 
 // GetResponses attempts to get all stored responses. It will return those it can even if it has trouble with some.
-func (ms *Storage) GetResponses() ([]StoredResponse, error) {
-	gotResponses, err := ms.db.ReadAll(responseNamespace)
+func (ms *Storage) GetResponses(ctx context.Context) ([]StoredResponse, error) {
+	gotResponses, err := ms.db.ReadAll(ctx, responseNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get all responses")
 	}
@@ -232,8 +233,8 @@ func (ms *Storage) GetResponses() ([]StoredResponse, error) {
 	return stored, nil
 }
 
-func (ms *Storage) DeleteResponse(id string) error {
-	if err := ms.db.Delete(responseNamespace, id); err != nil {
+func (ms *Storage) DeleteResponse(ctx context.Context, id string) error {
+	if err := ms.db.Delete(ctx, responseNamespace, id); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete response: %s", id)
 	}
 	return nil
@@ -246,7 +247,7 @@ func (ms *Storage) DeleteResponse(id string) error {
 //     creates in step 2.
 //
 // The operation and it's response (from 3) are returned.
-func (ms *Storage) ReviewApplication(id string, approved bool, reason string, opID string, response StoredResponse) (*StoredResponse, *opstorage.StoredOperation, error) {
+func (ms *Storage) ReviewApplication(ctx context.Context, id string, approved bool, reason string, opID string, response StoredResponse) (*StoredResponse, *opstorage.StoredOperation, error) {
 	// TODO: everything should be in a single Tx.
 	m := map[string]any{
 		"status": opsubmission.StatusDenied,
@@ -255,15 +256,16 @@ func (ms *Storage) ReviewApplication(id string, approved bool, reason string, op
 	if approved {
 		m["status"] = opsubmission.StatusApproved
 	}
-	if _, err := ms.db.Update(credential.ApplicationNamespace, id, m); err != nil {
+	if _, err := ms.db.Update(ctx, credential.ApplicationNamespace, id, m); err != nil {
 		return nil, nil, errors.Wrap(err, "updating application")
 	}
 
-	if err := ms.StoreResponse(response); err != nil {
+	if err := ms.StoreResponse(ctx, response); err != nil {
 		return nil, nil, errors.Wrap(err, "storing credential response")
 	}
 
 	responseData, operationData, err := ms.db.UpdateValueAndOperation(
+		ctx,
 		responseNamespace,
 		response.ID,
 		storage.NewUpdater(m),
