@@ -79,3 +79,24 @@ func (s Storage) ListIssuanceTemplates() ([]IssuanceTemplate, error) {
 	}
 	return ts, nil
 }
+
+func (s Storage) GetIssuanceTemplatesByManifestID(manifestID string) ([]StoredIssuanceTemplate, error) {
+	if manifestID == "" {
+		return nil, errors.New("cannot find issuance template without a manifest ID")
+	}
+	ms, err := s.db.ReadAll(namespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading all values")
+	}
+	var ts []StoredIssuanceTemplate
+	for key, data := range ms {
+		var sit StoredIssuanceTemplate
+		if err := json.Unmarshal(data, &sit); err != nil {
+			return nil, errors.Wrapf(err, "unmarshalling <%s>", key)
+		}
+		if sit.IssuanceTemplate.CredentialManifest == manifestID {
+			ts = append(ts, sit)
+		}
+	}
+	return ts, nil
+}

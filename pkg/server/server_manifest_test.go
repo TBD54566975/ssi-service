@@ -5,10 +5,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
+	credsdk "github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
+	"github.com/google/uuid"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,6 +21,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	manifestsvc "github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -307,6 +312,187 @@ func TestManifestAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), fmt.Sprintf("could not get manifest with id: %s", resp.Manifest.ID))
 	})
 
+	t.Run("Submit Application With Issuance Template", func(tt *testing.T) {
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
+
+		keyStoreService := testKeyStoreService(tt, bolt)
+		issuanceService := testIssuanceService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
+		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, didService, credentialService)
+		// create an issuer
+		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		// create an applicant
+		applicantDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		// create a schema for the creds to be issued against
+		licenseSchema := map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"licenseType": map[string]any{
+					"type": "string",
+				},
+			},
+			"additionalProperties": true,
+		}
+		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
+
+		// issue a credential against the schema to the subject, from the issuer
+		createdCred, err := credentialService.CreateCredential(credential.CreateCredentialRequest{
+			Issuer:     issuerDID.DID.ID,
+			Subject:    applicantDID.DID.ID,
+			JSONSchema: createdSchema.ID,
+			Data: map[string]any{
+				"licenseType": "WA-DL-CLASS-A",
+				"firstName":   "Tester",
+				"lastName":    "McTest",
+			},
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCred)
+
+		// good request
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
+
+		requestValue := newRequestValue(tt, createManifestRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
+		w := httptest.NewRecorder()
+		err = manifestRouter.CreateManifest(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.CreateManifestResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+
+		m := resp.Manifest
+		assert.NotEmpty(tt, m)
+		assert.Equal(tt, m.Issuer.ID, issuerDID.DID.ID)
+
+		// good application request
+		container := []credmodel.Container{{CredentialJWT: createdCred.CredentialJWT}}
+		applicationRequest := getValidApplicationRequest(m.ID, m.PresentationDefinition.ID, m.PresentationDefinition.InputDescriptors[0].ID, container)
+
+		// sign application
+		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
+		assert.NoError(tt, err)
+		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
+		assert.NoError(tt, err)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantPrivKey)
+		assert.NoError(tt, err)
+		signed, err := signer.SignJSON(applicationRequest)
+		assert.NoError(tt, err)
+
+		now := time.Date(2022, 10, 31, 0, 0, 0, 0, time.UTC)
+		duration := 5 * time.Second
+		issuanceTemplate, err := issuanceService.CreateIssuanceTemplate(&issuing.CreateIssuanceTemplateRequest{
+			IssuanceTemplate: issuing.IssuanceTemplate{
+				ID:                 uuid.NewString(),
+				CredentialManifest: m.ID,
+				Issuer:             issuerDID.DID.ID,
+				Credentials: []issuing.CredentialTemplate{
+					{
+						ID:     "id1",
+						Schema: createdSchema.ID,
+						Data: issuing.CredentialTemplateData{
+							CredentialInputDescriptor: "test-id",
+							Claims: issuing.ClaimTemplates{
+								Data: map[string]any{
+									"firstName": "$.credentialSubject.firstName",
+									"lastName":  "$.credentialSubject.lastName",
+									"state":     "CA",
+								},
+							},
+						},
+						Expiry: issuing.TimeLike{
+							Time: &now,
+						},
+					},
+					{
+						ID:     "id2",
+						Schema: createdSchema.ID,
+						Data: issuing.CredentialTemplateData{
+							CredentialInputDescriptor: "test-id",
+							Claims: issuing.ClaimTemplates{
+								Data: map[string]any{
+									"someCrazyObject": map[string]any{
+										"foo": 123,
+										"bar": false,
+										"baz": []any{
+											"yay", 123, nil,
+										},
+									},
+								},
+							},
+						},
+						Expiry:    issuing.TimeLike{Duration: &duration},
+						Revocable: true,
+					},
+				},
+			},
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuanceTemplate)
+
+		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
+		err = manifestRouter.SubmitApplication(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var op router.Operation
+		err = json.NewDecoder(w.Body).Decode(&op)
+		assert.NoError(tt, err)
+		assert.True(tt, op.Done)
+
+		var appResp router.SubmitApplicationResponse
+		respData, err := json.Marshal(op.Result.Response)
+		assert.NoError(tt, err)
+		err = json.Unmarshal(respData, &appResp)
+		assert.NoError(tt, err)
+
+		assert.Len(tt, appResp.Credentials, 2, "each output_descriptor in the definition should result in a credential")
+		vc, err := signing.ParseVerifiableCredentialFromJWT(appResp.Credentials.([]any)[0].(string))
+		assert.NoError(tt, err)
+		assert.Equal(tt, credsdk.CredentialSubject{
+			"id":        applicantDID.DID.ID,
+			"state":     "CA",
+			"firstName": "Tester",
+			"lastName":  "McTest",
+		}, vc.CredentialSubject)
+		assert.Equal(tt, time.Date(2022, 10, 31, 0, 0, 0, 0, time.UTC).Format(time.RFC3339), vc.ExpirationDate)
+		assert.Equal(tt, createdSchema.ID, vc.CredentialSchema.ID)
+		assert.Empty(tt, vc.CredentialStatus)
+
+		vc2, err := signing.ParseVerifiableCredentialFromJWT(appResp.Credentials.([]any)[1].(string))
+		assert.NoError(tt, err)
+		assert.Equal(tt, credsdk.CredentialSubject{
+			"id": applicantDID.DID.ID,
+			"someCrazyObject": map[string]any{
+				"foo": 123.,
+				"bar": false,
+				"baz": []any{
+					"yay", 123., nil,
+				},
+			},
+		}, vc2.CredentialSubject)
+		// TODO: inject the clock date and assert
+		assert.Equal(tt, createdSchema.ID, vc2.CredentialSchema.ID)
+		assert.NotEmpty(tt, vc2.CredentialStatus)
+	})
 	t.Run("Test Submit Application", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotNil(tt, bolt)

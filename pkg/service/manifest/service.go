@@ -15,6 +15,7 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
@@ -25,9 +26,10 @@ import (
 )
 
 type Service struct {
-	storage    *manifeststg.Storage
-	opsStorage *operation.Storage
-	config     config.ManifestServiceConfig
+	storage                 *manifeststg.Storage
+	opsStorage              *operation.Storage
+	issuanceTemplateStorage *issuing.Storage
+	config                  config.ManifestServiceConfig
 
 	// external dependencies
 	keyStore    *keystore.Service
@@ -66,7 +68,13 @@ func (s Service) Config() config.ManifestServiceConfig {
 	return s.config
 }
 
-func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver *didsdk.Resolver, credential *credential.Service) (*Service, error) {
+func NewManifestService(
+	config config.ManifestServiceConfig,
+	s storage.ServiceStorage,
+	keyStore *keystore.Service,
+	didResolver *didsdk.Resolver,
+	credential *credential.Service,
+) (*Service, error) {
 	manifestStorage, err := manifeststg.NewManifestStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the manifest service")
@@ -75,13 +83,18 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the operations")
 	}
+	issuingStorage, err := issuing.NewIssuingStorage(s)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for issuance templates")
+	}
 	return &Service{
-		storage:     manifestStorage,
-		opsStorage:  opsStorage,
-		config:      config,
-		keyStore:    keyStore,
-		didResolver: didResolver,
-		credential:  credential,
+		storage:                 manifestStorage,
+		opsStorage:              opsStorage,
+		issuanceTemplateStorage: issuingStorage,
+		config:                  config,
+		keyStore:                keyStore,
+		didResolver:             didResolver,
+		credential:              credential,
 	}, nil
 }
 
@@ -119,21 +132,31 @@ func (s Service) CreateManifest(request model.CreateManifestRequest) (*model.Cre
 	if request.IssuerName != nil {
 		issuerName = *request.IssuerName
 	}
-	if err := builder.SetIssuer(manifest.Issuer{
-		ID:   request.IssuerDID,
-		Name: issuerName,
-	}); err != nil {
+	if err := builder.SetIssuer(
+		manifest.Issuer{
+			ID:   request.IssuerDID,
+			Name: issuerName,
+		},
+	); err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not set issuer<%s> for manifest", request.IssuerDID)
 	}
 	if err := builder.SetClaimFormat(*request.ClaimFormat); err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not set claim format<%+v> for manifest", request.ClaimFormat)
 	}
 	if err := builder.SetOutputDescriptors(request.OutputDescriptors); err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not set output descriptors<%+v> for manifest", request.OutputDescriptors)
+		return nil, util.LoggingErrorMsgf(
+			err,
+			"could not set output descriptors<%+v> for manifest",
+			request.OutputDescriptors,
+		)
 	}
 	if request.PresentationDefinition != nil {
 		if err := builder.SetPresentationDefinition(*request.PresentationDefinition); err != nil {
-			return nil, util.LoggingErrorMsgf(err, "could not set presentation definition<%+v> for manifest", request.PresentationDefinition)
+			return nil, util.LoggingErrorMsgf(
+				err,
+				"could not set presentation definition<%+v> for manifest",
+				request.PresentationDefinition,
+			)
 		}
 	}
 
@@ -170,7 +193,10 @@ func (s Service) CreateManifest(request model.CreateManifestRequest) (*model.Cre
 func (s Service) VerifyManifest(request model.VerifyManifestRequest) (*model.VerifyManifestResponse, error) {
 	m, err := s.verifyManifestJWT(request.ManifestJWT)
 	if err != nil {
-		return &model.VerifyManifestResponse{Verified: false, Reason: "could not verify manifest's signature: " + err.Error()}, nil
+		return &model.VerifyManifestResponse{
+			Verified: false,
+			Reason:   "could not verify manifest's signature: " + err.Error(),
+		}, nil
 	}
 
 	// check the manifest is valid against its specification
@@ -226,8 +252,9 @@ type CredentialResponseContainer struct {
 	Credentials []any                       `json:"verifiableCredentials,omitempty"`
 }
 
-// ProcessApplicationSubmission stores the application in a pending state, along with an operation. Once the operation
-// is done, the Operation.Response field will be of type model.SubmitApplicationResponse.
+// ProcessApplicationSubmission stores the application in a pending state, along with an operation.
+// When there is an issuance template related to this manifest, the operation is done immediately.
+// Once the operation is done, the Operation.Response field will be of type model.SubmitApplicationResponse.
 // Invalid applications return an operation marked as done, with Response that represents denial.
 // The state of the application can be updated by calling CancelOperation, or by calling ReviewApplicationSubmission.
 // When the state is updated, the operation is marked as done.
@@ -237,18 +264,35 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 	gotManifest, err := s.storage.GetManifest(manifestID)
 	applicationID := request.Application.ID
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "problem with retrieving manifest<%s> during application<%s>'s validation", manifestID, applicationID)
+		return nil, util.LoggingErrorMsgf(
+			err,
+			"problem with retrieving manifest<%s> during application<%s>'s validation",
+			manifestID,
+			applicationID,
+		)
 	}
 	if gotManifest == nil {
-		return nil, util.LoggingNewErrorf("application<%s> is not valid; a manifest does not exist with id: %s", applicationID, manifestID)
+		return nil, util.LoggingNewErrorf(
+			"application<%s> is not valid; a manifest does not exist with id: %s",
+			applicationID,
+			manifestID,
+		)
 	}
 
 	opID := opcredential.IDFromResponseID(applicationID)
 	// validate the application
-	if unfulfilledInputDescriptorIDs, validationErr := s.validateCredentialApplication(gotManifest.Manifest, request); validationErr != nil {
+	if unfulfilledInputDescriptorIDs, validationErr := s.validateCredentialApplication(
+		gotManifest.Manifest,
+		request,
+	); validationErr != nil {
 		resp := errresp.GetErrorResponse(validationErr)
 		if resp.ErrorType == DenialResponse {
-			denialResp, err := buildDenialCredentialResponse(manifestID, applicationID, resp.Err.Error(), unfulfilledInputDescriptorIDs...)
+			denialResp, err := buildDenialCredentialResponse(
+				manifestID,
+				applicationID,
+				resp.Err.Error(),
+				unfulfilledInputDescriptorIDs...,
+			)
 			if err != nil {
 				return nil, util.LoggingErrorMsg(err, "could not build denial credential response")
 			}
@@ -285,13 +329,92 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 		return nil, util.LoggingErrorMsg(err, "could not store application")
 	}
 
-	storedOp := opstorage.StoredOperation{
+	storedOp := &opstorage.StoredOperation{
 		ID: opID,
 	}
-	if err = s.opsStorage.StoreOperation(storedOp); err != nil {
+	if err = s.opsStorage.StoreOperation(*storedOp); err != nil {
 		return nil, errors.Wrap(err, "storing operation")
 	}
-	return operation.ServiceModel(storedOp)
+
+	autoStoredOp, err := s.maybeIssueAutomatically(request, manifestID, applicantDID, applicationID, gotManifest)
+	if err != nil {
+		return nil, err
+	}
+
+	if autoStoredOp != nil {
+		storedOp = autoStoredOp
+	}
+	return operation.ServiceModel(*storedOp)
+}
+
+func (s Service) maybeIssueAutomatically(
+	request model.SubmitApplicationRequest,
+	manifestID string,
+	applicantDID string,
+	applicationID string,
+	gotManifest *manifeststg.StoredManifest,
+) (*opstorage.StoredOperation, error) {
+	issuanceTemplates, err := s.issuanceTemplateStorage.GetIssuanceTemplatesByManifestID(manifestID)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching issuance templates by manifest ID")
+	}
+	if len(issuanceTemplates) == 0 {
+		return nil, nil
+	}
+
+	issuanceTemplate := issuanceTemplates[0].IssuanceTemplate
+
+	if len(issuanceTemplates) > 1 {
+		logrus.Warnf("found multiple issuance templates, using first entry only")
+	}
+
+	credResp, creds, err := s.buildCredentialResponse(
+		applicantDID,
+		manifestID,
+		gotManifest.Manifest,
+		true,
+		"automatic creation via issuance template",
+		&issuanceTemplate,
+		request.Application,
+		request.ApplicationJSON,
+	)
+	if err != nil {
+		return nil, err
+	}
+	// prepare credentials for the response
+	credentials := credint.ContainersToInterface(creds)
+
+	// sign the response before returning
+	responseJWT, err := s.signCredentialResponseJWT(
+		gotManifest.Issuer, CredentialResponseContainer{
+			Response:    *credResp,
+			Credentials: credentials,
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "signing credential response")
+	}
+
+	// store the response we've generated
+	storeResponseRequest := manifeststg.StoredResponse{
+		ID:           credResp.ID,
+		ManifestID:   manifestID,
+		ApplicantDID: applicantDID,
+		Response:     *credResp,
+		Credentials:  creds,
+		ResponseJWT:  *responseJWT,
+	}
+	_, storedOp, err := s.storage.ReviewApplication(
+		applicationID,
+		true,
+		"automatic from issuing template",
+		opcredential.IDFromResponseID(applicationID),
+		storeResponseRequest,
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, "reviewing application")
+	}
+	return storedOp, nil
 }
 
 // ReviewApplication moves an application state and marks the operation associated with it as done. A credential
@@ -309,13 +432,26 @@ func (s Service) ReviewApplication(request model.ReviewApplicationRequest) (*mod
 	}
 	applicationID := application.ID
 	if gotManifest == nil {
-		return nil, util.LoggingNewErrorf("application<%s> is not valid; a manifest does not exist with id: %s", applicationID, manifestID)
+		return nil, util.LoggingNewErrorf(
+			"application<%s> is not valid; a manifest does not exist with id: %s",
+			applicationID,
+			manifestID,
+		)
 	}
 	credManifest := gotManifest.Manifest
 	applicantDID := application.ApplicantDID
 
 	// build the credential response
-	credResp, creds, err := s.buildCredentialResponse(applicantDID, manifestID, applicationID, credManifest, request.Approved, request.Reason)
+	credResp, creds, err := s.buildCredentialResponse(
+		applicantDID,
+		manifestID,
+		credManifest,
+		request.Approved,
+		request.Reason,
+		nil,
+		application.Application,
+		nil,
+	)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not build credential response")
 	}
@@ -324,10 +460,12 @@ func (s Service) ReviewApplication(request model.ReviewApplicationRequest) (*mod
 	credentials := credint.ContainersToInterface(creds)
 
 	// sign the response before returning
-	responseJWT, err := s.signCredentialResponseJWT(gotManifest.Issuer, CredentialResponseContainer{
-		Response:    *credResp,
-		Credentials: credentials,
-	})
+	responseJWT, err := s.signCredentialResponseJWT(
+		gotManifest.Issuer, CredentialResponseContainer{
+			Response:    *credResp,
+			Credentials: credentials,
+		},
+	)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not sign credential response")
 	}
@@ -341,7 +479,13 @@ func (s Service) ReviewApplication(request model.ReviewApplicationRequest) (*mod
 		Credentials:  creds,
 		ResponseJWT:  *responseJWT,
 	}
-	storedResponse, _, err := s.storage.ReviewApplication(request.ID, request.Approved, request.Reason, opcredential.IDFromResponseID(request.ID), storeResponseRequest)
+	storedResponse, _, err := s.storage.ReviewApplication(
+		request.ID,
+		request.Approved,
+		request.Reason,
+		opcredential.IDFromResponseID(request.ID),
+		storeResponseRequest,
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "updating submission")
 	}
