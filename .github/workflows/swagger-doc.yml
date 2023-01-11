@@ -1,13 +1,8 @@
 name: swagger-doc
 
-# when:
-#   - a pull request is opened against main
-#   - commits are pushed to main
 on:
   pull_request:
-    branches: [ main ]
-  # used to run action manually via the UI
-  workflow_dispatch:
+    types: [opened, synchronize]
 
 jobs:
 
@@ -26,7 +21,7 @@ jobs:
       run: go install github.com/magefile/mage
 
 
-    - name: Update spec and push generated spec file
+    - name: Update spec
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
