@@ -324,18 +324,22 @@ func TestManifestAPI(t *testing.T) {
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, didService, credentialService)
 		// create an issuer
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  didsdk.KeyMethod,
-			KeyType: crypto.Ed25519,
-		})
+		issuerDID, err := didService.CreateDIDByMethod(
+			context.Background(),
+			did.CreateDIDRequest{
+				Method:  didsdk.KeyMethod,
+				KeyType: crypto.Ed25519,
+			})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
 		// create an applicant
-		applicantDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{
-			Method:  didsdk.KeyMethod,
-			KeyType: crypto.Ed25519,
-		})
+		applicantDID, err := didService.CreateDIDByMethod(
+			context.Background(),
+			did.CreateDIDRequest{
+				Method:  didsdk.KeyMethod,
+				KeyType: crypto.Ed25519,
+			})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
@@ -349,21 +353,25 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(
+			context.Background(),
+			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
-		createdCred, err := credentialService.CreateCredential(credential.CreateCredentialRequest{
-			Issuer:     issuerDID.DID.ID,
-			Subject:    applicantDID.DID.ID,
-			JSONSchema: createdSchema.ID,
-			Data: map[string]any{
-				"licenseType": "WA-DL-CLASS-A",
-				"firstName":   "Tester",
-				"lastName":    "McTest",
-			},
-		})
+		createdCred, err := credentialService.CreateCredential(
+			context.Background(),
+			credential.CreateCredentialRequest{
+				Issuer:     issuerDID.DID.ID,
+				Subject:    applicantDID.DID.ID,
+				JSONSchema: createdSchema.ID,
+				Data: map[string]any{
+					"licenseType": "WA-DL-CLASS-A",
+					"firstName":   "Tester",
+					"lastName":    "McTest",
+				},
+			})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)
 
@@ -400,52 +408,54 @@ func TestManifestAPI(t *testing.T) {
 
 		now := time.Date(2022, 10, 31, 0, 0, 0, 0, time.UTC)
 		duration := 5 * time.Second
-		issuanceTemplate, err := issuanceService.CreateIssuanceTemplate(&issuing.CreateIssuanceTemplateRequest{
-			IssuanceTemplate: issuing.IssuanceTemplate{
-				ID:                 uuid.NewString(),
-				CredentialManifest: m.ID,
-				Issuer:             issuerDID.DID.ID,
-				Credentials: []issuing.CredentialTemplate{
-					{
-						ID:     "id1",
-						Schema: createdSchema.ID,
-						Data: issuing.CredentialTemplateData{
-							CredentialInputDescriptor: "test-id",
-							Claims: issuing.ClaimTemplates{
-								Data: map[string]any{
-									"firstName": "$.credentialSubject.firstName",
-									"lastName":  "$.credentialSubject.lastName",
-									"state":     "CA",
+		issuanceTemplate, err := issuanceService.CreateIssuanceTemplate(
+			context.Background(),
+			&issuing.CreateIssuanceTemplateRequest{
+				IssuanceTemplate: issuing.IssuanceTemplate{
+					ID:                 uuid.NewString(),
+					CredentialManifest: m.ID,
+					Issuer:             issuerDID.DID.ID,
+					Credentials: []issuing.CredentialTemplate{
+						{
+							ID:     "id1",
+							Schema: createdSchema.ID,
+							Data: issuing.CredentialTemplateData{
+								CredentialInputDescriptor: "test-id",
+								Claims: issuing.ClaimTemplates{
+									Data: map[string]any{
+										"firstName": "$.credentialSubject.firstName",
+										"lastName":  "$.credentialSubject.lastName",
+										"state":     "CA",
+									},
 								},
 							},
+							Expiry: issuing.TimeLike{
+								Time: &now,
+							},
 						},
-						Expiry: issuing.TimeLike{
-							Time: &now,
-						},
-					},
-					{
-						ID:     "id2",
-						Schema: createdSchema.ID,
-						Data: issuing.CredentialTemplateData{
-							CredentialInputDescriptor: "test-id",
-							Claims: issuing.ClaimTemplates{
-								Data: map[string]any{
-									"someCrazyObject": map[string]any{
-										"foo": 123,
-										"bar": false,
-										"baz": []any{
-											"yay", 123, nil,
+						{
+							ID:     "id2",
+							Schema: createdSchema.ID,
+							Data: issuing.CredentialTemplateData{
+								CredentialInputDescriptor: "test-id",
+								Claims: issuing.ClaimTemplates{
+									Data: map[string]any{
+										"someCrazyObject": map[string]any{
+											"foo": 123,
+											"bar": false,
+											"baz": []any{
+												"yay", 123, nil,
+											},
 										},
 									},
 								},
 							},
+							Expiry:    issuing.TimeLike{Duration: &duration},
+							Revocable: true,
 						},
-						Expiry:    issuing.TimeLike{Duration: &duration},
-						Revocable: true,
 					},
 				},
-			},
-		})
+			})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuanceTemplate)
 

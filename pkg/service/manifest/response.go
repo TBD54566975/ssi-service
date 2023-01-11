@@ -48,7 +48,8 @@ func (s Service) signCredentialResponseJWT(ctx context.Context, signingDID strin
 }
 
 func (s Service) buildCredentialResponse(
-	ctx context.Context, applicantDID, manifestID string,
+	ctx context.Context,
+	applicantDID, manifestID string,
 	credManifest manifest.CredentialManifest,
 	approved bool,
 	reason string,

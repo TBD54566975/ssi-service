@@ -283,7 +283,7 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 	opID := opcredential.IDFromResponseID(applicationID)
 	// validate the application
 	if unfulfilledInputDescriptorIDs, validationErr := s.validateCredentialApplication(
-		ctx,gotManifest.Manifest,
+		ctx, gotManifest.Manifest,
 		request,
 	); validationErr != nil {
 		resp := errresp.GetErrorResponse(validationErr)
@@ -337,7 +337,7 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 		return nil, errors.Wrap(err, "storing operation")
 	}
 
-	autoStoredOp, err := s.maybeIssueAutomatically(request, manifestID, applicantDID, applicationID, gotManifest)
+	autoStoredOp, err := s.maybeIssueAutomatically(ctx, request, manifestID, applicantDID, applicationID, gotManifest)
 	if err != nil {
 		return nil, err
 	}
@@ -349,13 +349,14 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 }
 
 func (s Service) maybeIssueAutomatically(
+	ctx context.Context,
 	request model.SubmitApplicationRequest,
 	manifestID string,
 	applicantDID string,
 	applicationID string,
 	gotManifest *manifeststg.StoredManifest,
 ) (*opstorage.StoredOperation, error) {
-	issuanceTemplates, err := s.issuanceTemplateStorage.GetIssuanceTemplatesByManifestID(manifestID)
+	issuanceTemplates, err := s.issuanceTemplateStorage.GetIssuanceTemplatesByManifestID(ctx, manifestID)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching issuance templates by manifest ID")
 	}
@@ -370,6 +371,7 @@ func (s Service) maybeIssueAutomatically(
 	}
 
 	credResp, creds, err := s.buildCredentialResponse(
+		ctx,
 		applicantDID,
 		manifestID,
 		gotManifest.Manifest,
@@ -387,6 +389,7 @@ func (s Service) maybeIssueAutomatically(
 
 	// sign the response before returning
 	responseJWT, err := s.signCredentialResponseJWT(
+		ctx,
 		gotManifest.Issuer, CredentialResponseContainer{
 			Response:    *credResp,
 			Credentials: credentials,
@@ -406,6 +409,7 @@ func (s Service) maybeIssueAutomatically(
 		ResponseJWT:  *responseJWT,
 	}
 	_, storedOp, err := s.storage.ReviewApplication(
+		ctx,
 		applicationID,
 		true,
 		"automatic from issuing template",
@@ -444,7 +448,7 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 
 	// build the credential response
 	credResp, creds, err := s.buildCredentialResponse(
-		ctx,applicantDID,
+		ctx, applicantDID,
 		manifestID,
 		credManifest,
 		request.Approved,
@@ -462,7 +466,7 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 
 	// sign the response before returning
 	responseJWT, err := s.signCredentialResponseJWT(
-		ctx,gotManifest.Issuer, CredentialResponseContainer{
+		ctx, gotManifest.Issuer, CredentialResponseContainer{
 			Response:    *credResp,
 			Credentials: credentials,
 		},
@@ -481,7 +485,7 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 		ResponseJWT:  *responseJWT,
 	}
 	storedResponse, _, err := s.storage.ReviewApplication(
-		ctx,request.ID,
+		ctx, request.ID,
 		request.Approved,
 		request.Reason,
 		opcredential.IDFromResponseID(request.ID),

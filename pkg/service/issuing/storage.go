@@ -82,11 +82,11 @@ func (s Storage) ListIssuanceTemplates(ctx context.Context) ([]IssuanceTemplate,
 	return ts, nil
 }
 
-func (s Storage) GetIssuanceTemplatesByManifestID(manifestID string) ([]StoredIssuanceTemplate, error) {
+func (s Storage) GetIssuanceTemplatesByManifestID(ctx context.Context, manifestID string) ([]StoredIssuanceTemplate, error) {
 	if manifestID == "" {
 		return nil, errors.New("cannot find issuance template without a manifest ID")
 	}
-	ms, err := s.db.ReadAll(namespace)
+	ms, err := s.db.ReadAll(ctx, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all values")
 	}
