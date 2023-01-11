@@ -56,11 +56,11 @@ jobs:
         git config user.email github-actions@github.com
         if (git diff --shortstat | grep '[0-9]'); then \
           git add .; \
-          git commit -m "gen OpenAPI Spec by github-actions"; \
+          git commit -m "generate OpenAPI Spec by github-action"; \
           git push
         fi
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.DOC_PUBLISH }}
 
   build:
     runs-on: ubuntu-latest
