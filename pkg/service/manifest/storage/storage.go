@@ -246,7 +246,7 @@ func (ms *Storage) DeleteResponse(id string) error {
 //     creates in step 2.
 //
 // The operation and it's response (from 3) are returned.
-func (ms *Storage) ReviewApplication(id string, approved bool, reason string, opID string, response StoredResponse) (*StoredResponse, *opstorage.StoredOperation, error) {
+func (ms *Storage) ReviewApplication(applicationID string, approved bool, reason string, opID string, response StoredResponse) (*StoredResponse, *opstorage.StoredOperation, error) {
 	// TODO: everything should be in a single Tx.
 	m := map[string]any{
 		"status": opsubmission.StatusDenied,
@@ -255,7 +255,7 @@ func (ms *Storage) ReviewApplication(id string, approved bool, reason string, op
 	if approved {
 		m["status"] = opsubmission.StatusApproved
 	}
-	if _, err := ms.db.Update(credential.ApplicationNamespace, id, m); err != nil {
+	if _, err := ms.db.Update(credential.ApplicationNamespace, applicationID, m); err != nil {
 		return nil, nil, errors.Wrap(err, "updating application")
 	}
 
