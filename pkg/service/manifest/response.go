@@ -1,11 +1,13 @@
 package manifest
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
+	"github.com/pkg/errors"
 
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -19,8 +21,8 @@ const (
 	DenialResponse errresp.Type = "DenialResponse"
 )
 
-func (s Service) signCredentialResponseJWT(signingDID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
-	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: signingDID})
+func (s Service) signCredentialResponseJWT(ctx context.Context, signingDID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: signingDID})
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key for signing response with key<%s>", signingDID)
 	}
@@ -37,7 +39,7 @@ func (s Service) signCredentialResponseJWT(signingDID string, r CredentialRespon
 	return responseToken, nil
 }
 
-func (s Service) buildCredentialResponse(applicantDID, manifestID, applicationID string, credManifest manifest.CredentialManifest) (*manifest.CredentialResponse, []cred.Container, error) {
+func (s Service) buildCredentialResponse(ctx context.Context, applicantDID, manifestID, applicationID string, credManifest manifest.CredentialManifest, approved bool, reason string) (*manifest.CredentialResponse, []cred.Container, error) {
 	// TODO(gabe) need to check if this can be fulfilled and conditionally return success/denial
 	responseBuilder := manifest.NewCredentialResponseBuilder(manifestID)
 	if err := responseBuilder.SetApplicationID(applicationID); err != nil {
@@ -54,7 +56,7 @@ func (s Service) buildCredentialResponse(applicantDID, manifestID, applicationID
 			Data: make(map[string]any),
 		}
 
-		credentialResponse, err := s.credential.CreateCredential(credentialRequest)
+		credentialResponse, err := s.credential.CreateCredential(ctx, credentialRequest)
 		if err != nil {
 			return nil, nil, util.LoggingErrorMsg(err, "could not create credential")
 		}
@@ -80,8 +82,14 @@ func (s Service) buildCredentialResponse(applicantDID, manifestID, applicationID
 	}
 
 	// set the information for the fulfilled credentials in the response
-	if err := responseBuilder.SetFulfillment(descriptors); err != nil {
-		return nil, nil, util.LoggingErrorMsg(err, "could not fulfill credential application: could not set fulfillment")
+	if approved {
+		if err := responseBuilder.SetFulfillment(descriptors); err != nil {
+			return nil, nil, util.LoggingErrorMsg(err, "could not fulfill credential application: could not set fulfillment")
+		}
+	} else {
+		if err := responseBuilder.SetDenial(reason); err != nil {
+			return nil, nil, errors.Wrap(err, "setting denial")
+		}
 	}
 	credRes, err := responseBuilder.Build()
 	if err != nil {

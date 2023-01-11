@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -52,13 +53,13 @@ func TestCredentialRouter(t *testing.T) {
 
 		// create a credential
 
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
 		issuer := issuerDID.DID.ID
 		subject := "did:test:345"
-		createdCred, err := credService.CreateCredential(credential.CreateCredentialRequest{
+		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:  issuer,
 			Subject: subject,
 			Data: map[string]any{
@@ -80,7 +81,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Equal(tt, "Nakamoto", cred.CredentialSubject["lastName"])
 
 		// get it back
-		gotCred, err := credService.GetCredential(credential.GetCredentialRequest{ID: cred.ID})
+		gotCred, err := credService.GetCredential(context.Background(), credential.GetCredentialRequest{ID: cred.ID})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, gotCred)
 
@@ -88,18 +89,18 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Equal(tt, createdCred.CredentialJWT, gotCred.CredentialJWT)
 
 		// get a cred that doesn't exist
-		_, err = credService.GetCredential(credential.GetCredentialRequest{ID: "bad"})
+		_, err = credService.GetCredential(context.Background(), credential.GetCredentialRequest{ID: "bad"})
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "credential not found with id: bad")
 
 		// get by schema - no schema
-		bySchema, err := credService.GetCredentialsBySchema(credential.GetCredentialBySchemaRequest{Schema: ""})
+		bySchema, err := credService.GetCredentialsBySchema(context.Background(), credential.GetCredentialBySchemaRequest{Schema: ""})
 		assert.NoError(tt, err)
 		assert.Len(tt, bySchema.Credentials, 1)
 		assert.EqualValues(tt, cred.CredentialSchema, bySchema.Credentials[0].Credential.CredentialSchema)
 
 		// get by subject
-		bySubject, err := credService.GetCredentialsBySubject(credential.GetCredentialBySubjectRequest{Subject: subject})
+		bySubject, err := credService.GetCredentialsBySubject(context.Background(), credential.GetCredentialBySubjectRequest{Subject: subject})
 		assert.NoError(tt, err)
 		assert.Len(tt, bySubject.Credentials, 1)
 
@@ -107,7 +108,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Equal(tt, cred.CredentialSubject[credsdk.VerifiableCredentialIDProperty], bySubject.Credentials[0].Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
 
 		// get by issuer
-		byIssuer, err := credService.GetCredentialsByIssuer(credential.GetCredentialByIssuerRequest{Issuer: issuer})
+		byIssuer, err := credService.GetCredentialsByIssuer(context.Background(), credential.GetCredentialByIssuerRequest{Issuer: issuer})
 		assert.NoError(tt, err)
 		assert.Len(tt, byIssuer.Credentials, 1)
 
@@ -115,7 +116,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Equal(tt, cred.Issuer, byIssuer.Credentials[0].Credential.Issuer)
 
 		// create another cred with the same issuer, different subject, different schema that doesn't exist
-		_, err = credService.CreateCredential(credential.CreateCredentialRequest{
+		_, err = credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:     issuer,
 			Subject:    "did:abcd:efghi",
 			JSONSchema: "https://test-schema.com",
@@ -138,12 +139,12 @@ func TestCredentialRouter(t *testing.T) {
 			"required":             []any{"email"},
 			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// create another cred with the same issuer, different subject, different schema that does exist
-		createdCredWithSchema, err := credService.CreateCredential(credential.CreateCredentialRequest{
+		createdCredWithSchema, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:     issuer,
 			Subject:    "did:abcd:efghi",
 			JSONSchema: createdSchema.ID,
@@ -156,19 +157,19 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, createdCredWithSchema)
 
 		// get by issuer
-		byIssuer, err = credService.GetCredentialsByIssuer(credential.GetCredentialByIssuerRequest{Issuer: issuer})
+		byIssuer, err = credService.GetCredentialsByIssuer(context.Background(), credential.GetCredentialByIssuerRequest{Issuer: issuer})
 		assert.NoError(tt, err)
 		assert.Len(tt, byIssuer.Credentials, 2)
 
 		// make sure the schema and subject queries are consistent
-		bySchema, err = credService.GetCredentialsBySchema(credential.GetCredentialBySchemaRequest{Schema: ""})
+		bySchema, err = credService.GetCredentialsBySchema(context.Background(), credential.GetCredentialBySchemaRequest{Schema: ""})
 		assert.NoError(tt, err)
 		assert.Len(tt, bySchema.Credentials, 1)
 
 		assert.Equal(tt, cred.ID, bySchema.Credentials[0].ID)
 		assert.EqualValues(tt, cred.CredentialSchema, bySchema.Credentials[0].Credential.CredentialSchema)
 
-		bySubject, err = credService.GetCredentialsBySubject(credential.GetCredentialBySubjectRequest{Subject: subject})
+		bySubject, err = credService.GetCredentialsBySubject(context.Background(), credential.GetCredentialBySubjectRequest{Subject: subject})
 		assert.NoError(tt, err)
 		assert.Len(tt, bySubject.Credentials, 1)
 
@@ -176,15 +177,15 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Equal(tt, cred.CredentialSubject[credsdk.VerifiableCredentialIDProperty], bySubject.Credentials[0].Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
 
 		// delete a cred that doesn't exist (no error since idempotent)
-		err = credService.DeleteCredential(credential.DeleteCredentialRequest{ID: "bad"})
+		err = credService.DeleteCredential(context.Background(), credential.DeleteCredentialRequest{ID: "bad"})
 		assert.NoError(tt, err)
 
 		// delete a credential that does exist
-		err = credService.DeleteCredential(credential.DeleteCredentialRequest{ID: cred.ID})
+		err = credService.DeleteCredential(context.Background(), credential.DeleteCredentialRequest{ID: cred.ID})
 		assert.NoError(tt, err)
 
 		// get it back
-		_, err = credService.GetCredential(credential.GetCredentialRequest{ID: cred.ID})
+		_, err = credService.GetCredential(context.Background(), credential.GetCredentialRequest{ID: cred.ID})
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), fmt.Sprintf("credential not found with id: %s", cred.ID))
 	})
@@ -206,7 +207,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Equal(tt, framework.StatusReady, credService.Status().Status)
 
 		// create a did
-		issuerDID, err := didService.CreateDIDByMethod(did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
@@ -222,14 +223,14 @@ func TestCredentialRouter(t *testing.T) {
 			"additionalProperties": false,
 		}
 
-		createdSchema, err := schemaService.CreateSchema(schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		issuer := issuerDID.DID.ID
 		subject := "did:test:345"
 
-		createdCred, err := credService.CreateCredential(credential.CreateCredentialRequest{
+		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:     issuer,
 			Subject:    subject,
 			JSONSchema: createdSchema.ID,
@@ -251,7 +252,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Contains(tt, credStatusMap["statusListCredential"], "v1/credentials/status")
 		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
 
-		createdCredTwo, err := credService.CreateCredential(credential.CreateCredentialRequest{
+		createdCredTwo, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:     issuer,
 			Subject:    subject,
 			JSONSchema: createdSchema.ID,

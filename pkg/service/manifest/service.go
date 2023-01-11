@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
@@ -10,18 +11,17 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
-	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation"
-	opcredential "github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
-	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
-
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
+	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation"
+	opcredential "github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
+	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -91,7 +91,7 @@ type CredentialManifestContainer struct {
 	Manifest manifest.CredentialManifest `json:"credential_manifest"`
 }
 
-func (s Service) CreateManifest(request model.CreateManifestRequest) (*model.CreateManifestResponse, error) {
+func (s Service) CreateManifest(ctx context.Context, request model.CreateManifestRequest) (*model.CreateManifestResponse, error) {
 
 	logrus.Debugf("creating manifest: %+v", request)
 
@@ -145,7 +145,7 @@ func (s Service) CreateManifest(request model.CreateManifestRequest) (*model.Cre
 	}
 
 	// sign the manifest
-	manifestJWT, err := s.signManifestJWT(CredentialManifestContainer{Manifest: *m})
+	manifestJWT, err := s.signManifestJWT(ctx, CredentialManifestContainer{Manifest: *m})
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not sign manifest")
 	}
@@ -158,7 +158,7 @@ func (s Service) CreateManifest(request model.CreateManifestRequest) (*model.Cre
 		ManifestJWT: *manifestJWT,
 	}
 
-	if err = s.storage.StoreManifest(storageRequest); err != nil {
+	if err = s.storage.StoreManifest(ctx, storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store manifest")
 	}
 
@@ -181,11 +181,11 @@ func (s Service) VerifyManifest(request model.VerifyManifestRequest) (*model.Ver
 	return &model.VerifyManifestResponse{Verified: true}, nil
 }
 
-func (s Service) GetManifest(request model.GetManifestRequest) (*model.GetManifestResponse, error) {
+func (s Service) GetManifest(ctx context.Context, request model.GetManifestRequest) (*model.GetManifestResponse, error) {
 
 	logrus.Debugf("getting manifest: %s", request.ID)
 
-	gotManifest, err := s.storage.GetManifest(request.ID)
+	gotManifest, err := s.storage.GetManifest(ctx, request.ID)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get manifest: %s", request.ID)
 	}
@@ -194,8 +194,8 @@ func (s Service) GetManifest(request model.GetManifestRequest) (*model.GetManife
 	return &response, nil
 }
 
-func (s Service) GetManifests() (*model.GetManifestsResponse, error) {
-	gotManifests, err := s.storage.GetManifests()
+func (s Service) GetManifests(ctx context.Context) (*model.GetManifestsResponse, error) {
+	gotManifests, err := s.storage.GetManifests(ctx)
 
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get manifests(s)")
@@ -210,11 +210,11 @@ func (s Service) GetManifests() (*model.GetManifestsResponse, error) {
 	return &response, nil
 }
 
-func (s Service) DeleteManifest(request model.DeleteManifestRequest) error {
+func (s Service) DeleteManifest(ctx context.Context, request model.DeleteManifestRequest) error {
 
 	logrus.Debugf("deleting manifest: %s", request.ID)
 
-	if err := s.storage.DeleteManifest(request.ID); err != nil {
+	if err := s.storage.DeleteManifest(ctx, request.ID); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete manifest with id: %s", request.ID)
 	}
 
@@ -227,10 +227,15 @@ type CredentialResponseContainer struct {
 	Credentials []any                       `json:"verifiableCredentials,omitempty"`
 }
 
-func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationRequest) (*operation.Operation, error) {
+// ProcessApplicationSubmission stores the application in a pending state, along with an operation. Once the operation
+// is done, the Operation.Response field will be of type model.SubmitApplicationResponse.
+// Invalid applications return an operation marked as done, with Response that represents denial.
+// The state of the application can be updated by calling CancelOperation, or by calling ReviewApplicationSubmission.
+// When the state is updated, the operation is marked as done.
+func (s Service) ProcessApplicationSubmission(ctx context.Context, request model.SubmitApplicationRequest) (*operation.Operation, error) {
 	// get the manifest associated with the application
 	manifestID := request.Application.ManifestID
-	gotManifest, err := s.storage.GetManifest(manifestID)
+	gotManifest, err := s.storage.GetManifest(ctx, manifestID)
 	applicationID := request.Application.ID
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "problem with retrieving manifest<%s> during application<%s>'s validation", manifestID, applicationID)
@@ -238,11 +243,10 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 	if gotManifest == nil {
 		return nil, util.LoggingNewErrorf("application<%s> is not valid; a manifest does not exist with id: %s", applicationID, manifestID)
 	}
-	credManifest := gotManifest.Manifest
 
 	opID := opcredential.IDFromResponseID(applicationID)
 	// validate the application
-	if unfulfilledInputDescriptorIDs, validationErr := s.validateCredentialApplication(gotManifest.Manifest, request); validationErr != nil {
+	if unfulfilledInputDescriptorIDs, validationErr := s.validateCredentialApplication(ctx, gotManifest.Manifest, request); validationErr != nil {
 		resp := errresp.GetErrorResponse(validationErr)
 		if resp.ErrorType == DenialResponse {
 			denialResp, err := buildDenialCredentialResponse(manifestID, applicationID, resp.Err.Error(), unfulfilledInputDescriptorIDs...)
@@ -258,7 +262,7 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 				Done:     true,
 				Response: sarData,
 			}
-			if err := s.opsStorage.StoreOperation(storedOp); err != nil {
+			if err := s.opsStorage.StoreOperation(ctx, storedOp); err != nil {
 				return nil, errors.Wrap(err, "storing operation")
 			}
 
@@ -271,19 +275,48 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 	applicantDID := request.ApplicantDID
 	storageRequest := manifeststg.StoredApplication{
 		ID:             applicationID,
-		Status:         opcredential.StatusFulfilled,
+		Status:         opcredential.StatusPending,
 		ManifestID:     manifestID,
 		ApplicantDID:   applicantDID,
 		Application:    request.Application,
 		Credentials:    request.Credentials,
 		ApplicationJWT: request.ApplicationJWT,
 	}
-	if err = s.storage.StoreApplication(storageRequest); err != nil {
+	if err = s.storage.StoreApplication(ctx, storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store application")
 	}
 
+	storedOp := opstorage.StoredOperation{
+		ID: opID,
+	}
+	if err = s.opsStorage.StoreOperation(ctx, storedOp); err != nil {
+		return nil, errors.Wrap(err, "storing operation")
+	}
+	return operation.ServiceModel(storedOp)
+}
+
+// ReviewApplication moves an application state and marks the operation associated with it as done. A credential
+// response is stored.
+func (s Service) ReviewApplication(ctx context.Context, request model.ReviewApplicationRequest) (*model.SubmitApplicationResponse, error) {
+	application, err := s.storage.GetApplication(ctx, request.ID)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching application")
+	}
+
+	manifestID := application.ManifestID
+	gotManifest, err := s.storage.GetManifest(ctx, manifestID)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching manifest")
+	}
+	applicationID := application.ID
+	if gotManifest == nil {
+		return nil, util.LoggingNewErrorf("application<%s> is not valid; a manifest does not exist with id: %s", applicationID, manifestID)
+	}
+	credManifest := gotManifest.Manifest
+	applicantDID := application.ApplicantDID
+
 	// build the credential response
-	credResp, creds, err := s.buildCredentialResponse(applicantDID, manifestID, applicationID, credManifest)
+	credResp, creds, err := s.buildCredentialResponse(ctx, applicantDID, manifestID, applicationID, credManifest, request.Approved, request.Reason)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not build credential response")
 	}
@@ -292,7 +325,7 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 	credentials := credint.ContainersToInterface(creds)
 
 	// sign the response before returning
-	responseJWT, err := s.signCredentialResponseJWT(gotManifest.Issuer, CredentialResponseContainer{
+	responseJWT, err := s.signCredentialResponseJWT(ctx, gotManifest.Issuer, CredentialResponseContainer{
 		Response:    *credResp,
 		Credentials: credentials,
 	})
@@ -309,30 +342,21 @@ func (s Service) ProcessApplicationSubmission(request model.SubmitApplicationReq
 		Credentials:  creds,
 		ResponseJWT:  *responseJWT,
 	}
-	if err = s.storage.StoreResponse(storeResponseRequest); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not store manifest response")
+
+	storedResponse, _, err := s.storage.ReviewApplication(ctx, request.ID, request.Approved, request.Reason, opcredential.IDFromResponseID(request.ID), storeResponseRequest)
+	if err != nil {
+		return nil, errors.Wrap(err, "updating submission")
 	}
 
-	sarData, err := json.Marshal(storeResponseRequest)
-	if err != nil {
-		return nil, errors.Wrap(err, "marshalling response")
-	}
-	storedOp := opstorage.StoredOperation{
-		ID:       opID,
-		Done:     true,
-		Response: sarData,
-	}
-	if err = s.opsStorage.StoreOperation(storedOp); err != nil {
-		return nil, errors.Wrap(err, "storing operation")
-	}
-	return operation.ServiceModel(storedOp)
+	m := model.ServiceModel(storedResponse)
+	return &m, nil
 }
 
-func (s Service) GetApplication(request model.GetApplicationRequest) (*model.GetApplicationResponse, error) {
+func (s Service) GetApplication(ctx context.Context, request model.GetApplicationRequest) (*model.GetApplicationResponse, error) {
 
 	logrus.Debugf("getting application: %s", request.ID)
 
-	gotApp, err := s.storage.GetApplication(request.ID)
+	gotApp, err := s.storage.GetApplication(ctx, request.ID)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get application: %s", request.ID)
 	}
@@ -341,11 +365,11 @@ func (s Service) GetApplication(request model.GetApplicationRequest) (*model.Get
 	return &response, nil
 }
 
-func (s Service) GetApplications() (*model.GetApplicationsResponse, error) {
+func (s Service) GetApplications(ctx context.Context) (*model.GetApplicationsResponse, error) {
 
 	logrus.Debugf("getting application(s)")
 
-	gotApps, err := s.storage.GetApplications()
+	gotApps, err := s.storage.GetApplications(ctx)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get application(s)")
 	}
@@ -359,22 +383,22 @@ func (s Service) GetApplications() (*model.GetApplicationsResponse, error) {
 	return &response, nil
 }
 
-func (s Service) DeleteApplication(request model.DeleteApplicationRequest) error {
+func (s Service) DeleteApplication(ctx context.Context, request model.DeleteApplicationRequest) error {
 
 	logrus.Debugf("deleting application: %s", request.ID)
 
-	if err := s.storage.DeleteApplication(request.ID); err != nil {
+	if err := s.storage.DeleteApplication(ctx, request.ID); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete application with id: %s", request.ID)
 	}
 
 	return nil
 }
 
-func (s Service) GetResponse(request model.GetResponseRequest) (*model.GetResponseResponse, error) {
+func (s Service) GetResponse(ctx context.Context, request model.GetResponseRequest) (*model.GetResponseResponse, error) {
 
 	logrus.Debugf("getting response: %s", request.ID)
 
-	gotResponse, err := s.storage.GetResponse(request.ID)
+	gotResponse, err := s.storage.GetResponse(ctx, request.ID)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get response: %s", request.ID)
 	}
@@ -383,11 +407,11 @@ func (s Service) GetResponse(request model.GetResponseRequest) (*model.GetRespon
 	return &response, nil
 }
 
-func (s Service) GetResponses() (*model.GetResponsesResponse, error) {
+func (s Service) GetResponses(ctx context.Context) (*model.GetResponsesResponse, error) {
 
 	logrus.Debugf("getting response(s)")
 
-	gotResponses, err := s.storage.GetResponses()
+	gotResponses, err := s.storage.GetResponses(ctx)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get response(s)")
 	}
@@ -401,11 +425,11 @@ func (s Service) GetResponses() (*model.GetResponsesResponse, error) {
 	return &response, nil
 }
 
-func (s Service) DeleteResponse(request model.DeleteResponseRequest) error {
+func (s Service) DeleteResponse(ctx context.Context, request model.DeleteResponseRequest) error {
 
 	logrus.Debugf("deleting response: %s", request.ID)
 
-	if err := s.storage.DeleteResponse(request.ID); err != nil {
+	if err := s.storage.DeleteResponse(ctx, request.ID); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete response with id: %s", request.ID)
 	}
 

@@ -71,7 +71,7 @@ func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	req := schema.CreateSchemaRequest{Author: request.Author, Name: request.Name, Schema: request.Schema, Sign: request.Sign}
-	createSchemaResponse, err := sr.service.CreateSchema(req)
+	createSchemaResponse, err := sr.service.CreateSchema(ctx, req)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create schema with authoring DID: %s", request.Author)
 		logrus.WithError(err).Error(errMsg)
@@ -101,7 +101,7 @@ func (sr SchemaRouter) GetSchema(ctx context.Context, w http.ResponseWriter, r *
 	}
 
 	// TODO(gabe) differentiate between internal errors and not found schemas
-	gotSchema, err := sr.service.GetSchema(schema.GetSchemaRequest{ID: *id})
+	gotSchema, err := sr.service.GetSchema(ctx, schema.GetSchemaRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get schema with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -126,7 +126,7 @@ type GetSchemasResponse struct {
 // @Failure      500  {string}  string  "Internal server error"
 // @Router       /v1/schemas [get]
 func (sr SchemaRouter) GetSchemas(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	gotSchemas, err := sr.service.GetSchemas()
+	gotSchemas, err := sr.service.GetSchemas(ctx)
 	if err != nil {
 		errMsg := "could not get schemas"
 		logrus.WithError(err).Error(errMsg)
@@ -204,7 +204,7 @@ func (sr SchemaRouter) DeleteSchema(ctx context.Context, w http.ResponseWriter, 
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := sr.service.DeleteSchema(schema.DeleteSchemaRequest{ID: *id}); err != nil {
+	if err := sr.service.DeleteSchema(ctx, schema.DeleteSchemaRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete schema with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)

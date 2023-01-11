@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -81,7 +82,7 @@ func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorag
 // CreateSchema houses the main service logic for schema creation. It validates the input, and
 // produces a schema value that conforms with the VC JSON JSONSchema specification.
 // TODO(gabe) support data integrity proof generation on schemas, versioning, and more
-func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaResponse, error) {
+func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) (*CreateSchemaResponse, error) {
 
 	logrus.Debugf("creating schema: %+v", request)
 
@@ -113,14 +114,14 @@ func (s Service) CreateSchema(request CreateSchemaRequest) (*CreateSchemaRespons
 
 	// sign the schema
 	if request.Sign {
-		signedSchema, err := s.signSchemaJWT(request.Author, schemaValue)
+		signedSchema, err := s.signSchemaJWT(ctx, request.Author, schemaValue)
 		if err != nil {
 			return nil, util.LoggingError(err)
 		}
 		storedSchema.SchemaJWT = signedSchema
 	}
 
-	if err = s.storage.StoreSchema(storedSchema); err != nil {
+	if err = s.storage.StoreSchema(ctx, storedSchema); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store schema")
 	}
 
@@ -142,8 +143,8 @@ func prepareJSONSchema(id, name string, s schema.JSONSchema) schema.JSONSchema {
 }
 
 // signSchemaJWT signs a schema after the key associated with the provided author for the schema as a JWT
-func (s Service) signSchemaJWT(author string, schema schema.VCJSONSchema) (*keyaccess.JWT, error) {
-	gotKey, err := s.keyStore.GetKey(keystore.GetKeyRequest{ID: author})
+func (s Service) signSchemaJWT(ctx context.Context, author string, schema schema.VCJSONSchema) (*keyaccess.JWT, error) {
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: author})
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key for signing schema for author<%s>", author)
 	}
@@ -215,11 +216,11 @@ func (s Service) verifySchemaJWT(token keyaccess.JWT) (*schema.VCJSONSchema, err
 	return &parsedSchema, nil
 }
 
-func (s Service) GetSchemas() (*GetSchemasResponse, error) {
+func (s Service) GetSchemas(ctx context.Context) (*GetSchemasResponse, error) {
 
 	logrus.Debug("getting all schema")
 
-	storedSchemas, err := s.storage.GetSchemas()
+	storedSchemas, err := s.storage.GetSchemas(ctx)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "error getting schemas")
 	}
@@ -235,12 +236,12 @@ func (s Service) GetSchemas() (*GetSchemasResponse, error) {
 	return &GetSchemasResponse{Schemas: schemas}, nil
 }
 
-func (s Service) GetSchema(request GetSchemaRequest) (*GetSchemaResponse, error) {
+func (s Service) GetSchema(ctx context.Context, request GetSchemaRequest) (*GetSchemaResponse, error) {
 
 	logrus.Debugf("getting schema: %s", request.ID)
 
 	// TODO(gabe) support external schema resolution https://github.com/TBD54566975/ssi-service/issues/125
-	gotSchema, err := s.storage.GetSchema(request.ID)
+	gotSchema, err := s.storage.GetSchema(ctx, request.ID)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "error getting schema: %s", request.ID)
 	}
@@ -250,19 +251,19 @@ func (s Service) GetSchema(request GetSchemaRequest) (*GetSchemaResponse, error)
 	return &GetSchemaResponse{Schema: gotSchema.Schema, SchemaJWT: gotSchema.SchemaJWT}, nil
 }
 
-func (s Service) Resolve(id string) (*schema.VCJSONSchema, error) {
-	schemaResponse, err := s.GetSchema(GetSchemaRequest{ID: id})
+func (s Service) Resolve(ctx context.Context, id string) (*schema.VCJSONSchema, error) {
+	schemaResponse, err := s.GetSchema(ctx, GetSchemaRequest{ID: id})
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get schema for id<%s>", id)
 	}
 	return &schemaResponse.Schema, nil
 }
 
-func (s Service) DeleteSchema(request DeleteSchemaRequest) error {
+func (s Service) DeleteSchema(ctx context.Context, request DeleteSchemaRequest) error {
 
 	logrus.Debugf("deleting schema: %s", request.ID)
 
-	if err := s.storage.DeleteSchema(request.ID); err != nil {
+	if err := s.storage.DeleteSchema(ctx, request.ID); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete schema with id: %s", request.ID)
 	}
 

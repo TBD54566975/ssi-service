@@ -245,6 +245,7 @@ func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodGet, applicationsHandlerPath, manifestRouter.GetApplications)
 	s.Handle(http.MethodGet, path.Join(applicationsHandlerPath, "/:id"), manifestRouter.GetApplication)
 	s.Handle(http.MethodDelete, path.Join(applicationsHandlerPath, "/:id"), manifestRouter.DeleteApplication)
+	s.Handle(http.MethodPut, path.Join(applicationsHandlerPath, "/:id", "/review"), manifestRouter.ReviewApplication)
 
 	s.Handle(http.MethodGet, responsesHandlerPath, manifestRouter.GetResponses)
 	s.Handle(http.MethodGet, path.Join(responsesHandlerPath, "/:id"), manifestRouter.GetResponse)

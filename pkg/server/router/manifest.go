@@ -94,7 +94,7 @@ func (mr ManifestRouter) CreateManifest(ctx context.Context, w http.ResponseWrit
 	}
 
 	req := request.ToServiceRequest()
-	createManifestResponse, err := mr.service.CreateManifest(req)
+	createManifestResponse, err := mr.service.CreateManifest(ctx, req)
 	if err != nil {
 		errMsg := "could not create manifest"
 		logrus.WithError(err).Error(errMsg)
@@ -129,7 +129,7 @@ func (mr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter,
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotManifest, err := mr.service.GetManifest(model.GetManifestRequest{ID: *id})
+	gotManifest, err := mr.service.GetManifest(ctx, model.GetManifestRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get manifest with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -162,7 +162,7 @@ type GetManifestsResponse struct {
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests [get]
 func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	gotManifests, err := mr.service.GetManifests()
+	gotManifests, err := mr.service.GetManifests(ctx)
 
 	if err != nil {
 		errMsg := "could not get manifests"
@@ -202,7 +202,7 @@ func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := mr.service.DeleteManifest(model.DeleteManifestRequest{ID: *id}); err != nil {
+	if err := mr.service.DeleteManifest(ctx, model.DeleteManifestRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete manifest with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
@@ -283,7 +283,7 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*model.SubmitApplication
 type SubmitApplicationResponse struct {
 	Response manifestsdk.CredentialResponse `json:"credential_response"`
 	// this is an interface type to union Data Integrity and JWT style VCs
-	Credentials []any         `json:"verifiableCredentials,omitempty"`
+	Credentials any           `json:"verifiableCredentials,omitempty"`
 	ResponseJWT keyaccess.JWT `json:"responseJwt,omitempty"`
 }
 
@@ -314,7 +314,7 @@ func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	op, err := mr.service.ProcessApplicationSubmission(*req)
+	op, err := mr.service.ProcessApplicationSubmission(ctx, *req)
 	if err != nil {
 		errMsg := "could not submit application"
 		logrus.WithError(err).Error(errMsg)
@@ -347,7 +347,7 @@ func (mr ManifestRouter) GetApplication(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotApplication, err := mr.service.GetApplication(model.GetApplicationRequest{ID: *id})
+	gotApplication, err := mr.service.GetApplication(ctx, model.GetApplicationRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get application with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -376,7 +376,7 @@ type GetApplicationsResponse struct {
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests/applications [get]
 func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	gotApplications, err := mr.service.GetApplications()
+	gotApplications, err := mr.service.GetApplications(ctx)
 
 	if err != nil {
 		errMsg := "could not get applications"
@@ -410,7 +410,7 @@ func (mr ManifestRouter) DeleteApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := mr.service.DeleteApplication(model.DeleteApplicationRequest{ID: *id}); err != nil {
+	if err := mr.service.DeleteApplication(ctx, model.DeleteApplicationRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete application with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
@@ -442,7 +442,7 @@ func (mr ManifestRouter) GetResponse(ctx context.Context, w http.ResponseWriter,
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotResponse, err := mr.service.GetResponse(model.GetResponseRequest{ID: *id})
+	gotResponse, err := mr.service.GetResponse(ctx, model.GetResponseRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get response with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
@@ -471,7 +471,7 @@ type GetResponsesResponse struct {
 // @Failure      500      {string}  string  "Internal server error"
 // @Router       /v1/manifests/responses [get]
 func (mr ManifestRouter) GetResponses(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	gotResponses, err := mr.service.GetResponses()
+	gotResponses, err := mr.service.GetResponses(ctx)
 
 	if err != nil {
 		errMsg := "could not get responses"
@@ -505,11 +505,60 @@ func (mr ManifestRouter) DeleteResponse(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := mr.service.DeleteResponse(model.DeleteResponseRequest{ID: *id}); err != nil {
+	if err := mr.service.DeleteResponse(ctx, model.DeleteResponseRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete response with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	return framework.Respond(ctx, w, nil, http.StatusOK)
+}
+
+type ReviewApplicationRequest struct {
+	Approved bool   `json:"approved"`
+	Reason   string `json:"reason"`
+}
+
+func (r ReviewApplicationRequest) toServiceRequest(id string) model.ReviewApplicationRequest {
+	return model.ReviewApplicationRequest{
+		ID:       id,
+		Approved: r.Approved,
+		Reason:   r.Reason,
+	}
+}
+
+// ReviewApplication godoc
+// @Summary      Reviews an application
+// @Description  Reviewing an application either fulfills or denies the credential.
+// @Tags         ApplicationAPI
+// @Accept       json
+// @Produce      json
+// @Param        request  body      ReviewApplicationRequest  true  "request body"
+// @Success      201      {object}  SubmitApplicationResponse "Credential Response"
+// @Failure      400      {string}  string  "Bad request"
+// @Failure      500      {string}  string  "Internal server error"
+// @Router       /v1/manifests/applications/{id}/review [put]
+func (mr ManifestRouter) ReviewApplication(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		return framework.NewRequestError(
+			util.LoggingNewError("review application request requires id"), http.StatusBadRequest)
+	}
+
+	var request ReviewApplicationRequest
+	if err := framework.Decode(r, &request); err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "invalid review application request"), http.StatusBadRequest)
+	}
+
+	applicationResponse, err := mr.service.ReviewApplication(ctx, request.toServiceRequest(*id))
+	if err != nil {
+		return framework.NewRequestError(
+			util.LoggingErrorMsg(err, "failed reviewing application"), http.StatusInternalServerError)
+	}
+	return framework.Respond(ctx, w, SubmitApplicationResponse{
+		Response:    applicationResponse.Response,
+		Credentials: applicationResponse.Credentials,
+		ResponseJWT: applicationResponse.ResponseJWT,
+	}, http.StatusOK)
 }

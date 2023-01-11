@@ -24,8 +24,7 @@ func init() {
 }
 
 type RedisDB struct {
-	db  *goredislib.Client
-	ctx context.Context
+	db *goredislib.Client
 }
 
 func (b *RedisDB) Init(i interface{}) error {
@@ -37,7 +36,6 @@ func (b *RedisDB) Init(i interface{}) error {
 	})
 
 	b.db = client
-	b.ctx = context.Background()
 
 	return nil
 }
@@ -47,7 +45,7 @@ func (b *RedisDB) URI() string {
 }
 
 func (b *RedisDB) IsOpen() bool {
-	pong, err := b.db.Ping(b.ctx).Result()
+	pong, err := b.db.Ping(context.Background()).Result()
 	if err != nil {
 		logrus.Error(err)
 		return false
@@ -64,13 +62,13 @@ func (b *RedisDB) Close() error {
 	return b.db.Close()
 }
 
-func (b *RedisDB) Write(namespace, key string, value []byte) error {
+func (b *RedisDB) Write(ctx context.Context, namespace, key string, value []byte) error {
 	nameSpaceKey := getRedisKey(namespace, key)
 	// Zero expiration means the key has no expiration time.
-	return b.db.Set(b.ctx, nameSpaceKey, value, 0).Err()
+	return b.db.Set(ctx, nameSpaceKey, value, 0).Err()
 }
 
-func (b *RedisDB) WriteMany(namespaces, keys []string, values [][]byte) error {
+func (b *RedisDB) WriteMany(ctx context.Context, namespaces, keys []string, values [][]byte) error {
 	if len(namespaces) != len(keys) && len(namespaces) != len(values) {
 		return errors.New("namespaces, keys, and values, are not of equal length")
 	}
@@ -80,12 +78,12 @@ func (b *RedisDB) WriteMany(namespaces, keys []string, values [][]byte) error {
 		nameSpaceKeys = append(nameSpaceKeys, getRedisKey(namespaces[i], keys[i]))
 	}
 
-	return b.db.MSet(b.ctx, nameSpaceKeys, values, 0).Err()
+	return b.db.MSet(ctx, nameSpaceKeys, values, 0).Err()
 }
 
-func (b *RedisDB) Read(namespace, key string) ([]byte, error) {
+func (b *RedisDB) Read(ctx context.Context, namespace, key string) ([]byte, error) {
 	nameSpaceKey := getRedisKey(namespace, key)
-	res, err := b.db.Get(b.ctx, nameSpaceKey).Bytes()
+	res, err := b.db.Get(ctx, nameSpaceKey).Bytes()
 
 	// Nil reply returned by Redis when key does not exist.
 	if errors.Is(err, goredislib.Nil) {
@@ -95,35 +93,35 @@ func (b *RedisDB) Read(namespace, key string) ([]byte, error) {
 	return res, err
 }
 
-func (b *RedisDB) ReadPrefix(namespace, prefix string) (map[string][]byte, error) {
+func (b *RedisDB) ReadPrefix(ctx context.Context, namespace, prefix string) (map[string][]byte, error) {
 	namespacePrefix := getRedisKey(namespace, prefix)
 
-	keys, err := readAllKeys(namespacePrefix, b)
+	keys, err := readAllKeys(ctx, namespacePrefix, b)
 	if err != nil {
 		return nil, errors.Wrap(err, "read all keys")
 	}
 
-	return readAll(keys, b)
+	return readAll(ctx, keys, b)
 }
 
-func (b *RedisDB) ReadAll(namespace string) (map[string][]byte, error) {
-	keys, err := readAllKeys(namespace, b)
+func (b *RedisDB) ReadAll(ctx context.Context, namespace string) (map[string][]byte, error) {
+	keys, err := readAllKeys(ctx, namespace, b)
 	if err != nil {
 		return nil, errors.Wrap(err, "read all keys")
 	}
 
-	return readAll(keys, b)
+	return readAll(ctx, keys, b)
 }
 
 // TODO: This potentially could dangerous as it might run out of memory as we populate result
-func readAll(keys []string, b *RedisDB) (map[string][]byte, error) {
+func readAll(ctx context.Context, keys []string, b *RedisDB) (map[string][]byte, error) {
 	result := make(map[string][]byte, len(keys))
 
 	if len(keys) == 0 {
 		return nil, nil
 	}
 
-	values, err := b.db.MGet(b.ctx, keys...).Result()
+	values, err := b.db.MGet(ctx, keys...).Result()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting multiple keys")
 	}
@@ -143,8 +141,8 @@ func readAll(keys []string, b *RedisDB) (map[string][]byte, error) {
 	return result, nil
 }
 
-func (b *RedisDB) ReadAllKeys(namespace string) ([]string, error) {
-	keys, err := readAllKeys(namespace, b)
+func (b *RedisDB) ReadAllKeys(ctx context.Context, namespace string) ([]string, error) {
+	keys, err := readAllKeys(ctx, namespace, b)
 	if err != nil {
 		return nil, err
 	}
@@ -163,13 +161,13 @@ func (b *RedisDB) ReadAllKeys(namespace string) ([]string, error) {
 }
 
 // TODO: This potentially could dangerous as it might run out of memory as we populate allKeys
-func readAllKeys(namespace string, b *RedisDB) ([]string, error) {
+func readAllKeys(ctx context.Context, namespace string, b *RedisDB) ([]string, error) {
 	var cursor uint64
 
 	var allKeys []string
 
 	for {
-		keys, nextCursor, err := b.db.Scan(b.ctx, cursor, namespace+"*", RedisScanBatchSize).Result()
+		keys, nextCursor, err := b.db.Scan(ctx, cursor, namespace+"*", RedisScanBatchSize).Result()
 		if err != nil {
 			return nil, errors.Wrap(err, "scan error")
 		}
@@ -186,14 +184,14 @@ func readAllKeys(namespace string, b *RedisDB) ([]string, error) {
 	return allKeys, nil
 }
 
-func (b *RedisDB) Delete(namespace, key string) error {
+func (b *RedisDB) Delete(ctx context.Context, namespace, key string) error {
 	nameSpaceKey := getRedisKey(namespace, key)
 
-	if !namespaceExists(namespace, b) {
+	if !namespaceExists(ctx, namespace, b) {
 		return errors.Errorf("namespace<%s> does not exist", namespace)
 	}
 
-	res, err := b.db.GetDel(b.ctx, nameSpaceKey).Result()
+	res, err := b.db.GetDel(ctx, nameSpaceKey).Result()
 	if res == "" {
 		return errors.Wrapf(err, "key<%s> and namespace<%s> does not exist", key, namespace)
 	}
@@ -202,8 +200,8 @@ func (b *RedisDB) Delete(namespace, key string) error {
 
 }
 
-func (b *RedisDB) DeleteNamespace(namespace string) error {
-	keys, err := readAllKeys(namespace, b)
+func (b *RedisDB) DeleteNamespace(ctx context.Context, namespace string) error {
+	keys, err := readAllKeys(ctx, namespace, b)
 	if err != nil {
 		return errors.Wrap(err, "read all keys")
 	}
@@ -212,25 +210,25 @@ func (b *RedisDB) DeleteNamespace(namespace string) error {
 		return errors.Errorf("could not delete namespace<%s>, namespace does not exist", namespace)
 	}
 
-	return b.db.Del(b.ctx, keys...).Err()
+	return b.db.Del(ctx, keys...).Err()
 }
 
-func (b *RedisDB) Update(namespace string, key string, values map[string]any) ([]byte, error) {
-	updatedData, err := txWithUpdater(namespace, key, NewUpdater(values), b)
+func (b *RedisDB) Update(ctx context.Context, namespace string, key string, values map[string]any) ([]byte, error) {
+	updatedData, err := txWithUpdater(ctx, namespace, key, NewUpdater(values), b)
 	return updatedData, err
 }
 
-func (b *RedisDB) UpdateValueAndOperation(namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error) {
+func (b *RedisDB) UpdateValueAndOperation(ctx context.Context, namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error) {
 	// The Pipeliner interface provided by the go-redis library guarantees that all the commands queued in the pipeline will either succeed or fail together.
-	_, err = b.db.TxPipelined(b.ctx, func(pipe goredislib.Pipeliner) error {
+	_, err = b.db.TxPipelined(ctx, func(pipe goredislib.Pipeliner) error {
 
-		firstTx, err := txWithUpdater(namespace, key, updater, b)
+		firstTx, err := txWithUpdater(ctx, namespace, key, updater, b)
 		if err != nil {
 			return err
 		}
 
 		opUpdater.SetUpdatedResponse(firstTx)
-		secondTx, err := txWithUpdater(opNamespace, opKey, opUpdater, b)
+		secondTx, err := txWithUpdater(ctx, opNamespace, opKey, opUpdater, b)
 		if err != nil {
 			return err
 		}
@@ -248,9 +246,9 @@ func (b *RedisDB) UpdateValueAndOperation(namespace, key string, updater Updater
 	return first, op, err
 }
 
-func txWithUpdater(namespace, key string, updater Updater, b *RedisDB) ([]byte, error) {
+func txWithUpdater(ctx context.Context, namespace, key string, updater Updater, b *RedisDB) ([]byte, error) {
 	nameSpaceKey := getRedisKey(namespace, key)
-	v, err := b.db.Get(b.ctx, nameSpaceKey).Bytes()
+	v, err := b.db.Get(ctx, nameSpaceKey).Bytes()
 	if err != nil {
 		return nil, errors.Wrapf(err, "get error with namespace: %s key: %s", namespace, key)
 	}
@@ -266,7 +264,7 @@ func txWithUpdater(namespace, key string, updater Updater, b *RedisDB) ([]byte, 
 		return nil, err
 	}
 
-	if err = b.db.Set(b.ctx, nameSpaceKey, data, 0).Err(); err != nil {
+	if err = b.db.Set(ctx, nameSpaceKey, data, 0).Err(); err != nil {
 		return nil, errors.Wrap(err, "writing to db")
 	}
 
@@ -277,8 +275,8 @@ func getRedisKey(namespace, key string) string {
 	return namespace + NamespaceKeySeparator + key
 }
 
-func namespaceExists(namespace string, b *RedisDB) bool {
-	keys, _ := b.db.Scan(b.ctx, 0, namespace+"*", RedisScanBatchSize).Val()
+func namespaceExists(ctx context.Context, namespace string, b *RedisDB) bool {
+	keys, _ := b.db.Scan(ctx, 0, namespace+"*", RedisScanBatchSize).Val()
 
 	if len(keys) == 0 {
 		return false

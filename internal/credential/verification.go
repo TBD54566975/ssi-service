@@ -1,6 +1,7 @@
 package credential
 
 import (
+	"context"
 	"crypto"
 	"fmt"
 
@@ -49,7 +50,7 @@ func NewCredentialVerifier(didResolver *didsdk.Resolver, schemaResolver schema.R
 
 // VerifyJWTCredential first parses and checks the signature on the given JWT credential. Next, it runs
 // a set of static verification checks on the credential as per the credential service's configuration.
-func (v Verifier) VerifyJWTCredential(token keyaccess.JWT) error {
+func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
 	// first, parse the token to see if it contains a valid verifiable credential
 	cred, err := signing.ParseVerifiableCredentialFromJWT(token.String())
 	if err != nil {
@@ -84,12 +85,12 @@ func (v Verifier) VerifyJWTCredential(token keyaccess.JWT) error {
 		return util.LoggingErrorMsg(err, "could not verify credential's signature")
 	}
 
-	return v.staticVerificationChecks(*cred)
+	return v.staticVerificationChecks(ctx, *cred)
 }
 
 // VerifyDataIntegrityCredential first checks the signature on the given data integrity credential. Next, it runs
 // a set of static verification checks on the credential as per the credential service's configuration.
-func (v Verifier) VerifyDataIntegrityCredential(credential credsdk.VerifiableCredential) error {
+func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential credsdk.VerifiableCredential) error {
 	// resolve the issuer's key material
 	kid, pubKey, err := v.resolveCredentialIssuerKey(credential)
 	if err != nil {
@@ -108,7 +109,7 @@ func (v Verifier) VerifyDataIntegrityCredential(credential credsdk.VerifiableCre
 		return util.LoggingErrorMsg(err, "could not verify the credential's signature")
 	}
 
-	return v.staticVerificationChecks(credential)
+	return v.staticVerificationChecks(ctx, credential)
 }
 
 func (v Verifier) VerifyJWT(did string, token keyaccess.JWT) error {
@@ -144,12 +145,12 @@ func (v Verifier) resolveCredentialIssuerKey(credential credsdk.VerifiableCreden
 
 // staticVerificationChecks runs a set of static verification checks on the credential as per the credential
 // service's configuration, such as checking the credential's schema, expiration, and object validity.
-func (v Verifier) staticVerificationChecks(credential credsdk.VerifiableCredential) error {
+func (v Verifier) staticVerificationChecks(ctx context.Context, credential credsdk.VerifiableCredential) error {
 	// if the credential has a schema, resolve it before it is to be used in verification
 	var verificationOpts []verification.VerificationOption
 	if credential.CredentialSchema != nil {
 		schemaID := credential.CredentialSchema.ID
-		resolvedSchema, err := v.schemaResolver.Resolve(schemaID)
+		resolvedSchema, err := v.schemaResolver.Resolve(ctx, schemaID)
 		if err != nil {
 			return errors.Wrapf(err, "for credential<%s> failed to resolve schemas: %s", credential.ID, schemaID)
 		}

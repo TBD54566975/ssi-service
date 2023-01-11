@@ -104,7 +104,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 
 	// TODO(gabe) check if the key type is supported for the method, to tell whether this is a bad req or internal error
 	createDIDRequest := did.CreateDIDRequest{Method: didsdk.Method(*method), KeyType: request.KeyType, DIDWebID: request.DIDWebID}
-	createDIDResponse, err := dr.service.CreateDIDByMethod(createDIDRequest)
+	createDIDResponse, err := dr.service.CreateDIDByMethod(ctx, createDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)
 		logrus.WithError(err).Error(errMsg)
@@ -152,7 +152,7 @@ func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _
 	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
 	// TODO(gabe) differentiate between internal errors and not found DIDs
 	getDIDRequest := did.GetDIDRequest{Method: didsdk.Method(*method), ID: *id}
-	gotDID, err := dr.service.GetDIDByMethod(getDIDRequest)
+	gotDID, err := dr.service.GetDIDByMethod(ctx, getDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get DID for method<%s> with id: %s", *method, *id)
 		logrus.WithError(err).Error(errMsg)
@@ -188,7 +188,7 @@ func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, 
 	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
 	// TODO(gabe) differentiate between internal errors and not found DIDs
 	getDIDsRequest := did.GetDIDsRequest{Method: didsdk.Method(*method)}
-	gotDIDs, err := dr.service.GetDIDsByMethod(getDIDsRequest)
+	gotDIDs, err := dr.service.GetDIDsByMethod(ctx, getDIDsRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get DIDs for method: %s", *method)
 		logrus.WithError(err).Error(errMsg)

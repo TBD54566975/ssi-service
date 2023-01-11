@@ -48,7 +48,7 @@ func (o OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter
 			util.LoggingNewError("get operation request requires id"), http.StatusBadRequest)
 	}
 
-	op, err := o.service.GetOperation(operation.GetOperationRequest{ID: *id})
+	op, err := o.service.GetOperation(ctx, operation.GetOperationRequest{ID: *id})
 
 	if err != nil {
 		return framework.NewRequestError(
@@ -140,7 +140,7 @@ func (o OperationRouter) GetOperations(ctx context.Context, w http.ResponseWrite
 			util.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
 	}
 
-	ops, err := o.service.GetOperations(req)
+	ops, err := o.service.GetOperations(ctx, req)
 	if err != nil {
 		logrus.WithError(err).Error("getting operations from service")
 		return framework.NewRequestError(err, http.StatusInternalServerError)
@@ -193,7 +193,7 @@ func (o OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWri
 			util.LoggingNewError("get operation request requires id"), http.StatusBadRequest)
 	}
 
-	op, err := o.service.CancelOperation(operation.CancelOperationRequest{ID: *id})
+	op, err := o.service.CancelOperation(ctx, operation.CancelOperationRequest{ID: *id})
 
 	if err != nil {
 		return framework.NewRequestError(
