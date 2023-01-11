@@ -8,6 +8,7 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/benbjohnson/clock"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -36,6 +37,8 @@ type Service struct {
 	keyStore    *keystore.Service
 	didResolver *didsdk.Resolver
 	credential  *credential.Service
+
+	Clock clock.Clock
 }
 
 func (s Service) Type() framework.Type {
@@ -96,6 +99,7 @@ func NewManifestService(
 		keyStore:                keyStore,
 		didResolver:             didResolver,
 		credential:              credential,
+		Clock:                   clock.New(),
 	}, nil
 }
 

@@ -16,7 +16,8 @@ type CredentialTemplateData struct {
 	// When present, it's the ID of the input descriptor in the application. Corresponds to one of the
 	// PresentationDefinition.InputDescriptors[].ID in the credential manifest. When creating a credential, the base
 	// data will be used from the provided submission that matches this ID.
-	// When absent, there will be no base data for the credentials created.
+	// When absent, there will be no base data for the credentials created. Additionally, no JSON path strings in
+	// Claims.Data will be resolved.
 	CredentialInputDescriptor string `json:"credentialInputDescriptor"`
 
 	// The set of information that will be used to create claims.

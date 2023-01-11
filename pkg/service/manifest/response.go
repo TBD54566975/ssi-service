@@ -85,7 +85,7 @@ func (s Service) buildCredentialResponse(
 			Data: make(map[string]any),
 		}
 		if template != nil {
-			err := applyIssuanceTemplate(
+			err := s.applyIssuanceTemplate(
 				&credentialRequest,
 				template,
 				templateMap,
@@ -146,7 +146,7 @@ func (s Service) buildCredentialResponse(
 	return credRes, creds, nil
 }
 
-func applyIssuanceTemplate(
+func (s Service) applyIssuanceTemplate(
 	credentialRequest *credential.CreateCredentialRequest,
 	template *issuing.IssuanceTemplate,
 	templateMap map[string]*issuing.CredentialTemplate,
@@ -184,7 +184,7 @@ func applyIssuanceTemplate(
 	}
 
 	if ct.Expiry.Duration != nil {
-		credentialRequest.Expiry = time.Now().Add(*ct.Expiry.Duration).Format(time.RFC3339)
+		credentialRequest.Expiry = s.Clock.Now().Add(*ct.Expiry.Duration).Format(time.RFC3339)
 	}
 
 	credentialRequest.Revocable = ct.Revocable

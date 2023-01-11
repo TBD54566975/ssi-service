@@ -13,6 +13,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/util"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/benbjohnson/clock"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/mr-tron/base58"
@@ -323,7 +324,7 @@ func TestManifestAPI(t *testing.T) {
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
-		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, didService, credentialService)
+		manifestRouter, manifestSvc := testManifest(tt, bolt, keyStoreService, didService, credentialService)
 		// create an issuer
 		issuerDID, err := didService.CreateDIDByMethod(
 			context.Background(),
@@ -408,6 +409,9 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		now := time.Date(2022, 10, 31, 0, 0, 0, 0, time.UTC)
+		mockClock := clock.NewMock()
+		manifestSvc.Clock = mockClock
+		mockClock.Set(now)
 		duration := 5 * time.Second
 		issuanceTemplate, err := issuanceService.CreateIssuanceTemplate(
 			context.Background(),
@@ -456,7 +460,11 @@ func TestManifestAPI(t *testing.T) {
 				},
 			},
 		}, vc2.CredentialSubject)
-		// TODO: inject the clock date and assert
+		assert.Equal(
+			tt,
+			time.Date(2022, 10, 31, 0, 0, 5, 0, time.UTC).Format(time.RFC3339),
+			vc2.ExpirationDate,
+		)
 		assert.Equal(tt, createdSchema.ID, vc2.CredentialSchema.ID)
 		assert.NotEmpty(tt, vc2.CredentialStatus)
 	})
