@@ -28,11 +28,10 @@ jobs:
         git config user.email github-actions@github.com        
         if (git diff --shortstat | grep '[0-9]'); then \
           echo ${{ github.event.pull_request.head.repo.clone_url }}          
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@${{ github.event.pull_request.head.repo.clone_url }}
-          git checkout "${GITHUB_REF:11}"
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@${{ github.event.pull_request.head.repo.clone_url }}          
           git add .; \
           git commit -m "gen OpenAPI Spec by github-actions"; \
-          git push
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}
         fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
