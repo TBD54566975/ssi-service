@@ -93,6 +93,7 @@ func (s Service) CreateCredential(ctx context.Context, request CreateCredentialR
 
 	logrus.Debugf("creating credential: %+v", request)
 
+	writeContexts := make([]WriteContext, 0)
 	builder := credential.NewVerifiableCredentialBuilder()
 
 	if err := builder.SetIssuer(request.Issuer); err != nil {
@@ -176,6 +177,34 @@ func (s Service) CreateCredential(ctx context.Context, request CreateCredentialR
 		if err := builder.SetCredentialStatus(status); err != nil {
 			return nil, util.LoggingErrorMsg(err, "could not set credential status")
 		}
+
+		statusListCredJWT, err := s.signCredentialJWT(ctx, request.Issuer, *statusListCredential)
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not sign status list credential")
+		}
+
+		statusListContainer := credint.Container{
+			ID:            statusListCredential.ID,
+			Credential:    statusListCredential,
+			CredentialJWT: statusListCredJWT,
+		}
+
+		statusListStorageRequest := StoreCredentialRequest{
+			Container: statusListContainer,
+		}
+
+		statusListIndexWriteContext, err := s.storage.GetIncrementStatusListIndexWriteContext(ctx)
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not get status list index write context")
+		}
+
+		statusListCredWriteContext, err := s.storage.GetStoreStatusListCredentialWriteContext(statusListStorageRequest)
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not get status list credential write context")
+		}
+
+		writeContexts = append(writeContexts, *statusListIndexWriteContext)
+		writeContexts = append(writeContexts, *statusListCredWriteContext)
 	}
 
 	cred, err := builder.Build()
@@ -191,13 +220,11 @@ func (s Service) CreateCredential(ctx context.Context, request CreateCredentialR
 	}
 
 	// TODO(gabe) support Data Integrity creds too https://github.com/TBD54566975/ssi-service/issues/105
-	// sign the credential
 	credJWT, err := s.signCredentialJWT(ctx, request.Issuer, *cred)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not sign credential")
 	}
 
-	// store the credential
 	container := credint.Container{
 		ID:            cred.ID,
 		Credential:    cred,
@@ -205,15 +232,18 @@ func (s Service) CreateCredential(ctx context.Context, request CreateCredentialR
 		Revoked:       false,
 	}
 
-	storageRequest := StoreCredentialRequest{
+	credentialStorageRequest := StoreCredentialRequest{
 		Container: container,
 	}
 
-	if err = s.storage.StoreCredential(ctx, storageRequest); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not store credential")
+	credWriteContext, err := s.storage.GetStoreCredentialWriteContext(credentialStorageRequest)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not get credential write context")
 	}
+	writeContexts = append(writeContexts, *credWriteContext)
 
-	// return the result
+	s.storage.WriteMany(ctx, writeContexts)
+
 	response := CreateCredentialResponse{Container: container}
 	return &response, nil
 }
@@ -237,26 +267,6 @@ func getStatusListCredential(ctx context.Context, s Service, issuerID string, sc
 		generatedStatusListCredential, err := statussdk.GenerateStatusList2021Credential(statusListID, issuerID, statussdk.StatusRevocation, []credential.VerifiableCredential{})
 		if err != nil {
 			return nil, util.LoggingErrorMsg(err, "could not generate status list")
-		}
-
-		statusListCredJWT, err := s.signCredentialJWT(ctx, issuerID, *generatedStatusListCredential)
-		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not sign status list credential")
-		}
-
-		// store the credential
-		statusListContainer := credint.Container{
-			ID:            generatedStatusListCredential.ID,
-			Credential:    generatedStatusListCredential,
-			CredentialJWT: statusListCredJWT,
-		}
-
-		storageRequest := StoreCredentialRequest{
-			Container: statusListContainer,
-		}
-
-		if err = s.storage.StoreStatusListCredential(ctx, storageRequest); err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not store credential")
 		}
 
 		statusListCredential = generatedStatusListCredential

@@ -85,6 +85,24 @@ func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value 
 		return nil
 	})
 }
+func (b *BoltDB) WriteMany(ctx context.Context, namespaces, keys []string, values [][]byte) error {
+	if len(namespaces) != len(keys) && len(namespaces) != len(values) {
+		return errors.New("namespaces, keys, and values, are not of equal length")
+	}
+
+	return b.db.Update(func(tx *bolt.Tx) error {
+		for i := range namespaces {
+			bucket, err := tx.CreateBucketIfNotExists([]byte(namespaces[i]))
+			if err != nil {
+				return err
+			}
+			if err = bucket.Put([]byte(keys[i]), values[i]); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
 
 func (b *BoltDB) Read(ctx context.Context, namespace, key string) ([]byte, error) {
 	var result []byte

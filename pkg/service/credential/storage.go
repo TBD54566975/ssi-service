@@ -39,6 +39,12 @@ type StoredCredential struct {
 	Revoked      bool   `json:"revoked"`
 }
 
+type WriteContext struct {
+	namespace string
+	key       string
+	value     []byte
+}
+
 func (sc StoredCredential) IsValid() bool {
 	return sc.ID != "" && (sc.HasDataIntegrityCredential() || sc.HasJWTCredential())
 }
@@ -127,16 +133,59 @@ func (cs *Storage) GetNextStatusListRandomIndex(ctx context.Context) (int, error
 		return -1, util.LoggingErrorMsgf(err, "could not unmarshal unique numbers")
 	}
 
+	return uniqueNums[statusListIndex.Index], nil
+}
+
+func (cs *Storage) WriteMany(ctx context.Context, writeContexts []WriteContext) error {
+	namespaces := make([]string, 0)
+	keys := make([]string, 0)
+	values := make([][]byte, 0)
+
+	for i := range writeContexts {
+		namespaces = append(namespaces, writeContexts[i].namespace)
+		keys = append(keys, writeContexts[i].key)
+		values = append(values, writeContexts[i].value)
+	}
+
+	return cs.db.WriteMany(ctx, namespaces, keys, values)
+}
+
+func (cs *Storage) IncrementStatusListIndex(ctx context.Context) error {
+	wc, err := cs.GetIncrementStatusListIndexWriteContext(ctx)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "problem getting increment status listIndex writeContext")
+	}
+
+	if err := cs.db.Write(ctx, wc.namespace, wc.key, wc.value); err != nil {
+		return util.LoggingErrorMsg(err, "problem writing current list index to db")
+	}
+
+	return nil
+}
+
+func (cs *Storage) GetIncrementStatusListIndexWriteContext(ctx context.Context) (*WriteContext, error) {
+	gotCurrentListIndexBytes, err := cs.db.Read(ctx, statusListIndexNamespace, currentListIndexKey)
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not get list index")
+	}
+
+	var statusListIndex StatusListIndex
+	if err = json.Unmarshal(gotCurrentListIndexBytes, &statusListIndex); err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not unmarshal unique numbers")
+	}
+
 	statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: statusListIndex.Index + 1})
 	if err != nil {
-		return -1, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
+		return nil, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
 	}
 
-	if err := cs.db.Write(ctx, statusListIndexNamespace, currentListIndexKey, statusListIndexBytes); err != nil {
-		return -1, util.LoggingErrorMsg(err, "problem writing current list index to db")
+	wc := WriteContext{
+		namespace: statusListIndexNamespace,
+		key:       currentListIndexKey,
+		value:     statusListIndexBytes,
 	}
 
-	return uniqueNums[statusListIndex.Index], nil
+	return &wc, nil
 }
 
 func (cs *Storage) StoreCredential(ctx context.Context, request StoreCredentialRequest) error {
@@ -148,22 +197,46 @@ func (cs *Storage) StoreStatusListCredential(ctx context.Context, request StoreC
 }
 
 func (cs *Storage) storeCredential(ctx context.Context, request StoreCredentialRequest, namespace string) error {
+
+	wc, err := cs.getStoreCredentialWriteContext(request, namespace)
+	if err != nil {
+		return errors.Wrap(err, "could not get stored credential write context")
+	}
+	// TODO(gabe) conflict checking?
+	return cs.db.Write(ctx, wc.namespace, wc.key, wc.value)
+}
+
+func (cs *Storage) GetStoreCredentialWriteContext(request StoreCredentialRequest) (*WriteContext, error) {
+	return cs.getStoreCredentialWriteContext(request, credentialNamespace)
+}
+
+func (cs *Storage) GetStoreStatusListCredentialWriteContext(request StoreCredentialRequest) (*WriteContext, error) {
+	return cs.getStoreCredentialWriteContext(request, statusListCredentialNamespace)
+}
+
+func (cs *Storage) getStoreCredentialWriteContext(request StoreCredentialRequest, namespace string) (*WriteContext, error) {
 	if !request.IsValid() {
-		return util.LoggingNewError("store request request is not valid")
+		return nil, util.LoggingNewError("store request request is not valid")
 	}
 
 	// transform the credential into its denormalized form for storage
 	storedCredential, err := buildStoredCredential(request)
 	if err != nil {
-		return errors.Wrap(err, "could not build stored credential")
+		return nil, errors.Wrap(err, "could not build stored credential")
 	}
 
 	storedCredBytes, err := json.Marshal(storedCredential)
 	if err != nil {
-		return util.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.CredentialID)
+		return nil, util.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.CredentialID)
 	}
-	// TODO(gabe) conflict checking?
-	return cs.db.Write(ctx, namespace, storedCredential.ID, storedCredBytes)
+
+	wc := WriteContext{
+		namespace: namespace,
+		key:       storedCredential.ID,
+		value:     storedCredBytes,
+	}
+
+	return &wc, nil
 }
 
 // buildStoredCredential generically parses a store credential request and returns the object to be stored

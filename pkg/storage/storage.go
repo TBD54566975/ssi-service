@@ -25,6 +25,7 @@ type ServiceStorage interface {
 	IsOpen() bool
 	Close() error
 	Write(ctx context.Context, namespace, key string, value []byte) error
+	WriteMany(ctx context.Context, namespace, key []string, value [][]byte) error
 	Read(ctx context.Context, namespace, key string) ([]byte, error)
 	ReadAll(ctx context.Context, namespace string) (map[string][]byte, error)
 	ReadPrefix(ctx context.Context, namespace, prefix string) (map[string][]byte, error)
