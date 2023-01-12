@@ -21,13 +21,12 @@ jobs:
       run: go install github.com/magefile/mage
 
     - name: Update spec and push generated spec file
-    - run: |
+      run: |
         export PATH=$PATH:$(go env GOPATH)/bin
         mage spec
         git config user.name github-actions
         git config user.email github-actions@github.com        
         if (git diff --shortstat | grep '[0-9]'); then \
-          echo $GITHUB_REPOSITORY
           echo {{ github.event.pull_request.head.repo.full_name }}
           echo {{ github.event.pull_request }}
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@{{ github.event.pull_request.head.repo.full_name }}
