@@ -374,7 +374,7 @@ type ReviewSubmissionResponse struct {
 }
 
 // ReviewSubmission godoc
-// @Summary      Review a pending submission
+// @Summary      Review a pending submissions
 // @Description  Reviews a pending submission. After this method is called, the operation with `id==presentations/submissions/{submission_id}` will be updated with the result of this invocation.
 // @Tags         SubmissionAPI
 // @Accept       json
