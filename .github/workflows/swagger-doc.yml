@@ -26,15 +26,16 @@ jobs:
         mage spec
         git config user.name github-actions
         git config user.email github-actions@github.com        
-
-        CLONE_URL=${{ github.event.pull_request.head.repo.clone_url }}
-        export CLONE_URL=${CLONE_URL#https://}        
+        
+        new_url=`echo $URL_HERE | sed 's|https://||g'`
         if (git diff --shortstat | grep '[0-9]'); then \          
           echo $CLONE_URL
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@$CLONE_URL          
+          echo $new_url
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@$new_url          
           git add .; \
           git commit -m "gen OpenAPI Spec by github-actions"; \
           git push origin HEAD:${{ github.event.pull_request.head.ref }}
         fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CLONE_URL: ${{ github.event.pull_request.head.repo.clone_url }}
