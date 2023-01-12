@@ -1,4 +1,14 @@
 {
   "approved": {{.Approved}},
-  "reason": "{{.Reason}}"
+  "reason": "{{.Reason}}",
+  "credential_overrides": {
+    "kyc_credential": {
+      "data": {
+        "familyName": "Tee",
+        "givenName": "Mister"
+      },
+      "expiry": null,
+      "revocable": true
+    }
+  }
 }

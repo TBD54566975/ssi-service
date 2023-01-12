@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
 
@@ -210,6 +211,17 @@ func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Serv
 	require.NoError(t, err)
 	require.NotEmpty(t, keystoreService)
 	return keystoreService
+}
+
+func testIssuanceService(t *testing.T, db storage.ServiceStorage) *issuing.Service {
+	cfg := config.IssuingServiceConfig{
+		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-issuance"},
+	}
+
+	s, err := issuing.NewIssuingService(cfg, db)
+	require.NoError(t, err)
+	require.NotEmpty(t, s)
+	return s
 }
 
 func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service) *did.Service {

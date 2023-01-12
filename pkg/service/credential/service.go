@@ -239,6 +239,7 @@ func (s Service) CreateCredential(ctx context.Context, request CreateCredentialR
 	credWriteContext, err := s.storage.GetStoreCredentialWriteContext(credentialStorageRequest)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get credential write context")
+
 	}
 	writeContexts = append(writeContexts, *credWriteContext)
 
@@ -269,6 +270,26 @@ func getStatusListCredential(ctx context.Context, s Service, issuerID string, sc
 			return nil, util.LoggingErrorMsg(err, "could not generate status list")
 		}
 
+		statusListCredJWT, err := s.signCredentialJWT(ctx, issuerID, *generatedStatusListCredential)
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not sign status list credential")
+		}
+
+		// store the credential
+		statusListContainer := credint.Container{
+			ID:            generatedStatusListCredential.ID,
+			Credential:    generatedStatusListCredential,
+			CredentialJWT: statusListCredJWT,
+		}
+
+		storageRequest := StoreCredentialRequest{
+			Container: statusListContainer,
+		}
+
+		if err = s.storage.StoreStatusListCredential(ctx, storageRequest); err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not store credential")
+		}
+		
 		statusListCredential = generatedStatusListCredential
 
 	} else {

@@ -12,8 +12,12 @@ type GetIssuanceTemplateRequest struct {
 }
 
 type CredentialTemplateData struct {
-	// Optional. When present, it's the ID of the input descriptor in the application. Corresponds to one of the
-	// PresentationDefinition.InputDescriptors[].ID in the credential manifest.
+	// Optional.
+	// When present, it's the ID of the input descriptor in the application. Corresponds to one of the
+	// PresentationDefinition.InputDescriptors[].ID in the credential manifest. When creating a credential, the base
+	// data will be used from the provided submission that matches this ID.
+	// When absent, there will be no base data for the credentials created. Additionally, no JSON path strings in
+	// Claims.Data will be resolved.
 	CredentialInputDescriptor string `json:"credentialInputDescriptor"`
 
 	// The set of information that will be used to create claims.
@@ -41,7 +45,7 @@ type CredentialTemplate struct {
 	// ID of the CredentialSchema to be used for the issued credential.
 	Schema string `json:"schema"`
 
-	// Date that will be used to determine credential claims.
+	// Data that will be used to determine credential claims.
 	Data CredentialTemplateData `json:"data"`
 
 	// Parameter to determine the expiry of the credential.
