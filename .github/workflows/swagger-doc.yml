@@ -34,9 +34,5 @@ jobs:
         if (git diff --shortstat | grep '[0-9]'); then \
           git add .; \
           git commit -m "gen OpenAPI Spec by github-actions"; \
+          git push
         fi
-    - name: Push changes
-      uses: ad-m/github-push-action@master
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        branch: ${{ github.head_ref }}
