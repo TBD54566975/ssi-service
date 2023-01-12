@@ -30,6 +30,14 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 )
 
+func TestFoo(t *testing.T) {
+	data := []byte(`{"credential_overrides":{"some_key":{}}}`)
+	var p router.ReviewApplicationRequest
+	assert.NoError(t, json.Unmarshal(data, &p))
+	assert.Equal(t, map[string]manifestsvc.CredentialOverride{
+		"some_key": {},
+	}, p.CredentialOverrides)
+}
 func TestManifestAPI(t *testing.T) {
 	t.Run("Test Create Manifest", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
@@ -581,7 +589,20 @@ func TestManifestAPI(t *testing.T) {
 		assert.Contains(tt, op.ID, "credentials/responses/")
 
 		// review application
-		reviewApplicationRequestValue := newRequestValue(tt, router.ReviewApplicationRequest{Approved: true, Reason: "I'm the almighty approver"})
+		expireAt := time.Date(2025, 10, 32, 0, 0, 0, 0, time.UTC)
+		reviewApplicationRequestValue := newRequestValue(tt, router.ReviewApplicationRequest{
+			Approved: true,
+			Reason:   "I'm the almighty approver",
+			CredentialOverrides: map[string]manifestsvc.CredentialOverride{
+				"id1": {
+					Data: map[string]any{
+						"looks": "pretty darn handsome",
+					},
+					Expiry:    &expireAt,
+					Revocable: true,
+				},
+			},
+		})
 		applicationID := storage.StatusObjectID(op.ID)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications/"+applicationID+"/review", reviewApplicationRequestValue)
 		err = manifestRouter.ReviewApplication(newRequestContextWithParams(map[string]string{"id": applicationID}), w, req)
@@ -597,6 +618,16 @@ func TestManifestAPI(t *testing.T) {
 		assert.Len(tt, appResp.Response.Fulfillment.DescriptorMap, 2)
 		assert.Len(tt, appResp.Credentials, 2)
 		assert.Empty(tt, appResp.Response.Denial)
+
+		vc, err := util.CredentialsFromInterface(appResp.Credentials.([]any)[0])
+		assert.NoError(tt, err)
+		assert.Equal(tt, credsdk.CredentialSubject{
+			"id":    applicantDID.DID.ID,
+			"looks": "pretty darn handsome",
+		}, vc.CredentialSubject)
+		assert.Equal(tt, expireAt.Format(time.RFC3339), vc.ExpirationDate)
+		assert.NotEmpty(tt, vc.CredentialStatus)
+		assert.Equal(tt, createdSchema.ID, vc.CredentialSchema.ID)
 	})
 
 	t.Run("Test Denied Application", func(tt *testing.T) {
