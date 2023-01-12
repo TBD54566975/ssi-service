@@ -33,7 +33,7 @@ jobs:
         git config user.email github-actions@github.com        
         if (git diff --shortstat | grep '[0-9]'); then \
           echo $GITHUB_REPOSITORY
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@{{ github.event.pull_request.head.repo.full_name }}
           git add .; \
           git commit -m "gen OpenAPI Spec by github-actions"; \
           git push
