@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
@@ -93,6 +95,8 @@ type ReviewApplicationRequest struct {
 	ID       string `json:"id" validate:"required"`
 	Approved bool   `json:"approved"`
 	Reason   string `json:"reason"`
+
+	CredentialOverrides map[string]CredentialOverride `json:"credential_overrides,omitempty"`
 }
 
 // Response
@@ -120,4 +124,15 @@ func ServiceModel(storedResponse *storage.StoredResponse) SubmitApplicationRespo
 		Credentials: cred.ContainersToInterface(storedResponse.Credentials),
 		ResponseJWT: storedResponse.ResponseJWT,
 	}
+}
+
+type CredentialOverride struct {
+	// Data that will be used to determine credential claims.
+	Data map[string]any `json:"data"`
+
+	// Parameter to determine the expiry of the credential.
+	Expiry *time.Time `json:"expiry"`
+
+	// Whether the credentials created should be revocable.
+	Revocable bool `json:"revocable"`
 }
