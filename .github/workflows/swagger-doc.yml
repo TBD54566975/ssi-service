@@ -21,11 +21,6 @@ jobs:
       run: go install github.com/magefile/mage
 
     - name: Update spec and push generated spec file
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.ref }}
-        repository: ${{ github.event.pull_request.head.repo.full_name }}
     - run: |
         export PATH=$PATH:$(go env GOPATH)/bin
         mage spec
@@ -33,6 +28,8 @@ jobs:
         git config user.email github-actions@github.com        
         if (git diff --shortstat | grep '[0-9]'); then \
           echo $GITHUB_REPOSITORY
+          echo {{ github.event.pull_request.head.repo.full_name }}
+          echo {{ github.event.pull_request }}
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@{{ github.event.pull_request.head.repo.full_name }}
           git add .; \
           git commit -m "gen OpenAPI Spec by github-actions"; \
