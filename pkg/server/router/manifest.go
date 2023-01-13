@@ -520,13 +520,18 @@ func (mr ManifestRouter) DeleteResponse(ctx context.Context, w http.ResponseWrit
 type ReviewApplicationRequest struct {
 	Approved bool   `json:"approved"`
 	Reason   string `json:"reason"`
+
+	// Overrides to apply to the credentials that will be created. Keys are the ID that corresponds to an
+	// OutputDescriptor.ID from the manifest.
+	CredentialOverrides map[string]model.CredentialOverride `json:"credential_overrides,omitempty"`
 }
 
 func (r ReviewApplicationRequest) toServiceRequest(id string) model.ReviewApplicationRequest {
 	return model.ReviewApplicationRequest{
-		ID:       id,
-		Approved: r.Approved,
-		Reason:   r.Reason,
+		ID:                  id,
+		Approved:            r.Approved,
+		Reason:              r.Reason,
+		CredentialOverrides: r.CredentialOverrides,
 	}
 }
 

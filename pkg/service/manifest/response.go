@@ -18,6 +18,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 )
 
 const (
@@ -56,6 +57,7 @@ func (s Service) buildCredentialResponse(
 	template *issuing.IssuanceTemplate,
 	application manifest.CredentialApplication,
 	applicationJSON map[string]any,
+	credentialOverrides map[string]model.CredentialOverride,
 ) (*manifest.CredentialResponse, []cred.Container, error) {
 	// TODO(gabe) need to check if this can be fulfilled and conditionally return success/denial
 	applicationID := application.ID
@@ -98,6 +100,7 @@ func (s Service) buildCredentialResponse(
 				return nil, nil, err
 			}
 		}
+		s.applyRequestData(&credentialRequest, credentialOverrides, od)
 
 		credentialResponse, err := s.credential.CreateCredential(ctx, credentialRequest)
 		if err != nil {
@@ -144,6 +147,19 @@ func (s Service) buildCredentialResponse(
 		return nil, nil, util.LoggingErrorMsg(err, "could not build response")
 	}
 	return credRes, creds, nil
+}
+
+func (s Service) applyRequestData(credentialRequest *credential.CreateCredentialRequest, credentialOverrides map[string]model.CredentialOverride, od manifest.OutputDescriptor) {
+	if credentialOverride, ok := credentialOverrides[od.ID]; ok {
+		for k, v := range credentialOverride.Data {
+			credentialRequest.Data[k] = v
+		}
+
+		if credentialOverride.Expiry != nil {
+			credentialRequest.Expiry = credentialOverride.Expiry.Format(time.RFC3339)
+		}
+		credentialRequest.Revocable = credentialOverride.Revocable
+	}
 }
 
 func (s Service) applyIssuanceTemplate(
