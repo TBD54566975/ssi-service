@@ -420,8 +420,10 @@ func (mr ManifestRouter) DeleteApplication(ctx context.Context, w http.ResponseW
 }
 
 type GetResponseResponse struct {
-	ID       string                         `json:"id"`
-	Response manifestsdk.CredentialResponse `json:"response"`
+	Response manifestsdk.CredentialResponse `json:"credential_response"`
+	// this is an interface type to union Data Integrity and JWT style VCs
+	Credentials any           `json:"verifiableCredentials,omitempty"`
+	ResponseJWT keyaccess.JWT `json:"responseJwt,omitempty"`
 }
 
 // GetResponse godoc
@@ -450,8 +452,9 @@ func (mr ManifestRouter) GetResponse(ctx context.Context, w http.ResponseWriter,
 	}
 
 	resp := GetResponseResponse{
-		ID:       gotResponse.Response.ID,
-		Response: gotResponse.Response,
+		Response:    gotResponse.Response,
+		Credentials: gotResponse.Credentials,
+		ResponseJWT: gotResponse.ResponseJWT,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }

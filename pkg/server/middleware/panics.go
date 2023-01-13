@@ -25,9 +25,10 @@ func Panics() framework.Middleware {
 			defer func() {
 				if r := recover(); r != nil {
 					// log the stack trace for this panic'd goroutine
-					err = errors.Errorf("%s: \n%s", v.TraceID, debug.Stack())
+					stack := debug.Stack()
+					err = errors.Errorf("%s: \n%s", v.TraceID, stack)
 
-					logrus.Infof("%s: PANIC :\n%s", v.TraceID, debug.Stack())
+					logrus.Infof("%s: PANIC : %s : \n%s", r, v.TraceID, stack)
 				}
 			}()
 

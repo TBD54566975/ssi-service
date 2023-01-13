@@ -11,32 +11,15 @@ type GetIssuanceTemplateRequest struct {
 	ID string `json:"id" validate:"required"`
 }
 
-type CredentialTemplateData struct {
-	// Optional.
-	// When present, it's the ID of the input descriptor in the application. Corresponds to one of the
-	// PresentationDefinition.InputDescriptors[].ID in the credential manifest. When creating a credential, the base
-	// data will be used from the provided submission that matches this ID.
-	// When absent, there will be no base data for the credentials created. Additionally, no JSON path strings in
-	// Claims.Data will be resolved.
-	CredentialInputDescriptor string `json:"credentialInputDescriptor"`
-
-	// The set of information that will be used to create claims.
-	Claims ClaimTemplates
-}
-
 type TimeLike struct {
 	// For fixed time in the future.
-	Time *time.Time
+	Time *time.Time `json:"time,omitempty"`
 
 	// For a fixed offset from when it was issued.
-	Duration *time.Duration
+	Duration *time.Duration `json:"duration,omitempty"`
 }
 
-type ClaimTemplates struct {
-	// Values may be json path like strings, or any other JSON primitive. Each entry will be used to come up with a
-	// claim about the credentialSubject in the credential that will be issued.
-	Data map[string]any
-}
+type ClaimTemplates map[string]any
 
 type CredentialTemplate struct {
 	// ID corresponding to an OutputDescriptor.ID from the manifest.
@@ -45,11 +28,21 @@ type CredentialTemplate struct {
 	// ID of the CredentialSchema to be used for the issued credential.
 	Schema string `json:"schema"`
 
+	// Optional.
+	// When present, it's the ID of the input descriptor in the application. Corresponds to one of the
+	// PresentationDefinition.InputDescriptors[].ID in the credential manifest. When creating a credential, the base
+	// data will be populated from the provided submission that matches this ID.
+	// When absent, there will be no base data for the credentials created. Additionally, no JSON path strings in
+	// ClaimTemplates.Data will be resolved.
+	CredentialInputDescriptor string `json:"credentialInputDescriptor"`
+
 	// Data that will be used to determine credential claims.
-	Data CredentialTemplateData `json:"data"`
+	// Values may be json path like strings, or any other JSON primitive. Each entry will be used to come up with a
+	// claim about the credentialSubject in the credential that will be issued.
+	Data ClaimTemplates `json:"data,omitempty"`
 
 	// Parameter to determine the expiry of the credential.
-	Expiry TimeLike `json:"expiry"`
+	Expiry TimeLike `json:"expiry,omitempty"`
 
 	// Whether the credentials created should be revocable.
 	Revocable bool `json:"revocable"`
