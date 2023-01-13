@@ -45,13 +45,13 @@ type GetDIDMethodsResponse struct {
 
 // GetDIDMethods godoc
 //
-//	@Summary		Get DID Methods
-//	@Description	Get supported DID methods
-//	@Tags			DecentralizedIdentityAPI
-//	@Accept			json
-//	@Produce		json
-//	@Success		200	{object}	GetDIDMethodsResponse
-//	@Router			/v1/dids [get]
+//@Summary     Get DID Methods
+// @Description Get supported DID methods
+// @Tags        DecentralizedIdentityAPI
+// @Accept      json
+// @Produce     json
+// @Success     200 {object} GetDIDMethodsResponse
+// @Router      /v1/dids [get]
 func (dr DIDRouter) GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	methods := dr.service.GetSupportedMethods()
 	response := GetDIDMethodsResponse{DIDMethods: methods.Methods}
@@ -71,17 +71,17 @@ type CreateDIDByMethodResponse struct {
 
 // CreateDIDByMethod godoc
 //
-//	@Summary		Create DID
-//	@Description	create DID by method
-//	@Tags			DecentralizedIdentityAPI
-//	@Accept			json
-//	@Produce		json
-//	@Param			request	body		CreateDIDByMethodRequest	true	"request body"
-//	@Param			method	path		string						true	"Method"
-//	@Success		201		{object}	CreateDIDByMethodResponse
-//	@Failure		400		{string}	string	"Bad request"
-//	@Failure		500		{string}	string	"Internal server error"
-//	@Router			/v1/dids/{method} [put]
+//@Summary     Create DID
+// @Description create DID by method
+// @Tags        DecentralizedIdentityAPI
+// @Accept      json
+// @Produce     json
+// @Param       request body     CreateDIDByMethodRequest true "request body"
+// @Param       method  path     string                   true "Method"
+// @Success     201     {object} CreateDIDByMethodResponse
+// @Failure     400     {string} string "Bad request"
+// @Failure     500     {string} string "Internal server error"
+// @Router      /v1/dids/{method} [put]
 func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
@@ -127,17 +127,17 @@ type GetDIDByMethodResponse struct {
 
 // GetDIDByMethod godoc
 //
-//	@Summary		Get DID
-//	@Description	Get DID by method
-//	@Tags			DecentralizedIdentityAPI
-//	@Accept			json
-//	@Produce		json
-//	@Param			request	body		CreateDIDByMethodRequest	true	"request body"
-//	@Param			method	path		string						true	"Method"
-//	@Param			id		path		string						true	"ID"
-//	@Success		200		{object}	GetDIDByMethodResponse
-//	@Failure		400		{string}	string	"Bad request"
-//	@Router			/v1/dids/{method}/{id} [get]
+//@Summary     Get DID
+// @Description Get DID by method
+// @Tags        DecentralizedIdentityAPI
+// @Accept      json
+// @Produce     json
+// @Param       request body     CreateDIDByMethodRequest true "request body"
+// @Param       method  path     string                   true "Method"
+// @Param       id      path     string                   true "ID"
+// @Success     200     {object} GetDIDByMethodResponse
+// @Failure     400     {string} string "Bad request"
+// @Router      /v1/dids/{method}/{id} [get]
 func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
@@ -172,15 +172,15 @@ type GetDIDsByMethodResponse struct {
 
 // GetDIDsByMethod godoc
 //
-//	@Summary		Get DIDs
-//	@Description	Get DIDs by method
-//	@Tags			DecentralizedIdentityAPI
-//	@Accept			json
-//	@Produce		json
-//	@Param			method	path		string	true	"Method"
-//	@Success		200		{object}	GetDIDsByMethodResponse
-//	@Failure		400		{string}	string	"Bad request"
-//	@Router			/v1/dids/{method} [get]
+//@Summary     Get DIDs
+// @Description Get DIDs by method
+// @Tags        DecentralizedIdentityAPI
+// @Accept      json
+// @Produce     json
+// @Param       method path     string true "Method"
+// @Success     200    {object} GetDIDsByMethodResponse
+// @Failure     400    {string} string "Bad request"
+// @Router      /v1/dids/{method} [get]
 func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
@@ -211,15 +211,15 @@ type ResolveDIDResponse struct {
 
 // ResolveDID godoc
 //
-//	@Summary		Resolve a DID
-//	@Description	Resolve a DID that may not be stored in this service
-//	@Tags			DecentralizedIdentityAPI
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		string	true	"ID"
-//	@Success		200	{object}	ResolveDIDResponse
-//	@Failure		400	{string}	string	"Bad request"
-//	@Router			/v1/dids/resolver/{id} [get]
+//@Summary     Resolve a DID
+// @Description Resolve a DID that may not be stored in this service
+// @Tags        DecentralizedIdentityAPI
+// @Accept      json
+// @Produce     json
+// @Param       id  path     string true "ID"
+// @Success     200 {object} ResolveDIDResponse
+// @Failure     400 {string} string "Bad request"
+// @Router      /v1/dids/resolver/{id} [get]
 func (dr DIDRouter) ResolveDID(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
