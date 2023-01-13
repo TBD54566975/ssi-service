@@ -166,7 +166,7 @@ func (s Service) applyIssuanceTemplate(
 	if err != nil {
 		return err
 	}
-	for k, v := range ct.Data.Claims.Data {
+	for k, v := range ct.Data {
 		claimValue := v
 		if vs, ok := v.(string); ok {
 			if strings.HasPrefix(vs, "$") {
@@ -197,7 +197,7 @@ func getCredential(
 	credManifest manifest.CredentialManifest,
 	submission *exchange.PresentationSubmission,
 ) (any, error) {
-	if ct.Data.CredentialInputDescriptor == "" {
+	if ct.CredentialInputDescriptor == "" {
 		return nil, nil
 	}
 
@@ -207,7 +207,7 @@ func getCredential(
 
 	// Lookup the claim that's sent in the submission.
 	for _, descriptor := range submission.DescriptorMap {
-		if descriptor.ID == ct.Data.CredentialInputDescriptor {
+		if descriptor.ID == ct.CredentialInputDescriptor {
 			c, err := jsonpath.JsonPathLookup(applicationJSON, descriptor.Path)
 			if err != nil {
 				return nil, errors.Wrapf(
@@ -222,7 +222,7 @@ func getCredential(
 	}
 	return nil, errors.Errorf(
 		"could not find credential for input_descriptor=\"%s\"",
-		ct.Data.CredentialInputDescriptor,
+		ct.CredentialInputDescriptor,
 	)
 }
 

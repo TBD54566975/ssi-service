@@ -1052,36 +1052,28 @@ func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *d
 			Issuer:             issuerDID.DID.ID,
 			Credentials: []issuing.CredentialTemplate{
 				{
-					ID:     "id1",
-					Schema: createdSchema.ID,
-					Data: issuing.CredentialTemplateData{
-						CredentialInputDescriptor: "test-id",
-						Claims: issuing.ClaimTemplates{
-							Data: map[string]any{
-								"firstName": "$.credentialSubject.firstName",
-								"lastName":  "$.credentialSubject.lastName",
-								"state":     "CA",
-							},
-						},
+					ID:                        "id1",
+					Schema:                    createdSchema.ID,
+					CredentialInputDescriptor: "test-id",
+					Data: issuing.ClaimTemplates{
+						"firstName": "$.credentialSubject.firstName",
+						"lastName":  "$.credentialSubject.lastName",
+						"state":     "CA",
 					},
 					Expiry: issuing.TimeLike{
 						Time: &now,
 					},
 				},
 				{
-					ID:     "id2",
-					Schema: createdSchema.ID,
-					Data: issuing.CredentialTemplateData{
-						CredentialInputDescriptor: "test-id",
-						Claims: issuing.ClaimTemplates{
-							Data: map[string]any{
-								"someCrazyObject": map[string]any{
-									"foo": 123,
-									"bar": false,
-									"baz": []any{
-										"yay", 123, nil,
-									},
-								},
+					ID:                        "id2",
+					Schema:                    createdSchema.ID,
+					CredentialInputDescriptor: "test-id",
+					Data: issuing.ClaimTemplates{
+						"someCrazyObject": map[string]any{
+							"foo": 123,
+							"bar": false,
+							"baz": []any{
+								"yay", 123, nil,
 							},
 						},
 					},
