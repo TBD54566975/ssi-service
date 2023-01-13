@@ -1,4 +1,16 @@
 definitions:
+  credential.Container:
+    properties:
+      credential:
+        $ref: '#/definitions/credential.VerifiableCredential'
+      credentialJWT:
+        type: string
+      id:
+        description: Credential ID
+        type: string
+      revoked:
+        type: boolean
+    type: object
   credential.CredentialSchema:
     properties:
       id:
@@ -56,8 +68,7 @@ definitions:
         $ref: '#/definitions/credential.CredentialSchema'
       credentialStatus: {}
       credentialSubject:
-        allOf:
-        - $ref: '#/definitions/credential.CredentialSubject'
+        $ref: '#/definitions/credential.CredentialSubject'
         description: This is where the subject's ID *may* be present
       evidence:
         items: {}
@@ -90,26 +101,6 @@ definitions:
     - issuer
     - type
     type: object
-  crypto.KeyType:
-    enum:
-    - Ed25519
-    - X25519
-    - secp256k1
-    - P-224
-    - P-256
-    - P-384
-    - P-521
-    - RSA
-    type: string
-    x-enum-varnames:
-    - Ed25519
-    - X25519
-    - SECP256k1
-    - P224
-    - P256
-    - P384
-    - P521
-    - RSA
   crypto.PublicKeyJWK:
     properties:
       alg:
@@ -135,20 +126,6 @@ definitions:
     required:
     - kty
     type: object
-  crypto.SignatureAlgorithm:
-    enum:
-    - EdDSA
-    - ES256K
-    - ES256
-    - ES384
-    - PS256
-    type: string
-    x-enum-varnames:
-    - EdDSA
-    - ES256K
-    - ES256
-    - ES384
-    - PS256
   did.DIDDocument:
     properties:
       '@context': {}
@@ -178,7 +155,7 @@ definitions:
         type: array
       service:
         items:
-          $ref: '#/definitions/github_com_TBD54566975_ssi-sdk_did.Service'
+          $ref: '#/definitions/did.Service'
         type: array
       verificationMethod:
         items:
@@ -211,18 +188,6 @@ definitions:
       error:
         $ref: '#/definitions/did.ResolutionError'
     type: object
-  did.Method:
-    enum:
-    - key
-    - peer
-    - pkh
-    - web
-    type: string
-    x-enum-varnames:
-    - KeyMethod
-    - PeerMethod
-    - PKHMethod
-    - WebMethod
   did.ResolutionError:
     properties:
       code:
@@ -233,6 +198,29 @@ definitions:
         type: boolean
       representationNotSupported:
         type: boolean
+    type: object
+  did.Service:
+    properties:
+      accept:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      routingKeys:
+        items:
+          type: string
+        type: array
+      serviceEndpoint:
+        description: |-
+          A string, map, or set composed of one or more strings and/or maps
+          All string values must be valid URIs
+      type:
+        type: string
+    required:
+    - id
+    - serviceEndpoint
+    - type
     type: object
   did.VerificationMethod:
     properties:
@@ -246,8 +234,7 @@ definitions:
       publicKeyBase58:
         type: string
       publicKeyJwk:
-        allOf:
-        - $ref: '#/definitions/crypto.PublicKeyJWK'
+        $ref: '#/definitions/crypto.PublicKeyJWK'
         description: must conform to https://datatracker.ietf.org/doc/html/rfc7517
       publicKeyMultibase:
         description: https://datatracker.ietf.org/doc/html/draft-multiformats-multibase-03
@@ -283,34 +270,38 @@ definitions:
       is_holder:
         $ref: '#/definitions/exchange.RelationalConstraint'
       limit_disclosure:
-        $ref: '#/definitions/exchange.Preference'
+        description: |-
+          If a predicate property is present, filter must be too
+          https://identity.foundation/presentation-exchange/#predicate-feature
+        type: string
       same_subject:
         $ref: '#/definitions/exchange.RelationalConstraint'
       statuses:
-        allOf:
-        - $ref: '#/definitions/exchange.CredentialStatus'
+        $ref: '#/definitions/exchange.CredentialStatus'
         description: https://identity.foundation/presentation-exchange/#credential-status-constraint-feature
       subject_is_issuer:
-        allOf:
-        - $ref: '#/definitions/exchange.Preference'
         description: https://identity.foundation/presentation-exchange/#relational-constraint-feature
+        type: string
     type: object
   exchange.CredentialStatus:
     properties:
       active:
         properties:
           directive:
-            $ref: '#/definitions/exchange.Preference'
+            description: https://identity.foundation/presentation-exchange/#relational-constraint-feature
+            type: string
         type: object
       revoked:
         properties:
           directive:
-            $ref: '#/definitions/exchange.Preference'
+            description: https://identity.foundation/presentation-exchange/#relational-constraint-feature
+            type: string
         type: object
       suspended:
         properties:
           directive:
-            $ref: '#/definitions/exchange.Preference'
+            description: https://identity.foundation/presentation-exchange/#relational-constraint-feature
+            type: string
         type: object
     type: object
   exchange.Field:
@@ -330,11 +321,10 @@ definitions:
           type: string
         type: array
       predicate:
-        allOf:
-        - $ref: '#/definitions/exchange.Preference'
         description: |-
           If a predicate property is present, filter must be too
           https://identity.foundation/presentation-exchange/#predicate-feature
+        type: string
       purpose:
         type: string
     required:
@@ -399,7 +389,7 @@ definitions:
     properties:
       alg:
         items:
-          $ref: '#/definitions/crypto.SignatureAlgorithm'
+          type: string
         type: array
     required:
     - alg
@@ -413,18 +403,6 @@ definitions:
     required:
     - proof_type
     type: object
-  exchange.Preference:
-    enum:
-    - required
-    - preferred
-    - allowed
-    - disallowed
-    type: string
-    x-enum-varnames:
-    - Required
-    - Preferred
-    - Allowed
-    - Disallowed
   exchange.PresentationDefinition:
     properties:
       format:
@@ -467,21 +445,14 @@ definitions:
   exchange.RelationalConstraint:
     properties:
       directive:
-        $ref: '#/definitions/exchange.Preference'
+        description: https://identity.foundation/presentation-exchange/#relational-constraint-feature
+        type: string
       field_id:
         type: string
     required:
     - directive
     - field_id
     type: object
-  exchange.Selection:
-    enum:
-    - all
-    - pick
-    type: string
-    x-enum-varnames:
-    - All
-    - Pick
   exchange.SubmissionDescriptor:
     properties:
       format:
@@ -518,46 +489,11 @@ definitions:
       purpose:
         type: string
       rule:
-        $ref: '#/definitions/exchange.Selection'
+        type: string
     required:
     - rule
     type: object
-  github_com_TBD54566975_ssi-sdk_did.Service:
-    properties:
-      accept:
-        items:
-          type: string
-        type: array
-      id:
-        type: string
-      routingKeys:
-        items:
-          type: string
-        type: array
-      serviceEndpoint:
-        description: |-
-          A string, map, or set composed of one or more strings and/or maps
-          All string values must be valid URIs
-      type:
-        type: string
-    required:
-    - id
-    - serviceEndpoint
-    - type
-    type: object
-  github_com_tbd54566975_ssi-service_internal_credential.Container:
-    properties:
-      credential:
-        $ref: '#/definitions/credential.VerifiableCredential'
-      credentialJWT:
-        type: string
-      id:
-        description: Credential ID
-        type: string
-      revoked:
-        type: boolean
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialRequest:
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialRequest:
     properties:
       '@context':
         description: A context is optional. If not present, we'll apply default, required
@@ -583,32 +519,32 @@ definitions:
     - issuer
     - subject
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialResponse:
     properties:
       credential:
         $ref: '#/definitions/credential.VerifiableCredential'
       credentialJwt:
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest:
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest:
     properties:
       didWebId:
         type: string
       keyType:
-        $ref: '#/definitions/crypto.KeyType'
+        type: string
     required:
     - keyType
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodResponse:
     properties:
       did:
         $ref: '#/definitions/did.DIDDocument'
       keyType:
-        $ref: '#/definitions/crypto.KeyType'
+        type: string
       privateKeyBase58:
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.CreateIssuanceTemplateRequest:
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateIssuanceTemplateRequest:
     properties:
       credentialManifest:
         description: ID of the credential manifest that this template corresponds
@@ -617,7 +553,7 @@ definitions:
       credentials:
         description: Info required to create a credential from a credential application.
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplate'
+          $ref: '#/definitions/issuing.CredentialTemplate'
         type: array
       id:
         description: ID of this template.
@@ -629,7 +565,7 @@ definitions:
     - credentialManifest
     - issuer
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest:
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest:
     properties:
       description:
         type: string
@@ -652,14 +588,14 @@ definitions:
     - issuerDid
     - outputDescriptors
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.CreateManifestResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestResponse:
     properties:
       credential_manifest:
         $ref: '#/definitions/manifest.CredentialManifest'
       manifestJwt:
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionRequest:
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionRequest:
     properties:
       format:
         $ref: '#/definitions/exchange.ClaimFormat'
@@ -678,12 +614,12 @@ definitions:
     required:
     - inputDescriptors
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionResponse:
     properties:
       presentation_definition:
         $ref: '#/definitions/exchange.PresentationDefinition'
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest:
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest:
     properties:
       author:
         type: string
@@ -700,7 +636,7 @@ definitions:
     - name
     - schema
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaResponse:
     properties:
       id:
         type: string
@@ -709,28 +645,28 @@ definitions:
       schemaJwt:
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.CreateSubmissionRequest:
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateSubmissionRequest:
     properties:
       submissionJwt:
         type: string
     required:
     - submissionJwt
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetApplicationResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationResponse:
     properties:
       application:
         $ref: '#/definitions/manifest.CredentialApplication'
       id:
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetApplicationsResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationsResponse:
     properties:
       applications:
         items:
           $ref: '#/definitions/manifest.CredentialApplication'
         type: array
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialResponse:
     properties:
       credential:
         $ref: '#/definitions/credential.VerifiableCredential'
@@ -739,7 +675,7 @@ definitions:
       id:
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialStatusListResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialStatusListResponse:
     properties:
       credential:
         $ref: '#/definitions/credential.VerifiableCredential'
@@ -748,43 +684,43 @@ definitions:
       id:
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialStatusResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialStatusResponse:
     properties:
       revoked:
         type: boolean
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialsResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialsResponse:
     properties:
       credentials:
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_internal_credential.Container'
+          $ref: '#/definitions/credential.Container'
         type: array
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse:
     properties:
       did:
         $ref: '#/definitions/did.DIDDocument'
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetDIDMethodsResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDMethodsResponse:
     properties:
       methods:
         items:
-          $ref: '#/definitions/did.Method'
+          type: string
         type: array
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetDIDsByMethodResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDsByMethodResponse:
     properties:
       dids:
         items:
           $ref: '#/definitions/did.DIDDocument'
         type: array
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse:
     properties:
       status:
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetKeyDetailsResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetKeyDetailsResponse:
     properties:
       controller:
         type: string
@@ -793,9 +729,9 @@ definitions:
       id:
         type: string
       type:
-        $ref: '#/definitions/crypto.KeyType'
+        type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetManifestResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestResponse:
     properties:
       credential_manifest:
         $ref: '#/definitions/manifest.CredentialManifest'
@@ -804,14 +740,14 @@ definitions:
       manifestJwt:
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetManifestsResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestsResponse:
     properties:
       manifests:
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetManifestResponse'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestResponse'
         type: array
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetOperationsRequest:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetOperationsRequest:
     properties:
       filter:
         description: |-
@@ -822,183 +758,19 @@ definitions:
         description: 'The name of the parent''s resource. For example: "/presentation/submissions".'
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetOperationsResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetOperationsResponse:
     properties:
       operations:
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.Operation'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.Operation'
         type: array
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetPresentationDefinitionResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetPresentationDefinitionResponse:
     properties:
       presentation_definition:
         $ref: '#/definitions/exchange.PresentationDefinition'
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetResponseResponse:
-    properties:
-      id:
-        type: string
-      response:
-        $ref: '#/definitions/manifest.CredentialResponse'
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetResponsesResponse:
-    properties:
-      responses:
-        items:
-          $ref: '#/definitions/manifest.CredentialResponse'
-        type: array
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse:
-    properties:
-      schema:
-        $ref: '#/definitions/schema.VCJSONSchema'
-      schemaJwt:
-        type: string
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetSchemasResponse:
-    properties:
-      schemas:
-        items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
-        type: array
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.GetSubmissionResponse:
-    properties:
-      definition_id:
-        type: string
-      descriptor_map:
-        items:
-          $ref: '#/definitions/exchange.SubmissionDescriptor'
-        type: array
-      id:
-        type: string
-      reason:
-        description: The reason why the submission was approved or denied.
-        type: string
-      status:
-        description: One of {`pending`, `approved`, `denied`, `cancelled`}.
-        type: string
-    required:
-    - definition_id
-    - descriptor_map
-    - id
-    - status
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.ListIssuanceTemplatesResponse:
-    properties:
-      issuanceTemplates:
-        items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate'
-        type: array
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.ListSubmissionRequest:
-    properties:
-      filter:
-        description: |-
-          A standard filter expression conforming to https://google.aip.dev/160.
-          For example: `status = "done"`.
-        type: string
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.ListSubmissionResponse:
-    properties:
-      submissions:
-        items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Submission'
-        type: array
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.Operation:
-    properties:
-      done:
-        description: Whether this operation has finished.
-        type: boolean
-      id:
-        description: The name of the resource related to this operation. E.g. "presentations/submissions/<uuid>"
-        type: string
-      result:
-        allOf:
-        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.OperationResult'
-        description: Populated if Done == true.
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.OperationResult:
-    properties:
-      error:
-        description: Populated when there was an error with the operation.
-        type: string
-      response:
-        description: Populated iff Error == "". The type should be specified in the
-          calling APIs documentation.
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse:
-    properties:
-      didDocument:
-        $ref: '#/definitions/did.DIDDocument'
-      didDocumentMetadata:
-        $ref: '#/definitions/did.DIDDocumentMetadata'
-      didResolutionMetadata:
-        $ref: '#/definitions/did.DIDResolutionMetadata'
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.ReviewApplicationRequest:
-    properties:
-      approved:
-        type: boolean
-      reason:
-        type: string
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.ReviewSubmissionRequest:
-    properties:
-      approved:
-        type: boolean
-      reason:
-        type: string
-    required:
-    - approved
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.ReviewSubmissionResponse:
-    properties:
-      definition_id:
-        type: string
-      descriptor_map:
-        items:
-          $ref: '#/definitions/exchange.SubmissionDescriptor'
-        type: array
-      id:
-        type: string
-      reason:
-        description: The reason why the submission was approved or denied.
-        type: string
-      status:
-        description: One of {`pending`, `approved`, `denied`, `cancelled`}.
-        type: string
-    required:
-    - definition_id
-    - descriptor_map
-    - id
-    - status
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest:
-    properties:
-      base58PrivateKey:
-        type: string
-      controller:
-        type: string
-      id:
-        type: string
-      type:
-        $ref: '#/definitions/crypto.KeyType'
-    required:
-    - base58PrivateKey
-    - controller
-    - id
-    - type
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationRequest:
-    properties:
-      applicationJwt:
-        type: string
-    required:
-    - applicationJwt
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetResponseResponse:
     properties:
       credential_response:
         $ref: '#/definitions/manifest.CredentialResponse'
@@ -1008,64 +780,241 @@ definitions:
         description: this is an interface type to union Data Integrity and JWT style
           VCs
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.UpdateCredentialStatusRequest:
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetResponsesResponse:
+    properties:
+      responses:
+        items:
+          $ref: '#/definitions/manifest.CredentialResponse'
+        type: array
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse:
+    properties:
+      schema:
+        $ref: '#/definitions/schema.VCJSONSchema'
+      schemaJwt:
+        type: string
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemasResponse:
+    properties:
+      schemas:
+        items:
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
+        type: array
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetSubmissionResponse:
+    properties:
+      definition_id:
+        type: string
+      descriptor_map:
+        items:
+          $ref: '#/definitions/exchange.SubmissionDescriptor'
+        type: array
+      id:
+        type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
+      status:
+        description: One of {`pending`, `approved`, `denied`, `cancelled`}.
+        type: string
+    required:
+    - definition_id
+    - descriptor_map
+    - id
+    - status
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.ListIssuanceTemplatesResponse:
+    properties:
+      issuanceTemplates:
+        items:
+          $ref: '#/definitions/issuing.IssuanceTemplate'
+        type: array
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.ListSubmissionRequest:
+    properties:
+      filter:
+        description: |-
+          A standard filter expression conforming to https://google.aip.dev/160.
+          For example: `status = "done"`.
+        type: string
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.ListSubmissionResponse:
+    properties:
+      submissions:
+        items:
+          $ref: '#/definitions/model.Submission'
+        type: array
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.Operation:
+    properties:
+      done:
+        description: Whether this operation has finished.
+        type: boolean
+      id:
+        description: The name of the resource related to this operation. E.g. "presentations/submissions/<uuid>"
+        type: string
+      result:
+        $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.OperationResult'
+        description: Populated if Done == true.
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.OperationResult:
+    properties:
+      error:
+        description: Populated when there was an error with the operation.
+        type: string
+      response:
+        description: Populated iff Error == "". The type should be specified in the
+          calling APIs documentation.
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse:
+    properties:
+      didDocument:
+        $ref: '#/definitions/did.DIDDocument'
+      didDocumentMetadata:
+        $ref: '#/definitions/did.DIDDocumentMetadata'
+      didResolutionMetadata:
+        $ref: '#/definitions/did.DIDResolutionMetadata'
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.ReviewApplicationRequest:
+    properties:
+      approved:
+        type: boolean
+      credential_overrides:
+        additionalProperties:
+          $ref: '#/definitions/model.CredentialOverride'
+        description: |-
+          Overrides to apply to the credentials that will be created. Keys are the ID that corresponds to an
+          OutputDescriptor.ID from the manifest.
+        type: object
+      reason:
+        type: string
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.ReviewSubmissionRequest:
+    properties:
+      approved:
+        type: boolean
+      reason:
+        type: string
+    required:
+    - approved
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.ReviewSubmissionResponse:
+    properties:
+      definition_id:
+        type: string
+      descriptor_map:
+        items:
+          $ref: '#/definitions/exchange.SubmissionDescriptor'
+        type: array
+      id:
+        type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
+      status:
+        description: One of {`pending`, `approved`, `denied`, `cancelled`}.
+        type: string
+    required:
+    - definition_id
+    - descriptor_map
+    - id
+    - status
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest:
+    properties:
+      base58PrivateKey:
+        type: string
+      controller:
+        type: string
+      id:
+        type: string
+      type:
+        type: string
+    required:
+    - base58PrivateKey
+    - controller
+    - id
+    - type
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationRequest:
+    properties:
+      applicationJwt:
+        type: string
+    required:
+    - applicationJwt
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationResponse:
+    properties:
+      credential_response:
+        $ref: '#/definitions/manifest.CredentialResponse'
+      responseJwt:
+        type: string
+      verifiableCredentials:
+        description: this is an interface type to union Data Integrity and JWT style
+          VCs
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.UpdateCredentialStatusRequest:
     properties:
       revoked:
         type: boolean
     required:
     - revoked
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.UpdateCredentialStatusResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.UpdateCredentialStatusResponse:
     properties:
       revoked:
         type: boolean
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialRequest:
+  github.com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialRequest:
     properties:
       credential:
         $ref: '#/definitions/credential.VerifiableCredential'
       credentialJwt:
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialResponse:
     properties:
       reason:
         type: string
       verified:
         type: boolean
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaRequest:
+  github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaRequest:
     properties:
       schemaJwt:
         type: string
     required:
     - schemaJwt
     type: object
-  github_com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaResponse:
+  github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaResponse:
     properties:
       reason:
         type: string
       verified:
         type: boolean
     type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuing.ClaimTemplates:
+  issuing.ClaimTemplates:
+    additionalProperties: {}
+    type: object
+  issuing.CredentialTemplate:
     properties:
-      data:
-        additionalProperties: {}
+      credentialInputDescriptor:
         description: |-
+          Optional.
+          When present, it's the ID of the input descriptor in the application. Corresponds to one of the
+          PresentationDefinition.InputDescriptors[].ID in the credential manifest. When creating a credential, the base
+          data will be populated from the provided submission that matches this ID.
+          When absent, there will be no base data for the credentials created. Additionally, no JSON path strings in
+          ClaimTemplates.Data will be resolved.
+        type: string
+      data:
+        $ref: '#/definitions/issuing.ClaimTemplates'
+        description: |-
+          Data that will be used to determine credential claims.
           Values may be json path like strings, or any other JSON primitive. Each entry will be used to come up with a
           claim about the credentialSubject in the credential that will be issued.
-        type: object
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplate:
-    properties:
-      data:
-        allOf:
-        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplateData'
-        description: Date that will be used to determine credential claims.
       expiry:
-        allOf:
-        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.TimeLike'
+        $ref: '#/definitions/issuing.TimeLike'
         description: Parameter to determine the expiry of the credential.
       id:
         description: ID corresponding to an OutputDescriptor.ID from the manifest.
@@ -1077,19 +1026,7 @@ definitions:
         description: ID of the CredentialSchema to be used for the issued credential.
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplateData:
-    properties:
-      claims:
-        allOf:
-        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.ClaimTemplates'
-        description: The set of information that will be used to create claims.
-      credentialInputDescriptor:
-        description: |-
-          Optional. When present, it's the ID of the input descriptor in the application. Corresponds to one of the
-          PresentationDefinition.InputDescriptors[].ID in the credential manifest.
-        type: string
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate:
+  issuing.IssuanceTemplate:
     properties:
       credentialManifest:
         description: ID of the credential manifest that this template corresponds
@@ -1098,7 +1035,7 @@ definitions:
       credentials:
         description: Info required to create a credential from a credential application.
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplate'
+          $ref: '#/definitions/issuing.CredentialTemplate'
         type: array
       id:
         description: ID of this template.
@@ -1110,7 +1047,7 @@ definitions:
     - credentialManifest
     - issuer
     type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuing.TimeLike:
+  issuing.TimeLike:
     properties:
       duration:
         description: For a fixed offset from when it was issued.
@@ -1118,28 +1055,6 @@ definitions:
       time:
         description: For fixed time in the future.
         type: string
-    type: object
-  github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Submission:
-    properties:
-      definition_id:
-        type: string
-      descriptor_map:
-        items:
-          $ref: '#/definitions/exchange.SubmissionDescriptor'
-        type: array
-      id:
-        type: string
-      reason:
-        description: The reason why the submission was approved or denied.
-        type: string
-      status:
-        description: One of {`pending`, `approved`, `denied`, `cancelled`}.
-        type: string
-    required:
-    - definition_id
-    - descriptor_map
-    - id
-    - status
     type: object
   manifest.CredentialApplication:
     properties:
@@ -1150,8 +1065,7 @@ definitions:
       manifest_id:
         type: string
       presentation_submission:
-        allOf:
-        - $ref: '#/definitions/exchange.PresentationSubmission'
+        $ref: '#/definitions/exchange.PresentationSubmission'
         description: Must be present if the corresponding manifest contains a presentation_definition
       spec_version:
         type: string
@@ -1229,8 +1143,7 @@ definitions:
       name:
         type: string
       styles:
-        allOf:
-        - $ref: '#/definitions/rendering.EntityStyleDescriptor'
+        $ref: '#/definitions/rendering.EntityStyleDescriptor'
         description: |-
           an object or URI as defined by the DIF Entity Styles specification
           https://identity.foundation/wallet-rendering/#entity-styles
@@ -1242,8 +1155,7 @@ definitions:
       description:
         type: string
       display:
-        allOf:
-        - $ref: '#/definitions/rendering.DataDisplay'
+        $ref: '#/definitions/rendering.DataDisplay'
         description: 'both below: an object or URI as defined by the DIF Entity Styles
           specification'
       id:
@@ -1258,6 +1170,41 @@ definitions:
     required:
     - id
     - schema
+    type: object
+  model.CredentialOverride:
+    properties:
+      data:
+        additionalProperties: {}
+        description: Data that will be used to determine credential claims.
+        type: object
+      expiry:
+        description: Parameter to determine the expiry of the credential.
+        type: string
+      revocable:
+        description: Whether the credentials created should be revocable.
+        type: boolean
+    type: object
+  model.Submission:
+    properties:
+      definition_id:
+        type: string
+      descriptor_map:
+        items:
+          $ref: '#/definitions/exchange.SubmissionDescriptor'
+        type: array
+      id:
+        type: string
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
+      status:
+        description: One of {`pending`, `approved`, `denied`, `cancelled`}.
+        type: string
+    required:
+    - definition_id
+    - descriptor_map
+    - id
+    - status
     type: object
   pkg_server_router.CreateCredentialRequest:
     properties:
@@ -1297,7 +1244,7 @@ definitions:
       didWebId:
         type: string
       keyType:
-        $ref: '#/definitions/crypto.KeyType'
+        type: string
     required:
     - keyType
     type: object
@@ -1306,7 +1253,7 @@ definitions:
       did:
         $ref: '#/definitions/did.DIDDocument'
       keyType:
-        $ref: '#/definitions/crypto.KeyType'
+        type: string
       privateKeyBase58:
         type: string
     type: object
@@ -1319,7 +1266,7 @@ definitions:
       credentials:
         description: Info required to create a credential from a credential application.
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplate'
+          $ref: '#/definitions/issuing.CredentialTemplate'
         type: array
       id:
         description: ID of this template.
@@ -1459,7 +1406,7 @@ definitions:
     properties:
       credentials:
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_internal_credential.Container'
+          $ref: '#/definitions/credential.Container'
         type: array
     type: object
   pkg_server_router.GetDIDByMethodResponse:
@@ -1471,7 +1418,7 @@ definitions:
     properties:
       methods:
         items:
-          $ref: '#/definitions/did.Method'
+          type: string
         type: array
     type: object
   pkg_server_router.GetDIDsByMethodResponse:
@@ -1495,7 +1442,7 @@ definitions:
       id:
         type: string
       type:
-        $ref: '#/definitions/crypto.KeyType'
+        type: string
     type: object
   pkg_server_router.GetManifestResponse:
     properties:
@@ -1538,10 +1485,13 @@ definitions:
     type: object
   pkg_server_router.GetResponseResponse:
     properties:
-      id:
-        type: string
-      response:
+      credential_response:
         $ref: '#/definitions/manifest.CredentialResponse'
+      responseJwt:
+        type: string
+      verifiableCredentials:
+        description: this is an interface type to union Data Integrity and JWT style
+          VCs
     type: object
   pkg_server_router.GetResponsesResponse:
     properties:
@@ -1590,7 +1540,7 @@ definitions:
     properties:
       issuanceTemplates:
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate'
+          $ref: '#/definitions/issuing.IssuanceTemplate'
         type: array
     type: object
   pkg_server_router.ListSubmissionRequest:
@@ -1605,7 +1555,7 @@ definitions:
     properties:
       submissions:
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Submission'
+          $ref: '#/definitions/model.Submission'
         type: array
     type: object
   pkg_server_router.Operation:
@@ -1617,8 +1567,7 @@ definitions:
         description: The name of the resource related to this operation. E.g. "presentations/submissions/<uuid>"
         type: string
       result:
-        allOf:
-        - $ref: '#/definitions/pkg_server_router.OperationResult'
+        $ref: '#/definitions/pkg_server_router.OperationResult'
         description: Populated if Done == true.
     type: object
   pkg_server_router.OperationResult:
@@ -1643,6 +1592,13 @@ definitions:
     properties:
       approved:
         type: boolean
+      credential_overrides:
+        additionalProperties:
+          $ref: '#/definitions/model.CredentialOverride'
+        description: |-
+          Overrides to apply to the credentials that will be created. Keys are the ID that corresponds to an
+          OutputDescriptor.ID from the manifest.
+        type: object
       reason:
         type: string
     type: object
@@ -1686,7 +1642,7 @@ definitions:
       id:
         type: string
       type:
-        $ref: '#/definitions/crypto.KeyType'
+        type: string
     required:
     - base58PrivateKey
     - controller
@@ -1885,7 +1841,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse'
+            $ref: '#/definitions/pkg_server_router.GetHealthCheckResponse'
       summary: Health Check
       tags:
       - HealthCheck
@@ -1931,7 +1887,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialsResponse'
+            $ref: '#/definitions/pkg_server_router.GetCredentialsResponse'
         "400":
           description: Bad request
           schema:
@@ -1953,14 +1909,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialRequest'
+          $ref: '#/definitions/pkg_server_router.CreateCredentialRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialResponse'
+            $ref: '#/definitions/pkg_server_router.CreateCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -2017,7 +1973,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialResponse'
+            $ref: '#/definitions/pkg_server_router.GetCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -2042,7 +1998,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialStatusResponse'
+            $ref: '#/definitions/pkg_server_router.GetCredentialStatusResponse'
         "400":
           description: Bad request
           schema:
@@ -2060,14 +2016,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.UpdateCredentialStatusRequest'
+          $ref: '#/definitions/pkg_server_router.UpdateCredentialStatusRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.UpdateCredentialStatusResponse'
+            $ref: '#/definitions/pkg_server_router.UpdateCredentialStatusResponse'
         "400":
           description: Bad request
           schema:
@@ -2096,7 +2052,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialStatusListResponse'
+            $ref: '#/definitions/pkg_server_router.GetCredentialStatusListResponse'
         "400":
           description: Bad request
           schema:
@@ -2115,14 +2071,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialRequest'
+          $ref: '#/definitions/pkg_server_router.VerifyCredentialRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialResponse'
+            $ref: '#/definitions/pkg_server_router.VerifyCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -2276,14 +2232,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.CreateIssuanceTemplateRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateIssuanceTemplateRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate'
+            $ref: '#/definitions/issuing.IssuanceTemplate'
         "400":
           description: Bad request
           schema:
@@ -2340,7 +2296,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate'
+            $ref: '#/definitions/issuing.IssuanceTemplate'
         "400":
           description: Bad request
           schema:
@@ -2746,14 +2702,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.GetOperationsRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetOperationsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetOperationsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetOperationsResponse'
         "400":
           description: Bad request
           schema:
@@ -2782,7 +2738,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.Operation'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.Operation'
         "400":
           description: Bad request
           schema:
@@ -2811,7 +2767,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.Operation'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.Operation'
         "400":
           description: Bad request
           schema:
@@ -3020,7 +2976,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Review a pending submissions
+      summary: Review a pending submission
       tags:
       - SubmissionAPI
   /v1/schemas:
@@ -3034,7 +2990,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetSchemasResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemasResponse'
         "500":
           description: Internal server error
           schema:
@@ -3052,14 +3008,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateSchemaRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateSchemaResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -3116,7 +3072,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -3135,14 +3091,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.VerifySchemaRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.VerifySchemaResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaResponse'
         "400":
           description: Bad request
           schema:

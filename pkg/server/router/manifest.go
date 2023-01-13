@@ -69,16 +69,16 @@ type CreateManifestResponse struct {
 }
 
 // CreateManifest godoc
-// @Summary      Create manifest
-// @Description  Create manifest
-// @Tags         ManifestAPI
-// @Accept       json
-// @Produce      json
-// @Param        request  body      CreateManifestRequest  true  "request body"
-// @Success      201      {object}  CreateManifestResponse
-// @Failure      400      {string}  string  "Bad request"
-// @Failure      500      {string}  string  "Internal server error"
-// @Router       /v1/manifests [put]
+// @Summary     Create manifest
+// @Description Create manifest
+// @Tags        ManifestAPI
+// @Accept      json
+// @Produce     json
+// @Param       request body     CreateManifestRequest true "request body"
+// @Success     201     {object} CreateManifestResponse
+// @Failure     400     {string} string "Bad request"
+// @Failure     500     {string} string "Internal server error"
+// @Router      /v1/manifests [put]
 func (mr ManifestRouter) CreateManifest(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreateManifestRequest
 	if err := framework.Decode(r, &request); err != nil {
@@ -112,15 +112,15 @@ type GetManifestResponse struct {
 }
 
 // GetManifest godoc
-// @Summary      Get manifest
-// @Description  Get a credential manifest by its id
-// @Tags         ManifestAPI
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "ID"
-// @Success      200  {object}  GetManifestResponse
-// @Failure      400  {string}  string  "Bad request"
-// @Router       /v1/manifests/{id} [get]
+// @Summary     Get manifest
+// @Description Get a credential manifest by its id
+// @Tags        ManifestAPI
+// @Accept      json
+// @Produce     json
+// @Param       id  path     string true "ID"
+// @Success     200 {object} GetManifestResponse
+// @Failure     400 {string} string "Bad request"
+// @Router      /v1/manifests/{id} [get]
 func (mr ManifestRouter) GetManifest(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -149,18 +149,18 @@ type GetManifestsResponse struct {
 }
 
 // GetManifests godoc
-// @Summary      Get manifests
-// @Description  Checks for the presence of a query parameter and calls the associated filtered get method
-// @Tags         ManifestAPI
-// @Accept       json
-// @Produce      json
-// @Param        issuer   query     string  false  "string issuer"
-// @Param        schema   query     string  false  "string schema"
-// @Param        subject  query     string  false  "string subject"
-// @Success      200      {object}  GetManifestsResponse
-// @Failure      400      {string}  string  "Bad request"
-// @Failure      500      {string}  string  "Internal server error"
-// @Router       /v1/manifests [get]
+// @Summary     Get manifests
+// @Description Checks for the presence of a query parameter and calls the associated filtered get method
+// @Tags        ManifestAPI
+// @Accept      json
+// @Produce     json
+// @Param       issuer  query    string false "string issuer"
+// @Param       schema  query    string false "string schema"
+// @Param       subject query    string false "string subject"
+// @Success     200     {object} GetManifestsResponse
+// @Failure     400     {string} string "Bad request"
+// @Failure     500     {string} string "Internal server error"
+// @Router      /v1/manifests [get]
 func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotManifests, err := mr.service.GetManifests(ctx)
 
@@ -184,16 +184,16 @@ func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter
 }
 
 // DeleteManifest godoc
-// @Summary      Delete manifests
-// @Description  Delete manifest by ID
-// @Tags         ManifestAPI
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "ID"
-// @Success      200  {string}  string  "OK"
-// @Failure      400  {string}  string  "Bad request"
-// @Failure      500  {string}  string  "Internal server error"
-// @Router       /v1/manifests/{id} [delete]
+// @Summary     Delete manifests
+// @Description Delete manifest by ID
+// @Tags        ManifestAPI
+// @Accept      json
+// @Produce     json
+// @Param       id  path     string true "ID"
+// @Success     200 {string} string "OK"
+// @Failure     400 {string} string "Bad request"
+// @Failure     500 {string} string "Internal server error"
+// @Router      /v1/manifests/{id} [delete]
 func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -288,17 +288,17 @@ type SubmitApplicationResponse struct {
 }
 
 // SubmitApplication godoc
-// @Summary      Submit application
-// @Description  Submit a credential application in response to a credential manifest. The request body is expected to
+// @Summary     Submit application
+// @Description Submit a credential application in response to a credential manifest. The request body is expected to
 // be a valid JWT signed by the applicant's DID, containing two top level properties: credential_application and vcs.
-// @Tags         ApplicationAPI
-// @Accept       json
-// @Produce      json
-// @Param        request  body      SubmitApplicationRequest  true  "request body"
-// @Success      201      {object}  Operation "Operation with a SubmitApplicationResponse type in the `result.response` field."
-// @Failure      400      {string}  string  "Bad request"
-// @Failure      500      {string}  string  "Internal server error"
-// @Router       /v1/manifests/applications [put]
+// @Tags        ApplicationAPI
+// @Accept      json
+// @Produce     json
+// @Param       request body     SubmitApplicationRequest true "request body"
+// @Success     201     {object} Operation                "Operation with a SubmitApplicationResponse type in the `result.response` field."
+// @Failure     400     {string} string                   "Bad request"
+// @Failure     500     {string} string                   "Internal server error"
+// @Router      /v1/manifests/applications [put]
 func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request SubmitApplicationRequest
 	if err := framework.Decode(r, &request); err != nil {
@@ -330,15 +330,15 @@ type GetApplicationResponse struct {
 }
 
 // GetApplication godoc
-// @Summary      Get application
-// @Description  Get application by id
-// @Tags         ApplicationAPI
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "ID"
-// @Success      200  {object}  GetApplicationResponse
-// @Failure      400  {string}  string  "Bad request"
-// @Router       /v1/manifests/applications/{id} [get]
+// @Summary     Get application
+// @Description Get application by id
+// @Tags        ApplicationAPI
+// @Accept      json
+// @Produce     json
+// @Param       id  path     string true "ID"
+// @Success     200 {object} GetApplicationResponse
+// @Failure     400 {string} string "Bad request"
+// @Router      /v1/manifests/applications/{id} [get]
 func (mr ManifestRouter) GetApplication(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -366,15 +366,15 @@ type GetApplicationsResponse struct {
 }
 
 // GetApplications godoc
-// @Summary      Get applications
-// @Description  Checks for the presence of a query parameter and calls the associated filtered get method
-// @Tags         ApplicationAPI
-// @Accept       json
-// @Produce      json
-// @Success      200      {object}  GetApplicationsResponse
-// @Failure      400      {string}  string  "Bad request"
-// @Failure      500      {string}  string  "Internal server error"
-// @Router       /v1/manifests/applications [get]
+// @Summary     Get applications
+// @Description Checks for the presence of a query parameter and calls the associated filtered get method
+// @Tags        ApplicationAPI
+// @Accept      json
+// @Produce     json
+// @Success     200 {object} GetApplicationsResponse
+// @Failure     400 {string} string "Bad request"
+// @Failure     500 {string} string "Internal server error"
+// @Router      /v1/manifests/applications [get]
 func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotApplications, err := mr.service.GetApplications(ctx)
 
@@ -392,16 +392,16 @@ func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWri
 }
 
 // DeleteApplication godoc
-// @Summary      Delete applications
-// @Description  Delete application by ID
-// @Tags         ApplicationAPI
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "ID"
-// @Success      200  {string}  string  "OK"
-// @Failure      400  {string}  string  "Bad request"
-// @Failure      500  {string}  string  "Internal server error"
-// @Router       /v1/manifests/applications/{id} [delete]
+// @Summary     Delete applications
+// @Description Delete application by ID
+// @Tags        ApplicationAPI
+// @Accept      json
+// @Produce     json
+// @Param       id  path     string true "ID"
+// @Success     200 {string} string "OK"
+// @Failure     400 {string} string "Bad request"
+// @Failure     500 {string} string "Internal server error"
+// @Router      /v1/manifests/applications/{id} [delete]
 func (mr ManifestRouter) DeleteApplication(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -427,15 +427,15 @@ type GetResponseResponse struct {
 }
 
 // GetResponse godoc
-// @Summary      Get response
-// @Description  Get response by id
-// @Tags         ResponseAPI
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "ID"
-// @Success      200  {object}  GetResponseResponse
-// @Failure      400  {string}  string  "Bad request"
-// @Router       /v1/manifests/responses/{id} [get]
+// @Summary     Get response
+// @Description Get response by id
+// @Tags        ResponseAPI
+// @Accept      json
+// @Produce     json
+// @Param       id  path     string true "ID"
+// @Success     200 {object} GetResponseResponse
+// @Failure     400 {string} string "Bad request"
+// @Router      /v1/manifests/responses/{id} [get]
 func (mr ManifestRouter) GetResponse(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -464,15 +464,15 @@ type GetResponsesResponse struct {
 }
 
 // GetResponses godoc
-// @Summary      Get responses
-// @Description  Checks for the presence of a query parameter and calls the associated filtered get method
-// @Tags         ResponseAPI
-// @Accept       json
-// @Produce      json
-// @Success      200      {object}  GetResponsesResponse
-// @Failure      400      {string}  string  "Bad request"
-// @Failure      500      {string}  string  "Internal server error"
-// @Router       /v1/manifests/responses [get]
+// @Summary     Get responses
+// @Description Checks for the presence of a query parameter and calls the associated filtered get method
+// @Tags        ResponseAPI
+// @Accept      json
+// @Produce     json
+// @Success     200 {object} GetResponsesResponse
+// @Failure     400 {string} string "Bad request"
+// @Failure     500 {string} string "Internal server error"
+// @Router      /v1/manifests/responses [get]
 func (mr ManifestRouter) GetResponses(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotResponses, err := mr.service.GetResponses(ctx)
 
@@ -490,16 +490,16 @@ func (mr ManifestRouter) GetResponses(ctx context.Context, w http.ResponseWriter
 }
 
 // DeleteResponse godoc
-// @Summary      Delete responses
-// @Description  Delete response by ID
-// @Tags         ResponseAPI
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "ID"
-// @Success      200  {string}  string  "OK"
-// @Failure      400  {string}  string  "Bad request"
-// @Failure      500  {string}  string  "Internal server error"
-// @Router       /v1/manifests/responses/{id} [delete]
+// @Summary     Delete responses
+// @Description Delete response by ID
+// @Tags        ResponseAPI
+// @Accept      json
+// @Produce     json
+// @Param       id  path     string true "ID"
+// @Success     200 {string} string "OK"
+// @Failure     400 {string} string "Bad request"
+// @Failure     500 {string} string "Internal server error"
+// @Router      /v1/manifests/responses/{id} [delete]
 func (mr ManifestRouter) DeleteResponse(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -536,16 +536,16 @@ func (r ReviewApplicationRequest) toServiceRequest(id string) model.ReviewApplic
 }
 
 // ReviewApplication godoc
-// @Summary      Reviews an application
-// @Description  Reviewing an application either fulfills or denies the credential.
-// @Tags         ApplicationAPI
-// @Accept       json
-// @Produce      json
-// @Param        request  body      ReviewApplicationRequest  true  "request body"
-// @Success      201      {object}  SubmitApplicationResponse "Credential Response"
-// @Failure      400      {string}  string  "Bad request"
-// @Failure      500      {string}  string  "Internal server error"
-// @Router       /v1/manifests/applications/{id}/review [put]
+// @Summary     Reviews an application
+// @Description Reviewing an application either fulfills or denies the credential.
+// @Tags        ApplicationAPI
+// @Accept      json
+// @Produce     json
+// @Param       request body     ReviewApplicationRequest  true "request body"
+// @Success     201     {object} SubmitApplicationResponse "Credential Response"
+// @Failure     400     {string} string                    "Bad request"
+// @Failure     500     {string} string                    "Internal server error"
+// @Router      /v1/manifests/applications/{id}/review [put]
 func (mr ManifestRouter) ReviewApplication(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
