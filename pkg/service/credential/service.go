@@ -243,7 +243,9 @@ func (s Service) CreateCredential(ctx context.Context, request CreateCredentialR
 	}
 	writeContexts = append(writeContexts, *credWriteContext)
 
-	s.storage.WriteMany(ctx, writeContexts)
+	if err = s.storage.WriteMany(ctx, writeContexts); err != nil {
+		return nil, util.LoggingErrorMsg(err, "failed to save vc")
+	}
 
 	response := CreateCredentialResponse{Container: container}
 	return &response, nil
@@ -289,7 +291,7 @@ func getStatusListCredential(ctx context.Context, s Service, issuerID string, sc
 		if err = s.storage.StoreStatusListCredential(ctx, storageRequest); err != nil {
 			return nil, util.LoggingErrorMsg(err, "could not store credential")
 		}
-		
+
 		statusListCredential = generatedStatusListCredential
 
 	} else {
