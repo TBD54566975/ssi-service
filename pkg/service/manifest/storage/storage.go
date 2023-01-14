@@ -202,7 +202,7 @@ func (ms *Storage) GetResponse(ctx context.Context, id string) (*StoredResponse,
 		return nil, util.LoggingErrorMsgf(err, "could not get response: %s", id)
 	}
 	if len(responseBytes) == 0 {
-		return nil, util.LoggingErrorMsgf(err, "response not found with id: %s", id)
+		return nil, util.LoggingNewErrorf("response not found with id: %s", id)
 	}
 	var stored StoredResponse
 	if err = json.Unmarshal(responseBytes, &stored); err != nil {

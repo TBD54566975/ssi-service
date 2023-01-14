@@ -42,13 +42,9 @@ func TestIssuanceRouter(t *testing.T) {
 							{
 								ID:     "output_descriptor_1",
 								Schema: createdSchema.Schema.ID,
-								Data: issuing.CredentialTemplateData{
-									Claims: issuing.ClaimTemplates{
-										Data: map[string]any{
-											"foo":   "bar",
-											"hello": "$.vcsomething.something",
-										},
-									},
+								Data: issuing.ClaimTemplates{
+									"foo":   "bar",
+									"hello": "$.vcsomething.something",
 								},
 								Expiry: issuing.TimeLike{
 									Time: &now,
@@ -68,13 +64,9 @@ func TestIssuanceRouter(t *testing.T) {
 							{
 								ID:     "output_descriptor_1",
 								Schema: "",
-								Data: issuing.CredentialTemplateData{
-									Claims: issuing.ClaimTemplates{
-										Data: map[string]any{
-											"foo":   "bar",
-											"hello": "$.vcsomething.something",
-										},
-									},
+								Data: issuing.ClaimTemplates{
+									"foo":   "bar",
+									"hello": "$.vcsomething.something",
 								},
 								Expiry: issuing.TimeLike{
 									Time: &now,
@@ -118,13 +110,9 @@ func TestIssuanceRouter(t *testing.T) {
 							{
 								ID:     "",
 								Schema: createdSchema.Schema.ID,
-								Data: issuing.CredentialTemplateData{
-									Claims: issuing.ClaimTemplates{
-										Data: map[string]any{
-											"foo":   "bar",
-											"hello": "$.vcsomething.something",
-										},
-									},
+								Data: issuing.ClaimTemplates{
+									"foo":   "bar",
+									"hello": "$.vcsomething.something",
 								},
 								Expiry: issuing.TimeLike{
 									Time: &now,
@@ -145,13 +133,9 @@ func TestIssuanceRouter(t *testing.T) {
 							{
 								ID:     "output_descriptor_1",
 								Schema: createdSchema.Schema.ID,
-								Data: issuing.CredentialTemplateData{
-									Claims: issuing.ClaimTemplates{
-										Data: map[string]any{
-											"foo":   "bar",
-											"hello": "$.vcsomething.something",
-										},
-									},
+								Data: issuing.ClaimTemplates{
+									"foo":   "bar",
+									"hello": "$.vcsomething.something",
 								},
 								Expiry: issuing.TimeLike{
 									Time:     &now,
@@ -173,13 +157,9 @@ func TestIssuanceRouter(t *testing.T) {
 							{
 								ID:     "output_descriptor_1",
 								Schema: "fake schema",
-								Data: issuing.CredentialTemplateData{
-									Claims: issuing.ClaimTemplates{
-										Data: map[string]any{
-											"foo":   "bar",
-											"hello": "$.vcsomething.something",
-										},
-									},
+								Data: issuing.ClaimTemplates{
+									"foo":   "bar",
+									"hello": "$.vcsomething.something",
 								},
 								Expiry: issuing.TimeLike{
 									Time: &now,
@@ -200,13 +180,9 @@ func TestIssuanceRouter(t *testing.T) {
 							{
 								ID:     "output_descriptor_1",
 								Schema: createdSchema.ID,
-								Data: issuing.CredentialTemplateData{
-									Claims: issuing.ClaimTemplates{
-										Data: map[string]any{
-											"foo":   "bar",
-											"hello": "$.vcsomething.something",
-										},
-									},
+								Data: issuing.ClaimTemplates{
+									"foo":   "bar",
+									"hello": "$.vcsomething.something",
 								},
 								Expiry: issuing.TimeLike{
 									Time: &now,
@@ -226,13 +202,9 @@ func TestIssuanceRouter(t *testing.T) {
 							{
 								ID:     "output_descriptor_1",
 								Schema: createdSchema.ID,
-								Data: issuing.CredentialTemplateData{
-									Claims: issuing.ClaimTemplates{
-										Data: map[string]any{
-											"foo":   "bar",
-											"hello": "$.vcsomething.something",
-										},
-									},
+								Data: issuing.ClaimTemplates{
+									"foo":   "bar",
+									"hello": "$.vcsomething.something",
 								},
 								Expiry: issuing.TimeLike{
 									Time: &now,
@@ -269,13 +241,9 @@ func TestIssuanceRouter(t *testing.T) {
 				{
 					ID:     "output_descriptor_1",
 					Schema: createdSchema.Schema.ID,
-					Data: issuing.CredentialTemplateData{
-						Claims: issuing.ClaimTemplates{
-							Data: map[string]any{
-								"foo":   "bar",
-								"hello": "$.vcsomething.something",
-							},
-						},
+					Data: issuing.ClaimTemplates{
+						"foo":   "bar",
+						"hello": "$.vcsomething.something",
 					},
 					Expiry: issuing.TimeLike{
 						Time: &now,
@@ -391,13 +359,9 @@ func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, 
 					{
 						ID:     "output_descriptor_1",
 						Schema: createdSchema.Schema.ID,
-						Data: issuing.CredentialTemplateData{
-							Claims: issuing.ClaimTemplates{
-								Data: map[string]any{
-									"foo":   "bar",
-									"hello": "$.vcsomething.something",
-								},
-							},
+						Data: issuing.ClaimTemplates{
+							"foo":   "bar",
+							"hello": "$.vcsomething.something",
 						},
 						Expiry: issuing.TimeLike{
 							Time: &now,

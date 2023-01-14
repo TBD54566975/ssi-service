@@ -106,7 +106,9 @@ type GetResponseRequest struct {
 }
 
 type GetResponseResponse struct {
-	Response manifestsdk.CredentialResponse `json:"response"`
+	Response    manifestsdk.CredentialResponse `json:"response"`
+	Credentials any
+	ResponseJWT keyaccess.JWT
 }
 
 type GetResponsesResponse struct {

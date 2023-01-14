@@ -1,0 +1,22 @@
+{
+  "credentialManifest": "{{.ManifestID}}",
+  "issuer": "{{.IssuerID}}",
+  "credentials": [
+    {
+      "id": "kyc_credential",
+      "schema": "{{.SchemaID}}",
+      "credentialInputDescriptor": "kyc1",
+      "data": {
+        "givenName": "$.credentialSubject.givenName",
+        "familyName": "$.credentialSubject.familyName",
+        "postalAddress": {
+          "addressRegion": "CA"
+        }
+      },
+      "expiry": {
+        "time": "2022-10-31T00:00:00Z"
+      },
+      "revocable": true
+    }
+  ]
+}

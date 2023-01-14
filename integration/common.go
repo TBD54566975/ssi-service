@@ -426,3 +426,23 @@ func ReviewApplication(params reviewApplicationParams) (string, error) {
 
 	return output, nil
 }
+
+type issuanceTemplateParams struct {
+	SchemaID   string
+	ManifestID string
+	IssuerID   string
+}
+
+func CreateIssuanceTemplate(params issuanceTemplateParams) (string, error) {
+	logrus.Println("\n\nCreating Issuance Template:")
+	issuanceTemplateJSON, err := resolveTemplate(params, "issuance-template-input.json")
+	if err != nil {
+		return "", err
+	}
+	output, err := put(endpoint+version+"issuancetemplates", issuanceTemplateJSON)
+	if err != nil {
+		return "", errors.Wrapf(err, "creating issuance template yielded output: %s", output)
+	}
+
+	return output, nil
+}

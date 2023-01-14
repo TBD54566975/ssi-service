@@ -391,7 +391,7 @@ func (s Service) maybeIssueAutomatically(
 		return nil, errors.Wrap(err, "signing credential response")
 	}
 
-	storeResponseRequest := manifeststg.StoredResponse{
+	storedResponse := manifeststg.StoredResponse{
 		ID:           credResp.ID,
 		ManifestID:   manifestID,
 		ApplicantDID: applicantDID,
@@ -405,7 +405,7 @@ func (s Service) maybeIssueAutomatically(
 		true,
 		"automatic from issuing template",
 		opcredential.IDFromResponseID(applicationID),
-		storeResponseRequest,
+		storedResponse,
 	)
 	if err != nil {
 		return nil, errors.Wrap(err, "reviewing application")
@@ -543,7 +543,11 @@ func (s Service) GetResponse(ctx context.Context, request model.GetResponseReque
 		return nil, util.LoggingErrorMsgf(err, "could not get response: %s", request.ID)
 	}
 
-	response := model.GetResponseResponse{Response: gotResponse.Response}
+	response := model.GetResponseResponse{
+		Response:    gotResponse.Response,
+		Credentials: credint.ContainersToInterface(gotResponse.Credentials),
+		ResponseJWT: gotResponse.ResponseJWT,
+	}
 	return &response, nil
 }
 
