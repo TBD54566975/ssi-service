@@ -36,7 +36,7 @@ jobs:
           git checkout -B main_swagger
           git add .; \
           git commit -m "gen OpenAPI Spec by github-actions"; \
-          git push --set-upstream origin main_swagger
+          git push --force --set-upstream origin main_swagger
         fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
