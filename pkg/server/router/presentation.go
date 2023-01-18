@@ -296,7 +296,7 @@ func (pr PresentationRouter) CreateSubmission(ctx context.Context, w http.Respon
 
 type GetSubmissionResponse struct {
 	*model.Submission
-	// TODO: Actually add the credentials that were sent.
+	// TODO(OSE-334): Actually add the credentials that were sent.
 }
 
 // GetSubmission godoc
