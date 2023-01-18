@@ -30,7 +30,7 @@ type Storage struct {
 	db storage.ServiceStorage
 }
 
-func (ps Storage) UpdateSubmission(ctx context.Context, id string, approved bool, reason string, opID string) (prestorage.StoredSubmission, opstorage.StoredOperation, error) {
+func (ps *Storage) UpdateSubmission(ctx context.Context, id string, approved bool, reason string, opID string) (prestorage.StoredSubmission, opstorage.StoredOperation, error) {
 	m := map[string]any{
 		"status": opsubmission.StatusDenied,
 		"reason": reason,
@@ -139,7 +139,7 @@ func (ps *Storage) DeletePresentation(ctx context.Context, id string) error {
 	return nil
 }
 
-func (ps Storage) StoreSubmission(ctx context.Context, s prestorage.StoredSubmission) error {
+func (ps *Storage) StoreSubmission(ctx context.Context, s prestorage.StoredSubmission) error {
 	id := s.Submission.ID
 	if id == "" {
 		err := errors.New("could not store submission definition without an ID")
@@ -166,4 +166,20 @@ func (ps *Storage) GetSubmission(ctx context.Context, id string) (*prestorage.St
 		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored submission definition: %s", id)
 	}
 	return &stored, nil
+}
+
+func (ps *Storage) ListDefinitions(ctx context.Context) ([]prestorage.StoredDefinition, error) {
+	m, err := ps.db.ReadAll(ctx, presentationDefinitionNamespace)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading all")
+	}
+	ts := make([]prestorage.StoredDefinition, len(m))
+	i := 0
+	for k, v := range m {
+		if err = json.Unmarshal(v, &ts[i]); err != nil {
+			return nil, errors.Wrapf(err, "unmarshalling template with key <%s>", k)
+		}
+		i++
+	}
+	return ts, nil
 }
