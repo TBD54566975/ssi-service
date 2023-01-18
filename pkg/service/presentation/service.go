@@ -245,3 +245,20 @@ func (s Service) ReviewSubmission(ctx context.Context, request model.ReviewSubmi
 	m := model.ServiceModel(&updatedSubmission)
 	return &m, nil
 }
+
+func (s Service) ListDefinitions(ctx context.Context) (*model.ListDefinitionsResponse, error) {
+	logrus.Debug("listing presentation definitions")
+
+	subs, err := s.storage.ListDefinitions(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "fetching definitions from storage")
+	}
+
+	resp := &model.ListDefinitionsResponse{Definitions: make([]*exchange.PresentationDefinition, 0, len(subs))}
+	for _, sub := range subs {
+		sub := sub // What's this?? see https://github.com/golang/go/wiki/CommonMistakes#using-reference-to-loop-iterator-variable
+		resp.Definitions = append(resp.Definitions, &sub.PresentationDefinition)
+	}
+
+	return resp, nil
+}
