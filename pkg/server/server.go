@@ -183,6 +183,7 @@ func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
 
 	s.Handle(http.MethodPut, handlerPath, pRouter.CreatePresentationDefinition)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), pRouter.GetPresentationDefinition)
+	s.Handle(http.MethodGet, handlerPath, pRouter.ListDefinitions)
 	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), pRouter.DeletePresentationDefinition)
 
 	submissionHandlerPath := V1Prefix + PresentationsPrefix + SubmissionsPrefix

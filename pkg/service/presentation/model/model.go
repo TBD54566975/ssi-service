@@ -78,6 +78,10 @@ type ListSubmissionResponse struct {
 	Submissions []Submission `json:"submissions"`
 }
 
+type ListDefinitionsResponse struct {
+	Definitions []*exchange.PresentationDefinition `json:"definitions"`
+}
+
 type ReviewSubmissionRequest struct {
 	ID       string `json:"id" validate:"required"`
 	Approved bool   `json:"approved"`

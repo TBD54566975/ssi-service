@@ -71,16 +71,17 @@ type CreateCredentialResponse struct {
 }
 
 // CreateCredential godoc
-// @Summary      Create Credential
-// @Description  Create a credential
-// @Tags         CredentialAPI
-// @Accept       json
-// @Produce      json
-// @Param        request  body      CreateCredentialRequest  true  "request body"
-// @Success      201      {object}  CreateCredentialResponse
-// @Failure      400      {string}  string  "Bad request"
-// @Failure      500      {string}  string  "Internal server error"
-// @Router       /v1/credentials [put]
+//
+//	@Summary		Create Credential
+//	@Description	Create a credential
+//	@Tags			CredentialAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		CreateCredentialRequest	true	"request body"
+//	@Success		201		{object}	CreateCredentialResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/credentials [put]
 func (cr CredentialRouter) CreateCredential(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreateCredentialRequest
 	invalidCreateCredentialRequest := "invalid create credential request"
@@ -115,15 +116,16 @@ type GetCredentialResponse struct {
 }
 
 // GetCredential godoc
-// @Summary      Get Credential
-// @Description  Get credential by id
-// @Tags         CredentialAPI
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "ID"
-// @Success      200  {object}  GetCredentialResponse
-// @Failure      400  {string}  string  "Bad request"
-// @Router       /v1/credentials/{id} [get]
+//
+//	@Summary		Get Credential
+//	@Description	Get credential by id
+//	@Tags			CredentialAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		200	{object}	GetCredentialResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Router			/v1/credentials/{id} [get]
 func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -152,15 +154,16 @@ type GetCredentialStatusResponse struct {
 }
 
 // GetCredentialStatus godoc
-// @Summary      Get Credential Status
-// @Description  Get credential status by id
-// @Tags         CredentialAPI
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "ID"
-// @Success      200  {object}  GetCredentialStatusResponse
-// @Failure      400  {string}  string  "Bad request"
-// @Router       /v1/credentials/{id}/status [get]
+//
+//	@Summary		Get Credential Status
+//	@Description	Get credential status by id
+//	@Tags			CredentialAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		200	{object}	GetCredentialStatusResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Router			/v1/credentials/{id}/status [get]
 func (cr CredentialRouter) GetCredentialStatus(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -190,15 +193,16 @@ type GetCredentialStatusListResponse struct {
 }
 
 // GetCredentialStatusList godoc
-// @Summary      Get Credential Status List
-// @Description  Get credential status list by id
-// @Tags         CredentialAPI
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "ID"
-// @Success      200  {object}  GetCredentialStatusListResponse
-// @Failure      400  {string}  string  "Bad request"
-// @Router       /v1/credentials/status/{id} [get]
+//
+//	@Summary		Get Credential Status List
+//	@Description	Get credential status list by id
+//	@Tags			CredentialAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		200	{object}	GetCredentialStatusListResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Router			/v1/credentials/status/{id} [get]
 func (cr CredentialRouter) GetCredentialStatusList(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -239,16 +243,17 @@ type UpdateCredentialStatusResponse struct {
 }
 
 // UpdateCredentialStatus godoc
-// @Summary      Update Credential Status
-// @Description  Update a credential's status
-// @Tags         CredentialAPI
-// @Accept       json
-// @Produce      json
-// @Param        request  body      UpdateCredentialStatusRequest  true  "request body"
-// @Success      201      {object}  UpdateCredentialStatusResponse
-// @Failure      400      {string}  string  "Bad request"
-// @Failure      500      {string}  string  "Internal server error"
-// @Router       /v1/credentials/{id}/status [put]
+//
+//	@Summary		Update Credential Status
+//	@Description	Update a credential's status
+//	@Tags			CredentialAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		UpdateCredentialStatusRequest	true	"request body"
+//	@Success		201		{object}	UpdateCredentialStatusResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/credentials/{id}/status [put]
 func (cr CredentialRouter) UpdateCredentialStatus(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -303,15 +308,16 @@ type VerifyCredentialResponse struct {
 }
 
 // VerifyCredential godoc
-// @Summary      Verify Credential
-// @Description  Verify a given credential by its id
-// @Tags         CredentialAPI
-// @Accept       json
-// @Produce      json
-// @Param        request  body      VerifyCredentialRequest  true  "request body"
-// @Success      200  {object}  VerifyCredentialResponse
-// @Failure      400  {string}  string  "Bad request"
-// @Router       /v1/credentials/verification [put]
+//
+//	@Summary		Verify Credential
+//	@Description	Verify a given credential by its id
+//	@Tags			CredentialAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		VerifyCredentialRequest	true	"request body"
+//	@Success		200		{object}	VerifyCredentialResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Router			/v1/credentials/verification [put]
 func (cr CredentialRouter) VerifyCredential(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request VerifyCredentialRequest
 	if err := framework.Decode(r, &request); err != nil {
@@ -345,18 +351,19 @@ type GetCredentialsResponse struct {
 }
 
 // GetCredentials godoc
-// @Summary      Get Credentials
-// @Description  Checks for the presence of a query parameter and calls the associated filtered get method
-// @Tags         CredentialAPI
-// @Accept       json
-// @Produce      json
-// @Param        issuer   query     string  false  "string issuer"
-// @Param        schema   query     string  false  "string schema"
-// @Param        subject  query     string  false  "string subject"
-// @Success      200      {object}  GetCredentialsResponse
-// @Failure      400      {string}  string  "Bad request"
-// @Failure      500      {string}  string  "Internal server error"
-// @Router       /v1/credentials [get]
+//
+//	@Summary		Get Credentials
+//	@Description	Checks for the presence of a query parameter and calls the associated filtered get method
+//	@Tags			CredentialAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			issuer	query		string	false	"string issuer"
+//	@Param			schema	query		string	false	"string schema"
+//	@Param			subject	query		string	false	"string subject"
+//	@Success		200		{object}	GetCredentialsResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/credentials [get]
 func (cr CredentialRouter) GetCredentials(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	issuer := framework.GetQueryValue(r, IssuerParam)
 	schema := framework.GetQueryValue(r, SchemaParam)
@@ -418,16 +425,17 @@ func (cr CredentialRouter) getCredentialsBySchema(ctx context.Context, schema st
 }
 
 // DeleteCredential godoc
-// @Summary      Delete Credentials
-// @Description  Delete credential by ID
-// @Tags         CredentialAPI
-// @Accept       json
-// @Produce      json
-// @Param        id   path      string  true  "ID"
-// @Success      200  {string}  string  "OK"
-// @Failure      400  {string}  string  "Bad request"
-// @Failure      500  {string}  string  "Internal server error"
-// @Router       /v1/credentials/{id} [delete]
+//
+//	@Summary		Delete Credentials
+//	@Description	Delete credential by ID
+//	@Tags			CredentialAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		200	{string}	string	"OK"
+//	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
+//	@Router			/v1/credentials/{id} [delete]
 func (cr CredentialRouter) DeleteCredential(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
