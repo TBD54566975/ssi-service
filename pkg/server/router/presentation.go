@@ -49,16 +49,16 @@ type CreatePresentationDefinitionResponse struct {
 
 // CreatePresentationDefinition godoc
 //
-//@Summary     Create PresentationDefinition
-// @Description Create presentation definition
-// @Tags        PresentationDefinitionAPI
-// @Accept      json
-// @Produce     json
-// @Param       request body     CreatePresentationDefinitionRequest true "request body"
-// @Success     201     {object} CreatePresentationDefinitionResponse
-// @Failure     400     {string} string "Bad request"
-// @Failure     500     {string} string "Internal server error"
-// @Router      /v1/presentation/definition [put]
+//	@Summary		Create PresentationDefinition
+//	@Description	Create presentation definition
+//	@Tags			PresentationDefinitionAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		CreatePresentationDefinitionRequest	true	"request body"
+//	@Success		201		{object}	CreatePresentationDefinitionResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/presentation/definition [put]
 func (pr PresentationRouter) CreatePresentationDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreatePresentationDefinitionRequest
 	errMsg := "Invalid Presentation Definition Request"
@@ -126,15 +126,15 @@ type GetPresentationDefinitionResponse struct {
 
 // GetPresentationDefinition godoc
 //
-//@Summary     Get PresentationDefinition
-// @Description Get a presentation definition by its ID
-// @Tags        PresentationDefinitionAPI
-// @Accept      json
-// @Produce     json
-// @Param       id  path     string true "ID"
-// @Success     200 {object} GetPresentationDefinitionResponse
-// @Failure     400 {string} string "Bad request"
-// @Router      /v1/presentation/definition/{id} [get]
+//	@Summary		Get PresentationDefinition
+//	@Description	Get a presentation definition by its ID
+//	@Tags			PresentationDefinitionAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		200	{object}	GetPresentationDefinitionResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Router			/v1/presentation/definition/{id} [get]
 func (pr PresentationRouter) GetPresentationDefinition(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -192,16 +192,16 @@ func (pr PresentationRouter) ListDefinitions(ctx context.Context, w http.Respons
 
 // DeletePresentationDefinition godoc
 //
-//@Summary     Delete PresentationDefinition
-// @Description Delete a presentation definition by its ID
-// @Tags        PresentationDefinitionAPI
-// @Accept      json
-// @Produce     json
-// @Param       id  path     string true "ID"
-// @Success     200 {string} string "OK"
-// @Failure     400 {string} string "Bad request"
-// @Failure     500 {string} string "Internal server error"
-// @Router      /v1/presentation/definition/{id} [delete]
+//	@Summary		Delete PresentationDefinition
+//	@Description	Delete a presentation definition by its ID
+//	@Tags			PresentationDefinitionAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		200	{string}	string	"OK"
+//	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
+//	@Router			/v1/presentation/definition/{id} [delete]
 func (pr PresentationRouter) DeletePresentationDefinition(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -259,16 +259,16 @@ func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequ
 
 // CreateSubmission godoc
 //
-//@Summary     Create Submission
-// @Description Creates a submission in this server ready to be reviewed.
-// @Tags        SubmissionAPI
-// @Accept      json
-// @Produce     json
-// @Param       request body     CreateSubmissionRequest true "request body"
-// @Success     201     {object} Operation               "The type of response is Submission once the operation has finished."
-// @Failure     400     {string} string                  "Bad request"
-// @Failure     500     {string} string                  "Internal server error"
-// @Router      /v1/presentations/submissions [put]
+//	@Summary		Create Submission
+//	@Description	Creates a submission in this server ready to be reviewed.
+//	@Tags			SubmissionAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		CreateSubmissionRequest	true	"request body"
+//	@Success		201		{object}	Operation				"The type of response is Submission once the operation has finished."
+//	@Failure		400		{string}	string					"Bad request"
+//	@Failure		500		{string}	string					"Internal server error"
+//	@Router			/v1/presentations/submissions [put]
 func (pr PresentationRouter) CreateSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreateSubmissionRequest
 	if err := framework.Decode(r, &request); err != nil {
@@ -301,15 +301,15 @@ type GetSubmissionResponse struct {
 
 // GetSubmission godoc
 //
-//@Summary     Get Submission
-// @Description Get a submission by its ID
-// @Tags        SubmissionAPI
-// @Accept      json
-// @Produce     json
-// @Param       id  path     string true "ID"
-// @Success     200 {object} GetSubmissionResponse
-// @Failure     400 {string} string "Bad request"
-// @Router      /v1/presentations/submissions/{id} [get]
+//	@Summary		Get Submission
+//	@Description	Get a submission by its ID
+//	@Tags			SubmissionAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		200	{object}	GetSubmissionResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Router			/v1/presentations/submissions/{id} [get]
 func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
@@ -345,16 +345,16 @@ type ListSubmissionResponse struct {
 
 // ListSubmissions godoc
 //
-//@Summary     List Submissions
-// @Description List existing submissions according to a filtering query. The `filter` field follows the syntax described in https://google.aip.dev/160.
-// @Tags        SubmissionAPI
-// @Accept      json
-// @Produce     json
-// @Param       request body     ListSubmissionRequest true "request body"
-// @Success     200     {object} ListSubmissionResponse
-// @Failure     400     {string} string "Bad request"
-// @Failure     500     {string} string "Internal server error"
-// @Router      /v1/presentations/submissions [get]
+//	@Summary		List Submissions
+//	@Description	List existing submissions according to a filtering query. The `filter` field follows the syntax described in https://google.aip.dev/160.
+//	@Tags			SubmissionAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		ListSubmissionRequest	true	"request body"
+//	@Success		200		{object}	ListSubmissionResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/presentations/submissions [get]
 func (pr PresentationRouter) ListSubmissions(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request ListSubmissionRequest
 	if err := framework.Decode(r, &request); err != nil {
@@ -416,16 +416,16 @@ type ReviewSubmissionResponse struct {
 
 // ReviewSubmission godoc
 //
-//@Summary     Review a pending submission
-// @Description Reviews a pending submission. After this method is called, the operation with `id==presentations/submissions/{submission_id}` will be updated with the result of this invocation.
-// @Tags        SubmissionAPI
-// @Accept      json
-// @Produce     json
-// @Param       request body     ReviewSubmissionRequest true "request body"
-// @Success     200     {object} ReviewSubmissionResponse
-// @Failure     400     {string} string "Bad request"
-// @Failure     500     {string} string "Internal server error"
-// @Router      /v1/presentations/submissions/{id}/review [put]
+//	@Summary		Review a pending submission
+//	@Description	Reviews a pending submission. After this method is called, the operation with `id==presentations/submissions/{submission_id}` will be updated with the result of this invocation.
+//	@Tags			SubmissionAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		ReviewSubmissionRequest	true	"request body"
+//	@Success		200		{object}	ReviewSubmissionResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/presentations/submissions/{id}/review [put]
 func (pr PresentationRouter) ReviewSubmission(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
