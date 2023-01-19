@@ -140,7 +140,11 @@ func (ps *Storage) DeletePresentation(ctx context.Context, id string) error {
 }
 
 func (ps *Storage) StoreSubmission(ctx context.Context, s prestorage.StoredSubmission) error {
-	id := s.Submission.ID
+	sub, ok := s.VerifiablePresentation.PresentationSubmission.(exchange.PresentationSubmission)
+	if !ok {
+		return util.LoggingNewError("asserting that field is of type exchange.PresentationSubmission")
+	}
+	id := sub.ID
 	if id == "" {
 		err := errors.New("could not store submission definition without an ID")
 		logrus.WithError(err).Error()

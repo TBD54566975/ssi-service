@@ -199,8 +199,8 @@ func TestPresentationAPI(t *testing.T) {
 
 			var resp router.GetSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Equal(ttt, opstorage.StatusObjectID(op.ID), resp.Submission.ID)
-			assert.Equal(ttt, definition.PresentationDefinition.ID, resp.Submission.DefinitionID)
+			assert.Equal(ttt, opstorage.StatusObjectID(op.ID), resp.GetSubmission().ID)
+			assert.Equal(ttt, definition.PresentationDefinition.ID, resp.GetSubmission().DefinitionID)
 			assert.Equal(ttt, "pending", resp.Submission.Status)
 		})
 
@@ -260,9 +260,9 @@ func TestPresentationAPI(t *testing.T) {
 			var resp router.ReviewSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Equal(ttt, "because I want to", resp.Reason)
-			assert.NotEmpty(ttt, resp.ID)
+			assert.NotEmpty(ttt, resp.GetSubmission().ID)
 			assert.Equal(ttt, "approved", resp.Status)
-			assert.Equal(ttt, definition.PresentationDefinition.ID, resp.DefinitionID)
+			assert.Equal(ttt, definition.PresentationDefinition.ID, resp.GetSubmission().DefinitionID)
 		})
 
 		tt.Run("Review submission twice fails", func(ttt *testing.T) {
@@ -351,28 +351,50 @@ func TestPresentationAPI(t *testing.T) {
 			expectedSubmissions := []model.Submission{
 				{
 					Status: "pending",
-					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           opstorage.StatusObjectID(op.ID),
-						DefinitionID: definition.PresentationDefinition.ID,
+					VerifiablePresentation: &credential.VerifiablePresentation{
+						Context: []any{"https://www.w3.org/2018/credentials/v1"},
+						Holder:  holderDID.String(),
+						Type:    []any{"VerifiablePresentation"},
 					},
 				},
 				{
 					Status: "pending",
-					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           opstorage.StatusObjectID(op2.ID),
-						DefinitionID: definition.PresentationDefinition.ID,
+					VerifiablePresentation: &credential.VerifiablePresentation{
+						Context: []any{"https://www.w3.org/2018/credentials/v1"},
+						Holder:  mrTeeDID.String(),
+						Type:    []any{"VerifiablePresentation"},
 					},
 				},
 			}
 			diff := cmp.Diff(expectedSubmissions, resp.Submissions,
-				cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
+				cmpopts.IgnoreFields(credential.VerifiablePresentation{}, "ID", "VerifiableCredential", "PresentationSubmission"),
 				cmpopts.SortSlices(func(l, r model.Submission) bool {
-					return l.PresentationSubmission.ID < r.PresentationSubmission.ID
+					return l.VerifiablePresentation.Holder < r.VerifiablePresentation.Holder
 				}),
 			)
 			if diff != "" {
 				ttt.Errorf("Mismatch on submissions (-want +got):\n%s", diff)
 			}
+			assert.Len(ttt, resp.Submissions[0].VerifiablePresentation.VerifiableCredential, 1)
+			assert.Len(ttt, resp.Submissions[1].VerifiablePresentation.VerifiableCredential, 1)
+
+			assert.ElementsMatch(ttt,
+				[]string{
+					opstorage.StatusObjectID(op.ID),
+					opstorage.StatusObjectID(op2.ID)},
+				[]string{
+					resp.Submissions[0].GetSubmission().ID,
+					resp.Submissions[1].GetSubmission().ID,
+				})
+			assert.Equal(ttt,
+				[]string{
+					definition.PresentationDefinition.ID,
+					definition.PresentationDefinition.ID,
+				},
+				[]string{
+					resp.Submissions[0].GetSubmission().DefinitionID,
+					resp.Submissions[1].GetSubmission().DefinitionID,
+				})
 		})
 
 		tt.Run("bad filter returns error", func(ttt *testing.T) {
@@ -423,21 +445,27 @@ func TestPresentationAPI(t *testing.T) {
 			expectedSubmissions := []model.Submission{
 				{
 					Status: "pending",
-					PresentationSubmission: &exchange.PresentationSubmission{
-						ID:           opstorage.StatusObjectID(op.ID),
-						DefinitionID: definition.PresentationDefinition.ID,
+					VerifiablePresentation: &credential.VerifiablePresentation{
+						Context: []any{"https://www.w3.org/2018/credentials/v1"},
+						Holder:  holderDID.String(),
+						Type:    []any{"VerifiablePresentation"},
 					},
 				},
 			}
 			diff := cmp.Diff(expectedSubmissions, resp.Submissions,
-				cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
+				cmpopts.IgnoreFields(credential.VerifiablePresentation{}, "ID", "PresentationSubmission", "VerifiableCredential"),
 				cmpopts.SortSlices(func(l, r model.Submission) bool {
-					return l.PresentationSubmission.ID < r.PresentationSubmission.ID
+					return l.VerifiablePresentation.Holder < r.VerifiablePresentation.Holder
 				}),
 			)
 			if diff != "" {
 				ttt.Errorf("Mismatch on submissions (-want +got):\n%s", diff)
 			}
+
+			assert.Len(ttt, resp.Submissions, 1)
+			assert.Len(ttt, resp.Submissions[0].VerifiablePresentation.VerifiableCredential, 1)
+			assert.Equal(ttt, opstorage.StatusObjectID(op.ID), resp.Submissions[0].GetSubmission().ID)
+			assert.Equal(ttt, definition.PresentationDefinition.ID, resp.Submissions[0].GetSubmission().DefinitionID)
 		})
 
 		tt.Run("List submissions filter returns empty when status does not match", func(ttt *testing.T) {

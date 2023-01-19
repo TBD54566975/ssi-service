@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/pkg/errors"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -26,9 +27,9 @@ type DefinitionStorage interface {
 }
 
 type StoredSubmission struct {
-	Status     submission.Status               `json:"status"`
-	Submission exchange.PresentationSubmission `json:"submission"`
-	Reason     string                          `json:"reason"`
+	Status                 submission.Status                 `json:"status"`
+	Reason                 string                            `json:"reason"`
+	VerifiablePresentation credential.VerifiablePresentation `json:"vp"`
 }
 
 func (s StoredSubmission) FilterVariablesMap() map[string]any {

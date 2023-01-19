@@ -179,8 +179,8 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 	}
 
 	storedSubmission := presentationstorage.StoredSubmission{
-		Status:     submission.StatusPending,
-		Submission: request.Submission,
+		Status:                 submission.StatusPending,
+		VerifiablePresentation: request.Presentation,
 	}
 
 	// TODO(andres): IO requests should be done in parallel, once we have context wired up.
@@ -188,7 +188,11 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 		return nil, errors.Wrap(err, "could not store presentation")
 	}
 
-	opID := submission.IDFromSubmissionID(storedSubmission.Submission.ID)
+	sub, ok := storedSubmission.VerifiablePresentation.PresentationSubmission.(exchange.PresentationSubmission)
+	if !ok {
+		return nil, errors.New("interface is not exchange.PresentationSubmission")
+	}
+	opID := submission.IDFromSubmissionID(sub.ID)
 	storedOp := opstorage.StoredOperation{
 		ID:   opID,
 		Done: false,
