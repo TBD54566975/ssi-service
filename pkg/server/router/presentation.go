@@ -41,12 +41,18 @@ type CreatePresentationDefinitionRequest struct {
 	Format                 *exchange.ClaimFormat            `json:"format,omitempty" validate:"omitempty,dive"`
 	InputDescriptors       []exchange.InputDescriptor       `json:"inputDescriptors" validate:"required,dive"`
 	SubmissionRequirements []exchange.SubmissionRequirement `json:"submissionRequirements,omitempty" validate:"omitempty,dive"`
-	Author                 string                           `json:"author" validate:"required"`
+
+	// DID of the author of this presentation definition. The DID must have been previously created with the DID API,
+	// or the PrivateKey must have been added independently. The privateKey associated to this DID will be used to
+	// sign an envelope that contains the created presentation definition.
+	Author string `json:"author" validate:"required"`
 }
 
 type CreatePresentationDefinitionResponse struct {
-	PresentationDefinition    exchange.PresentationDefinition `json:"presentation_definition"`
-	PresentationDefinitionJWT keyaccess.JWT                   `json:"presentationDefinitionJWT"`
+	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition"`
+
+	// Signed envelope that contains the PresentationDefinition created.
+	PresentationDefinitionJWT keyaccess.JWT `json:"presentationDefinitionJWT"`
 }
 
 // CreatePresentationDefinition godoc
@@ -127,8 +133,10 @@ func definitionFromRequest(request CreatePresentationDefinitionRequest) (*exchan
 }
 
 type GetPresentationDefinitionResponse struct {
-	PresentationDefinition    exchange.PresentationDefinition `json:"presentation_definition"`
-	PresentationDefinitionJWT keyaccess.JWT                   `json:"presentationDefinitionJWT"`
+	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition"`
+
+	// Signed envelope that contains the PresentationDefinition created.
+	PresentationDefinitionJWT keyaccess.JWT `json:"presentationDefinitionJWT"`
 }
 
 // GetPresentationDefinition godoc
