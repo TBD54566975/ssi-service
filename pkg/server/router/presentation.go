@@ -41,10 +41,12 @@ type CreatePresentationDefinitionRequest struct {
 	Format                 *exchange.ClaimFormat            `json:"format,omitempty" validate:"omitempty,dive"`
 	InputDescriptors       []exchange.InputDescriptor       `json:"inputDescriptors" validate:"required,dive"`
 	SubmissionRequirements []exchange.SubmissionRequirement `json:"submissionRequirements,omitempty" validate:"omitempty,dive"`
+	Author                 string                           `json:"author" validate:"required"`
 }
 
 type CreatePresentationDefinitionResponse struct {
-	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition"`
+	PresentationDefinition    exchange.PresentationDefinition `json:"presentation_definition"`
+	PresentationDefinitionJWT keyaccess.JWT                   `json:"presentationDefinitionJWT"`
 }
 
 // CreatePresentationDefinition godoc
@@ -77,14 +79,18 @@ func (pr PresentationRouter) CreatePresentationDefinition(ctx context.Context, w
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
-	serviceResp, err := pr.service.CreatePresentationDefinition(ctx, model.CreatePresentationDefinitionRequest{PresentationDefinition: *def})
+	serviceResp, err := pr.service.CreatePresentationDefinition(
+		ctx,
+		model.CreatePresentationDefinitionRequest{PresentationDefinition: *def, Author: request.Author},
+	)
 	if err != nil {
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := CreatePresentationDefinitionResponse{
-		PresentationDefinition: serviceResp.PresentationDefinition,
+		PresentationDefinition:    serviceResp.PresentationDefinition,
+		PresentationDefinitionJWT: serviceResp.PresentationDefinitionJWT,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
@@ -121,7 +127,8 @@ func definitionFromRequest(request CreatePresentationDefinitionRequest) (*exchan
 }
 
 type GetPresentationDefinitionResponse struct {
-	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition"`
+	PresentationDefinition    exchange.PresentationDefinition `json:"presentation_definition"`
+	PresentationDefinitionJWT keyaccess.JWT                   `json:"presentationDefinitionJWT"`
 }
 
 // GetPresentationDefinition godoc
@@ -151,7 +158,8 @@ func (pr PresentationRouter) GetPresentationDefinition(ctx context.Context, w ht
 	}
 
 	resp := GetPresentationDefinitionResponse{
-		PresentationDefinition: def.PresentationDefinition,
+		PresentationDefinition:    def.PresentationDefinition,
+		PresentationDefinitionJWT: def.PresentationDefinitionJWT,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }

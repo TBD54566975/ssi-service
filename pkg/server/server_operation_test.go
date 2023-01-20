@@ -22,11 +22,12 @@ import (
 func TestOperationsAPI(t *testing.T) {
 	t.Run("Marks operation as done after reviewing submission", func(tt *testing.T) {
 		s := setupTestDB(tt)
-		pRouter := setupPresentationRouter(t, s)
+		pRouter, didService := setupPresentationRouter(t, s)
+		authorDID := createDID(t, didService)
 		opRouter := setupOperationsRouter(t, s)
 
 		holderSigner, holderDID := getSigner(t)
-		definition := createPresentationDefinition(t, pRouter)
+		definition := createPresentationDefinition(t, pRouter, authorDID.DID.ID)
 		submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 		sub := reviewSubmission(t, pRouter, opstorage.StatusObjectID(submissionOp.ID))
 
@@ -54,11 +55,12 @@ func TestOperationsAPI(t *testing.T) {
 	t.Run("GetOperation", func(t *testing.T) {
 		t.Run("Returns operation after submission", func(tt *testing.T) {
 			s := setupTestDB(tt)
-			pRouter := setupPresentationRouter(t, s)
+			pRouter, didService := setupPresentationRouter(t, s)
+			authorDID := createDID(t, didService)
 			opRouter := setupOperationsRouter(t, s)
 
 			holderSigner, holderDID := getSigner(t)
-			definition := createPresentationDefinition(t, pRouter)
+			definition := createPresentationDefinition(t, pRouter, authorDID.DID.ID)
 			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			createdID := submissionOp.ID
@@ -115,10 +117,11 @@ func TestOperationsAPI(t *testing.T) {
 
 		t.Run("Returns one operation for every submission", func(tt *testing.T) {
 			s := setupTestDB(tt)
-			pRouter := setupPresentationRouter(t, s)
+			pRouter, didService := setupPresentationRouter(t, s)
+			authorDID := createDID(t, didService)
 			opRouter := setupOperationsRouter(t, s)
 
-			def := createPresentationDefinition(t, pRouter)
+			def := createPresentationDefinition(t, pRouter, authorDID.DID.ID)
 			holderSigner, holderDID := getSigner(t)
 			submissionOp := createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 
@@ -150,10 +153,11 @@ func TestOperationsAPI(t *testing.T) {
 
 		t.Run("Returns operation when filtering to include", func(tt *testing.T) {
 			s := setupTestDB(tt)
-			pRouter := setupPresentationRouter(t, s)
+			pRouter, didService := setupPresentationRouter(t, s)
+			authorDID := createDID(t, didService)
 			opRouter := setupOperationsRouter(t, s)
 
-			def := createPresentationDefinition(t, pRouter)
+			def := createPresentationDefinition(t, pRouter, authorDID.DID.ID)
 			holderSigner, holderDID := getSigner(t)
 			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 
@@ -175,10 +179,11 @@ func TestOperationsAPI(t *testing.T) {
 
 		t.Run("Returns zero operations when filtering to exclude", func(tt *testing.T) {
 			s := setupTestDB(tt)
-			pRouter := setupPresentationRouter(t, s)
+			pRouter, didService := setupPresentationRouter(t, s)
+			authorDID := createDID(t, didService)
 			opRouter := setupOperationsRouter(t, s)
 
-			def := createPresentationDefinition(t, pRouter)
+			def := createPresentationDefinition(t, pRouter, authorDID.DID.ID)
 			holderSigner, holderDID := getSigner(t)
 			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 
@@ -199,10 +204,11 @@ func TestOperationsAPI(t *testing.T) {
 
 		t.Run("Returns zero operations when wrong parent is specified", func(tt *testing.T) {
 			s := setupTestDB(tt)
-			pRouter := setupPresentationRouter(t, s)
+			pRouter, didService := setupPresentationRouter(t, s)
+			authorDID := createDID(t, didService)
 			opRouter := setupOperationsRouter(t, s)
 
-			def := createPresentationDefinition(t, pRouter)
+			def := createPresentationDefinition(t, pRouter, authorDID.DID.ID)
 			holderSigner, holderDID := getSigner(t)
 			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 
@@ -224,11 +230,12 @@ func TestOperationsAPI(t *testing.T) {
 	t.Run("CancelOperation", func(t *testing.T) {
 		t.Run("Marks an operation as done", func(t *testing.T) {
 			s := setupTestDB(t)
-			pRouter := setupPresentationRouter(t, s)
+			pRouter, didService := setupPresentationRouter(t, s)
+			authorDID := createDID(t, didService)
 			opRouter := setupOperationsRouter(t, s)
 
 			holderSigner, holderDID := getSigner(t)
-			definition := createPresentationDefinition(t, pRouter)
+			definition := createPresentationDefinition(t, pRouter, authorDID.DID.ID)
 			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			createdID := submissionOp.ID
@@ -250,11 +257,12 @@ func TestOperationsAPI(t *testing.T) {
 
 		t.Run("Returns error when operation is done already", func(t *testing.T) {
 			s := setupTestDB(t)
-			pRouter := setupPresentationRouter(t, s)
+			pRouter, didService := setupPresentationRouter(t, s)
+			authorDID := createDID(t, didService)
 			opRouter := setupOperationsRouter(t, s)
 
 			holderSigner, holderDID := getSigner(t)
-			definition := createPresentationDefinition(t, pRouter)
+			definition := createPresentationDefinition(t, pRouter, authorDID.DID.ID)
 			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, VerifiableCredential(), holderDID, holderSigner)
 			_ = reviewSubmission(t, pRouter, opstorage.StatusObjectID(submissionOp.ID))
 

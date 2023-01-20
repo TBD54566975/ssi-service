@@ -24,6 +24,7 @@ const (
 type StoredPresentation struct {
 	ID                     string                          `json:"id"`
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
+	Author                 string                          `json:"issuerID"`
 }
 
 type Storage struct {

@@ -6,8 +6,11 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 )
@@ -36,20 +39,25 @@ func TestPresentationDefinitionService(t *testing.T) {
 	keyStoreService := testKeyStoreService(t, s)
 	didService := testDIDService(t, s, keyStoreService)
 	schemaService := testSchemaService(t, s, keyStoreService, didService)
+	authorDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
+		Method:  didsdk.KeyMethod,
+		KeyType: crypto.Ed25519,
+	})
+	require.NoError(t, err)
 
-	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s, didService.GetResolver(), schemaService)
+	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s, didService.GetResolver(), schemaService, keyStoreService)
 	assert.NoError(t, err)
 
 	t.Run("Create returns the created definition", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
-		created, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{PresentationDefinition: *pd})
+		created, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{PresentationDefinition: *pd, Author: authorDID.DID.ID})
 		assert.NoError(t, err)
 		assert.Equal(t, pd, &created.PresentationDefinition)
 	})
 
 	t.Run("Get returns the created definition", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
-		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{PresentationDefinition: *pd})
+		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{PresentationDefinition: *pd, Author: authorDID.DID.ID})
 		assert.NoError(t, err)
 
 		getPd, err := service.GetPresentationDefinition(context.Background(), model.GetPresentationDefinitionRequest{ID: pd.ID})
@@ -61,7 +69,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 
 	t.Run("Get does not return after deletion", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
-		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{PresentationDefinition: *pd})
+		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{PresentationDefinition: *pd, Author: authorDID.DID.ID})
 		assert.NoError(t, err)
 
 		assert.NoError(t, service.DeletePresentationDefinition(context.Background(), model.DeletePresentationDefinitionRequest{ID: pd.ID}))

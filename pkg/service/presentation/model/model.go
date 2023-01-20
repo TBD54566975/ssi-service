@@ -13,14 +13,16 @@ import (
 
 type CreatePresentationDefinitionRequest struct {
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition" validate:"required"`
+	Author                 string                          `json:"author" validate:"required"`
 }
 
-func (cpr CreatePresentationDefinitionRequest) IsValid() bool {
-	return util.IsValidStruct(cpr) == nil
+func (cpr CreatePresentationDefinitionRequest) IsValid() error {
+	return util.IsValidStruct(cpr)
 }
 
 type CreatePresentationDefinitionResponse struct {
-	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
+	PresentationDefinition    exchange.PresentationDefinition `json:"presentationDefinition"`
+	PresentationDefinitionJWT keyaccess.JWT                   `json:"presentationDefinitionJWT"`
 }
 
 type GetPresentationDefinitionRequest struct {
@@ -28,8 +30,9 @@ type GetPresentationDefinitionRequest struct {
 }
 
 type GetPresentationDefinitionResponse struct {
-	ID                     string                          `json:"id"`
-	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
+	ID                        string                          `json:"id"`
+	PresentationDefinition    exchange.PresentationDefinition `json:"presentationDefinition"`
+	PresentationDefinitionJWT keyaccess.JWT                   `json:"presentationDefinitionJWT"`
 }
 
 type DeletePresentationDefinitionRequest struct {
