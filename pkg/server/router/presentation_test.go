@@ -2,14 +2,17 @@ package router
 
 import (
 	"context"
+	crypto2 "crypto"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
@@ -31,6 +34,10 @@ func TestPresentationDefinitionRouter(t *testing.T) {
 	})
 }
 
+type Public interface {
+	Public() crypto2.PublicKey
+}
+
 func TestPresentationDefinitionService(t *testing.T) {
 
 	s := setupTestDB(t)
@@ -44,15 +51,23 @@ func TestPresentationDefinitionService(t *testing.T) {
 		KeyType: crypto.Ed25519,
 	})
 	require.NoError(t, err)
+	privKeyBytes, err := base58.Decode(authorDID.PrivateKeyBase58)
+	require.NoError(t, err)
+	privKey, err := crypto.BytesToPrivKey(privKeyBytes, authorDID.KeyType)
+	require.NoError(t, err)
+	ka, err := keyaccess.NewJWKKeyAccessVerifier(authorDID.DID.ID, privKey.(Public).Public())
+	require.NoError(t, err)
 
 	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s, didService.GetResolver(), schemaService, keyStoreService)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	t.Run("Create returns the created definition", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
 		created, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{PresentationDefinition: *pd, Author: authorDID.DID.ID})
+
 		assert.NoError(t, err)
 		assert.Equal(t, pd, &created.PresentationDefinition)
+		assert.NoError(t, ka.Verify(created.PresentationDefinitionJWT))
 	})
 
 	t.Run("Get returns the created definition", func(t *testing.T) {
@@ -65,6 +80,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, pd.ID, getPd.ID)
 		assert.Equal(t, pd, &getPd.PresentationDefinition)
+		assert.NoError(t, ka.Verify(getPd.PresentationDefinitionJWT))
 	})
 
 	t.Run("Get does not return after deletion", func(t *testing.T) {
