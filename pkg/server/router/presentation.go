@@ -51,7 +51,8 @@ type CreatePresentationDefinitionRequest struct {
 type CreatePresentationDefinitionResponse struct {
 	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition"`
 
-	// Signed envelope that contains the PresentationDefinition created.
+	// Signed envelope that contains the PresentationDefinition created using the privateKey of the author of the
+	// definition.
 	PresentationDefinitionJWT keyaccess.JWT `json:"presentationDefinitionJWT"`
 }
 
@@ -135,7 +136,8 @@ func definitionFromRequest(request CreatePresentationDefinitionRequest) (*exchan
 type GetPresentationDefinitionResponse struct {
 	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition"`
 
-	// Signed envelope that contains the PresentationDefinition created.
+	// Signed envelope that contains the PresentationDefinition created using the privateKey of the author of the
+	// definition.
 	PresentationDefinitionJWT keyaccess.JWT `json:"presentationDefinitionJWT"`
 }
 
