@@ -56,7 +56,7 @@ type CreatePresentationDefinitionResponse struct {
 	PresentationDefinitionJWT keyaccess.JWT `json:"presentationDefinitionJWT"`
 }
 
-// CreatePresentationDefinition godoc
+// CreateDefinition godoc
 //
 //	@Summary		Create PresentationDefinition
 //	@Description	Create presentation definition
@@ -68,7 +68,7 @@ type CreatePresentationDefinitionResponse struct {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/presentation/definition [put]
-func (pr PresentationRouter) CreatePresentationDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (pr PresentationRouter) CreateDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request CreatePresentationDefinitionRequest
 	errMsg := "Invalid Presentation Definition Request"
 	if err := framework.Decode(r, &request); err != nil {
@@ -141,7 +141,7 @@ type GetPresentationDefinitionResponse struct {
 	PresentationDefinitionJWT keyaccess.JWT `json:"presentationDefinitionJWT"`
 }
 
-// GetPresentationDefinition godoc
+// GetDefinition godoc
 //
 //	@Summary		Get PresentationDefinition
 //	@Description	Get a presentation definition by its ID
@@ -152,7 +152,7 @@ type GetPresentationDefinitionResponse struct {
 //	@Success		200	{object}	GetPresentationDefinitionResponse
 //	@Failure		400	{string}	string	"Bad request"
 //	@Router			/v1/presentation/definition/{id} [get]
-func (pr PresentationRouter) GetPresentationDefinition(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (pr PresentationRouter) GetDefinition(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get presentation without ID parameter"
@@ -208,7 +208,7 @@ func (pr PresentationRouter) ListDefinitions(ctx context.Context, w http.Respons
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
-// DeletePresentationDefinition godoc
+// DeleteDefinition godoc
 //
 //	@Summary		Delete PresentationDefinition
 //	@Description	Delete a presentation definition by its ID
@@ -220,7 +220,7 @@ func (pr PresentationRouter) ListDefinitions(ctx context.Context, w http.Respons
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/presentation/definition/{id} [delete]
-func (pr PresentationRouter) DeletePresentationDefinition(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (pr PresentationRouter) DeleteDefinition(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot delete a presentation without an ID parameter"
@@ -279,7 +279,7 @@ func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequ
 //
 //	@Summary		Create Submission
 //	@Description	Creates a submission in this server ready to be reviewed.
-//	@Tags			SubmissionAPI
+//	@Tags			PresentationSubmissionAPI
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateSubmissionRequest	true	"request body"
@@ -321,7 +321,7 @@ type GetSubmissionResponse struct {
 //
 //	@Summary		Get Submission
 //	@Description	Get a submission by its ID
-//	@Tags			SubmissionAPI
+//	@Tags			PresentationSubmissionAPI
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -365,7 +365,7 @@ type ListSubmissionResponse struct {
 //
 //	@Summary		List Submissions
 //	@Description	List existing submissions according to a filtering query. The `filter` field follows the syntax described in https://google.aip.dev/160.
-//	@Tags			SubmissionAPI
+//	@Tags			PresentationSubmissionAPI
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		ListSubmissionRequest	true	"request body"
@@ -436,7 +436,7 @@ type ReviewSubmissionResponse struct {
 //
 //	@Summary		Review a pending submission
 //	@Description	Reviews a pending submission. After this method is called, the operation with `id==presentations/submissions/{submission_id}` will be updated with the result of this invocation.
-//	@Tags			SubmissionAPI
+//	@Tags			PresentationSubmissionAPI
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		ReviewSubmissionRequest	true	"request body"
