@@ -9,7 +9,7 @@ import (
 	"go.einride.tech/aip/filtering"
 )
 
-type StoredPresentation struct {
+type StoredDefinition struct {
 	ID                     string                          `json:"id"`
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
 }
@@ -20,10 +20,9 @@ type Storage interface {
 }
 
 type DefinitionStorage interface {
-	// TODO: rename to Definition
-	StorePresentation(schema StoredPresentation) error
-	GetPresentation(id string) (*StoredPresentation, error)
-	DeletePresentation(id string) error
+	StoreDefinition(schema StoredDefinition) error
+	GetDefinition(id string) (*StoredDefinition, error)
+	DeleteDefinition(id string) error
 }
 
 type StoredSubmission struct {

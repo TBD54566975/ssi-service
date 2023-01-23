@@ -172,12 +172,12 @@ func (ps *Storage) GetSubmission(ctx context.Context, id string) (*prestorage.St
 	return &stored, nil
 }
 
-func (ps *Storage) ListDefinitions(ctx context.Context) ([]prestorage.StoredPresentation, error) {
+func (ps *Storage) ListDefinitions(ctx context.Context) ([]prestorage.StoredDefinition, error) {
 	m, err := ps.db.ReadAll(ctx, presentationDefinitionNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all")
 	}
-	ts := make([]prestorage.StoredPresentation, len(m))
+	ts := make([]prestorage.StoredDefinition, len(m))
 	i := 0
 	for k, v := range m {
 		if err = json.Unmarshal(v, &ts[i]); err != nil {
