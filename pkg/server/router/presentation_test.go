@@ -2,7 +2,7 @@ package router
 
 import (
 	"context"
-	crypto2 "crypto"
+	gocrypto "crypto"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
@@ -35,7 +35,7 @@ func TestPresentationDefinitionRouter(t *testing.T) {
 }
 
 type Public interface {
-	Public() crypto2.PublicKey
+	Public() gocrypto.PublicKey
 }
 
 func TestPresentationDefinitionService(t *testing.T) {

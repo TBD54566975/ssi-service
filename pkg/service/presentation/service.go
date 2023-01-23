@@ -112,10 +112,10 @@ func (s Service) CreatePresentationDefinition(ctx context.Context, request model
 		return nil, util.LoggingErrorMsgf(err, "signing presentation definition enveloper with author<%s>", storedPresentation.Author)
 	}
 
-	m := &model.CreatePresentationDefinitionResponse{}
+	var m model.CreatePresentationDefinitionResponse
 	m.PresentationDefinition = storedPresentation.PresentationDefinition
 	m.PresentationDefinitionJWT = *defJWT
-	return m, nil
+	return &m, nil
 }
 
 func (s Service) GetPresentationDefinition(ctx context.Context, request model.GetPresentationDefinitionRequest) (*model.GetPresentationDefinitionResponse, error) {
