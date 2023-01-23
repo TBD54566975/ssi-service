@@ -53,6 +53,7 @@ func setupRedisDB(t *testing.T) *RedisDB {
 func TestDB(t *testing.T) {
 	for _, dbImpl := range getDBImplementations(t) {
 		db := dbImpl
+		ctxBackground := context.Background()
 
 		// create a name space and a message in it
 		namespace := "F1"
@@ -66,7 +67,7 @@ func TestDB(t *testing.T) {
 		assert.NoError(t, err)
 
 		// get it back
-		gotPlayers1, err := db.Read(context.Background(), namespace, team1)
+		gotPlayers1, err := db.Read(&ctxBackground, namespace, team1)
 		assert.NoError(t, err)
 
 		var players1Result []string
@@ -75,12 +76,12 @@ func TestDB(t *testing.T) {
 		assert.EqualValues(t, players1, players1Result)
 
 		// get a value from a namespace that doesn't exist
-		res, err := db.Read(context.Background(), "bad", "worse")
+		res, err := db.Read(&ctxBackground, "bad", "worse")
 		assert.NoError(t, err)
 		assert.Empty(t, res)
 
 		// get a value that doesn't exist in the namespace
-		noValue, err := db.Read(context.Background(), namespace, "Porsche")
+		noValue, err := db.Read(&ctxBackground, namespace, "Porsche")
 		assert.NoError(t, err)
 		assert.Empty(t, noValue)
 
@@ -108,7 +109,7 @@ func TestDB(t *testing.T) {
 		err = db.Delete(context.Background(), namespace, team2)
 		assert.NoError(t, err)
 
-		gotPlayers2, err := db.Read(context.Background(), namespace, team2)
+		gotPlayers2, err := db.Read(&ctxBackground, namespace, team2)
 		assert.NoError(t, err)
 		assert.Empty(t, gotPlayers2)
 
@@ -125,7 +126,7 @@ func TestDB(t *testing.T) {
 		err = db.DeleteNamespace(context.Background(), namespace)
 		assert.NoError(t, err)
 
-		res, err = db.Read(context.Background(), namespace, team1)
+		res, err = db.Read(&ctxBackground, namespace, team1)
 		assert.NoError(t, err)
 		assert.Empty(t, res)
 	}
@@ -177,6 +178,7 @@ func TestDBPrefixAndKeys(t *testing.T) {
 func TestDBEmptyNamespace(t *testing.T) {
 	for _, dbImpl := range getDBImplementations(t) {
 		db := dbImpl
+		ctxBackground := context.Background()
 
 		namespace := "dne"
 		key := "doesnotexist"
@@ -193,7 +195,7 @@ func TestDBEmptyNamespace(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, allValues, 0)
 
-		value, err := db.Read(context.Background(), namespace, key)
+		value, err := db.Read(&ctxBackground, namespace, key)
 		assert.NoError(t, err)
 		assert.Nil(t, value)
 	}

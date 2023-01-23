@@ -11,20 +11,24 @@ import (
 )
 
 const (
-	NamespaceKeySeparator = ":"
-	Pong                  = "PONG"
-	RedisScanBatchSize    = 1000
+	NamespaceKeySeparator            = ":"
+	Pong                             = "PONG"
+	RedisScanBatchSize               = 1000
+	MaxRetries                       = 2000
+	TX                    ContextKey = "tx"
 )
+
+type ContextKey string
+
+type RedisDB struct {
+	db *goredislib.Client
+}
 
 func init() {
 	err := RegisterStorage(&RedisDB{})
 	if err != nil {
 		panic(err)
 	}
-}
-
-type RedisDB struct {
-	db *goredislib.Client
 }
 
 func (b *RedisDB) Init(i interface{}) error {
@@ -62,9 +66,80 @@ func (b *RedisDB) Close() error {
 	return b.db.Close()
 }
 
+type TxContext struct {
+	tx        goredislib.Pipeliner
+	watchKeys []string
+	watchOnly bool
+}
+
+func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc) (any, error) {
+
+	watchKeys := make([]string, 0)
+	ctxWithWatchKeys := context.WithValue(ctx, TX, TxContext{nil, watchKeys, true})
+
+	_, err := businessLogicFunc(&ctxWithWatchKeys)
+	if err != nil {
+		return nil, errors.Wrap(err, "problem with watch only execution")
+	}
+
+	ctxWatchKeys := ctxWithWatchKeys.Value(TX).(TxContext).watchKeys
+
+	fmt.Println("Found watch keys DEBUG:")
+	fmt.Println(ctxWatchKeys)
+
+	var finalOutput any
+	// Transactional function.
+	txf := func(tx *goredislib.Tx) error {
+		// Operation is commited only if the watched keys remain unchanged.
+		_, err := tx.TxPipelined(ctx, func(pipe goredislib.Pipeliner) error {
+
+			ctxWithTx := context.WithValue(ctx, TX, TxContext{pipe, nil, false})
+
+			var err error
+			finalOutput, err = businessLogicFunc(&ctxWithTx)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+		return err
+	}
+
+	// TODO: Add better retry logic
+	for i := 0; i < MaxRetries; i++ {
+
+		err := b.db.Watch(ctx, txf, ctxWatchKeys...)
+		if err == nil {
+			// Success.
+			return finalOutput, nil
+		}
+
+		if errors.Is(err, goredislib.TxFailedErr) {
+			// Optimistic lock lost. Retry.
+			fmt.Println("RETRY, EXPECTED, Trying again..")
+			continue
+		}
+
+		// Return any other error.
+		return nil, err
+	}
+
+	return finalOutput, nil
+}
+
 func (b *RedisDB) Write(ctx context.Context, namespace, key string, value []byte) error {
 	nameSpaceKey := getRedisKey(namespace, key)
-	// Zero expiration means the key has no expiration time.
+	if ctx.Value(TX) != nil {
+		txContext := ctx.Value(TX).(TxContext)
+
+		if txContext.watchOnly {
+			// watch only so don't write
+			return nil
+		}
+
+		return txContext.tx.Set(ctx, nameSpaceKey, value, 0).Err()
+	}
+
 	return b.db.Set(ctx, nameSpaceKey, value, 0).Err()
 }
 
@@ -81,9 +156,22 @@ func (b *RedisDB) WriteMany(ctx context.Context, namespaces, keys []string, valu
 	return b.db.MSet(ctx, nameSpaceKeys, values, 0).Err()
 }
 
-func (b *RedisDB) Read(ctx context.Context, namespace, key string) ([]byte, error) {
+func (b *RedisDB) Read(ctx *context.Context, namespace, key string) ([]byte, error) {
+	var res []byte
+	var err error
+
 	nameSpaceKey := getRedisKey(namespace, key)
-	res, err := b.db.Get(ctx, nameSpaceKey).Bytes()
+
+	if (*ctx).Value(TX) != nil {
+		txContext := (*ctx).Value(TX).(TxContext)
+
+		watchKeys := txContext.watchKeys
+		watchKeys = append(watchKeys, nameSpaceKey)
+
+		*ctx = context.WithValue(*ctx, TX, TxContext{txContext.tx, watchKeys, txContext.watchOnly})
+	}
+
+	res, err = b.db.Get(*ctx, nameSpaceKey).Bytes()
 
 	// Nil reply returned by Redis when key does not exist.
 	if errors.Is(err, goredislib.Nil) {

@@ -6,12 +6,11 @@ import (
 	"math/rand"
 	"strings"
 
+	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
-	"github.com/TBD54566975/ssi-sdk/credential"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -107,7 +106,7 @@ func NewCredentialStorage(db storage.ServiceStorage) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (cs *Storage) GetNextStatusListRandomIndex(ctx context.Context) (int, error) {
+func (cs *Storage) GetNextStatusListRandomIndex(ctx *context.Context) (int, error) {
 
 	gotUniqueNumBytes, err := cs.db.Read(ctx, statusListIndexNamespace, statusListIndexesKey)
 	if err != nil {
@@ -164,7 +163,7 @@ func (cs *Storage) IncrementStatusListIndex(ctx context.Context) error {
 }
 
 func (cs *Storage) GetIncrementStatusListIndexWriteContext(ctx context.Context) (*WriteContext, error) {
-	gotCurrentListIndexBytes, err := cs.db.Read(ctx, statusListIndexNamespace, currentListIndexKey)
+	gotCurrentListIndexBytes, err := cs.db.Read(&ctx, statusListIndexNamespace, currentListIndexKey)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get list index")
 	}
@@ -337,7 +336,7 @@ func (cs *Storage) GetCredentialsByIssuer(ctx context.Context, issuer string) ([
 	// now get each credential by key
 	var storedCreds []StoredCredential
 	for _, key := range issuerKeys {
-		credBytes, err := cs.db.Read(ctx, credentialNamespace, key)
+		credBytes, err := cs.db.Read(&ctx, credentialNamespace, key)
 		if err != nil {
 			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
 		} else {
@@ -380,7 +379,7 @@ func (cs *Storage) GetCredentialsBySubject(ctx context.Context, subject string) 
 	// now get each credential by key
 	var storedCreds []StoredCredential
 	for _, key := range subjectKeys {
-		credBytes, err := cs.db.Read(ctx, credentialNamespace, key)
+		credBytes, err := cs.db.Read(&ctx, credentialNamespace, key)
 		if err != nil {
 			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
 		} else {
@@ -424,7 +423,7 @@ func (cs *Storage) GetCredentialsBySchema(ctx context.Context, schema string) ([
 	// now get each credential by key
 	var storedCreds []StoredCredential
 	for _, key := range schemaKeys {
-		credBytes, err := cs.db.Read(ctx, credentialNamespace, key)
+		credBytes, err := cs.db.Read(&ctx, credentialNamespace, key)
 		if err != nil {
 			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
 		} else {
@@ -476,7 +475,7 @@ func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer s
 	// now get each credential by key
 	var storedCreds []StoredCredential
 	for _, key := range issuerSchemaKeys {
-		credBytes, err := cs.db.Read(ctx, namespace, key)
+		credBytes, err := cs.db.Read(&ctx, namespace, key)
 		if err != nil {
 			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
 		} else {

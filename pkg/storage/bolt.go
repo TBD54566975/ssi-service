@@ -73,6 +73,11 @@ func (b *BoltDB) Close() error {
 	return b.db.Close()
 }
 
+// TODO: Implement
+func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc) (any, error) {
+	return businessLogicFunc(&ctx)
+}
+
 func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value []byte) error {
 	return b.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists([]byte(namespace))
@@ -104,7 +109,7 @@ func (b *BoltDB) WriteMany(ctx context.Context, namespaces, keys []string, value
 	})
 }
 
-func (b *BoltDB) Read(ctx context.Context, namespace, key string) ([]byte, error) {
+func (b *BoltDB) Read(ctx *context.Context, namespace, key string) ([]byte, error) {
 	var result []byte
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))

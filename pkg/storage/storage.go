@@ -8,6 +8,8 @@ import (
 
 type Type string
 
+type BusinessLogicFunc func(ctx *context.Context) (any, error)
+
 const (
 	Bolt  Type = "bolt"
 	Redis Type = "redis"
@@ -26,7 +28,7 @@ type ServiceStorage interface {
 	Close() error
 	Write(ctx context.Context, namespace, key string, value []byte) error
 	WriteMany(ctx context.Context, namespace, key []string, value [][]byte) error
-	Read(ctx context.Context, namespace, key string) ([]byte, error)
+	Read(ctx *context.Context, namespace, key string) ([]byte, error)
 	ReadAll(ctx context.Context, namespace string) (map[string][]byte, error)
 	ReadPrefix(ctx context.Context, namespace, prefix string) (map[string][]byte, error)
 	ReadAllKeys(ctx context.Context, namespace string) ([]string, error)
@@ -34,6 +36,7 @@ type ServiceStorage interface {
 	DeleteNamespace(ctx context.Context, namespace string) error
 	Update(ctx context.Context, namespace string, key string, values map[string]any) ([]byte, error)
 	UpdateValueAndOperation(ctx context.Context, namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error)
+	Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc) (any, error)
 }
 
 // NewStorage returns the instance of the given storageProvider. If it doesn't exist, then a default implementation

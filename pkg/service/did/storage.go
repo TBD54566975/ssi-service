@@ -61,7 +61,7 @@ func (ds *Storage) GetDID(ctx context.Context, id string) (*StoredDID, error) {
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
-	docBytes, err := ds.db.Read(ctx, ns, id)
+	docBytes, err := ds.db.Read(&ctx, ns, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}

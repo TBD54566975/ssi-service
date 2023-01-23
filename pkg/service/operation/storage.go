@@ -84,7 +84,7 @@ func (b Storage) StoreOperation(ctx context.Context, op opstorage.StoredOperatio
 
 func (b Storage) GetOperation(ctx context.Context, id string) (opstorage.StoredOperation, error) {
 	var stored opstorage.StoredOperation
-	jsonBytes, err := b.db.Read(ctx, namespace.FromID(id), id)
+	jsonBytes, err := b.db.Read(&ctx, namespace.FromID(id), id)
 	if err != nil {
 		return stored, util.LoggingErrorMsgf(err, "reading operation with id: %s", id)
 	}
