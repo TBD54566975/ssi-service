@@ -10,6 +10,7 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"golang.org/x/crypto/chacha20poly1305"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -95,7 +96,6 @@ func (s Service) StoreKey(ctx context.Context, request StoreKeyRequest) error {
 }
 
 func (s Service) GetKey(ctx context.Context, request GetKeyRequest) (*GetKeyResponse, error) {
-
 	logrus.Debugf("getting key: %+v", request)
 
 	id := request.ID
@@ -182,4 +182,21 @@ func DecryptKey(serviceKey, encryptedKey []byte) ([]byte, error) {
 		return nil, errors.Wrap(err, "could not decrypt key with service key")
 	}
 	return decryptedKey, nil
+}
+
+// Sign fetches the key in the store, and uses it to sign data. Data should be json or json-serializable.
+func (s Service) Sign(ctx context.Context, keyID string, data any) (*keyaccess.JWT, error) {
+	gotKey, err := s.GetKey(ctx, GetKeyRequest{ID: keyID})
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not get key for signing schema for keyID<%s>", keyID)
+	}
+	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not create key access for signing schema for keyID<%s>", keyID)
+	}
+	schemaToken, err := keyAccess.SignJSON(data)
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not sign schema for keyID<%s>", keyID)
+	}
+	return schemaToken, nil
 }

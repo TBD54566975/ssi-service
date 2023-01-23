@@ -186,9 +186,16 @@ func CreateCredentialApplicationJWT(credApplication credApplicationParams, crede
 	return signed.String(), nil
 }
 
-func CreatePresentationDefinition() (string, error) {
+type definitionParams struct {
+	Author string
+}
+
+func CreatePresentationDefinition(params definitionParams) (string, error) {
 	logrus.Println("\n\nCreate our Presentation Definition:")
-	definitionJSON := getJSONFromFile("presentation-definition-input.json")
+	definitionJSON, err := resolveTemplate(params, "presentation-definition-input.json")
+	if err != nil {
+		return "", err
+	}
 	output, err := put(endpoint+version+"presentations/definitions", definitionJSON)
 	if err != nil {
 		return "", errors.Wrapf(err, "presentation definition endpoint with output: %s", output)

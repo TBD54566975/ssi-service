@@ -41,10 +41,19 @@ type CreatePresentationDefinitionRequest struct {
 	Format                 *exchange.ClaimFormat            `json:"format,omitempty" validate:"omitempty,dive"`
 	InputDescriptors       []exchange.InputDescriptor       `json:"inputDescriptors" validate:"required,dive"`
 	SubmissionRequirements []exchange.SubmissionRequirement `json:"submissionRequirements,omitempty" validate:"omitempty,dive"`
+
+	// DID of the author of this presentation definition. The DID must have been previously created with the DID API,
+	// or the PrivateKey must have been added independently. The privateKey associated to this DID will be used to
+	// sign an envelope that contains the created presentation definition.
+	Author string `json:"author" validate:"required"`
 }
 
 type CreatePresentationDefinitionResponse struct {
 	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition"`
+
+	// Signed envelope that contains the PresentationDefinition created using the privateKey of the author of the
+	// definition.
+	PresentationDefinitionJWT keyaccess.JWT `json:"presentationDefinitionJWT"`
 }
 
 // CreateDefinition godoc
@@ -77,14 +86,18 @@ func (pr PresentationRouter) CreateDefinition(ctx context.Context, w http.Respon
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
-	serviceResp, err := pr.service.CreatePresentationDefinition(ctx, model.CreatePresentationDefinitionRequest{PresentationDefinition: *def})
+	serviceResp, err := pr.service.CreatePresentationDefinition(
+		ctx,
+		model.CreatePresentationDefinitionRequest{PresentationDefinition: *def, Author: request.Author},
+	)
 	if err != nil {
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := CreatePresentationDefinitionResponse{
-		PresentationDefinition: serviceResp.PresentationDefinition,
+		PresentationDefinition:    serviceResp.PresentationDefinition,
+		PresentationDefinitionJWT: serviceResp.PresentationDefinitionJWT,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
@@ -122,6 +135,10 @@ func definitionFromRequest(request CreatePresentationDefinitionRequest) (*exchan
 
 type GetPresentationDefinitionResponse struct {
 	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition"`
+
+	// Signed envelope that contains the PresentationDefinition created using the privateKey of the author of the
+	// definition.
+	PresentationDefinitionJWT keyaccess.JWT `json:"presentationDefinitionJWT"`
 }
 
 // GetDefinition godoc
@@ -151,7 +168,8 @@ func (pr PresentationRouter) GetDefinition(ctx context.Context, w http.ResponseW
 	}
 
 	resp := GetPresentationDefinitionResponse{
-		PresentationDefinition: def.PresentationDefinition,
+		PresentationDefinition:    def.PresentationDefinition,
+		PresentationDefinitionJWT: def.PresentationDefinitionJWT,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
