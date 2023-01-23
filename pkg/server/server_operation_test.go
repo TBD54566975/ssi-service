@@ -244,8 +244,7 @@ func TestOperationsAPI(t *testing.T) {
 			var resp router.Operation
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 			assert.True(t, resp.Done)
-			assert.Contains(t, resp.Result.Response, "definition_id")
-			assert.Contains(t, resp.Result.Response, "descriptor_map")
+			assert.Contains(t, resp.Result.Response, "verifiablePresentation")
 			assert.Equal(t, "cancelled", resp.Result.Response.(map[string]any)["status"])
 		})
 

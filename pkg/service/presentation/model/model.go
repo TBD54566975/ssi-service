@@ -4,6 +4,7 @@ import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/util"
+	"github.com/goccy/go-json"
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
@@ -71,7 +72,24 @@ type Submission struct {
 	Status string `json:"status" validate:"required"`
 	// The reason why the submission was approved or denied.
 	Reason string `json:"reason"`
-	*exchange.PresentationSubmission
+	// The verifiable presentation containing the presentation_submission along with the credentials presented.
+	VerifiablePresentation *credsdk.VerifiablePresentation `json:"verifiablePresentation,omitempty"`
+}
+
+func (r Submission) GetSubmission() *exchange.PresentationSubmission {
+	switch m := r.VerifiablePresentation.PresentationSubmission.(type) {
+	case exchange.PresentationSubmission:
+		return &m
+	case *exchange.PresentationSubmission:
+		return m
+	case map[string]any:
+		var ts *exchange.PresentationSubmission
+		data, _ := json.Marshal(m)
+		_ = json.Unmarshal(data, &ts)
+		return ts
+	default:
+		return nil
+	}
 }
 
 type ListSubmissionResponse struct {
@@ -98,6 +116,6 @@ func ServiceModel(storedSubmission *storage.StoredSubmission) Submission {
 	return Submission{
 		Status:                 storedSubmission.Status.String(),
 		Reason:                 storedSubmission.Reason,
-		PresentationSubmission: &storedSubmission.Submission,
+		VerifiablePresentation: &storedSubmission.VerifiablePresentation,
 	}
 }
