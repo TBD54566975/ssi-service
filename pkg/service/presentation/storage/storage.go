@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/pkg/errors"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -8,7 +9,7 @@ import (
 	"go.einride.tech/aip/filtering"
 )
 
-type StoredPresentation struct {
+type StoredDefinition struct {
 	ID                     string                          `json:"id"`
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
 }
@@ -19,16 +20,15 @@ type Storage interface {
 }
 
 type DefinitionStorage interface {
-	// TODO: rename to Definition
-	StorePresentation(schema StoredPresentation) error
-	GetPresentation(id string) (*StoredPresentation, error)
-	DeletePresentation(id string) error
+	StoreDefinition(schema StoredDefinition) error
+	GetDefinition(id string) (*StoredDefinition, error)
+	DeleteDefinition(id string) error
 }
 
 type StoredSubmission struct {
-	Status     submission.Status               `json:"status"`
-	Submission exchange.PresentationSubmission `json:"submission"`
-	Reason     string                          `json:"reason"`
+	Status                 submission.Status                 `json:"status"`
+	Reason                 string                            `json:"reason"`
+	VerifiablePresentation credential.VerifiablePresentation `json:"vp"`
 }
 
 func (s StoredSubmission) FilterVariablesMap() map[string]any {

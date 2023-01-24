@@ -24,6 +24,7 @@ const (
 type StoredPresentation struct {
 	ID                     string                          `json:"id"`
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
+	Author                 string                          `json:"issuerID"`
 }
 
 type Storage struct {
@@ -140,7 +141,11 @@ func (ps *Storage) DeletePresentation(ctx context.Context, id string) error {
 }
 
 func (ps *Storage) StoreSubmission(ctx context.Context, s prestorage.StoredSubmission) error {
-	id := s.Submission.ID
+	sub, ok := s.VerifiablePresentation.PresentationSubmission.(exchange.PresentationSubmission)
+	if !ok {
+		return util.LoggingNewError("asserting that field is of type exchange.PresentationSubmission")
+	}
+	id := sub.ID
 	if id == "" {
 		err := errors.New("could not store submission definition without an ID")
 		logrus.WithError(err).Error()
@@ -168,12 +173,12 @@ func (ps *Storage) GetSubmission(ctx context.Context, id string) (*prestorage.St
 	return &stored, nil
 }
 
-func (ps *Storage) ListDefinitions(ctx context.Context) ([]prestorage.StoredPresentation, error) {
+func (ps *Storage) ListDefinitions(ctx context.Context) ([]prestorage.StoredDefinition, error) {
 	m, err := ps.db.ReadAll(ctx, presentationDefinitionNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all")
 	}
-	ts := make([]prestorage.StoredPresentation, len(m))
+	ts := make([]prestorage.StoredDefinition, len(m))
 	i := 0
 	for k, v := range m {
 		if err = json.Unmarshal(v, &ts[i]); err != nil {

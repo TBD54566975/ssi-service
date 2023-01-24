@@ -32,8 +32,16 @@ func TestCreateParticipants(t *testing.T) {
 	holderPrivateKey, err := getJSONElement(holderOutput, "$.privateKeyBase58")
 	assert.NoError(t, err)
 
+	verifierOutput, err := CreateDIDKey()
+	assert.NoError(t, err)
+
+	verifierDID, err := getJSONElement(verifierOutput, "$.did.id")
+	assert.NoError(t, err)
+	assert.Contains(t, holderDID, "did:key")
+
 	SetValue(presentationExchangeContext, "issuerDID", issuerDID)
 	SetValue(presentationExchangeContext, "holderDID", holderDID)
+	SetValue(presentationExchangeContext, "verifierDID", verifierDID)
 	SetValue(presentationExchangeContext, "holderPrivateKey", holderPrivateKey)
 }
 
@@ -42,7 +50,10 @@ func TestCreatePresentationDefinition(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	definition, err := CreatePresentationDefinition()
+	verifierDID, err := GetValue(presentationExchangeContext, "verifierDID")
+	assert.NoError(t, err)
+
+	definition, err := CreatePresentationDefinition(definitionParams{Author: verifierDID.(string)})
 	assert.NoError(t, err)
 
 	definitionID, err := getJSONElement(definition, "$.presentation_definition.id")

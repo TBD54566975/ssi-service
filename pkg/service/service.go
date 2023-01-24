@@ -106,7 +106,7 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the manifest service")
 	}
 
-	presentationService, err := presentation.NewPresentationService(config.PresentationConfig, storageProvider, didResolver, schemaService)
+	presentationService, err := presentation.NewPresentationService(config.PresentationConfig, storageProvider, didResolver, schemaService, keyStoreService)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the presentation service")
 	}

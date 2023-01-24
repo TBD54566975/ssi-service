@@ -15,6 +15,7 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/jwt"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
@@ -26,6 +27,7 @@ import (
 
 type Service struct {
 	storage    *Storage
+	keystore   *keystore.Service
 	opsStorage *operation.Storage
 	config     config.PresentationServiceConfig
 	resolver   *didsdk.Resolver
@@ -55,7 +57,7 @@ func (s Service) Config() config.PresentationServiceConfig {
 	return s.config
 }
 
-func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage, resolver *didsdk.Resolver, schema *schema.Service) (*Service, error) {
+func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage, resolver *didsdk.Resolver, schema *schema.Service, keystore *keystore.Service) (*Service, error) {
 	presentationStorage, err := NewPresentationStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate definition storage for the presentation service")
@@ -70,6 +72,7 @@ func NewPresentationService(config config.PresentationServiceConfig, s storage.S
 	}
 	service := Service{
 		storage:    presentationStorage,
+		keystore:   keystore,
 		opsStorage: opsStorage,
 		config:     config,
 		resolver:   resolver,
@@ -87,23 +90,32 @@ func NewPresentationService(config config.PresentationServiceConfig, s storage.S
 func (s Service) CreatePresentationDefinition(ctx context.Context, request model.CreatePresentationDefinitionRequest) (*model.CreatePresentationDefinitionResponse, error) {
 	logrus.Debugf("creating presentation definition: %+v", request)
 
-	if !request.IsValid() {
-		return nil, util.LoggingNewErrorf("invalid create presentation definition request: %+v", request)
+	if err := request.IsValid(); err != nil {
+		return nil, util.LoggingErrorMsgf(err, "invalid create presentation definition request: %+v", request)
 	}
 
 	if err := exchange.IsValidPresentationDefinition(request.PresentationDefinition); err != nil {
 		return nil, util.LoggingErrorMsg(err, "provided value is not a valid presentation definition")
 	}
 
-	storedPresentation := StoredPresentation{ID: request.PresentationDefinition.ID, PresentationDefinition: request.PresentationDefinition}
+	storedPresentation := StoredPresentation{
+		ID:                     request.PresentationDefinition.ID,
+		PresentationDefinition: request.PresentationDefinition,
+		Author:                 request.Author,
+	}
 
 	if err := s.storage.StorePresentation(ctx, storedPresentation); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store presentation")
 	}
+	defJWT, err := s.keystore.Sign(context.Background(), storedPresentation.Author, exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "signing presentation definition enveloper with author<%s>", storedPresentation.Author)
+	}
 
-	return &model.CreatePresentationDefinitionResponse{
-		PresentationDefinition: storedPresentation.PresentationDefinition,
-	}, nil
+	var m model.CreatePresentationDefinitionResponse
+	m.PresentationDefinition = storedPresentation.PresentationDefinition
+	m.PresentationDefinitionJWT = *defJWT
+	return &m, nil
 }
 
 func (s Service) GetPresentationDefinition(ctx context.Context, request model.GetPresentationDefinitionRequest) (*model.GetPresentationDefinitionResponse, error) {
@@ -116,7 +128,15 @@ func (s Service) GetPresentationDefinition(ctx context.Context, request model.Ge
 	if storedPresentation == nil {
 		return nil, util.LoggingNewErrorf("presentation definition with id<%s> could not be found", request.ID)
 	}
-	return &model.GetPresentationDefinitionResponse{ID: storedPresentation.ID, PresentationDefinition: storedPresentation.PresentationDefinition}, nil
+	defJWT, err := s.keystore.Sign(ctx, storedPresentation.Author, exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "signing presentation definition envelope by issuer<%s>", storedPresentation.Author)
+	}
+	return &model.GetPresentationDefinitionResponse{
+		ID:                        storedPresentation.ID,
+		PresentationDefinition:    storedPresentation.PresentationDefinition,
+		PresentationDefinitionJWT: *defJWT,
+	}, nil
 }
 
 func (s Service) DeletePresentationDefinition(ctx context.Context, request model.DeletePresentationDefinitionRequest) error {
@@ -179,8 +199,8 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 	}
 
 	storedSubmission := presentationstorage.StoredSubmission{
-		Status:     submission.StatusPending,
-		Submission: request.Submission,
+		Status:                 submission.StatusPending,
+		VerifiablePresentation: request.Presentation,
 	}
 
 	// TODO(andres): IO requests should be done in parallel, once we have context wired up.
@@ -188,7 +208,11 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 		return nil, errors.Wrap(err, "could not store presentation")
 	}
 
-	opID := submission.IDFromSubmissionID(storedSubmission.Submission.ID)
+	sub, ok := storedSubmission.VerifiablePresentation.PresentationSubmission.(exchange.PresentationSubmission)
+	if !ok {
+		return nil, errors.New("interface is not exchange.PresentationSubmission")
+	}
+	opID := submission.IDFromSubmissionID(sub.ID)
 	storedOp := opstorage.StoredOperation{
 		ID:   opID,
 		Done: false,
