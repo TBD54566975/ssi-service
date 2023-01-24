@@ -121,10 +121,6 @@ func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFu
 	return finalOutput, nil
 }
 
-func executeTransaction(b *RedisDB, ctx context.Context, txf func(tx *goredislib.Tx) error, ctxWatchKeys []string) error {
-	return b.db.Watch(ctx, txf, ctxWatchKeys...)
-}
-
 func (b *RedisDB) Write(ctx context.Context, namespace, key string, value []byte) error {
 	nameSpaceKey := getRedisKey(namespace, key)
 
