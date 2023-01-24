@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	SchemaNamespace = "schema"
+	namespace = "schema"
 )
 
 type StoredSchema struct {
@@ -48,11 +48,11 @@ func (ss *Storage) StoreSchema(ctx context.Context, schema StoredSchema) error {
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)
 	}
-	return ss.db.Write(ctx, SchemaNamespace, id, schemaBytes)
+	return ss.db.Write(ctx, namespace, id, schemaBytes)
 }
 
 func (ss *Storage) GetSchema(ctx context.Context, id string) (*StoredSchema, error) {
-	schemaBytes, err := ss.db.Read(&ctx, SchemaNamespace, id)
+	schemaBytes, err := ss.db.Read(&ctx, namespace, id)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get schema: %s", id)
 		logrus.WithError(err).Error(errMsg)
@@ -74,7 +74,7 @@ func (ss *Storage) GetSchema(ctx context.Context, id string) (*StoredSchema, err
 
 // GetSchemas attempts to get all stored schemas. It will return those it can even if it has trouble with some.
 func (ss *Storage) GetSchemas(ctx context.Context) ([]StoredSchema, error) {
-	gotSchemas, err := ss.db.ReadAll(ctx, SchemaNamespace)
+	gotSchemas, err := ss.db.ReadAll(ctx, namespace)
 	if err != nil {
 		errMsg := "could not get all schemas"
 		logrus.WithError(err).Error(errMsg)
@@ -95,7 +95,7 @@ func (ss *Storage) GetSchemas(ctx context.Context) ([]StoredSchema, error) {
 }
 
 func (ss *Storage) DeleteSchema(ctx context.Context, id string) error {
-	if err := ss.db.Delete(ctx, SchemaNamespace, id); err != nil {
+	if err := ss.db.Delete(ctx, namespace, id); err != nil {
 		errMsg := fmt.Sprintf("could not delete schema: %s", id)
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)

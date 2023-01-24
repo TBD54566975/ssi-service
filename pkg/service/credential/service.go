@@ -89,6 +89,28 @@ func NewCredentialService(config config.CredentialServiceConfig, s storage.Servi
 	return &service, nil
 }
 
+func (s Service) CreateCredential(ctx context.Context, request CreateCredentialRequest) (*CreateCredentialResponse, error) {
+	returnFunc := s.CreateCredentialFunc(request)
+	returnValue, err := s.storage.db.Execute(ctx, returnFunc)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "execute")
+	}
+
+	credResponse, ok := returnValue.(*CreateCredentialResponse)
+	if !ok {
+		return nil, errors.New("Problem with casting to CreateCredentialResponse")
+	}
+
+	return credResponse, nil
+}
+
+func (s Service) CreateCredentialFunc(request CreateCredentialRequest) storage.BusinessLogicFunc {
+	return func(ctx *context.Context) (any, error) {
+		return s.CreateCredentialBusinessLogic(ctx, request)
+	}
+}
+
 func (s Service) CreateCredentialBusinessLogic(ctx *context.Context, request CreateCredentialRequest) (*CreateCredentialResponse, error) {
 	logrus.Debugf("creating credential: %+v", request)
 
@@ -154,7 +176,7 @@ func (s Service) CreateCredentialBusinessLogic(ctx *context.Context, request Cre
 		issuerID := request.Issuer
 		schemaID := request.JSONSchema
 
-		statusListCredential, err := getStatusListCredential(*ctx, s, issuerID, schemaID)
+		statusListCredential, err := getStatusListCredential(ctx, s, issuerID, schemaID)
 		if err != nil {
 			return nil, util.LoggingErrorMsgf(err, "problem with getting status list credential")
 		}
@@ -237,29 +259,7 @@ func (s Service) CreateCredentialBusinessLogic(ctx *context.Context, request Cre
 	return &response, nil
 }
 
-func (s Service) CreateCredential(ctx context.Context, request CreateCredentialRequest) (*CreateCredentialResponse, error) {
-	returnFunc := s.CreateCredentialFunc(request)
-	returnValue, err := s.storage.db.Execute(ctx, returnFunc)
-
-	if err != nil {
-		return nil, errors.Wrap(err, "execute")
-	}
-
-	credResponse, ok := returnValue.(*CreateCredentialResponse)
-	if !ok {
-		return nil, errors.New("Problem with casting to CreateCredentialResponse")
-	}
-
-	return credResponse, nil
-}
-
-func (s Service) CreateCredentialFunc(request CreateCredentialRequest) storage.BusinessLogicFunc {
-	return func(ctx *context.Context) (any, error) {
-		return s.CreateCredentialBusinessLogic(ctx, request)
-	}
-}
-
-func getStatusListCredential(ctx context.Context, s Service, issuerID string, schemaID string) (*credential.VerifiableCredential, error) {
+func getStatusListCredential(ctx *context.Context, s Service, issuerID string, schemaID string) (*credential.VerifiableCredential, error) {
 	storedStatusListCreds, err := s.storage.GetStatusListCredentialsByIssuerAndSchema(ctx, issuerID, schemaID)
 	if err != nil {
 		return nil, util.LoggingNewErrorf("problem with getting status list credential for issuer: %s schema: %s", issuerID, schemaID)
@@ -281,7 +281,6 @@ func getStatusListCredential(ctx context.Context, s Service, issuerID string, sc
 		}
 
 		statusListCredential = generatedStatusListCredential
-
 	} else {
 		statusListCredential = storedStatusListCreds[0].Credential
 	}
@@ -530,7 +529,7 @@ func updateCredentialStatus(ctx context.Context, s Service, gotCred *StoredCrede
 		return nil, util.LoggingNewErrorf("problem with getting status list credential id")
 	}
 
-	creds, err := s.storage.GetCredentialsByIssuerAndSchema(ctx, gotCred.Issuer, gotCred.Schema)
+	creds, err := s.storage.GetCredentialsByIssuerAndSchema(&ctx, gotCred.Issuer, gotCred.Schema)
 	if err != nil {
 		return nil, util.LoggingNewErrorf("problem with getting status list credential for issuer: %s schema: %s", gotCred.Issuer, gotCred.Schema)
 	}
@@ -571,7 +570,7 @@ func updateCredentialStatus(ctx context.Context, s Service, gotCred *StoredCrede
 }
 
 func (s Service) GetCredentialsByIssuerAndSchemaWithStatus(ctx context.Context, issuer string, schema string) ([]credential.VerifiableCredential, error) {
-	gotCreds, err := s.storage.GetCredentialsByIssuerAndSchema(ctx, issuer, schema)
+	gotCreds, err := s.storage.GetCredentialsByIssuerAndSchema(&ctx, issuer, schema)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get credential(s) for issuer: %s", issuer)
 	}

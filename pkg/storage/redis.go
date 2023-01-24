@@ -73,7 +73,6 @@ type TxContext struct {
 }
 
 func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc) (any, error) {
-
 	watchKeys := make([]string, 0)
 	ctxWithWatchKeys := context.WithValue(ctx, TX, TxContext{nil, watchKeys, true})
 
@@ -83,9 +82,6 @@ func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFu
 	}
 
 	ctxWatchKeys := ctxWithWatchKeys.Value(TX).(TxContext).watchKeys
-
-	fmt.Println("Found watch keys DEBUG:")
-	fmt.Println(ctxWatchKeys)
 
 	var finalOutput any
 	// Transactional function.
@@ -129,6 +125,7 @@ func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFu
 
 func (b *RedisDB) Write(ctx context.Context, namespace, key string, value []byte) error {
 	nameSpaceKey := getRedisKey(namespace, key)
+
 	if ctx.Value(TX) != nil {
 		txContext := ctx.Value(TX).(TxContext)
 
@@ -157,9 +154,6 @@ func (b *RedisDB) WriteMany(ctx context.Context, namespaces, keys []string, valu
 }
 
 func (b *RedisDB) Read(ctx *context.Context, namespace, key string) ([]byte, error) {
-	var res []byte
-	var err error
-
 	nameSpaceKey := getRedisKey(namespace, key)
 
 	if (*ctx).Value(TX) != nil {
@@ -171,7 +165,7 @@ func (b *RedisDB) Read(ctx *context.Context, namespace, key string) ([]byte, err
 		*ctx = context.WithValue(*ctx, TX, TxContext{txContext.tx, watchKeys, txContext.watchOnly})
 	}
 
-	res, err = b.db.Get(*ctx, nameSpaceKey).Bytes()
+	res, err := b.db.Get(*ctx, nameSpaceKey).Bytes()
 
 	// Nil reply returned by Redis when key does not exist.
 	if errors.Is(err, goredislib.Nil) {

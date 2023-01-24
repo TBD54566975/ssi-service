@@ -61,7 +61,6 @@ const (
 	statusListCredentialNamespace = "status-list-credential"
 	statusListIndexNamespace      = "status-list-index"
 
-	fakeKey              = "fake-key"
 	statusListIndexesKey = "status-list-indexes"
 	currentListIndexKey  = "current-list-index"
 
@@ -445,16 +444,16 @@ func (cs *Storage) GetCredentialsBySchema(ctx context.Context, schema string) ([
 // GetCredentialsByIssuerAndSchema gets all credentials stored with a prefix key containing the issuer value
 // The method is greedy, meaning if multiple values are found...and some fail during processing, we will
 // return only the successful values and log an error for the failures.
-func (cs *Storage) GetCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string) ([]StoredCredential, error) {
+func (cs *Storage) GetCredentialsByIssuerAndSchema(ctx *context.Context, issuer string, schema string) ([]StoredCredential, error) {
 	return cs.getCredentialsByIssuerAndSchema(ctx, issuer, schema, credentialNamespace)
 }
 
-func (cs *Storage) GetStatusListCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string) ([]StoredCredential, error) {
+func (cs *Storage) GetStatusListCredentialsByIssuerAndSchema(ctx *context.Context, issuer string, schema string) ([]StoredCredential, error) {
 	return cs.getCredentialsByIssuerAndSchema(ctx, issuer, schema, statusListCredentialNamespace)
 }
 
-func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string, namespace string) ([]StoredCredential, error) {
-	keys, err := cs.db.ReadAllKeys(ctx, namespace)
+func (cs *Storage) getCredentialsByIssuerAndSchema(ctx *context.Context, issuer string, schema string, namespace string) ([]StoredCredential, error) {
+	keys, err := cs.db.ReadAllKeys(*ctx, namespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
 	}
@@ -475,7 +474,7 @@ func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer s
 	// now get each credential by key
 	var storedCreds []StoredCredential
 	for _, key := range issuerSchemaKeys {
-		credBytes, err := cs.db.Read(&ctx, namespace, key)
+		credBytes, err := cs.db.Read(ctx, namespace, key)
 		if err != nil {
 			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
 		} else {
