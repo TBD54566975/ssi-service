@@ -119,7 +119,7 @@ func (ps *Storage) StorePresentation(ctx context.Context, presentation StoredPre
 }
 
 func (ps *Storage) GetPresentation(ctx context.Context, id string) (*StoredPresentation, error) {
-	jsonBytes, err := ps.db.Read(&ctx, presentationDefinitionNamespace, id)
+	jsonBytes, err := ps.db.Read(ctx, presentationDefinitionNamespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get presentation definition: %s", id)
 	}
@@ -159,7 +159,7 @@ func (ps *Storage) StoreSubmission(ctx context.Context, s prestorage.StoredSubmi
 }
 
 func (ps *Storage) GetSubmission(ctx context.Context, id string) (*prestorage.StoredSubmission, error) {
-	jsonBytes, err := ps.db.Read(&ctx, opsubmission.Namespace, id)
+	jsonBytes, err := ps.db.Read(ctx, opsubmission.Namespace, id)
 	if err != nil {
 		return nil, util.LoggingNewErrorf("could not get submission definition: %s", id)
 	}

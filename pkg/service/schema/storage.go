@@ -52,7 +52,7 @@ func (ss *Storage) StoreSchema(ctx context.Context, schema StoredSchema) error {
 }
 
 func (ss *Storage) GetSchema(ctx context.Context, id string) (*StoredSchema, error) {
-	schemaBytes, err := ss.db.Read(&ctx, namespace, id)
+	schemaBytes, err := ss.db.Read(ctx, namespace, id)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get schema: %s", id)
 		logrus.WithError(err).Error(errMsg)

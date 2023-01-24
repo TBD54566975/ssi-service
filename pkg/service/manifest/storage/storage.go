@@ -79,7 +79,7 @@ func (ms *Storage) StoreManifest(ctx context.Context, manifest StoredManifest) e
 }
 
 func (ms *Storage) GetManifest(ctx context.Context, id string) (*StoredManifest, error) {
-	manifestBytes, err := ms.db.Read(&ctx, manifestNamespace, id)
+	manifestBytes, err := ms.db.Read(ctx, manifestNamespace, id)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get manifest: %s", id)
 		logrus.WithError(err).Error(errMsg)
@@ -141,7 +141,7 @@ func (ms *Storage) StoreApplication(ctx context.Context, application StoredAppli
 }
 
 func (ms *Storage) GetApplication(ctx context.Context, id string) (*StoredApplication, error) {
-	applicationBytes, err := ms.db.Read(&ctx, credential.ApplicationNamespace, id)
+	applicationBytes, err := ms.db.Read(ctx, credential.ApplicationNamespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get application: %s", id)
 	}
@@ -197,7 +197,7 @@ func (ms *Storage) StoreResponse(ctx context.Context, response StoredResponse) e
 }
 
 func (ms *Storage) GetResponse(ctx context.Context, id string) (*StoredResponse, error) {
-	responseBytes, err := ms.db.Read(&ctx, responseNamespace, id)
+	responseBytes, err := ms.db.Read(ctx, responseNamespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get response: %s", id)
 	}

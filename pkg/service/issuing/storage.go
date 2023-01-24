@@ -42,7 +42,7 @@ func (s Storage) GetIssuanceTemplate(ctx context.Context, id string) (*StoredIss
 	if id == "" {
 		return nil, errors.New("cannot fetch issuance template without an ID")
 	}
-	data, err := s.db.Read(&ctx, namespace, id)
+	data, err := s.db.Read(ctx, namespace, id)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading from db")
 	}

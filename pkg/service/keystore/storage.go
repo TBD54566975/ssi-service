@@ -77,7 +77,7 @@ func (kss *Storage) getAndSetServiceKey(ctx context.Context) ([]byte, error) {
 		return kss.serviceKey, nil
 	}
 
-	storedKeyBytes, err := kss.db.Read(&ctx, namespace, skKey)
+	storedKeyBytes, err := kss.db.Read(ctx, namespace, skKey)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get service key")
 	}
@@ -126,7 +126,7 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 }
 
 func (kss *Storage) GetKey(ctx context.Context, id string) (*StoredKey, error) {
-	storedKeyBytes, err := kss.db.Read(&ctx, namespace, id)
+	storedKeyBytes, err := kss.db.Read(ctx, namespace, id)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key details for key: %s", id)
 	}

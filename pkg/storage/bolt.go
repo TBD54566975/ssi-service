@@ -75,7 +75,7 @@ func (b *BoltDB) Close() error {
 
 // TODO: Implement
 func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc) (any, error) {
-	return businessLogicFunc(&ctx)
+	return businessLogicFunc(ctx, Accumulator{})
 }
 
 func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value []byte) error {
@@ -90,6 +90,11 @@ func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value 
 		return nil
 	})
 }
+
+func (b *BoltDB) WriteTx(ctx context.Context, namespace, key string, value []byte, accumulator Accumulator) error {
+	return b.Write(ctx, namespace, key, value)
+}
+
 func (b *BoltDB) WriteMany(ctx context.Context, namespaces, keys []string, values [][]byte) error {
 	if len(namespaces) != len(keys) && len(namespaces) != len(values) {
 		return errors.New("namespaces, keys, and values, are not of equal length")
@@ -109,7 +114,7 @@ func (b *BoltDB) WriteMany(ctx context.Context, namespaces, keys []string, value
 	})
 }
 
-func (b *BoltDB) Read(ctx *context.Context, namespace, key string) ([]byte, error) {
+func (b *BoltDB) Read(ctx context.Context, namespace, key string) ([]byte, error) {
 	var result []byte
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
@@ -121,6 +126,10 @@ func (b *BoltDB) Read(ctx *context.Context, namespace, key string) ([]byte, erro
 		return nil
 	})
 	return result, err
+}
+
+func (b *BoltDB) ReadTx(ctx context.Context, namespace, key string, accumulator Accumulator) ([]byte, error) {
+	return b.Read(ctx, namespace, key)
 }
 
 // ReadPrefix does a prefix query within a namespace.
