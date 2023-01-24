@@ -4,18 +4,20 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff"
 	goredislib "github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 const (
+	TX                    ContextKey = "tx"
 	NamespaceKeySeparator            = ":"
 	Pong                             = "PONG"
 	RedisScanBatchSize               = 1000
-	MaxRetries                       = 2000
-	TX                    ContextKey = "tx"
+	MaxElapsedTime                   = 6 * time.Second
 )
 
 type ContextKey string
@@ -101,26 +103,26 @@ func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFu
 		return err
 	}
 
-	// TODO: Add better retry logic
-	for i := 0; i < MaxRetries; i++ {
+	expBackoff := backoff.NewExponentialBackOff()
+	expBackoff.MaxElapsedTime = MaxElapsedTime
 
+	err = backoff.Retry(func() error {
 		err := b.db.Watch(ctx, txf, ctxWatchKeys...)
-		if err == nil {
-			// Success.
-			return finalOutput, nil
+		if err != nil && errors.Is(err, goredislib.TxFailedErr) {
+			logrus.Warn("Optimistic lock lost. Retrying..")
 		}
+		return err
+	}, expBackoff)
 
-		if errors.Is(err, goredislib.TxFailedErr) {
-			// Optimistic lock lost. Retry.
-			fmt.Println("RETRY, EXPECTED, Trying again..")
-			continue
-		}
-
-		// Return any other error.
-		return nil, err
+	if err != nil {
+		logrus.Errorf("error after retrying: %v", err)
 	}
 
 	return finalOutput, nil
+}
+
+func executeTransaction(b *RedisDB, ctx context.Context, txf func(tx *goredislib.Tx) error, ctxWatchKeys []string) error {
+	return b.db.Watch(ctx, txf, ctxWatchKeys...)
 }
 
 func (b *RedisDB) Write(ctx context.Context, namespace, key string, value []byte) error {

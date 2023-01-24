@@ -8,6 +8,7 @@ require (
 	github.com/alicebob/miniredis/v2 v2.30.0
 	github.com/ardanlabs/conf v1.5.0
 	github.com/benbjohnson/clock v1.3.0
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/dimfeld/httptreemux/v5 v5.5.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.0
@@ -47,7 +48,6 @@ require (
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-playground/validator/v10 v10.11.1 // indirect
-	github.com/go-redis/redis v6.15.9+incompatible // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
