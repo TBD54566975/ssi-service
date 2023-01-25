@@ -143,5 +143,5 @@ func TestRevocationCheckStatusListCredentialIntegration(t *testing.T) {
 	assert.NotEmpty(t, encodedListOriginal)
 
 	// TODO: Fix Revocation Bug
-	//assert.NotEqual(t, encodedListOriginal.(string), encodedList)
+	// assert.NotEqual(t, encodedListOriginal.(string), encodedList)
 }
