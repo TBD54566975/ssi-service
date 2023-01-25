@@ -21,7 +21,7 @@ log_level = "info"
 
 enable_schema_caching = true
 
-# Redis Configuration
+# Storage Configuration
 [services]
 service_endpoint = "http://localhost:8080"
 storage = "redis"

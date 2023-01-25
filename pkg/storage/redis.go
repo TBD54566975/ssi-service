@@ -27,7 +27,7 @@ type RedisDB struct {
 }
 
 func init() {
-	err := RegisterStorage(&RedisDB{})
+	err := RegisterStorage(new(RedisDB))
 	if err != nil {
 		panic(err)
 	}
@@ -66,12 +66,6 @@ func (b *RedisDB) Type() Type {
 
 func (b *RedisDB) Close() error {
 	return b.db.Close()
-}
-
-type TxContext struct {
-	tx        goredislib.Pipeliner
-	watchKeys []string
-	watchOnly bool
 }
 
 func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc) (any, error) {
@@ -114,6 +108,7 @@ func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFu
 
 	if err != nil {
 		logrus.Errorf("error after retrying: %v", err)
+		return nil, errors.Wrap(err, "failed to execute after retrying")
 	}
 
 	return finalOutput, nil
