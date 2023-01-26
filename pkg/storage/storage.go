@@ -8,13 +8,7 @@ import (
 
 type Type string
 
-type Accumulator struct {
-	readWatchKeys *[]string
-	watchOnly     bool
-	pipe          interface{}
-}
-
-type BusinessLogicFunc func(ctx context.Context, ac Accumulator) (any, error)
+type BusinessLogicFunc func(ctx context.Context) (any, error)
 
 const (
 	Bolt  Type = "bolt"
@@ -33,10 +27,8 @@ type ServiceStorage interface {
 	IsOpen() bool
 	Close() error
 	Write(ctx context.Context, namespace, key string, value []byte) error
-	WriteTx(ctx context.Context, namespace, key string, value []byte, accumulator Accumulator) error
 	WriteMany(ctx context.Context, namespace, key []string, value [][]byte) error
 	Read(ctx context.Context, namespace, key string) ([]byte, error)
-	ReadTx(ctx context.Context, namespace, key string, accumulator Accumulator) ([]byte, error)
 	ReadAll(ctx context.Context, namespace string) (map[string][]byte, error)
 	ReadPrefix(ctx context.Context, namespace, prefix string) (map[string][]byte, error)
 	ReadAllKeys(ctx context.Context, namespace string) ([]string, error)
@@ -44,7 +36,7 @@ type ServiceStorage interface {
 	DeleteNamespace(ctx context.Context, namespace string) error
 	Update(ctx context.Context, namespace string, key string, values map[string]any) ([]byte, error)
 	UpdateValueAndOperation(ctx context.Context, namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error)
-	Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc) (any, error)
+	Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, watchKeys []string) (any, error)
 }
 
 // NewStorage returns the instance of the given storageProvider. If it doesn't exist, then a default implementation

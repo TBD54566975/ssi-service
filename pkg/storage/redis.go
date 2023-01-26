@@ -68,25 +68,17 @@ func (b *RedisDB) Close() error {
 	return b.db.Close()
 }
 
-func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc) (any, error) {
-	watchKeys := make([]string, 0)
-	acc := Accumulator{&watchKeys, true, nil}
-
-	_, err := businessLogicFunc(ctx, acc)
-	if err != nil {
-		return nil, errors.Wrap(err, "problem with watch only execution")
-	}
-
+func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, watchKeys []string) (any, error) {
 	var finalOutput any
 	// Transactional function.
 	txf := func(tx *goredislib.Tx) error {
 		// Operation is commited only if the watched keys remain unchanged.
 		_, err := tx.TxPipelined(ctx, func(pipe goredislib.Pipeliner) error {
 
-			acc = Accumulator{&watchKeys, false, pipe}
+			pipeCTX := context.WithValue(ctx, TX, pipe)
 
 			var err error
-			finalOutput, err = businessLogicFunc(ctx, acc)
+			finalOutput, err = businessLogicFunc(pipeCTX)
 			if err != nil {
 				return err
 			}
@@ -98,7 +90,7 @@ func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFu
 	expBackoff := backoff.NewExponentialBackOff()
 	expBackoff.MaxElapsedTime = MaxElapsedTime
 
-	err = backoff.Retry(func() error {
+	err := backoff.Retry(func() error {
 		err := b.db.Watch(ctx, txf, watchKeys...)
 		if err != nil && errors.Is(err, goredislib.TxFailedErr) {
 			logrus.Warn("Optimistic lock lost. Retrying..")
@@ -116,19 +108,17 @@ func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFu
 
 func (b *RedisDB) Write(ctx context.Context, namespace, key string, value []byte) error {
 	nameSpaceKey := getRedisKey(namespace, key)
-	return b.db.Set(ctx, nameSpaceKey, value, 0).Err()
-}
 
-func (b *RedisDB) WriteTx(ctx context.Context, namespace, key string, value []byte, accumulator Accumulator) error {
-	nameSpaceKey := getRedisKey(namespace, key)
+	if ctx.Value(TX) != nil {
+		pipe, ok := ctx.Value(TX).(goredislib.Pipeliner)
+		if !ok {
+			return errors.New("casting to pipeliner")
+		}
 
-	if accumulator.watchOnly {
-		// watch only so don't write
-		return nil
+		return pipe.Set(ctx, nameSpaceKey, value, 0).Err()
 	}
 
-	pipe := accumulator.pipe.(goredislib.Pipeliner)
-	return pipe.Set(ctx, nameSpaceKey, value, 0).Err()
+	return b.db.Set(ctx, nameSpaceKey, value, 0).Err()
 }
 
 func (b *RedisDB) WriteMany(ctx context.Context, namespaces, keys []string, values [][]byte) error {
@@ -155,16 +145,6 @@ func (b *RedisDB) Read(ctx context.Context, namespace, key string) ([]byte, erro
 	}
 
 	return res, err
-}
-
-func (b *RedisDB) ReadTx(ctx context.Context, namespace, key string, accumulator Accumulator) ([]byte, error) {
-	nameSpaceKey := getRedisKey(namespace, key)
-
-	if accumulator.watchOnly {
-		*accumulator.readWatchKeys = append(*accumulator.readWatchKeys, nameSpaceKey)
-	}
-
-	return b.Read(ctx, namespace, key)
 }
 
 func (b *RedisDB) ReadPrefix(ctx context.Context, namespace, prefix string) (map[string][]byte, error) {

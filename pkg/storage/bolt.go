@@ -74,8 +74,8 @@ func (b *BoltDB) Close() error {
 }
 
 // TODO: Implement
-func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc) (any, error) {
-	return businessLogicFunc(ctx, Accumulator{})
+func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, watchKeys []string) (any, error) {
+	return businessLogicFunc(ctx)
 }
 
 func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value []byte) error {
@@ -89,10 +89,6 @@ func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value 
 		}
 		return nil
 	})
-}
-
-func (b *BoltDB) WriteTx(ctx context.Context, namespace, key string, value []byte, accumulator Accumulator) error {
-	return b.Write(ctx, namespace, key, value)
 }
 
 func (b *BoltDB) WriteMany(ctx context.Context, namespaces, keys []string, values [][]byte) error {
@@ -126,10 +122,6 @@ func (b *BoltDB) Read(ctx context.Context, namespace, key string) ([]byte, error
 		return nil
 	})
 	return result, err
-}
-
-func (b *BoltDB) ReadTx(ctx context.Context, namespace, key string, accumulator Accumulator) ([]byte, error) {
-	return b.Read(ctx, namespace, key)
 }
 
 // ReadPrefix does a prefix query within a namespace.

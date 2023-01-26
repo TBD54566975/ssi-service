@@ -105,9 +105,13 @@ func NewCredentialStorage(db storage.ServiceStorage) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (cs *Storage) GetNextStatusListRandomIndex(ctx context.Context, acc storage.Accumulator) (int, error) {
+func (cs *Storage) GetStatusListIndexesWriteKey() string {
+	return fmt.Sprintf("%v:%v", statusListIndexNamespace, statusListIndexesKey)
+}
 
-	gotUniqueNumBytes, err := cs.db.ReadTx(ctx, statusListIndexNamespace, statusListIndexesKey, acc)
+func (cs *Storage) GetNextStatusListRandomIndex(ctx context.Context) (int, error) {
+
+	gotUniqueNumBytes, err := cs.db.Read(ctx, statusListIndexNamespace, statusListIndexesKey)
 	if err != nil {
 		return -1, util.LoggingErrorMsgf(err, "reading status list")
 	}
@@ -121,7 +125,7 @@ func (cs *Storage) GetNextStatusListRandomIndex(ctx context.Context, acc storage
 		return -1, util.LoggingErrorMsgf(err, "could not unmarshal unique numbers")
 	}
 
-	gotCurrentListIndexBytes, err := cs.db.ReadTx(ctx, statusListIndexNamespace, currentListIndexKey, acc)
+	gotCurrentListIndexBytes, err := cs.db.Read(ctx, statusListIndexNamespace, currentListIndexKey)
 	if err != nil {
 		return -1, util.LoggingErrorMsgf(err, "could not get list index")
 	}
@@ -148,21 +152,25 @@ func (cs *Storage) WriteMany(ctx context.Context, writeContexts []WriteContext) 
 	return cs.db.WriteMany(ctx, namespaces, keys, values)
 }
 
-func (cs *Storage) IncrementStatusListIndex(ctx context.Context, acc storage.Accumulator) error {
-	wc, err := cs.GetIncrementStatusListIndexWriteContext(ctx, acc)
+func (cs *Storage) IncrementStatusListIndex(ctx context.Context) error {
+	wc, err := cs.GetIncrementStatusListIndexWriteContext(ctx)
 	if err != nil {
 		return util.LoggingErrorMsg(err, "problem getting increment status listIndex writeContext")
 	}
 
-	if err := cs.db.WriteTx(ctx, wc.namespace, wc.key, wc.value, acc); err != nil {
+	if err := cs.db.Write(ctx, wc.namespace, wc.key, wc.value); err != nil {
 		return util.LoggingErrorMsg(err, "problem writing current list index to db")
 	}
 
 	return nil
 }
 
-func (cs *Storage) GetIncrementStatusListIndexWriteContext(ctx context.Context, acc storage.Accumulator) (*WriteContext, error) {
-	gotCurrentListIndexBytes, err := cs.db.ReadTx(ctx, statusListIndexNamespace, currentListIndexKey, acc)
+func (cs *Storage) GetIncrementStatusListIndexWriteContextWatchKey() string {
+	return fmt.Sprintf("%v:%v", statusListIndexNamespace, currentListIndexKey)
+}
+
+func (cs *Storage) GetIncrementStatusListIndexWriteContext(ctx context.Context) (*WriteContext, error) {
+	gotCurrentListIndexBytes, err := cs.db.Read(ctx, statusListIndexNamespace, currentListIndexKey)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get list index")
 	}
@@ -186,22 +194,22 @@ func (cs *Storage) GetIncrementStatusListIndexWriteContext(ctx context.Context, 
 	return &wc, nil
 }
 
-func (cs *Storage) StoreCredential(ctx context.Context, request StoreCredentialRequest, acc storage.Accumulator) error {
-	return cs.storeCredential(ctx, request, credentialNamespace, acc)
+func (cs *Storage) StoreCredential(ctx context.Context, request StoreCredentialRequest) error {
+	return cs.storeCredential(ctx, request, credentialNamespace)
 }
 
-func (cs *Storage) StoreStatusListCredential(ctx context.Context, request StoreCredentialRequest, acc storage.Accumulator) error {
-	return cs.storeCredential(ctx, request, statusListCredentialNamespace, acc)
+func (cs *Storage) StoreStatusListCredential(ctx context.Context, request StoreCredentialRequest) error {
+	return cs.storeCredential(ctx, request, statusListCredentialNamespace)
 }
 
-func (cs *Storage) storeCredential(ctx context.Context, request StoreCredentialRequest, namespace string, acc storage.Accumulator) error {
+func (cs *Storage) storeCredential(ctx context.Context, request StoreCredentialRequest, namespace string) error {
 
 	wc, err := cs.getStoreCredentialWriteContext(request, namespace)
 	if err != nil {
 		return errors.Wrap(err, "could not get stored credential write context")
 	}
 	// TODO(gabe) conflict checking?
-	return cs.db.WriteTx(ctx, wc.namespace, wc.key, wc.value, acc)
+	return cs.db.Write(ctx, wc.namespace, wc.key, wc.value)
 }
 
 func (cs *Storage) GetStoreCredentialWriteContext(request StoreCredentialRequest) (*WriteContext, error) {
@@ -444,15 +452,15 @@ func (cs *Storage) GetCredentialsBySchema(ctx context.Context, schema string) ([
 // GetCredentialsByIssuerAndSchema gets all credentials stored with a prefix key containing the issuer value
 // The method is greedy, meaning if multiple values are found...and some fail during processing, we will
 // return only the successful values and log an error for the failures.
-func (cs *Storage) GetCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string, acc storage.Accumulator) ([]StoredCredential, error) {
-	return cs.getCredentialsByIssuerAndSchema(ctx, issuer, schema, credentialNamespace, acc)
+func (cs *Storage) GetCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string) ([]StoredCredential, error) {
+	return cs.getCredentialsByIssuerAndSchema(ctx, issuer, schema, credentialNamespace)
 }
 
-func (cs *Storage) GetStatusListCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string, acc storage.Accumulator) ([]StoredCredential, error) {
-	return cs.getCredentialsByIssuerAndSchema(ctx, issuer, schema, statusListCredentialNamespace, acc)
+func (cs *Storage) GetStatusListCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string) ([]StoredCredential, error) {
+	return cs.getCredentialsByIssuerAndSchema(ctx, issuer, schema, statusListCredentialNamespace)
 }
 
-func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string, namespace string, acc storage.Accumulator) ([]StoredCredential, error) {
+func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string, namespace string) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, namespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
@@ -474,7 +482,7 @@ func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer s
 	// now get each credential by key
 	var storedCreds []StoredCredential
 	for _, key := range issuerSchemaKeys {
-		credBytes, err := cs.db.ReadTx(ctx, namespace, key, acc)
+		credBytes, err := cs.db.Read(ctx, namespace, key)
 		if err != nil {
 			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
 		} else {
