@@ -90,6 +90,26 @@ definitions:
     - issuer
     - type
     type: object
+  credential.VerifiablePresentation:
+    properties:
+      '@context':
+        description: Either a string or set of strings
+      holder:
+        type: string
+      id:
+        type: string
+      presentation_submission:
+        description: an optional field as a part of https://identity.foundation/presentation-exchange/#embed-targets
+      proof: {}
+      type: {}
+      verifiableCredential:
+        description: Verifiable credential could be our object model, a JWT, or any
+          other valid credential representation
+        items: {}
+        type: array
+    required:
+    - type
+    type: object
   crypto.KeyType:
     enum:
     - Ed25519
@@ -558,30 +578,6 @@ definitions:
         type: boolean
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialRequest:
-    properties:
-      '@context':
-        description: A context is optional. If not present, we'll apply default, required
-          context values.
-        type: string
-      data:
-        additionalProperties: {}
-        type: object
-      expiry:
-        type: string
-      issuer:
-        type: string
-      revocable:
-        type: boolean
-      schema:
-        description: A schema is optional. If present, we'll attempt to look it up
-          and validate the data against it.
-        type: string
-      subject:
-        type: string
-    required:
-    - data
-    - issuer
-    - subject
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialResponse:
     properties:
@@ -661,6 +657,12 @@ definitions:
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionRequest:
     properties:
+      author:
+        description: |-
+          DID of the author of this presentation definition. The DID must have been previously created with the DID API,
+          or the PrivateKey must have been added independently. The privateKey associated to this DID will be used to
+          sign an envelope that contains the created presentation definition.
+        type: string
       format:
         $ref: '#/definitions/exchange.ClaimFormat'
       inputDescriptors:
@@ -676,12 +678,18 @@ definitions:
           $ref: '#/definitions/exchange.SubmissionRequirement'
         type: array
     required:
+    - author
     - inputDescriptors
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.CreatePresentationDefinitionResponse:
     properties:
       presentation_definition:
         $ref: '#/definitions/exchange.PresentationDefinition'
+      presentationDefinitionJWT:
+        description: |-
+          Signed envelope that contains the PresentationDefinition created using the privateKey of the author of the
+          definition.
+        type: string
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest:
     properties:
@@ -742,8 +750,11 @@ definitions:
   github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialStatusListResponse:
     properties:
       credential:
-        $ref: '#/definitions/credential.VerifiableCredential'
+        allOf:
+        - $ref: '#/definitions/credential.VerifiableCredential'
+        description: Credential where type includes "VerifiableCredential" and "StatusList2021".
       credentialJwt:
+        description: The JWT signed with the associated issuer's private key.
         type: string
       id:
         type: string
@@ -751,6 +762,7 @@ definitions:
   github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialStatusResponse:
     properties:
       revoked:
+        description: Whether the credential has been revoked.
         type: boolean
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialsResponse:
@@ -833,6 +845,11 @@ definitions:
     properties:
       presentation_definition:
         $ref: '#/definitions/exchange.PresentationDefinition'
+      presentationDefinitionJWT:
+        description: |-
+          Signed envelope that contains the PresentationDefinition created using the privateKey of the author of the
+          definition.
+        type: string
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.GetResponseResponse:
     properties:
@@ -867,24 +884,18 @@ definitions:
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.GetSubmissionResponse:
     properties:
-      definition_id:
-        type: string
-      descriptor_map:
-        items:
-          $ref: '#/definitions/exchange.SubmissionDescriptor'
-        type: array
-      id:
-        type: string
       reason:
         description: The reason why the submission was approved or denied.
         type: string
       status:
         description: One of {`pending`, `approved`, `denied`, `cancelled`}.
         type: string
+      verifiablePresentation:
+        allOf:
+        - $ref: '#/definitions/credential.VerifiablePresentation'
+        description: The verifiable presentation containing the presentation_submission
+          along with the credentials presented.
     required:
-    - definition_id
-    - descriptor_map
-    - id
     - status
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.ListDefinitionsRequest:
@@ -974,24 +985,18 @@ definitions:
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.ReviewSubmissionResponse:
     properties:
-      definition_id:
-        type: string
-      descriptor_map:
-        items:
-          $ref: '#/definitions/exchange.SubmissionDescriptor'
-        type: array
-      id:
-        type: string
       reason:
         description: The reason why the submission was approved or denied.
         type: string
       status:
         description: One of {`pending`, `approved`, `denied`, `cancelled`}.
         type: string
+      verifiablePresentation:
+        allOf:
+        - $ref: '#/definitions/credential.VerifiablePresentation'
+        description: The verifiable presentation containing the presentation_submission
+          along with the credentials presented.
     required:
-    - definition_id
-    - descriptor_map
-    - id
     - status
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest:
@@ -1030,6 +1035,9 @@ definitions:
   github_com_tbd54566975_ssi-service_pkg_server_router.UpdateCredentialStatusRequest:
     properties:
       revoked:
+        description: |-
+          The new revoked status of this credential. The status will be saved in the encodedList of the StatusList2021
+          credential associated with this VC.
         type: boolean
     required:
     - revoked
@@ -1037,20 +1045,27 @@ definitions:
   github_com_tbd54566975_ssi-service_pkg_server_router.UpdateCredentialStatusResponse:
     properties:
       revoked:
+        description: The updated status of this credential.
         type: boolean
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialRequest:
     properties:
       credential:
-        $ref: '#/definitions/credential.VerifiableCredential'
+        allOf:
+        - $ref: '#/definitions/credential.VerifiableCredential'
+        description: A credential secured via data integrity. Must have the "proof"
+          property set.
       credentialJwt:
+        description: A JWT that encodes a credential.
         type: string
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialResponse:
     properties:
       reason:
+        description: The reason why this credential couldn't be verified.
         type: string
       verified:
+        description: Whether the
         type: boolean
     type: object
   github_com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaRequest:
@@ -1126,8 +1141,9 @@ definitions:
   github_com_tbd54566975_ssi-service_pkg_service_issuing.TimeLike:
     properties:
       duration:
+        allOf:
+        - $ref: '#/definitions/time.Duration'
         description: For a fixed offset from when it was issued.
-        type: integer
       time:
         description: For fixed time in the future.
         type: string
@@ -1147,24 +1163,18 @@ definitions:
     type: object
   github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Submission:
     properties:
-      definition_id:
-        type: string
-      descriptor_map:
-        items:
-          $ref: '#/definitions/exchange.SubmissionDescriptor'
-        type: array
-      id:
-        type: string
       reason:
         description: The reason why the submission was approved or denied.
         type: string
       status:
         description: One of {`pending`, `approved`, `denied`, `cancelled`}.
         type: string
+      verifiablePresentation:
+        allOf:
+        - $ref: '#/definitions/credential.VerifiablePresentation'
+        description: The verifiable presentation containing the presentation_submission
+          along with the credentials presented.
     required:
-    - definition_id
-    - descriptor_map
-    - id
     - status
     type: object
   manifest.CredentialApplication:
@@ -1286,30 +1296,6 @@ definitions:
     - schema
     type: object
   pkg_server_router.CreateCredentialRequest:
-    properties:
-      '@context':
-        description: A context is optional. If not present, we'll apply default, required
-          context values.
-        type: string
-      data:
-        additionalProperties: {}
-        type: object
-      expiry:
-        type: string
-      issuer:
-        type: string
-      revocable:
-        type: boolean
-      schema:
-        description: A schema is optional. If present, we'll attempt to look it up
-          and validate the data against it.
-        type: string
-      subject:
-        type: string
-    required:
-    - data
-    - issuer
-    - subject
     type: object
   pkg_server_router.CreateCredentialResponse:
     properties:
@@ -1389,6 +1375,12 @@ definitions:
     type: object
   pkg_server_router.CreatePresentationDefinitionRequest:
     properties:
+      author:
+        description: |-
+          DID of the author of this presentation definition. The DID must have been previously created with the DID API,
+          or the PrivateKey must have been added independently. The privateKey associated to this DID will be used to
+          sign an envelope that contains the created presentation definition.
+        type: string
       format:
         $ref: '#/definitions/exchange.ClaimFormat'
       inputDescriptors:
@@ -1404,12 +1396,18 @@ definitions:
           $ref: '#/definitions/exchange.SubmissionRequirement'
         type: array
     required:
+    - author
     - inputDescriptors
     type: object
   pkg_server_router.CreatePresentationDefinitionResponse:
     properties:
       presentation_definition:
         $ref: '#/definitions/exchange.PresentationDefinition'
+      presentationDefinitionJWT:
+        description: |-
+          Signed envelope that contains the PresentationDefinition created using the privateKey of the author of the
+          definition.
+        type: string
     type: object
   pkg_server_router.CreateSchemaRequest:
     properties:
@@ -1470,8 +1468,11 @@ definitions:
   pkg_server_router.GetCredentialStatusListResponse:
     properties:
       credential:
-        $ref: '#/definitions/credential.VerifiableCredential'
+        allOf:
+        - $ref: '#/definitions/credential.VerifiableCredential'
+        description: Credential where type includes "VerifiableCredential" and "StatusList2021".
       credentialJwt:
+        description: The JWT signed with the associated issuer's private key.
         type: string
       id:
         type: string
@@ -1479,6 +1480,7 @@ definitions:
   pkg_server_router.GetCredentialStatusResponse:
     properties:
       revoked:
+        description: Whether the credential has been revoked.
         type: boolean
     type: object
   pkg_server_router.GetCredentialsResponse:
@@ -1561,6 +1563,11 @@ definitions:
     properties:
       presentation_definition:
         $ref: '#/definitions/exchange.PresentationDefinition'
+      presentationDefinitionJWT:
+        description: |-
+          Signed envelope that contains the PresentationDefinition created using the privateKey of the author of the
+          definition.
+        type: string
     type: object
   pkg_server_router.GetResponseResponse:
     properties:
@@ -1595,24 +1602,18 @@ definitions:
     type: object
   pkg_server_router.GetSubmissionResponse:
     properties:
-      definition_id:
-        type: string
-      descriptor_map:
-        items:
-          $ref: '#/definitions/exchange.SubmissionDescriptor'
-        type: array
-      id:
-        type: string
       reason:
         description: The reason why the submission was approved or denied.
         type: string
       status:
         description: One of {`pending`, `approved`, `denied`, `cancelled`}.
         type: string
+      verifiablePresentation:
+        allOf:
+        - $ref: '#/definitions/credential.VerifiablePresentation'
+        description: The verifiable presentation containing the presentation_submission
+          along with the credentials presented.
     required:
-    - definition_id
-    - descriptor_map
-    - id
     - status
     type: object
   pkg_server_router.ListDefinitionsRequest:
@@ -1702,24 +1703,18 @@ definitions:
     type: object
   pkg_server_router.ReviewSubmissionResponse:
     properties:
-      definition_id:
-        type: string
-      descriptor_map:
-        items:
-          $ref: '#/definitions/exchange.SubmissionDescriptor'
-        type: array
-      id:
-        type: string
       reason:
         description: The reason why the submission was approved or denied.
         type: string
       status:
         description: One of {`pending`, `approved`, `denied`, `cancelled`}.
         type: string
+      verifiablePresentation:
+        allOf:
+        - $ref: '#/definitions/credential.VerifiablePresentation'
+        description: The verifiable presentation containing the presentation_submission
+          along with the credentials presented.
     required:
-    - definition_id
-    - descriptor_map
-    - id
     - status
     type: object
   pkg_server_router.StoreKeyRequest:
@@ -1758,6 +1753,9 @@ definitions:
   pkg_server_router.UpdateCredentialStatusRequest:
     properties:
       revoked:
+        description: |-
+          The new revoked status of this credential. The status will be saved in the encodedList of the StatusList2021
+          credential associated with this VC.
         type: boolean
     required:
     - revoked
@@ -1765,20 +1763,27 @@ definitions:
   pkg_server_router.UpdateCredentialStatusResponse:
     properties:
       revoked:
+        description: The updated status of this credential.
         type: boolean
     type: object
   pkg_server_router.VerifyCredentialRequest:
     properties:
       credential:
-        $ref: '#/definitions/credential.VerifiableCredential'
+        allOf:
+        - $ref: '#/definitions/credential.VerifiableCredential'
+        description: A credential secured via data integrity. Must have the "proof"
+          property set.
       credentialJwt:
+        description: A JWT that encodes a credential.
         type: string
     type: object
   pkg_server_router.VerifyCredentialResponse:
     properties:
       reason:
+        description: The reason why this credential couldn't be verified.
         type: string
       verified:
+        description: Whether the
         type: boolean
     type: object
   pkg_server_router.VerifySchemaRequest:
@@ -1906,6 +1911,26 @@ definitions:
       version:
         type: string
     type: object
+  time.Duration:
+    enum:
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
+    type: integer
+    x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
 host: localhost:8080
 info:
   contact:
@@ -1930,7 +1955,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetHealthCheckResponse'
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse'
       summary: Health Check
       tags:
       - HealthCheck
@@ -1956,17 +1981,18 @@ paths:
       consumes:
       - application/json
       description: Checks for the presence of a query parameter and calls the associated
-        filtered get method
+        filtered get method. Only one parameter is allowed to be specified.
       parameters:
-      - description: string issuer
+      - description: The issuer id
+        example: did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp
         in: query
         name: issuer
         type: string
-      - description: string schema
+      - description: The credentialSchema.id value to filter by
         in: query
         name: schema
         type: string
-      - description: string subject
+      - description: The credentialSubject.id value to filter by
         in: query
         name: subject
         type: string
@@ -1976,7 +2002,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialsResponse'
+            $ref: '#/definitions/pkg_server_router.GetCredentialsResponse'
         "400":
           description: Bad request
           schema:
@@ -1991,21 +2017,21 @@ paths:
     put:
       consumes:
       - application/json
-      description: Create a credential
+      description: Create a verifiable credential
       parameters:
       - description: request body
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialRequest'
+          $ref: '#/definitions/pkg_server_router.CreateCredentialRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialResponse'
+            $ref: '#/definitions/pkg_server_router.CreateCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -2062,9 +2088,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialResponse'
+            $ref: '#/definitions/pkg_server_router.GetCredentialResponse'
         "400":
           description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
           schema:
             type: string
       summary: Get Credential
@@ -2087,9 +2117,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialStatusResponse'
+            $ref: '#/definitions/pkg_server_router.GetCredentialStatusResponse'
         "400":
           description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
           schema:
             type: string
       summary: Get Credential Status
@@ -2105,14 +2139,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.UpdateCredentialStatusRequest'
+          $ref: '#/definitions/pkg_server_router.UpdateCredentialStatusRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.UpdateCredentialStatusResponse'
+            $ref: '#/definitions/pkg_server_router.UpdateCredentialStatusResponse'
         "400":
           description: Bad request
           schema:
@@ -2128,7 +2162,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get credential status list by id
+      description: Get credential status list by id.
       parameters:
       - description: ID
         in: path
@@ -2141,9 +2175,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetCredentialStatusListResponse'
+            $ref: '#/definitions/pkg_server_router.GetCredentialStatusListResponse'
         "400":
           description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
           schema:
             type: string
       summary: Get Credential Status List
@@ -2153,23 +2191,32 @@ paths:
     put:
       consumes:
       - application/json
-      description: Verify a given credential by its id
+      description: |-
+        Verify a given credential by its id. The system does the following levels of verification:
+        1. Makes sure the credential has a valid signature
+        2. Makes sure the credential has is not expired
+        3. Makes sure the credential complies with the VC Data Model
+        4. If the credential has a schema, makes sure its data complies with the schema
       parameters:
       - description: request body
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialRequest'
+          $ref: '#/definitions/pkg_server_router.VerifyCredentialRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialResponse'
+            $ref: '#/definitions/pkg_server_router.VerifyCredentialResponse'
         "400":
           description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
           schema:
             type: string
       summary: Verify Credential
@@ -2186,7 +2233,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDMethodsResponse'
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetDIDMethodsResponse'
       summary: Get DID Methods
       tags:
       - DecentralizedIdentityAPI
@@ -2207,7 +2254,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDsByMethodResponse'
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetDIDsByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -2225,7 +2272,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -2237,7 +2284,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateDIDByMethodResponse'
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -2260,7 +2307,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -2277,7 +2324,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDByMethodResponse'
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -2302,7 +2349,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.ResolveDIDResponse'
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse'
         "400":
           description: Bad request
           schema:
@@ -3011,7 +3058,7 @@ paths:
             type: string
       summary: List Submissions
       tags:
-      - SubmissionAPI
+      - PresentationSubmissionAPI
     put:
       consumes:
       - application/json
@@ -3040,7 +3087,7 @@ paths:
             type: string
       summary: Create Submission
       tags:
-      - SubmissionAPI
+      - PresentationSubmissionAPI
   /v1/presentations/submissions/{id}:
     get:
       consumes:
@@ -3065,7 +3112,7 @@ paths:
             type: string
       summary: Get Submission
       tags:
-      - SubmissionAPI
+      - PresentationSubmissionAPI
   /v1/presentations/submissions/{id}/review:
     put:
       consumes:
@@ -3097,7 +3144,7 @@ paths:
             type: string
       summary: Review a pending submission
       tags:
-      - SubmissionAPI
+      - PresentationSubmissionAPI
   /v1/schemas:
     get:
       consumes:
@@ -3109,7 +3156,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetSchemasResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemasResponse'
         "500":
           description: Internal server error
           schema:
@@ -3127,14 +3174,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest'
+          $ref: '#/definitions/pkg_server_router.CreateSchemaRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.CreateSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -3191,7 +3238,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -3210,14 +3257,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaRequest'
+          $ref: '#/definitions/pkg_server_router.VerifySchemaRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaResponse'
+            $ref: '#/definitions/pkg_server_router.VerifySchemaResponse'
         "400":
           description: Bad request
           schema:
