@@ -54,7 +54,7 @@ type CreateCredentialRequest struct {
 	Schema string `json:"schema"`
 
 	// Claims about the subject. The keys should be predicates (e.g. "alumniOf"), and the values can be any object.
-	Data map[string]any `json:"data" validate:"required" example:"{\"alumniOf\":\"did:web:awesomeschool.edu\""`
+	Data map[string]any `json:"data" validate:"required" example:"{\"alumniOf\":\"did:web:awesomeschool.edu\"}"`
 
 	// Optional. Corresponds to `expirationDate` in https://www.w3.org/TR/vc-data-model/#expiration.
 	Expiry string `json:"expiry" example:"2020-01-01T19:23:24Z"`
