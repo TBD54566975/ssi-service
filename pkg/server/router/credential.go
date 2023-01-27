@@ -41,15 +41,27 @@ func NewCredentialRouter(s svcframework.Service) (*CredentialRouter, error) {
 }
 
 type CreateCredentialRequest struct {
-	Issuer  string `json:"issuer" validate:"required"`
-	Subject string `json:"subject" validate:"required"`
+	// The issuer id.
+	Issuer string `json:"issuer" validate:"required" example:"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
+
+	// The subject id.
+	Subject string `json:"subject" validate:"required" example:"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
+
 	// A context is optional. If not present, we'll apply default, required context values.
 	Context string `json:"@context"`
+
 	// A schema is optional. If present, we'll attempt to look it up and validate the data against it.
-	Schema    string         `json:"schema"`
-	Data      map[string]any `json:"data" validate:"required"`
-	Expiry    string         `json:"expiry"`
-	Revocable bool           `json:"revocable"`
+	Schema string `json:"schema"`
+
+	// Claims about the subject. The keys should be predicates (e.g. "alumniOf"), and the values can be any object.
+	Data map[string]any `json:"data" validate:"required" example:"{\"alumniOf\":\"did:web:awesomeschool.edu\""`
+
+	// Optional. Corresponds to `expirationDate` in https://www.w3.org/TR/vc-data-model/#expiration.
+	Expiry string `json:"expiry" example:"2020-01-01T19:23:24Z"`
+
+	// Whether this credential can be revoked. When true, the created VC will have the "credentialStatus"
+	// property set.
+	Revocable bool `json:"revocable"`
 	// TODO(gabe) support more capabilities like signature type, format, status, and more.
 }
 
@@ -73,7 +85,7 @@ type CreateCredentialResponse struct {
 // CreateCredential godoc
 //
 //	@Summary		Create Credential
-//	@Description	Create a credential
+//	@Description	Create a verifiable credential
 //	@Tags			CredentialAPI
 //	@Accept			json
 //	@Produce		json
@@ -125,6 +137,7 @@ type GetCredentialResponse struct {
 //	@Param			id	path		string	true	"ID"
 //	@Success		200	{object}	GetCredentialResponse
 //	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/credentials/{id} [get]
 func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
@@ -138,7 +151,7 @@ func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWri
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := GetCredentialResponse{
@@ -150,6 +163,7 @@ func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWri
 }
 
 type GetCredentialStatusResponse struct {
+	// Whether the credential has been revoked.
 	Revoked bool `json:"revoked"`
 }
 
@@ -163,6 +177,7 @@ type GetCredentialStatusResponse struct {
 //	@Param			id	path		string	true	"ID"
 //	@Success		200	{object}	GetCredentialStatusResponse
 //	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/credentials/{id}/status [get]
 func (cr CredentialRouter) GetCredentialStatus(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
@@ -176,7 +191,7 @@ func (cr CredentialRouter) GetCredentialStatus(ctx context.Context, w http.Respo
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := GetCredentialStatusResponse{
@@ -187,21 +202,25 @@ func (cr CredentialRouter) GetCredentialStatus(ctx context.Context, w http.Respo
 }
 
 type GetCredentialStatusListResponse struct {
-	ID            string                        `json:"id"`
-	Credential    *credsdk.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT *keyaccess.JWT                `json:"credentialJwt,omitempty"`
+	ID string `json:"id"`
+	// Credential where type includes "VerifiableCredential" and "StatusList2021".
+	Credential *credsdk.VerifiableCredential `json:"credential,omitempty"`
+
+	// The JWT signed with the associated issuer's private key.
+	CredentialJWT *keyaccess.JWT `json:"credentialJwt,omitempty"`
 }
 
 // GetCredentialStatusList godoc
 //
 //	@Summary		Get Credential Status List
-//	@Description	Get credential status list by id
+//	@Description	Get credential status list by id.
 //	@Tags			CredentialAPI
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
 //	@Success		200	{object}	GetCredentialStatusListResponse
 //	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/credentials/status/{id} [get]
 func (cr CredentialRouter) GetCredentialStatusList(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
@@ -215,7 +234,7 @@ func (cr CredentialRouter) GetCredentialStatusList(ctx context.Context, w http.R
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential status list with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := GetCredentialStatusListResponse{
@@ -228,6 +247,8 @@ func (cr CredentialRouter) GetCredentialStatusList(ctx context.Context, w http.R
 }
 
 type UpdateCredentialStatusRequest struct {
+	// The new revoked status of this credential. The status will be saved in the encodedList of the StatusList2021
+	// credential associated with this VC.
 	Revoked bool `json:"revoked" validate:"required"`
 }
 
@@ -239,6 +260,7 @@ func (c UpdateCredentialStatusRequest) ToServiceRequest(id string) credential.Up
 }
 
 type UpdateCredentialStatusResponse struct {
+	// The updated status of this credential.
 	Revoked bool `json:"revoked"`
 }
 
@@ -282,7 +304,7 @@ func (cr CredentialRouter) UpdateCredentialStatus(ctx context.Context, w http.Re
 	if err != nil {
 		errMsg := fmt.Sprintf("could not update credential with id: %s", req.ID)
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := UpdateCredentialStatusResponse{
@@ -293,8 +315,11 @@ func (cr CredentialRouter) UpdateCredentialStatus(ctx context.Context, w http.Re
 }
 
 type VerifyCredentialRequest struct {
+	// A credential secured via data integrity. Must have the "proof" property set.
 	DataIntegrityCredential *credsdk.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT           *keyaccess.JWT                `json:"credentialJwt,omitempty"`
+
+	// A JWT that encodes a credential.
+	CredentialJWT *keyaccess.JWT `json:"credentialJwt,omitempty"`
 }
 
 func (vcr VerifyCredentialRequest) IsValid() bool {
@@ -303,20 +328,28 @@ func (vcr VerifyCredentialRequest) IsValid() bool {
 }
 
 type VerifyCredentialResponse struct {
-	Verified bool   `json:"verified"`
-	Reason   string `json:"reason,omitempty"`
+	// Whether the credential was verified.
+	Verified bool `json:"verified"`
+
+	// The reason why this credential couldn't be verified.
+	Reason string `json:"reason,omitempty"`
 }
 
 // VerifyCredential godoc
 //
 //	@Summary		Verify Credential
-//	@Description	Verify a given credential by its id
+//	@Description	Verify a given credential by its id. The system does the following levels of verification:
+//	@Description	1. Makes sure the credential has a valid signature
+//	@Description	2. Makes sure the credential has is not expired
+//	@Description	3. Makes sure the credential complies with the VC Data Model
+//	@Description	4. If the credential has a schema, makes sure its data complies with the schema
 //	@Tags			CredentialAPI
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		VerifyCredentialRequest	true	"request body"
 //	@Success		200		{object}	VerifyCredentialResponse
 //	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/credentials/verification [put]
 func (cr CredentialRouter) VerifyCredential(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	var request VerifyCredentialRequest
@@ -353,13 +386,13 @@ type GetCredentialsResponse struct {
 // GetCredentials godoc
 //
 //	@Summary		Get Credentials
-//	@Description	Checks for the presence of a query parameter and calls the associated filtered get method
+//	@Description	Checks for the presence of a query parameter and calls the associated filtered get method. Only one parameter is allowed to be specified.
 //	@Tags			CredentialAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			issuer	query		string	false	"string issuer"
-//	@Param			schema	query		string	false	"string schema"
-//	@Param			subject	query		string	false	"string subject"
+//	@Param			issuer	query		string	false	"The issuer id"	example(did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp)
+//	@Param			schema	query		string	false	"The credentialSchema.id value to filter by"
+//	@Param			subject	query		string	false	"The credentialSubject.id value to filter by"
 //	@Success		200		{object}	GetCredentialsResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
