@@ -90,7 +90,7 @@ func NewCredentialService(config config.CredentialServiceConfig, s storage.Servi
 }
 
 func (s Service) CreateCredential(ctx context.Context, request CreateCredentialRequest) (*CreateCredentialResponse, error) {
-	returnFunc := s.CreateCredentialFunc(request)
+	returnFunc := s.createCredentialFunc(request)
 
 	watchKeys := []storage.WatchKey{s.storage.GetIncrementStatusListIndexWriteContextWatchKey(), s.storage.GetStatusListIndexesWriteKey()}
 	returnValue, err := s.storage.db.Execute(ctx, returnFunc, watchKeys)
@@ -107,13 +107,13 @@ func (s Service) CreateCredential(ctx context.Context, request CreateCredentialR
 	return credResponse, nil
 }
 
-func (s Service) CreateCredentialFunc(request CreateCredentialRequest) storage.BusinessLogicFunc {
+func (s Service) createCredentialFunc(request CreateCredentialRequest) storage.BusinessLogicFunc {
 	return func(ctx context.Context, tx storage.Tx) (any, error) {
-		return s.CreateCredentialBusinessLogic(ctx, request, tx)
+		return s.createCredentialBusinessLogic(ctx, request, tx)
 	}
 }
 
-func (s Service) CreateCredentialBusinessLogic(ctx context.Context, request CreateCredentialRequest, tx storage.Tx) (*CreateCredentialResponse, error) {
+func (s Service) createCredentialBusinessLogic(ctx context.Context, request CreateCredentialRequest, tx storage.Tx) (*CreateCredentialResponse, error) {
 	logrus.Debugf("creating credential: %+v", request)
 
 	builder := credential.NewVerifiableCredentialBuilder()
@@ -483,7 +483,7 @@ func (s Service) GetCredentialStatusList(ctx context.Context, request GetCredent
 }
 
 func (s Service) UpdateCredentialStatus(ctx context.Context, request UpdateCredentialStatusRequest) (*UpdateCredentialStatusResponse, error) {
-	returnFunc := s.UpdateCredentialStatusFunc(request)
+	returnFunc := s.updateCredentialStatusFunc(request)
 
 	watchKeys := []storage.WatchKey{s.storage.GetIncrementStatusListIndexWriteContextWatchKey(), s.storage.GetStatusListIndexesWriteKey()}
 	returnValue, err := s.storage.db.Execute(ctx, returnFunc, watchKeys)
@@ -499,13 +499,13 @@ func (s Service) UpdateCredentialStatus(ctx context.Context, request UpdateCrede
 	return credResponse, nil
 }
 
-func (s Service) UpdateCredentialStatusFunc(request UpdateCredentialStatusRequest) storage.BusinessLogicFunc {
+func (s Service) updateCredentialStatusFunc(request UpdateCredentialStatusRequest) storage.BusinessLogicFunc {
 	return func(ctx context.Context, tx storage.Tx) (any, error) {
-		return s.UpdateCredentialStatusBusinessLogic(ctx, request, tx)
+		return s.updateCredentialStatusBusinessLogic(ctx, request, tx)
 	}
 }
 
-func (s Service) UpdateCredentialStatusBusinessLogic(ctx context.Context, request UpdateCredentialStatusRequest, tx storage.Tx) (*UpdateCredentialStatusResponse, error) {
+func (s Service) updateCredentialStatusBusinessLogic(ctx context.Context, request UpdateCredentialStatusRequest, tx storage.Tx) (*UpdateCredentialStatusResponse, error) {
 	logrus.Debugf("updating credential status: %s to Revoked: %v", request.ID, request.Revoked)
 
 	gotCred, err := s.storage.GetCredential(ctx, request.ID)
@@ -524,7 +524,7 @@ func (s Service) UpdateCredentialStatusBusinessLogic(ctx context.Context, reques
 
 	container, err := updateCredentialStatus(ctx, s, gotCred, request, tx)
 	if err != nil {
-		return nil, util.LoggingNewError("updating credential")
+		return nil, util.LoggingErrorMsg(err, "updating credential")
 	}
 
 	response := UpdateCredentialStatusResponse{Revoked: container.Revoked}

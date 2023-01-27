@@ -13,14 +13,11 @@ import (
 )
 
 const (
-	TX                    ContextKey = "tx"
-	NamespaceKeySeparator            = ":"
-	Pong                             = "PONG"
-	RedisScanBatchSize               = 1000
-	MaxElapsedTime                   = 6 * time.Second
+	NamespaceKeySeparator = ":"
+	Pong                  = "PONG"
+	RedisScanBatchSize    = 1000
+	MaxElapsedTime        = 6 * time.Second
 )
-
-type ContextKey string
 
 type RedisDB struct {
 	db *goredislib.Client
@@ -98,7 +95,7 @@ func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFu
 	watchKeysStr := make([]string, 0)
 
 	for _, wc := range watchKeys {
-		watchKeysStr = append(watchKeysStr, fmt.Sprintf("%v:%v", wc.Namespace, wc.Key))
+		watchKeysStr = append(watchKeysStr, getRedisKey(wc.Namespace, wc.Key))
 	}
 
 	expBackoff := backoff.NewExponentialBackOff()
@@ -108,8 +105,9 @@ func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFu
 		err := b.db.Watch(ctx, txf, watchKeysStr...)
 		if err != nil && errors.Is(err, goredislib.TxFailedErr) {
 			logrus.Warn("Optimistic lock lost. Retrying..")
+			return err
 		}
-		return err
+		return backoff.Permanent(err)
 	}, expBackoff)
 
 	if err != nil {
