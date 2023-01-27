@@ -8,7 +8,16 @@ import (
 
 type Type string
 
-type BusinessLogicFunc func(ctx context.Context) (any, error)
+type BusinessLogicFunc func(ctx context.Context, tx Tx) (any, error)
+
+type WatchKey struct {
+	Namespace string
+	Key       string
+}
+
+type Tx interface {
+	Write(ctx context.Context, namespace, key string, value []byte) error
+}
 
 const (
 	Bolt  Type = "bolt"
@@ -36,7 +45,7 @@ type ServiceStorage interface {
 	DeleteNamespace(ctx context.Context, namespace string) error
 	Update(ctx context.Context, namespace string, key string, values map[string]any) ([]byte, error)
 	UpdateValueAndOperation(ctx context.Context, namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error)
-	Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, watchKeys []string) (any, error)
+	Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, watchKeys []WatchKey) (any, error)
 }
 
 // NewStorage returns the instance of the given storageProvider. If it doesn't exist, then a default implementation

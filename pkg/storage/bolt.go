@@ -73,9 +73,19 @@ func (b *BoltDB) Close() error {
 	return b.db.Close()
 }
 
-// TODO: Implement
-func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, watchKeys []string) (any, error) {
-	return businessLogicFunc(ctx)
+type boltTx struct {
+	b *BoltDB
+}
+
+// TODO: Implement to be transactional
+func (btx *boltTx) Write(ctx context.Context, namespace, key string, value []byte) error {
+	return btx.b.Write(ctx, namespace, key, value)
+}
+
+// TODO: Implement to be transactional
+func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, watchKeys []WatchKey) (any, error) {
+	bTx := boltTx{b}
+	return businessLogicFunc(ctx, &bTx)
 }
 
 func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value []byte) error {

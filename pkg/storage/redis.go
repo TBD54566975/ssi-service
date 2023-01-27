@@ -26,6 +26,15 @@ type RedisDB struct {
 	db *goredislib.Client
 }
 
+type redisTx struct {
+	pipe goredislib.Pipeliner
+}
+
+func (rtx *redisTx) Write(ctx context.Context, namespace, key string, value []byte) error {
+	nameSpaceKey := getRedisKey(namespace, key)
+	return rtx.pipe.Set(ctx, nameSpaceKey, value, 0).Err()
+}
+
 func init() {
 	err := RegisterStorage(new(RedisDB))
 	if err != nil {
@@ -68,17 +77,16 @@ func (b *RedisDB) Close() error {
 	return b.db.Close()
 }
 
-func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, watchKeys []string) (any, error) {
+func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, watchKeys []WatchKey) (any, error) {
 	var finalOutput any
 	// Transactional function.
 	txf := func(tx *goredislib.Tx) error {
 		// Operation is commited only if the watched keys remain unchanged.
 		_, err := tx.TxPipelined(ctx, func(pipe goredislib.Pipeliner) error {
-
-			pipeCTX := context.WithValue(ctx, TX, pipe)
-
+			redisTx := redisTx{pipe}
 			var err error
-			finalOutput, err = businessLogicFunc(pipeCTX)
+
+			finalOutput, err = businessLogicFunc(ctx, &redisTx)
 			if err != nil {
 				return err
 			}
@@ -87,11 +95,17 @@ func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFu
 		return err
 	}
 
+	watchKeysStr := make([]string, 0)
+
+	for _, wc := range watchKeys {
+		watchKeysStr = append(watchKeysStr, fmt.Sprintf("%v:%v", wc.Namespace, wc.Key))
+	}
+
 	expBackoff := backoff.NewExponentialBackOff()
 	expBackoff.MaxElapsedTime = MaxElapsedTime
 
 	err := backoff.Retry(func() error {
-		err := b.db.Watch(ctx, txf, watchKeys...)
+		err := b.db.Watch(ctx, txf, watchKeysStr...)
 		if err != nil && errors.Is(err, goredislib.TxFailedErr) {
 			logrus.Warn("Optimistic lock lost. Retrying..")
 		}
@@ -108,16 +122,6 @@ func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFu
 
 func (b *RedisDB) Write(ctx context.Context, namespace, key string, value []byte) error {
 	nameSpaceKey := getRedisKey(namespace, key)
-
-	if ctx.Value(TX) != nil {
-		pipe, ok := ctx.Value(TX).(goredislib.Pipeliner)
-		if !ok {
-			return errors.New("casting to pipeliner")
-		}
-
-		return pipe.Set(ctx, nameSpaceKey, value, 0).Err()
-	}
-
 	return b.db.Set(ctx, nameSpaceKey, value, 0).Err()
 }
 
