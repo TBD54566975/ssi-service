@@ -173,7 +173,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	if request.Revocable == true {
+	if request.Revocable {
 		credID := builder.ID
 		issuerID := request.Issuer
 		schemaID := request.JSONSchema
