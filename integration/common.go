@@ -103,8 +103,7 @@ func CreateVerifiableCredential(credentialInput credInputParams, revocable bool)
 	err = backoff.Retry(func() error {
 		output, err = put(endpoint+version+"credentials", credentialJSON)
 		if err != nil {
-			logrus.Warn(err)
-			logrus.Warn("retryable error caught, retrying..")
+			logrus.WithError(err).Warn("retryable error caught, retrying..")
 			return err
 		}
 		return nil
