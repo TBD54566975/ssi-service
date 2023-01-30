@@ -8,6 +8,7 @@ require (
 	github.com/alicebob/miniredis/v2 v2.30.0
 	github.com/ardanlabs/conf v1.5.0
 	github.com/benbjohnson/clock v1.3.0
+	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/dimfeld/httptreemux/v5 v5.5.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.0

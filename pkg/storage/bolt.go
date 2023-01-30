@@ -73,6 +73,21 @@ func (b *BoltDB) Close() error {
 	return b.db.Close()
 }
 
+type boltTx struct {
+	b *BoltDB
+}
+
+// TODO: Implement to be transactional
+func (btx *boltTx) Write(ctx context.Context, namespace, key string, value []byte) error {
+	return btx.b.Write(ctx, namespace, key, value)
+}
+
+// TODO: Implement to be transactional
+func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, watchKeys []WatchKey) (any, error) {
+	bTx := boltTx{b}
+	return businessLogicFunc(ctx, &bTx)
+}
+
 func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value []byte) error {
 	return b.db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists([]byte(namespace))
@@ -85,6 +100,7 @@ func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value 
 		return nil
 	})
 }
+
 func (b *BoltDB) WriteMany(ctx context.Context, namespaces, keys []string, values [][]byte) error {
 	if len(namespaces) != len(keys) && len(namespaces) != len(values) {
 		return errors.New("namespaces, keys, and values, are not of equal length")

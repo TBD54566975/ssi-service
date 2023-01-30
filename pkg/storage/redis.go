@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/cenkalti/backoff/v4"
 	goredislib "github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -14,17 +16,27 @@ const (
 	NamespaceKeySeparator = ":"
 	Pong                  = "PONG"
 	RedisScanBatchSize    = 1000
+	MaxElapsedTime        = 6 * time.Second
 )
-
-func init() {
-	err := RegisterStorage(&RedisDB{})
-	if err != nil {
-		panic(err)
-	}
-}
 
 type RedisDB struct {
 	db *goredislib.Client
+}
+
+type redisTx struct {
+	pipe goredislib.Pipeliner
+}
+
+func (rtx *redisTx) Write(ctx context.Context, namespace, key string, value []byte) error {
+	nameSpaceKey := getRedisKey(namespace, key)
+	return rtx.pipe.Set(ctx, nameSpaceKey, value, 0).Err()
+}
+
+func init() {
+	err := RegisterStorage(new(RedisDB))
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (b *RedisDB) Init(i interface{}) error {
@@ -62,9 +74,52 @@ func (b *RedisDB) Close() error {
 	return b.db.Close()
 }
 
+func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, watchKeys []WatchKey) (any, error) {
+	var finalOutput any
+	// Transactional function.
+	txf := func(tx *goredislib.Tx) error {
+		// Operation is commited only if the watched keys remain unchanged.
+		_, err := tx.TxPipelined(ctx, func(pipe goredislib.Pipeliner) error {
+			redisTx := redisTx{pipe}
+			var err error
+
+			finalOutput, err = businessLogicFunc(ctx, &redisTx)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+		return err
+	}
+
+	watchKeysStr := make([]string, 0)
+
+	for _, wc := range watchKeys {
+		watchKeysStr = append(watchKeysStr, getRedisKey(wc.Namespace, wc.Key))
+	}
+
+	expBackoff := backoff.NewExponentialBackOff()
+	expBackoff.MaxElapsedTime = MaxElapsedTime
+
+	err := backoff.Retry(func() error {
+		err := b.db.Watch(ctx, txf, watchKeysStr...)
+		if err != nil && errors.Is(err, goredislib.TxFailedErr) {
+			logrus.Warn("Optimistic lock lost. Retrying..")
+			return err
+		}
+		return backoff.Permanent(err)
+	}, expBackoff)
+
+	if err != nil {
+		logrus.Errorf("error after retrying: %v", err)
+		return nil, errors.Wrap(err, "failed to execute after retrying")
+	}
+
+	return finalOutput, nil
+}
+
 func (b *RedisDB) Write(ctx context.Context, namespace, key string, value []byte) error {
 	nameSpaceKey := getRedisKey(namespace, key)
-	// Zero expiration means the key has no expiration time.
 	return b.db.Set(ctx, nameSpaceKey, value, 0).Err()
 }
 
@@ -83,6 +138,7 @@ func (b *RedisDB) WriteMany(ctx context.Context, namespaces, keys []string, valu
 
 func (b *RedisDB) Read(ctx context.Context, namespace, key string) ([]byte, error) {
 	nameSpaceKey := getRedisKey(namespace, key)
+
 	res, err := b.db.Get(ctx, nameSpaceKey).Bytes()
 
 	// Nil reply returned by Redis when key does not exist.

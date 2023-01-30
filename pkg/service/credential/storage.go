@@ -6,12 +6,11 @@ import (
 	"math/rand"
 	"strings"
 
+	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
-	"github.com/TBD54566975/ssi-sdk/credential"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -62,7 +61,6 @@ const (
 	statusListCredentialNamespace = "status-list-credential"
 	statusListIndexNamespace      = "status-list-index"
 
-	fakeKey              = "fake-key"
 	statusListIndexesKey = "status-list-indexes"
 	currentListIndexKey  = "current-list-index"
 
@@ -150,6 +148,19 @@ func (cs *Storage) WriteMany(ctx context.Context, writeContexts []WriteContext) 
 	return cs.db.WriteMany(ctx, namespaces, keys, values)
 }
 
+func (cs *Storage) IncrementStatusListIndexTx(ctx context.Context, tx storage.Tx) error {
+	wc, err := cs.GetIncrementStatusListIndexWriteContext(ctx)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "problem getting increment status listIndex writeContext")
+	}
+
+	if err := tx.Write(ctx, wc.namespace, wc.key, wc.value); err != nil {
+		return util.LoggingErrorMsg(err, "problem writing current list index to db")
+	}
+
+	return nil
+}
+
 func (cs *Storage) IncrementStatusListIndex(ctx context.Context) error {
 	wc, err := cs.GetIncrementStatusListIndexWriteContext(ctx)
 	if err != nil {
@@ -190,6 +201,14 @@ func (cs *Storage) GetIncrementStatusListIndexWriteContext(ctx context.Context) 
 
 func (cs *Storage) StoreCredential(ctx context.Context, request StoreCredentialRequest) error {
 	return cs.storeCredential(ctx, request, credentialNamespace)
+}
+
+func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, request StoreCredentialRequest, tx storage.Tx) error {
+	wc, err := cs.getStoreCredentialWriteContext(request, statusListCredentialNamespace)
+	if err != nil {
+		return errors.Wrap(err, "could not get stored credential write context")
+	}
+	return tx.Write(ctx, wc.namespace, wc.key, wc.value)
 }
 
 func (cs *Storage) StoreStatusListCredential(ctx context.Context, request StoreCredentialRequest) error {
@@ -530,6 +549,14 @@ func (cs *Storage) deleteCredential(ctx context.Context, id string, namespace st
 		return util.LoggingErrorMsgf(err, "could not delete credential: %s", id)
 	}
 	return nil
+}
+
+func (cs *Storage) GetIncrementStatusListIndexWriteContextWatchKey() storage.WatchKey {
+	return storage.WatchKey{Namespace: statusListIndexNamespace, Key: currentListIndexKey}
+}
+
+func (cs *Storage) GetStatusListIndexesWriteKey() storage.WatchKey {
+	return storage.WatchKey{Namespace: statusListIndexNamespace, Key: statusListIndexesKey}
 }
 
 // unique key for a credential

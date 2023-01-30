@@ -8,7 +8,6 @@ import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
