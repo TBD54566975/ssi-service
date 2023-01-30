@@ -178,7 +178,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 		issuerID := request.Issuer
 		schemaID := request.JSONSchema
 
-		statusListCredential, err := getStatusListCredential(ctx, s, issuerID, schemaID)
+		statusListCredential, err := getOrCreateStatusListCredential(ctx, s, issuerID, schemaID, tx)
 		if err != nil {
 			return nil, util.LoggingErrorMsgf(err, "problem with getting status list credential")
 		}
@@ -186,6 +186,10 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 		statusListIndex, err := s.storage.GetNextStatusListRandomIndex(ctx)
 		if err != nil {
 			return nil, util.LoggingErrorMsg(err, "problem with getting status list index")
+		}
+
+		if err := s.storage.IncrementStatusListIndexTx(ctx, tx); err != nil {
+			return nil, errors.Wrap(err, "incrementing status list index")
 		}
 
 		status := statussdk.StatusList2021Entry{
@@ -198,29 +202,6 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 
 		if err := builder.SetCredentialStatus(status); err != nil {
 			return nil, util.LoggingErrorMsg(err, "could not set credential status")
-		}
-
-		statusListCredJWT, err := s.signCredentialJWT(ctx, request.Issuer, *statusListCredential)
-		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not sign status list credential")
-		}
-
-		statusListContainer := credint.Container{
-			ID:            statusListCredential.ID,
-			Credential:    statusListCredential,
-			CredentialJWT: statusListCredJWT,
-		}
-
-		statusListStorageRequest := StoreCredentialRequest{
-			Container: statusListContainer,
-		}
-
-		if err := s.storage.IncrementStatusListIndexTx(ctx, tx); err != nil {
-			return nil, errors.Wrap(err, "incrementing status list index")
-		}
-
-		if err := s.storage.StoreStatusListCredentialTx(ctx, statusListStorageRequest, tx); err != nil {
-			return nil, errors.Wrap(err, "storing status list credential")
 		}
 	}
 
@@ -261,7 +242,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 	return &response, nil
 }
 
-func getStatusListCredential(ctx context.Context, s Service, issuerID string, schemaID string) (*credential.VerifiableCredential, error) {
+func getOrCreateStatusListCredential(ctx context.Context, s Service, issuerID string, schemaID string, tx storage.Tx) (*credential.VerifiableCredential, error) {
 	storedStatusListCreds, err := s.storage.GetStatusListCredentialsByIssuerAndSchema(ctx, issuerID, schemaID)
 	if err != nil {
 		return nil, util.LoggingNewErrorf("getting status list credential for issuer: %s schema: %s", issuerID, schemaID)
@@ -283,6 +264,31 @@ func getStatusListCredential(ctx context.Context, s Service, issuerID string, sc
 		}
 
 		statusListCredential = generatedStatusListCredential
+
+		credSchema := credential.CredentialSchema{
+			ID:   schemaID,
+			Type: SchemaLDType,
+		}
+		statusListCredential.CredentialSchema = &credSchema
+
+		statusListCredJWT, err := s.signCredentialJWT(ctx, issuerID, *statusListCredential)
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not sign status list credential")
+		}
+
+		statusListContainer := credint.Container{
+			ID:            statusListCredential.ID,
+			Credential:    statusListCredential,
+			CredentialJWT: statusListCredJWT,
+		}
+
+		statusListStorageRequest := StoreCredentialRequest{
+			Container: statusListContainer,
+		}
+
+		if err := s.storage.StoreStatusListCredentialTx(ctx, statusListStorageRequest, tx); err != nil {
+			return nil, errors.Wrap(err, "storing status list credential")
+		}
 	} else {
 		statusListCredential = storedStatusListCreds[0].Credential
 	}
@@ -570,6 +576,8 @@ func updateCredentialStatus(ctx context.Context, s Service, gotCred *StoredCrede
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not generate status list")
 	}
+
+	generatedStatusListCredential.CredentialSchema = gotCred.Credential.CredentialSchema
 
 	statusListCredJWT, err := s.signCredentialJWT(ctx, gotCred.Issuer, *generatedStatusListCredential)
 	if err != nil {
