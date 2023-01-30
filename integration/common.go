@@ -24,7 +24,7 @@ import (
 const (
 	endpoint       = "http://localhost:8080/"
 	version        = "v1/"
-	MaxElapsedTime = 60 * time.Second
+	MaxElapsedTime = 120 * time.Second
 )
 
 var (
@@ -103,6 +103,7 @@ func CreateVerifiableCredential(credentialInput credInputParams, revocable bool)
 	err = backoff.Retry(func() error {
 		output, err = put(endpoint+version+"credentials", credentialJSON)
 		if err != nil {
+			logrus.Warn(err)
 			logrus.Warn("retryable error caught, retrying..")
 			return err
 		}
@@ -380,7 +381,7 @@ func put(url string, json string) (string, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	client.Timeout = 60 * time.Second
+	client.Timeout = 90 * time.Second
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", errors.Wrap(err, "client http client")
