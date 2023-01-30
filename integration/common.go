@@ -7,9 +7,11 @@ import (
 	"io"
 	"net/http"
 	"text/template"
+	"time"
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
 	"github.com/oliveagle/jsonpath"
@@ -20,8 +22,9 @@ import (
 )
 
 const (
-	endpoint = "http://localhost:8080/"
-	version  = "v1/"
+	endpoint       = "http://localhost:8080/"
+	version        = "v1/"
+	MaxElapsedTime = 120 * time.Second
 )
 
 var (
@@ -92,9 +95,22 @@ func CreateVerifiableCredential(credentialInput credInputParams, revocable bool)
 		return "", err
 	}
 
-	output, err := put(endpoint+version+"credentials", credentialJSON)
+	expBackoff := backoff.NewExponentialBackOff()
+	expBackoff.MaxElapsedTime = MaxElapsedTime
+
+	var output string
+
+	err = backoff.Retry(func() error {
+		output, err = put(endpoint+version+"credentials", credentialJSON)
+		if err != nil {
+			logrus.WithError(err).Warn("retryable error caught, retrying..")
+			return err
+		}
+		return nil
+	}, expBackoff)
+
 	if err != nil {
-		return "", errors.Wrapf(err, "credentials endpoint with output: %s", output)
+		return "", errors.Wrap(err, "error after retrying")
 	}
 
 	return output, nil
@@ -364,6 +380,7 @@ func put(url string, json string) (string, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	client.Timeout = 90 * time.Second
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", errors.Wrap(err, "client http client")
