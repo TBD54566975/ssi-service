@@ -56,6 +56,9 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 		middleware.Metrics(),
 		middleware.Panics(),
 	}
+	if config.Server.EnableAllowAllCORS {
+		middlewares = append(middlewares, middleware.Cors())
+	}
 	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares...)
 	ssi, err := service.InstantiateSSIService(config.Services)
 	if err != nil {
