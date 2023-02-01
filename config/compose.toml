@@ -20,6 +20,7 @@ log_location = "logs"
 log_level = "info"
 
 enable_schema_caching = true
+enable_allow_all_cors = true
 
 # Storage Configuration
 [services]
