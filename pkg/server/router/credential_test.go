@@ -8,10 +8,12 @@ import (
 	"time"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/credential/status"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/goccy/go-json"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -308,6 +310,116 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEqual(tt, credStatusMapThree["statusListCredential"], credStatusMap["statusListCredential"])
 	})
 
+	t.Run("Credential Status List Test No Schemas", func(tt *testing.T) {
+		bolt := setupTestDB(tt)
+		assert.NotNil(tt, bolt)
+
+		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, credService)
+
+		// check type and status
+		assert.Equal(tt, framework.Credential, credService.Type())
+		assert.Equal(tt, framework.StatusReady, credService.Status().Status)
+
+		// create a did
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		issuer := issuerDID.DID.ID
+		subject := "did:test:345"
+
+		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+			Issuer:  issuer,
+			Subject: subject,
+			Data: map[string]any{
+				"email": "Satoshi@Nakamoto.btc",
+			},
+			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Revocable: true,
+		})
+
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCred)
+		assert.NotEmpty(tt, createdCred.CredentialJWT)
+
+		credStatusMap, ok := createdCred.Credential.CredentialStatus.(map[string]any)
+		assert.True(tt, ok)
+
+		assert.Contains(tt, credStatusMap["id"], fmt.Sprintf("v1/credentials/%s/status", createdCred.ID))
+		assert.Contains(tt, credStatusMap["statusListCredential"], "v1/credentials/status")
+		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
+
+		createdCredTwo, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+			Issuer:  issuer,
+			Subject: subject,
+			Data: map[string]any{
+				"email": "Satoshi2@Nakamoto2.btc",
+			},
+			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Revocable: true,
+		})
+
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCredTwo)
+		assert.NotEmpty(tt, createdCredTwo.CredentialJWT)
+
+		credStatusMapTwo, ok := createdCredTwo.Credential.CredentialStatus.(map[string]any)
+		assert.True(tt, ok)
+
+		assert.Contains(tt, credStatusMapTwo["id"], fmt.Sprintf("v1/credentials/%s/status", createdCredTwo.ID))
+		assert.Contains(tt, credStatusMapTwo["statusListCredential"], "v1/credentials/status")
+		assert.NotEmpty(tt, credStatusMapTwo["statusListIndex"])
+
+		// Cred with same <issuer, schema> pair share the same statusListCredential
+		assert.Equal(tt, credStatusMapTwo["statusListCredential"], credStatusMap["statusListCredential"])
+
+		emailSchema := map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"email": map[string]any{
+					"type": "string",
+				},
+			},
+			"required":             []any{"email"},
+			"additionalProperties": false,
+		}
+
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
+
+		createdCredThree, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+			Issuer:     issuer,
+			Subject:    subject,
+			JSONSchema: createdSchema.ID,
+			Data: map[string]any{
+				"email": "Satoshi2@Nakamoto2.btc",
+			},
+			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Revocable: true,
+		})
+
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCredThree)
+		assert.NotEmpty(tt, createdCredThree.CredentialJWT)
+
+		credStatusMapThree, ok := createdCredThree.Credential.CredentialStatus.(map[string]any)
+		assert.True(tt, ok)
+
+		assert.Contains(tt, credStatusMapThree["id"], fmt.Sprintf("v1/credentials/%s/status", createdCredThree.ID))
+		assert.Contains(tt, credStatusMapThree["statusListCredential"], "v1/credentials/status")
+		assert.NotEmpty(tt, credStatusMapThree["statusListIndex"])
+
+		// Cred with different <issuer, schema> pair have different statusListCredential
+		assert.NotEqual(tt, credStatusMapThree["statusListCredential"], credStatusMap["statusListCredential"])
+	})
+
 	t.Run("Credential Status List Test Update Revoked Status", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotNil(tt, bolt)
@@ -363,23 +475,27 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, createdCred)
 		assert.NotEmpty(tt, createdCred.CredentialJWT)
 
-		credStatusMap, ok := createdCred.Credential.CredentialStatus.(map[string]any)
-		assert.True(tt, ok)
+		statusBytes, err := json.Marshal(createdCred.Credential.CredentialStatus)
+		assert.NoError(tt, err)
 
-		assert.Contains(tt, credStatusMap["id"], fmt.Sprintf("http://localhost:1234/v1/credentials/%s/status", createdCred.ID))
-		assert.Contains(tt, credStatusMap["statusListCredential"], "http://localhost:1234/v1/credentials/status")
-		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
+		var statusEntry status.StatusList2021Entry
+		err = json.Unmarshal(statusBytes, &statusEntry)
+		assert.NoError(tt, err)
+
+		assert.Contains(tt, statusEntry.ID, fmt.Sprintf("http://localhost:1234/v1/credentials/%s/status", createdCred.ID))
+		assert.Contains(tt, statusEntry.StatusListCredential, "http://localhost:1234/v1/credentials/status")
+		assert.NotEmpty(tt, statusEntry.StatusListIndex)
 
 		credStatus, err := credService.GetCredentialStatus(context.Background(), credential.GetCredentialStatusRequest{ID: createdCred.ID})
 		assert.NoError(tt, err)
 		assert.Equal(tt, credStatus.Revoked, false)
 
-		credStatusListStr := credStatusMap["statusListCredential"].(string)
+		credStatusListStr := statusEntry.StatusListCredential
 
 		credStatusListID := strings.Split(credStatusListStr, "/")[len(strings.Split(credStatusListStr, "/"))-1]
 		credStatusList, err := credService.GetCredentialStatusList(context.Background(), credential.GetCredentialStatusListRequest{ID: credStatusListID})
 		assert.NoError(tt, err)
-		assert.Equal(tt, credStatusList.Credential.ID, credStatusMap["statusListCredential"].(string))
+		assert.Equal(tt, credStatusList.Credential.ID, statusEntry.StatusListCredential)
 
 		credentialSubject := credStatusList.Container.Credential.CredentialSubject
 		assert.NotEmpty(tt, credentialSubject)
@@ -387,13 +503,23 @@ func TestCredentialRouter(t *testing.T) {
 		encodedList := credentialSubject["encodedList"]
 		assert.NotEmpty(tt, encodedList)
 
+		// Validate the StatusListIndex in not flipped in the credStatusList
+		valid, err := status.ValidateCredentialInStatusList(*createdCred.Credential, *credStatusList.Credential)
+		assert.NoError(tt, err)
+		assert.False(tt, valid)
+
 		updatedStatus, err := credService.UpdateCredentialStatus(context.Background(), credential.UpdateCredentialStatusRequest{ID: createdCred.ID, Revoked: true})
 		assert.NoError(tt, err)
 		assert.Equal(tt, updatedStatus.Revoked, true)
 
 		credStatusListAfterRevoke, err := credService.GetCredentialStatusList(context.Background(), credential.GetCredentialStatusListRequest{ID: credStatusListID})
 		assert.NoError(tt, err)
-		assert.Equal(tt, credStatusListAfterRevoke.Credential.ID, credStatusMap["statusListCredential"].(string))
+		assert.Equal(tt, credStatusListAfterRevoke.Credential.ID, statusEntry.StatusListCredential)
+
+		// Validate the StatusListIndex in flipped in the credStatusList
+		valid, err = status.ValidateCredentialInStatusList(*createdCred.Credential, *credStatusListAfterRevoke.Credential)
+		assert.NoError(tt, err)
+		assert.True(tt, valid)
 
 		credentialSubjectAfterRevoke := credStatusListAfterRevoke.Container.Credential.CredentialSubject
 		assert.NotEmpty(tt, credentialSubjectAfterRevoke)

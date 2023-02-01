@@ -265,11 +265,13 @@ func getOrCreateStatusListCredential(ctx context.Context, s Service, issuerID st
 
 		statusListCredential = generatedStatusListCredential
 
-		credSchema := credential.CredentialSchema{
-			ID:   schemaID,
-			Type: SchemaLDType,
+		if schemaID != "" {
+			credSchema := credential.CredentialSchema{
+				ID:   schemaID,
+				Type: SchemaLDType,
+			}
+			statusListCredential.CredentialSchema = &credSchema
 		}
-		statusListCredential.CredentialSchema = &credSchema
 
 		statusListCredJWT, err := s.signCredentialJWT(ctx, issuerID, *statusListCredential)
 		if err != nil {
