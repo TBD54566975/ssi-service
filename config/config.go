@@ -47,6 +47,7 @@ type ServerConfig struct {
 	LogLocation         string        `toml:"log_location" conf:"default:log"`
 	LogLevel            string        `toml:"log_level" conf:"default:debug"`
 	EnableSchemaCaching bool          `toml:"enable_schema_caching" conf:"default:true"`
+	EnableAllowAllCORS  bool          `toml:"enable_allow_all_cors" conf:"default:false"`
 }
 
 type IssuingServiceConfig struct {
