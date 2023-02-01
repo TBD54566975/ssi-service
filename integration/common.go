@@ -353,16 +353,9 @@ func getJSONElement(jsonString string, jsonPath string) (string, error) {
 func get(url string) (string, error) {
 	logrus.Println(fmt.Sprintf("\nPerforming GET request to:  %s\n", url))
 
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	resp, err := http.Get(url) // #nosec: testing only.
 	if err != nil {
-		return "", errors.Wrap(err, "building http req")
-	}
-
-	req.Header.Set("Origin", "http://foo.com")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", errors.Wrap(err, "client http client")
+		return "", errors.Wrapf(err, "getting url: %s", url)
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -387,7 +380,6 @@ func put(url string, json string) (string, error) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Origin", "http://foo.com")
 	client.Timeout = 90 * time.Second
 	resp, err := client.Do(req)
 	if err != nil {
