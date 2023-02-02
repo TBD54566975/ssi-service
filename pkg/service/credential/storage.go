@@ -80,26 +80,42 @@ type StatusListIndex struct {
 
 func NewCredentialStorage(db storage.ServiceStorage) (*Storage, error) {
 	if db == nil {
-		return nil, errors.New("bolt db reference is nil")
+		return nil, util.LoggingNewError("bolt db reference is nil")
 	}
 
-	randUniqueList := randomUniqueNum(bitStringLength)
-	uniqueNumBytes, err := json.Marshal(randUniqueList)
+	listIndexKeyExists, err := db.Exists(context.Background(), statusListIndexNamespace, currentListIndexKey)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not marshal random unique numbers")
+		return nil, util.LoggingErrorMsg(err, "exists for currentListIndexKey")
 	}
 
-	if err := db.Write(context.Background(), statusListIndexNamespace, statusListIndexesKey, uniqueNumBytes); err != nil {
-		return nil, util.LoggingErrorMsg(err, "problem writing status list indexes to db")
-	}
-
-	statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: 0})
+	statusListIndexesKeyExists, err := db.Exists(context.Background(), statusListIndexNamespace, statusListIndexesKey)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
+		return nil, util.LoggingErrorMsg(err, "exists for statusListIndexesKey")
 	}
 
-	if err := db.Write(context.Background(), statusListIndexNamespace, currentListIndexKey, statusListIndexBytes); err != nil {
-		return nil, util.LoggingErrorMsg(err, "problem writing current list index to db")
+	if listIndexKeyExists != statusListIndexesKeyExists {
+		return nil, util.LoggingNewError("list index and status list index not in the same state")
+	}
+
+	if !listIndexKeyExists && !statusListIndexesKeyExists {
+		randUniqueList := randomUniqueNum(bitStringLength)
+		uniqueNumBytes, err := json.Marshal(randUniqueList)
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not marshal random unique numbers")
+		}
+
+		if err := db.Write(context.Background(), statusListIndexNamespace, statusListIndexesKey, uniqueNumBytes); err != nil {
+			return nil, util.LoggingErrorMsg(err, "problem writing status list indexes to db")
+		}
+
+		statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: 0})
+		if err != nil {
+			return nil, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
+		}
+
+		if err := db.Write(context.Background(), statusListIndexNamespace, currentListIndexKey, statusListIndexBytes); err != nil {
+			return nil, util.LoggingErrorMsg(err, "problem writing current list index to db")
+		}
 	}
 
 	return &Storage{db: db}, nil
@@ -177,12 +193,16 @@ func (cs *Storage) IncrementStatusListIndex(ctx context.Context) error {
 func (cs *Storage) GetIncrementStatusListIndexWriteContext(ctx context.Context) (*WriteContext, error) {
 	gotCurrentListIndexBytes, err := cs.db.Read(ctx, statusListIndexNamespace, currentListIndexKey)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get list index")
+		return nil, util.LoggingErrorMsg(err, "could not get list index")
 	}
 
 	var statusListIndex StatusListIndex
 	if err = json.Unmarshal(gotCurrentListIndexBytes, &statusListIndex); err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not unmarshal unique numbers")
+		return nil, util.LoggingErrorMsg(err, "could not unmarshal unique numbers")
+	}
+
+	if statusListIndex.Index >= bitStringLength-1 {
+		return nil, util.LoggingErrorMsg(err, "no more indexes available for status list index")
 	}
 
 	statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: statusListIndex.Index + 1})

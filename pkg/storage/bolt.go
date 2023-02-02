@@ -77,6 +77,27 @@ type boltTx struct {
 	b *BoltDB
 }
 
+func (b *BoltDB) Exists(ctx context.Context, namespace, key string) (bool, error) {
+	exists := true
+	var result []byte
+
+	err := b.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(namespace))
+		if bucket == nil {
+			exists = false
+			return nil
+		}
+		result = bucket.Get([]byte(key))
+		return nil
+	})
+
+	if result == nil {
+		exists = false
+	}
+
+	return exists, err
+}
+
 // TODO: Implement to be transactional
 func (btx *boltTx) Write(ctx context.Context, namespace, key string, value []byte) error {
 	return btx.b.Write(ctx, namespace, key, value)

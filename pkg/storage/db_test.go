@@ -199,6 +199,37 @@ func TestDBEmptyNamespace(t *testing.T) {
 	}
 }
 
+func TestDBExists(t *testing.T) {
+	for _, dbImpl := range getDBImplementations(t) {
+		db := dbImpl
+
+		namespace := "exist"
+		key := "keytest"
+
+		exists, err := db.Exists(context.Background(), namespace, key)
+		assert.NoError(t, err)
+		assert.False(t, exists)
+
+		err = db.Write(context.Background(), namespace, "dnedne", nil)
+		assert.NoError(t, err)
+
+		exists, err = db.Exists(context.Background(), namespace, key)
+		assert.NoError(t, err)
+		assert.False(t, exists)
+
+		err = db.Write(context.Background(), namespace, key, nil)
+		assert.NoError(t, err)
+
+		dummyData := []byte("dummy")
+		err = db.Write(context.Background(), namespace, key, dummyData)
+		assert.NoError(t, err)
+
+		exists, err = db.Exists(context.Background(), namespace, key)
+		assert.NoError(t, err)
+		assert.True(t, exists)
+	}
+}
+
 type testStruct struct {
 	Status int    `json:"status"`
 	Reason string `json:"reason"`
