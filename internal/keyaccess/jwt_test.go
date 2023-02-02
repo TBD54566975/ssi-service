@@ -22,10 +22,9 @@ func TestJWKKeyAccessForEachKeyType(t *testing.T) {
 		{
 			kt: crypto.Ed25519,
 		},
-		// TODO: Updated SDK giving error: invalid elliptic curve {secp256k1}
-		// {
-		//	kt: crypto.SECP256k1,
-		// },
+		{
+			kt: crypto.SECP256k1,
+		},
 		{
 			kt: crypto.P256,
 		},
