@@ -122,7 +122,7 @@ func (b *RedisDB) Exists(ctx context.Context, namespace, key string) (bool, erro
 	nameSpaceKey := getRedisKey(namespace, key)
 	existsInt, err := b.db.Exists(ctx, nameSpaceKey).Result()
 	if err != nil {
-		return false, errors.Wrap(err, "checking if exits")
+		return false, errors.Wrap(err, "checking if exists")
 	}
 
 	exists := existsInt != 0

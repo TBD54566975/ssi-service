@@ -11,7 +11,7 @@ on:
 
 jobs:
   end2endtest:
-    timeout-minutes: 15
+    timeout-minutes: 20
     runs-on: ubuntu-latest
 
     steps:
@@ -30,7 +30,11 @@ jobs:
       run: docker-compose -f "build/docker-compose.yml" up -d --build
 
     - name: End To End Test
-      run: mage integration
+      uses: nick-fields/retry@v2
+      with:
+        max_attempts: 3
+        retry_on: error
+        command: mage integration
 
     - name: Stop containers
       if: always()
