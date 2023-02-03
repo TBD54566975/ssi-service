@@ -275,4 +275,72 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, credStatusMapTwo["statusListIndex"])
 
 	})
+
+	t.Run("Credential Status List Test On Create", func(tt *testing.T) {
+		statusListIndexNamespace := "status-list-index"
+
+		statusListIndexesKey := "status-list-indexes"
+		currentListIndexKey := "current-list-index"
+
+		bolt := setupTestDB(tt)
+		assert.NotNil(tt, bolt)
+
+		value, err := bolt.Read(context.Background(), statusListIndexNamespace, currentListIndexKey)
+		assert.NoError(tt, err)
+		assert.Empty(tt, value)
+
+		value, err = bolt.Read(context.Background(), statusListIndexNamespace, statusListIndexesKey)
+		assert.NoError(tt, err)
+		assert.Empty(tt, value)
+
+		exists, err := bolt.Exists(context.Background(), statusListIndexNamespace, currentListIndexKey)
+		assert.NoError(tt, err)
+		assert.False(tt, exists)
+
+		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, statusListIndexesKey)
+		assert.NoError(tt, err)
+		assert.False(tt, exists)
+
+		// Create the storage
+		credStorage, err := credential.NewCredentialStorage(bolt)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, credStorage)
+
+		value, err = bolt.Read(context.Background(), statusListIndexNamespace, currentListIndexKey)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, value)
+
+		value, err = bolt.Read(context.Background(), statusListIndexNamespace, statusListIndexesKey)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, value)
+
+		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, currentListIndexKey)
+		assert.NoError(tt, err)
+		assert.True(tt, exists)
+
+		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, statusListIndexesKey)
+		assert.NoError(tt, err)
+		assert.True(tt, exists)
+
+		// "Restart" the service
+		credStorage, err = credential.NewCredentialStorage(bolt)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, credStorage)
+
+		value, err = bolt.Read(context.Background(), statusListIndexNamespace, currentListIndexKey)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, value)
+
+		value, err = bolt.Read(context.Background(), statusListIndexNamespace, statusListIndexesKey)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, value)
+
+		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, currentListIndexKey)
+		assert.NoError(tt, err)
+		assert.True(tt, exists)
+
+		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, statusListIndexesKey)
+		assert.NoError(tt, err)
+		assert.True(tt, exists)
+	})
 }

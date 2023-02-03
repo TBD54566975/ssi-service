@@ -199,34 +199,69 @@ func TestDBEmptyNamespace(t *testing.T) {
 	}
 }
 
+func TestDBExistsNoNamespaceKey(t *testing.T) {
+	for _, dbImpl := range getDBImplementations(t) {
+		db := dbImpl
+
+		exists, err := db.Exists(context.Background(), "dnenamespace", "dnekey")
+		assert.NoError(t, err)
+		assert.False(t, exists)
+	}
+}
+
+func TestDBExistsNoKey(t *testing.T) {
+	for _, dbImpl := range getDBImplementations(t) {
+		db := dbImpl
+
+		namespace := "exists"
+
+		err := db.Write(context.Background(), namespace, "dnedne", nil)
+		assert.NoError(t, err)
+
+		exists, err := db.Exists(context.Background(), namespace, "otherdnekey")
+		assert.NoError(t, err)
+		assert.False(t, exists)
+
+	}
+}
+
+func TestDBExistsNilValue(t *testing.T) {
+	for _, dbImpl := range getDBImplementations(t) {
+		db := dbImpl
+
+		namespace := "exists"
+		key := "key1"
+
+		err := db.Write(context.Background(), namespace, key, nil)
+		assert.NoError(t, err)
+
+		exists, err := db.Exists(context.Background(), namespace, key)
+		assert.NoError(t, err)
+		assert.True(t, exists)
+	}
+}
+
 func TestDBExists(t *testing.T) {
 	for _, dbImpl := range getDBImplementations(t) {
 		db := dbImpl
 
-		namespace := "exist"
-		key := "keytest"
+		namespace := "exists"
+		key := "key1"
+
+		dummyData := []byte("dummy")
+		err := db.Write(context.Background(), namespace, key, dummyData)
+		assert.NoError(t, err)
 
 		exists, err := db.Exists(context.Background(), namespace, key)
 		assert.NoError(t, err)
-		assert.False(t, exists)
-
-		err = db.Write(context.Background(), namespace, "dnedne", nil)
-		assert.NoError(t, err)
-
-		exists, err = db.Exists(context.Background(), namespace, key)
-		assert.NoError(t, err)
-		assert.False(t, exists)
-
-		err = db.Write(context.Background(), namespace, key, nil)
-		assert.NoError(t, err)
-
-		dummyData := []byte("dummy")
-		err = db.Write(context.Background(), namespace, key, dummyData)
-		assert.NoError(t, err)
-
-		exists, err = db.Exists(context.Background(), namespace, key)
-		assert.NoError(t, err)
 		assert.True(t, exists)
+
+		err = db.Delete(context.Background(), namespace, key)
+		assert.NoError(t, err)
+
+		exists, err = db.Exists(context.Background(), namespace, key)
+		assert.NoError(t, err)
+		assert.False(t, exists)
 	}
 }
 
