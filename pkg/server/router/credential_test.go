@@ -192,7 +192,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), fmt.Sprintf("credential not found with id: %s", cred.ID))
 	})
-	
+
 	t.Run("Credential Status List Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotNil(tt, bolt)
