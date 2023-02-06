@@ -118,6 +118,17 @@ func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFu
 	return finalOutput, nil
 }
 
+func (b *RedisDB) Exists(ctx context.Context, namespace, key string) (bool, error) {
+	nameSpaceKey := getRedisKey(namespace, key)
+	existsInt, err := b.db.Exists(ctx, nameSpaceKey).Result()
+	if err != nil {
+		return false, errors.Wrap(err, "checking if exists")
+	}
+
+	exists := existsInt != 0
+	return exists, nil
+}
+
 func (b *RedisDB) Write(ctx context.Context, namespace, key string, value []byte) error {
 	nameSpaceKey := getRedisKey(namespace, key)
 	return b.db.Set(ctx, nameSpaceKey, value, 0).Err()

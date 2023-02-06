@@ -38,6 +38,7 @@ type ServiceStorage interface {
 	Write(ctx context.Context, namespace, key string, value []byte) error
 	WriteMany(ctx context.Context, namespace, key []string, value [][]byte) error
 	Read(ctx context.Context, namespace, key string) ([]byte, error)
+	Exists(ctx context.Context, namespace, key string) (bool, error)
 	ReadAll(ctx context.Context, namespace string) (map[string][]byte, error)
 	ReadPrefix(ctx context.Context, namespace, prefix string) (map[string][]byte, error)
 	ReadAllKeys(ctx context.Context, namespace string) ([]string, error)
