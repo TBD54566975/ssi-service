@@ -199,7 +199,7 @@ func TestDBEmptyNamespace(t *testing.T) {
 	}
 }
 
-func TestDBExistsNoNamespaceKey(t *testing.T) {
+func TestDBExists_FalseWhenNoNamespaceKey(t *testing.T) {
 	for _, dbImpl := range getDBImplementations(t) {
 		db := dbImpl
 
@@ -209,7 +209,7 @@ func TestDBExistsNoNamespaceKey(t *testing.T) {
 	}
 }
 
-func TestDBExistsNoKey(t *testing.T) {
+func TestDBExists_FalseWhenKeyIsAbsent(t *testing.T) {
 	for _, dbImpl := range getDBImplementations(t) {
 		db := dbImpl
 
@@ -221,11 +221,10 @@ func TestDBExistsNoKey(t *testing.T) {
 		exists, err := db.Exists(context.Background(), namespace, "otherdnekey")
 		assert.NoError(t, err)
 		assert.False(t, exists)
-
 	}
 }
 
-func TestDBExistsNilValue(t *testing.T) {
+func TestDBExists_TrueWhenNilKey(t *testing.T) {
 	for _, dbImpl := range getDBImplementations(t) {
 		db := dbImpl
 
@@ -241,7 +240,7 @@ func TestDBExistsNilValue(t *testing.T) {
 	}
 }
 
-func TestDBExists(t *testing.T) {
+func TestDBExists_FalseAfterDeletingKey(t *testing.T) {
 	for _, dbImpl := range getDBImplementations(t) {
 		db := dbImpl
 

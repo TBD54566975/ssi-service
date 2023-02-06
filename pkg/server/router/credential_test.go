@@ -251,6 +251,69 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Contains(tt, credStatusMap["id"], fmt.Sprintf("v1/credentials/%s/status", createdCred.ID))
 		assert.Contains(tt, credStatusMap["statusListCredential"], "v1/credentials/status")
 		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
+	})
+
+	t.Run("Two Revocable Credentials Share Status List Credential", func(tt *testing.T) {
+		bolt := setupTestDB(tt)
+		assert.NotNil(tt, bolt)
+
+		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, credService)
+
+		// check type and status
+		assert.Equal(tt, framework.Credential, credService.Type())
+		assert.Equal(tt, framework.StatusReady, credService.Status().Status)
+
+		// create a did
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		// create a schema
+		emailSchema := map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"email": map[string]any{
+					"type": "string",
+				},
+			},
+			"required":             []any{"email"},
+			"additionalProperties": false,
+		}
+
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
+
+		issuer := issuerDID.DID.ID
+		subject := "did:test:345"
+
+		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+			Issuer:     issuer,
+			Subject:    subject,
+			JSONSchema: createdSchema.ID,
+			Data: map[string]any{
+				"email": "Satoshi@Nakamoto.btc",
+			},
+			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Revocable: true,
+		})
+
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCred)
+		assert.NotEmpty(tt, createdCred.CredentialJWT)
+
+		credStatusMap, ok := createdCred.Credential.CredentialStatus.(map[string]any)
+		assert.True(tt, ok)
+
+		assert.Contains(tt, credStatusMap["id"], fmt.Sprintf("v1/credentials/%s/status", createdCred.ID))
+		assert.Contains(tt, credStatusMap["statusListCredential"], "v1/credentials/status")
+		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
 
 		createdCredTwo, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:     issuer,
@@ -274,9 +337,10 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Contains(tt, credStatusMapTwo["statusListCredential"], "v1/credentials/status")
 		assert.NotEmpty(tt, credStatusMapTwo["statusListIndex"])
 
+		// assert.Equal(tt, credStatusMap["statusListCredential"], credStatusMapTwo["statusListCredential"])
 	})
 
-	t.Run("Credential Status List Test On Create", func(tt *testing.T) {
+	t.Run("Existing Status List Indexes Used After Restart", func(tt *testing.T) {
 		statusListIndexNamespace := "status-list-index"
 
 		statusListIndexesKey := "status-list-indexes"
@@ -285,6 +349,7 @@ func TestCredentialRouter(t *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotNil(tt, bolt)
 
+		// Make sure there is nothing in DB before we create storage
 		value, err := bolt.Read(context.Background(), statusListIndexNamespace, currentListIndexKey)
 		assert.NoError(tt, err)
 		assert.Empty(tt, value)
@@ -306,14 +371,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, credStorage)
 
-		value, err = bolt.Read(context.Background(), statusListIndexNamespace, currentListIndexKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, value)
-
-		value, err = bolt.Read(context.Background(), statusListIndexNamespace, statusListIndexesKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, value)
-
+		// Make sure that values are there
 		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, currentListIndexKey)
 		assert.NoError(tt, err)
 		assert.True(tt, exists)
@@ -321,20 +379,20 @@ func TestCredentialRouter(t *testing.T) {
 		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, statusListIndexesKey)
 		assert.NoError(tt, err)
 		assert.True(tt, exists)
+
+		value, err = bolt.Read(context.Background(), statusListIndexNamespace, currentListIndexKey)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, value)
+
+		statusListIndexes, err := bolt.Read(context.Background(), statusListIndexNamespace, statusListIndexesKey)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, value)
 
 		// "Restart" the service
 		credStorage, err = credential.NewCredentialStorage(bolt)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, credStorage)
 
-		value, err = bolt.Read(context.Background(), statusListIndexNamespace, currentListIndexKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, value)
-
-		value, err = bolt.Read(context.Background(), statusListIndexNamespace, statusListIndexesKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, value)
-
 		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, currentListIndexKey)
 		assert.NoError(tt, err)
 		assert.True(tt, exists)
@@ -342,5 +400,16 @@ func TestCredentialRouter(t *testing.T) {
 		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, statusListIndexesKey)
 		assert.NoError(tt, err)
 		assert.True(tt, exists)
+
+		value, err = bolt.Read(context.Background(), statusListIndexNamespace, currentListIndexKey)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, value)
+
+		statusListIndexesAfterRestart, err := bolt.Read(context.Background(), statusListIndexNamespace, statusListIndexesKey)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, statusListIndexesAfterRestart)
+
+		assert.Equal(tt, statusListIndexes, statusListIndexesAfterRestart)
+
 	})
 }
