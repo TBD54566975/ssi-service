@@ -561,7 +561,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, credStorage)
 
-		// Make sure that values are there
+		// Make sure that values are there after we create a new credential storage
 		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, currentListIndexKey)
 		assert.NoError(tt, err)
 		assert.True(tt, exists)
