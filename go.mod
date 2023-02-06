@@ -17,7 +17,7 @@ require (
 	github.com/google/cel-go v0.13.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
-	github.com/joho/godotenv v1.4.0
+	github.com/joho/godotenv v1.5.1
 	github.com/lestrrat-go/jwx v1.2.25
 	github.com/magefile/mage v1.14.0
 	github.com/mr-tron/base58 v1.2.0
