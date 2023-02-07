@@ -602,7 +602,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Equal(tt, statusListIndexes, statusListIndexesAfterRestart)
 	})
 
-	t.Run("Test Create Suspendable Credential", func(tt *testing.T) {
+	t.Run("Create Suspendable Credential", func(tt *testing.T) {
 		issuer, schema, credService := createCredServicePrereqs(tt)
 		subject := "did:test:345"
 
@@ -656,7 +656,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.False(tt, valid)
 	})
 
-	t.Run("Test Update Suspendable Credential", func(tt *testing.T) {
+	t.Run("Update Suspendable Credential To Suspended", func(tt *testing.T) {
 		issuer, schema, credService := createCredServicePrereqs(tt)
 		subject := "did:test:345"
 
