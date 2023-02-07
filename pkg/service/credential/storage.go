@@ -8,6 +8,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
+	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -36,6 +37,7 @@ type StoredCredential struct {
 	Schema       string `json:"schema"`
 	IssuanceDate string `json:"issuanceDate"`
 	Revoked      bool   `json:"revoked"`
+	Suspended    bool   `json:"suspended"`
 }
 
 type WriteContext struct {
@@ -97,7 +99,9 @@ func NewCredentialStorage(db storage.ServiceStorage) (*Storage, error) {
 		return nil, util.LoggingNewError("list index and status list index not in the same state")
 	}
 
-	if !listIndexKeyExists && !statusListIndexesKeyExists {
+	indexKeysDontExist := !listIndexKeyExists && !statusListIndexesKeyExists
+
+	if indexKeysDontExist {
 		randUniqueList := randomUniqueNum(bitStringLength)
 		uniqueNumBytes, err := json.Marshal(randUniqueList)
 		if err != nil {
@@ -223,16 +227,55 @@ func (cs *Storage) StoreCredential(ctx context.Context, request StoreCredentialR
 	return cs.storeCredential(ctx, request, credentialNamespace)
 }
 
-func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, request StoreCredentialRequest, tx storage.Tx) error {
-	wc, err := cs.getStoreCredentialWriteContext(request, statusListCredentialNamespace)
-	if err != nil {
-		return errors.Wrap(err, "could not get stored credential write context")
+func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, request StoreCredentialRequest, statusPurpose statussdk.StatusPurpose, tx storage.Tx) error {
+	if !request.IsValid() {
+		return util.LoggingNewError("store request request is not valid")
 	}
-	return tx.Write(ctx, wc.namespace, wc.key, wc.value)
+
+	// transform the credential into its denormalized form for storage
+	storedCredential, err := buildStoredCredential(request)
+	if err != nil {
+		return errors.Wrap(err, "could not build stored credential")
+	}
+
+	storedCredBytes, err := json.Marshal(storedCredential)
+	if err != nil {
+		return util.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.CredentialID)
+	}
+
+	schemaID := ""
+	if request.Credential.CredentialSchema != nil {
+		schemaID = request.Credential.CredentialSchema.ID
+	}
+
+	statusListCredentialKey := createStatusListCredentialPrefixKey(storedCredential.CredentialID, request.Credential.Issuer.(string), request.Credential.CredentialSubject.GetID(), schemaID, string(statusPurpose))
+	return tx.Write(ctx, statusListCredentialNamespace, statusListCredentialKey, storedCredBytes)
 }
 
-func (cs *Storage) StoreStatusListCredential(ctx context.Context, request StoreCredentialRequest) error {
-	return cs.storeCredential(ctx, request, statusListCredentialNamespace)
+func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*StoredCredential, error) {
+	prefixValues, err := cs.db.ReadPrefix(ctx, statusListCredentialNamespace, id)
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not get credential from storage: %s", id)
+	}
+	if len(prefixValues) > 1 {
+		return nil, util.LoggingNewErrorf("could not get credential from storage; multiple prefix values matched credential id: %s", id)
+	}
+
+	// since we know the map now only has a single value, we break after the first element
+	var credBytes []byte
+	for _, v := range prefixValues {
+		credBytes = v
+		break
+	}
+	if len(credBytes) == 0 {
+		return nil, util.LoggingNewErrorf("could not get credential from storage %s with id: %s", credentialNotFoundErrMsg, id)
+	}
+
+	var stored StoredCredential
+	if err = json.Unmarshal(credBytes, &stored); err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored credential: %s", id)
+	}
+	return &stored, nil
 }
 
 func (cs *Storage) storeCredential(ctx context.Context, request StoreCredentialRequest, namespace string) error {
@@ -247,10 +290,6 @@ func (cs *Storage) storeCredential(ctx context.Context, request StoreCredentialR
 
 func (cs *Storage) GetStoreCredentialWriteContext(request StoreCredentialRequest) (*WriteContext, error) {
 	return cs.getStoreCredentialWriteContext(request, credentialNamespace)
-}
-
-func (cs *Storage) GetStoreStatusListCredentialWriteContext(request StoreCredentialRequest) (*WriteContext, error) {
-	return cs.getStoreCredentialWriteContext(request, statusListCredentialNamespace)
 }
 
 func (cs *Storage) getStoreCredentialWriteContext(request StoreCredentialRequest, namespace string) (*WriteContext, error) {
@@ -312,15 +351,12 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 		Schema:        schema,
 		IssuanceDate:  cred.IssuanceDate,
 		Revoked:       request.Revoked,
+		Suspended:     request.Suspended,
 	}, nil
 }
 
 func (cs *Storage) GetCredential(ctx context.Context, id string) (*StoredCredential, error) {
 	return cs.getCredential(ctx, id, credentialNamespace)
-}
-
-func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*StoredCredential, error) {
-	return cs.getCredential(ctx, id, statusListCredentialNamespace)
 }
 
 func (cs *Storage) getCredential(ctx context.Context, id string, namespace string) (*StoredCredential, error) {
@@ -489,8 +525,46 @@ func (cs *Storage) GetCredentialsByIssuerAndSchema(ctx context.Context, issuer s
 	return cs.getCredentialsByIssuerAndSchema(ctx, issuer, schema, credentialNamespace)
 }
 
-func (cs *Storage) GetStatusListCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string) ([]StoredCredential, error) {
-	return cs.getCredentialsByIssuerAndSchema(ctx, issuer, schema, statusListCredentialNamespace)
+func (cs *Storage) GetStatusListCredentialsByIssuerAndSchema(ctx context.Context, statusPurpose statussdk.StatusPurpose, issuer string, schema string) ([]StoredCredential, error) {
+	keys, err := cs.db.ReadAllKeys(ctx, statusListCredentialNamespace)
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
+	}
+
+	query := "sc:" + schema + "-sp:" + string(statusPurpose)
+	var issuerSchemaKeys []string
+	for _, k := range keys {
+		if strings.Contains(k, issuer) && strings.HasSuffix(k, query) {
+			issuerSchemaKeys = append(issuerSchemaKeys, k)
+		}
+	}
+
+	if len(issuerSchemaKeys) == 0 {
+		logrus.Warnf("no credentials found for issuer: %s and schema %s", util.SanitizeLog(issuer), util.SanitizeLog(schema))
+		return nil, nil
+	}
+
+	// now get each credential by key
+	var storedCreds []StoredCredential
+	for _, key := range issuerSchemaKeys {
+		credBytes, err := cs.db.Read(ctx, statusListCredentialNamespace, key)
+		if err != nil {
+			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
+		} else {
+			var cred StoredCredential
+			if err = json.Unmarshal(credBytes, &cred); err != nil {
+				logrus.WithError(err).Errorf("could not unmarshal credential with key: %s", key)
+			}
+
+			storedCreds = append(storedCreds, cred)
+		}
+	}
+
+	if len(storedCreds) == 0 {
+		logrus.Warnf("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
+	}
+
+	return storedCreds, nil
 }
 
 func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string, namespace string) ([]StoredCredential, error) {
@@ -582,6 +656,10 @@ func (cs *Storage) GetStatusListIndexesWriteKey() storage.WatchKey {
 // unique key for a credential
 func createPrefixKey(id, issuer, subject, schema string) string {
 	return strings.Join([]string{id, "is:" + issuer, "su:" + subject, "sc:" + schema}, "-")
+}
+
+func createStatusListCredentialPrefixKey(id, issuer, subject, schema, statusPurpose string) string {
+	return strings.Join([]string{id, "is:" + issuer, "su:" + subject, "sc:" + schema, "sp:" + statusPurpose}, "-")
 }
 
 func randomUniqueNum(count int) []int {

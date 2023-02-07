@@ -14,10 +14,11 @@ type CreateCredentialRequest struct {
 	// A context is optional. If not present, we'll apply default, required context values.
 	Context string `json:"context,omitempty"`
 	// A schema is optional. If present, we'll attempt to look it up and validate the data against it.
-	JSONSchema string         `json:"jsonSchema,omitempty"`
-	Data       map[string]any `json:"data,omitempty"`
-	Expiry     string         `json:"expiry,omitempty"`
-	Revocable  bool           `json:"revocable,omitempty"`
+	JSONSchema  string         `json:"jsonSchema,omitempty"`
+	Data        map[string]any `json:"data,omitempty"`
+	Expiry      string         `json:"expiry,omitempty"`
+	Revocable   bool           `json:"revocable,omitempty"`
+	Suspendable bool           `json:"revocable,omitempty"`
 	// TODO(gabe) support more capabilities like signature type, format, status, and more.
 }
 
@@ -60,16 +61,19 @@ type GetCredentialStatusRequest struct {
 }
 
 type GetCredentialStatusResponse struct {
-	Revoked bool `json:"revoked" validate:"required"`
+	Revoked   bool `json:"revoked" validate:"required"`
+	Suspended bool `json:"suspended" validate:"required"`
 }
 
 type UpdateCredentialStatusRequest struct {
-	ID      string `json:"id" validate:"required"`
-	Revoked bool   `json:"revoked" validate:"required"`
+	ID        string `json:"id" validate:"required"`
+	Revoked   bool   `json:"revoked" validate:"required"`
+	Suspended bool   `json:"suspended" validate:"required"`
 }
 
 type UpdateCredentialStatusResponse struct {
-	Revoked bool `json:"revoked" validate:"required"`
+	Revoked   bool `json:"revoked" validate:"required"`
+	Suspended bool `json:"suspended" validate:"required"`
 }
 
 type GetCredentialStatusListRequest struct {
