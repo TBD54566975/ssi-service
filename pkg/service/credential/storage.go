@@ -138,7 +138,7 @@ func (cs *Storage) GetNextStatusListRandomIndex(ctx context.Context) (int, error
 
 	var uniqueNums []int
 	if err = json.Unmarshal(gotUniqueNumBytes, &uniqueNums); err != nil {
-		return -1, util.LoggingErrorMsgf(err, "could not unmarshal unique numbers")
+		return -1, util.LoggingErrorMsgf(err, "unmarshalling unique numbers")
 	}
 
 	gotCurrentListIndexBytes, err := cs.db.Read(ctx, statusListIndexNamespace, currentListIndexKey)
@@ -148,7 +148,7 @@ func (cs *Storage) GetNextStatusListRandomIndex(ctx context.Context) (int, error
 
 	var statusListIndex StatusListIndex
 	if err = json.Unmarshal(gotCurrentListIndexBytes, &statusListIndex); err != nil {
-		return -1, util.LoggingErrorMsgf(err, "could not unmarshal unique numbers")
+		return -1, util.LoggingErrorMsgf(err, "unmarshalling unique numbers")
 	}
 
 	return uniqueNums[statusListIndex.Index], nil
@@ -202,7 +202,7 @@ func (cs *Storage) GetIncrementStatusListIndexWriteContext(ctx context.Context) 
 
 	var statusListIndex StatusListIndex
 	if err = json.Unmarshal(gotCurrentListIndexBytes, &statusListIndex); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not unmarshal unique numbers")
+		return nil, util.LoggingErrorMsg(err, "unmarshalling unique numbers")
 	}
 
 	if statusListIndex.Index >= bitStringLength-1 {
@@ -273,7 +273,7 @@ func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*Sto
 
 	var stored StoredCredential
 	if err = json.Unmarshal(credBytes, &stored); err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored credential: %s", id)
+		return nil, util.LoggingErrorMsgf(err, "unmarshalling stored credential: %s", id)
 	}
 	return &stored, nil
 }
@@ -381,7 +381,7 @@ func (cs *Storage) getCredential(ctx context.Context, id string, namespace strin
 
 	var stored StoredCredential
 	if err = json.Unmarshal(credBytes, &stored); err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored credential: %s", id)
+		return nil, util.LoggingErrorMsgf(err, "unmarshalling stored credential: %s", id)
 	}
 	return &stored, nil
 }
@@ -419,7 +419,7 @@ func (cs *Storage) GetCredentialsByIssuer(ctx context.Context, issuer string) ([
 		} else {
 			var cred StoredCredential
 			if err = json.Unmarshal(credBytes, &cred); err != nil {
-				logrus.WithError(err).Errorf("could not unmarshal credential with key: %s", key)
+				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
 			}
 			storedCreds = append(storedCreds, cred)
 		}
@@ -462,7 +462,7 @@ func (cs *Storage) GetCredentialsBySubject(ctx context.Context, subject string) 
 		} else {
 			var cred StoredCredential
 			if err := json.Unmarshal(credBytes, &cred); err != nil {
-				logrus.WithError(err).Errorf("could not unmarshal credential with key: %s", key)
+				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
 			}
 			storedCreds = append(storedCreds, cred)
 		}
@@ -506,7 +506,7 @@ func (cs *Storage) GetCredentialsBySchema(ctx context.Context, schema string) ([
 		} else {
 			var cred StoredCredential
 			if err := json.Unmarshal(credBytes, &cred); err != nil {
-				logrus.WithError(err).Errorf("could not unmarshal credential with key: %s", key)
+				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
 			}
 			storedCreds = append(storedCreds, cred)
 		}
@@ -554,7 +554,7 @@ func (cs *Storage) GetStatusListCredentialsByIssuerAndSchema(ctx context.Context
 		} else {
 			var cred StoredCredential
 			if err = json.Unmarshal(credBytes, &cred); err != nil {
-				logrus.WithError(err).Errorf("could not unmarshal credential with key: %s", key)
+				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
 			}
 
 			storedCreds = append(storedCreds, cred)
@@ -596,7 +596,7 @@ func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer s
 		} else {
 			var cred StoredCredential
 			if err = json.Unmarshal(credBytes, &cred); err != nil {
-				logrus.WithError(err).Errorf("could not unmarshal credential with key: %s", key)
+				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
 			}
 			storedCreds = append(storedCreds, cred)
 		}
