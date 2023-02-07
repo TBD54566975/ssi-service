@@ -61,18 +61,23 @@ type CreateCredentialRequest struct {
 	// Whether this credential can be revoked. When true, the created VC will have the "credentialStatus"
 	// property set.
 	Revocable bool `json:"revocable"`
+
+	// Whether this credential can be suspended. When true, the created VC will have the "credentialStatus"
+	// property set.
+	Suspendable bool `json:"suspendable"`
 	// TODO(gabe) support more capabilities like signature type, format, status, and more.
 }
 
 func (c CreateCredentialRequest) ToServiceRequest() credential.CreateCredentialRequest {
 	return credential.CreateCredentialRequest{
-		Issuer:     c.Issuer,
-		Subject:    c.Subject,
-		Context:    c.Context,
-		JSONSchema: c.Schema,
-		Data:       c.Data,
-		Expiry:     c.Expiry,
-		Revocable:  c.Revocable,
+		Issuer:      c.Issuer,
+		Subject:     c.Subject,
+		Context:     c.Context,
+		JSONSchema:  c.Schema,
+		Data:        c.Data,
+		Expiry:      c.Expiry,
+		Revocable:   c.Revocable,
+		Suspendable: c.Suspendable,
 	}
 }
 
@@ -164,6 +169,8 @@ func (cr CredentialRouter) GetCredential(ctx context.Context, w http.ResponseWri
 type GetCredentialStatusResponse struct {
 	// Whether the credential has been revoked.
 	Revoked bool `json:"revoked"`
+	// Whether the credential has been suspended.
+	Suspended bool `json:"suspended"`
 }
 
 // GetCredentialStatus godoc
@@ -194,7 +201,8 @@ func (cr CredentialRouter) GetCredentialStatus(ctx context.Context, w http.Respo
 	}
 
 	resp := GetCredentialStatusResponse{
-		Revoked: getCredentialStatusResponse.Revoked,
+		Revoked:   getCredentialStatusResponse.Revoked,
+		Suspended: getCredentialStatusResponse.Suspended,
 	}
 
 	return framework.Respond(ctx, w, resp, http.StatusOK)
@@ -248,19 +256,22 @@ func (cr CredentialRouter) GetCredentialStatusList(ctx context.Context, w http.R
 type UpdateCredentialStatusRequest struct {
 	// The new revoked status of this credential. The status will be saved in the encodedList of the StatusList2021
 	// credential associated with this VC.
-	Revoked bool `json:"revoked" validate:"required"`
+	Revoked   bool `json:"revoked,omitempty"`
+	Suspended bool `json:"suspended,omitempty"`
 }
 
 func (c UpdateCredentialStatusRequest) ToServiceRequest(id string) credential.UpdateCredentialStatusRequest {
 	return credential.UpdateCredentialStatusRequest{
-		ID:      id,
-		Revoked: c.Revoked,
+		ID:        id,
+		Revoked:   c.Revoked,
+		Suspended: c.Suspended,
 	}
 }
 
 type UpdateCredentialStatusResponse struct {
 	// The updated status of this credential.
-	Revoked bool `json:"revoked"`
+	Revoked   bool `json:"revoked"`
+	Suspended bool `json:"suspended"`
 }
 
 // UpdateCredentialStatus godoc
@@ -307,7 +318,8 @@ func (cr CredentialRouter) UpdateCredentialStatus(ctx context.Context, w http.Re
 	}
 
 	resp := UpdateCredentialStatusResponse{
-		Revoked: gotCredential.Revoked,
+		Revoked:   gotCredential.Revoked,
+		Suspended: gotCredential.Suspended,
 	}
 
 	return framework.Respond(ctx, w, resp, http.StatusOK)

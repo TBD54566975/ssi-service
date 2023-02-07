@@ -116,8 +116,8 @@ func (s Service) createCredentialFunc(request CreateCredentialRequest) storage.B
 func (s Service) createCredentialBusinessLogic(ctx context.Context, request CreateCredentialRequest, tx storage.Tx) (*CreateCredentialResponse, error) {
 	logrus.Debugf("creating credential: %+v", request)
 
-	if request.Revocable && request.Suspendable {
-		return nil, util.LoggingNewError("credential cannot be revocable and suspendable")
+	if !request.isStatusValid() {
+		return nil, util.LoggingNewError("credential may have at most one status")
 	}
 
 	builder := credential.NewVerifiableCredentialBuilder()
@@ -300,7 +300,7 @@ func getOrCreateStatusListCredential(ctx context.Context, s Service, statusPurpo
 			Container: statusListContainer,
 		}
 
-		if err := s.storage.StoreStatusListCredentialTx(ctx, statusListStorageRequest, statusPurpose, tx); err != nil {
+		if err := s.storage.StoreStatusListCredentialTx(ctx, tx, statusListStorageRequest, statusPurpose); err != nil {
 			return nil, errors.Wrap(err, "storing status list credential")
 		}
 	} else {
@@ -622,7 +622,7 @@ func updateCredentialStatus(ctx context.Context, s Service, gotCred *StoredCrede
 		Container: statusListContainer,
 	}
 
-	if err = s.storage.StoreStatusListCredentialTx(ctx, storageRequest, statusPurpose, tx); err != nil {
+	if err = s.storage.StoreStatusListCredentialTx(ctx, tx, storageRequest, statusPurpose); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store credential status list")
 	}
 

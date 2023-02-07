@@ -12,6 +12,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/goccy/go-json"
 	"github.com/tbd54566975/ssi-service/config"
@@ -492,7 +493,8 @@ func TestCredentialRouter(t *testing.T) {
 
 		credStatusListStr := statusEntry.StatusListCredential
 
-		credStatusListID := strings.Split(credStatusListStr, "/")[len(strings.Split(credStatusListStr, "/"))-1]
+		_, credStatusListID, ok := strings.Cut(credStatusListStr, "/v1/credentials/status/")
+		assert.True(tt, ok)
 		credStatusList, err := credService.GetCredentialStatusList(context.Background(), credential.GetCredentialStatusListRequest{ID: credStatusListID})
 		assert.NoError(tt, err)
 		assert.Equal(tt, credStatusList.Credential.ID, statusEntry.StatusListCredential)
@@ -503,7 +505,7 @@ func TestCredentialRouter(t *testing.T) {
 		encodedList := credentialSubject["encodedList"]
 		assert.NotEmpty(tt, encodedList)
 
-		// Validate the StatusListIndex in not flipped in the credStatusList
+		// Validate the StatusListIndex is not flipped in the credStatusList
 		valid, err := status.ValidateCredentialInStatusList(*createdCred.Credential, *credStatusList.Credential)
 		assert.NoError(tt, err)
 		assert.False(tt, valid)
@@ -639,7 +641,8 @@ func TestCredentialRouter(t *testing.T) {
 
 		credStatusListStr := statusEntry.StatusListCredential
 
-		credStatusListID := strings.Split(credStatusListStr, "/")[len(strings.Split(credStatusListStr, "/"))-1]
+		_, credStatusListID, ok := strings.Cut(credStatusListStr, "/v1/credentials/status/")
+		assert.True(tt, ok)
 		credStatusList, err := credService.GetCredentialStatusList(context.Background(), credential.GetCredentialStatusListRequest{ID: credStatusListID})
 		assert.NoError(tt, err)
 		assert.Equal(tt, credStatusList.Credential.ID, statusEntry.StatusListCredential)
@@ -650,7 +653,7 @@ func TestCredentialRouter(t *testing.T) {
 		encodedList := credentialSubject["encodedList"]
 		assert.NotEmpty(tt, encodedList)
 
-		// Validate the StatusListIndex in not flipped in the credStatusList
+		// Validate the StatusListIndex is not flipped in the credStatusList
 		valid, err := status.ValidateCredentialInStatusList(*createdCred.Credential, *credStatusList.Credential)
 		assert.NoError(tt, err)
 		assert.False(tt, valid)
@@ -693,7 +696,8 @@ func TestCredentialRouter(t *testing.T) {
 
 		credStatusListStr := statusEntry.StatusListCredential
 
-		credStatusListID := strings.Split(credStatusListStr, "/")[len(strings.Split(credStatusListStr, "/"))-1]
+		_, credStatusListID, ok := strings.Cut(credStatusListStr, "/v1/credentials/status/")
+		assert.True(tt, ok)
 		credStatusList, err := credService.GetCredentialStatusList(context.Background(), credential.GetCredentialStatusListRequest{ID: credStatusListID})
 		assert.NoError(tt, err)
 		assert.Equal(tt, credStatusList.Credential.ID, statusEntry.StatusListCredential)
@@ -704,7 +708,7 @@ func TestCredentialRouter(t *testing.T) {
 		encodedList := credentialSubject["encodedList"]
 		assert.NotEmpty(tt, encodedList)
 
-		// Validate the StatusListIndex in not flipped in the credStatusList
+		// Validate the StatusListIndex is not flipped in the credStatusList
 		valid, err := status.ValidateCredentialInStatusList(*createdCred.Credential, *credStatusList.Credential)
 		assert.NoError(tt, err)
 		assert.False(tt, valid)
@@ -749,7 +753,7 @@ func TestCredentialRouter(t *testing.T) {
 		})
 
 		assert.Error(tt, err)
-		assert.ErrorContains(tt, err, "credential cannot be revocable and suspendable")
+		assert.ErrorContains(tt, err, "credential may have at most one status")
 		assert.Empty(tt, createdCred)
 	})
 
@@ -805,24 +809,24 @@ func TestCredentialRouter(t *testing.T) {
 
 func createCredServicePrereqs(tt *testing.T) (string, string, credential.Service) {
 	bolt := setupTestDB(tt)
-	assert.NotNil(tt, bolt)
+	require.NotNil(tt, bolt)
 
 	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234"}}
 	keyStoreService := testKeyStoreService(tt, bolt)
 	didService := testDIDService(tt, bolt, keyStoreService)
 	schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 	credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService)
-	assert.NoError(tt, err)
-	assert.NotEmpty(tt, credService)
+	require.NoError(tt, err)
+	require.NotEmpty(tt, credService)
 
 	// check type and status
-	assert.Equal(tt, framework.Credential, credService.Type())
-	assert.Equal(tt, framework.StatusReady, credService.Status().Status)
+	require.Equal(tt, framework.Credential, credService.Type())
+	require.Equal(tt, framework.StatusReady, credService.Status().Status)
 
 	// create a did
 	issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
-	assert.NoError(tt, err)
-	assert.NotEmpty(tt, issuerDID)
+	require.NoError(tt, err)
+	require.NotEmpty(tt, issuerDID)
 
 	// create a schema
 	emailSchema := map[string]any{
@@ -837,8 +841,8 @@ func createCredServicePrereqs(tt *testing.T) (string, string, credential.Service
 	}
 
 	createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
-	assert.NoError(tt, err)
-	assert.NotEmpty(tt, createdSchema)
+	require.NoError(tt, err)
+	require.NotEmpty(tt, createdSchema)
 
 	return issuerDID.DID.ID, createdSchema.ID, *credService
 }

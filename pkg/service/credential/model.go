@@ -83,3 +83,10 @@ type GetCredentialStatusListRequest struct {
 type GetCredentialStatusListResponse struct {
 	credential.Container `json:"credential,omitempty"`
 }
+
+func (csr CreateCredentialRequest) isStatusValid() bool {
+	if csr.Revocable && csr.Suspendable {
+		return false
+	}
+	return true
+}

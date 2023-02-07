@@ -227,7 +227,7 @@ func (cs *Storage) StoreCredential(ctx context.Context, request StoreCredentialR
 	return cs.storeCredential(ctx, request, credentialNamespace)
 }
 
-func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, request StoreCredentialRequest, statusPurpose statussdk.StatusPurpose, tx storage.Tx) error {
+func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, tx storage.Tx, request StoreCredentialRequest, statusPurpose statussdk.StatusPurpose) error {
 	if !request.IsValid() {
 		return util.LoggingNewError("store request request is not valid")
 	}
@@ -235,7 +235,7 @@ func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, request Stor
 	// transform the credential into its denormalized form for storage
 	storedCredential, err := buildStoredCredential(request)
 	if err != nil {
-		return errors.Wrap(err, "could not build stored credential")
+		return errors.Wrap(err, "building stored credential")
 	}
 
 	storedCredBytes, err := json.Marshal(storedCredential)
@@ -282,7 +282,8 @@ func (cs *Storage) storeCredential(ctx context.Context, request StoreCredentialR
 
 	wc, err := cs.getStoreCredentialWriteContext(request, namespace)
 	if err != nil {
-		return errors.Wrap(err, "could not get stored credential write context")
+		return errors.Wrap(err, "building stored credential")
+
 	}
 	// TODO(gabe) conflict checking?
 	return cs.db.Write(ctx, wc.namespace, wc.key, wc.value)
@@ -300,7 +301,7 @@ func (cs *Storage) getStoreCredentialWriteContext(request StoreCredentialRequest
 	// transform the credential into its denormalized form for storage
 	storedCredential, err := buildStoredCredential(request)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not build stored credential")
+		return nil, errors.Wrap(err, "building stored credential")
 	}
 
 	storedCredBytes, err := json.Marshal(storedCredential)
