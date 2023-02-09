@@ -37,6 +37,8 @@ jobs:
           git add .; \
           git commit -m "gen OpenAPI Spec by github-actions"; \
           git push --force --set-upstream origin main_swagger
+          curl -X POST -H "Content-Type: application/json" -d '{}' $NETLIFY_DEPLOY_WEBHOOK
         fi
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NETLIFY_DEPLOY_WEBHOOK: ${{ secrets.NETLIFY_DEPLOY_WEBHOOK }}
