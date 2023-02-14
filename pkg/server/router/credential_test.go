@@ -532,78 +532,6 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEqualValues(tt, encodedListAfterRevoke, encodedList)
 	})
 
-	t.Run("Existing Status List Indexes Used After Restart", func(tt *testing.T) {
-		statusListIndexNamespace := "status-list-index"
-
-		statusListIndexesKey := "status-list-indexes"
-		currentListIndexKey := "current-list-index"
-
-		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
-
-		// Make sure there is nothing in DB before we create storage
-		value, err := bolt.Read(context.Background(), statusListIndexNamespace, currentListIndexKey)
-		assert.NoError(tt, err)
-		assert.Empty(tt, value)
-
-		value, err = bolt.Read(context.Background(), statusListIndexNamespace, statusListIndexesKey)
-		assert.NoError(tt, err)
-		assert.Empty(tt, value)
-
-		exists, err := bolt.Exists(context.Background(), statusListIndexNamespace, currentListIndexKey)
-		assert.NoError(tt, err)
-		assert.False(tt, exists)
-
-		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, statusListIndexesKey)
-		assert.NoError(tt, err)
-		assert.False(tt, exists)
-
-		// Create the storage
-		credStorage, err := credential.NewCredentialStorage(bolt)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, credStorage)
-
-		// Make sure that values are there after we create a new credential storage
-		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, currentListIndexKey)
-		assert.NoError(tt, err)
-		assert.True(tt, exists)
-
-		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, statusListIndexesKey)
-		assert.NoError(tt, err)
-		assert.True(tt, exists)
-
-		value, err = bolt.Read(context.Background(), statusListIndexNamespace, currentListIndexKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, value)
-
-		statusListIndexes, err := bolt.Read(context.Background(), statusListIndexNamespace, statusListIndexesKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, value)
-
-		// "Restart" the service
-		credStorage, err = credential.NewCredentialStorage(bolt)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, credStorage)
-
-		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, currentListIndexKey)
-		assert.NoError(tt, err)
-		assert.True(tt, exists)
-
-		exists, err = bolt.Exists(context.Background(), statusListIndexNamespace, statusListIndexesKey)
-		assert.NoError(tt, err)
-		assert.True(tt, exists)
-
-		value, err = bolt.Read(context.Background(), statusListIndexNamespace, currentListIndexKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, value)
-
-		statusListIndexesAfterRestart, err := bolt.Read(context.Background(), statusListIndexNamespace, statusListIndexesKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, statusListIndexesAfterRestart)
-
-		assert.Equal(tt, statusListIndexes, statusListIndexesAfterRestart)
-	})
-
 	t.Run("Create Suspendable Credential", func(tt *testing.T) {
 		issuer, schema, credService := createCredServicePrereqs(tt)
 		subject := "did:test:345"
@@ -803,6 +731,23 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Nil(tt, updatedStatus)
 		assert.Error(tt, err)
 		assert.ErrorContains(tt, err, "has a different status purpose<revocation> value than the status credential<suspension>")
+	})
+
+	t.Run("Extract UUID returns UUID", func(tt *testing.T) {
+		uuid := credential.ExtractID("/v1/credentials/status/ceccb36e-a386-494a-8bf5-d86f953485dd")
+		assert.NotEmpty(tt, uuid)
+		assert.Equal(tt, uuid, "ceccb36e-a386-494a-8bf5-d86f953485dd")
+
+		uuid = credential.ExtractID("http://localhost:1234/v1/credentials/status/ceccb36e-a386-494a-8bf5-d86f953485dd")
+		assert.NotEmpty(tt, uuid)
+		assert.Equal(tt, uuid, "ceccb36e-a386-494a-8bf5-d86f953485dd")
+
+		uuid = credential.ExtractID("ANYTHING/ceccb36e-a386-494a-8bf5-d86f953485dd")
+		assert.NotEmpty(tt, uuid)
+		assert.Equal(tt, uuid, "ceccb36e-a386-494a-8bf5-d86f953485dd")
+
+		uuid = credential.ExtractID("badinput")
+		assert.Empty(tt, uuid)
 	})
 
 }

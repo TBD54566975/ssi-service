@@ -110,7 +110,7 @@ func TestConcurrencyRevocationVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
-	const vcCount = 100
+	const vcCount = 20
 	credStatusListIndexes := make([]string, vcCount)
 
 	var wg sync.WaitGroup

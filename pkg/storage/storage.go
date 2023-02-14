@@ -13,6 +13,7 @@ type BusinessLogicFunc func(ctx context.Context, tx Tx) (any, error)
 type WatchKey struct {
 	Namespace string
 	Key       string
+	UUID      string
 }
 
 type Tx interface {

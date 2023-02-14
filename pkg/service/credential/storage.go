@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"regexp"
 	"strings"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
 	"github.com/goccy/go-json"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
@@ -46,6 +48,14 @@ type WriteContext struct {
 	value     []byte
 }
 
+type StatusListCredentialMetadata struct {
+	statusListCredential           *StoredCredential
+	statusListCredentialWatchKey   storage.WatchKey
+	statusListIndexPoolWatchKey    storage.WatchKey
+	statusListCurrentIndexWatchKey storage.WatchKey
+	uuid                           string
+}
+
 func (sc StoredCredential) IsValid() bool {
 	return sc.ID != "" && (sc.HasDataIntegrityCredential() || sc.HasJWTCredential())
 }
@@ -59,12 +69,10 @@ func (sc StoredCredential) HasJWTCredential() bool {
 }
 
 const (
-	credentialNamespace           = "credential"
-	statusListCredentialNamespace = "status-list-credential"
-	statusListIndexNamespace      = "status-list-index"
-
-	statusListIndexesKey = "status-list-indexes"
-	currentListIndexKey  = "current-list-index"
+	credentialNamespace                    = "credential"
+	statusListCredentialNamespace          = "status-list-credential"
+	statusListCredentialIndexPoolNamespace = "status-list-index-pool"
+	statusListCredentialCurrentIndex       = "status-list-current-index"
 
 	// A a minimum revocation bitString length of 131,072, or 16KB uncompressed
 	bitStringLength = 8 * 1024 * 16
@@ -85,49 +93,12 @@ func NewCredentialStorage(db storage.ServiceStorage) (*Storage, error) {
 		return nil, util.LoggingNewError("bolt db reference is nil")
 	}
 
-	listIndexKeyExists, err := db.Exists(context.Background(), statusListIndexNamespace, currentListIndexKey)
-	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "exists for currentListIndexKey")
-	}
-
-	statusListIndexesKeyExists, err := db.Exists(context.Background(), statusListIndexNamespace, statusListIndexesKey)
-	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "exists for statusListIndexesKey")
-	}
-
-	if listIndexKeyExists != statusListIndexesKeyExists {
-		return nil, util.LoggingNewError("list index and status list index not in the same state")
-	}
-
-	indexKeysDontExist := !listIndexKeyExists && !statusListIndexesKeyExists
-
-	if indexKeysDontExist {
-		randUniqueList := randomUniqueNum(bitStringLength)
-		uniqueNumBytes, err := json.Marshal(randUniqueList)
-		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not marshal random unique numbers")
-		}
-
-		if err := db.Write(context.Background(), statusListIndexNamespace, statusListIndexesKey, uniqueNumBytes); err != nil {
-			return nil, util.LoggingErrorMsg(err, "problem writing status list indexes to db")
-		}
-
-		statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: 0})
-		if err != nil {
-			return nil, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
-		}
-
-		if err := db.Write(context.Background(), statusListIndexNamespace, currentListIndexKey, statusListIndexBytes); err != nil {
-			return nil, util.LoggingErrorMsg(err, "problem writing current list index to db")
-		}
-	}
-
 	return &Storage{db: db}, nil
 }
 
-func (cs *Storage) GetNextStatusListRandomIndex(ctx context.Context) (int, error) {
+func (cs *Storage) GetNextStatusListRandomIndex(ctx context.Context, slcMetadata StatusListCredentialMetadata) (int, error) {
 
-	gotUniqueNumBytes, err := cs.db.Read(ctx, statusListIndexNamespace, statusListIndexesKey)
+	gotUniqueNumBytes, err := cs.db.Read(ctx, slcMetadata.statusListIndexPoolWatchKey.Namespace, slcMetadata.statusListIndexPoolWatchKey.Key)
 	if err != nil {
 		return -1, util.LoggingErrorMsgf(err, "reading status list")
 	}
@@ -141,7 +112,7 @@ func (cs *Storage) GetNextStatusListRandomIndex(ctx context.Context) (int, error
 		return -1, util.LoggingErrorMsgf(err, "unmarshalling unique numbers")
 	}
 
-	gotCurrentListIndexBytes, err := cs.db.Read(ctx, statusListIndexNamespace, currentListIndexKey)
+	gotCurrentListIndexBytes, err := cs.db.Read(ctx, slcMetadata.statusListCurrentIndexWatchKey.Namespace, slcMetadata.statusListCurrentIndexWatchKey.Key)
 	if err != nil {
 		return -1, util.LoggingErrorMsgf(err, "could not get list index")
 	}
@@ -168,66 +139,63 @@ func (cs *Storage) WriteMany(ctx context.Context, writeContexts []WriteContext) 
 	return cs.db.WriteMany(ctx, namespaces, keys, values)
 }
 
-func (cs *Storage) IncrementStatusListIndexTx(ctx context.Context, tx storage.Tx) error {
-	wc, err := cs.GetIncrementStatusListIndexWriteContext(ctx)
+func (cs *Storage) IncrementStatusListIndexTx(ctx context.Context, tx storage.Tx, slcMetadata StatusListCredentialMetadata) error {
+	gotCurrentListIndexBytes, err := cs.db.Read(ctx, slcMetadata.statusListCurrentIndexWatchKey.Namespace, slcMetadata.statusListCurrentIndexWatchKey.Key)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "problem getting increment status listIndex writeContext")
-	}
-
-	if err := tx.Write(ctx, wc.namespace, wc.key, wc.value); err != nil {
-		return util.LoggingErrorMsg(err, "problem writing current list index to db")
-	}
-
-	return nil
-}
-
-func (cs *Storage) IncrementStatusListIndex(ctx context.Context) error {
-	wc, err := cs.GetIncrementStatusListIndexWriteContext(ctx)
-	if err != nil {
-		return util.LoggingErrorMsg(err, "problem getting increment status listIndex writeContext")
-	}
-
-	if err := cs.db.Write(ctx, wc.namespace, wc.key, wc.value); err != nil {
-		return util.LoggingErrorMsg(err, "problem writing current list index to db")
-	}
-
-	return nil
-}
-
-func (cs *Storage) GetIncrementStatusListIndexWriteContext(ctx context.Context) (*WriteContext, error) {
-	gotCurrentListIndexBytes, err := cs.db.Read(ctx, statusListIndexNamespace, currentListIndexKey)
-	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not get list index")
+		return util.LoggingErrorMsg(err, "could not get list index")
 	}
 
 	var statusListIndex StatusListIndex
 	if err = json.Unmarshal(gotCurrentListIndexBytes, &statusListIndex); err != nil {
-		return nil, util.LoggingErrorMsg(err, "unmarshalling unique numbers")
+		return util.LoggingErrorMsg(err, "unmarshalling unique numbers")
 	}
 
 	if statusListIndex.Index >= bitStringLength-1 {
-		return nil, util.LoggingErrorMsg(err, "no more indexes available for status list index")
+		return util.LoggingErrorMsg(err, "no more indexes available for status list index")
 	}
 
 	statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: statusListIndex.Index + 1})
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
+		return util.LoggingErrorMsg(err, "could not marshal status list index bytes")
 	}
 
-	wc := WriteContext{
-		namespace: statusListIndexNamespace,
-		key:       currentListIndexKey,
-		value:     statusListIndexBytes,
+	if err := tx.Write(ctx, slcMetadata.statusListCurrentIndexWatchKey.Namespace, slcMetadata.statusListCurrentIndexWatchKey.Key, statusListIndexBytes); err != nil {
+		return util.LoggingErrorMsg(err, "problem writing current list index to db")
 	}
 
-	return &wc, nil
+	return nil
 }
 
 func (cs *Storage) StoreCredential(ctx context.Context, request StoreCredentialRequest) error {
 	return cs.storeCredential(ctx, request, credentialNamespace)
 }
 
-func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, tx storage.Tx, request StoreCredentialRequest, statusPurpose statussdk.StatusPurpose) error {
+func (cs *Storage) CreateStatusListCredentialTx(ctx context.Context, tx storage.Tx, request StoreCredentialRequest, slcMetadata StatusListCredentialMetadata) (int, error) {
+
+	randUniqueList := randomUniqueNum(bitStringLength)
+	uniqueNumBytes, err := json.Marshal(randUniqueList)
+	if err != nil {
+		return -1, util.LoggingErrorMsg(err, "could not marshal random unique numbers")
+	}
+
+	if err := tx.Write(context.Background(), slcMetadata.statusListIndexPoolWatchKey.Namespace, slcMetadata.statusListIndexPoolWatchKey.Key, uniqueNumBytes); err != nil {
+		return -1, util.LoggingErrorMsg(err, "problem writing status list indexes to db")
+	}
+
+	// Set the index to 1 since this is a new statusListCredential
+	statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: 1})
+	if err != nil {
+		return -1, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
+	}
+
+	if err := tx.Write(context.Background(), slcMetadata.statusListCurrentIndexWatchKey.Namespace, slcMetadata.statusListCurrentIndexWatchKey.Key, statusListIndexBytes); err != nil {
+		return -1, util.LoggingErrorMsg(err, "problem writing current list index to db")
+	}
+
+	return randUniqueList[0], cs.StoreStatusListCredentialTx(ctx, tx, request, slcMetadata)
+}
+
+func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, tx storage.Tx, request StoreCredentialRequest, slcMetadata StatusListCredentialMetadata) error {
 	if !request.IsValid() {
 		return util.LoggingNewError("store request request is not valid")
 	}
@@ -243,13 +211,7 @@ func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, tx storage.T
 		return util.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.CredentialID)
 	}
 
-	schemaID := ""
-	if request.Credential.CredentialSchema != nil {
-		schemaID = request.Credential.CredentialSchema.ID
-	}
-
-	statusListCredentialKey := createStatusListCredentialPrefixKey(storedCredential.CredentialID, request.Credential.Issuer.(string), request.Credential.CredentialSubject.GetID(), schemaID, string(statusPurpose))
-	return tx.Write(ctx, statusListCredentialNamespace, statusListCredentialKey, storedCredBytes)
+	return tx.Write(ctx, slcMetadata.statusListCredentialWatchKey.Namespace, slcMetadata.statusListCredentialWatchKey.Key, storedCredBytes)
 }
 
 func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*StoredCredential, error) {
@@ -526,7 +488,7 @@ func (cs *Storage) GetCredentialsByIssuerAndSchema(ctx context.Context, issuer s
 	return cs.getCredentialsByIssuerAndSchema(ctx, issuer, schema, credentialNamespace)
 }
 
-func (cs *Storage) GetStatusListCredentialsByIssuerAndSchema(ctx context.Context, statusPurpose statussdk.StatusPurpose, issuer string, schema string) ([]StoredCredential, error) {
+func (cs *Storage) GetStatusListCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string, statusPurpose statussdk.StatusPurpose) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, statusListCredentialNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
@@ -646,21 +608,58 @@ func (cs *Storage) deleteCredential(ctx context.Context, id string, namespace st
 	return nil
 }
 
-func (cs *Storage) GetIncrementStatusListIndexWriteContextWatchKey() storage.WatchKey {
-	return storage.WatchKey{Namespace: statusListIndexNamespace, Key: currentListIndexKey}
+func (cs *Storage) GetStatusListCredentialWatchKey(guid, issuer, schema, statusPurpose string) storage.WatchKey {
+	return storage.WatchKey{Namespace: statusListCredentialNamespace, Key: getStatusListKey(guid, issuer, schema, statusPurpose), UUID: guid}
 }
 
-func (cs *Storage) GetStatusListIndexesWriteKey() storage.WatchKey {
-	return storage.WatchKey{Namespace: statusListIndexNamespace, Key: statusListIndexesKey}
+func (cs *Storage) GetStatusListIndexPoolWatchKey(guid, issuer, schema, statusPurpose string) storage.WatchKey {
+	return storage.WatchKey{Namespace: statusListCredentialIndexPoolNamespace, Key: getStatusListKey(guid, issuer, schema, statusPurpose), UUID: guid}
+}
+
+func (cs *Storage) GetStatusListCurrentIndexWatchKey(guid, issuer, schema, statusPurpose string) storage.WatchKey {
+	return storage.WatchKey{Namespace: statusListCredentialCurrentIndex, Key: getStatusListKey(guid, issuer, schema, statusPurpose), UUID: guid}
+}
+
+func (cs *Storage) GetStatusListCredentialKeyData(ctx context.Context, issuer string, schema string, statusPurpose statussdk.StatusPurpose) (string, *StoredCredential, error) {
+	storedStatusListCreds, err := cs.GetStatusListCredentialsByIssuerAndSchema(ctx, issuer, schema, statusPurpose)
+	if err != nil {
+		return "", nil, util.LoggingNewErrorf("getting status list credential for issuer: %s schema: %s", issuer, schema)
+	}
+
+	// This should never happen, there should always be only 1 status list credential per <issuer,schema, statusPurpose> triplet
+	if len(storedStatusListCreds) > 1 {
+		return "", nil, util.LoggingNewErrorf("only one status list credential per <issuer,schema> pair allowed. issuer: %s schema: %s", issuer, schema)
+	}
+
+	// No Status List Credential Exists, create a new uuid
+	if len(storedStatusListCreds) == 0 {
+		return uuid.New().String(), nil, nil
+	}
+
+	statusListUUID := ExtractID(storedStatusListCreds[0].CredentialID)
+	if statusListUUID == "" {
+		return "", nil, util.LoggingNewError("could not extract UUID from existing Credential Status List")
+	}
+
+	return statusListUUID, &storedStatusListCreds[0], nil
+}
+
+func ExtractID(input string) string {
+	re := regexp.MustCompile(`\/[a-zA-Z0-9-]+$`)
+	match := re.FindString(input)
+	if len(match) > 0 {
+		return match[1:]
+	}
+	return ""
+}
+
+func getStatusListKey(uuid, issuer, schema, statusPurpose string) string {
+	return strings.Join([]string{uuid, "is:" + issuer, "sc:" + schema, "sp:" + statusPurpose}, "-")
 }
 
 // unique key for a credential
 func createPrefixKey(id, issuer, subject, schema string) string {
 	return strings.Join([]string{id, "is:" + issuer, "su:" + subject, "sc:" + schema}, "-")
-}
-
-func createStatusListCredentialPrefixKey(id, issuer, subject, schema, statusPurpose string) string {
-	return strings.Join([]string{id, "is:" + issuer, "su:" + subject, "sc:" + schema, "sp:" + statusPurpose}, "-")
 }
 
 func randomUniqueNum(count int) []int {

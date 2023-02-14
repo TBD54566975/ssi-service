@@ -174,6 +174,48 @@ func TestDBPrefixAndKeys(t *testing.T) {
 	}
 }
 
+func TestDBPrefixAndKeysMultipleNamespace(t *testing.T) {
+	for _, dbImpl := range getDBImplementations(t) {
+		db := dbImpl
+
+		namespaceOne := "blockchains-orange"
+		namespaceTwo := "blockchains-grey"
+
+		// set up prefix read test
+
+		dummyData := []byte("dummy")
+		err := db.Write(context.Background(), namespaceOne, "bitcoin-testnet", dummyData)
+		assert.NoError(t, err)
+
+		err = db.Write(context.Background(), namespaceOne, "bitcoin-mainnet", dummyData)
+		assert.NoError(t, err)
+
+		err = db.Write(context.Background(), namespaceTwo, "eth-testnet", dummyData)
+		assert.NoError(t, err)
+
+		err = db.Write(context.Background(), namespaceTwo, "eth-mainnet", dummyData)
+		assert.NoError(t, err)
+
+		// read all keys
+		allKeys, err := db.ReadAllKeys(context.Background(), namespaceOne)
+
+		assert.NoError(t, err)
+		assert.NotEmpty(t, allKeys)
+		assert.Len(t, allKeys, 2)
+		assert.Contains(t, allKeys, "bitcoin-testnet")
+		assert.Contains(t, allKeys, "bitcoin-mainnet")
+
+		// read all keys
+		allKeys, err = db.ReadAllKeys(context.Background(), namespaceTwo)
+
+		assert.NoError(t, err)
+		assert.NotEmpty(t, allKeys)
+		assert.Len(t, allKeys, 2)
+		assert.Contains(t, allKeys, "eth-testnet")
+		assert.Contains(t, allKeys, "eth-mainnet")
+	}
+}
+
 func TestDBEmptyNamespace(t *testing.T) {
 	for _, dbImpl := range getDBImplementations(t) {
 		db := dbImpl
