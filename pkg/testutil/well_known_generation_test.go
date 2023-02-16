@@ -21,11 +21,13 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
-func TestWellKnownGeneration(t *testing.T) {
+func TestWellKnownGenerationTest(t *testing.T) {
 
 	t.Run("Credential .WellKnown Credential Test", func(tt *testing.T) {
 		// To generate a well known config remove this line
-		tt.Skip("skipping wellknown test")
+		if true {
+			tt.Skip("skipping wellknown test")
+		}
 
 		origin := "https://www.tbd.website/"
 		bolt := setupTestDB(tt)
@@ -51,6 +53,7 @@ func TestWellKnownGeneration(t *testing.T) {
 		assert.NotEmpty(tt, gotDidWebKey)
 
 		createWellKnownDIDConfiguration(tt, didWeb, gotDidWebKey, origin)
+
 	})
 }
 
@@ -73,6 +76,7 @@ func createWellKnownDIDConfiguration(tt *testing.T, didResponse *did.CreateDIDRe
 	assert.NoError(tt, err)
 
 	err = builder.SetExpirationDate("2051-10-05T14:48:00.000Z")
+	assert.NoError(tt, err)
 
 	err = builder.SetIssuanceDate(time.Now().Format(time.RFC3339))
 	assert.NoError(tt, err)
@@ -80,17 +84,20 @@ func createWellKnownDIDConfiguration(tt *testing.T, didResponse *did.CreateDIDRe
 	err = builder.AddType("DomainLinkageCredential")
 	assert.NoError(tt, err)
 
-	builder.SetID("")
+	err = builder.SetID("")
+	assert.NoError(tt, err)
+
 	cred, err := builder.Build()
 	assert.NoError(tt, err)
 
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
+	assert.NoError(tt, err)
 
 	jwtToken := jwt.New()
 
 	expirationVal := cred.ExpirationDate
 	if expirationVal != "" {
-		var expirationDate = expirationVal
+		var expirationDate string
 		unixTime, err := rfc3339ToUnix(expirationVal)
 		assert.NoError(tt, err)
 		expirationDate = string(unixTime)
@@ -99,8 +106,9 @@ func createWellKnownDIDConfiguration(tt *testing.T, didResponse *did.CreateDIDRe
 	}
 
 	err = jwtToken.Set(jwt.IssuerKey, cred.Issuer)
+	assert.NoError(tt, err)
 
-	var issuanceDate = cred.IssuanceDate
+	var issuanceDate string
 	if unixTime, err := rfc3339ToUnix(cred.IssuanceDate); err == nil {
 		issuanceDate = string(unixTime)
 	} else {
@@ -109,6 +117,7 @@ func createWellKnownDIDConfiguration(tt *testing.T, didResponse *did.CreateDIDRe
 	}
 
 	err = jwtToken.Set(jwt.NotBeforeKey, issuanceDate)
+	assert.NoError(tt, err)
 
 	subVal := cred.CredentialSubject.GetID()
 	if subVal != "" {
@@ -121,8 +130,9 @@ func createWellKnownDIDConfiguration(tt *testing.T, didResponse *did.CreateDIDRe
 	assert.NoError(tt, err)
 
 	// TODO: Remove typ header
-	//option := jwt.WithJwsHeaders()
+	// option := jwt.WithJwsHeaders()
 	signedTokenBytes, err := jwt.Sign(jwtToken, jwa.SignatureAlgorithm(keyAccess.JWTSigner.GetSigningAlgorithm()), keyAccess.JWTSigner.Key)
+	assert.NoError(tt, err)
 
 	credToken := keyaccess.JWT(signedTokenBytes).Ptr()
 
