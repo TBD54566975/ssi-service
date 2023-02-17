@@ -166,8 +166,13 @@ func (cs *Storage) IncrementStatusListIndexTx(ctx context.Context, tx storage.Tx
 	return nil
 }
 
-func (cs *Storage) StoreCredential(ctx context.Context, request StoreCredentialRequest) error {
-	return cs.storeCredential(ctx, request, credentialNamespace)
+func (cs *Storage) StoreCredentialTx(ctx context.Context, tx storage.Tx, request StoreCredentialRequest) error {
+	wc, err := cs.getStoreCredentialWriteContext(request, credentialNamespace)
+	if err != nil {
+		return errors.Wrap(err, "building stored credential")
+
+	}
+	return tx.Write(ctx, wc.namespace, wc.key, wc.value)
 }
 
 func (cs *Storage) CreateStatusListCredentialTx(ctx context.Context, tx storage.Tx, request StoreCredentialRequest, slcMetadata StatusListCredentialMetadata) (int, error) {
@@ -215,29 +220,36 @@ func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, tx storage.T
 }
 
 func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*StoredCredential, error) {
-	prefixValues, err := cs.db.ReadPrefix(ctx, statusListCredentialNamespace, id)
+	keys, err := cs.db.ReadAllKeys(ctx, statusListCredentialNamespace)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get credential from storage: %s", id)
-	}
-	if len(prefixValues) > 1 {
-		return nil, util.LoggingNewErrorf("could not get credential from storage; multiple prefix values matched credential id: %s", id)
+		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for cred with id: %s", id)
 	}
 
-	// since we know the map now only has a single value, we break after the first element
-	var credBytes []byte
-	for _, v := range prefixValues {
-		credBytes = v
-		break
-	}
-	if len(credBytes) == 0 {
-		return nil, util.LoggingNewErrorf("could not get credential from storage %s with id: %s", credentialNotFoundErrMsg, id)
+	var storedCreds []StoredCredential
+	for _, key := range keys {
+		credBytes, err := cs.db.Read(ctx, statusListCredentialNamespace, key)
+		if err != nil {
+			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
+		} else {
+			var cred StoredCredential
+			if err = json.Unmarshal(credBytes, &cred); err != nil {
+				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
+			}
+			if ExtractID(cred.CredentialID) == id {
+				storedCreds = append(storedCreds, cred)
+			}
+		}
 	}
 
-	var stored StoredCredential
-	if err = json.Unmarshal(credBytes, &stored); err != nil {
-		return nil, util.LoggingErrorMsgf(err, "unmarshalling stored credential: %s", id)
+	if len(storedCreds) == 0 {
+		logrus.Warnf("no credentials able to be retrieved for id: %s", id)
 	}
-	return &stored, nil
+
+	if len(storedCreds) > 1 {
+		logrus.Warnf("there should only be status list credential per <issuer,schema,statuspurpose> tripple, bad state")
+	}
+
+	return &storedCreds[0], nil
 }
 
 func (cs *Storage) storeCredential(ctx context.Context, request StoreCredentialRequest, namespace string) error {
@@ -503,7 +515,7 @@ func (cs *Storage) GetStatusListCredentialsByIssuerAndSchema(ctx context.Context
 	}
 
 	if len(issuerSchemaKeys) == 0 {
-		logrus.Warnf("no credentials found for issuer: %s and schema %s", util.SanitizeLog(issuer), util.SanitizeLog(schema))
+		logrus.Warnf("no status list credentials found for issuer: %s schema %s and status purpose %s", util.SanitizeLog(issuer), util.SanitizeLog(schema), util.SanitizeLog(string(statusPurpose)))
 		return nil, nil
 	}
 
@@ -608,16 +620,16 @@ func (cs *Storage) deleteCredential(ctx context.Context, id string, namespace st
 	return nil
 }
 
-func (cs *Storage) GetStatusListCredentialWatchKey(guid, issuer, schema, statusPurpose string) storage.WatchKey {
-	return storage.WatchKey{Namespace: statusListCredentialNamespace, Key: getStatusListKey(guid, issuer, schema, statusPurpose), UUID: guid}
+func (cs *Storage) GetStatusListCredentialWatchKey(issuer, schema, statusPurpose string) storage.WatchKey {
+	return storage.WatchKey{Namespace: statusListCredentialNamespace, Key: getStatusListKey("", issuer, schema, statusPurpose)}
 }
 
-func (cs *Storage) GetStatusListIndexPoolWatchKey(guid, issuer, schema, statusPurpose string) storage.WatchKey {
-	return storage.WatchKey{Namespace: statusListCredentialIndexPoolNamespace, Key: getStatusListKey(guid, issuer, schema, statusPurpose), UUID: guid}
+func (cs *Storage) GetStatusListIndexPoolWatchKey(issuer, schema, statusPurpose string) storage.WatchKey {
+	return storage.WatchKey{Namespace: statusListCredentialIndexPoolNamespace, Key: getStatusListKey("", issuer, schema, statusPurpose)}
 }
 
-func (cs *Storage) GetStatusListCurrentIndexWatchKey(guid, issuer, schema, statusPurpose string) storage.WatchKey {
-	return storage.WatchKey{Namespace: statusListCredentialCurrentIndex, Key: getStatusListKey(guid, issuer, schema, statusPurpose), UUID: guid}
+func (cs *Storage) GetStatusListCurrentIndexWatchKey(issuer, schema, statusPurpose string) storage.WatchKey {
+	return storage.WatchKey{Namespace: statusListCredentialCurrentIndex, Key: getStatusListKey("", issuer, schema, statusPurpose)}
 }
 
 func (cs *Storage) GetStatusListCredentialKeyData(ctx context.Context, issuer string, schema string, statusPurpose statussdk.StatusPurpose) (string, *StoredCredential, error) {
@@ -632,7 +644,8 @@ func (cs *Storage) GetStatusListCredentialKeyData(ctx context.Context, issuer st
 	}
 
 	// No Status List Credential Exists, create a new uuid
-	if len(storedStatusListCreds) == 0 {
+	if storedStatusListCreds == nil || len(storedStatusListCreds) == 0 {
+		logrus.Warn("No Status List Credential Exists, create a new uuid")
 		return uuid.New().String(), nil, nil
 	}
 

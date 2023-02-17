@@ -113,9 +113,9 @@ func (s Service) CreateCredential(ctx context.Context, request CreateCredentialR
 			return nil, errors.New("generating uuid")
 		}
 
-		statusListCredentialWatchKey := s.storage.GetStatusListCredentialWatchKey(statusListUUID, request.Issuer, request.JSONSchema, string(statusPurpose))
-		statusListCredentialIndexPoolWatchKey := s.storage.GetStatusListIndexPoolWatchKey(statusListUUID, request.Issuer, request.JSONSchema, string(statusPurpose))
-		statusListCredentialCurrentIndexWatchKey := s.storage.GetStatusListCurrentIndexWatchKey(statusListUUID, request.Issuer, request.JSONSchema, string(statusPurpose))
+		statusListCredentialWatchKey := s.storage.GetStatusListCredentialWatchKey(request.Issuer, request.JSONSchema, string(statusPurpose))
+		statusListCredentialIndexPoolWatchKey := s.storage.GetStatusListIndexPoolWatchKey(request.Issuer, request.JSONSchema, string(statusPurpose))
+		statusListCredentialCurrentIndexWatchKey := s.storage.GetStatusListCurrentIndexWatchKey(request.Issuer, request.JSONSchema, string(statusPurpose))
 
 		watchKeys = append(watchKeys, statusListCredentialWatchKey)
 		watchKeys = append(watchKeys, statusListCredentialIndexPoolWatchKey)
@@ -291,7 +291,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 		Container: container,
 	}
 
-	if err = s.storage.StoreCredential(ctx, credentialStorageRequest); err != nil {
+	if err = s.storage.StoreCredentialTx(ctx, tx, credentialStorageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "failed to save vc")
 	}
 
@@ -540,7 +540,7 @@ func (s Service) UpdateCredentialStatus(ctx context.Context, request UpdateCrede
 		return nil, util.LoggingNewErrorf("status purpose could not be derived from credential status")
 	}
 
-	statusListUUID, statusListCredential, err := s.storage.GetStatusListCredentialKeyData(ctx, gotCred.Issuer, gotCred.Schema, statussdk.StatusPurpose(statusPurpose))
+	_, statusListCredential, err := s.storage.GetStatusListCredentialKeyData(ctx, gotCred.Issuer, gotCred.Schema, statussdk.StatusPurpose(statusPurpose))
 	if err != nil {
 		return nil, errors.Wrap(err, "getting status list watch key uuid data")
 	}
@@ -549,7 +549,7 @@ func (s Service) UpdateCredentialStatus(ctx context.Context, request UpdateCrede
 		return nil, errors.Wrap(err, "status list credential should exist in order to update")
 	}
 
-	statusListCredentialWatchKey := s.storage.GetStatusListCredentialWatchKey(statusListUUID, gotCred.Issuer, gotCred.Schema, statusPurpose)
+	statusListCredentialWatchKey := s.storage.GetStatusListCredentialWatchKey(gotCred.Issuer, gotCred.Schema, statusPurpose)
 
 	slcMetadata := StatusListCredentialMetadata{statusListCredentialWatchKey: statusListCredentialWatchKey}
 
@@ -592,6 +592,7 @@ func (s Service) updateCredentialStatusBusinessLogic(ctx context.Context, tx sto
 
 	// if the request is the same as what the current credential is there is no action
 	if gotCred.Revoked == request.Revoked && gotCred.Suspended == request.Suspended {
+		logrus.Warn("request and credential have same status, no action is needed")
 		response := UpdateCredentialStatusResponse{Revoked: gotCred.Revoked, Suspended: gotCred.Suspended}
 		return &response, nil
 	}
@@ -619,7 +620,7 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 		Container: container,
 	}
 
-	if err := s.storage.StoreCredential(ctx, storageRequest); err != nil {
+	if err := s.storage.StoreCredentialTx(ctx, tx, storageRequest); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store credential")
 	}
 
@@ -636,11 +637,21 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 
 	var revokedOrSuspendedStatusCreds []credential.VerifiableCredential
 	for _, cred := range creds {
+		// we add the current cred to the creds list based on request, not on what could be in stale database that the tx has not updated yet
+		if cred.Credential.ID == gotCred.Credential.ID {
+			continue
+		}
+
 		if request.Revoked && cred.Credential.CredentialStatus != nil && cred.Revoked {
 			revokedOrSuspendedStatusCreds = append(revokedOrSuspendedStatusCreds, *cred.Credential)
 		} else if request.Suspended && cred.Credential.CredentialStatus != nil && cred.Suspended {
 			revokedOrSuspendedStatusCreds = append(revokedOrSuspendedStatusCreds, *cred.Credential)
 		}
+	}
+
+	// add current one since it has not been saved yet and wont be available in the creds array
+	if request.Revoked == true || request.Suspended == true {
+		revokedOrSuspendedStatusCreds = append(revokedOrSuspendedStatusCreds, *gotCred.Credential)
 	}
 
 	statusPurpose := statussdk.StatusRevocation

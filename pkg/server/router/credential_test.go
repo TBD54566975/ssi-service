@@ -664,6 +664,88 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEqualValues(tt, encodedListAfterSuspended, encodedList)
 	})
 
+	t.Run("Update Suspendable Credential To Suspended then Unsuspended", func(tt *testing.T) {
+		issuer, schema, credService := createCredServicePrereqs(tt)
+		subject := "did:test:345"
+
+		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+			Issuer:     issuer,
+			Subject:    subject,
+			JSONSchema: schema,
+			Data: map[string]any{
+				"email": "Satoshi@Nakamoto.btc",
+			},
+			Expiry:      time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Suspendable: true,
+		})
+
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCred)
+		assert.NotEmpty(tt, createdCred.CredentialJWT)
+
+		statusBytes, err := json.Marshal(createdCred.Credential.CredentialStatus)
+		assert.NoError(tt, err)
+
+		var statusEntry status.StatusList2021Entry
+		err = json.Unmarshal(statusBytes, &statusEntry)
+		assert.NoError(tt, err)
+
+		assert.Contains(tt, statusEntry.ID, fmt.Sprintf("http://localhost:1234/v1/credentials/%s/status", createdCred.ID))
+		assert.Contains(tt, statusEntry.StatusListCredential, "http://localhost:1234/v1/credentials/status")
+		assert.NotEmpty(tt, statusEntry.StatusListIndex)
+
+		credStatus, err := credService.GetCredentialStatus(context.Background(), credential.GetCredentialStatusRequest{ID: createdCred.ID})
+		assert.NoError(tt, err)
+		assert.Equal(tt, credStatus.Revoked, false)
+		assert.Equal(tt, credStatus.Suspended, false)
+
+		credStatusListStr := statusEntry.StatusListCredential
+
+		_, credStatusListID, ok := strings.Cut(credStatusListStr, "/v1/credentials/status/")
+		assert.True(tt, ok)
+		credStatusList, err := credService.GetCredentialStatusList(context.Background(), credential.GetCredentialStatusListRequest{ID: credStatusListID})
+		assert.NoError(tt, err)
+		assert.Equal(tt, credStatusList.Credential.ID, statusEntry.StatusListCredential)
+
+		credentialSubject := credStatusList.Container.Credential.CredentialSubject
+		assert.NotEmpty(tt, credentialSubject)
+
+		encodedList := credentialSubject["encodedList"]
+		assert.NotEmpty(tt, encodedList)
+
+		// Validate the StatusListIndex is not flipped in the credStatusList
+		valid, err := status.ValidateCredentialInStatusList(*createdCred.Credential, *credStatusList.Credential)
+		assert.NoError(tt, err)
+		assert.False(tt, valid)
+
+		updatedStatus, err := credService.UpdateCredentialStatus(context.Background(), credential.UpdateCredentialStatusRequest{ID: createdCred.ID, Suspended: true})
+		assert.NoError(tt, err)
+		assert.Equal(tt, updatedStatus.Suspended, true)
+		assert.Equal(tt, updatedStatus.Revoked, false)
+
+		credStatusListAfterRevoke, err := credService.GetCredentialStatusList(context.Background(), credential.GetCredentialStatusListRequest{ID: credStatusListID})
+		assert.NoError(tt, err)
+		assert.Equal(tt, credStatusListAfterRevoke.Credential.ID, statusEntry.StatusListCredential)
+
+		// Validate the StatusListIndex in flipped in the credStatusList
+		valid, err = status.ValidateCredentialInStatusList(*createdCred.Credential, *credStatusListAfterRevoke.Credential)
+		assert.NoError(tt, err)
+		assert.True(tt, valid)
+
+		credentialSubjectAfterRevoke := credStatusListAfterRevoke.Container.Credential.CredentialSubject
+		assert.NotEmpty(tt, credentialSubjectAfterRevoke)
+
+		encodedListAfterSuspended := credentialSubjectAfterRevoke["encodedList"]
+		assert.NotEmpty(tt, encodedListAfterSuspended)
+
+		assert.NotEqualValues(tt, encodedListAfterSuspended, encodedList)
+
+		updatedStatus, err = credService.UpdateCredentialStatus(context.Background(), credential.UpdateCredentialStatusRequest{ID: createdCred.ID, Suspended: false})
+		assert.NoError(tt, err)
+		assert.Equal(tt, updatedStatus.Suspended, false)
+		assert.Equal(tt, updatedStatus.Revoked, false)
+	})
+
 	t.Run("Create Suspendable and Revocable Credential Should Be Error", func(tt *testing.T) {
 		issuer, schema, credService := createCredServicePrereqs(tt)
 		subject := "did:test:345"
