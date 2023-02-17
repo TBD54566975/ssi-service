@@ -38,6 +38,7 @@ const (
 	ResponsesPrefix        = "/responses"
 	KeyStorePrefix         = "/keys"
 	VerificationPath       = "/verification"
+	WebhookPrefix          = "/webhooks"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -113,6 +114,8 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 		return s.OperationAPI(service)
 	case svcframework.Issuing:
 		return s.IssuanceAPI(service)
+	case svcframework.Webhook:
+		return s.WebhookAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
@@ -269,4 +272,18 @@ func (s *SSIServer) IssuanceAPI(service svcframework.Service) error {
 	s.Handle(http.MethodGet, path.Join(issuanceHandlerPath, "/:id"), issuanceRouter.GetIssuanceTemplate)
 	s.Handle(http.MethodDelete, path.Join(issuanceHandlerPath, "/:id"), issuanceRouter.DeleteIssuanceTemplate)
 	return nil
+}
+
+func (s *SSIServer) WebhookAPI(service svcframework.Service) (err error) {
+	webhookRouter, err := router.NewWebhookRouter(service)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not create webhook router")
+	}
+
+	handlerPath := V1Prefix + WebhookPrefix
+	s.Handle(http.MethodPut, handlerPath, webhookRouter.CreateWebhook)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), webhookRouter.GetWebhook)
+	s.Handle(http.MethodGet, handlerPath, webhookRouter.GetWebhooks)
+	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), webhookRouter.DeleteWebhook)
+	return
 }
