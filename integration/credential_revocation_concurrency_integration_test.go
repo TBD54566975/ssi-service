@@ -1,10 +1,8 @@
 package integration
 
 import (
-	"math/rand"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -121,10 +119,6 @@ func TestConcurrencyRevocationVerifiableCredentialIntegration(t *testing.T) {
 	for i := 0; i < vcCount; i++ {
 		go func(i int) {
 			defer wg.Done()
-
-			rand.Seed(time.Now().UnixNano())
-			n := rand.Intn(5000)
-			time.Sleep(time.Duration(n) * time.Millisecond) //sleep between 0-5 seconds for jitter
 
 			vcOutput, err := CreateVerifiableCredential(credInputParams{IssuerID: issuerDID, SchemaID: schemaID, SubjectID: issuerDID}, true)
 			assert.NoError(t, err)

@@ -252,17 +252,6 @@ func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*Sto
 	return &storedCreds[0], nil
 }
 
-func (cs *Storage) storeCredential(ctx context.Context, request StoreCredentialRequest, namespace string) error {
-
-	wc, err := cs.getStoreCredentialWriteContext(request, namespace)
-	if err != nil {
-		return errors.Wrap(err, "building stored credential")
-
-	}
-	// TODO(gabe) conflict checking?
-	return cs.db.Write(ctx, wc.namespace, wc.key, wc.value)
-}
-
 func (cs *Storage) GetStoreCredentialWriteContext(request StoreCredentialRequest) (*WriteContext, error) {
 	return cs.getStoreCredentialWriteContext(request, credentialNamespace)
 }
