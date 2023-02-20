@@ -131,3 +131,33 @@ func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWri
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
+
+// DeleteKey godoc
+//
+// @Summary     Delete Key
+// @Description Delete key
+// @Tags        KeyStoreAPI
+// @Accept      json
+// @Produce     json
+// @Param       id  path     string true "ID"
+// @Success     200 {object} DeleteKeyResponse
+// @Failure     400 {string} string "Bad request"
+// @Router      /v1/keys/{id} [delete]
+func (ksr *KeyStoreRouter) DeleteKey(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		errMsg := "cannot get key details without ID parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	_, err := ksr.service.DeleteKey(ctx, keystore.DeleteKeyRequest{ID: *id})
+	if err != nil {
+		errMsg := fmt.Sprintf("could not delete key for id: %s", *id)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	resp := GetKeyDetailsResponse{}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
+}

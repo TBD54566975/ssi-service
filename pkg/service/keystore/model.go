@@ -35,3 +35,10 @@ type GetKeyDetailsResponse struct {
 	Controller string
 	CreatedAt  string
 }
+
+type DeleteKeyRequest struct {
+	ID string
+}
+
+type DeleteKeyResponse struct {
+}
