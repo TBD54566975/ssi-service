@@ -140,3 +140,65 @@ func TestStoreAndGetKey(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, signer)
 }
+
+func TestStoreAndGetKeyWithExistingKeystorage(t *testing.T) {
+
+	file, err := os.CreateTemp("", "bolt")
+	require.NoError(t, err)
+	name := file.Name()
+	assert.NoError(t, file.Close())
+	bolt, err := storage.NewStorage(storage.Bolt, name)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, bolt)
+
+	// remove the db file after the test
+	t.Cleanup(func() {
+		_ = bolt.Close()
+		_ = os.Remove(bolt.URI())
+	})
+
+	config := config.KeyStoreServiceConfig{
+		BaseServiceConfig: &config.BaseServiceConfig{
+			Name: "test-keyStore",
+		},
+		ServiceKeyPassword: "test-password",
+	}
+
+	serviceKey, serviceKeySalt, err := GenerateServiceKey(config.ServiceKeyPassword)
+
+	// Next, instantiate the key storage
+	keyStoreStorage, err := NewKeyStoreStorage(s, ServiceKey{
+		Base58Key:  serviceKey,
+		Base58Salt: serviceKeySalt,
+	})
+
+	keyStore, err := NewKeyStoreFromKeystoreStorage(
+		config,
+		keyStoreStorage,
+	)
+
+	assert.NoError(t, err)
+	assert.NotEmpty(t, keyStore)
+
+	// store the key
+	_, privKey, err := crypto.GenerateEd25519Key()
+	assert.NoError(t, err)
+	err = keyStore.StoreKey(context.Background(), StoreKeyRequest{
+		ID:               "test-id",
+		Type:             crypto.Ed25519,
+		Controller:       "test-controller",
+		PrivateKeyBase58: base58.Encode(privKey),
+	})
+	assert.NoError(t, err)
+
+	// get it back
+	keyResponse, err := keyStore.GetKey(context.Background(), GetKeyRequest{ID: "test-id"})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, keyResponse)
+	assert.Equal(t, privKey, keyResponse.Key)
+
+	// make sure can create a signer properly
+	signer, err := crypto.NewJWTSigner("kid", keyResponse.Key)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, signer)
+}
