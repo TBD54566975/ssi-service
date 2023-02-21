@@ -161,3 +161,33 @@ func (ksr *KeyStoreRouter) DeleteKey(ctx context.Context, w http.ResponseWriter,
 	resp := GetKeyDetailsResponse{}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
+
+// KeyExists godoc
+//
+// @Summary     Check Key Id Exists
+// @Description Check a key exists without disclosing key contents
+// @Tags        KeyStoreAPI
+// @Accept      json
+// @Produce     json
+// @Param       id  path     string true "ID"
+// @Success     200 {object} KeyExistsResponse
+// @Failure     400 {string} string "Bad request"
+// @Router      /v1/keys/check/{id} [get]
+func (ksr *KeyStoreRouter) KeyExists(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		errMsg := "cannot check key exists without ID parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	_, err := ksr.service.KeyExists(ctx, keystore.KeyExistsRequest{ID: *id})
+	if err != nil {
+		errMsg := fmt.Sprintf("could not check key for id: %s", *id)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	resp := GetKeyDetailsResponse{}
+	return framework.Respond(ctx, w, resp, http.StatusOK)
+}

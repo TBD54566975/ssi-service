@@ -42,3 +42,11 @@ type DeleteKeyRequest struct {
 
 type DeleteKeyResponse struct {
 }
+
+type KeyExistsRequest struct {
+	ID string
+}
+
+type KeyExistsResponse struct {
+	Exists bool
+}

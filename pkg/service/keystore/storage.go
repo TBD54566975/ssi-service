@@ -126,7 +126,24 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 }
 
 func (kss *Storage) DeleteKey(ctx context.Context, id string) error {
+	if r, err := kss.KeyExists(ctx, id); err != nil {
+		return err
+	} else if !r {
+		return errors.New("key does not exist.")
+	}
 	return kss.db.Delete(ctx, namespace, id)
+}
+
+// check if a key exists
+func (kss *Storage) KeyExists(ctx context.Context, id string) (bool, error) {
+	storedKeyBytes, err := kss.db.Read(ctx, namespace, id)
+	if err != nil {
+		return false, err
+	}
+	if storedKeyBytes != nil {
+		return true, nil
+	}
+	return false, nil
 }
 
 func (kss *Storage) GetKey(ctx context.Context, id string) (*StoredKey, error) {
