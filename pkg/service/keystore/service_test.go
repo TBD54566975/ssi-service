@@ -167,7 +167,7 @@ func TestStoreAndGetKeyWithExistingKeystorage(t *testing.T) {
 	serviceKey, serviceKeySalt, err := GenerateServiceKey(config.ServiceKeyPassword)
 
 	// Next, instantiate the key storage
-	keyStoreStorage, err := NewKeyStoreStorage(s, ServiceKey{
+	keyStoreStorage, err := NewKeyStoreStorage(bolt, ServiceKey{
 		Base58Key:  serviceKey,
 		Base58Salt: serviceKeySalt,
 	})

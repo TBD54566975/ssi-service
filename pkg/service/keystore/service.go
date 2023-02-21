@@ -48,6 +48,10 @@ func (s Service) Config() config.KeyStoreServiceConfig {
 
 // NewKeyStoreFromKeystoreStorage uses  a keystore service directly from storage object
 func NewKeyStoreFromKeystoreStorage(config config.KeyStoreServiceConfig, keyStoreStorage *Storage) (*Service, error) {
+	if keyStoreStorage == nil {
+		return nil, errors.New("no storage provided")
+	}
+
 	service := Service{
 		storage: keyStoreStorage,
 		config:  config,
