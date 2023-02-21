@@ -129,8 +129,7 @@ func (s Service) GetKey(ctx context.Context, request GetKeyRequest) (*GetKeyResp
 func (s Service) DeleteKey(ctx context.Context, request DeleteKeyRequest) (*DeleteKeyResponse, error) {
 	logrus.Debugf("deleteing key: %+v", request)
 	id := request.ID
-	err := s.storage.DeleteKey(ctx, id)
-	if err != nil {
+	if err := s.storage.DeleteKey(ctx, id); err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not delete key: %s", id)
 	}
 
