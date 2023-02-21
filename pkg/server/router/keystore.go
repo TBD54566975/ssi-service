@@ -135,7 +135,7 @@ func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWri
 // DeleteKey godoc
 //
 // @Summary     Delete Key
-// @Description Delete key
+// @Description Delete a stored key
 // @Tags        KeyStoreAPI
 // @Accept      json
 // @Produce     json
@@ -146,7 +146,7 @@ func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWri
 func (ksr *KeyStoreRouter) DeleteKey(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
-		errMsg := "cannot get key details without ID parameter"
+		errMsg := "cannot delete key without ID parameter"
 		logrus.Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
