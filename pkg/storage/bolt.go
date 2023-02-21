@@ -146,8 +146,7 @@ func (b *BoltDB) Read(ctx context.Context, namespace, key string) ([]byte, error
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
 		if bucket == nil {
-			logrus.Warnf("namespace<%s> does not exist", namespace)
-			return nil
+			return fmt.Errorf("namespace<%s> does not exist", namespace)
 		}
 		result = bucket.Get([]byte(key))
 		return nil
