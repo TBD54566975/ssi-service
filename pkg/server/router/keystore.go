@@ -143,7 +143,7 @@ func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWri
 // @Success     200
 // @Failure     400 {string} string "Bad request"
 // @Router      /v1/keys/{id} [delete]
-func (ksr *KeyStoreRouter) Revoke(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (ksr *KeyStoreRouter) RevokeKey(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot delete key without ID parameter"
