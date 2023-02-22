@@ -90,3 +90,7 @@ func (csr CreateCredentialRequest) isStatusValid() bool {
 	}
 	return true
 }
+
+func (csr CreateCredentialRequest) hasStatus() bool {
+	return csr.Suspendable || csr.Revocable
+}

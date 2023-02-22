@@ -93,7 +93,7 @@ func (s Service) CreateCredential(ctx context.Context, request CreateCredentialR
 
 	var slcMetadata StatusListCredentialMetadata
 
-	if request.isStatusValid() && (request.Suspendable || request.Revocable) {
+	if request.hasStatus() && request.isStatusValid() {
 
 		var statusListUUID string
 		var err error
@@ -210,7 +210,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 		return nil, util.LoggingErrorMsg(err, errMsg)
 	}
 
-	if request.Revocable || request.Suspendable {
+	if request.hasStatus() {
 
 		credID := builder.ID
 		issuerID := request.Issuer

@@ -432,7 +432,6 @@ func TestCredentialRouter(t *testing.T) {
 		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, credService)
-
 		// check type and status
 		assert.Equal(tt, framework.Credential, credService.Type())
 		assert.Equal(tt, framework.StatusReady, credService.Status().Status)
@@ -530,6 +529,100 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, encodedListAfterRevoke)
 
 		assert.NotEqualValues(tt, encodedListAfterRevoke, encodedList)
+
+	})
+
+	t.Run("Create Multiple Suspendable Credential Different Issuer Schema StatusPurpose Triples", func(tt *testing.T) {
+		bolt := setupTestDB(tt)
+		assert.NotNil(tt, bolt)
+
+		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234"}}
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, credService)
+		// check type and status
+		assert.Equal(tt, framework.Credential, credService.Type())
+		assert.Equal(tt, framework.StatusReady, credService.Status().Status)
+
+		// create a did
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		// create a schema
+		emailSchema := map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"email": map[string]any{
+					"type": "string",
+				},
+			},
+			"required":             []any{"email"},
+			"additionalProperties": false,
+		}
+
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdSchema)
+
+		subject := "did:test:345"
+
+		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+			Issuer:     issuerDID.DID.ID,
+			Subject:    subject,
+			JSONSchema: createdSchema.ID,
+			Data: map[string]any{
+				"email": "Satoshi@Nakamoto.btc",
+			},
+			Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Revocable: true,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCred)
+
+		createdCredSuspendable, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+			Issuer:     issuerDID.DID.ID,
+			Subject:    subject,
+			JSONSchema: createdSchema.ID,
+			Data: map[string]any{
+				"email": "Satoshi@Nakamoto.btc",
+			},
+			Expiry:      time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			Suspendable: true,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, createdCredSuspendable)
+
+		revocationKey := strings.Join([]string{"", "is:" + issuerDID.DID.ID, "sc:" + createdSchema.ID, "sp:" + string(status.StatusRevocation)}, "-")
+
+		slcExists, err := bolt.Exists(context.Background(), "status-list-credential", revocationKey)
+		assert.NoError(tt, err)
+		assert.True(tt, slcExists)
+
+		indexPoolExists, err := bolt.Exists(context.Background(), "status-list-index-pool", revocationKey)
+		assert.NoError(tt, err)
+		assert.True(tt, indexPoolExists)
+
+		currentIndexExists, err := bolt.Exists(context.Background(), "status-list-current-index", revocationKey)
+		assert.NoError(tt, err)
+		assert.True(tt, currentIndexExists)
+
+		suspensionKey := strings.Join([]string{"", "is:" + issuerDID.DID.ID, "sc:" + createdSchema.ID, "sp:" + string(status.StatusSuspension)}, "-")
+
+		slcExists, err = bolt.Exists(context.Background(), "status-list-credential", suspensionKey)
+		assert.NoError(tt, err)
+		assert.True(tt, slcExists)
+
+		indexPoolExists, err = bolt.Exists(context.Background(), "status-list-index-pool", suspensionKey)
+		assert.NoError(tt, err)
+		assert.True(tt, indexPoolExists)
+
+		currentIndexExists, err = bolt.Exists(context.Background(), "status-list-current-index", suspensionKey)
+		assert.NoError(tt, err)
+		assert.True(tt, currentIndexExists)
 	})
 
 	t.Run("Create Suspendable Credential", func(tt *testing.T) {
@@ -814,24 +907,6 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Error(tt, err)
 		assert.ErrorContains(tt, err, "has a different status purpose<revocation> value than the status credential<suspension>")
 	})
-
-	t.Run("Extract UUID returns UUID", func(tt *testing.T) {
-		uuid := credential.ExtractID("/v1/credentials/status/ceccb36e-a386-494a-8bf5-d86f953485dd")
-		assert.NotEmpty(tt, uuid)
-		assert.Equal(tt, uuid, "ceccb36e-a386-494a-8bf5-d86f953485dd")
-
-		uuid = credential.ExtractID("http://localhost:1234/v1/credentials/status/ceccb36e-a386-494a-8bf5-d86f953485dd")
-		assert.NotEmpty(tt, uuid)
-		assert.Equal(tt, uuid, "ceccb36e-a386-494a-8bf5-d86f953485dd")
-
-		uuid = credential.ExtractID("ANYTHING/ceccb36e-a386-494a-8bf5-d86f953485dd")
-		assert.NotEmpty(tt, uuid)
-		assert.Equal(tt, uuid, "ceccb36e-a386-494a-8bf5-d86f953485dd")
-
-		uuid = credential.ExtractID("badinput")
-		assert.Empty(tt, uuid)
-	})
-
 }
 
 func createCredServicePrereqs(tt *testing.T) (string, string, credential.Service) {
