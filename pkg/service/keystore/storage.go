@@ -128,15 +128,16 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 }
 
 func (kss *Storage) RevokeKey(ctx context.Context, id string) error {
-	if key, err := kss.GetKey(ctx, id); err != nil {
+	key, err := kss.GetKey(ctx, id)
+	if err != nil {
 		return err
-	} else if key == nil {
+	}
+	if key == nil {
 		return errors.New("key not found")
-	} else {
-		key.Revoked = true
-		if err = kss.StoreKey(ctx, *key); err != nil {
-			return err
-		}
+	}
+	key.Revoked = true
+	if err = kss.StoreKey(ctx, *key); err != nil {
+		return err
 	}
 	return nil
 }
