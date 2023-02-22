@@ -75,3 +75,11 @@ func (s Service) GetWebhook(ctx context.Context, request GetWebhookRequest) (*Ge
 func (s Service) DeleteWebhook(ctx context.Context, request DeleteWebhookRequest) error {
 	return nil
 }
+
+func (s Service) GetSupportedNouns() GetSupportedNounsResponse {
+	return GetSupportedNounsResponse{Nouns: []Noun{"Credential", "DID", "Manifest", "Schema", "Presentation"}}
+}
+
+func (s Service) GetSupportedVerbs() GetSupportedVerbsResponse {
+	return GetSupportedVerbsResponse{Verbs: []Verb{"Create", "Update", "Delete"}}
+}

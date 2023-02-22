@@ -29,9 +29,9 @@ func NewWebhookRouter(s svcframework.Service) (*WebhookRouter, error) {
 }
 
 type CreateWebhookRequest struct {
-	WebhookNoun   webhook.Noun   `json:"webhookNoun" validate:"required"`
-	WebhookAction webhook.Action `json:"webhookAction" validate:"required"`
-	Urls          []string       `json:"urls" validate:"required"`
+	Noun webhook.Noun `json:"noun" validate:"required"`
+	Verb webhook.Verb `json:"verb" validate:"required"`
+	Urls []string     `json:"urls" validate:"required"`
 }
 
 type CreateWebhookResponse struct {
@@ -66,7 +66,7 @@ func (sr WebhookRouter) CreateWebhook(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	req := webhook.CreateWebhookRequest{WebhookNoun: request.WebhookNoun, WebhookAction: request.WebhookAction, Urls: request.Urls}
+	req := webhook.CreateWebhookRequest{Noun: request.Noun, Verb: request.Verb, Urls: request.Urls}
 	createWebhookResponse, err := sr.service.CreateWebhook(ctx, req)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create webhook")
@@ -106,7 +106,7 @@ func (sr WebhookRouter) GetWebhook(ctx context.Context, w http.ResponseWriter, r
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get webhook with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := GetWebhookResponse{Webhook: gotWebhook.Webhook}

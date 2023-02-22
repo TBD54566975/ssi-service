@@ -1,18 +1,21 @@
 package webhook
 
+// In the context of webhooks, it's common to use noun.verb notation to describe events,
+// such as "credential.create" or "schema.delete".
 type Noun string
-type Action string
+type Verb string
 
 type Webhook struct {
-	WebhookNoun   Noun     `json:"webhookNoun" validate:"required"`
-	WebhookAction Action   `json:"webhookAction" validate:"required"`
-	Urls          []string `json:"urls" validate:"required"`
+	ID   string   `json:"id" validate:"required"`
+	Noun Noun     `json:"noun" validate:"required"`
+	Verb Verb     `json:"verb" validate:"required"`
+	Urls []string `json:"urls" validate:"required"`
 }
 
 type CreateWebhookRequest struct {
-	WebhookNoun   Noun     `json:"webhookNoun" validate:"required"`
-	WebhookAction Action   `json:"webhookAction" validate:"required"`
-	Urls          []string `json:"urls" validate:"required"`
+	Noun Noun     `json:"noun" validate:"required"`
+	Verb Verb     `json:"verb" validate:"required"`
+	Urls []string `json:"urls" validate:"required"`
 }
 
 type CreateWebhookResponse struct {
@@ -35,4 +38,12 @@ type GetWebhooksResponse struct {
 
 type DeleteWebhookRequest struct {
 	ID string `json:"id" validate:"required"`
+}
+
+type GetSupportedNounsResponse struct {
+	Nouns []Noun `json:"nouns,omitempty"`
+}
+
+type GetSupportedVerbsResponse struct {
+	Verbs []Verb `json:"verbs,omitempty"`
 }
