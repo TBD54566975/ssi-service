@@ -123,18 +123,18 @@ func (s Service) GetKey(ctx context.Context, request GetKeyRequest) (*GetKeyResp
 		Controller: gotKey.Controller,
 		Key:        privKey,
 		CreatedAt:  gotKey.CreatedAt,
+		Revoked:    gotKey.Revoked,
 	}, nil
 }
 
-func (s Service) DeleteKey(ctx context.Context, request DeleteKeyRequest) (*DeleteKeyResponse, error) {
-	logrus.Debugf("deleteing key: %+v", request)
+func (s Service) RevokeKey(ctx context.Context, request RevokeKeyRequest) error {
+	logrus.Debugf("revoking key: %+v", request)
 	id := request.ID
 	err := s.storage.DeleteKey(ctx, id)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not delete key: %s", id)
+		return util.LoggingErrorMsgf(err, "could not delete key: %s", id)
 	}
-
-	return &DeleteKeyResponse{}, nil
+	return nil
 }
 
 func (s Service) GetKeyDetails(ctx context.Context, request GetKeyDetailsRequest) (*GetKeyDetailsResponse, error) {
@@ -154,6 +154,7 @@ func (s Service) GetKeyDetails(ctx context.Context, request GetKeyDetailsRequest
 		Type:       gotKeyDetails.KeyType,
 		Controller: gotKeyDetails.Controller,
 		CreatedAt:  gotKeyDetails.CreatedAt,
+		Revoked:    gotKeyDetails.Revoked,
 	}, nil
 }
 

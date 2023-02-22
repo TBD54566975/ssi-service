@@ -18,6 +18,7 @@ type StoredKey struct {
 	Controller string         `json:"controller"`
 	KeyType    crypto.KeyType `json:"keyType"`
 	Base58Key  string         `json:"key"`
+	Revoked    bool           `json:"revoked"`
 	CreatedAt  string         `json:"createdAt"`
 }
 
@@ -26,6 +27,7 @@ type KeyDetails struct {
 	ID         string         `json:"id"`
 	Controller string         `json:"controller"`
 	KeyType    crypto.KeyType `json:"keyType"`
+	Revoked    bool           `json:"revoked"`
 	CreatedAt  string         `json:"createdAt"`
 }
 
@@ -126,6 +128,13 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 }
 
 func (kss *Storage) DeleteKey(ctx context.Context, id string) error {
+	key, err := kss.GetKey(ctx, id)
+	if err != nil {
+		return err
+	}
+	if key != nil {
+		key.Revoked = true
+	}
 	return kss.db.Delete(ctx, namespace, id)
 }
 
@@ -167,5 +176,6 @@ func (kss *Storage) GetKeyDetails(ctx context.Context, id string) (*KeyDetails, 
 		Controller: stored.Controller,
 		KeyType:    stored.KeyType,
 		CreatedAt:  stored.CreatedAt,
+		Revoked:    stored.Revoked,
 	}, nil
 }

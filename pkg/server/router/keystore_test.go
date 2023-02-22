@@ -88,7 +88,7 @@ func TestKeyStoreRouter(t *testing.T) {
 		assert.Equal(tt, "did:test:me", gotDetails.Controller)
 
 		// delete key checks
-		_, err = keyStoreService.DeleteKey(context.Background(), keystore.DeleteKeyRequest{ID: keyID})
+		err = keyStoreService.RevokeKey(context.Background(), keystore.RevokeKeyRequest{ID: keyID})
 		assert.NoError(tt, err)
 		_, err = keyStoreService.GetKeyDetails(context.Background(), keystore.GetKeyDetailsRequest{ID: keyID})
 		assert.Error(tt, err)

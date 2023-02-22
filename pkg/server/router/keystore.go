@@ -151,7 +151,7 @@ func (ksr *KeyStoreRouter) DeleteKey(ctx context.Context, w http.ResponseWriter,
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	_, err := ksr.service.DeleteKey(ctx, keystore.DeleteKeyRequest{ID: *id})
+	err := ksr.service.RevokeKey(ctx, keystore.RevokeKeyRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not delete key for id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
