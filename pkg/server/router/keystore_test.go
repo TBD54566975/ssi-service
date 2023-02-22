@@ -91,6 +91,6 @@ func TestKeyStoreRouter(t *testing.T) {
 		err = keyStoreService.RevokeKey(context.Background(), keystore.RevokeKeyRequest{ID: keyID})
 		assert.NoError(tt, err)
 		gotDetails, err = keyStoreService.GetKeyDetails(context.Background(), keystore.GetKeyDetailsRequest{ID: keyID})
-		assert.True(tt, details.Revoked)
+		assert.True(tt, gotDetails.Revoked)
 	})
 }
