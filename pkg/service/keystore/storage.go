@@ -127,7 +127,7 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 	return kss.db.Write(ctx, namespace, id, encryptedKey)
 }
 
-func (kss *Storage) DeleteKey(ctx context.Context, id string) error {
+func (kss *Storage) RevokeKey(ctx context.Context, id string) error {
 	key, err := kss.GetKey(ctx, id)
 	if err != nil {
 		return err
@@ -135,7 +135,7 @@ func (kss *Storage) DeleteKey(ctx context.Context, id string) error {
 	if key != nil {
 		key.Revoked = true
 	}
-	return kss.db.Delete(ctx, namespace, id)
+	return nil
 }
 
 func (kss *Storage) GetKey(ctx context.Context, id string) (*StoredKey, error) {

@@ -130,7 +130,7 @@ func (s Service) GetKey(ctx context.Context, request GetKeyRequest) (*GetKeyResp
 func (s Service) RevokeKey(ctx context.Context, request RevokeKeyRequest) error {
 	logrus.Debugf("revoking key: %+v", request)
 	id := request.ID
-	err := s.storage.DeleteKey(ctx, id)
+	err := s.storage.RevokeKey(ctx, id)
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete key: %s", id)
 	}

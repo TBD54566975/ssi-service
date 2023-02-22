@@ -158,6 +158,6 @@ func (ksr *KeyStoreRouter) DeleteKey(ctx context.Context, w http.ResponseWriter,
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	resp := GetKeyDetailsResponse{}
+	var resp GetKeyDetailsResponse
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
