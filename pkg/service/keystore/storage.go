@@ -2,6 +2,7 @@ package keystore
 
 import (
 	"context"
+	"time"
 
 	"github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
@@ -18,6 +19,8 @@ type StoredKey struct {
 	Controller string         `json:"controller"`
 	KeyType    crypto.KeyType `json:"keyType"`
 	Base58Key  string         `json:"key"`
+	Revoked    bool           `json:"revoked"`
+	RevokedAt  string         `json:"revokedAt"`
 	CreatedAt  string         `json:"createdAt"`
 }
 
@@ -26,6 +29,8 @@ type KeyDetails struct {
 	ID         string         `json:"id"`
 	Controller string         `json:"controller"`
 	KeyType    crypto.KeyType `json:"keyType"`
+	Revoked    bool           `json:"revoked"`
+	RevokedAt  string         `json:"revokedAt"`
 	CreatedAt  string         `json:"createdAt"`
 }
 
@@ -125,6 +130,23 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 	return kss.db.Write(ctx, namespace, id, encryptedKey)
 }
 
+func (kss *Storage) RevokeKey(ctx context.Context, id string) error {
+	key, err := kss.GetKey(ctx, id)
+	if err != nil {
+		return err
+	}
+	if key == nil {
+		return errors.New("key not found")
+	}
+
+	key.Revoked = true
+	key.RevokedAt = time.Now().UTC().Format(time.RFC3339)
+	if err = kss.StoreKey(ctx, *key); err != nil {
+		return err
+	}
+	return nil
+}
+
 func (kss *Storage) GetKey(ctx context.Context, id string) (*StoredKey, error) {
 	storedKeyBytes, err := kss.db.Read(ctx, namespace, id)
 	if err != nil {
@@ -163,5 +185,6 @@ func (kss *Storage) GetKeyDetails(ctx context.Context, id string) (*KeyDetails, 
 		Controller: stored.Controller,
 		KeyType:    stored.KeyType,
 		CreatedAt:  stored.CreatedAt,
+		Revoked:    stored.Revoked,
 	}, nil
 }
