@@ -124,6 +124,7 @@ func (s Service) GetKey(ctx context.Context, request GetKeyRequest) (*GetKeyResp
 		Key:        privKey,
 		CreatedAt:  gotKey.CreatedAt,
 		Revoked:    gotKey.Revoked,
+		RevokedAt:  gotKey.RevokedAt,
 	}, nil
 }
 
@@ -155,6 +156,7 @@ func (s Service) GetKeyDetails(ctx context.Context, request GetKeyDetailsRequest
 		Controller: gotKeyDetails.Controller,
 		CreatedAt:  gotKeyDetails.CreatedAt,
 		Revoked:    gotKeyDetails.Revoked,
+		RevokedAt:  gotKeyDetails.RevokedAt,
 	}, nil
 }
 

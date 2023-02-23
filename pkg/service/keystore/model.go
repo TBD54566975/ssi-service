@@ -23,6 +23,7 @@ type GetKeyResponse struct {
 	Controller string
 	CreatedAt  string
 	Revoked    bool
+	RevokedAt  string
 	Key        gocrypto.PrivateKey
 }
 
@@ -36,6 +37,7 @@ type GetKeyDetailsResponse struct {
 	Controller string
 	CreatedAt  string
 	Revoked    bool
+	RevokedAt  string
 }
 
 type RevokeKeyRequest struct {

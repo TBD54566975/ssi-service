@@ -2,6 +2,7 @@ package keystore
 
 import (
 	"context"
+	"time"
 
 	"github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
@@ -19,6 +20,7 @@ type StoredKey struct {
 	KeyType    crypto.KeyType `json:"keyType"`
 	Base58Key  string         `json:"key"`
 	Revoked    bool           `json:"revoked"`
+	RevokedAt  string         `json:"revokedAt"`
 	CreatedAt  string         `json:"createdAt"`
 }
 
@@ -28,6 +30,7 @@ type KeyDetails struct {
 	Controller string         `json:"controller"`
 	KeyType    crypto.KeyType `json:"keyType"`
 	Revoked    bool           `json:"revoked"`
+	RevokedAt  string         `json:"revokedAt"`
 	CreatedAt  string         `json:"createdAt"`
 }
 
@@ -135,7 +138,9 @@ func (kss *Storage) RevokeKey(ctx context.Context, id string) error {
 	if key == nil {
 		return errors.New("key not found")
 	}
+
 	key.Revoked = true
+	key.RevokedAt = time.Now().UTC().Format(time.RFC3339)
 	if err = kss.StoreKey(ctx, *key); err != nil {
 		return err
 	}
