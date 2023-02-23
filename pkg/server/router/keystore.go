@@ -131,3 +131,33 @@ func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWri
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
+
+// RevokeKey godoc
+//
+// @Summary     Revoke Key
+// @Description Revoke a stored key
+// @Tags        KeyStoreAPI
+// @Accept      json
+// @Produce     json
+// @Param       id  path     string true "ID"
+// @Success     200
+// @Failure     400 {string} string "Bad request"
+// @Router      /v1/keys/{id} [delete]
+func (ksr *KeyStoreRouter) RevokeKey(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		errMsg := "cannot delete key without ID parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	err := ksr.service.RevokeKey(ctx, keystore.RevokeKeyRequest{ID: *id})
+	if err != nil {
+		errMsg := fmt.Sprintf("could not delete key for id: %s", *id)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	}
+
+	var resp GetKeyDetailsResponse
+	return framework.Respond(ctx, w, resp, http.StatusOK)
+}

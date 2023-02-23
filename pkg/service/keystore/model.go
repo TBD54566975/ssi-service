@@ -22,6 +22,8 @@ type GetKeyResponse struct {
 	Type       crypto.KeyType
 	Controller string
 	CreatedAt  string
+	Revoked    bool
+	RevokedAt  string
 	Key        gocrypto.PrivateKey
 }
 
@@ -34,4 +36,10 @@ type GetKeyDetailsResponse struct {
 	Type       crypto.KeyType
 	Controller string
 	CreatedAt  string
+	Revoked    bool
+	RevokedAt  string
+}
+
+type RevokeKeyRequest struct {
+	ID string
 }
