@@ -285,5 +285,8 @@ func (s *SSIServer) WebhookAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), webhookRouter.GetWebhook)
 	s.Handle(http.MethodGet, handlerPath, webhookRouter.GetWebhooks)
 	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), webhookRouter.DeleteWebhook)
+
+	s.Handle(http.MethodGet, path.Join(handlerPath, "nouns"), webhookRouter.GetSupportedNouns)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "verbs"), webhookRouter.GetSupportedVerbs)
 	return
 }

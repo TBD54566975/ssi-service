@@ -9,13 +9,13 @@ type Webhook struct {
 	ID   string   `json:"id" validate:"required"`
 	Noun Noun     `json:"noun" validate:"required"`
 	Verb Verb     `json:"verb" validate:"required"`
-	Urls []string `json:"urls" validate:"required"`
+	URLS []string `json:"urls" validate:"required"`
 }
 
 type CreateWebhookRequest struct {
 	Noun Noun     `json:"noun" validate:"required"`
 	Verb Verb     `json:"verb" validate:"required"`
-	Urls []string `json:"urls" validate:"required"`
+	URLS []string `json:"urls" validate:"required"`
 }
 
 type CreateWebhookResponse struct {
