@@ -28,12 +28,14 @@ func NewWebhookRouter(s svcframework.Service) (*WebhookRouter, error) {
 	return &WebhookRouter{service: webhookService}, nil
 }
 
+// CreateWebhookRequest In the context of webhooks, it's common to use noun.verb notation to describe events,
+// such as "credential.create" or "schema.delete".
 type CreateWebhookRequest struct {
 	// The noun (entity) for the new webhook.eg: Credential
 	Noun webhook.Noun `json:"noun" validate:"required"`
 	// The verb for the new webhook.eg: Create
 	Verb webhook.Verb `json:"verb" validate:"required"`
-	// The URLS to post the output of this request to Noun.Verb action to
+	// The URLS to post the output of this request to Noun.Verb action to.
 	URLS []string `json:"urls" validate:"required"`
 }
 

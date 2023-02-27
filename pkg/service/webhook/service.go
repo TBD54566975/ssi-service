@@ -77,9 +77,9 @@ func (s Service) DeleteWebhook(ctx context.Context, request DeleteWebhookRequest
 }
 
 func (s Service) GetSupportedNouns() GetSupportedNounsResponse {
-	return GetSupportedNounsResponse{Nouns: []Noun{"Credential", "DID", "Manifest", "Schema", "Presentation"}}
+	return GetSupportedNounsResponse{Nouns: []Noun{Credential, DID, Manifest, Schema, Presentation}}
 }
 
 func (s Service) GetSupportedVerbs() GetSupportedVerbsResponse {
-	return GetSupportedVerbsResponse{Verbs: []Verb{"Create", "Update", "Delete"}}
+	return GetSupportedVerbsResponse{Verbs: []Verb{Create, Delete}}
 }

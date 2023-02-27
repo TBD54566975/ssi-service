@@ -5,6 +5,17 @@ package webhook
 type Noun string
 type Verb string
 
+// Supported Nouns
+const Credential = Noun("Credential")
+const DID = Noun("DID")
+const Manifest = Noun("Manifest")
+const Schema = Noun("Schema")
+const Presentation = Noun("Presentation")
+
+// Supported Verbs
+const Create = Verb("Create")
+const Delete = Verb("Delete")
+
 type Webhook struct {
 	ID   string   `json:"id" validate:"required"`
 	Noun Noun     `json:"noun" validate:"required"`
