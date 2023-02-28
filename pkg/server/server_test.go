@@ -13,6 +13,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
+	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
@@ -299,4 +300,27 @@ func testManifest(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Se
 	require.NotEmpty(t, manifestRouter)
 
 	return manifestRouter, manifestService
+}
+
+func testWebhookService(t *testing.T, bolt storage.ServiceStorage) *webhook.Service {
+	serviceConfig := config.WebhookServiceConfig{
+		BaseServiceConfig: &config.BaseServiceConfig{Name: "webhook"},
+	}
+
+	// create a webhook service
+	webhookService, err := webhook.NewWebhookService(serviceConfig, bolt)
+	require.NoError(t, err)
+	require.NotEmpty(t, webhookService)
+	return webhookService
+}
+
+func testWebhookRouter(t *testing.T, bolt storage.ServiceStorage) *router.WebhookRouter {
+	webhookService := testWebhookService(t, bolt)
+
+	// create router for service
+	webhookRouter, err := router.NewWebhookRouter(webhookService)
+	require.NoError(t, err)
+	require.NotEmpty(t, webhookRouter)
+
+	return webhookRouter
 }

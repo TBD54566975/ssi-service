@@ -35,12 +35,11 @@ type CreateWebhookRequest struct {
 	Noun webhook.Noun `json:"noun" validate:"required"`
 	// The verb for the new webhook.eg: Create
 	Verb webhook.Verb `json:"verb" validate:"required"`
-	// The URLS to post the output of this request to Noun.Verb action to.
-	URLS []string `json:"urls" validate:"required"`
+	// The URL to post the output of this request to Noun.Verb action to.
+	URL string `json:"url" validate:"required"`
 }
 
 type CreateWebhookResponse struct {
-	ID      string          `json:"id"`
 	Webhook webhook.Webhook `json:"webhook"`
 }
 
@@ -70,7 +69,12 @@ func (wr WebhookRouter) CreateWebhook(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	req := webhook.CreateWebhookRequest{Noun: request.Noun, Verb: request.Verb, URLS: request.URLS}
+	req := webhook.CreateWebhookRequest{Noun: request.Noun, Verb: request.Verb, URL: request.URL}
+
+	if !req.IsValid() {
+		return framework.NewRequestError(errors.New("invalid create webhook request"), http.StatusBadRequest)
+	}
+
 	createWebhookResponse, err := wr.service.CreateWebhook(ctx, req)
 	if err != nil {
 		errMsg := "could not create webhook"
@@ -78,12 +82,11 @@ func (wr WebhookRouter) CreateWebhook(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := CreateWebhookResponse{ID: createWebhookResponse.ID, Webhook: createWebhookResponse.Webhook}
+	resp := CreateWebhookResponse{Webhook: createWebhookResponse.Webhook}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
 type GetWebhookResponse struct {
-	ID      string          `json:"id"`
 	Webhook webhook.Webhook `json:"webhook"`
 }
 
@@ -97,18 +100,25 @@ type GetWebhookResponse struct {
 // @Param       id  path     string true "ID"
 // @Success     200 {object} GetWebhookResponse
 // @Failure     400 {string} string "Bad request"
-// @Router      /v1/webhooks/{id} [get]
+// @Router      /v1/webhooks/{noun}/{verb} [get]
 func (wr WebhookRouter) GetWebhook(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	id := framework.GetParam(ctx, IDParam)
-	if id == nil {
-		errMsg := "cannot get webhook without ID parameter"
+	noun := framework.GetParam(ctx, "noun")
+	if noun == nil {
+		errMsg := "cannot get webhook without noun parameter"
 		logrus.Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	gotWebhook, err := wr.service.GetWebhook(ctx, webhook.GetWebhookRequest{ID: *id})
+	verb := framework.GetParam(ctx, "verb")
+	if noun == nil {
+		errMsg := "cannot get webhook without verb parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	gotWebhook, err := wr.service.GetWebhook(ctx, webhook.GetWebhookRequest{Noun: webhook.Noun(*noun), Verb: webhook.Verb(*verb)})
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get webhook with id: %s", *id)
+		errMsg := fmt.Sprintf("could not get webhook with id: %s-%s", *noun, *verb)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
@@ -159,17 +169,37 @@ func (wr WebhookRouter) GetWebhooks(ctx context.Context, w http.ResponseWriter, 
 // @Success     200 {string} string "OK"
 // @Failure     400 {string} string "Bad request"
 // @Failure     500 {string} string "Internal server error"
-// @Router      /v1/webhooks/{id} [delete]
+// @Router      /v1/webhooks/{noun}/{verb}/{url} [delete]
 func (wr WebhookRouter) DeleteWebhook(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	id := framework.GetParam(ctx, IDParam)
-	if id == nil {
-		errMsg := "cannot delete a webhook without an ID parameter"
+	noun := framework.GetParam(ctx, "noun")
+	if noun == nil {
+		errMsg := "cannot get webhook without noun parameter"
 		logrus.Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := wr.service.DeleteWebhook(ctx, webhook.DeleteWebhookRequest{ID: *id}); err != nil {
-		errMsg := fmt.Sprintf("could not delete webhook with id: %s", *id)
+	verb := framework.GetParam(ctx, "verb")
+	if noun == nil {
+		errMsg := "cannot get webhook without verb parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	url := framework.GetParam(ctx, "url")
+	if noun == nil {
+		errMsg := "cannot get webhook without verb parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	req := webhook.DeleteWebhookRequest{Noun: webhook.Noun(*noun), Verb: webhook.Verb(*verb), URL: *url}
+
+	if !req.IsValid() {
+		return framework.NewRequestError(errors.New("invalid delete webhook request"), http.StatusBadRequest)
+	}
+
+	if err := wr.service.DeleteWebhook(ctx, req); err != nil {
+		errMsg := fmt.Sprintf("could not delete webhook with id: %s-%s", *noun, *verb)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
