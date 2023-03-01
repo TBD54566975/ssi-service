@@ -175,6 +175,8 @@ func (cs *Storage) StoreCredentialTx(ctx context.Context, tx storage.Tx, request
 	return tx.Write(ctx, wc.namespace, wc.key, wc.value)
 }
 
+// CreateStatusListCredentialTx creates a new status list credential with the provided metadata and stores it in the database as a transaction.
+// The function generates a unique random number and stores it along with the metadata in the database and then returns it
 func (cs *Storage) CreateStatusListCredentialTx(ctx context.Context, tx storage.Tx, request StoreCredentialRequest, slcMetadata StatusListCredentialMetadata) (int, error) {
 
 	randUniqueList := randomUniqueNum(bitStringLength)
@@ -183,10 +185,9 @@ func (cs *Storage) CreateStatusListCredentialTx(ctx context.Context, tx storage.
 		return -1, util.LoggingErrorMsg(err, "could not marshal random unique numbers")
 	}
 
-
 	if err := tx.Write(context.Background(), slcMetadata.statusListIndexPoolWatchKey.Namespace, slcMetadata.statusListIndexPoolWatchKey.Key, uniqueNumBytes); err != nil {
 		return -1, util.LoggingErrorMsg(err, "problem writing status list indexes to db")
-  }
+	}
 
 	// Set the index to 1 since this is a new statusListCredential
 	statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: 1})
@@ -231,14 +232,14 @@ func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*Sto
 		credBytes, err := cs.db.Read(ctx, statusListCredentialNamespace, key)
 		if err != nil {
 			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
-		} else {
-			var cred StoredCredential
-			if err = json.Unmarshal(credBytes, &cred); err != nil {
-				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
-			}
-			if ExtractID(cred.CredentialID) == id {
-				storedCreds = append(storedCreds, cred)
-			}
+			continue
+		}
+		var cred StoredCredential
+		if err = json.Unmarshal(credBytes, &cred); err != nil {
+			logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
+		}
+		if ExtractID(cred.CredentialID) == id {
+			storedCreds = append(storedCreds, cred)
 		}
 	}
 
@@ -490,7 +491,7 @@ func (cs *Storage) GetCredentialsByIssuerAndSchema(ctx context.Context, issuer s
 	return cs.getCredentialsByIssuerAndSchema(ctx, issuer, schema, credentialNamespace)
 }
 
-func (cs *Storage) GetStatusListCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string, statusPurpose statussdk.StatusPurpose) ([]StoredCredential, error) {
+func (cs *Storage) GetStatusListCredentialsByIssuerSchemaPurpose(ctx context.Context, issuer string, schema string, statusPurpose statussdk.StatusPurpose) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, statusListCredentialNamespace)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
@@ -611,19 +612,19 @@ func (cs *Storage) deleteCredential(ctx context.Context, id string, namespace st
 }
 
 func (cs *Storage) GetStatusListCredentialWatchKey(issuer, schema, statusPurpose string) storage.WatchKey {
-	return storage.WatchKey{Namespace: statusListCredentialNamespace, Key: getStatusListKey("", issuer, schema, statusPurpose)}
+	return storage.WatchKey{Namespace: statusListCredentialNamespace, Key: getStatusListKey(issuer, schema, statusPurpose)}
 }
 
 func (cs *Storage) GetStatusListIndexPoolWatchKey(issuer, schema, statusPurpose string) storage.WatchKey {
-	return storage.WatchKey{Namespace: statusListCredentialIndexPoolNamespace, Key: getStatusListKey("", issuer, schema, statusPurpose)}
+	return storage.WatchKey{Namespace: statusListCredentialIndexPoolNamespace, Key: getStatusListKey(issuer, schema, statusPurpose)}
 }
 
 func (cs *Storage) GetStatusListCurrentIndexWatchKey(issuer, schema, statusPurpose string) storage.WatchKey {
-	return storage.WatchKey{Namespace: statusListCredentialCurrentIndex, Key: getStatusListKey("", issuer, schema, statusPurpose)}
+	return storage.WatchKey{Namespace: statusListCredentialCurrentIndex, Key: getStatusListKey(issuer, schema, statusPurpose)}
 }
 
 func (cs *Storage) GetStatusListCredentialKeyData(ctx context.Context, issuer string, schema string, statusPurpose statussdk.StatusPurpose) (string, *StoredCredential, error) {
-	storedStatusListCreds, err := cs.GetStatusListCredentialsByIssuerAndSchema(ctx, issuer, schema, statusPurpose)
+	storedStatusListCreds, err := cs.GetStatusListCredentialsByIssuerSchemaPurpose(ctx, issuer, schema, statusPurpose)
 	if err != nil {
 		return "", nil, util.LoggingNewErrorf("getting status list credential for issuer: %s schema: %s", issuer, schema)
 	}
@@ -647,6 +648,11 @@ func (cs *Storage) GetStatusListCredentialKeyData(ctx context.Context, issuer st
 	return statusListUUID, &storedStatusListCreds[0], nil
 }
 
+// ExtractID is a function that takes a string input and returns a string that contains an ID extracted from the input string.
+// The ID is extracted by searching for a string that matches the regular expression, which matches a forward slash followed
+// by one or more characters that are either letters (upper or lower case), digits (0-9), or hyphens (-), at the end of the input string.
+// If a match is found, the function returns the matched string with the forward slash removed (i.e., everything after the forward slash).
+// If no match is found, an empty string is returned.
 func ExtractID(input string) string {
 	re := regexp.MustCompile(`\/[a-zA-Z0-9-]+$`)
 	match := re.FindString(input)
@@ -656,8 +662,8 @@ func ExtractID(input string) string {
 	return ""
 }
 
-func getStatusListKey(uuid, issuer, schema, statusPurpose string) string {
-	return strings.Join([]string{uuid, "is:" + issuer, "sc:" + schema, "sp:" + statusPurpose}, "-")
+func getStatusListKey(issuer, schema, statusPurpose string) string {
+	return strings.Join([]string{"is:" + issuer, "sc:" + schema, "sp:" + statusPurpose}, "-")
 }
 
 // unique key for a credential

@@ -174,7 +174,7 @@ func TestDBPrefixAndKeys(t *testing.T) {
 	}
 }
 
-func TestDBPrefixAndKeysMultipleNamespace(t *testing.T) {
+func TestDBReadAllKeysForNamespace(t *testing.T) {
 	for _, dbImpl := range getDBImplementations(t) {
 		db := dbImpl
 
