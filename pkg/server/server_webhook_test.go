@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
@@ -92,6 +93,64 @@ func TestWebhookAPI(t *testing.T) {
 
 		err := webhookRouter.CreateWebhook(newRequestContext(), w, req)
 		assert.NoError(tt, err)
+	})
+
+	t.Run("Test Good Request Delete Webhook", func(tt *testing.T) {
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
+
+		webhookRouter := testWebhookRouter(tt, bolt)
+
+		webhookRequest := router.CreateWebhookRequest{
+			Noun: "Manifest",
+			Verb: "Create",
+			URL:  "https://www.tbd.website/",
+		}
+
+		requestValue := newRequestValue(tt, webhookRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/webhooks", requestValue)
+		w := httptest.NewRecorder()
+
+		err := webhookRouter.CreateWebhook(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/webhooks", nil)
+		w = httptest.NewRecorder()
+
+		err = webhookRouter.GetWebhooks(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.GetWebhooksResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+		assert.Len(tt, resp.Webhooks, 1)
+
+		err = webhookRouter.GetWebhooks(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		deleteWebhookRequest := router.DeleteWebhookRequest{
+			Noun: "Manifest",
+			Verb: "Create",
+			URL:  "https://www.tbd.website/",
+		}
+
+		requestValue = newRequestValue(tt, deleteWebhookRequest)
+		req = httptest.NewRequest(http.MethodDelete, "https://ssi-service.com/v1/webhooks", requestValue)
+		w = httptest.NewRecorder()
+
+		err = webhookRouter.DeleteWebhook(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/webhooks", nil)
+		w = httptest.NewRecorder()
+
+		err = webhookRouter.GetWebhooks(newRequestContext(), w, req)
+		assert.NoError(tt, err)
+
+		var respAfter router.GetWebhooksResponse
+		err = json.NewDecoder(w.Body).Decode(&respAfter)
+		assert.NoError(tt, err)
+		assert.Len(tt, respAfter.Webhooks, 0)
 	})
 
 	t.Run("Test Get Webhook None Exist", func(tt *testing.T) {

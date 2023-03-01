@@ -148,6 +148,7 @@ func (s Service) DeleteWebhook(ctx context.Context, request DeleteWebhookRequest
 
 	webhook.URLS = append(webhook.URLS[:index], webhook.URLS[index+1:]...)
 
+	// if the webhook has no more URLS delete the entire webhook entity
 	if len(webhook.URLS) == 0 {
 		return s.storage.DeleteWebhook(ctx, string(request.Noun), string(request.Verb))
 	}
