@@ -107,7 +107,7 @@ func (sr SchemaRouter) GetSchema(ctx context.Context, w http.ResponseWriter, r *
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get schema with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := GetSchemaResponse{Schema: gotSchema.Schema, SchemaJWT: gotSchema.SchemaJWT}
