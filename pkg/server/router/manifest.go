@@ -381,7 +381,6 @@ type GetApplicationsResponse struct {
 // @Accept      json
 // @Produce     json
 // @Success     200 {object} GetApplicationsResponse
-// @Failure     400 {string} string "Bad request"
 // @Failure     500 {string} string "Internal server error"
 // @Router      /v1/manifests/applications [get]
 func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
@@ -390,7 +389,7 @@ func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWri
 	if err != nil {
 		errMsg := "could not get applications"
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := GetApplicationsResponse{
@@ -446,6 +445,7 @@ type GetResponseResponse struct {
 // @Param       id  path     string true "ID"
 // @Success     200 {object} GetResponseResponse
 // @Failure     400 {string} string "Bad request"
+// @Failure     500 {string} string "Internal server error"
 // @Router      /v1/manifests/responses/{id} [get]
 func (mr ManifestRouter) GetResponse(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
@@ -459,7 +459,7 @@ func (mr ManifestRouter) GetResponse(ctx context.Context, w http.ResponseWriter,
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get response with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := GetResponseResponse{
@@ -482,7 +482,6 @@ type GetResponsesResponse struct {
 // @Accept      json
 // @Produce     json
 // @Success     200 {object} GetResponsesResponse
-// @Failure     400 {string} string "Bad request"
 // @Failure     500 {string} string "Internal server error"
 // @Router      /v1/manifests/responses [get]
 func (mr ManifestRouter) GetResponses(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
@@ -491,7 +490,7 @@ func (mr ManifestRouter) GetResponses(ctx context.Context, w http.ResponseWriter
 	if err != nil {
 		errMsg := "could not get responses"
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := GetResponsesResponse{
@@ -582,5 +581,5 @@ func (mr ManifestRouter) ReviewApplication(ctx context.Context, w http.ResponseW
 		Response:    applicationResponse.Response,
 		Credentials: applicationResponse.Credentials,
 		ResponseJWT: applicationResponse.ResponseJWT,
-	}, http.StatusOK)
+	}, http.StatusCreated)
 }
