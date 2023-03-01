@@ -206,7 +206,7 @@ func (cs *Storage) GetIncrementStatusListIndexWriteContext(ctx context.Context) 
 	}
 
 	if statusListIndex.Index >= bitStringLength-1 {
-		return nil, util.LoggingErrorMsg(err, "no more indexes available for status list index")
+		return nil, util.LoggingNewError("no more indexes available for status list index")
 	}
 
 	statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: statusListIndex.Index + 1})
