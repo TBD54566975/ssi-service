@@ -376,7 +376,7 @@ type GetApplicationsResponse struct {
 // GetApplications godoc
 //
 // @Summary     Get applications
-// @Description Checks for the presence of a query parameter and calls the associated filtered get method
+// @Description Gets all the existing applications.
 // @Tags        ApplicationAPI
 // @Accept      json
 // @Produce     json
