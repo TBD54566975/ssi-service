@@ -183,9 +183,10 @@ func (cs *Storage) CreateStatusListCredentialTx(ctx context.Context, tx storage.
 		return -1, util.LoggingErrorMsg(err, "could not marshal random unique numbers")
 	}
 
+
 	if err := tx.Write(context.Background(), slcMetadata.statusListIndexPoolWatchKey.Namespace, slcMetadata.statusListIndexPoolWatchKey.Key, uniqueNumBytes); err != nil {
 		return -1, util.LoggingErrorMsg(err, "problem writing status list indexes to db")
-	}
+  }
 
 	// Set the index to 1 since this is a new statusListCredential
 	statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: 1})
