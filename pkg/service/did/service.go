@@ -7,6 +7,7 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/did"
@@ -26,6 +27,7 @@ type Service struct {
 
 	// external dependencies
 	keyStore *keystore.Service
+	Webhook  *webhook.Service
 }
 
 func (s *Service) Type() framework.Type {
@@ -64,7 +66,7 @@ func (s *Service) GetResolver() *didsdk.Resolver {
 	return s.resolver
 }
 
-func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
+func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, webhook *webhook.Service) (*Service, error) {
 	didStorage, err := NewDIDStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
@@ -81,6 +83,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 		handlers: make(map[didsdk.Method]MethodHandler),
 		keyStore: keyStore,
 		resolver: resolver,
+		Webhook:  webhook,
 	}
 
 	// instantiate all handlers for DID methods

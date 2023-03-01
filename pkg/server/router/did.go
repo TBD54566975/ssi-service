@@ -9,6 +9,7 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -118,6 +119,8 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 		PrivateKeyBase58: createDIDResponse.PrivateKeyBase58,
 		KeyType:          createDIDResponse.KeyType,
 	}
+
+	go dr.service.Webhook.PublishWebhook(webhook.DID, webhook.Create, resp)
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 

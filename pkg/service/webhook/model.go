@@ -29,6 +29,13 @@ type Webhook struct {
 	URLS []string `json:"urls" validate:"required"`
 }
 
+type Payload struct {
+	Noun Noun   `json:"noun" validate:"required"`
+	Verb Verb   `json:"verb" validate:"required"`
+	URL  string `json:"url" validate:"required"`
+	Data any    `json:"data,omitempty"`
+}
+
 type CreateWebhookRequest struct {
 	Noun Noun   `json:"noun" validate:"required"`
 	Verb Verb   `json:"verb" validate:"required"`

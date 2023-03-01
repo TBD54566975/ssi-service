@@ -14,6 +14,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 )
 
 const (
@@ -122,6 +123,8 @@ func (cr CredentialRouter) CreateCredential(ctx context.Context, w http.Response
 	}
 
 	resp := CreateCredentialResponse{Credential: createCredentialResponse.Credential, CredentialJWT: createCredentialResponse.CredentialJWT}
+
+	go cr.service.Webhook.PublishWebhook(webhook.Credential, webhook.Create, resp)
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
@@ -494,5 +497,6 @@ func (cr CredentialRouter) DeleteCredential(ctx context.Context, w http.Response
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
+	go cr.service.Webhook.PublishWebhook(webhook.Credential, webhook.Delete, id)
 	return framework.Respond(ctx, w, nil, http.StatusOK)
 }

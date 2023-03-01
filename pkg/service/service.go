@@ -79,12 +79,17 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsgf(err, "could not instantiate storage provider: %s", config.StorageProvider)
 	}
 
+	webhookService, err := webhook.NewWebhookService(config.WebhookConfig, storageProvider)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate the webhook service")
+	}
+
 	keyStoreService, err := keystore.NewKeyStoreService(config.KeyStoreConfig, storageProvider)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate keystore service")
 	}
 
-	didService, err := did.NewDIDService(config.DIDConfig, storageProvider, keyStoreService)
+	didService, err := did.NewDIDService(config.DIDConfig, storageProvider, keyStoreService, webhookService)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the DID service")
 	}
@@ -100,7 +105,7 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the issuing service")
 	}
 
-	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider, keyStoreService, didResolver, schemaService)
+	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider, keyStoreService, didResolver, schemaService, webhookService)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the credential service")
 	}
@@ -118,11 +123,6 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 	operationService, err := operation.NewOperationService(storageProvider)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the operation service")
-	}
-
-	webhookService, err := webhook.NewWebhookService(config.WebhookConfig, storageProvider)
-	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not instantiate the webhook service")
 	}
 
 	return []framework.Service{keyStoreService, didService, schemaService, issuingService, credentialService, manifestService, presentationService, operationService, webhookService}, nil

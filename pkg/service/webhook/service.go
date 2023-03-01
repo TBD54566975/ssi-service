@@ -1,10 +1,14 @@
 package webhook
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -15,8 +19,9 @@ import (
 )
 
 type Service struct {
-	storage *Storage
-	config  config.WebhookServiceConfig
+	storage    *Storage
+	config     config.WebhookServiceConfig
+	httpClient *http.Client
 }
 
 func (s Service) Type() framework.Type {
@@ -47,10 +52,15 @@ func NewWebhookService(config config.WebhookServiceConfig, s storage.ServiceStor
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the webhook service")
 	}
+
+	client := new(http.Client)
+
 	service := Service{
-		storage: webhookStorage,
-		config:  config,
+		storage:    webhookStorage,
+		config:     config,
+		httpClient: client,
 	}
+
 	if !service.Status().IsReady() {
 		return nil, errors.New(service.Status().Message)
 	}
@@ -59,6 +69,7 @@ func NewWebhookService(config config.WebhookServiceConfig, s storage.ServiceStor
 
 func (s Service) CreateWebhook(ctx context.Context, request CreateWebhookRequest) (*CreateWebhookResponse, error) {
 	logrus.Debugf("creating webhook: %+v", request)
+
 	webhook, err := s.storage.GetWebhook(ctx, string(request.Noun), string(request.Verb))
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "get webhook")
@@ -67,7 +78,17 @@ func (s Service) CreateWebhook(ctx context.Context, request CreateWebhookRequest
 	if webhook == nil {
 		webhook = &Webhook{request.Noun, request.Verb, []string{request.URL}}
 	} else {
-		webhook.URLS = append(webhook.URLS, request.URL)
+		exists := false
+		for _, v := range webhook.URLS {
+			if v == request.URL {
+				exists = true
+				break
+			}
+		}
+
+		if !exists {
+			webhook.URLS = append(webhook.URLS, request.URL)
+		}
 	}
 
 	err = s.storage.StoreWebhook(ctx, string(request.Noun), string(request.Verb), *webhook)
@@ -95,6 +116,7 @@ func (s Service) GetWebhook(ctx context.Context, request GetWebhookRequest) (*Ge
 
 func (s Service) GetWebhooks(ctx context.Context) (*GetWebhooksResponse, error) {
 	logrus.Debug("getting all webhooks")
+
 	webhooks, err := s.storage.GetWebhooks(ctx)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "get webhooks")
@@ -139,4 +161,58 @@ func (s Service) GetSupportedNouns() GetSupportedNounsResponse {
 
 func (s Service) GetSupportedVerbs() GetSupportedVerbsResponse {
 	return GetSupportedVerbsResponse{Verbs: []Verb{Create, Delete}}
+}
+
+func (s Service) PublishWebhook(noun Noun, verb Verb, payload interface{}) {
+	webhook, err := s.storage.GetWebhook(context.Background(), string(noun), string(verb))
+	if err != nil {
+		logrus.WithError(err).Warn("get webhook")
+	}
+
+	if webhook == nil {
+		logrus.Warn("no webhook found")
+		return
+	}
+
+	for _, url := range webhook.URLS {
+		postPayload := Payload{Noun: noun, Verb: verb, URL: url, Data: payload}
+
+		postJSONData, err := json.Marshal(postPayload)
+		if err != nil {
+			logrus.Warn("marshal payload")
+		}
+		_, err = s.post(url, string(postJSONData))
+		if err != nil {
+			logrus.Warnf("posting payload to %s", url)
+		}
+	}
+}
+
+func (s Service) post(url string, json string) (string, error) {
+	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer([]byte(json)))
+	if err != nil {
+		return "", errors.Wrap(err, "building http req")
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return "", errors.Wrap(err, "client http client")
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", errors.Wrap(err, "parsing body")
+	}
+
+	if is2xxResponse(resp.StatusCode) {
+		return "", fmt.Errorf("status code %v not in the 200s. body: %s", resp.StatusCode, string(body))
+	}
+
+	return string(body), err
+}
+
+func is2xxResponse(statusCode int) bool {
+	return statusCode/100 != 2
 }

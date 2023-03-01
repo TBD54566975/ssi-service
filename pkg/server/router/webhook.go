@@ -207,6 +207,10 @@ func (wr WebhookRouter) DeleteWebhook(ctx context.Context, w http.ResponseWriter
 	return framework.Respond(ctx, w, nil, http.StatusOK)
 }
 
+type GetSupportedNounsResponse struct {
+	Nouns []webhook.Noun `json:"nouns,omitempty"`
+}
+
 // GetSupportedNouns godoc
 //
 // @Summary     Get Supported Nouns
@@ -219,7 +223,11 @@ func (wr WebhookRouter) DeleteWebhook(ctx context.Context, w http.ResponseWriter
 // @Router      /v1/webhooks/nouns [get]
 func (wr WebhookRouter) GetSupportedNouns(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	nouns := wr.service.GetSupportedNouns()
-	return framework.Respond(ctx, w, nouns, http.StatusOK)
+	return framework.Respond(ctx, w, GetSupportedNounsResponse{nouns.Nouns}, http.StatusOK)
+}
+
+type GetSupportedVerbsResponse struct {
+	Verbs []webhook.Verb `json:"verbs,omitempty"`
 }
 
 // GetSupportedVerbs godoc
@@ -234,5 +242,5 @@ func (wr WebhookRouter) GetSupportedNouns(ctx context.Context, w http.ResponseWr
 // @Router      /v1/webhooks/verbs [get]
 func (wr WebhookRouter) GetSupportedVerbs(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	verbs := wr.service.GetSupportedVerbs()
-	return framework.Respond(ctx, w, verbs, http.StatusOK)
+	return framework.Respond(ctx, w, GetSupportedVerbsResponse{verbs.Verbs}, http.StatusOK)
 }
