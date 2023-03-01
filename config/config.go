@@ -78,6 +78,7 @@ type ServicesConfig struct {
 	CredentialConfig     CredentialServiceConfig   `toml:"credential,omitempty"`
 	ManifestConfig       ManifestServiceConfig     `toml:"manifest,omitempty"`
 	PresentationConfig   PresentationServiceConfig `toml:"presentation,omitempty"`
+	WebhookConfig        WebhookServiceConfig      `toml:"webhook,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
@@ -158,6 +159,17 @@ func (p *PresentationServiceConfig) IsEmpty() bool {
 		return true
 	}
 	return reflect.DeepEqual(p, &PresentationServiceConfig{})
+}
+
+type WebhookServiceConfig struct {
+	*BaseServiceConfig
+}
+
+func (p *WebhookServiceConfig) IsEmpty() bool {
+	if p == nil {
+		return true
+	}
+	return reflect.DeepEqual(p, &WebhookServiceConfig{})
 }
 
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
@@ -259,6 +271,9 @@ func loadDefaultServicesConfig(config *SSIServiceConfig) {
 		},
 		IssuingServiceConfig: IssuingServiceConfig{
 			BaseServiceConfig: &BaseServiceConfig{Name: "issuing"},
+		},
+		WebhookConfig: WebhookServiceConfig{
+			BaseServiceConfig: &BaseServiceConfig{Name: "webhook"},
 		},
 	}
 
