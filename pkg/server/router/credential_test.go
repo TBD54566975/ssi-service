@@ -596,7 +596,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCredSuspendable)
 
-		revocationKey := strings.Join([]string{"", "is:" + issuerDID.DID.ID, "sc:" + createdSchema.ID, "sp:" + string(status.StatusRevocation)}, "-")
+		revocationKey := strings.Join([]string{"is:" + issuerDID.DID.ID, "sc:" + createdSchema.ID, "sp:" + string(status.StatusRevocation)}, "-")
 
 		slcExists, err := bolt.Exists(context.Background(), "status-list-credential", revocationKey)
 		assert.NoError(tt, err)
@@ -610,7 +610,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.True(tt, currentIndexExists)
 
-		suspensionKey := strings.Join([]string{"", "is:" + issuerDID.DID.ID, "sc:" + createdSchema.ID, "sp:" + string(status.StatusSuspension)}, "-")
+		suspensionKey := strings.Join([]string{"is:" + issuerDID.DID.ID, "sc:" + createdSchema.ID, "sp:" + string(status.StatusSuspension)}, "-")
 
 		slcExists, err = bolt.Exists(context.Background(), "status-list-credential", suspensionKey)
 		assert.NoError(tt, err)
