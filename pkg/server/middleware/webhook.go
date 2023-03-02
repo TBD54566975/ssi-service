@@ -52,14 +52,13 @@ func Webhook(webhookService svcframework.Service) framework.Middleware {
 			switch r.Method {
 			case http.MethodPut:
 				if strings.Contains(r.URL.Path, didHandlerPath) {
-					whService.PublishWebhook(webhook.DID, webhook.Create, body)
-				}
-				if strings.Contains(r.URL.Path, credHandlerPath) {
-					whService.PublishWebhook(webhook.Credential, webhook.Create, body)
+					go whService.PublishWebhook(webhook.DID, webhook.Create, body)
+				} else if strings.Contains(r.URL.Path, credHandlerPath) {
+					go whService.PublishWebhook(webhook.Credential, webhook.Create, body)
 				}
 			case http.MethodDelete:
 				if strings.Contains(r.URL.Path, credHandlerPath) {
-					whService.PublishWebhook(webhook.Credential, webhook.Delete, body)
+					go whService.PublishWebhook(webhook.Credential, webhook.Delete, body)
 				}
 			}
 			return err
