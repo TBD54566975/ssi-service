@@ -89,7 +89,7 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate keystore service")
 	}
 
-	didService, err := did.NewDIDService(config.DIDConfig, storageProvider, keyStoreService, webhookService)
+	didService, err := did.NewDIDService(config.DIDConfig, storageProvider, keyStoreService)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the DID service")
 	}
@@ -105,7 +105,7 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the issuing service")
 	}
 
-	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider, keyStoreService, didResolver, schemaService, webhookService)
+	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider, keyStoreService, didResolver, schemaService)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the credential service")
 	}

@@ -47,8 +47,7 @@ func TestCredentialRouter(t *testing.T) {
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
-		webhookService := testWebhookService(tt, bolt)
-		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService, webhookService)
+		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, credService)
 
@@ -203,8 +202,7 @@ func TestCredentialRouter(t *testing.T) {
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
-		webhookService := testWebhookService(tt, bolt)
-		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService, webhookService)
+		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, credService)
 
@@ -321,9 +319,8 @@ func TestCredentialRouter(t *testing.T) {
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
-		webhookService := testWebhookService(tt, bolt)
 
-		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService, webhookService)
+		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, credService)
 
@@ -433,8 +430,7 @@ func TestCredentialRouter(t *testing.T) {
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
-		webhookService := testWebhookService(tt, bolt)
-		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService, webhookService)
+		credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, credService)
 
@@ -820,8 +816,7 @@ func createCredServicePrereqs(tt *testing.T) (string, string, credential.Service
 	keyStoreService := testKeyStoreService(tt, bolt)
 	didService := testDIDService(tt, bolt, keyStoreService)
 	schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
-	webhookService := testWebhookService(tt, bolt)
-	credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService, webhookService)
+	credService, err := credential.NewCredentialService(serviceConfig, bolt, keyStoreService, didService.GetResolver(), schemaService)
 	require.NoError(tt, err)
 	require.NotEmpty(tt, credService)
 

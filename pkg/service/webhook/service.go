@@ -171,7 +171,6 @@ func (s Service) PublishWebhook(noun Noun, verb Verb, payload interface{}) {
 	}
 
 	if webhook == nil {
-		logrus.Warn("no webhook found")
 		return
 	}
 

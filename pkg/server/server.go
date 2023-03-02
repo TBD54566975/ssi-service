@@ -69,6 +69,17 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 	// get all instantiated services
 	services := ssi.GetServices()
 
+	var webhookService svcframework.Service
+
+	for _, v := range services {
+		if v.Type() == svcframework.Webhook {
+			webhookService = v
+			break
+		}
+	}
+
+	httpServer.AddMiddleware(middleware.Webhook(webhookService))
+
 	// service-level routers
 	httpServer.Handle(http.MethodGet, HealthPrefix, router.Health)
 	httpServer.Handle(http.MethodGet, ReadinessPrefix, router.Readiness(services))

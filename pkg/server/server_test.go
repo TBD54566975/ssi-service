@@ -232,9 +232,8 @@ func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystor
 		ResolutionMethods: []string{"key"},
 	}
 
-	webhookService := testWebhookService(t, bolt)
 	// create a did service
-	didService, err := did.NewDIDService(serviceConfig, bolt, keyStore, webhookService)
+	didService, err := did.NewDIDService(serviceConfig, bolt, keyStore)
 	require.NoError(t, err)
 	require.NotEmpty(t, didService)
 	return didService
@@ -270,9 +269,8 @@ func testSchemaRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keyst
 func testCredentialService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
 	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 
-	webhookService := testWebhookService(t, db)
 	// create a credential service
-	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver(), schema, webhookService)
+	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver(), schema)
 	require.NoError(t, err)
 	require.NotEmpty(t, credentialService)
 	return credentialService

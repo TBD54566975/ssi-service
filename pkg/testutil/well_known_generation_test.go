@@ -18,7 +18,6 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
-	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -33,8 +32,7 @@ func TestWellKnownGenerationTest(t *testing.T) {
 		origin := "https://www.tbd.website/"
 		bolt := setupTestDB(tt)
 		keyStoreService := testKeyStoreService(tt, bolt)
-		webhookService := testWebhookService(tt, bolt)
-		didService := testDIDService(tt, bolt, keyStoreService, webhookService)
+		didService := testDIDService(tt, bolt, keyStoreService)
 
 		didKey, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: "key", KeyType: "Ed25519"})
 		assert.NoError(tt, err)
@@ -155,18 +153,6 @@ func createWellKnownDIDConfiguration(tt *testing.T, didResponse *did.CreateDIDRe
 	fmt.Println(string(jsonStr))
 }
 
-func testWebhookService(t *testing.T, bolt storage.ServiceStorage) *webhook.Service {
-	serviceConfig := config.WebhookServiceConfig{
-		BaseServiceConfig: &config.BaseServiceConfig{Name: "webhook"},
-	}
-
-	// create a webhook service
-	webhookService, err := webhook.NewWebhookService(serviceConfig, bolt)
-	require.NoError(t, err)
-	require.NotEmpty(t, webhookService)
-	return webhookService
-}
-
 func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Service {
 	serviceConfig := config.KeyStoreServiceConfig{ServiceKeyPassword: "test-password"}
 	// create a keystore service
@@ -176,7 +162,7 @@ func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Serv
 	return keystoreService
 }
 
-func testDIDService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, webhook *webhook.Service) *did.Service {
+func testDIDService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service) *did.Service {
 	serviceConfig := config.DIDServiceConfig{
 		BaseServiceConfig: &config.BaseServiceConfig{
 			Name: "did",
@@ -185,7 +171,7 @@ func testDIDService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.
 		ResolutionMethods: []string{"key"},
 	}
 	// create a did service
-	didService, err := did.NewDIDService(serviceConfig, db, keyStore, webhook)
+	didService, err := did.NewDIDService(serviceConfig, db, keyStore)
 	require.NoError(t, err)
 	require.NotEmpty(t, didService)
 	return didService

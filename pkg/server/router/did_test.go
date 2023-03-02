@@ -34,10 +34,9 @@ func TestDIDRouter(t *testing.T) {
 		assert.NotNil(tt, db)
 
 		keyStoreService := testKeyStoreService(tt, db)
-		webhookService := testWebhookService(tt, db)
 		methods := []string{didsdk.KeyMethod.String()}
 		serviceConfig := config.DIDServiceConfig{Methods: methods, ResolutionMethods: methods}
-		didService, err := did.NewDIDService(serviceConfig, db, keyStoreService, webhookService)
+		didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didService)
 
@@ -104,10 +103,9 @@ func TestDIDRouter(t *testing.T) {
 		assert.NotNil(tt, db)
 
 		keyStoreService := testKeyStoreService(tt, db)
-		webhookService := testWebhookService(tt, db)
 		methods := []string{didsdk.KeyMethod.String(), didsdk.WebMethod.String()}
 		serviceConfig := config.DIDServiceConfig{Methods: methods, ResolutionMethods: methods}
-		didService, err := did.NewDIDService(serviceConfig, db, keyStoreService, webhookService)
+		didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didService)
 
