@@ -11,7 +11,6 @@ import (
 	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
