@@ -139,7 +139,7 @@ func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWri
 // @Tags        KeyStoreAPI
 // @Accept      json
 // @Produce     json
-// @Param       id  path     string true "ID"
+// @Param       id path string true "ID"
 // @Success     200
 // @Failure     400 {string} string "Bad request"
 // @Router      /v1/keys/{id} [delete]
