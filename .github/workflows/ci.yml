@@ -49,6 +49,9 @@ jobs:
     - name: Test
       run: mage CITest
 
+    - name: Generate Swagger
+      run: mage spec
+
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
 
