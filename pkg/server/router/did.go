@@ -170,6 +170,12 @@ type GetDIDsByMethodResponse struct {
 	DIDs []didsdk.DIDDocument `json:"dids,omitempty"`
 }
 
+type GetDIDsRequest struct {
+	// A standard filter expression conforming to https://google.aip.dev/160.
+	// Not implemented yet.
+	Filter string `json:"filter"`
+}
+
 // GetDIDsByMethod godoc
 //
 // @Summary     Get DIDs
@@ -177,10 +183,11 @@ type GetDIDsByMethodResponse struct {
 // @Tags        DecentralizedIdentityAPI
 // @Accept      json
 // @Produce     json
-// @Param       method path     string true "Method"
-// @Success     200    {object} GetDIDsByMethodResponse
-// @Failure     400    {string} string "Bad request"
-// @Router      /v1/dids/{method} [get]
+// @Param       request body     GetDIDsRequest true "request body"
+// @Success     200     {object} GetDIDsByMethodResponse
+// @Failure     400     {string} string "Bad request"
+// @Failure     500     {string} string "Internal server error"
+// @Router      /v1/dids [get]
 func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
@@ -196,7 +203,7 @@ func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, 
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get DIDs for method: %s", *method)
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := GetDIDsByMethodResponse{DIDs: gotDIDs.DIDs}
