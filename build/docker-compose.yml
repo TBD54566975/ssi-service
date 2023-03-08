@@ -16,6 +16,8 @@ services:
       - ../config/compose.toml:/app/config/config.toml
     networks:
       - ssi_network
+    links:
+      - uni-resolver-web
   swagger-ui:
     build:
       context: ../
@@ -60,6 +62,21 @@ services:
       - "9001:8081"
     networks:
       - ssi_network
+  uni-resolver-web:
+    image: universalresolver/uni-resolver-web:latest
+    ports:
+      - "8088:8080"
+    platform: "linux/amd64"
+    networks:
+      - universal-resolver
+  driver-did-ion:
+    image: identityfoundation/driver-did-ion:latest
+    ports:
+      - "8089:8080"
+    platform: "linux/amd64"
+    networks:
+      - universal-resolver
 
 networks:
   ssi_network:
+  universal-resolver:

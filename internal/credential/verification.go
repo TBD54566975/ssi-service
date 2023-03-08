@@ -8,9 +8,9 @@ import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/credential/verification"
-	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/pkg/service/did/resolve"
 
 	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -20,13 +20,13 @@ import (
 
 type Verifier struct {
 	verifier       *verification.CredentialVerifier
-	didResolver    *didsdk.Resolver
+	didResolver    resolve.Resolver
 	schemaResolver schema.Resolution
 }
 
 // NewCredentialVerifier creates a new credential verifier which executes both signature and static verification checks.
 // In the future the set of verification checks will be configurable.
-func NewCredentialVerifier(didResolver *didsdk.Resolver, schemaResolver schema.Resolution) (*Verifier, error) {
+func NewCredentialVerifier(didResolver resolve.Resolver, schemaResolver schema.Resolution) (*Verifier, error) {
 	if didResolver == nil {
 		return nil, errors.New("didResolver cannot be nil")
 	}

@@ -13,6 +13,7 @@ import (
 	"github.com/multiformats/go-varint"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/service/did/resolve"
 )
 
 // GetVerificationInformation resolves a DID and provides a kid and public key needed for data verification
@@ -117,7 +118,7 @@ func multibaseToPubKeyBytes(mb string) ([]byte, error) {
 }
 
 // ResolveKeyForDID resolves a public key from a DID.
-func ResolveKeyForDID(resolver *didsdk.Resolver, did string) (kid string, pubKey crypto.PublicKey, err error) {
+func ResolveKeyForDID(resolver resolve.Resolver, did string) (kid string, pubKey crypto.PublicKey, err error) {
 	resolved, err := resolver.Resolve(did, nil)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to resolve did: %s", did)

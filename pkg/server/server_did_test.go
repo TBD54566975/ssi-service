@@ -254,7 +254,7 @@ func TestDIDAPI(t *testing.T) {
 		}
 		err := didService.ResolveDID(newRequestContextWithParams(badParams), w, req)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "not a valid did: bad")
+		assert.Contains(tt, err.Error(), "malformed did: bad")
 
 		w.Flush()
 
