@@ -29,8 +29,6 @@ type Service struct {
 
 	// external dependencies
 	keyStore *keystore.Service
-
-	universalResolver resolve.UniversalResolver
 }
 
 func (s *Service) Type() framework.Type {
