@@ -31,10 +31,20 @@ func NewKeyStoreRouter(s svcframework.Service) (*KeyStoreRouter, error) {
 }
 
 type StoreKeyRequest struct {
-	ID               string         `json:"id" validate:"required"`
-	Type             crypto.KeyType `json:"type,omitempty" validate:"required"`
-	Controller       string         `json:"controller,omitempty" validate:"required"`
-	PrivateKeyBase58 string         `json:"base58PrivateKey,omitempty" validate:"required"`
+	// The `id` field is the unique identifier for this object. If set to a resolvable DID, the ssi-service will use
+	// the private key encoded in the `PrivateKeyBase58` field of this object to sign objects issued or authored by this
+	// DID; otherwise, it will only be used to identify this object.
+	ID string `json:"id" validate:"required"`
+
+	// Identifies the cryptographic algorithm family used with the key.
+	// One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
+	Type crypto.KeyType `json:"type,omitempty" validate:"required"`
+
+	// See https://www.w3.org/TR/did-core/#did-controller
+	Controller string `json:"controller,omitempty" validate:"required"`
+
+	// Base58 encoding of the bytes that result from marshalling the private key using golang's implementation.
+	PrivateKeyBase58 string `json:"base58PrivateKey,omitempty" validate:"required"`
 }
 
 func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) {
@@ -104,7 +114,7 @@ type GetKeyDetailsResponse struct {
 // @Tags        KeyStoreAPI
 // @Accept      json
 // @Produce     json
-// @Param       id  path     string true "ID"
+// @Param       id  path     string true "ID of the key to get"
 // @Success     200 {object} GetKeyDetailsResponse
 // @Failure     400 {string} string "Bad request"
 // @Router      /v1/keys/{id} [get]
@@ -135,13 +145,14 @@ func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWri
 // RevokeKey godoc
 //
 // @Summary     Revoke Key
-// @Description Revoke a stored key
+// @Description Marks the stored key as being revoked, along with the timestamps of when it was revoked. NB: the key can still be used for signing. This will likely be addressed before v1 is released.
 // @Tags        KeyStoreAPI
 // @Accept      json
 // @Produce     json
-// @Param       id path string true "ID"
+// @Param       id path string true "ID of the key to revoke"
 // @Success     200
 // @Failure     400 {string} string "Bad request"
+// @Failure     500 {string} string "Internal server error"
 // @Router      /v1/keys/{id} [delete]
 func (ksr *KeyStoreRouter) RevokeKey(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
@@ -155,7 +166,7 @@ func (ksr *KeyStoreRouter) RevokeKey(ctx context.Context, w http.ResponseWriter,
 	if err != nil {
 		errMsg := fmt.Sprintf("could not delete key for id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	var resp GetKeyDetailsResponse
