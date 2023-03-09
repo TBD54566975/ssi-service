@@ -117,6 +117,8 @@ func TestConcurrencyRevocationVerifiableCredentialIntegration(t *testing.T) {
 	wg.Add(vcCount)
 
 	m := sync.Mutex{}
+	credStatusListURLSet := make(map[string]struct{})
+
 	for i := 0; i < vcCount; i++ {
 		go func() {
 			defer wg.Done()
@@ -146,12 +148,14 @@ func TestConcurrencyRevocationVerifiableCredentialIntegration(t *testing.T) {
 
 			m.Lock()
 			credStatusListIndexes = append(credStatusListIndexes, credStatusListIndex)
+			credStatusListURLSet[credStatusListURL] = struct{}{}
 			m.Unlock()
 		}()
 	}
 
 	wg.Wait()
 
+	assert.Len(t, credStatusListURLSet, 1)
 	assert.True(t, areElementsUnique(credStatusListIndexes), "elements should be unique")
 }
 
