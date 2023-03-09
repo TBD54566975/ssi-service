@@ -31,13 +31,9 @@ func NewKeyStoreRouter(s svcframework.Service) (*KeyStoreRouter, error) {
 }
 
 type StoreKeyRequest struct {
-	// ID to be associated with this key. Can be used for retrieval and revocation.
-	//
-	// When the ID is a DID, then ssi-service will use the key encoded in `PrivateKeyBase58` to sign objects.
-	//
-	// When it's not a DID, then ssi-service will not sign objects with this key.
-	//
-	// It is recommended to pass in IDs that are DIDs.
+	// The `id` field is the unique identifier for this object. If set to a resolvable DID, the ssi-service will use
+	// the private key encoded in the `PrivateKeyBase58` field of this object to sign objects issued or authored by this
+	// DID; otherwise, it will only be used to identify this object.
 	ID string `json:"id" validate:"required"`
 
 	// Identifies the cryptographic algorithm family used with the key.
