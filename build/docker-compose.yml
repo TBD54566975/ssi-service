@@ -16,6 +16,7 @@ services:
       - ../config/compose.toml:/app/config/config.toml
     networks:
       - ssi_network
+      - universal-resolver
     links:
       - uni-resolver-web
   swagger-ui:
