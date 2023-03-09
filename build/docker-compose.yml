@@ -71,7 +71,7 @@ services:
     networks:
       - universal-resolver
   driver-did-ion:
-    image: identityfoundation/driver-did-ion:latest
+    image: identityfoundation/driver-did-ion:v0.8.1
     ports:
       - "8089:8080"
     platform: "linux/amd64"
