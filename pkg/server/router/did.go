@@ -59,8 +59,12 @@ func (dr DIDRouter) GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ 
 }
 
 type CreateDIDByMethodRequest struct {
-	KeyType  crypto.KeyType `json:"keyType" validate:"required"`
-	DIDWebID string         `json:"didWebId"`
+	// Identifies the cryptographic algorithm family to use when generating this key.
+	// One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
+	KeyType crypto.KeyType `json:"keyType" validate:"required"`
+
+	// Required when creating a DID with the `web` did method. E.g. `did:web:identity.foundation`.
+	DIDWebID string `json:"didWebId"`
 }
 
 type CreateDIDByMethodResponse struct {
@@ -71,8 +75,10 @@ type CreateDIDByMethodResponse struct {
 
 // CreateDIDByMethod godoc
 //
-// @Summary     Create DID
-// @Description create DID by method
+// @Summary     Create DID Document
+// @Description Creates a DID document with the given method. The document created is stored internally and can be
+// @Description retrieved using the GetOperation. Method dependent registration (for example, DID web registration)
+// @Description is left up to the clients of this API.
 // @Tags        DecentralizedIdentityAPI
 // @Accept      json
 // @Produce     json
