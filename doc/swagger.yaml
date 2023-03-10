@@ -554,8 +554,13 @@ definitions:
   github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest:
     properties:
       didWebId:
+        description: Required when creating a DID with the `web` did method. E.g.
+          `did:web:identity.foundation`.
         type: string
       keyType:
+        description: |-
+          Identifies the cryptographic algorithm family to use when generating this key.
+          One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
         type: string
     required:
     - keyType
@@ -565,6 +570,9 @@ definitions:
       did:
         $ref: '#/definitions/did.DIDDocument'
       keyType:
+        description: |-
+          Identifies the cryptographic algorithm family to use when generating this key.
+          One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
         type: string
       privateKeyBase58:
         type: string
@@ -1387,8 +1395,13 @@ definitions:
   pkg_server_router.CreateDIDByMethodRequest:
     properties:
       didWebId:
+        description: Required when creating a DID with the `web` did method. E.g.
+          `did:web:identity.foundation`.
         type: string
       keyType:
+        description: |-
+          Identifies the cryptographic algorithm family to use when generating this key.
+          One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
         type: string
     required:
     - keyType
@@ -1398,6 +1411,9 @@ definitions:
       did:
         $ref: '#/definitions/did.DIDDocument'
       keyType:
+        description: |-
+          Identifies the cryptographic algorithm family to use when generating this key.
+          One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
         type: string
       privateKeyBase58:
         type: string
@@ -2430,7 +2446,10 @@ paths:
     put:
       consumes:
       - application/json
-      description: create DID by method
+      description: |-
+        Creates a DID document with the given method. The document created is stored internally and can be
+        retrieved using the GetOperation. Method dependent registration (for example, DID web registration)
+        is left up to the clients of this API.
       parameters:
       - description: request body
         in: body
@@ -2458,7 +2477,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create DID
+      summary: Create DID Document
       tags:
       - DecentralizedIdentityAPI
   /v1/dids/{method}/{id}:
@@ -2711,7 +2730,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetManifestsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestsResponse'
         "400":
           description: Bad request
           schema:
@@ -2733,14 +2752,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateManifestRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateManifestResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -2797,7 +2816,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetManifestResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -2816,7 +2835,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetApplicationsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationsResponse'
         "500":
           description: Internal server error
           schema:
@@ -2835,7 +2854,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.SubmitApplicationRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationRequest'
       produces:
       - application/json
       responses:
@@ -2843,7 +2862,7 @@ paths:
           description: Operation with a SubmitApplicationResponse type in the `result.response`
             field.
           schema:
-            $ref: '#/definitions/pkg_server_router.Operation'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.Operation'
         "400":
           description: Bad request
           schema:
@@ -2900,7 +2919,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetApplicationResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationResponse'
         "400":
           description: Bad request
           schema:
@@ -2919,14 +2938,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.ReviewApplicationRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.ReviewApplicationRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Credential Response
           schema:
-            $ref: '#/definitions/pkg_server_router.SubmitApplicationResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationResponse'
         "400":
           description: Bad request
           schema:
@@ -2950,7 +2969,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetResponsesResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetResponsesResponse'
         "500":
           description: Internal server error
           schema:
@@ -3003,7 +3022,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetResponseResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetResponseResponse'
         "400":
           description: Bad request
           schema:
@@ -3344,7 +3363,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetSchemasResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemasResponse'
         "500":
           description: Internal server error
           schema:
@@ -3362,14 +3381,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateSchemaRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateSchemaResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -3426,7 +3445,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -3445,14 +3464,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.VerifySchemaRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.VerifySchemaResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -3471,7 +3490,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetWebhooksResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetWebhooksResponse'
         "500":
           description: Internal server error
           schema:
@@ -3489,14 +3508,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateWebhookRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateWebhookRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateWebhookResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateWebhookResponse'
         "400":
           description: Bad request
           schema:
@@ -3553,7 +3572,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetWebhookResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetWebhookResponse'
         "400":
           description: Bad request
           schema:
