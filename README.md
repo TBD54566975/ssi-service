@@ -142,11 +142,11 @@ Note: Your port by differ, the range of the ports for swagger are between `8002`
   - [x] Signing and verification with [JWTs](https://w3c.github.io/vc-jwt/)
   - [ ] Signing and verification with [Data Integrity Proofs](https://w3c.github.io/vc-data-integrity/)
 - [x] Applying for Verifiable Credentials using [Credential Manifest](https://identity.foundation/credential-manifest/)
-- [ ] Requesting, Receiving, and the Validation of Verifiable Claims
+- [x] Requesting, Receiving, and the Validation of Verifiable Claims
   using [Presentation Exchange](https://identity.foundation/presentation-exchange/)
-- [ ] Status of Verifiable Credentials using the [Status List 2021](https://w3c-ccg.github.io/vc-status-list-2021/)
+- [x] Status of Verifiable Credentials using the [Status List 2021](https://w3c-ccg.github.io/vc-status-list-2021/)
 - [ ] Creating and managing Trust documents using [Trust Establishment](https://identity.foundation/trust-establishment/)
-- [ ] [DID Well Known Configuration](https://identity.foundation/.well-known/resources/did-configuration/) documents
+- [x] [DID Well Known Configuration](https://identity.foundation/.well-known/resources/did-configuration/) documents
 
 ## Vision, Features, and Development
 
