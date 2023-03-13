@@ -10,17 +10,20 @@ import (
 	"github.com/pkg/errors"
 )
 
+// UniversalResolver is a struct that implements the Resolver interface. It calls the universal resolver endpoint
+// to resolve any DID according to https://github.com/decentralized-identity/universal-resolver.
 type UniversalResolver struct {
-	C   http.Client
-	URL string
+	Client http.Client
+	URL    string
 }
 
 type Resolver interface {
 	Resolve(did string, opts ...didsdk.ResolutionOptions) (*didsdk.DIDResolutionResult, error)
 }
 
-func (u UniversalResolver) Resolve(did string, _ ...didsdk.ResolutionOptions) (*didsdk.DIDResolutionResult, error) {
-	resp, err := u.C.Get(u.URL + "/1.0/identifiers/" + did)
+// Resolve results resolution results by doing a GET on <URL>/1.0.identifiers/<did>.
+func (ur UniversalResolver) Resolve(did string, _ ...didsdk.ResolutionOptions) (*didsdk.DIDResolutionResult, error) {
+	resp, err := ur.Client.Get(ur.URL + "/1.0/identifiers/" + did)
 	if err != nil {
 		return nil, errors.Wrap(err, "performing http get")
 	}

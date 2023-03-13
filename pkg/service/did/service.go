@@ -92,8 +92,8 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 	}
 
 	ur := &resolve.UniversalResolver{
-		C:   http.Client{},
-		URL: config.UniversalResolverURL,
+		Client: http.Client{},
+		URL:    config.UniversalResolverURL,
 	}
 	for _, urm := range config.UniversalResolverMethods {
 		service.methodToResolver[urm] = ur
