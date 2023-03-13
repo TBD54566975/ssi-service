@@ -11,6 +11,8 @@ definitions:
         type: string
       revoked:
         type: boolean
+      suspended:
+        type: boolean
     type: object
   credential.CredentialSchema:
     properties:
@@ -531,6 +533,11 @@ definitions:
         description: The subject id.
         example: did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp
         type: string
+      suspendable:
+        description: |-
+          Whether this credential can be suspended. When true, the created VC will have the "credentialStatus"
+          property set.
+        type: boolean
     required:
     - data
     - issuer
@@ -541,6 +548,7 @@ definitions:
       credential:
         $ref: '#/definitions/credential.VerifiableCredential'
       credentialJwt:
+        description: A JWT that encodes a credential.
         type: string
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest:
@@ -688,6 +696,32 @@ definitions:
     required:
     - submissionJwt
     type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateWebhookRequest:
+    properties:
+      noun:
+        description: 'The noun (entity) for the new webhook.eg: Credential'
+        type: string
+      urls:
+        description: The URLS to post the output of this request to Noun.Verb action
+          to.
+        items:
+          type: string
+        type: array
+      verb:
+        description: 'The verb for the new webhook.eg: Create'
+        type: string
+    required:
+    - noun
+    - urls
+    - verb
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.CreateWebhookResponse:
+    properties:
+      id:
+        type: string
+      webhook:
+        $ref: '#/definitions/webhook.Webhook'
+    type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationResponse:
     properties:
       application:
@@ -707,6 +741,7 @@ definitions:
       credential:
         $ref: '#/definitions/credential.VerifiableCredential'
       credentialJwt:
+        description: A JWT that encodes a credential.
         type: string
       id:
         type: string
@@ -726,6 +761,9 @@ definitions:
     properties:
       revoked:
         description: Whether the credential has been revoked.
+        type: boolean
+      suspended:
+        description: Whether the credential has been suspended.
         type: boolean
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialsResponse:
@@ -754,6 +792,14 @@ definitions:
           $ref: '#/definitions/did.DIDDocument'
         type: array
     type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDsRequest:
+    properties:
+      filter:
+        description: |-
+          A standard filter expression conforming to https://google.aip.dev/160.
+          Not implemented yet.
+        type: string
+    type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.GetHealthCheckResponse:
     properties:
       status:
@@ -768,6 +814,9 @@ definitions:
       id:
         type: string
       type:
+        description: |-
+          Identifies the cryptographic algorithm family used with the key.
+          One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
         type: string
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestResponse:
@@ -864,6 +913,20 @@ definitions:
           along with the credentials presented.
     required:
     - status
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetWebhookResponse:
+    properties:
+      id:
+        type: string
+      webhook:
+        $ref: '#/definitions/webhook.Webhook'
+    type: object
+  github.com_tbd54566975_ssi-service_pkg_server_router.GetWebhooksResponse:
+    properties:
+      webhooks:
+        items:
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetWebhookResponse'
+        type: array
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.ListDefinitionsRequest:
     type: object
@@ -967,12 +1030,22 @@ definitions:
   github.com_tbd54566975_ssi-service_pkg_server_router.StoreKeyRequest:
     properties:
       base58PrivateKey:
+        description: Base58 encoding of the bytes that result from marshalling the
+          private key using golang's implementation.
         type: string
       controller:
+        description: See https://www.w3.org/TR/did-core/#did-controller
         type: string
       id:
+        description: |-
+          The `id` field is the unique identifier for this object. If set to a resolvable DID, the ssi-service will use
+          the private key encoded in the `PrivateKeyBase58` field of this object to sign objects issued or authored by this
+          DID; otherwise, it will only be used to identify this object.
         type: string
       type:
+        description: |-
+          Identifies the cryptographic algorithm family used with the key.
+          One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
         type: string
     required:
     - base58PrivateKey
@@ -1006,13 +1079,15 @@ definitions:
           The new revoked status of this credential. The status will be saved in the encodedList of the StatusList2021
           credential associated with this VC.
         type: boolean
-    required:
-    - revoked
+      suspended:
+        type: boolean
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.UpdateCredentialStatusResponse:
     properties:
       revoked:
         description: The updated status of this credential.
+        type: boolean
+      suspended:
         type: boolean
     type: object
   github.com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialRequest:
@@ -1292,6 +1367,11 @@ definitions:
         description: The subject id.
         example: did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp
         type: string
+      suspendable:
+        description: |-
+          Whether this credential can be suspended. When true, the created VC will have the "credentialStatus"
+          property set.
+        type: boolean
     required:
     - data
     - issuer
@@ -1302,7 +1382,6 @@ definitions:
       credential:
         $ref: '#/definitions/credential.VerifiableCredential'
       credentialJwt:
-        description: A JWT that encodes a credential.
         type: string
     type: object
   pkg_server_router.CreateDIDByMethodRequest:
@@ -1450,6 +1529,32 @@ definitions:
     required:
     - submissionJwt
     type: object
+  pkg_server_router.CreateWebhookRequest:
+    properties:
+      noun:
+        description: 'The noun (entity) for the new webhook.eg: Credential'
+        type: string
+      urls:
+        description: The URLS to post the output of this request to Noun.Verb action
+          to.
+        items:
+          type: string
+        type: array
+      verb:
+        description: 'The verb for the new webhook.eg: Create'
+        type: string
+    required:
+    - noun
+    - urls
+    - verb
+    type: object
+  pkg_server_router.CreateWebhookResponse:
+    properties:
+      id:
+        type: string
+      webhook:
+        $ref: '#/definitions/webhook.Webhook'
+    type: object
   pkg_server_router.GetApplicationResponse:
     properties:
       application:
@@ -1469,7 +1574,6 @@ definitions:
       credential:
         $ref: '#/definitions/credential.VerifiableCredential'
       credentialJwt:
-        description: A JWT that encodes a credential.
         type: string
       id:
         type: string
@@ -1489,6 +1593,9 @@ definitions:
     properties:
       revoked:
         description: Whether the credential has been revoked.
+        type: boolean
+      suspended:
+        description: Whether the credential has been suspended.
         type: boolean
     type: object
   pkg_server_router.GetCredentialsResponse:
@@ -1517,6 +1624,14 @@ definitions:
           $ref: '#/definitions/did.DIDDocument'
         type: array
     type: object
+  pkg_server_router.GetDIDsRequest:
+    properties:
+      filter:
+        description: |-
+          A standard filter expression conforming to https://google.aip.dev/160.
+          Not implemented yet.
+        type: string
+    type: object
   pkg_server_router.GetHealthCheckResponse:
     properties:
       status:
@@ -1531,6 +1646,9 @@ definitions:
       id:
         type: string
       type:
+        description: |-
+          Identifies the cryptographic algorithm family used with the key.
+          One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
         type: string
     type: object
   pkg_server_router.GetManifestResponse:
@@ -1627,6 +1745,20 @@ definitions:
           along with the credentials presented.
     required:
     - status
+    type: object
+  pkg_server_router.GetWebhookResponse:
+    properties:
+      id:
+        type: string
+      webhook:
+        $ref: '#/definitions/webhook.Webhook'
+    type: object
+  pkg_server_router.GetWebhooksResponse:
+    properties:
+      webhooks:
+        items:
+          $ref: '#/definitions/pkg_server_router.GetWebhookResponse'
+        type: array
     type: object
   pkg_server_router.ListDefinitionsRequest:
     type: object
@@ -1730,12 +1862,22 @@ definitions:
   pkg_server_router.StoreKeyRequest:
     properties:
       base58PrivateKey:
+        description: Base58 encoding of the bytes that result from marshalling the
+          private key using golang's implementation.
         type: string
       controller:
+        description: See https://www.w3.org/TR/did-core/#did-controller
         type: string
       id:
+        description: |-
+          The `id` field is the unique identifier for this object. If set to a resolvable DID, the ssi-service will use
+          the private key encoded in the `PrivateKeyBase58` field of this object to sign objects issued or authored by this
+          DID; otherwise, it will only be used to identify this object.
         type: string
       type:
+        description: |-
+          Identifies the cryptographic algorithm family used with the key.
+          One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
         type: string
     required:
     - base58PrivateKey
@@ -1769,13 +1911,15 @@ definitions:
           The new revoked status of this credential. The status will be saved in the encodedList of the StatusList2021
           credential associated with this VC.
         type: boolean
-    required:
-    - revoked
+      suspended:
+        type: boolean
     type: object
   pkg_server_router.UpdateCredentialStatusResponse:
     properties:
       revoked:
         description: The updated status of this credential.
+        type: boolean
+      suspended:
         type: boolean
     type: object
   pkg_server_router.VerifyCredentialRequest:
@@ -1925,6 +2069,42 @@ definitions:
       version:
         type: string
     type: object
+  webhook.GetSupportedNounsResponse:
+    properties:
+      nouns:
+        items:
+          description: 'The noun (entity) for the new webhook.eg: Credential'
+          type: string
+        type: array
+    type: object
+  webhook.GetSupportedVerbsResponse:
+    properties:
+      verbs:
+        items:
+          description: 'The verb for the new webhook.eg: Create'
+          type: string
+        type: array
+    type: object
+  webhook.Webhook:
+    properties:
+      id:
+        type: string
+      noun:
+        description: 'The noun (entity) for the new webhook.eg: Credential'
+        type: string
+      urls:
+        items:
+          type: string
+        type: array
+      verb:
+        description: 'The verb for the new webhook.eg: Create'
+        type: string
+    required:
+    - id
+    - noun
+    - urls
+    - verb
+    type: object
 host: localhost:8080
 info:
   contact:
@@ -1996,7 +2176,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetCredentialsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialsResponse'
         "400":
           description: Bad request
           schema:
@@ -2018,14 +2198,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateCredentialRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateCredentialResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -2082,7 +2262,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetCredentialResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -2111,7 +2291,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetCredentialStatusResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialStatusResponse'
         "400":
           description: Bad request
           schema:
@@ -2133,14 +2313,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.UpdateCredentialStatusRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.UpdateCredentialStatusRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.UpdateCredentialStatusResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.UpdateCredentialStatusResponse'
         "400":
           description: Bad request
           schema:
@@ -2169,7 +2349,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetCredentialStatusListResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetCredentialStatusListResponse'
         "400":
           description: Bad request
           schema:
@@ -2197,14 +2377,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.VerifyCredentialRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.VerifyCredentialResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifyCredentialResponse'
         "400":
           description: Bad request
           schema:
@@ -2220,42 +2400,33 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get supported DID methods
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDMethodsResponse'
-      summary: Get DID Methods
-      tags:
-      - DecentralizedIdentityAPI
-  /v1/dids/{method}:
-    get:
-      consumes:
-      - application/json
       description: Get DIDs by method
       parameters:
-      - description: Method
-        in: path
-        name: method
+      - description: request body
+        in: body
+        name: request
         required: true
-        type: string
+        schema:
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDsByMethodResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDsByMethodResponse'
         "400":
           description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
           schema:
             type: string
       summary: Get DIDs
       tags:
       - DecentralizedIdentityAPI
+  /v1/dids/{method}:
     put:
       consumes:
       - application/json
@@ -2266,7 +2437,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -2278,7 +2449,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/pkg_server_router.CreateDIDByMethodResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -2301,7 +2472,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateDIDByMethodRequest'
       - description: Method
         in: path
         name: method
@@ -2318,7 +2489,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDByMethodResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetDIDByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -2343,7 +2514,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.ResolveDIDResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.ResolveDIDResponse'
         "400":
           description: Bad request
           schema:
@@ -2463,12 +2634,40 @@ paths:
       tags:
       - KeyStoreAPI
   /v1/keys/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: 'Marks the stored key as being revoked, along with the timestamps
+        of when it was revoked. NB: the key can still be used for signing. This will
+        likely be addressed before v1 is released.'
+      parameters:
+      - description: ID of the key to revoke
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Revoke Key
+      tags:
+      - KeyStoreAPI
     get:
       consumes:
       - application/json
       description: Get details about a stored key
       parameters:
-      - description: ID
+      - description: ID of the key to get
         in: path
         name: id
         required: true
@@ -2512,7 +2711,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestsResponse'
+            $ref: '#/definitions/pkg_server_router.GetManifestsResponse'
         "400":
           description: Bad request
           schema:
@@ -2534,14 +2733,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestRequest'
+          $ref: '#/definitions/pkg_server_router.CreateManifestRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateManifestResponse'
+            $ref: '#/definitions/pkg_server_router.CreateManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -2598,7 +2797,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetManifestResponse'
+            $ref: '#/definitions/pkg_server_router.GetManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -2610,19 +2809,14 @@ paths:
     get:
       consumes:
       - application/json
-      description: Checks for the presence of a query parameter and calls the associated
-        filtered get method
+      description: Gets all the existing applications.
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationsResponse'
-        "400":
-          description: Bad request
-          schema:
-            type: string
+            $ref: '#/definitions/pkg_server_router.GetApplicationsResponse'
         "500":
           description: Internal server error
           schema:
@@ -2641,7 +2835,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationRequest'
+          $ref: '#/definitions/pkg_server_router.SubmitApplicationRequest'
       produces:
       - application/json
       responses:
@@ -2649,7 +2843,7 @@ paths:
           description: Operation with a SubmitApplicationResponse type in the `result.response`
             field.
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.Operation'
+            $ref: '#/definitions/pkg_server_router.Operation'
         "400":
           description: Bad request
           schema:
@@ -2706,7 +2900,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetApplicationResponse'
+            $ref: '#/definitions/pkg_server_router.GetApplicationResponse'
         "400":
           description: Bad request
           schema:
@@ -2725,14 +2919,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.ReviewApplicationRequest'
+          $ref: '#/definitions/pkg_server_router.ReviewApplicationRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Credential Response
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.SubmitApplicationResponse'
+            $ref: '#/definitions/pkg_server_router.SubmitApplicationResponse'
         "400":
           description: Bad request
           schema:
@@ -2756,11 +2950,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetResponsesResponse'
-        "400":
-          description: Bad request
-          schema:
-            type: string
+            $ref: '#/definitions/pkg_server_router.GetResponsesResponse'
         "500":
           description: Internal server error
           schema:
@@ -2813,9 +3003,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetResponseResponse'
+            $ref: '#/definitions/pkg_server_router.GetResponseResponse'
         "400":
           description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
           schema:
             type: string
       summary: Get response
@@ -2832,14 +3026,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.GetOperationsRequest'
+          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetOperationsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetOperationsResponse'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetOperationsResponse'
         "400":
           description: Bad request
           schema:
@@ -2868,7 +3062,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.Operation'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.Operation'
         "400":
           description: Bad request
           schema:
@@ -2897,7 +3091,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.Operation'
+            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.Operation'
         "400":
           description: Bad request
           schema:
@@ -3150,7 +3344,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemasResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemasResponse'
         "500":
           description: Internal server error
           schema:
@@ -3168,14 +3362,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaRequest'
+          $ref: '#/definitions/pkg_server_router.CreateSchemaRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.CreateSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.CreateSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -3232,7 +3426,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.GetSchemaResponse'
+            $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -3251,14 +3445,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaRequest'
+          $ref: '#/definitions/pkg_server_router.VerifySchemaRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github.com_tbd54566975_ssi-service_pkg_server_router.VerifySchemaResponse'
+            $ref: '#/definitions/pkg_server_router.VerifySchemaResponse'
         "400":
           description: Bad request
           schema:
@@ -3266,4 +3460,135 @@ paths:
       summary: Verify Schema
       tags:
       - SchemaAPI
+  /v1/webhooks:
+    get:
+      consumes:
+      - application/json
+      description: Get webhooks
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.GetWebhooksResponse'
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get Webhooks
+      tags:
+      - WebhookAPI
+    put:
+      consumes:
+      - application/json
+      description: Create webhook
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.CreateWebhookRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pkg_server_router.CreateWebhookResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create Webhook
+      tags:
+      - WebhookAPI
+  /v1/webhooks/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a webhook by its ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete Webhook
+      tags:
+      - WebhookAPI
+    get:
+      consumes:
+      - application/json
+      description: Get a webhook by its ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.GetWebhookResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Get Webhook
+      tags:
+      - WebhookAPI
+  /v1/webhooks/nouns:
+    get:
+      consumes:
+      - application/json
+      description: Get supported nouns for webhook generation
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/webhook.GetSupportedNounsResponse'
+      summary: Get Supported Nouns
+      tags:
+      - WebhookAPI
+  /v1/webhooks/verbs:
+    get:
+      consumes:
+      - application/json
+      description: Get supported verbs for webhook generation
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/webhook.GetSupportedVerbsResponse'
+      summary: Get Supported Verbs
+      tags:
+      - WebhookAPI
 swagger: "2.0"

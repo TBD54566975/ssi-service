@@ -98,7 +98,7 @@ type GetWebhookResponse struct {
 // @Success     200 {object} GetWebhookResponse
 // @Failure     400 {string} string "Bad request"
 // @Router      /v1/webhooks/{id} [get]
-func (wr WebhookRouter) GetWebhook(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (wr WebhookRouter) GetWebhook(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get webhook without ID parameter"
@@ -131,7 +131,7 @@ type GetWebhooksResponse struct {
 // @Success     200 {object} GetWebhooksResponse
 // @Failure     500 {string} string "Internal server error"
 // @Router      /v1/webhooks [get]
-func (wr WebhookRouter) GetWebhooks(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (wr WebhookRouter) GetWebhooks(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotWebhooks, err := wr.service.GetWebhooks(ctx)
 	if err != nil {
 		errMsg := "could not get webhooks"
@@ -184,10 +184,9 @@ func (wr WebhookRouter) DeleteWebhook(ctx context.Context, w http.ResponseWriter
 // @Tags        WebhookAPI
 // @Accept      json
 // @Produce     json
-// @Success     200 {object} GetSupportedNounsResponse
-// @Failure     500 {string} string "Internal server error"
+// @Success     200 {object} webhook.GetSupportedNounsResponse
 // @Router      /v1/webhooks/nouns [get]
-func (wr WebhookRouter) GetSupportedNouns(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (wr WebhookRouter) GetSupportedNouns(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	nouns := wr.service.GetSupportedNouns()
 	return framework.Respond(ctx, w, nouns, http.StatusOK)
 }
@@ -199,10 +198,9 @@ func (wr WebhookRouter) GetSupportedNouns(ctx context.Context, w http.ResponseWr
 // @Tags        WebhookAPI
 // @Accept      json
 // @Produce     json
-// @Success     200 {object} GetSupportedVerbsResponse
-// @Failure     500 {string} string "Internal server error"
+// @Success     200 {object} webhook.GetSupportedVerbsResponse
 // @Router      /v1/webhooks/verbs [get]
-func (wr WebhookRouter) GetSupportedVerbs(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (wr WebhookRouter) GetSupportedVerbs(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	verbs := wr.service.GetSupportedVerbs()
 	return framework.Respond(ctx, w, verbs, http.StatusOK)
 }

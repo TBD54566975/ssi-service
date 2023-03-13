@@ -11,8 +11,8 @@ func TestResolveDIDWebIntegration(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	// A .well-known file exists at https://identity.foundation/.well-known/did.json
-	didWebOutput, err := put(endpoint+version+"dids/web", `{ "keyType":"Ed25519", "didWebId":"did:web:identity.foundation"}`)
+	// A .well-known file exists at https://tbd.website/.well-known/did.json
+	didWebOutput, err := put(endpoint+version+"dids/web", `{ "keyType":"Ed25519", "didWebId":"did:web:tbd.website"}`)
 	assert.NoError(t, err)
 
 	did, err := getJSONElement(didWebOutput, "$.did.id")
@@ -26,5 +26,5 @@ func TestResolveDIDWebIntegration(t *testing.T) {
 
 	didDocumentID, err := getJSONElement(resolvedOutput, "$.didDocument.id")
 	assert.NoError(t, err)
-	assert.Equal(t, "did:web:identity.foundation", didDocumentID)
+	assert.Equal(t, "did:web:tbd.website", didDocumentID)
 }
