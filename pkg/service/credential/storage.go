@@ -11,7 +11,6 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
 	"github.com/goccy/go-json"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
@@ -49,11 +48,9 @@ type WriteContext struct {
 }
 
 type StatusListCredentialMetadata struct {
-	statusListCredential           *StoredCredential
 	statusListCredentialWatchKey   storage.WatchKey
 	statusListIndexPoolWatchKey    storage.WatchKey
 	statusListCurrentIndexWatchKey storage.WatchKey
-	uuid                           string
 }
 
 func (sc StoredCredential) IsValid() bool {
@@ -252,10 +249,6 @@ func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*Sto
 	}
 
 	return &storedCreds[0], nil
-}
-
-func (cs *Storage) GetStoreCredentialWriteContext(request StoreCredentialRequest) (*WriteContext, error) {
-	return cs.getStoreCredentialWriteContext(request, credentialNamespace)
 }
 
 func (cs *Storage) getStoreCredentialWriteContext(request StoreCredentialRequest, namespace string) (*WriteContext, error) {
@@ -623,29 +616,24 @@ func (cs *Storage) GetStatusListCurrentIndexWatchKey(issuer, schema, statusPurpo
 	return storage.WatchKey{Namespace: statusListCredentialCurrentIndex, Key: getStatusListKey(issuer, schema, statusPurpose)}
 }
 
-func (cs *Storage) GetStatusListCredentialKeyData(ctx context.Context, issuer string, schema string, statusPurpose statussdk.StatusPurpose) (string, *StoredCredential, error) {
+func (cs *Storage) GetStatusListCredentialKeyData(ctx context.Context, issuer string, schema string, statusPurpose statussdk.StatusPurpose) (*StoredCredential, error) {
 	storedStatusListCreds, err := cs.GetStatusListCredentialsByIssuerSchemaPurpose(ctx, issuer, schema, statusPurpose)
 	if err != nil {
-		return "", nil, util.LoggingNewErrorf("getting status list credential for issuer: %s schema: %s", issuer, schema)
+		return nil, util.LoggingNewErrorf("getting status list credential for issuer: %s schema: %s", issuer, schema)
 	}
 
 	// This should never happen, there should always be only 1 status list credential per <issuer,schema, statusPurpose> triplet
 	if len(storedStatusListCreds) > 1 {
-		return "", nil, util.LoggingNewErrorf("only one status list credential per <issuer,schema> pair allowed. issuer: %s schema: %s", issuer, schema)
+		return nil, util.LoggingNewErrorf("only one status list credential per <issuer,schema> pair allowed. issuer: %s schema: %s", issuer, schema)
 	}
 
 	// No Status List Credential Exists, create a new uuid
 	if storedStatusListCreds == nil || len(storedStatusListCreds) == 0 {
 		logrus.Warn("No Status List Credential Exists, create a new uuid")
-		return uuid.New().String(), nil, nil
+		return nil, nil
 	}
 
-	statusListUUID := ExtractID(storedStatusListCreds[0].CredentialID)
-	if statusListUUID == "" {
-		return "", nil, util.LoggingNewError("could not extract UUID from existing Credential Status List")
-	}
-
-	return statusListUUID, &storedStatusListCreds[0], nil
+	return &storedStatusListCreds[0], nil
 }
 
 // ExtractID is a function that takes a string input and returns a string that contains an ID extracted from the input string.
@@ -654,7 +642,7 @@ func (cs *Storage) GetStatusListCredentialKeyData(ctx context.Context, issuer st
 // If a match is found, the function returns the matched string with the forward slash removed (i.e., everything after the forward slash).
 // If no match is found, an empty string is returned.
 func ExtractID(input string) string {
-	re := regexp.MustCompile(`\/[a-zA-Z0-9-]+$`)
+	re := regexp.MustCompile(`/[a-zA-Z0-9-]+$`)
 	match := re.FindString(input)
 	if len(match) > 0 {
 		return match[1:]

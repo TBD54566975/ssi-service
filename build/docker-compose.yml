@@ -47,6 +47,8 @@ services:
       - ALLOW_EMPTY_PASSWORD=yes
     # This allows for data to not be persisted on new runs
     command: [sh, -c, "rm -f /data/dump.rdb && redis-server --save ''"]
+    ports:
+      - "6379:6379"
     networks:
       - ssi_network
   redis-commander:
