@@ -6,37 +6,51 @@
 
 # ssi-service
 
+A web service that exposes the ssi-sdk as an HTTP API. Support operations for Verifiable Credentials, Decentralized Identifiers and things Self Sovereign Identity!
+
 ## Introduction
-
 The Self Sovereign Identity Service (SSIS) facilitates all things relating to [DIDs](https://www.w3.org/TR/did-core/)
-and [Verifiable Credentials](https://www.w3.org/TR/vc-data-model) -- in a box! The service is a part of a larger
+and [Verifiable Credentials](https://www.w3.org/TR/vc-data-model) - in a box! The service is a part of a larger
 Decentralized Web Platform architecture which you can learn more about in our
-[collaboration repo](https://github.com/TBD54566975/collaboration). The SSI Service is a HTTP-API driven web service
-that wraps the [ssi-sdk](https://github.com/TBD54566975/ssi-sdk). The core functionality of the SSIS includes,
-but is not limited to: interacting with the standards around Verifiable Credentials, Credential Revocations, requesting
-Credentials, exchanging Credentials, data schemas for Credentials and other verifiable data, messaging using
-Decentralized Web Nodes, and usage of Decentralized Identifiers. Using these core standards, the SSIS enables robust
-functionality to facilitate all verifiable interactions such as creating, signing, issuing, curating, requesting,
-revoking, exchanging, validating, verifying credentials in varying degrees of complexity.
+[collaboration repo](https://github.com/TBD54566975/collaboration).
 
-For more information, see the [vision document](doc/VISION.md).
+## Core Functionality
+- Create and manage Decentralized Identifiers
+- Create and manage Verifiable Credentials
+- Credential Suspension
+- Interacting with the standards around Verifiable Credentials such as
+  - Credential Revocations
+  - Applying for Credentials
+  - Exchanging Credentials
+  - Data Schemas (for credentials and other verifiable data)
 
-![ssi-service](doc/ssi-service.png)
+## Use Cases (more to come!)
+### Business: Issuing Verifiable Credentials <br />
+[Follow Tutorial](https://developer.tbd.website/docs/tutorials/issue-verifiable-credential-manually)
+
+Steps to issue an Employment Status Credential:
+1. Spin up and host the SSI-Service
+2. Add the ability for your employees to click 'apply for a credential' on your internal EMS (should we show a front end button code example)
+3. [Create an Issuer DID](blob/main/integration/common.go#L36) for your business
+4. [Create a Schema](blob/main/integration/common.go#L66)
+5. [Create a Credential Manifest](blob/main/integration/common.go#L154)
+6. [Submit a Credential Application](blob/main/integration/common.go#L173)
 
 ## Configuration
 
-Configuration is managed using
-a [TOML](https://toml.io/en/) [file](https://github.com/TBD54566975/ssi-service/blob/main/config/config.toml). There are
-sets of configuration values for the server (e.g. which port to listen on), the services (e.g. which database to use),
+Managed via:
+[TOML](https://toml.io/en/) [file](https://github.com/TBD54566975/ssi-service/blob/main/config/config.toml)
+
+There are sets of configuration values for the server (e.g. which port to listen on), the services (e.g. which database to use),
 and each service. Each service may define specific configuration, such as which DID methods are enabled for the DID
 service.
 
-Here is the sequence of events on how the SSI-Service consumes it's configuration
-* On startup, the SSI-Service loads default values into the SSIServiceConfig
-* It then checks for a toml config file
-  * If one exists, it loads the toml file
-  * If one does not exist, it uses a default config defined in the code inline
-* Finally, it loads the config/.env file and adds the env variables defined in this file to the final SSIServiceConfig
+### Steps for SSI-Service to consume its configuration:
+1. On startup: SSI-Service loads default values into the SSIServiceConfig
+2. Checks for a TOML config file:
+  - If exists...load toml file
+  - If does not exist...it uses a default config defined in the code inline
+3. Finally, it loads the config/.env file and adds the env variables defined in this file to the final SSIServiceConfig
 
 ## Build & Test
 
@@ -56,43 +70,35 @@ A utility is provided to run _clean, build, and test_ in sequence with:
 mage cbt
 ```
 
-## Continuous Integration
-
-CI is managed via [GitHub Actions](https://github.com/TBD54566975/ssi-service/actions). Actions are triggered to run
-for each Pull Request, and on merge to `main`. You can run CI locally using a tool
-like [act](https://github.com/nektos/act).
-
 ## Deployment
 
 The service is packaged as a [Docker container](https://www.docker.com/), runnable in a wide variety of
-environments. [Docker Compose](https://docs.docker.com/compose/) is used for simplification and orchestration. To run
-the service, you can use the following command, which will start the service on port `8080`:
+environments.
 
+[Docker Compose](https://docs.docker.com/compose/) is used for simplification and orchestration. To run
+the service, you can use the following command, which will start the service on port `8080`:
 ```shell
 mage run
 ```
 
 Or, you can run docker-compose yourself:
-
 ```shell
 cd build && docker-compose up --build
 ```
 
-### Health and Readiness Checks
-
-You should then be able to send requests as follows:
+## Health and Readiness Checks
 
 Note: port 3000 is used by default, specified in `config.toml`, for the SSI Service process. If you're running
 via `mage run` or docker compose, the port to access will be `8080`.
 
-The command below will give you a health check, if the status is OK then you are up.
+Run for health check (status: OK, then you are up):
 
 ```shell
  ~ curl localhost:3000/health
 {"status":"OK"}
 ```
 
-The command below will tell if you all the services (credential, did, and schema) are up and ready.
+Run to check if all services are up and ready (credential, did, and schema):
 
 ```bash
 ~ curl localhost:8080/readiness
@@ -115,27 +121,21 @@ The command below will tell if you all the services (credential, did, and schema
 }
 ```
 
-## HTTP Endpoints
+## Continuous Integration
 
-You can find more HTTP endpoints by checking out the swagger docs at: `http://localhost:8002/docs`
+CI is managed via [GitHub Actions](https://github.com/TBD54566975/ssi-service/actions). Actions are triggered to run
+for each Pull Request, and on merge to `main`. You can run CI locally using a tool
+like [act](https://github.com/nektos/act).
+
+## HTTP Endpoints
+You can find all HTTP endpoints by checking out the swagger docs at: `http://localhost:8002/docs`
 
 Note: Your port by differ, the range of the ports for swagger are between `8002` and `8080`.
 
-## Vision, Features, and Development
-
-The vision for the project is laid out in [this document](doc/VISION.md).
-
-The project follows a proposal-based improvement format called [SIPs, outlined here.](sip/README.md).
-
-Please [open a discussion](https://forums.tbd.website/c/self-sovereign-identity-developers/7)
-or [issue](https://github.com/TBD54566975/ssi-service/issues) if you are interested in helping shape the future of the
-project.
-
 ## What's Supported?
-
 - [x] [DID Management](https://www.w3.org/TR/did-core/)
   - [x] [did:key](https://w3c-ccg.github.io/did-method-key/)
-  - [ ] [did:web](https://w3c-ccg.github.io/did-method-web/)
+  - [x] [did:web](https://w3c-ccg.github.io/did-method-web/)
   - [ ] [did:ion](https://identity.foundation/ion/)
 - [x] [Verifiable Credential Schema](https://w3c-ccg.github.io/vc-json-schemas/v2/index.html) Management
 - [x] [Verifiable Credential](https://www.w3.org/TR/vc-data-model) Issuance & Verification
@@ -147,6 +147,15 @@ project.
 - [ ] Status of Verifiable Credentials using the [Status List 2021](https://w3c-ccg.github.io/vc-status-list-2021/)
 - [ ] Creating and managing Trust documents using [Trust Establishment](https://identity.foundation/trust-establishment/)
 - [ ] [DID Well Known Configuration](https://identity.foundation/.well-known/resources/did-configuration/) documents
+
+## Vision, Features, and Development
+
+The vision for the project is laid out in [this document](doc/VISION.md).
+
+The project follows a proposal-based improvement format called [SIPs, outlined here.](sip/README.md).
+
+Please [open a discussion](https://forums.tbd.website/c/self-sovereign-identity/16), join Discord [SSI conversations](https://discord.com/channels/937858703112155166/969272692891086868),
+or [issue](https://github.com/TBD54566975/ssi-service/issues) if you are interested in helping shape the future of the project.
 
 ## Project Resources
 
