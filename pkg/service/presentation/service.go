@@ -164,7 +164,7 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing vp from jwt")
 	}
-	if err := jwt.VerifyTokenFromDID(sdkVP.Holder, request.SubmissionJWT, s.resolver); err != nil {
+	if err := jwt.VerifyTokenFromDID(ctx, sdkVP.Holder, request.SubmissionJWT, s.resolver); err != nil {
 		return nil, errors.Wrap(err, "verifying token from did")
 	}
 

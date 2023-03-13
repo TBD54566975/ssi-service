@@ -94,7 +94,7 @@ func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, 
 // @Success     200 {object} GetSchemaResponse
 // @Failure     400 {string} string "Bad request"
 // @Router      /v1/schemas/{id} [get]
-func (sr SchemaRouter) GetSchema(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (sr SchemaRouter) GetSchema(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get schema without ID parameter"
@@ -128,7 +128,7 @@ type GetSchemasResponse struct {
 // @Success     200 {object} GetSchemasResponse
 // @Failure     500 {string} string "Internal server error"
 // @Router      /v1/schemas [get]
-func (sr SchemaRouter) GetSchemas(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (sr SchemaRouter) GetSchemas(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	gotSchemas, err := sr.service.GetSchemas(ctx)
 	if err != nil {
 		errMsg := "could not get schemas"
@@ -178,7 +178,7 @@ func (sr SchemaRouter) VerifySchema(ctx context.Context, w http.ResponseWriter, 
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	verificationResult, err := sr.service.VerifySchema(schema.VerifySchemaRequest{SchemaJWT: request.SchemaJWT})
+	verificationResult, err := sr.service.VerifySchema(context.Background(), schema.VerifySchemaRequest{SchemaJWT: request.SchemaJWT})
 	if err != nil {
 		errMsg := "could not verify schema"
 		logrus.WithError(err).Error(errMsg)

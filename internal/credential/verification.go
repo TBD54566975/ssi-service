@@ -64,7 +64,7 @@ func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) 
 	}
 
 	// resolve the issuer's key material
-	kid, pubKey, err := v.resolveCredentialIssuerKey(*cred)
+	kid, pubKey, err := v.resolveCredentialIssuerKey(ctx, *cred)
 	if err != nil {
 		return util.LoggingError(err)
 	}
@@ -92,7 +92,7 @@ func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) 
 // a set of static verification checks on the credential as per the credential service's configuration.
 func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential credsdk.VerifiableCredential) error {
 	// resolve the issuer's key material
-	kid, pubKey, err := v.resolveCredentialIssuerKey(credential)
+	kid, pubKey, err := v.resolveCredentialIssuerKey(ctx, credential)
 	if err != nil {
 		return util.LoggingError(err)
 	}
@@ -112,9 +112,9 @@ func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential 
 	return v.staticVerificationChecks(ctx, credential)
 }
 
-func (v Verifier) VerifyJWT(did string, token keyaccess.JWT) error {
+func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT) error {
 	// resolve the did's key material
-	kid, pubKey, err := didint.ResolveKeyForDID(v.didResolver, did)
+	kid, pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, did)
 	if err != nil {
 		return util.LoggingError(err)
 	}
@@ -137,9 +137,9 @@ func (v Verifier) VerifyJWT(did string, token keyaccess.JWT) error {
 // resolveCredentialIssuerKey resolves the issuer's public key from the credential's issuer DID.
 // TODO(gabe): perhaps this should be a verification method referenced on the proof object, not the issuer
 // TODO(gabe): support issuers that are not strings, but objects
-func (v Verifier) resolveCredentialIssuerKey(credential credsdk.VerifiableCredential) (kid string, pubKey crypto.PublicKey, err error) {
+func (v Verifier) resolveCredentialIssuerKey(ctx context.Context, credential credsdk.VerifiableCredential) (kid string, pubKey crypto.PublicKey, err error) {
 	issuerDID := credential.Issuer.(string)
-	return didint.ResolveKeyForDID(v.didResolver, issuerDID)
+	return didint.ResolveKeyForDID(ctx, v.didResolver, issuerDID)
 
 }
 

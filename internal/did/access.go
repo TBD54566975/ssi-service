@@ -1,6 +1,7 @@
 package did
 
 import (
+	"context"
 	"crypto"
 	"fmt"
 
@@ -118,8 +119,8 @@ func multibaseToPubKeyBytes(mb string) ([]byte, error) {
 }
 
 // ResolveKeyForDID resolves a public key from a DID.
-func ResolveKeyForDID(resolver resolve.Resolver, did string) (kid string, pubKey crypto.PublicKey, err error) {
-	resolved, err := resolver.Resolve(did, nil)
+func ResolveKeyForDID(ctx context.Context, resolver resolve.Resolver, did string) (kid string, pubKey crypto.PublicKey, err error) {
+	resolved, err := resolver.Resolve(ctx, did, nil)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to resolve did: %s", did)
 		return

@@ -18,9 +18,9 @@ import (
 )
 
 type Service struct {
-	config      config.DIDServiceConfig
-	storage     *Storage
-	sdkResolver *didsdk.Resolver
+	config        config.DIDServiceConfig
+	storage       *Storage
+	localResolver *resolve.LocalResolver
 
 	methodToResolver map[string]resolve.Resolver
 
@@ -47,7 +47,7 @@ func (s *Service) Status() framework.Status {
 	if s.keyStore == nil {
 		ae.AppendString("no key store service configured")
 	}
-	if s.sdkResolver == nil {
+	if s.localResolver == nil {
 		ae.AppendString("no resolver configured")
 	}
 	if !ae.IsEmpty() {
@@ -74,7 +74,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 	}
 
 	// instantiate DID resolver
-	localResolver, err := did.BuildResolver(config.ResolutionMethods)
+	sdkResolver, err := did.BuildResolver(config.ResolutionMethods)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate DID resolver")
 	}
@@ -83,12 +83,12 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 		storage:          didStorage,
 		handlers:         make(map[didsdk.Method]MethodHandler),
 		keyStore:         keyStore,
-		sdkResolver:      localResolver,
+		localResolver:    &resolve.LocalResolver{Resolver: sdkResolver},
 		methodToResolver: make(map[string]resolve.Resolver),
 	}
 
-	for _, sm := range service.sdkResolver.SupportedMethods() {
-		service.methodToResolver[sm.String()] = service.sdkResolver
+	for _, sm := range service.localResolver.SupportedMethods() {
+		service.methodToResolver[sm.String()] = service.localResolver
 	}
 
 	ur := &resolve.UniversalResolver{
@@ -135,7 +135,7 @@ func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, er
 	if request.DID == "" {
 		return nil, util.LoggingNewError("cannot resolve empty DID")
 	}
-	resolved, err := s.Resolve(request.DID)
+	resolved, err := s.Resolve(context.Background(), request.DID)
 	if err != nil {
 		return nil, err
 	}
@@ -146,13 +146,13 @@ func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, er
 	}, nil
 }
 
-func (s *Service) Resolve(did string, _ ...didsdk.ResolutionOptions) (*didsdk.DIDResolutionResult, error) {
+func (s *Service) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOptions) (*didsdk.DIDResolutionResult, error) {
 	selectedResolver, err := s.chooseResolver(did)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "choosing resolver")
 	}
 
-	resolved, err := selectedResolver.Resolve(did)
+	resolved, err := selectedResolver.Resolve(ctx, did)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not resolve DID: %s", did)
 	}
