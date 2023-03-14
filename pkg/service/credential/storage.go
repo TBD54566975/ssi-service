@@ -504,19 +504,20 @@ func (cs *Storage) GetStatusListCredentialsByIssuerSchemaPurpose(ctx context.Con
 	}
 
 	// now get each credential by key
-	var storedCreds []StoredCredential
+	storedCreds := make([]StoredCredential, 0, len(issuerSchemaKeys))
 	for _, key := range issuerSchemaKeys {
 		credBytes, err := cs.db.Read(ctx, statusListCredentialNamespace, key)
 		if err != nil {
 			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
-		} else {
-			var cred StoredCredential
-			if err = json.Unmarshal(credBytes, &cred); err != nil {
-				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
-			}
-
-			storedCreds = append(storedCreds, cred)
+			return nil, err
 		}
+
+		var cred StoredCredential
+		if err = json.Unmarshal(credBytes, &cred); err != nil {
+			logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
+		}
+
+		storedCreds = append(storedCreds, cred)
 	}
 
 	if len(storedCreds) == 0 {

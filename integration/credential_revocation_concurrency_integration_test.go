@@ -116,8 +116,8 @@ func TestConcurrencyRevocationVerifiableCredentialIntegration(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(vcCount)
 
-	m := sync.Mutex{}
-	credStatusListURLSet := make(map[string]struct{})
+	var m sync.Mutex
+	credStatusListURLSet := make(map[string]struct{}, vcCount)
 
 	for i := 0; i < vcCount; i++ {
 		go func() {
