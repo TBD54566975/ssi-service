@@ -170,13 +170,13 @@ func TestSchemaSigning(t *testing.T) {
 		assert.NotEmpty(tt, createdSchema.SchemaJWT)
 
 		// verify the schema
-		verifiedSchema, err := schemaService.VerifySchema(schema.VerifySchemaRequest{SchemaJWT: *createdSchema.SchemaJWT})
+		verifiedSchema, err := schemaService.VerifySchema(context.Background(), schema.VerifySchemaRequest{SchemaJWT: *createdSchema.SchemaJWT})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, verifiedSchema)
 		assert.True(tt, verifiedSchema.Verified)
 
 		// verify a bad schema
-		verifiedSchema, err = schemaService.VerifySchema(schema.VerifySchemaRequest{SchemaJWT: "bad"})
+		verifiedSchema, err = schemaService.VerifySchema(context.Background(), schema.VerifySchemaRequest{SchemaJWT: "bad"})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, verifiedSchema)
 		assert.False(tt, verifiedSchema.Verified)

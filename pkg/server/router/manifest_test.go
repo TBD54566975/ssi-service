@@ -96,7 +96,7 @@ func TestManifestRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
 
-		verificationResponse, err := manifestService.VerifyManifest(model.VerifyManifestRequest{ManifestJWT: createdManifest.ManifestJWT})
+		verificationResponse, err := manifestService.VerifyManifest(context.Background(), model.VerifyManifestRequest{ManifestJWT: createdManifest.ManifestJWT})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, verificationResponse)
 		assert.True(tt, verificationResponse.Verified)
