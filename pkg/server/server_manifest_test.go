@@ -100,7 +100,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.Equal(tt, resp.Manifest.Issuer.ID, issuerDID.DID.ID)
 
 		// verify the manifest
-		verificationResponse, err := manifestService.VerifyManifest(manifestsvc.VerifyManifestRequest{ManifestJWT: resp.ManifestJWT})
+		verificationResponse, err := manifestService.VerifyManifest(context.Background(), manifestsvc.VerifyManifestRequest{ManifestJWT: resp.ManifestJWT})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, verificationResponse)
 		assert.True(tt, verificationResponse.Verified)
@@ -242,7 +242,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// verify each manifest
 		for _, m := range getManifestsResp.Manifests {
-			verificationResponse, err := manifestService.VerifyManifest(manifestsvc.VerifyManifestRequest{ManifestJWT: m.ManifestJWT})
+			verificationResponse, err := manifestService.VerifyManifest(context.Background(), manifestsvc.VerifyManifestRequest{ManifestJWT: m.ManifestJWT})
 			assert.NoError(tt, err)
 			assert.NotEmpty(tt, verificationResponse)
 			assert.True(tt, verificationResponse.Verified)

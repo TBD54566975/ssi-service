@@ -27,7 +27,7 @@ jobs:
       run: go install github.com/magefile/mage
 
     - name: Start containers
-      run: docker-compose -f "build/docker-compose.yml" up -d --build web redis
+      run: docker-compose -f "build/docker-compose.yml" up -d --build web redis uni-resolver-web driver-did-ion
 
     - name: End To End Test
       run: mage integration

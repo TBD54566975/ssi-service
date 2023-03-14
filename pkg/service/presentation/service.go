@@ -6,7 +6,6 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
-	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -14,6 +13,7 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/jwt"
+	"github.com/tbd54566975/ssi-service/pkg/service/did/resolve"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
@@ -30,7 +30,7 @@ type Service struct {
 	keystore   *keystore.Service
 	opsStorage *operation.Storage
 	config     config.PresentationServiceConfig
-	resolver   *didsdk.Resolver
+	resolver   resolve.Resolver
 	schema     *schema.Service
 	verifier   *credential.Verifier
 }
@@ -57,7 +57,7 @@ func (s Service) Config() config.PresentationServiceConfig {
 	return s.config
 }
 
-func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage, resolver *didsdk.Resolver, schema *schema.Service, keystore *keystore.Service) (*Service, error) {
+func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage, resolver resolve.Resolver, schema *schema.Service, keystore *keystore.Service) (*Service, error) {
 	presentationStorage, err := NewPresentationStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate definition storage for the presentation service")
@@ -164,7 +164,7 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing vp from jwt")
 	}
-	if err := jwt.VerifyTokenFromDID(sdkVP.Holder, request.SubmissionJWT, s.resolver); err != nil {
+	if err := jwt.VerifyTokenFromDID(ctx, sdkVP.Holder, request.SubmissionJWT, s.resolver); err != nil {
 		return nil, errors.Wrap(err, "verifying token from did")
 	}
 
