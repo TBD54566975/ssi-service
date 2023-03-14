@@ -27,7 +27,7 @@ jobs:
       run: go install github.com/magefile/mage
 
     - name: Start containers
-      run: docker-compose -f "build/docker-compose.yml" up -d --build
+      run: docker-compose -f "build/docker-compose.yml" up -d --build web redis
 
     - name: End To End Test
       run: mage integration
@@ -37,12 +37,12 @@ jobs:
       run: docker-compose -f "build/docker-compose.yml" down
 
     - name: Save Container Logs to File
-      if: always()
-      run: docker logs build-web-1 > build_web_1_logs.txt
+      if: failure()
+      run: docker logs web > web_logs.txt
 
     - name: Upload Logs as Artifact
-      if: always()
+      if: failure()
       uses: actions/upload-artifact@v3
       with:
         name: logs
-        path: build_web_1_logs.txt
+        path: web_logs.txt

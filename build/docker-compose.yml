@@ -2,6 +2,7 @@ version: "3.98"
 
 services:
   web:
+    container_name: web
     build:
       context: ../
       dockerfile: build/Dockerfile
