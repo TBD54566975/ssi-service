@@ -7,8 +7,9 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	goredislib "github.com/go-redis/redis/v8"
 	"github.com/pkg/errors"
+	"github.com/redis/go-redis/extra/redisotel/v9"
+	goredislib "github.com/redis/go-redis/v9"
 	"github.com/sirupsen/logrus"
 )
 
@@ -46,6 +47,14 @@ func (b *RedisDB) Init(i interface{}) error {
 		Addr:     options["address"].(string),
 		Password: options["password"].(string),
 	})
+
+	if err := redisotel.InstrumentTracing(client); err != nil {
+		return errors.Wrap(err, "instrumenting tracing")
+	}
+
+	if err := redisotel.InstrumentMetrics(client); err != nil {
+		return errors.Wrap(err, "instrumenting metrics")
+	}
 
 	b.db = client
 
