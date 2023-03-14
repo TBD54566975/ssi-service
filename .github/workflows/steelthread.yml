@@ -32,17 +32,17 @@ jobs:
     - name: End To End Test
       run: mage integration
 
-    - name: Stop containers
-      if: always()
-      run: docker-compose -f "build/docker-compose.yml" down
-
     - name: Save Container Logs to File
-      if: failure()
+      if: always()
       run: docker logs web > web_logs.txt
 
     - name: Upload Logs as Artifact
-      if: failure()
+      if: always()
       uses: actions/upload-artifact@v3
       with:
         name: logs
         path: web_logs.txt
+
+    - name: Stop containers
+      if: always()
+      run: docker-compose -f "build/docker-compose.yml" down
