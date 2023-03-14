@@ -35,3 +35,12 @@ jobs:
     - name: Stop containers
       if: always()
       run: docker-compose -f "build/docker-compose.yml" down
+
+    - name: Save Container Logs to File
+      run: docker logs build-web-1 > build_web_1_logs.txt
+
+    - name: Upload Logs as Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: logs
+        path: build_web_1_logs.txt
