@@ -32,7 +32,7 @@ func (s Service) signManifestJWT(ctx context.Context, m CredentialManifestContai
 	return manifestToken, nil
 }
 
-func (s Service) verifyManifestJWT(token keyaccess.JWT) (*manifest.CredentialManifest, error) {
+func (s Service) verifyManifestJWT(ctx context.Context, token keyaccess.JWT) (*manifest.CredentialManifest, error) {
 	parsed, err := jwt.Parse([]byte(token))
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not parse JWT")
@@ -47,7 +47,7 @@ func (s Service) verifyManifestJWT(token keyaccess.JWT) (*manifest.CredentialMan
 		return nil, util.LoggingErrorMsg(err, "could not unmarshal claims into manifest")
 	}
 	issuer := parsedManifest.Manifest.Issuer.ID
-	kid, pubKey, err := didint.ResolveKeyForDID(s.didResolver, issuer)
+	kid, pubKey, err := didint.ResolveKeyForDID(ctx, s.didResolver, issuer)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "failed to resolve manifest issuer's did: %s", issuer)
 	}

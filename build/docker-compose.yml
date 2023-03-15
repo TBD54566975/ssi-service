@@ -2,6 +2,7 @@ version: "3.98"
 
 services:
   web:
+    container_name: web
     build:
       context: ../
       dockerfile: build/Dockerfile
@@ -16,6 +17,9 @@ services:
       - ../config/compose.toml:/app/config/config.toml
     networks:
       - ssi_network
+      - universal-resolver
+    links:
+      - uni-resolver-web
   swagger-ui:
     build:
       context: ../
@@ -64,6 +68,21 @@ services:
       - "9001:8081"
     networks:
       - ssi_network
+  uni-resolver-web:
+    image: universalresolver/uni-resolver-web:latest
+    ports:
+      - "8088:8080"
+    platform: "linux/amd64"
+    networks:
+      - universal-resolver
+  driver-did-ion:
+    image: identityfoundation/driver-did-ion:v0.8.1
+    ports:
+      - "8089:8080"
+    platform: "linux/amd64"
+    networks:
+      - universal-resolver
 
 networks:
   ssi_network:
+  universal-resolver:
