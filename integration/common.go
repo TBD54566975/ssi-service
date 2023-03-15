@@ -363,7 +363,7 @@ func get(url string) (string, error) {
 		return "", errors.Wrap(err, "parsing body")
 	}
 
-	if is2xxResponse(resp.StatusCode) {
+	if !is2xxResponse(resp.StatusCode) {
 		return "", fmt.Errorf("status code not in the 200s. body: %s", string(body))
 	}
 
@@ -391,7 +391,7 @@ func put(url string, json string) (string, error) {
 		return "", errors.Wrap(err, "parsing body")
 	}
 
-	if is2xxResponse(resp.StatusCode) {
+	if !is2xxResponse(resp.StatusCode) {
 		return "", fmt.Errorf("status code %v not in the 200s. body: %s", resp.StatusCode, string(body))
 	}
 
@@ -407,7 +407,7 @@ func getJSONFromFile(fileName string) string {
 }
 
 func is2xxResponse(statusCode int) bool {
-	return statusCode/100 != 2
+	return statusCode/100 == 2
 }
 
 func getValidApplicationRequest(credAppJSON string, credentialJWT string) manifestsdk.CredentialApplicationWrapper {

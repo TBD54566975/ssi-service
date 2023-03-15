@@ -216,10 +216,10 @@ func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWrit
 }
 
 type SubmitApplicationRequest struct {
-	ApplicationJWT keyaccess.JWT `json:"applicationJwt" validate:"required"`
 	// Contains the following properties:
 	// Application  manifestsdk.CredentialApplication `json:"credential_application" validate:"required"`
 	// Credentials  []interface{}                     `json:"vcs" validate:"required"`
+	ApplicationJWT keyaccess.JWT `json:"applicationJwt" validate:"required"`
 }
 
 const (

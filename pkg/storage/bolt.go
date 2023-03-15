@@ -103,10 +103,16 @@ func (btx *boltTx) Write(ctx context.Context, namespace, key string, value []byt
 	return btx.b.Write(ctx, namespace, key, value)
 }
 
-// TODO: Implement to be transactional
-func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, watchKeys []WatchKey) (any, error) {
+func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, _ []WatchKey) (any, error) {
 	bTx := boltTx{b}
-	return businessLogicFunc(ctx, &bTx)
+	var result any
+
+	err := b.db.Update(func(tx *bolt.Tx) error {
+		var err error
+		result, err = businessLogicFunc(ctx, &bTx)
+		return err
+	})
+	return result, err
 }
 
 func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value []byte) error {
