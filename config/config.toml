@@ -7,6 +7,8 @@ desc = "Default configuration to be used while running the service as a single g
 [server]
 api_host = "0.0.0.0:3000"
 debug_host = "0.0.0.0:4000"
+jager_host = "http://localhost:14268/api/traces"
+jager_enabled = true
 
 # 5 seconds, time is in nanoseconds
 read_timeout = 5000000000
@@ -22,7 +24,7 @@ enable_allow_all_cors = true
 
 # Storage Configuration
 [services]
-service_endpoint = "http://localhost:8080"
+service_endpoint = "http://localhost:3000"
 storage = "redis"
 
 [services.storage_option]
