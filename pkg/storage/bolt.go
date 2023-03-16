@@ -109,26 +109,32 @@ func (btx *boltTx) Write(_ context.Context, namespace, key string, value []byte)
 func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, _ []WatchKey) (any, error) {
 	t, err := b.db.Begin(true)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "beginning transaction")
 	}
 
 	bTx := boltTx{tx: t}
 	// Make sure the transaction rolls back in the event of a panic.
 	defer func() {
 		if t.DB() != nil {
-			_ = t.Rollback()
+			err = t.Rollback()
+			if err != nil {
+				logrus.Error("unable to roll back")
+			}
 		}
 	}()
 
 	// If an error is returned from the function then rollback and return error.
 	result, err := businessLogicFunc(ctx, &bTx)
 	if err != nil {
-		_ = t.Rollback()
-		return nil, err
+		if rollbackErr := t.Rollback(); rollbackErr != nil {
+			logrus.Errorf("problem rolling back %s", rollbackErr)
+			return nil, errors.Wrap(rollbackErr, "rolling back transaction")
+		}
+		return nil, errors.Wrap(err, "executing business logic func")
 	}
 
 	if err := t.Commit(); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "committing transaction")
 	}
 	return result, nil
 }
