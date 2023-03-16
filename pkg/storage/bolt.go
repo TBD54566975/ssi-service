@@ -74,7 +74,7 @@ func (b *BoltDB) Close() error {
 }
 
 type boltTx struct {
-	b *BoltDB
+	tx *bolt.Tx
 }
 
 func (b *BoltDB) Exists(ctx context.Context, namespace, key string) (bool, error) {
@@ -99,24 +99,46 @@ func (b *BoltDB) Exists(ctx context.Context, namespace, key string) (bool, error
 }
 
 // TODO: Implement to be transactional
-func (btx *boltTx) Write(ctx context.Context, namespace, key string, value []byte) error {
-	return btx.b.Write(ctx, namespace, key, value)
+func (btx *boltTx) Write(_ context.Context, namespace, key string, value []byte) error {
+	return writeFunc(namespace, key, value)(btx.tx)
 }
 
+// Execute runs the provided function within a transaction. Any failure during execution results in a rollback.
+// It is recommended to not open transactions within businessLogicFunc, as there are situation in which the interplay
+// between transactions may cause deadlocks.
 func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, _ []WatchKey) (any, error) {
-	bTx := boltTx{b}
-	var result any
+	t, err := b.db.Begin(true)
+	if err != nil {
+		return nil, err
+	}
 
-	err := b.db.Update(func(tx *bolt.Tx) error {
-		var err error
-		result, err = businessLogicFunc(ctx, &bTx)
-		return err
-	})
-	return result, err
+	bTx := boltTx{tx: t}
+	// Make sure the transaction rolls back in the event of a panic.
+	defer func() {
+		if t.DB() != nil {
+			_ = t.Rollback()
+		}
+	}()
+
+	// If an error is returned from the function then rollback and return error.
+	result, err := businessLogicFunc(ctx, &bTx)
+	if err != nil {
+		_ = t.Rollback()
+		return nil, err
+	}
+
+	if err := t.Commit(); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value []byte) error {
-	return b.db.Update(func(tx *bolt.Tx) error {
+	return b.db.Update(writeFunc(namespace, key, value))
+}
+
+func writeFunc(namespace string, key string, value []byte) func(tx *bolt.Tx) error {
+	return func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists([]byte(namespace))
 		if err != nil {
 			return err
@@ -125,7 +147,7 @@ func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value 
 			return err
 		}
 		return nil
-	})
+	}
 }
 
 func (b *BoltDB) WriteMany(ctx context.Context, namespaces, keys []string, values [][]byte) error {
