@@ -133,5 +133,6 @@ func NewServer(shutdown chan os.Signal, config *AuthConfig) *Server {
 
 type AuthConfig struct {
 	conf.Version
-	Server config.ServerConfig
+	Server               config.ServerConfig
+	CredentialIssuerFile string `toml:"credential_issuer_file" conf:"default:config/credential_issuer_metadata.json"`
 }

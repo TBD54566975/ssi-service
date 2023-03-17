@@ -1,19 +1,18 @@
 package authorizationserver
 
 import (
-	"encoding/json"
+	_ "embed"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
 
-	"github.com/TBD54566975/ssi-sdk/oidc/issuance"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tbd54566975/ssi-service/config"
 )
 
-func fetchMetadata(url string) (*issuance.IssuerMetadata, error) {
+func fetchMetadata(url string) ([]byte, error) {
 	resp, err := http.Get(url) // #nosec: testing only.
 	if err != nil {
 		return nil, err
@@ -22,20 +21,21 @@ func fetchMetadata(url string) (*issuance.IssuerMetadata, error) {
 		_ = resp.Body.Close()
 	}()
 
-	var metadata issuance.IssuerMetadata
-	if err := json.NewDecoder(resp.Body).Decode(&metadata); err != nil {
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
 		return nil, err
 	}
 
-	return &metadata, nil
+	return data, nil
 }
+
+//go:embed expected_issuer_metadata.json
+var expectedIssuerMetadata []byte
 
 func TestCredentialIssuerMetadata(t *testing.T) {
 	// Create an httptest server with the metadataHandler
 	server := httptest.NewServer(NewServer(make(chan os.Signal, 1), &AuthConfig{
-		Server: config.ServerConfig{
-			APIHost: "my-authorization-server.com:8488",
-		},
+		CredentialIssuerFile: "../../config/credential_issuer_metadata.json",
 	}))
 	defer server.Close()
 
@@ -44,5 +44,5 @@ func TestCredentialIssuerMetadata(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check that the issuer matches the URL that was fetched
-	assert.Equal(t, "https://my-authorization-server.com:8488/oidc/issuer", metadata.CredentialIssuer.String())
+	assert.JSONEq(t, string(expectedIssuerMetadata), string(metadata))
 }
