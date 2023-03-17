@@ -44,5 +44,5 @@ func TestCredentialIssuerMetadata(t *testing.T) {
 	require.NoError(t, err)
 
 	// Check that the issuer matches the URL that was fetched
-	assert.Equal(t, "http://my-authorization-server.com:8488/oidc/issuer", metadata.CredentialIssuer.String())
+	assert.Equal(t, "https://my-authorization-server.com:8488/oidc/issuer", metadata.CredentialIssuer.String())
 }
