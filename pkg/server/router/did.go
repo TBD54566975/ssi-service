@@ -222,6 +222,52 @@ type ResolveDIDResponse struct {
 	DIDDocumentMetadata *didsdk.DIDDocumentMetadata   `json:"didDocumentMetadata,omitempty"`
 }
 
+type DeleteDIDByMethodRequest struct {
+	// Identifies the cryptographic algorithm family to use when generating this key.
+	// One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
+	KeyType crypto.KeyType `json:"keyType" validate:"required"`
+
+	// Required when creating a DID with the `web` did method. E.g. `did:web:identity.foundation`.
+	DIDWebID string `json:"didWebId"`
+}
+
+// SoftDeleteDIDByMethod godoc
+//
+// @Summary     Soft Delete DID
+// @Description Soft Deletes DID by method
+// @Tags        DecentralizedIdentityAPI
+// @Accept      json
+// @Produce     json
+// @Param       request body     DeleteDIDByMethodRequest true "request body"
+// @Param       method  path     string                   true "Method"
+// @Param       id      path     string                   true "ID"
+// @Success     200     {string} string "OK"
+// @Failure     400     {string} string "Bad request"
+// @Router      /v1/dids/{method}/{id} [delete]
+func (dr DIDRouter) SoftDeleteDIDByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	method := framework.GetParam(ctx, MethodParam)
+	if method == nil {
+		errMsg := "soft delete DID by method request missing method parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		errMsg := fmt.Sprintf("soft delete DID request missing id parameter for method: %s", *method)
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	deleteDIDRequest := did.DeleteDIDRequest{Method: didsdk.Method(*method), ID: *id}
+	if err := dr.service.SoftDeleteDIDByMethod(ctx, deleteDIDRequest); err != nil {
+		errMsg := fmt.Sprintf("could not soft delete DID with id: %s", *id)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
+	}
+
+	return framework.Respond(ctx, w, nil, http.StatusOK)
+}
+
 // ResolveDID godoc
 //
 // @Summary     Resolve a DID

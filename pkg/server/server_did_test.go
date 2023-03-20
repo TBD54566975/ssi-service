@@ -156,6 +156,121 @@ func TestDIDAPI(t *testing.T) {
 		assert.Equal(tt, createdID, resp.DID.ID)
 	})
 
+	t.Run("Test Soft Delete DID By Method", func(tt *testing.T) {
+		bolt := setupTestDB(tt)
+		require.NotNil(tt, bolt)
+
+		_, keyStore := testKeyStore(tt, bolt)
+		didService := testDIDRouter(tt, bolt, keyStore)
+
+		// soft delete DID by method
+		req := httptest.NewRequest(http.MethodDelete, "https://ssi-service.com/v1/dids/bad/worse", nil)
+		w := httptest.NewRecorder()
+
+		// bad params
+		badParams := map[string]string{
+			"method": "bad",
+			"id":     "worse",
+		}
+
+		err := didService.SoftDeleteDIDByMethod(newRequestContextWithParams(badParams), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "could not soft delete DID")
+
+		// reset recorder between calls
+		w.Flush()
+
+		// good method, bad id
+		badParams1 := map[string]string{
+			"method": "key",
+			"id":     "worse",
+		}
+		err = didService.SoftDeleteDIDByMethod(newRequestContextWithParams(badParams1), w, req)
+		assert.Error(tt, err)
+		assert.Contains(tt, err.Error(), "could not soft delete DID with id: worse: error getting DID: worse")
+
+		// reset recorder between calls
+		w.Flush()
+		// store a DID
+		createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
+		requestReader := newRequestValue(tt, createDIDRequest)
+		params := map[string]string{"method": "key"}
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", requestReader)
+
+		err = didService.CreateDIDByMethod(newRequestContextWithParams(params), w, req)
+		assert.NoError(tt, err)
+
+		var createdDID router.CreateDIDByMethodResponse
+		err = json.NewDecoder(w.Body).Decode(&createdDID)
+		assert.NoError(tt, err)
+
+		// reset recorder between calls
+		w.Flush()
+
+		// get all dids for method
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key", requestReader)
+		err = didService.GetDIDsByMethod(newRequestContextWithParams(params), w, req)
+		assert.NoError(tt, err)
+
+		var gotDIDsResponse router.GetDIDsByMethodResponse
+		err = json.NewDecoder(w.Body).Decode(&gotDIDsResponse)
+		assert.NoError(tt, err)
+		assert.Len(tt, gotDIDsResponse.DIDs, 1)
+
+		// get it back
+		createdID := createdDID.DID.ID
+		getDIDPath := fmt.Sprintf("https://ssi-service.com/v1/dids/key/%s", createdID)
+		req = httptest.NewRequest(http.MethodGet, getDIDPath, nil)
+
+		// good params
+		goodParams := map[string]string{
+			"method": "key",
+			"id":     createdID,
+		}
+		err = didService.GetDIDByMethod(newRequestContextWithParams(goodParams), w, req)
+		assert.NoError(tt, err)
+
+		var resp router.GetDIDByMethodResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+		assert.Equal(tt, createdID, resp.DID.ID)
+
+		// delete it
+		deleteDIDPath := fmt.Sprintf("https://ssi-service.com/v1/dids/key/%s", createdID)
+		req = httptest.NewRequest(http.MethodDelete, deleteDIDPath, nil)
+
+		err = didService.SoftDeleteDIDByMethod(newRequestContextWithParams(goodParams), w, req)
+		assert.NoError(tt, err)
+
+		var delResp router.DeleteDIDByMethodRequest
+		err = json.NewDecoder(w.Body).Decode(&delResp)
+		assert.NoError(tt, err)
+
+		// get it back
+		req = httptest.NewRequest(http.MethodGet, getDIDPath, nil)
+
+		err = didService.GetDIDByMethod(newRequestContextWithParams(goodParams), w, req)
+		assert.NoError(tt, err)
+
+		var deletedGetResp router.GetDIDByMethodResponse
+		err = json.NewDecoder(w.Body).Decode(&deletedGetResp)
+		assert.NoError(tt, err)
+		assert.Equal(tt, createdID, deletedGetResp.DID.ID)
+
+		// reset recorder between calls
+		w.Flush()
+
+		// get all dids for method
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key", requestReader)
+		err = didService.GetDIDsByMethod(newRequestContextWithParams(params), w, req)
+		assert.NoError(tt, err)
+
+		var gotDIDsResponseAfterDelete router.GetDIDsByMethodResponse
+		err = json.NewDecoder(w.Body).Decode(&gotDIDsResponseAfterDelete)
+		assert.NoError(tt, err)
+		assert.Len(tt, gotDIDsResponseAfterDelete.DIDs, 0)
+	})
+
 	t.Run("Test Get DIDs By Method", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotNil(tt, bolt)
@@ -218,7 +333,6 @@ func TestDIDAPI(t *testing.T) {
 		w.Flush()
 
 		// get all dids for method
-
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key", requestReader)
 		err = didService.GetDIDsByMethod(newRequestContextWithParams(params), w, req)
 		assert.NoError(tt, err)
