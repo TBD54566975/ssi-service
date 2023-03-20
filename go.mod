@@ -12,8 +12,7 @@ require (
 	github.com/dimfeld/httptreemux/v5 v5.5.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-redis/redis/v8 v8.11.5
-	github.com/goccy/go-json v0.10.0
+	github.com/goccy/go-json v0.10.2
 	github.com/google/cel-go v0.13.0
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
@@ -25,6 +24,8 @@ require (
 	github.com/multiformats/go-varint v0.0.7
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/pkg/errors v0.9.1
+	github.com/redis/go-redis/extra/redisotel/v9 v9.0.2
+	github.com/redis/go-redis/v9 v9.0.2
 	github.com/rs/cors v1.8.3
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.2
@@ -58,13 +59,10 @@ require (
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.2.0 // indirect
 	github.com/multiformats/go-multicodec v0.8.1 // indirect
-	github.com/onsi/gomega v1.20.0 // indirect
 	github.com/piprate/json-gold v0.5.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.0.2 // indirect
-	github.com/redis/go-redis/extra/redisotel/v9 v9.0.2 // indirect
-	github.com/redis/go-redis/v9 v9.0.2 // indirect
 	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.2.0 // indirect
 	github.com/stoewer/go-strcase v1.2.1 // indirect
