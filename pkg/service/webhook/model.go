@@ -74,8 +74,7 @@ type GetSupportedVerbsResponse struct {
 }
 
 func (cwr DeleteWebhookRequest) IsValid() bool {
-	fmt.Println(cwr)
-	if isValidNoun(cwr.Noun) && isValidVerb(cwr.Verb) && isValidURL(cwr.URL) {
+	if cwr.Noun.IsValid() && cwr.Verb.isValid() && isValidURL(cwr.URL) {
 		return true
 	}
 	return false
@@ -83,22 +82,22 @@ func (cwr DeleteWebhookRequest) IsValid() bool {
 
 func (cwr CreateWebhookRequest) IsValid() bool {
 	fmt.Println(cwr)
-	if isValidNoun(cwr.Noun) && isValidVerb(cwr.Verb) && isValidURL(cwr.URL) {
+	if cwr.Noun.IsValid() && cwr.Verb.isValid() && isValidURL(cwr.URL) {
 		return true
 	}
 	return false
 }
 
-func isValidNoun(noun Noun) bool {
-	switch noun {
+func (n Noun) IsValid() bool {
+	switch n {
 	case Credential, DID, Manifest, Schema, Presentation:
 		return true
 	}
 	return false
 }
 
-func isValidVerb(verb Verb) bool {
-	switch verb {
+func (v Verb) isValid() bool {
+	switch v {
 	case Create, Delete:
 		return true
 	}

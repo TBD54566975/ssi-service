@@ -4,17 +4,10 @@ import (
 	"bytes"
 	"context"
 	"net/http"
-	"strings"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
-)
-
-const (
-	V1Prefix          = "/v1"
-	DIDsPrefix        = "/dids"
-	CredentialsPrefix = "/credentials"
 )
 
 // Define a custom response writer that wraps the original response writer and writes to a buffer
@@ -32,7 +25,7 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 	return n, err
 }
 
-func Webhook(webhookService svcframework.Service) framework.Middleware {
+func Webhook(webhookService svcframework.Service, noun webhook.Noun, verb webhook.Verb) framework.Middleware {
 	return func(handler framework.Handler) framework.Handler {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			buf := bytes.NewBuffer([]byte{})
@@ -44,23 +37,9 @@ func Webhook(webhookService svcframework.Service) framework.Middleware {
 			err := handler(ctx, wrappedWriter, r)
 			body := buf.String()
 
-			didHandlerPath := V1Prefix + DIDsPrefix
-			credHandlerPath := V1Prefix + CredentialsPrefix
-
 			whService := webhookService.(*webhook.Service)
+			go whService.PublishWebhook(noun, verb, body)
 
-			switch r.Method {
-			case http.MethodPut:
-				if strings.Contains(r.URL.Path, didHandlerPath) {
-					go whService.PublishWebhook(webhook.DID, webhook.Create, body)
-				} else if strings.Contains(r.URL.Path, credHandlerPath) {
-					go whService.PublishWebhook(webhook.Credential, webhook.Create, body)
-				}
-			case http.MethodDelete:
-				if strings.Contains(r.URL.Path, credHandlerPath) {
-					go whService.PublishWebhook(webhook.Credential, webhook.Delete, body)
-				}
-			}
 			return err
 		}
 	}

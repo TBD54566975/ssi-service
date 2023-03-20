@@ -72,6 +72,17 @@ func (ssi *SSIService) GetServices() []framework.Service {
 	return ssi.services
 }
 
+// GetService returns the specified instantiated service provider
+func (ssi *SSIService) GetService(serviceType framework.Type) framework.Service {
+	for _, s := range ssi.services {
+		if s.Type() == serviceType {
+			return s
+			break
+		}
+	}
+	return nil
+}
+
 // instantiateServices begins all instantiates and their dependencies
 func instantiateServices(config config.ServicesConfig) ([]framework.Service, error) {
 	storageProvider, err := storage.NewStorage(storage.Type(config.StorageProvider), config.StorageOption)
