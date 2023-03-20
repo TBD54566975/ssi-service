@@ -9,15 +9,15 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 	schemalib "github.com/TBD54566975/ssi-sdk/credential/schema"
 	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
-	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/pkg/service/did/resolve"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -65,7 +65,7 @@ func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
 
-func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver *didsdk.Resolver, schema *schema.Service) (*Service, error) {
+func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver resolve.Resolver, schema *schema.Service) (*Service, error) {
 	credentialStorage, err := NewCredentialStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the credential service")
@@ -89,28 +89,15 @@ func NewCredentialService(config config.CredentialServiceConfig, s storage.Servi
 
 func (s Service) CreateCredential(ctx context.Context, request CreateCredentialRequest) (*CreateCredentialResponse, error) {
 	watchKeys := make([]storage.WatchKey, 0)
-	var statusListCredential *StoredCredential
 
 	var slcMetadata StatusListCredentialMetadata
 
 	if request.hasStatus() && request.isStatusValid() {
 
-		var statusListUUID string
-		var err error
-
 		statusPurpose := statussdk.StatusRevocation
 
 		if request.Suspendable {
 			statusPurpose = statussdk.StatusSuspension
-		}
-
-		statusListUUID, statusListCredential, err = s.storage.GetStatusListCredentialKeyData(ctx, request.Issuer, request.JSONSchema, statusPurpose)
-		if err != nil {
-			return nil, errors.Wrap(err, "getting status list watch key uuid data")
-		}
-
-		if statusListUUID == "" {
-			return nil, errors.New("generating uuid")
 		}
 
 		statusListCredentialWatchKey := s.storage.GetStatusListCredentialWatchKey(request.Issuer, request.JSONSchema, string(statusPurpose))
@@ -121,7 +108,7 @@ func (s Service) CreateCredential(ctx context.Context, request CreateCredentialR
 		watchKeys = append(watchKeys, statusListCredentialIndexPoolWatchKey)
 		watchKeys = append(watchKeys, statusListCredentialCurrentIndexWatchKey)
 
-		slcMetadata = StatusListCredentialMetadata{statusListCredential: statusListCredential, statusListCredentialWatchKey: statusListCredentialWatchKey, statusListIndexPoolWatchKey: statusListCredentialIndexPoolWatchKey, statusListCurrentIndexWatchKey: statusListCredentialCurrentIndexWatchKey, uuid: statusListUUID}
+		slcMetadata = StatusListCredentialMetadata{statusListCredentialWatchKey: statusListCredentialWatchKey, statusListIndexPoolWatchKey: statusListCredentialIndexPoolWatchKey, statusListCurrentIndexWatchKey: statusListCredentialCurrentIndexWatchKey}
 	}
 
 	returnFunc := s.createCredentialFunc(request, slcMetadata)
@@ -227,7 +214,17 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 		var randomIndex int
 		var err error
 
-		if slcMetadata.statusListCredential == nil {
+		statusListCredential, err := s.storage.GetStatusListCredentialKeyData(
+			ctx,
+			issuerID,
+			schemaID,
+			statusPurpose,
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "getting status list credential key data")
+		}
+
+		if statusListCredential == nil {
 			// creates status list credential with random index
 			randomIndex, slCredential, err = createStatusListCredential(ctx, tx, s, statusPurpose, issuerID, schemaID, slcMetadata)
 			if err != nil {
@@ -241,7 +238,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 				return nil, util.LoggingErrorMsg(err, "problem with getting status list index")
 			}
 
-			statusListCredentialID = slcMetadata.statusListCredential.Credential.ID
+			statusListCredentialID = statusListCredential.Credential.ID
 
 			if err := s.storage.IncrementStatusListIndexTx(ctx, tx, slcMetadata); err != nil {
 				return nil, errors.Wrap(err, "incrementing status list index")
@@ -300,7 +297,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 }
 
 func createStatusListCredential(ctx context.Context, tx storage.Tx, s Service, statusPurpose statussdk.StatusPurpose, issuerID string, schemaID string, slcMetadata StatusListCredentialMetadata) (int, *credential.VerifiableCredential, error) {
-	statusListID := fmt.Sprintf("%s/v1/credentials/status/%s", s.config.ServiceEndpoint, slcMetadata.uuid)
+	statusListID := fmt.Sprintf("%s/v1/credentials/status/%s", s.config.ServiceEndpoint, uuid.NewString())
 
 	generatedStatusListCredential, err := statussdk.GenerateStatusList2021Credential(statusListID, issuerID, statusPurpose, []credential.VerifiableCredential{})
 	if err != nil {
@@ -540,7 +537,7 @@ func (s Service) UpdateCredentialStatus(ctx context.Context, request UpdateCrede
 		return nil, util.LoggingNewErrorf("status purpose could not be derived from credential status")
 	}
 
-	_, statusListCredential, err := s.storage.GetStatusListCredentialKeyData(ctx, gotCred.Issuer, gotCred.Schema, statussdk.StatusPurpose(statusPurpose))
+	statusListCredential, err := s.storage.GetStatusListCredentialKeyData(ctx, gotCred.Issuer, gotCred.Schema, statussdk.StatusPurpose(statusPurpose))
 	if err != nil {
 		return nil, errors.Wrap(err, "getting status list watch key uuid data")
 	}

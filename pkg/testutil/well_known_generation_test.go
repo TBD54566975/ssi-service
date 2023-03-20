@@ -72,7 +72,7 @@ func createWellKnownDIDConfiguration(tt *testing.T, didResponse *did.CreateDIDRe
 	err = builder.SetCredentialSubject(subject)
 	assert.NoError(tt, err)
 
-	err = builder.AddContext("https://identity.foundation/.well-known/did-configuration/v1")
+	err = builder.AddContext("https://tbd.website/.well-known/did-configuration/v1")
 	assert.NoError(tt, err)
 
 	err = builder.SetExpirationDate("2051-10-05T14:48:00.000Z")
@@ -137,7 +137,7 @@ func createWellKnownDIDConfiguration(tt *testing.T, didResponse *did.CreateDIDRe
 	credToken := keyaccess.JWT(signedTokenBytes).Ptr()
 
 	wellKnown := map[string]interface{}{
-		"@context":    "https://identity.foundation/.well-known/did-configuration/v1",
+		"@context":    "https://tbd.website/.well-known/did-configuration/v1",
 		"linked_dids": []string{credToken.String()},
 	}
 
@@ -181,7 +181,8 @@ func setupTestDB(t *testing.T) storage.ServiceStorage {
 	file, err := os.CreateTemp("", "bolt")
 	require.NoError(t, err)
 	name := file.Name()
-	file.Close()
+	err = file.Close()
+	require.NoError(t, err)
 	s, err := storage.NewStorage(storage.Bolt, name)
 	require.NoError(t, err)
 	t.Cleanup(func() {

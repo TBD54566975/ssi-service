@@ -40,6 +40,8 @@ password = "default-password"
 name = "did"
 methods = ["key", "web"]
 resolution_methods = ["key", "web", "pkh", "peer"]
+universal_resolver_url = "http://uni-resolver-web:8080"
+universal_resolver_methods = ["ion"]
 
 [services.schema]
 name = "schema"

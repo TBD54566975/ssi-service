@@ -77,7 +77,6 @@ func (ssi *SSIService) GetService(serviceType framework.Type) framework.Service 
 	for _, s := range ssi.services {
 		if s.Type() == serviceType {
 			return s
-			break
 		}
 	}
 	return nil

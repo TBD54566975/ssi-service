@@ -1,24 +1,23 @@
 package webhook
 
-import (
-	"fmt"
-	"net/url"
-)
+import "net/url"
 
 // In the context of webhooks, it's common to use noun.verb notation to describe events,
 // such as "credential.create" or "schema.delete".
 type Noun string
 type Verb string
 
+// Supported Nouns
 const (
-	// Supported Nouns
 	Credential   = Noun("Credential")
 	DID          = Noun("DID")
 	Manifest     = Noun("Manifest")
 	Schema       = Noun("Schema")
 	Presentation = Noun("Presentation")
+)
 
-	// Supported Verbs
+// Supported Verbs
+const (
 	Create = Verb("Create")
 	Delete = Verb("Delete")
 )
@@ -81,7 +80,6 @@ func (cwr DeleteWebhookRequest) IsValid() bool {
 }
 
 func (cwr CreateWebhookRequest) IsValid() bool {
-	fmt.Println(cwr)
 	if cwr.Noun.IsValid() && cwr.Verb.isValid() && isValidURL(cwr.URL) {
 		return true
 	}

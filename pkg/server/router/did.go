@@ -58,8 +58,12 @@ func (dr DIDRouter) GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ 
 }
 
 type CreateDIDByMethodRequest struct {
-	KeyType  crypto.KeyType `json:"keyType" validate:"required"`
-	DIDWebID string         `json:"didWebId"`
+	// Identifies the cryptographic algorithm family to use when generating this key.
+	// One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
+	KeyType crypto.KeyType `json:"keyType" validate:"required"`
+
+	// Required when creating a DID with the `web` did method. E.g. `did:web:identity.foundation`.
+	DIDWebID string `json:"didWebId"`
 }
 
 type CreateDIDByMethodResponse struct {
@@ -70,8 +74,10 @@ type CreateDIDByMethodResponse struct {
 
 // CreateDIDByMethod godoc
 //
-// @Summary     Create DID
-// @Description create DID by method
+// @Summary     Create DID Document
+// @Description Creates a DID document with the given method. The document created is stored internally and can be
+// @Description retrieved using the GetOperation. Method dependent registration (for example, DID web registration)
+// @Description is left up to the clients of this API.
 // @Tags        DecentralizedIdentityAPI
 // @Accept      json
 // @Produce     json
@@ -170,6 +176,12 @@ type GetDIDsByMethodResponse struct {
 	DIDs []didsdk.DIDDocument `json:"dids,omitempty"`
 }
 
+type GetDIDsRequest struct {
+	// A standard filter expression conforming to https://google.aip.dev/160.
+	// Not implemented yet.
+	Filter string `json:"filter"`
+}
+
 // GetDIDsByMethod godoc
 //
 // @Summary     Get DIDs
@@ -177,10 +189,11 @@ type GetDIDsByMethodResponse struct {
 // @Tags        DecentralizedIdentityAPI
 // @Accept      json
 // @Produce     json
-// @Param       method path     string true "Method"
-// @Success     200    {object} GetDIDsByMethodResponse
-// @Failure     400    {string} string "Bad request"
-// @Router      /v1/dids/{method} [get]
+// @Param       request body     GetDIDsRequest true "request body"
+// @Success     200     {object} GetDIDsByMethodResponse
+// @Failure     400     {string} string "Bad request"
+// @Failure     500     {string} string "Internal server error"
+// @Router      /v1/dids [get]
 func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
@@ -196,7 +209,7 @@ func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, 
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get DIDs for method: %s", *method)
 		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := GetDIDsByMethodResponse{DIDs: gotDIDs.DIDs}

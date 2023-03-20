@@ -20,17 +20,28 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v3
       with:
-        go-version: 1.20.1
+        go-version: 1.20.2
         cache: true
 
     - name: Install Mage
       run: go install github.com/magefile/mage
 
     - name: Start containers
-      run: docker-compose -f "build/docker-compose.yml" up -d --build
+      run: docker-compose -f "build/docker-compose.yml" up -d --build web redis uni-resolver-web driver-did-ion
 
     - name: End To End Test
       run: mage integration
+
+    - name: Save Container Logs to File
+      if: failure()
+      run: docker logs web > web_logs.txt
+
+    - name: Upload Logs as Artifact
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: logs
+        path: web_logs.txt
 
     - name: Stop containers
       if: always()

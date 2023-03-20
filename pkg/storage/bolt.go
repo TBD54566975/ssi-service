@@ -74,7 +74,7 @@ func (b *BoltDB) Close() error {
 }
 
 type boltTx struct {
-	b *BoltDB
+	tx *bolt.Tx
 }
 
 func (b *BoltDB) Exists(ctx context.Context, namespace, key string) (bool, error) {
@@ -99,18 +99,52 @@ func (b *BoltDB) Exists(ctx context.Context, namespace, key string) (bool, error
 }
 
 // TODO: Implement to be transactional
-func (btx *boltTx) Write(ctx context.Context, namespace, key string, value []byte) error {
-	return btx.b.Write(ctx, namespace, key, value)
+func (btx *boltTx) Write(_ context.Context, namespace, key string, value []byte) error {
+	return writeFunc(namespace, key, value)(btx.tx)
 }
 
-// TODO: Implement to be transactional
-func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, watchKeys []WatchKey) (any, error) {
-	bTx := boltTx{b}
-	return businessLogicFunc(ctx, &bTx)
+// Execute runs the provided function within a transaction. Any failure during execution results in a rollback.
+// It is recommended to not open transactions within businessLogicFunc, as there are situation in which the interplay
+// between transactions may cause deadlocks.
+func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFunc, _ []WatchKey) (any, error) {
+	t, err := b.db.Begin(true)
+	if err != nil {
+		return nil, errors.Wrap(err, "beginning transaction")
+	}
+
+	bTx := boltTx{tx: t}
+	// Make sure the transaction rolls back in the event of a panic.
+	defer func() {
+		if t.DB() != nil {
+			err = t.Rollback()
+			if err != nil {
+				logrus.Error("unable to roll back")
+			}
+		}
+	}()
+
+	// If an error is returned from the function then rollback and return error.
+	result, err := businessLogicFunc(ctx, &bTx)
+	if err != nil {
+		if rollbackErr := t.Rollback(); rollbackErr != nil {
+			logrus.Errorf("problem rolling back %s", rollbackErr)
+			return nil, errors.Wrap(rollbackErr, "rolling back transaction")
+		}
+		return nil, errors.Wrap(err, "executing business logic func")
+	}
+
+	if err := t.Commit(); err != nil {
+		return nil, errors.Wrap(err, "committing transaction")
+	}
+	return result, nil
 }
 
 func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value []byte) error {
-	return b.db.Update(func(tx *bolt.Tx) error {
+	return b.db.Update(writeFunc(namespace, key, value))
+}
+
+func writeFunc(namespace string, key string, value []byte) func(tx *bolt.Tx) error {
+	return func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists([]byte(namespace))
 		if err != nil {
 			return err
@@ -119,7 +153,7 @@ func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value 
 			return err
 		}
 		return nil
-	})
+	}
 }
 
 func (b *BoltDB) WriteMany(ctx context.Context, namespaces, keys []string, values [][]byte) error {

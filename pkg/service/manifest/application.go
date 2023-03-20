@@ -15,8 +15,8 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 )
 
-func (s Service) verifyApplicationJWT(did string, token keyaccess.JWT) error {
-	return jwt.VerifyTokenFromDID(did, token, s.didResolver)
+func (s Service) verifyApplicationJWT(ctx context.Context, did string, token keyaccess.JWT) error {
+	return jwt.VerifyTokenFromDID(ctx, did, token, s.didResolver)
 }
 
 // validateCredentialApplication validates the credential application's signature(s) in addition to making sure it
@@ -24,7 +24,7 @@ func (s Service) verifyApplicationJWT(did string, token keyaccess.JWT) error {
 // input descriptors along with an error if validation fails.
 func (s Service) validateCredentialApplication(ctx context.Context, credManifest manifest.CredentialManifest, request model.SubmitApplicationRequest) (inputDescriptorIDs []string, err error) {
 	// validate the payload's signature
-	if verificationErr := s.verifyApplicationJWT(request.ApplicantDID, request.ApplicationJWT); verificationErr != nil {
+	if verificationErr := s.verifyApplicationJWT(ctx, request.ApplicantDID, request.ApplicationJWT); verificationErr != nil {
 		err = util.LoggingErrorMsgf(err, "could not verify application<%s>'s signature", request.Application.ID)
 		return
 	}
