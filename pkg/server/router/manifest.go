@@ -194,7 +194,7 @@ func (mr ManifestRouter) GetManifests(ctx context.Context, w http.ResponseWriter
 // @Accept      json
 // @Produce     json
 // @Param       id  path     string true "ID"
-// @Success     200 {string} string "OK"
+// @Success     204 {string} string "No Content"
 // @Failure     400 {string} string "Bad request"
 // @Failure     500 {string} string "Internal server error"
 // @Router      /v1/manifests/{id} [delete]
@@ -212,7 +212,7 @@ func (mr ManifestRouter) DeleteManifest(ctx context.Context, w http.ResponseWrit
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	return framework.Respond(ctx, w, nil, http.StatusOK)
+	return framework.Respond(ctx, w, nil, http.StatusNoContent)
 }
 
 type SubmitApplicationRequest struct {
@@ -407,7 +407,7 @@ func (mr ManifestRouter) GetApplications(ctx context.Context, w http.ResponseWri
 // @Accept      json
 // @Produce     json
 // @Param       id  path     string true "ID"
-// @Success     200 {string} string "OK"
+// @Success     204 {string} string "No Content"
 // @Failure     400 {string} string "Bad request"
 // @Failure     500 {string} string "Internal server error"
 // @Router      /v1/manifests/applications/{id} [delete]
@@ -425,7 +425,7 @@ func (mr ManifestRouter) DeleteApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	return framework.Respond(ctx, w, nil, http.StatusOK)
+	return framework.Respond(ctx, w, nil, http.StatusNoContent)
 }
 
 type GetResponseResponse struct {
