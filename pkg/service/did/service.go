@@ -117,6 +117,7 @@ type MethodHandler interface {
 	CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error)
 	GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error)
 	GetDIDs(ctx context.Context, method didsdk.Method) (*GetDIDsResponse, error)
+	SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error
 }
 
 func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
@@ -190,6 +191,14 @@ func (s *Service) GetDIDsByMethod(ctx context.Context, request GetDIDsRequest) (
 		return nil, util.LoggingErrorMsgf(err, "could not get handler for method<%s>", method)
 	}
 	return handler.GetDIDs(ctx, method)
+}
+
+func (s *Service) SoftDeleteDIDByMethod(ctx context.Context, request DeleteDIDRequest) error {
+	handler, err := s.getHandler(request.Method)
+	if err != nil {
+		return util.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
+	}
+	return handler.SoftDeleteDID(ctx, request)
 }
 
 func (s *Service) getHandler(method didsdk.Method) (MethodHandler, error) {

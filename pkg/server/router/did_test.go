@@ -95,6 +95,19 @@ func TestDIDRouter(t *testing.T) {
 			}
 		}
 		assert.Len(tt, knownDIDs, 0)
+
+		// delete dids
+		err = didService.SoftDeleteDIDByMethod(context.Background(), did.DeleteDIDRequest{Method: didsdk.KeyMethod, ID: createDIDResponse.DID.ID})
+		assert.NoError(tt, err)
+
+		err = didService.SoftDeleteDIDByMethod(context.Background(), did.DeleteDIDRequest{Method: didsdk.KeyMethod, ID: createDIDResponse2.DID.ID})
+		assert.NoError(tt, err)
+
+		// get all DIDs back
+		getDIDsResponse, err = didService.GetDIDsByMethod(context.Background(), did.GetDIDsRequest{Method: didsdk.KeyMethod})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, getDIDsResponse)
+		assert.Len(tt, getDIDsResponse.DIDs, 0)
 	})
 
 	t.Run("DID Web Service Test", func(tt *testing.T) {
@@ -165,5 +178,19 @@ func TestDIDRouter(t *testing.T) {
 			}
 		}
 		assert.Len(tt, knownDIDs, 0)
+
+		// delete dids
+		err = didService.SoftDeleteDIDByMethod(context.Background(), did.DeleteDIDRequest{Method: didsdk.WebMethod, ID: createDIDResponse.DID.ID})
+		assert.NoError(tt, err)
+
+		err = didService.SoftDeleteDIDByMethod(context.Background(), did.DeleteDIDRequest{Method: didsdk.WebMethod, ID: createDIDResponse2.DID.ID})
+		assert.NoError(tt, err)
+
+		// get all DIDs back
+		getDIDsResponse, err = didService.GetDIDsByMethod(context.Background(), did.GetDIDsRequest{Method: didsdk.WebMethod})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, getDIDsResponse)
+		assert.Len(tt, getDIDsResponse.DIDs, 0)
 	})
+
 }

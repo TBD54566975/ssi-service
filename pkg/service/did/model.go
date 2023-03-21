@@ -51,3 +51,8 @@ type GetDIDsRequest struct {
 type GetDIDsResponse struct {
 	DIDs []didsdk.DIDDocument `json:"dids"`
 }
+
+type DeleteDIDRequest struct {
+	Method didsdk.Method `json:"method" validate:"required"`
+	ID     string        `json:"id" validate:"required"`
+}
