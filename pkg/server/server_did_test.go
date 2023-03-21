@@ -177,9 +177,6 @@ func TestDIDAPI(t *testing.T) {
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not soft delete DID")
 
-		// reset recorder between calls
-		w.Flush()
-
 		// good method, bad id
 		badParams1 := map[string]string{
 			"method": "key",
@@ -189,8 +186,6 @@ func TestDIDAPI(t *testing.T) {
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not soft delete DID with id: worse: error getting DID: worse")
 
-		// reset recorder between calls
-		w.Flush()
 		// store a DID
 		createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
 		requestReader := newRequestValue(tt, createDIDRequest)
@@ -203,9 +198,6 @@ func TestDIDAPI(t *testing.T) {
 		var createdDID router.CreateDIDByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&createdDID)
 		assert.NoError(tt, err)
-
-		// reset recorder between calls
-		w.Flush()
 
 		// get all dids for method
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key", requestReader)
@@ -242,10 +234,6 @@ func TestDIDAPI(t *testing.T) {
 		err = didService.SoftDeleteDIDByMethod(newRequestContextWithParams(goodParams), w, req)
 		assert.NoError(tt, err)
 
-		var delResp router.DeleteDIDByMethodRequest
-		err = json.NewDecoder(w.Body).Decode(&delResp)
-		assert.NoError(tt, err)
-
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, getDIDPath, nil)
 
@@ -256,9 +244,6 @@ func TestDIDAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&deletedGetResp)
 		assert.NoError(tt, err)
 		assert.Equal(tt, createdID, deletedGetResp.DID.ID)
-
-		// reset recorder between calls
-		w.Flush()
 
 		// get all dids for method
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key", requestReader)

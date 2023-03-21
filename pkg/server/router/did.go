@@ -222,27 +222,20 @@ type ResolveDIDResponse struct {
 	DIDDocumentMetadata *didsdk.DIDDocumentMetadata   `json:"didDocumentMetadata,omitempty"`
 }
 
-type DeleteDIDByMethodRequest struct {
-	// Identifies the cryptographic algorithm family to use when generating this key.
-	// One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
-	KeyType crypto.KeyType `json:"keyType" validate:"required"`
-
-	// Required when creating a DID with the `web` did method. E.g. `did:web:identity.foundation`.
-	DIDWebID string `json:"didWebId"`
-}
-
 // SoftDeleteDIDByMethod godoc
-//
+// @Description When this is called with the correct did method and id it will flip the softDelete flag to true for the db entry.
+// @Description A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the GetDIDsByMethod call
+// @Description This facilitates a clean SSI-Service Admin UI but not leave any hanging VCs with inaccessible hanging DIDs.
 // @Summary     Soft Delete DID
 // @Description Soft Deletes DID by method
 // @Tags        DecentralizedIdentityAPI
 // @Accept      json
 // @Produce     json
-// @Param       request body     DeleteDIDByMethodRequest true "request body"
 // @Param       method  path     string                   true "Method"
 // @Param       id      path     string                   true "ID"
-// @Success     200     {string} string "OK"
+// @Success     204     {string} string "No Content"
 // @Failure     400     {string} string "Bad request"
+// @Failure     500     {string} string "Internal server error"
 // @Router      /v1/dids/{method}/{id} [delete]
 func (dr DIDRouter) SoftDeleteDIDByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
@@ -265,7 +258,7 @@ func (dr DIDRouter) SoftDeleteDIDByMethod(ctx context.Context, w http.ResponseWr
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	return framework.Respond(ctx, w, nil, http.StatusOK)
+	return framework.Respond(ctx, w, nil, http.StatusNoContent)
 }
 
 // ResolveDID godoc

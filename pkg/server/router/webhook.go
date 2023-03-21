@@ -156,7 +156,7 @@ func (wr WebhookRouter) GetWebhooks(ctx context.Context, w http.ResponseWriter, 
 // @Accept      json
 // @Produce     json
 // @Param       id  path     string true "ID"
-// @Success     200 {string} string "OK"
+// @Success     204 {string} string "No Content"
 // @Failure     400 {string} string "Bad request"
 // @Failure     500 {string} string "Internal server error"
 // @Router      /v1/webhooks/{id} [delete]
@@ -174,7 +174,7 @@ func (wr WebhookRouter) DeleteWebhook(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	return framework.Respond(ctx, w, nil, http.StatusOK)
+	return framework.Respond(ctx, w, nil, http.StatusNoContent)
 }
 
 // GetSupportedNouns godoc
