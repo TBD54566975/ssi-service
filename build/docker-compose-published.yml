@@ -1,0 +1,82 @@
+version: "3.98"
+
+services:
+  web:
+    container_name: web
+    image: ghcr.io/tbd54566975/ssi-service:main
+    ports:
+      - "8080:3000"
+    environment:
+      - JAEGER_HTTP_URL=http://jaeger:14268/api/traces
+    depends_on:
+      - jaeger
+      - redis
+    volumes:
+      - ../config/compose.toml:/app/config/config.toml
+    networks:
+      - ssi_network
+      - universal-resolver
+    links:
+      - uni-resolver-web
+  swagger-ui:
+    image: ghcr.io/tbd54566975/ssi-service-swagger:main
+    ports:
+      - "8002:8080"
+    volumes:
+      - ../doc/swagger.yaml:/app/swagger.yaml
+    command: ["serve", "/app/swagger.yaml", "--no-open", "--port", "8080"]
+  gui:
+    image: ghcr.io/tbd54566975/ssi-service-streamlit:main
+    ports:
+      - "8003:8501"
+    depends_on:
+      - web
+    networks:
+      - ssi_network
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "6831:6831/udp"
+      - "16686:16686"
+      - "14268:14268"
+    networks:
+      - ssi_network
+  redis:
+    image: redis:alpine
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    # This allows for data to not be persisted on new runs
+    command: [sh, -c, "rm -f /data/dump.rdb && redis-server --save ''"]
+    ports:
+      - "6379:6379"
+    networks:
+      - ssi_network
+  redis-commander:
+    container_name: redis-commander
+    hostname: redis-commander
+    image: ghcr.io/joeferner/redis-commander:latest
+    restart: always
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "9001:8081"
+    networks:
+      - ssi_network
+  uni-resolver-web:
+    image: universalresolver/uni-resolver-web:latest
+    ports:
+      - "8088:8080"
+    platform: "linux/amd64"
+    networks:
+      - universal-resolver
+  driver-did-ion:
+    image: identityfoundation/driver-did-ion:v0.8.1
+    ports:
+      - "8089:8080"
+    platform: "linux/amd64"
+    networks:
+      - universal-resolver
+
+networks:
+  ssi_network:
+  universal-resolver:
