@@ -137,6 +137,7 @@ func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service, webho
 	s.Handle(http.MethodPut, path.Join(handlerPath, "/:method"), didRouter.CreateDIDByMethod, middleware.Webhook(webhookService, webhook.DID, webhook.Create))
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method"), didRouter.GetDIDsByMethod)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method/:id"), didRouter.GetDIDByMethod)
+	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:method/:id"), didRouter.SoftDeleteDIDByMethod)
 
 	s.Handle(http.MethodGet, path.Join(path.Join(handlerPath, ResolverPrefix), "/:id"), didRouter.ResolveDID)
 	return
