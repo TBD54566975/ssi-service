@@ -9,7 +9,6 @@ import (
 	"path"
 
 	"github.com/sirupsen/logrus"
-
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -17,6 +16,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 )
 
 const (
@@ -69,6 +69,9 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 	// get all instantiated services
 	services := ssi.GetServices()
 
+	// get webhook service
+	webhookService := ssi.GetService(svcframework.Webhook).(*webhook.Service)
+
 	// service-level routers
 	httpServer.Handle(http.MethodGet, HealthPrefix, router.Health)
 	httpServer.Handle(http.MethodGet, ReadinessPrefix, router.Readiness(services))
@@ -83,7 +86,7 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 	// start all services and their routers
 	logrus.Infof("Starting [%d] service routers...\n", len(services))
 	for _, s := range services {
-		if err := server.instantiateRouter(s); err != nil {
+		if err := server.instantiateRouter(s, webhookService); err != nil {
 			logrus.WithError(err).Fatalf("unable to instaniate service router<%s>", s.Type())
 			return nil, err
 		}
@@ -95,15 +98,15 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 
 // instantiateRouter registers the HTTP router for a service with the HTTP server
 // NOTE: all service API router must be registered here
-func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
+func (s *SSIServer) instantiateRouter(service svcframework.Service, webhookService *webhook.Service) error {
 	serviceType := service.Type()
 	switch serviceType {
 	case svcframework.DID:
-		return s.DecentralizedIdentityAPI(service)
+		return s.DecentralizedIdentityAPI(service, webhookService)
 	case svcframework.Schema:
-		return s.SchemaAPI(service)
+		return s.SchemaAPI(service, webhookService)
 	case svcframework.Credential:
-		return s.CredentialAPI(service)
+		return s.CredentialAPI(service, webhookService)
 	case svcframework.KeyStore:
 		return s.KeyStoreAPI(service)
 	case svcframework.Manifest:
@@ -122,7 +125,7 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service) error {
 }
 
 // DecentralizedIdentityAPI registers all HTTP router for the DID Service
-func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) (err error) {
+func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
 	didRouter, err := router.NewDIDRouter(service)
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not create DID router")
@@ -131,7 +134,7 @@ func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) (err 
 	handlerPath := V1Prefix + DIDsPrefix
 
 	s.Handle(http.MethodGet, handlerPath, didRouter.GetDIDMethods)
-	s.Handle(http.MethodPut, path.Join(handlerPath, "/:method"), didRouter.CreateDIDByMethod)
+	s.Handle(http.MethodPut, path.Join(handlerPath, "/:method"), didRouter.CreateDIDByMethod, middleware.Webhook(webhookService, webhook.DID, webhook.Create))
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method"), didRouter.GetDIDsByMethod)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method/:id"), didRouter.GetDIDByMethod)
 	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:method/:id"), didRouter.SoftDeleteDIDByMethod)
@@ -141,7 +144,7 @@ func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service) (err 
 }
 
 // SchemaAPI registers all HTTP router for the Schema Service
-func (s *SSIServer) SchemaAPI(service svcframework.Service) (err error) {
+func (s *SSIServer) SchemaAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
 	schemaRouter, err := router.NewSchemaRouter(service)
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not create schema router")
@@ -149,15 +152,15 @@ func (s *SSIServer) SchemaAPI(service svcframework.Service) (err error) {
 
 	handlerPath := V1Prefix + SchemasPrefix
 
-	s.Handle(http.MethodPut, handlerPath, schemaRouter.CreateSchema)
+	s.Handle(http.MethodPut, handlerPath, schemaRouter.CreateSchema, middleware.Webhook(webhookService, webhook.Schema, webhook.Create))
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), schemaRouter.GetSchema)
 	s.Handle(http.MethodGet, handlerPath, schemaRouter.GetSchemas)
 	s.Handle(http.MethodPut, path.Join(handlerPath, VerificationPath), schemaRouter.VerifySchema)
-	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), schemaRouter.DeleteSchema)
+	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), schemaRouter.DeleteSchema, middleware.Webhook(webhookService, webhook.Schema, webhook.Delete))
 	return
 }
 
-func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
+func (s *SSIServer) CredentialAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
 	credRouter, err := router.NewCredentialRouter(service)
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not create credential router")
@@ -167,11 +170,11 @@ func (s *SSIServer) CredentialAPI(service svcframework.Service) (err error) {
 	statusHandlerPath := V1Prefix + CredentialsPrefix + StatusPrefix
 
 	// Credentials
-	s.Handle(http.MethodPut, credentialHandlerPath, credRouter.CreateCredential)
+	s.Handle(http.MethodPut, credentialHandlerPath, credRouter.CreateCredential, middleware.Webhook(webhookService, webhook.Credential, webhook.Create))
 	s.Handle(http.MethodGet, credentialHandlerPath, credRouter.GetCredentials)
 	s.Handle(http.MethodGet, path.Join(credentialHandlerPath, "/:id"), credRouter.GetCredential)
 	s.Handle(http.MethodPut, path.Join(credentialHandlerPath, VerificationPath), credRouter.VerifyCredential)
-	s.Handle(http.MethodDelete, path.Join(credentialHandlerPath, "/:id"), credRouter.DeleteCredential)
+	s.Handle(http.MethodDelete, path.Join(credentialHandlerPath, "/:id"), credRouter.DeleteCredential, middleware.Webhook(webhookService, webhook.Credential, webhook.Delete))
 
 	// Credential Status
 	s.Handle(http.MethodGet, path.Join(credentialHandlerPath, "/:id", StatusPrefix), credRouter.GetCredentialStatus)
@@ -283,9 +286,9 @@ func (s *SSIServer) WebhookAPI(service svcframework.Service) (err error) {
 
 	handlerPath := V1Prefix + WebhookPrefix
 	s.Handle(http.MethodPut, handlerPath, webhookRouter.CreateWebhook)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), webhookRouter.GetWebhook)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:noun/:verb"), webhookRouter.GetWebhook)
 	s.Handle(http.MethodGet, handlerPath, webhookRouter.GetWebhooks)
-	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), webhookRouter.DeleteWebhook)
+	s.Handle(http.MethodDelete, handlerPath, webhookRouter.DeleteWebhook)
 
 	s.Handle(http.MethodGet, path.Join(handlerPath, "nouns"), webhookRouter.GetSupportedNouns)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "verbs"), webhookRouter.GetSupportedVerbs)

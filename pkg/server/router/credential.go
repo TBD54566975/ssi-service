@@ -122,6 +122,7 @@ func (cr CredentialRouter) CreateCredential(ctx context.Context, w http.Response
 	}
 
 	resp := CreateCredentialResponse{Credential: createCredentialResponse.Credential, CredentialJWT: createCredentialResponse.CredentialJWT}
+
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 

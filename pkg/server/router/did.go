@@ -9,7 +9,6 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -124,6 +123,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 		PrivateKeyBase58: createDIDResponse.PrivateKeyBase58,
 		KeyType:          createDIDResponse.KeyType,
 	}
+
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
