@@ -72,6 +72,13 @@ type GetSupportedVerbsResponse struct {
 	Verbs []Verb `json:"verbs,omitempty"`
 }
 
+func (wh Webhook) IsEmpty() bool {
+	if wh.URLS != nil && len(wh.URLS) > 0 && wh.Noun == "" && wh.Verb == "" {
+		return true
+	}
+	return false
+}
+
 func (cwr DeleteWebhookRequest) IsValid() bool {
 	if cwr.Noun.IsValid() && cwr.Verb.isValid() && isValidURL(cwr.URL) {
 		return true
@@ -102,6 +109,8 @@ func (v Verb) isValid() bool {
 	return false
 }
 
+// isValidURL checks if there were any errors during parsing and if the parsed URL has a non-empty Scheme and Host.
+// currently we support any scheme including http, https, ftp ...
 func isValidURL(urlStr string) bool {
 	parsedURL, err := url.Parse(urlStr)
 	return err == nil && parsedURL.Scheme != "" && parsedURL.Host != ""

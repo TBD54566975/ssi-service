@@ -72,7 +72,7 @@ func (wr WebhookRouter) CreateWebhook(ctx context.Context, w http.ResponseWriter
 	req := webhook.CreateWebhookRequest{Noun: request.Noun, Verb: request.Verb, URL: request.URL}
 
 	if !req.IsValid() {
-		return framework.NewRequestError(errors.New("invalid create webhook request"), http.StatusBadRequest)
+		return framework.NewRequestError(errors.New("invalid create webhook request. wrong noun, verb, or url format (needs http / https)"), http.StatusBadRequest)
 	}
 
 	createWebhookResponse, err := wr.service.CreateWebhook(ctx, req)

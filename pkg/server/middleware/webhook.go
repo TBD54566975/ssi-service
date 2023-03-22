@@ -19,9 +19,15 @@ type responseWriter struct {
 func (rw *responseWriter) Write(b []byte) (int, error) {
 	// Write the response body to both the original response writer and the buffer
 	n, err := rw.ResponseWriter.Write(b)
-	if err == nil {
-		rw.buf.Write(b)
+	if err != nil {
+		return n, err
 	}
+
+	_, err = rw.buf.Write(b)
+	if err != nil {
+		return n, err
+	}
+
 	return n, err
 }
 
@@ -35,10 +41,9 @@ func Webhook(webhookService svcframework.Service, noun webhook.Noun, verb webhoo
 
 			// Call the original handler with the new response writer
 			err := handler(ctx, wrappedWriter, r)
-			body := buf.String()
 
 			whService := webhookService.(*webhook.Service)
-			go whService.PublishWebhook(noun, verb, body)
+			go whService.PublishWebhook(ctx, noun, verb, buf)
 
 			return err
 		}

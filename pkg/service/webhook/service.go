@@ -16,6 +16,8 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type Service struct {
@@ -53,7 +55,7 @@ func NewWebhookService(config config.WebhookServiceConfig, s storage.ServiceStor
 		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the webhook service")
 	}
 
-	client := new(http.Client)
+	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 
 	service := Service{
 		storage:    webhookStorage,
@@ -164,53 +166,62 @@ func (s Service) GetSupportedVerbs() GetSupportedVerbsResponse {
 	return GetSupportedVerbsResponse{Verbs: []Verb{Create, Delete}}
 }
 
-func (s Service) PublishWebhook(noun Noun, verb Verb, payload interface{}) {
+func (s Service) PublishWebhook(ctx context.Context, noun Noun, verb Verb, payloadReader io.Reader) {
 	webhook, err := s.storage.GetWebhook(context.Background(), string(noun), string(verb))
 	if err != nil {
 		logrus.WithError(err).Warn("get webhook")
+		return
 	}
 
 	if webhook == nil {
 		return
 	}
 
-	for _, url := range webhook.URLS {
-		postPayload := Payload{Noun: noun, Verb: verb, URL: url, Data: payload}
+	payloadBytes, err := io.ReadAll(payloadReader)
+	if err != nil {
+		logrus.WithError(err).Warn("converting payload to bytes")
+		return
+	}
 
+	postPayload := Payload{Noun: noun, Verb: verb, Data: string(payloadBytes)}
+	for _, url := range webhook.URLS {
+		postPayload.URL = url
 		postJSONData, err := json.Marshal(postPayload)
 		if err != nil {
 			logrus.Warn("marshal payload")
+			continue
 		}
-		_, err = s.post(url, string(postJSONData))
+
+		err = s.post(ctx, url, string(postJSONData))
 		if err != nil {
 			logrus.Warnf("posting payload to %s", url)
 		}
 	}
 }
 
-func (s Service) post(url string, json string) (string, error) {
+func (s Service) post(ctx context.Context, url string, json string) error {
 	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer([]byte(json)))
 	if err != nil {
-		return "", errors.Wrap(err, "building http req")
+		return errors.Wrap(err, "building http req")
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := s.httpClient.Do(req)
+
 	if err != nil {
-		return "", errors.Wrap(err, "client http client")
+		return errors.Wrap(err, "client http client")
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", errors.Wrap(err, "parsing body")
+	if !is2xxResponse(resp.StatusCode) {
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return errors.Wrap(err, "parsing body")
+		}
+		return fmt.Errorf("status code %v not in the 200s. body: %s", resp.StatusCode, string(body))
 	}
 
-	if is2xxResponse(resp.StatusCode) {
-		return "", fmt.Errorf("status code %v not in the 200s. body: %s", resp.StatusCode, string(body))
-	}
-
-	return string(body), err
+	return err
 }
 
 func is2xxResponse(statusCode int) bool {
