@@ -200,7 +200,7 @@ func (s Service) PublishWebhook(ctx context.Context, noun Noun, verb Verb, paylo
 }
 
 func (s Service) post(ctx context.Context, url string, json string) error {
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer([]byte(json)))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer([]byte(json)))
 	if err != nil {
 		return errors.Wrap(err, "building http req")
 	}
