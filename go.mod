@@ -2,6 +2,8 @@ module github.com/tbd54566975/ssi-service
 
 go 1.20
 
+replace github.com/dgraph-io/ristretto => github.com/ory/ristretto v0.1.1-0.20211108053508-297c39e6640f
+
 require (
 	github.com/BurntSushi/toml v1.2.1
 	github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230315202223-e0ac99ad58b5
@@ -39,8 +41,6 @@ require (
 	golang.org/x/crypto v0.7.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
 )
-
-replace github.com/dgraph-io/ristretto => github.com/ory/ristretto v0.1.1-0.20211108053508-297c39e6640f
 
 require (
 	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
