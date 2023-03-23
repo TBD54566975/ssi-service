@@ -27,8 +27,9 @@ var (
 )
 
 type StoredDID struct {
-	ID  string          `json:"id"`
-	DID did.DIDDocument `json:"did"`
+	ID          string          `json:"id"`
+	DID         did.DIDDocument `json:"did"`
+	SoftDeleted bool            `json:"softDeleted"`
 }
 
 type Storage struct {

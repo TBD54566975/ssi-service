@@ -9,7 +9,6 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -124,6 +123,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 		PrivateKeyBase58: createDIDResponse.PrivateKeyBase58,
 		KeyType:          createDIDResponse.KeyType,
 	}
+
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
@@ -220,6 +220,45 @@ type ResolveDIDResponse struct {
 	ResolutionMetadata  *didsdk.DIDResolutionMetadata `json:"didResolutionMetadata,omitempty"`
 	DIDDocument         *didsdk.DIDDocument           `json:"didDocument"`
 	DIDDocumentMetadata *didsdk.DIDDocumentMetadata   `json:"didDocumentMetadata,omitempty"`
+}
+
+// SoftDeleteDIDByMethod godoc
+// @Description When this is called with the correct did method and id it will flip the softDelete flag to true for the db entry.
+// @Description A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the GetDIDsByMethod call
+// @Description This facilitates a clean SSI-Service Admin UI but not leave any hanging VCs with inaccessible hanging DIDs.
+// @Summary     Soft Delete DID
+// @Description Soft Deletes DID by method
+// @Tags        DecentralizedIdentityAPI
+// @Accept      json
+// @Produce     json
+// @Param       method  path     string                   true "Method"
+// @Param       id      path     string                   true "ID"
+// @Success     204     {string} string "No Content"
+// @Failure     400     {string} string "Bad request"
+// @Failure     500     {string} string "Internal server error"
+// @Router      /v1/dids/{method}/{id} [delete]
+func (dr DIDRouter) SoftDeleteDIDByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	method := framework.GetParam(ctx, MethodParam)
+	if method == nil {
+		errMsg := "soft delete DID by method request missing method parameter"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+	id := framework.GetParam(ctx, IDParam)
+	if id == nil {
+		errMsg := fmt.Sprintf("soft delete DID request missing id parameter for method: %s", *method)
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	deleteDIDRequest := did.DeleteDIDRequest{Method: didsdk.Method(*method), ID: *id}
+	if err := dr.service.SoftDeleteDIDByMethod(ctx, deleteDIDRequest); err != nil {
+		errMsg := fmt.Sprintf("could not soft delete DID with id: %s", *id)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
+	}
+
+	return framework.Respond(ctx, w, nil, http.StatusNoContent)
 }
 
 // ResolveDID godoc

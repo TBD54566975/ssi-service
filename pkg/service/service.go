@@ -72,11 +72,26 @@ func (ssi *SSIService) GetServices() []framework.Service {
 	return ssi.services
 }
 
+// GetService returns the specified instantiated service provider
+func (ssi *SSIService) GetService(serviceType framework.Type) framework.Service {
+	for _, s := range ssi.services {
+		if s.Type() == serviceType {
+			return s
+		}
+	}
+	return nil
+}
+
 // instantiateServices begins all instantiates and their dependencies
 func instantiateServices(config config.ServicesConfig) ([]framework.Service, error) {
 	storageProvider, err := storage.NewStorage(storage.Type(config.StorageProvider), config.StorageOption)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not instantiate storage provider: %s", config.StorageProvider)
+	}
+
+	webhookService, err := webhook.NewWebhookService(config.WebhookConfig, storageProvider)
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not instantiate the webhook service")
 	}
 
 	keyStoreService, err := keystore.NewKeyStoreService(config.KeyStoreConfig, storageProvider)
@@ -118,11 +133,6 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 	operationService, err := operation.NewOperationService(storageProvider)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the operation service")
-	}
-
-	webhookService, err := webhook.NewWebhookService(config.WebhookConfig, storageProvider)
-	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not instantiate the webhook service")
 	}
 
 	return []framework.Service{keyStoreService, didService, schemaService, issuingService, credentialService, manifestService, presentationService, operationService, webhookService}, nil

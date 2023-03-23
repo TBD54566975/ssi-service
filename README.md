@@ -81,10 +81,17 @@ the service, you can use the following command, which will start the service on 
 mage run
 ```
 
-Or, you can run docker-compose yourself:
+Or, you can run docker-compose yourself, building from source:
 ```shell
 cd build && docker-compose up --build
 ```
+
+To use the pre-published images:
+```shell
+cd build && docker-compose up -d
+```
+
+
 
 ## Health and Readiness Checks
 

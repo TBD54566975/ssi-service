@@ -62,6 +62,10 @@ func NewHTTPServer(config config.ServerConfig, shutdown chan os.Signal, mw ...Mi
 	}
 }
 
+func (s *Server) AddMiddleware(mw Middleware) {
+	s.mw = append(s.mw, mw)
+}
+
 // Handle sets a handler function for a given HTTP method and path pair
 // to the server mux.
 func (s *Server) Handle(method string, path string, handler Handler, mw ...Middleware) {

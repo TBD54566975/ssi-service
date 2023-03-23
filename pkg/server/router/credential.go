@@ -122,6 +122,7 @@ func (cr CredentialRouter) CreateCredential(ctx context.Context, w http.Response
 	}
 
 	resp := CreateCredentialResponse{Credential: createCredentialResponse.Credential, CredentialJWT: createCredentialResponse.CredentialJWT}
+
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
@@ -476,7 +477,7 @@ func (cr CredentialRouter) getCredentialsBySchema(ctx context.Context, schema st
 // @Accept      json
 // @Produce     json
 // @Param       id  path     string true "ID"
-// @Success     200 {string} string "OK"
+// @Success     204 {string} string "No Content"
 // @Failure     400 {string} string "Bad request"
 // @Failure     500 {string} string "Internal server error"
 // @Router      /v1/credentials/{id} [delete]
@@ -494,5 +495,5 @@ func (cr CredentialRouter) DeleteCredential(ctx context.Context, w http.Response
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	return framework.Respond(ctx, w, nil, http.StatusOK)
+	return framework.Respond(ctx, w, nil, http.StatusNoContent)
 }
