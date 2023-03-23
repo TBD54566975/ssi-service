@@ -24,10 +24,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 )
 
-const (
-	LogPrefix = config.ServiceName + ": "
-)
-
 func init() {
 	// Log as JSON instead of the default ASCII formatter.
 	logrus.SetFormatter(&logrus.JSONFormatter{})
@@ -78,7 +74,9 @@ func run() error {
 		} else {
 			logrus.Info("Failed to log to file, using default stdout")
 		}
-		defer file.Close()
+		defer func() {
+			_ = file.Close()
+		}()
 	}
 
 	// set up schema caching based on config
