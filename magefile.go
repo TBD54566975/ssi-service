@@ -33,7 +33,7 @@ func Build() error {
 // Artifact builds the binary.
 func Artifact() error {
 	fmt.Println("Building binary...")
-	return sh.Run(Go, "build", "-tags", "jwx_es256k", "-o", "./bin/ssi-service", "./cmd")
+	return sh.Run(Go, "build", "-tags", "jwx_es256k", "-o", "./bin/ssi-service", "./cmd/ssiservice")
 }
 
 // Vuln downloads and runs govulncheck https://go.dev/blog/vuln
