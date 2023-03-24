@@ -95,7 +95,7 @@ func NewServer(shutdown chan os.Signal, config *AuthConfig, store *storage.Memor
 	}
 	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares...)
 
-	im := loadIssuerMetadata(err, config)
+	im := loadIssuerMetadata(config)
 
 	httpServer.Handle(http.MethodGet, issuerMetadataPath, credentialIssuerMetadata(&im))
 
@@ -109,7 +109,7 @@ func NewServer(shutdown chan os.Signal, config *AuthConfig, store *storage.Memor
 	}
 }
 
-func loadIssuerMetadata(err error, config *AuthConfig) issuance.IssuerMetadata {
+func loadIssuerMetadata(config *AuthConfig) issuance.IssuerMetadata {
 	// It's ok to panic here as this is only called during startup.
 	jsonData, err := os.ReadFile(config.CredentialIssuerFile)
 	if err != nil {
