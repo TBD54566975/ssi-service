@@ -5,15 +5,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-type CredentialSubject struct {
-}
-
-type CredentialDefinition struct {
-	Context []any `json:"@context" validate:"required"`
-	// Either a string or a set of strings https://www.w3.org/TR/2021/REC-vc-data-model-20211109/#types
-	Types []any `json:"types" validate:"required"`
-}
-
 type AuthorizationDetail struct {
 	// Type is the type of the requested authorization, e.g., "payment_initiation".
 	Type string `json:"type"`
@@ -44,6 +35,7 @@ type AuthorizationDetail struct {
 	// Present when type == openid_credential && format == ldp_json
 	CredentialDefinition *CredentialDefinition `json:"credential_definition,omitempty"`
 }
+
 type JWTVCDetails struct {
 	// The type values the Wallet requests authorization for at the issuer
 	Types []string `json:"types"`
@@ -51,6 +43,13 @@ type JWTVCDetails struct {
 	// A list of key value pairs, where the key identifies the claim offered in the Credential. Indicates the claims the
 	// Wallet would like to turn up in the credential to be issued.
 	CredentialSubject map[string]any `json:"credentialSubject,omitempty"`
+}
+
+type CredentialDefinition struct {
+	Context []any `json:"@context" validate:"required"`
+
+	// Either a string or a set of strings https://www.w3.org/TR/2021/REC-vc-data-model-20211109/#types
+	Types []any `json:"types" validate:"required"`
 }
 
 func (d AuthorizationDetail) IsValid() error {
