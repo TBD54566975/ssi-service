@@ -19,7 +19,7 @@ import (
 )
 
 // GetVerificationInformation resolves a DID and provides a kid and public key needed for data verification
-// it is possible that a DID has multiple verification method, in which case a kid must be provided, otherwise
+// it is possible that a DID has multiple verification methods, in which case a kid must be provided, otherwise
 // resolution will fail.
 func GetVerificationInformation(did didsdk.Document, maybeKID string) (kid string, pubKey crypto.PublicKey, err error) {
 	if did.IsEmpty() {
