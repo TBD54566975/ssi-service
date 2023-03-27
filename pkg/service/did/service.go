@@ -8,6 +8,7 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -112,6 +113,10 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 	return &service, nil
 }
 
+type MethodHandlerProvider interface {
+	NewMethodHandler(s *Storage, ks *keystore.Service) (MethodHandler, error)
+}
+
 // MethodHandler describes the functionality of *all* possible DID service, regardless of method
 type MethodHandler interface {
 	CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error)
@@ -123,9 +128,9 @@ type MethodHandler interface {
 func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
 	switch method {
 	case didsdk.KeyMethod:
-		s.handlers[method] = newKeyDIDHandler(s.storage, s.keyStore)
+		s.handlers[method] = NewKeyDIDHandler(s.storage, s.keyStore)
 	case didsdk.WebMethod:
-		s.handlers[method] = newWebDIDHandler(s.storage, s.keyStore)
+		s.handlers[method] = NewWebDIDHandler(s.storage, s.keyStore)
 	default:
 		return util.LoggingNewErrorf("unsupported DID method: %s", method)
 	}
@@ -141,13 +146,13 @@ func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, er
 		return nil, err
 	}
 	return &ResolveDIDResponse{
-		ResolutionMetadata:  &resolved.DIDResolutionMetadata,
-		DIDDocument:         &resolved.DIDDocument,
-		DIDDocumentMetadata: &resolved.DIDDocumentMetadata,
+		ResolutionMetadata:  &resolved.ResolutionMetadata,
+		DIDDocument:         &resolved.Document,
+		DIDDocumentMetadata: &resolved.DocumentMetadata,
 	}, nil
 }
 
-func (s *Service) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOptions) (*didsdk.DIDResolutionResult, error) {
+func (s *Service) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
 	selectedResolver, err := s.chooseResolver(did)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "choosing resolver")

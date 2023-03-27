@@ -19,11 +19,11 @@ type UniversalResolver struct {
 }
 
 type Resolver interface {
-	Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOptions) (*didsdk.DIDResolutionResult, error)
+	Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error)
 }
 
 // Resolve results resolution results by doing a GET on <URL>/1.0.identifiers/<did>.
-func (ur UniversalResolver) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOptions) (*didsdk.DIDResolutionResult, error) {
+func (ur UniversalResolver) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
 	url := ur.URL + "/1.0/identifiers/" + did
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -39,22 +39,11 @@ func (ur UniversalResolver) Resolve(ctx context.Context, did string, _ ...didsdk
 	if err != nil {
 		return nil, err
 	}
-	var result ResolutionResult
-	if err := json.Unmarshal(respBody, &result); err != nil {
+	var result didsdk.ResolutionResult
+	if err = json.Unmarshal(respBody, &result); err != nil {
 		return nil, errors.Wrap(err, "unmarshalling JSON")
 	}
-	return &didsdk.DIDResolutionResult{
-		DIDResolutionMetadata: result.DIDResolutionMetadata,
-		DIDDocument:           result.DIDDocument,
-		DIDDocumentMetadata:   result.DIDDocumentMetadata,
-	}, nil
-}
-
-type ResolutionResult struct {
-	Context                      any `json:"@context"`
-	didsdk.DIDResolutionMetadata `json:"didResolutionMetadata"`
-	didsdk.DIDDocument           `json:"didDocument"`
-	didsdk.DIDDocumentMetadata   `json:"didDocumentMetadata"`
+	return &result, nil
 }
 
 // LocalResolver is an implementation of Resolver that passes through the parameters into the sdk implementation that
@@ -64,6 +53,6 @@ type LocalResolver struct {
 	*didsdk.Resolver
 }
 
-func (lr LocalResolver) Resolve(_ context.Context, did string, opts ...didsdk.ResolutionOptions) (*didsdk.DIDResolutionResult, error) {
+func (lr LocalResolver) Resolve(_ context.Context, did string, opts ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
 	return lr.Resolver.Resolve(did, opts...)
 }

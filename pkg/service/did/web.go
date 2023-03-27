@@ -13,7 +13,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func newWebDIDHandler(s *Storage, ks *keystore.Service) MethodHandler {
+func NewWebDIDHandler(s *Storage, ks *keystore.Service) MethodHandler {
 	return &webDIDHandler{storage: s, keyStore: ks}
 }
 
@@ -110,7 +110,7 @@ func (h *webDIDHandler) GetDIDs(ctx context.Context, method did.Method) (*GetDID
 	if err != nil {
 		return nil, fmt.Errorf("error getting DIDs for method: %s", method)
 	}
-	dids := make([]did.DIDDocument, 0, len(gotDIDs))
+	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
 		if !gotDID.SoftDeleted {
 			dids = append(dids, gotDID.DID)

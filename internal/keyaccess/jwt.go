@@ -93,7 +93,7 @@ func (ka JWKKeyAccess) Sign(payload map[string]any) (*JWT, error) {
 	if payload == nil {
 		return nil, errors.New("payload cannot be nil")
 	}
-	tokenBytes, err := ka.SignJWT(payload)
+	tokenBytes, err := ka.SignWithDefaults(payload)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not sign payload")
 	}
@@ -104,7 +104,7 @@ func (ka JWKKeyAccess) Verify(token JWT) error {
 	if token == "" {
 		return errors.New("token cannot be empty")
 	}
-	return ka.VerifyJWT(string(token))
+	return ka.VerifyJWS(string(token))
 }
 
 func (ka JWKKeyAccess) SignVerifiableCredential(credential credential.VerifiableCredential) (*JWT, error) {
