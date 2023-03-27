@@ -25,7 +25,7 @@ type Service struct {
 
 	methodToResolver map[string]resolve.Resolver
 
-	// supported DID method
+	// supported DID methods
 	handlers map[didsdk.Method]MethodHandler
 
 	// external dependencies
@@ -100,7 +100,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 		service.methodToResolver[urm] = ur
 	}
 
-	// instantiate all handlers for DID method
+	// instantiate all handlers for DID methods
 	for _, m := range config.Methods {
 		if err = service.instantiateHandlerForMethod(didsdk.Method(m)); err != nil {
 			return nil, errors.Wrap(err, "could not instantiate DID service")
