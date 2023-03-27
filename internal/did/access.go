@@ -27,13 +27,13 @@ func GetVerificationInformation(did didsdk.Document, maybeKID string) (kid strin
 	}
 	verificationMethods := did.VerificationMethod
 	if len(verificationMethods) == 0 {
-		return "", nil, errors.Errorf("did doc: %s has no verification method", did.ID)
+		return "", nil, errors.Errorf("did doc: %s has no verification methods", did.ID)
 	}
 
-	// handle the case where a kid is provided && there are multiple verification method
+	// handle the case where a kid is provided && there are multiple verification methods
 	if len(verificationMethods) > 1 {
 		if maybeKID == "" {
-			return "", nil, errors.Errorf("kid is required for did: %s, which has multiple verification method", did.ID)
+			return "", nil, errors.Errorf("kid is required for did: %s, which has multiple verification methods", did.ID)
 		}
 		for _, method := range verificationMethods {
 			if method.ID == maybeKID {

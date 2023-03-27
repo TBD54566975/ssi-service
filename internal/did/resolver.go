@@ -7,10 +7,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-// BuildResolver builds a DID resolver from a list of method to support resolution for
+// BuildResolver builds a DID resolver from a list of methods to support resolution for
 func BuildResolver(methods []string) (*didsdk.Resolver, error) {
 	if len(methods) == 0 {
-		return nil, errors.New("no method provided")
+		return nil, errors.New("no methods provided")
 	}
 	resolvers := make([]didsdk.Resolution, 0, len(methods))
 	for _, method := range methods {
