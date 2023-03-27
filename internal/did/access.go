@@ -21,7 +21,7 @@ import (
 // GetVerificationInformation resolves a DID and provides a kid and public key needed for data verification
 // it is possible that a DID has multiple verification method, in which case a kid must be provided, otherwise
 // resolution will fail.
-func GetVerificationInformation(did didsdk.DIDDocument, maybeKID string) (kid string, pubKey crypto.PublicKey, err error) {
+func GetVerificationInformation(did didsdk.Document, maybeKID string) (kid string, pubKey crypto.PublicKey, err error) {
 	if did.IsEmpty() {
 		return "", nil, errors.Errorf("did doc: %+v is empty", did)
 	}
@@ -128,7 +128,7 @@ func ResolveKeyForDID(ctx context.Context, resolver resolve.Resolver, did string
 	}
 
 	// next, get the verification information (key) from the did document
-	kid, pubKey, err = GetVerificationInformation(resolved.DIDDocument, "")
+	kid, pubKey, err = GetVerificationInformation(resolved.Document, "")
 	if err != nil {
 		err = errors.Wrapf(err, "failed to get verification information from the did document: %s", did)
 		return

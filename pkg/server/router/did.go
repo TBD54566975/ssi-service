@@ -68,9 +68,9 @@ type CreateDIDByMethodRequest struct {
 }
 
 type CreateDIDByMethodResponse struct {
-	DID              didsdk.DIDDocument `json:"did,omitempty"`
-	PrivateKeyBase58 string             `json:"privateKeyBase58,omitempty"`
-	KeyType          crypto.KeyType     `json:"keyType,omitempty"`
+	DID              didsdk.Document `json:"did,omitempty"`
+	PrivateKeyBase58 string          `json:"privateKeyBase58,omitempty"`
+	KeyType          crypto.KeyType  `json:"keyType,omitempty"`
 }
 
 // CreateDIDByMethod godoc
@@ -129,7 +129,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 }
 
 type GetDIDByMethodResponse struct {
-	DID didsdk.DIDDocument `json:"did,omitempty"`
+	DID didsdk.Document `json:"did,omitempty"`
 }
 
 // GetDIDByMethod godoc
@@ -174,7 +174,7 @@ func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _
 }
 
 type GetDIDsByMethodResponse struct {
-	DIDs []didsdk.DIDDocument `json:"dids,omitempty"`
+	DIDs []didsdk.Document `json:"dids,omitempty"`
 }
 
 type GetDIDsRequest struct {
@@ -218,9 +218,9 @@ func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, 
 }
 
 type ResolveDIDResponse struct {
-	ResolutionMetadata  *didsdk.DIDResolutionMetadata `json:"didResolutionMetadata,omitempty"`
-	DIDDocument         *didsdk.DIDDocument           `json:"didDocument"`
-	DIDDocumentMetadata *didsdk.DIDDocumentMetadata   `json:"didDocumentMetadata,omitempty"`
+	ResolutionMetadata  *didsdk.ResolutionMetadata `json:"didResolutionMetadata,omitempty"`
+	DIDDocument         *didsdk.Document           `json:"didDocument"`
+	DIDDocumentMetadata *didsdk.DocumentMetadata   `json:"didDocumentMetadata,omitempty"`
 }
 
 // SoftDeleteDIDByMethod godoc

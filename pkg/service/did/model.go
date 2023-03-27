@@ -14,9 +14,9 @@ type ResolveDIDRequest struct {
 }
 
 type ResolveDIDResponse struct {
-	ResolutionMetadata  *didsdk.DIDResolutionMetadata `json:"didResolutionMetadata,omitempty"`
-	DIDDocument         *didsdk.DIDDocument           `json:"didDocument"`
-	DIDDocumentMetadata *didsdk.DIDDocumentMetadata   `json:"didDocumentMetadata,omitempty"`
+	ResolutionMetadata  *didsdk.ResolutionMetadata `json:"didResolutionMetadata,omitempty"`
+	DIDDocument         *didsdk.Document           `json:"didDocument"`
+	DIDDocumentMetadata *didsdk.DocumentMetadata   `json:"didDocumentMetadata,omitempty"`
 }
 
 // CreateDIDRequest is the JSON-serializable request for creating a DID across DID method
@@ -28,9 +28,9 @@ type CreateDIDRequest struct {
 
 // CreateDIDResponse is the JSON-serializable response for creating a DID
 type CreateDIDResponse struct {
-	DID              didsdk.DIDDocument `json:"did"`
-	PrivateKeyBase58 string             `json:"base58PrivateKey"`
-	KeyType          crypto.KeyType     `json:"keyType"`
+	DID              didsdk.Document `json:"did"`
+	PrivateKeyBase58 string          `json:"base58PrivateKey"`
+	KeyType          crypto.KeyType  `json:"keyType"`
 }
 
 type GetDIDRequest struct {
@@ -40,7 +40,7 @@ type GetDIDRequest struct {
 
 // GetDIDResponse is the JSON-serializable response for getting a DID
 type GetDIDResponse struct {
-	DID didsdk.DIDDocument `json:"did"`
+	DID didsdk.Document `json:"did"`
 }
 
 type GetDIDsRequest struct {
@@ -49,7 +49,7 @@ type GetDIDsRequest struct {
 
 // GetDIDsResponse is the JSON-serializable response for getting all DIDs for a given method
 type GetDIDsResponse struct {
-	DIDs []didsdk.DIDDocument `json:"dids"`
+	DIDs []didsdk.Document `json:"dids"`
 }
 
 type DeleteDIDRequest struct {

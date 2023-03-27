@@ -201,9 +201,9 @@ func TestJWKKeyAccessSignVerifyCredentials(t *testing.T) {
 		assert.NotEmpty(tt, ka)
 
 		// verify
-		_, err = ka.VerifyVerifiableCredential(JWT("bad"))
+		_, err = ka.VerifyVerifiableCredential("bad")
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not verify JWT and its signature")
+		assert.Contains(tt, err.Error(), "invalid JWT")
 	})
 }
 
@@ -258,9 +258,9 @@ func TestJWKKeyAccessSignVerifyPresentations(t *testing.T) {
 		assert.NotEmpty(tt, ka)
 
 		// verify
-		_, err = ka.VerifyVerifiablePresentation(JWT("bad"))
+		_, err = ka.VerifyVerifiablePresentation("bad")
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not verify JWT and its signature")
+		assert.Contains(tt, err.Error(), "invalid JWT")
 	})
 }
 

@@ -36,7 +36,7 @@ func TestGetVerificationInformation(t *testing.T) {
 		PublicKeyBase58: publicKey["an awesome kid"].base58,
 	}
 	type args struct {
-		did      did.DIDDocument
+		did      did.Document
 		maybeKID string
 	}
 	tests := []struct {
@@ -49,7 +49,7 @@ func TestGetVerificationInformation(t *testing.T) {
 		{
 			name: "multiple method return the correct public key",
 			args: args{
-				did: did.DIDDocument{
+				did: did.Document{
 					ID: "my doc id",
 					VerificationMethod: []did.VerificationMethod{
 						kid2Method,
@@ -65,7 +65,7 @@ func TestGetVerificationInformation(t *testing.T) {
 		{
 			name: "single verification method without maybekid",
 			args: args{
-				did: did.DIDDocument{
+				did: did.Document{
 					ID: "my doc id",
 					VerificationMethod: []did.VerificationMethod{
 						awesomeKidMethod,
@@ -80,7 +80,7 @@ func TestGetVerificationInformation(t *testing.T) {
 		{
 			name: "single verification method with maybekid",
 			args: args{
-				did: did.DIDDocument{
+				did: did.Document{
 					ID: "my doc id",
 					VerificationMethod: []did.VerificationMethod{
 						awesomeKidMethod,
@@ -95,7 +95,7 @@ func TestGetVerificationInformation(t *testing.T) {
 		{
 			name: "things not great",
 			args: args{
-				did: did.DIDDocument{
+				did: did.Document{
 					ID: "my doc id",
 					VerificationMethod: []did.VerificationMethod{
 						kid2Method,

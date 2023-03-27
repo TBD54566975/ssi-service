@@ -146,13 +146,13 @@ func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, er
 		return nil, err
 	}
 	return &ResolveDIDResponse{
-		ResolutionMetadata:  &resolved.DIDResolutionMetadata,
-		DIDDocument:         &resolved.DIDDocument,
-		DIDDocumentMetadata: &resolved.DIDDocumentMetadata,
+		ResolutionMetadata:  &resolved.ResolutionMetadata,
+		DIDDocument:         &resolved.Document,
+		DIDDocumentMetadata: &resolved.DocumentMetadata,
 	}, nil
 }
 
-func (s *Service) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOptions) (*didsdk.DIDResolutionResult, error) {
+func (s *Service) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
 	selectedResolver, err := s.chooseResolver(did)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "choosing resolver")

@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230315202223-e0ac99ad58b5
+	github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230327190942-a55dfe2b54ff
 	github.com/alicebob/miniredis/v2 v2.30.1
 	github.com/ardanlabs/conf v1.5.0
 	github.com/benbjohnson/clock v1.3.0
@@ -53,12 +53,17 @@ require (
 	github.com/felixge/httpsnoop v1.0.3 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-playground/validator/v10 v10.11.2 // indirect
-	github.com/leodido/go-urn v1.2.1 // indirect
+	github.com/go-playground/validator/v10 v10.12.0 // indirect
+	github.com/hyperledger/aries-framework-go v0.1.9-0.20230217102417-a948231f8452 // indirect
+	github.com/hyperledger/aries-framework-go/spi v0.0.0-20221025204933-b807371b6f1e // indirect
+	github.com/kilic/bls12-381 v0.1.1-0.20210503002446-7b7597926c69 // indirect
+	github.com/leodido/go-urn v1.2.2 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
+	github.com/lestrrat-go/httprc v1.0.4 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
+	github.com/lestrrat-go/jwx/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.2.0 // indirect
@@ -67,7 +72,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.0.2 // indirect
-	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.2.0 // indirect
 	github.com/stoewer/go-strcase v1.2.1 // indirect
 	github.com/yuin/gopher-lua v1.1.0 // indirect

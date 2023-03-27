@@ -13,6 +13,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	didresolver "github.com/tbd54566975/ssi-service/pkg/service/did/resolve"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -156,7 +157,7 @@ func (s Service) signSchemaJWT(ctx context.Context, author string, schema schema
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not marshal schema for signing for author<%s>", author)
 	}
-	schemaToken, err := keyAccess.SignJWT(schemaJSONBytes)
+	schemaToken, err := keyAccess.SignWithDefaults(schemaJSONBytes)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not sign schema for author<%s>", author)
 	}
@@ -202,7 +203,7 @@ func (s Service) verifySchemaJWT(ctx context.Context, token keyaccess.JWT) (*sch
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to resolve schema author's did: %s", parsedSchema.Author)
 	}
-	kid, pubKey, err := did.GetVerificationInformation(resolved.DIDDocument, "")
+	kid, pubKey, err := did.GetVerificationInformation(resolved.Document, "")
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get verification information from schema")
 	}
