@@ -14,11 +14,12 @@ import (
 	"github.com/multiformats/go-varint"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/did/resolve"
 )
 
 // GetVerificationInformation resolves a DID and provides a kid and public key needed for data verification
-// it is possible that a DID has multiple verification methods, in which case a kid must be provided, otherwise
+// it is possible that a DID has multiple verification method, in which case a kid must be provided, otherwise
 // resolution will fail.
 func GetVerificationInformation(did didsdk.DIDDocument, maybeKID string) (kid string, pubKey crypto.PublicKey, err error) {
 	if did.IsEmpty() {
@@ -26,13 +27,13 @@ func GetVerificationInformation(did didsdk.DIDDocument, maybeKID string) (kid st
 	}
 	verificationMethods := did.VerificationMethod
 	if len(verificationMethods) == 0 {
-		return "", nil, errors.Errorf("did doc: %s has no verification methods", did.ID)
+		return "", nil, errors.Errorf("did doc: %s has no verification method", did.ID)
 	}
 
-	// handle the case where a kid is provided && there are multiple verification methods
+	// handle the case where a kid is provided && there are multiple verification method
 	if len(verificationMethods) > 1 {
 		if maybeKID == "" {
-			return "", nil, errors.Errorf("kid is required for did: %s, which has multiple verification methods", did.ID)
+			return "", nil, errors.Errorf("kid is required for did: %s, which has multiple verification method", did.ID)
 		}
 		for _, method := range verificationMethods {
 			if method.ID == maybeKID {

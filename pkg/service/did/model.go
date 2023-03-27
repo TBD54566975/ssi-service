@@ -6,7 +6,7 @@ import (
 )
 
 type GetSupportedMethodsResponse struct {
-	Methods []didsdk.Method `json:"methods"`
+	Methods []didsdk.Method `json:"method"`
 }
 
 type ResolveDIDRequest struct {
@@ -19,7 +19,7 @@ type ResolveDIDResponse struct {
 	DIDDocumentMetadata *didsdk.DIDDocumentMetadata   `json:"didDocumentMetadata,omitempty"`
 }
 
-// CreateDIDRequest is the JSON-serializable request for creating a DID across DID methods
+// CreateDIDRequest is the JSON-serializable request for creating a DID across DID method
 type CreateDIDRequest struct {
 	Method   didsdk.Method  `json:"method" validate:"required"`
 	KeyType  crypto.KeyType `validate:"required"`

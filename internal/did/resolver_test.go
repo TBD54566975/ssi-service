@@ -10,7 +10,7 @@ func TestResolver(t *testing.T) {
 	// empty resolver
 	_, err := BuildResolver(nil)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no methods provided")
+	assert.Contains(t, err.Error(), "no method provided")
 
 	// unsupported method
 	_, err = BuildResolver([]string{"unsupported"})

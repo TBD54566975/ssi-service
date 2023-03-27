@@ -8,6 +8,7 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -24,7 +25,7 @@ type Service struct {
 
 	methodToResolver map[string]resolve.Resolver
 
-	// supported DID methods
+	// supported DID method
 	handlers map[didsdk.Method]MethodHandler
 
 	// external dependencies
@@ -99,7 +100,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 		service.methodToResolver[urm] = ur
 	}
 
-	// instantiate all handlers for DID methods
+	// instantiate all handlers for DID method
 	for _, m := range config.Methods {
 		if err = service.instantiateHandlerForMethod(didsdk.Method(m)); err != nil {
 			return nil, errors.Wrap(err, "could not instantiate DID service")
@@ -110,6 +111,10 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 		return nil, errors.New(service.Status().Message)
 	}
 	return &service, nil
+}
+
+type MethodHandlerProvider interface {
+	NewMethodHandler(s *Storage, ks *keystore.Service) (MethodHandler, error)
 }
 
 // MethodHandler describes the functionality of *all* possible DID service, regardless of method
@@ -123,9 +128,9 @@ type MethodHandler interface {
 func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
 	switch method {
 	case didsdk.KeyMethod:
-		s.handlers[method] = newKeyDIDHandler(s.storage, s.keyStore)
+		s.handlers[method] = NewKeyDIDHandler(s.storage, s.keyStore)
 	case didsdk.WebMethod:
-		s.handlers[method] = newWebDIDHandler(s.storage, s.keyStore)
+		s.handlers[method] = NewWebDIDHandler(s.storage, s.keyStore)
 	default:
 		return util.LoggingNewErrorf("unsupported DID method: %s", method)
 	}

@@ -19,6 +19,7 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
@@ -38,6 +39,7 @@ func TestFoo(t *testing.T) {
 		"some_key": {},
 	}, p.CredentialOverrides)
 }
+
 func TestManifestAPI(t *testing.T) {
 	t.Run("Test Create Manifest", func(tt *testing.T) {
 		bolt := setupTestDB(tt)

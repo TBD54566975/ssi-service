@@ -47,7 +47,7 @@ func TestGetVerificationInformation(t *testing.T) {
 		wantErr    assert.ErrorAssertionFunc
 	}{
 		{
-			name: "multiple methods return the correct public key",
+			name: "multiple method return the correct public key",
 			args: args{
 				did: did.DIDDocument{
 					ID: "my doc id",

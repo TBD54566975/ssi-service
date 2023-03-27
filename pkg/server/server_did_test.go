@@ -23,7 +23,7 @@ func TestDIDAPI(t *testing.T) {
 		_, keyStoreService := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStoreService)
 
-		// get DID methods
+		// get DID method
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids", nil)
 		w := httptest.NewRecorder()
 

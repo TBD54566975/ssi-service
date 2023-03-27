@@ -104,7 +104,7 @@ func (k *KeyStoreServiceConfig) IsEmpty() bool {
 
 type DIDServiceConfig struct {
 	*BaseServiceConfig
-	Methods                  []string `toml:"methods"`
+	Methods                  []string `toml:"method"`
 	ResolutionMethods        []string `toml:"resolution_methods"`
 	UniversalResolverURL     string   `toml:"universal_resolver_url"`
 	UniversalResolverMethods []string `toml:"universal_resolver_methods"`

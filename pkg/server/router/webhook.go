@@ -101,7 +101,7 @@ type GetWebhookResponse struct {
 // @Success     200 {object} GetWebhookResponse
 // @Failure     400 {string} string "Bad request"
 // @Router      /v1/webhooks/{noun}/{verb} [get]
-func (wr WebhookRouter) GetWebhook(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (wr WebhookRouter) GetWebhook(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	noun := framework.GetParam(ctx, "noun")
 	if noun == nil {
 		errMsg := "cannot get webhook without noun parameter"

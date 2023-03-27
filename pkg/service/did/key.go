@@ -13,7 +13,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func newKeyDIDHandler(s *Storage, ks *keystore.Service) MethodHandler {
+func NewKeyDIDHandler(s *Storage, ks *keystore.Service) MethodHandler {
 	return &keyDIDHandler{storage: s, keyStore: ks}
 }
 

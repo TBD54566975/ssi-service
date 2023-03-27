@@ -7,12 +7,13 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"go.einride.tech/aip/filtering"
+
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	manifestsvc "github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
-	"go.einride.tech/aip/filtering"
 )
 
 type OperationRouter struct {
@@ -42,7 +43,7 @@ func NewOperationRouter(s svcframework.Service) (*OperationRouter, error) {
 // @Failure     400 {string} string    "Bad request"
 // @Failure     500 {string} string    "Internal server error"
 // @Router      /v1/operations/{id} [get]
-func (o OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (o OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
@@ -189,7 +190,7 @@ func routerModel(op operation.Operation) Operation {
 // @Failure     400 {string} string    "Bad request"
 // @Failure     500 {string} string    "Internal server error"
 // @Router      /v1/operations/cancel/{id} [get]
-func (o OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (o OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
