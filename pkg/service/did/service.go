@@ -87,13 +87,13 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 	}
 
 	// create handler resolver first, which wraps our handlers as a resolver
-	hanlderResolver, err := NewHandlerResolver(service.handlers)
+	handlerResolver, err := NewHandlerResolver(service.handlers)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating handler resolver")
 	}
 
 	// instantiate DID resolver
-	resolver, err := resolution.NewServiceResolver(hanlderResolver, config.ResolutionMethods, config.UniversalResolverURL)
+	resolver, err := resolution.NewServiceResolver(handlerResolver, config.ResolutionMethods, config.UniversalResolverURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating DID resolver")
 	}

@@ -8,8 +8,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	internaldid "github.com/tbd54566975/ssi-service/internal/did"
-	internalutil "github.com/tbd54566975/ssi-service/internal/util"
+	didint "github.com/tbd54566975/ssi-service/internal/did"
+	utilint "github.com/tbd54566975/ssi-service/internal/util"
 )
 
 type Resolver interface {
@@ -32,7 +32,7 @@ func NewServiceResolver(handlerResolver Resolver, resolutionMethods []string, un
 	}
 
 	// instantiate sdk resolver
-	sdkResolver, err := internaldid.BuildResolver(resolutionMethods)
+	sdkResolver, err := didint.BuildResolver(resolutionMethods)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating SDK DID resolver")
 	}
@@ -64,7 +64,7 @@ func NewServiceResolver(handlerResolver Resolver, resolutionMethods []string, un
 // 3. Try to resolve with the universal resolver
 func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
 	// check the did is valid
-	if _, err := internalutil.GetMethodForDID(did); err != nil {
+	if _, err := utilint.GetMethodForDID(did); err != nil {
 		return nil, errors.Wrap(err, "getting method DID")
 	}
 
@@ -72,34 +72,32 @@ func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...dids
 	// first, try to resolve with the handlers we have
 	if sr.hr != nil {
 		handlersResolvedDID, err := sr.hr.Resolve(ctx, did, opts...)
-		if err != nil {
-			logrus.WithError(err).Error("error resolving DID with handler resolver")
-			ae.Append(err)
-		} else {
+		if err == nil {
 			return handlersResolvedDID, nil
 		}
+		logrus.WithError(err).Error("error resolving DID with handler resolver")
+		ae.Append(err)
 	}
 
 	// next, try to resolve with the local resolver
 	if sr.lr != nil {
 		locallyResolvedDID, err := sr.lr.Resolve(ctx, did, opts...)
-		if err != nil {
-			logrus.WithError(err).Error("error resolving DID with local resolver")
-			ae.Append(err)
-		} else {
+		if err == nil {
 			return locallyResolvedDID, nil
 		}
+		logrus.WithError(err).Error("error resolving DID with local resolver")
+		ae.Append(err)
 	}
 
 	// finally, resolution with the universal resolver
 	if sr.ur != nil {
 		universallyResolvedDID, err := sr.ur.Resolve(ctx, did, opts...)
-		if err != nil {
-			logrus.WithError(err).Error("error resolving DID with universal resolver")
-			ae.Append(err)
-		} else {
+		if err == nil {
 			return universallyResolvedDID, nil
+
 		}
+		logrus.WithError(err).Error("error resolving DID with universal resolver")
+		ae.Append(err)
 	}
 
 	if ae.IsEmpty() {
