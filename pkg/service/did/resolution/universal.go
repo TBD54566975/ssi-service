@@ -23,7 +23,7 @@ func newUniversalResolver(url string) (*universalResolver, error) {
 		return nil, errors.New("universal resolver URL cannot be empty")
 	}
 	return &universalResolver{
-		Client: http.DefaultClient,
+		Client: http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 		URL:    url,
 	}, nil
 }
