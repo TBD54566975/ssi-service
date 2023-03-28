@@ -49,7 +49,7 @@ func (s Service) verifyManifestJWT(ctx context.Context, token keyaccess.JWT) (*m
 		return nil, util.LoggingErrorMsg(err, "unmarshalling claims into manifest")
 	}
 
-	if err = didint.VerifyTokenFromDID(ctx, parsedManifest.Manifest.Issuer.ID, token, s.didResolver); err != nil {
+	if err = didint.VerifyTokenFromDID(ctx, s.didResolver, parsedManifest.Manifest.Issuer.ID, token); err != nil {
 		return nil, util.LoggingErrorMsg(err, "verifying manifest JWT")
 	}
 	return &parsedManifest.Manifest, nil

@@ -114,7 +114,7 @@ func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential 
 
 func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT) error {
 	// resolve the did's key material
-	kid, pubKey, err := didint.ResolveKeyForDID(ctx, did, v.didResolver)
+	kid, pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, did)
 	if err != nil {
 		return util.LoggingError(err)
 	}
@@ -138,7 +138,7 @@ func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT
 // TODO(gabe): support issuers that are not strings, but objects
 func (v Verifier) resolveCredentialIssuerKey(ctx context.Context, credential credsdk.VerifiableCredential) (kid string, pubKey crypto.PublicKey, err error) {
 	issuerDID := credential.Issuer.(string)
-	return didint.ResolveKeyForDID(ctx, issuerDID, v.didResolver)
+	return didint.ResolveKeyForDID(ctx, v.didResolver, issuerDID)
 }
 
 // staticVerificationChecks runs a set of static verification checks on the credential as per the credential

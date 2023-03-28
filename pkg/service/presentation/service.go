@@ -167,7 +167,7 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 	}
 
 	// verify the token with the did by first resolving the did and getting the public key and next verifying the token
-	if err = didint.VerifyTokenFromDID(ctx, sdkVP.Holder, request.SubmissionJWT, s.resolver); err != nil {
+	if err = didint.VerifyTokenFromDID(ctx, s.resolver, sdkVP.Holder, request.SubmissionJWT); err != nil {
 		return nil, errors.Wrap(err, "verifying token from did")
 	}
 

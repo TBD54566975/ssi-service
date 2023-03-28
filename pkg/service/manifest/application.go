@@ -20,7 +20,7 @@ import (
 // input descriptors along with an error if validation fails.
 func (s Service) validateCredentialApplication(ctx context.Context, credManifest manifest.CredentialManifest, request model.SubmitApplicationRequest) (inputDescriptorIDs []string, err error) {
 	// validate the payload's signature
-	if verificationErr := didint.VerifyTokenFromDID(ctx, request.ApplicantDID, request.ApplicationJWT, s.didResolver); verificationErr != nil {
+	if verificationErr := didint.VerifyTokenFromDID(ctx, s.didResolver, request.ApplicantDID, request.ApplicationJWT); verificationErr != nil {
 		err = util.LoggingErrorMsgf(err, "could not verify application<%s>'s signature", request.Application.ID)
 		return
 	}
