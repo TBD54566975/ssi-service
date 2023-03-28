@@ -14,7 +14,6 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	didint "github.com/tbd54566975/ssi-service/internal/did"
-	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
@@ -168,7 +167,7 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 	}
 
 	// verify the token with the did by first resolving the did and getting the public key and next verifying the token
-	if err = s.verifyTokenFromDID(ctx, sdkVP.Holder, request.SubmissionJWT); err != nil {
+	if err = didint.VerifyTokenFromDID(ctx, sdkVP.Holder, request.SubmissionJWT, s.resolver); err != nil {
 		return nil, errors.Wrap(err, "verifying token from did")
 	}
 
@@ -229,27 +228,6 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 		ID:   storedOp.ID,
 		Done: false,
 	}, nil
-}
-
-// verifyTokenFromDID verifies the token from the did by first resolving the did, next extracting the public key,
-// and then verifying the token
-func (s Service) verifyTokenFromDID(ctx context.Context, did string, token keyaccess.JWT) error {
-	resolved, err := s.resolver.Resolve(ctx, did)
-	if err != nil {
-		return errors.Wrap(err, "resolving DID")
-	}
-	kid, pubKey, err := didint.GetVerificationInformation(resolved.Document, "")
-	if err != nil {
-		return errors.Wrap(err, "getting verification information from DID")
-	}
-	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
-	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create application verifier")
-	}
-	if err = verifier.Verify(token); err != nil {
-		return util.LoggingErrorMsg(err, "could not verify the application's signature")
-	}
-	return nil
 }
 
 func (s Service) GetSubmission(ctx context.Context, request model.GetSubmissionRequest) (*model.GetSubmissionResponse, error) {

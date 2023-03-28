@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
@@ -19,7 +20,7 @@ import (
 // input descriptors along with an error if validation fails.
 func (s Service) validateCredentialApplication(ctx context.Context, credManifest manifest.CredentialManifest, request model.SubmitApplicationRequest) (inputDescriptorIDs []string, err error) {
 	// validate the payload's signature
-	if verificationErr := s.verifyJWTFromDID(ctx, request.ApplicantDID, request.ApplicationJWT); verificationErr != nil {
+	if verificationErr := didint.VerifyTokenFromDID(ctx, request.ApplicantDID, request.ApplicationJWT, s.didResolver); verificationErr != nil {
 		err = util.LoggingErrorMsgf(err, "could not verify application<%s>'s signature", request.Application.ID)
 		return
 	}

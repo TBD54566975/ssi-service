@@ -7,6 +7,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/lestrrat-go/jwx/jwt"
 
+	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
@@ -48,7 +49,7 @@ func (s Service) verifyManifestJWT(ctx context.Context, token keyaccess.JWT) (*m
 		return nil, util.LoggingErrorMsg(err, "unmarshalling claims into manifest")
 	}
 
-	if err = s.verifyJWTFromDID(ctx, parsedManifest.Manifest.Issuer.ID, token); err != nil {
+	if err = didint.VerifyTokenFromDID(ctx, parsedManifest.Manifest.Issuer.ID, token, s.didResolver); err != nil {
 		return nil, util.LoggingErrorMsg(err, "verifying manifest JWT")
 	}
 	return &parsedManifest.Manifest, nil

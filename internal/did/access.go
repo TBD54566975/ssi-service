@@ -1,11 +1,13 @@
 package did
 
 import (
+	"context"
 	"crypto"
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/cryptosuite"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/lestrrat-go/jwx/jwk"
 	"github.com/mr-tron/base58"
@@ -13,6 +15,8 @@ import (
 	"github.com/multiformats/go-varint"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 )
 
 // GetVerificationInformation resolves a DID and provides a kid and public key needed for data verification
@@ -83,6 +87,31 @@ func extractKeyFromVerificationMethod(method didsdk.VerificationMethod) (pubKey 
 	}
 	err = errors.New("no public key found in verification method")
 	return
+}
+
+// VerifyTokenFromDID verifies that the information in the token was digitally signed by the public key associated with
+// the public key of the verification method of the did's document. The passed in resolver is used to map from the did
+// to the did document.
+func VerifyTokenFromDID(ctx context.Context, did string, token keyaccess.JWT, resolver didsdk.Resolver) error {
+	resolved, err := resolver.Resolve(ctx, did)
+	if err != nil {
+		return errors.Wrapf(err, "resolving DID: %s", did)
+	}
+
+	// get the verification information from the DID document
+	kid, pubKey, err := GetVerificationInformation(resolved.Document, "")
+	if err != nil {
+		return errors.Wrapf(err, "getting verification information from the DID document: %s", did)
+	}
+
+	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not create application verifier")
+	}
+	if err = verifier.Verify(token); err != nil {
+		return util.LoggingErrorMsg(err, "could not verify the application's signature")
+	}
+	return nil
 }
 
 // multibaseToPubKey converts a multibase encoded public key to public key bytes for known multibase encodings

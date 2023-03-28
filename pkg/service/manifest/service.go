@@ -15,8 +15,6 @@ import (
 
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
-	didint "github.com/tbd54566975/ssi-service/internal/did"
-	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -565,29 +563,6 @@ func (s Service) DeleteResponse(ctx context.Context, request model.DeleteRespons
 
 	if err := s.storage.DeleteResponse(ctx, request.ID); err != nil {
 		return util.LoggingErrorMsgf(err, "could not delete response with id: %s", request.ID)
-	}
-
-	return nil
-}
-
-func (s Service) verifyJWTFromDID(ctx context.Context, did string, token keyaccess.JWT) error {
-	// resolve DID and key information from it
-	resolved, err := s.didResolver.Resolve(ctx, did)
-	if err != nil {
-		return util.LoggingErrorMsgf(err, "resolving did: %s", did)
-	}
-	kid, pubKey, err := didint.GetVerificationInformation(resolved.Document, "")
-	if err != nil {
-		return util.LoggingErrorMsgf(err, "getting verification information from did: %s", did)
-	}
-
-	// construct a verifier and verify the JWT
-	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
-	if err != nil {
-		return util.LoggingErrorMsg(err, "creating JWK verifier")
-	}
-	if err = verifier.Verify(token); err != nil {
-		return util.LoggingErrorMsg(err, "verifying JWT signature")
 	}
 
 	return nil
