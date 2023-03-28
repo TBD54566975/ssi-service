@@ -103,7 +103,6 @@ func (h *webDIDHandler) GetDID(ctx context.Context, request GetDIDRequest) (*Get
 }
 
 func (h *webDIDHandler) GetDIDs(ctx context.Context, method did.Method) (*GetDIDsResponse, error) {
-
 	logrus.Debugf("getting DIDs for method: %s", method)
 
 	gotDIDs, err := h.storage.GetDIDs(ctx, string(method))

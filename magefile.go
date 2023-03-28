@@ -26,7 +26,7 @@ var (
 
 // Build builds the library.
 func Build() error {
-	fmt.Println("Building library...")
+	fmt.Println("Building project...")
 	return sh.Run(Go, "build", "-tags", "jwx_es256k", "./...")
 }
 

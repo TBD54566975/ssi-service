@@ -8,9 +8,9 @@ import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/credential/verification"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/ssi-service/pkg/service/did/resolve"
 
 	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -20,13 +20,13 @@ import (
 
 type Verifier struct {
 	verifier       *verification.CredentialVerifier
-	didResolver    resolve.Resolver
+	didResolver    didsdk.Resolver
 	schemaResolver schema.Resolution
 }
 
 // NewCredentialVerifier creates a new credential verifier which executes both signature and static verification checks.
 // In the future the set of verification checks will be configurable.
-func NewCredentialVerifier(didResolver resolve.Resolver, schemaResolver schema.Resolution) (*Verifier, error) {
+func NewCredentialVerifier(didResolver didsdk.Resolver, schemaResolver schema.Resolution) (*Verifier, error) {
 	if didResolver == nil {
 		return nil, errors.New("didResolver cannot be nil")
 	}
@@ -122,8 +122,7 @@ func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT
 	// construct a signature verifier from the verification information
 	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create verifier for kid %s", kid)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not create verifier for kid %s", kid)
 	}
 
 	// verify the signature on the credential
@@ -140,7 +139,6 @@ func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT
 func (v Verifier) resolveCredentialIssuerKey(ctx context.Context, credential credsdk.VerifiableCredential) (kid string, pubKey crypto.PublicKey, err error) {
 	issuerDID := credential.Issuer.(string)
 	return didint.ResolveKeyForDID(ctx, v.didResolver, issuerDID)
-
 }
 
 // staticVerificationChecks runs a set of static verification checks on the credential as per the credential

@@ -5,26 +5,22 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tbd54566975/ssi-service/pkg/jwt"
+	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
-	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 )
-
-func (s Service) verifyApplicationJWT(ctx context.Context, did string, token keyaccess.JWT) error {
-	return jwt.VerifyTokenFromDID(ctx, did, token, s.didResolver)
-}
 
 // validateCredentialApplication validates the credential application's signature(s) in addition to making sure it
 // is a valid credential application, and complies with its corresponding manifest. it returns the ids of unfulfilled
 // input descriptors along with an error if validation fails.
 func (s Service) validateCredentialApplication(ctx context.Context, credManifest manifest.CredentialManifest, request model.SubmitApplicationRequest) (inputDescriptorIDs []string, err error) {
 	// validate the payload's signature
-	if verificationErr := s.verifyApplicationJWT(ctx, request.ApplicantDID, request.ApplicationJWT); verificationErr != nil {
+	if verificationErr := didint.VerifyTokenFromDID(ctx, s.didResolver, request.ApplicantDID, request.ApplicationJWT); verificationErr != nil {
 		err = util.LoggingErrorMsgf(err, "could not verify application<%s>'s signature", request.Application.ID)
 		return
 	}

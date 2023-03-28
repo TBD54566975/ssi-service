@@ -1,6 +1,8 @@
 package did
 
 import (
+	gocrypto "crypto"
+
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 )
@@ -41,6 +43,16 @@ type GetDIDRequest struct {
 // GetDIDResponse is the JSON-serializable response for getting a DID
 type GetDIDResponse struct {
 	DID didsdk.Document `json:"did"`
+}
+
+type GetKeyFromDIDRequest struct {
+	ID    string `json:"id" validate:"required"`
+	KeyID string `json:"keyId,omitempty"`
+}
+
+type GetKeyFromDIDResponse struct {
+	KeyID     string             `json:"keyId"`
+	PublicKey gocrypto.PublicKey `json:"publicKey"`
 }
 
 type GetDIDsRequest struct {

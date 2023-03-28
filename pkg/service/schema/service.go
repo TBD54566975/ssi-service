@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	schemalib "github.com/TBD54566975/ssi-sdk/schema"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
@@ -13,8 +14,6 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
-	didresolver "github.com/tbd54566975/ssi-service/pkg/service/did/resolve"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/did"
@@ -32,7 +31,7 @@ type Service struct {
 
 	// external dependencies
 	keyStore *keystore.Service
-	resolver didresolver.Resolver
+	resolver didsdk.Resolver
 }
 
 func (s Service) Type() framework.Type {
@@ -63,7 +62,7 @@ func (s Service) Config() config.SchemaServiceConfig {
 	return s.config
 }
 
-func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, resolver didresolver.Resolver) (*Service, error) {
+func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, resolver didsdk.Resolver) (*Service, error) {
 	schemaStorage, err := NewSchemaStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the schema service")

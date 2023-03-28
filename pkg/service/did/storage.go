@@ -119,7 +119,7 @@ func getNamespaceForDID(id string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	ns, err := getNamespaceForMethod(method)
+	ns, err := getNamespaceForMethod(method.String())
 	if err != nil {
 		return "", err
 	}
