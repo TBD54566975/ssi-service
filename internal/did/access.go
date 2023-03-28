@@ -89,6 +89,23 @@ func extractKeyFromVerificationMethod(method didsdk.VerificationMethod) (pubKey 
 	return
 }
 
+// ResolveKeyForDID resolves a public key from a DID.
+func ResolveKeyForDID(ctx context.Context, did string, resolver didsdk.Resolver) (kid string, pubKey crypto.PublicKey, err error) {
+	resolved, err := resolver.Resolve(ctx, did, nil)
+	if err != nil {
+		err = errors.Wrapf(err, "resolving DID: %s", did)
+		return "", nil, err
+	}
+
+	// next, get the verification information (key) from the did document
+	kid, pubKey, err = GetVerificationInformation(resolved.Document, "")
+	if err != nil {
+		err = errors.Wrapf(err, "getting verification information from DID Document: %s", did)
+		return "", nil, err
+	}
+	return kid, pubKey, err
+}
+
 // VerifyTokenFromDID verifies that the information in the token was digitally signed by the public key associated with
 // the public key of the verification method of the did's document. The passed in resolver is used to map from the did
 // to the did document.

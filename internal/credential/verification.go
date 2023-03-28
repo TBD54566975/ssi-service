@@ -114,7 +114,7 @@ func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential 
 
 func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT) error {
 	// resolve the did's key material
-	kid, pubKey, err := v.resolveKeyForDID(ctx, did)
+	kid, pubKey, err := didint.ResolveKeyForDID(ctx, did, v.didResolver)
 	if err != nil {
 		return util.LoggingError(err)
 	}
@@ -138,26 +138,7 @@ func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT
 // TODO(gabe): support issuers that are not strings, but objects
 func (v Verifier) resolveCredentialIssuerKey(ctx context.Context, credential credsdk.VerifiableCredential) (kid string, pubKey crypto.PublicKey, err error) {
 	issuerDID := credential.Issuer.(string)
-	return v.resolveKeyForDID(ctx, issuerDID)
-}
-
-// resolveKeyForDID combines the resolution of a DID document with the extraction of the verification information
-func (v Verifier) resolveKeyForDID(ctx context.Context, did string) (kid string, pubKey crypto.PublicKey, err error) {
-	// resolve DID document
-	resolved, err := v.didResolver.Resolve(ctx, did)
-	if err != nil {
-		err = errors.Wrapf(err, "resolving DID: %s", did)
-		return kid, pubKey, err
-	}
-
-	// get the verification information from the DID document
-	kid, pubKey, err = didint.GetVerificationInformation(resolved.Document, "")
-	if err != nil {
-		err = errors.Wrapf(err, "getting verification information from the DID document: %s", did)
-		return kid, pubKey, err
-	}
-
-	return kid, pubKey, nil
+	return didint.ResolveKeyForDID(ctx, issuerDID, v.didResolver)
 }
 
 // staticVerificationChecks runs a set of static verification checks on the credential as per the credential
