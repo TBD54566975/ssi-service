@@ -11,12 +11,11 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 
-	"github.com/tbd54566975/ssi-service/pkg/service/did/resolution"
-
 	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/schema"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/pkg/service/did/resolution"
 )
 
 type Verifier struct {
