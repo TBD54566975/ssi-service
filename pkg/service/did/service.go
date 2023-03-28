@@ -107,7 +107,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 
 func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, error) {
 	if request.DID == "" {
-		return nil, util.LoggingNewError("cannot resolution empty DID")
+		return nil, util.LoggingNewError("cannot resolve empty DID")
 	}
 	resolved, err := s.Resolve(context.Background(), request.DID)
 	if err != nil {

@@ -7,7 +7,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-// localResolver is an implementation of Resolver that passes through the parameters into the sdk implementation that
+// localResolver is an implementation of didsdk.Resolution that passes through the parameters into the sdk implementation that
 // resolves DIDs. This is done because, when this is being written, the didsdk.Resolution interface does not let callers
 // pass in their own context.
 type localResolver struct {
