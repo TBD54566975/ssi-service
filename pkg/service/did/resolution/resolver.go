@@ -55,6 +55,10 @@ func NewServiceResolver(handlerResolver Resolver, resolutionMethods []string, un
 	}, nil
 }
 
+// Resolve resolves a DID using a combination of local and universal resolvers. The ordering is as follows:
+// 1. Try to resolve with the handlers we have, wrapping the resulting DID in resolution result
+// 2. Try to resolve with the local resolver
+// 3. Try to resolve with the universal resolver
 func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
 	// check the did is valid
 	if _, err := internalutil.GetMethodForDID(did); err != nil {
