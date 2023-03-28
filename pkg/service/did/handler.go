@@ -9,6 +9,8 @@ import (
 )
 
 // MethodHandler describes the functionality of *all* possible DID service, regardless of method
+// TODO(gabe) consider smaller/more composable interfaces and promoting reusability across methods
+// https://github.com/TBD54566975/ssi-service/issues/362
 type MethodHandler interface {
 	CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error)
 	GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error)
@@ -16,14 +18,9 @@ type MethodHandler interface {
 	SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error
 }
 
-// HandlerResolver is a DID resolver that uses a multimethod resolver backed by method handlers to resolve DIDs,
-// meaning DIDs we store in our database
-type HandlerResolver struct {
-	*didsdk.MultiMethodResolver
-}
-
 // NewHandlerResolver creates a new HandlerResolver from a map of MethodHandlers which are used to resolve DIDs
-func NewHandlerResolver(handlers map[didsdk.Method]MethodHandler) (*HandlerResolver, error) {
+// stored in our database
+func NewHandlerResolver(handlers map[didsdk.Method]MethodHandler) (*didsdk.MultiMethodResolver, error) {
 	if len(handlers) == 0 {
 		return nil, util.LoggingNewError("no handlers provided")
 	}
@@ -39,16 +36,7 @@ func NewHandlerResolver(handlers map[didsdk.Method]MethodHandler) (*HandlerResol
 		return nil, errors.Wrap(err, "creating multi-method resolver")
 	}
 
-	return &HandlerResolver{MultiMethodResolver: multiMethodResolver}, nil
-}
-
-// Resolve resolves a DID using the embedded MultiMethodResolver
-func (hr HandlerResolver) Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOption) (*didsdk.ResolutionResult, error) {
-	return hr.MultiMethodResolver.Resolve(ctx, did, opts)
-}
-
-func (hr HandlerResolver) Methods() []didsdk.Method {
-	return hr.MultiMethodResolver.Methods()
+	return multiMethodResolver, nil
 }
 
 // handlerResolver is a DID resolver that uses a MethodHandler to resolve DIDs

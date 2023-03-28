@@ -16,7 +16,7 @@ import (
 type ServiceResolver struct {
 	resolutionMethods []string
 	hr                didsdk.Resolver
-	lr                *localResolver
+	lr                didsdk.Resolver
 	ur                *universalResolver
 }
 
@@ -30,13 +30,9 @@ func NewServiceResolver(handlerResolver didsdk.Resolver, resolutionMethods []str
 	}
 
 	// instantiate sdk resolver
-	sdkResolver, err := didint.BuildMultiMethodResolver(resolutionMethods)
+	localResolver, err := didint.BuildMultiMethodResolver(resolutionMethods)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating SDK DID resolver")
-	}
-	lr, err := newLocalResolver(sdkResolver)
-	if err != nil {
-		return nil, errors.Wrap(err, "instantiating local resolver")
 	}
 
 	// instantiate universal resolver
@@ -51,7 +47,7 @@ func NewServiceResolver(handlerResolver didsdk.Resolver, resolutionMethods []str
 	return &ServiceResolver{
 		resolutionMethods: resolutionMethods,
 		hr:                handlerResolver,
-		lr:                lr,
+		lr:                localResolver,
 		ur:                ur,
 	}, nil
 }
@@ -60,6 +56,7 @@ func NewServiceResolver(handlerResolver didsdk.Resolver, resolutionMethods []str
 // 1. Try to resolve with the handlers we have, wrapping the resulting DID in resolution result
 // 2. Try to resolve with the local resolver
 // 3. Try to resolve with the universal resolver
+// TODO(gabe) avoid caching DIDs that should be externally resolved https://github.com/TBD54566975/ssi-service/issues/361
 func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOption) (*didsdk.ResolutionResult, error) {
 	// check the did is valid
 	if _, err := utilint.GetMethodForDID(did); err != nil {
