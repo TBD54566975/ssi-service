@@ -31,7 +31,7 @@ func (s Service) signManifestJWT(ctx context.Context, m CredentialManifestContai
 	return manifestToken, nil
 }
 
-func (s Service) verifyManifestJWT(token keyaccess.JWT) (*manifest.CredentialManifest, error) {
+func (s Service) verifyManifestJWT(ctx context.Context, token keyaccess.JWT) (*manifest.CredentialManifest, error) {
 	parsed, err := jwt.Parse([]byte(token))
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not parse JWT")
@@ -45,8 +45,11 @@ func (s Service) verifyManifestJWT(token keyaccess.JWT) (*manifest.CredentialMan
 
 	var parsedManifest CredentialManifestContainer
 	if err = json.Unmarshal(claimsJSONBytes, &parsedManifest); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not unmarshal claims into manifest")
+		return nil, util.LoggingErrorMsg(err, "unmarshalling claims into manifest")
 	}
 
+	if err = s.verifyJWTFromDID(ctx, parsedManifest.Manifest.Issuer.ID, token); err != nil {
+		return nil, util.LoggingErrorMsg(err, "verifying manifest JWT")
+	}
 	return &parsedManifest.Manifest, nil
 }

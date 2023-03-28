@@ -191,8 +191,8 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 }
 
 // VerifyManifest verifies a manifest's signature and makes sure the manifest is compliant with the specification
-func (s Service) VerifyManifest(_ context.Context, request model.VerifyManifestRequest) (*model.VerifyManifestResponse, error) {
-	m, err := s.verifyManifestJWT(request.ManifestJWT)
+func (s Service) VerifyManifest(ctx context.Context, request model.VerifyManifestRequest) (*model.VerifyManifestResponse, error) {
+	m, err := s.verifyManifestJWT(ctx, request.ManifestJWT)
 	if err != nil {
 		return &model.VerifyManifestResponse{
 			Verified: false,
