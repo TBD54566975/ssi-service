@@ -43,6 +43,6 @@ func TestCredentialIssuerMetadata(t *testing.T) {
 	metadata, err := fetchMetadata(server.URL + "/oidc/issuer/.well-known/openid-credential-issuer")
 	require.NoError(t, err)
 
-	// Check that the issuer matches the url that was fetched
+	// Check that the issuer matches the URL that was fetched
 	assert.JSONEq(t, string(expectedIssuerMetadata), string(metadata))
 }

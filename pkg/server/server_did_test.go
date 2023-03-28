@@ -364,7 +364,7 @@ func TestDIDAPI(t *testing.T) {
 		}
 		err = didService.ResolveDID(newRequestContextWithParams(badParams), w, req)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "selected encoding not supported")
+		assert.Contains(tt, err.Error(), "unable to resolve DID did:key:abcd")
 
 		w.Flush()
 
