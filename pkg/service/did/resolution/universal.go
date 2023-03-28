@@ -1,4 +1,4 @@
-package resolve
+package resolution
 
 import (
 	"bufio"
@@ -12,7 +12,7 @@ import (
 )
 
 // universalResolver is a struct that implements the Resolver interface. It calls the universal resolver endpoint
-// to resolve any DID according to https://github.com/decentralized-identity/universal-resolver.
+// to resolution any DID according to https://github.com/decentralized-identity/universal-resolver.
 type universalResolver struct {
 	Client *http.Client
 	URL    string

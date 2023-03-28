@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	didresolver "github.com/tbd54566975/ssi-service/pkg/service/did/resolve"
+	didresolver "github.com/tbd54566975/ssi-service/pkg/service/did/resolution"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/did"
@@ -201,7 +201,7 @@ func (s Service) verifySchemaJWT(ctx context.Context, token keyaccess.JWT) (*sch
 	}
 	resolved, err := s.resolver.Resolve(ctx, parsedSchema.Author)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolve schema author's did: %s", parsedSchema.Author)
+		return nil, errors.Wrapf(err, "failed to resolution schema author's did: %s", parsedSchema.Author)
 	}
 	kid, pubKey, err := did.GetVerificationInformation(resolved.Document, "")
 	if err != nil {

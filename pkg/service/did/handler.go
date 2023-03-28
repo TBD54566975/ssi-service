@@ -18,12 +18,12 @@ type MethodHandler interface {
 	SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error
 }
 
-// HandlerResolver is a DID resolver that uses MethodHandlers to resolve DIDs, meaning DIDs we store in our database
+// HandlerResolver is a DID resolver that uses MethodHandlers to resolution DIDs, meaning DIDs we store in our database
 type HandlerResolver struct {
 	handlers map[didsdk.Method]MethodHandler
 }
 
-// NewHandlerResolver creates a new HandlerResolver from a map of MethodHandlers which are used to resolve DIDs
+// NewHandlerResolver creates a new HandlerResolver from a map of MethodHandlers which are used to resolution DIDs
 func NewHandlerResolver(handlers map[didsdk.Method]MethodHandler) (*HandlerResolver, error) {
 	if len(handlers) == 0 {
 		return nil, util.LoggingNewError("no handlers provided")
@@ -32,7 +32,7 @@ func NewHandlerResolver(handlers map[didsdk.Method]MethodHandler) (*HandlerResol
 }
 
 // Resolve resolves a DID using the MethodHandler for the DID's method, wrapping the result in a ResolutionResult
-func (hr HandlerResolver) Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
+func (hr HandlerResolver) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
 	// get method from DID
 	method, err := internalutil.GetMethodForDID(did)
 	if err != nil {

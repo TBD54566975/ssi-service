@@ -1,7 +1,6 @@
 package did
 
 import (
-	"context"
 	"crypto"
 	"fmt"
 
@@ -14,8 +13,6 @@ import (
 	"github.com/multiformats/go-varint"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
-	"github.com/tbd54566975/ssi-service/pkg/service/did/resolve"
 )
 
 // GetVerificationInformation resolves a DID and provides a kid and public key needed for data verification
@@ -117,21 +114,4 @@ func multibaseToPubKeyBytes(mb string) ([]byte, error) {
 	}
 	pubKeyBytes := decoded[n:]
 	return pubKeyBytes, nil
-}
-
-// ResolveKeyForDID gets a public key from a DID.
-func ResolveKeyForDID(ctx context.Context, resolver resolve.Resolver, did string) (kid string, pubKey crypto.PublicKey, err error) {
-	resolved, err := resolver.Resolve(ctx, did, nil)
-	if err != nil {
-		err = errors.Wrapf(err, "failed to resolve did: %s", did)
-		return
-	}
-
-	// next, get the verification information (key) from the did document
-	kid, pubKey, err = GetVerificationInformation(resolved.Document, "")
-	if err != nil {
-		err = errors.Wrapf(err, "failed to get verification information from the did document: %s", did)
-		return
-	}
-	return
 }

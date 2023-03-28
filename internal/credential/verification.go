@@ -10,7 +10,8 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/verification"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/ssi-service/pkg/service/did/resolve"
+
+	"github.com/tbd54566975/ssi-service/pkg/service/did/resolution"
 
 	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -20,13 +21,13 @@ import (
 
 type Verifier struct {
 	verifier       *verification.CredentialVerifier
-	didResolver    resolve.Resolver
+	didResolver    resolution.Resolver
 	schemaResolver schema.Resolution
 }
 
 // NewCredentialVerifier creates a new credential verifier which executes both signature and static verification checks.
 // In the future the set of verification checks will be configurable.
-func NewCredentialVerifier(didResolver resolve.Resolver, schemaResolver schema.Resolution) (*Verifier, error) {
+func NewCredentialVerifier(didResolver resolution.Resolver, schemaResolver schema.Resolution) (*Verifier, error) {
 	if didResolver == nil {
 		return nil, errors.New("didResolver cannot be nil")
 	}
@@ -63,7 +64,7 @@ func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) 
 		return util.LoggingErrorMsg(err, "could not get key ID from JWT")
 	}
 
-	// resolve the issuer's key material
+	// resolution the issuer's key material
 	kid, pubKey, err := v.resolveCredentialIssuerKey(ctx, *cred)
 	if err != nil {
 		return util.LoggingError(err)
@@ -91,7 +92,7 @@ func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) 
 // VerifyDataIntegrityCredential first checks the signature on the given data integrity credential. Next, it runs
 // a set of static verification checks on the credential as per the credential service's configuration.
 func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential credsdk.VerifiableCredential) error {
-	// resolve the issuer's key material
+	// resolution the issuer's key material
 	kid, pubKey, err := v.resolveCredentialIssuerKey(ctx, credential)
 	if err != nil {
 		return util.LoggingError(err)
@@ -113,8 +114,8 @@ func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential 
 }
 
 func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT) error {
-	// resolve the did's key material
-	kid, pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, did)
+	// resolution the did's key material
+	kid, pubKey, err := v.resolveKeyForDID(ctx, did)
 	if err != nil {
 		return util.LoggingError(err)
 	}
@@ -122,8 +123,7 @@ func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT
 	// construct a signature verifier from the verification information
 	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create verifier for kid %s", kid)
-		return util.LoggingErrorMsg(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not create verifier for kid %s", kid)
 	}
 
 	// verify the signature on the credential
@@ -139,20 +139,38 @@ func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT
 // TODO(gabe): support issuers that are not strings, but objects
 func (v Verifier) resolveCredentialIssuerKey(ctx context.Context, credential credsdk.VerifiableCredential) (kid string, pubKey crypto.PublicKey, err error) {
 	issuerDID := credential.Issuer.(string)
-	return didint.ResolveKeyForDID(ctx, v.didResolver, issuerDID)
+	return v.resolveKeyForDID(ctx, issuerDID)
+}
 
+// resolveKeyForDID combines the resolution of a DID document with the extraction of the verification information
+func (v Verifier) resolveKeyForDID(ctx context.Context, did string) (kid string, pubKey crypto.PublicKey, err error) {
+	// resolve DID document
+	resolved, err := v.didResolver.Resolve(ctx, did)
+	if err != nil {
+		err = errors.Wrapf(err, "resolving DID: %s", did)
+		return kid, pubKey, err
+	}
+
+	// get the verification information from the DID document
+	kid, pubKey, err = didint.GetVerificationInformation(resolved.Document, "")
+	if err != nil {
+		err = errors.Wrapf(err, "getting verification information from the DID document: %s", did)
+		return kid, pubKey, err
+	}
+
+	return kid, pubKey, nil
 }
 
 // staticVerificationChecks runs a set of static verification checks on the credential as per the credential
 // service's configuration, such as checking the credential's schema, expiration, and object validity.
 func (v Verifier) staticVerificationChecks(ctx context.Context, credential credsdk.VerifiableCredential) error {
-	// if the credential has a schema, resolve it before it is to be used in verification
+	// if the credential has a schema, resolution it before it is to be used in verification
 	var verificationOpts []verification.VerificationOption
 	if credential.CredentialSchema != nil {
 		schemaID := credential.CredentialSchema.ID
 		resolvedSchema, err := v.schemaResolver.Resolve(ctx, schemaID)
 		if err != nil {
-			return errors.Wrapf(err, "for credential<%s> failed to resolve schemas: %s", credential.ID, schemaID)
+			return errors.Wrapf(err, "for credential<%s> failed to resolution schemas: %s", credential.ID, schemaID)
 		}
 		schemaBytes, err := json.Marshal(resolvedSchema)
 		if err != nil {

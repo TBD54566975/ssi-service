@@ -9,8 +9,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/util"
-	"github.com/tbd54566975/ssi-service/pkg/service/did/resolve"
+	"github.com/tbd54566975/ssi-service/pkg/service/did/resolution"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -24,7 +25,7 @@ type Service struct {
 	handlers map[didsdk.Method]MethodHandler
 
 	// resolver for DID methods
-	resolver *resolve.ServiceResolver
+	resolver *resolution.ServiceResolver
 
 	// external dependencies
 	keyStore *keystore.Service
@@ -62,7 +63,7 @@ func (s *Service) Config() config.DIDServiceConfig {
 	return s.config
 }
 
-func (s *Service) GetResolver() resolve.Resolver {
+func (s *Service) GetResolver() resolution.Resolver {
 	return s
 }
 
@@ -92,7 +93,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 	}
 
 	// instantiate DID resolver
-	resolver, err := resolve.NewServiceResolver(hanlderResolver, config.ResolutionMethods, config.UniversalResolverURL)
+	resolver, err := resolution.NewServiceResolver(hanlderResolver, config.ResolutionMethods, config.UniversalResolverURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating DID resolver")
 	}
@@ -106,7 +107,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 
 func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, error) {
 	if request.DID == "" {
-		return nil, util.LoggingNewError("cannot resolve empty DID")
+		return nil, util.LoggingNewError("cannot resolution empty DID")
 	}
 	resolved, err := s.Resolve(context.Background(), request.DID)
 	if err != nil {
@@ -145,6 +146,24 @@ func (s *Service) GetDIDByMethod(ctx context.Context, request GetDIDRequest) (*G
 		return nil, util.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
 	}
 	return handler.GetDID(ctx, request)
+}
+
+func (s *Service) GetKeyFromDID(ctx context.Context, request GetKeyFromDIDRequest) (*GetKeyFromDIDResponse, error) {
+	resolved, err := s.Resolve(ctx, request.ID)
+	if err != nil {
+		return nil, util.LoggingErrorMsgf(err, "resolving DID<%s>", request.ID)
+	}
+
+	// next, get the verification information (key) from the did document
+	kid, pubKey, err := did.GetVerificationInformation(resolved.Document, request.KeyID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting verification information from the did document: %s", request.ID)
+	}
+
+	return &GetKeyFromDIDResponse{
+		KeyID:     kid,
+		PublicKey: pubKey,
+	}, nil
 }
 
 func (s *Service) GetDIDsByMethod(ctx context.Context, request GetDIDsRequest) (*GetDIDsResponse, error) {

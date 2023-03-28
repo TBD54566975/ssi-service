@@ -25,7 +25,7 @@ func TestResolver(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, resolved)
 
-	// resolve for a method that is not supported
+	// resolution for a method that is not supported
 	_, err = resolver.Resolve("did:web:example.com")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "unsupported method: web")
