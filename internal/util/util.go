@@ -13,10 +13,10 @@ import (
 func GetMethodForDID(did string) (didsdk.Method, error) {
 	split := strings.Split(did, ":")
 	if len(split) < 3 {
-		return "", errors.New("did has fewer than three parts")
+		return "", errors.New("malformed did: did has fewer than three parts")
 	}
 	if split[0] != "did" {
-		return "", errors.New("did must start with `did`")
+		return "", errors.New("malformed did: did must start with `did`")
 	}
 	return didsdk.Method(split[1]), nil
 }

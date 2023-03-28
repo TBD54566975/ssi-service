@@ -42,9 +42,12 @@ func NewServiceResolver(handlerResolver Resolver, resolutionMethods []string, un
 	}
 
 	// instantiate universal resolver
-	ur, err := newUniversalResolver(universalResolverURL)
-	if err != nil {
-		return nil, errors.Wrap(err, "instantiating universal resolver")
+	var ur *universalResolver
+	if universalResolverURL != "" {
+		ur, err = newUniversalResolver(universalResolverURL)
+		if err != nil {
+			return nil, errors.Wrap(err, "instantiating universal resolver")
+		}
 	}
 
 	return &ServiceResolver{
