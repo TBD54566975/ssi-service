@@ -102,7 +102,7 @@ func multibaseToPubKeyBytes(mb string) ([]byte, error) {
 		return nil, err
 	}
 	if encoding != didsdk.Base58BTCMultiBase {
-		err := fmt.Errorf("expected %d encoding but found %d", didsdk.Base58BTCMultiBase, encoding)
+		err = fmt.Errorf("expected %d encoding but found %d", didsdk.Base58BTCMultiBase, encoding)
 		logrus.WithError(err).Error()
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func multibaseToPubKeyBytes(mb string) ([]byte, error) {
 	return pubKeyBytes, nil
 }
 
-// ResolveKeyForDID resolves a public key from a DID.
+// ResolveKeyForDID gets a public key from a DID.
 func ResolveKeyForDID(ctx context.Context, resolver resolve.Resolver, did string) (kid string, pubKey crypto.PublicKey, err error) {
 	resolved, err := resolver.Resolve(ctx, did, nil)
 	if err != nil {

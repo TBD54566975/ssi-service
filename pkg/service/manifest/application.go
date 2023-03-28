@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/tbd54566975/ssi-service/pkg/jwt"
+	"github.com/tbd54566975/ssi-service/internal/jwt"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
+
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"

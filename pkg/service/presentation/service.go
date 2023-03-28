@@ -9,10 +9,11 @@ import (
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/jwt"
 	"github.com/tbd54566975/ssi-service/internal/util"
-	"github.com/tbd54566975/ssi-service/pkg/jwt"
 	"github.com/tbd54566975/ssi-service/pkg/service/did/resolve"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
@@ -168,7 +169,7 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 		return nil, errors.Wrap(err, "verifying token from did")
 	}
 
-	if _, err := s.storage.GetSubmission(ctx, request.Submission.ID); !errors.Is(err, presentationstorage.ErrSubmissionNotFound) {
+	if _, err = s.storage.GetSubmission(ctx, request.Submission.ID); !errors.Is(err, presentationstorage.ErrSubmissionNotFound) {
 		return nil, errors.Errorf("submission with id %s already present", request.Submission.ID)
 	}
 
@@ -182,19 +183,19 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 			return nil, errors.Errorf("invalid credential %+v", cred)
 		}
 		if cred.CredentialJWT != nil {
-			if err := s.verifier.VerifyJWTCredential(ctx, *cred.CredentialJWT); err != nil {
+			if err = s.verifier.VerifyJWTCredential(ctx, *cred.CredentialJWT); err != nil {
 				return nil, errors.Wrapf(err, "verifying jwt credential %s", cred.CredentialJWT)
 			}
 		} else {
 			if cred.HasDataIntegrityCredential() {
-				if err := s.verifier.VerifyDataIntegrityCredential(ctx, *cred.Credential); err != nil {
+				if err = s.verifier.VerifyDataIntegrityCredential(ctx, *cred.Credential); err != nil {
 					return nil, errors.Wrapf(err, "verifying data integrity credential %+v", cred.Credential)
 				}
 			}
 		}
 	}
 
-	if err := exchange.VerifyPresentationSubmissionVP(definition.PresentationDefinition, request.Presentation); err != nil {
+	if err = exchange.VerifyPresentationSubmissionVP(definition.PresentationDefinition, request.Presentation); err != nil {
 		return nil, errors.Wrap(err, "verifying presentation submission vp")
 	}
 
@@ -204,7 +205,7 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 	}
 
 	// TODO(andres): IO requests should be done in parallel, once we have context wired up.
-	if err := s.storage.StoreSubmission(ctx, storedSubmission); err != nil {
+	if err = s.storage.StoreSubmission(ctx, storedSubmission); err != nil {
 		return nil, errors.Wrap(err, "could not store presentation")
 	}
 
@@ -217,7 +218,7 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 		ID:   opID,
 		Done: false,
 	}
-	if err := s.opsStorage.StoreOperation(ctx, storedOp); err != nil {
+	if err = s.opsStorage.StoreOperation(ctx, storedOp); err != nil {
 		return nil, errors.Wrap(err, "could not store operation")
 	}
 

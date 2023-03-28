@@ -11,19 +11,25 @@ import (
 	"github.com/pkg/errors"
 )
 
-// UniversalResolver is a struct that implements the Resolver interface. It calls the universal resolver endpoint
+// universalResolver is a struct that implements the Resolver interface. It calls the universal resolver endpoint
 // to resolve any DID according to https://github.com/decentralized-identity/universal-resolver.
-type UniversalResolver struct {
-	Client http.Client
+type universalResolver struct {
+	Client *http.Client
 	URL    string
 }
 
-type Resolver interface {
-	Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error)
+func newUniversalResolver(url string) (*universalResolver, error) {
+	if url == "" {
+		return nil, errors.New("universal resolver URL cannot be empty")
+	}
+	return &universalResolver{
+		Client: http.DefaultClient,
+		URL:    url,
+	}, nil
 }
 
 // Resolve results resolution results by doing a GET on <URL>/1.0.identifiers/<did>.
-func (ur UniversalResolver) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
+func (ur universalResolver) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
 	url := ur.URL + "/1.0/identifiers/" + did
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -44,15 +50,4 @@ func (ur UniversalResolver) Resolve(ctx context.Context, did string, _ ...didsdk
 		return nil, errors.Wrap(err, "unmarshalling JSON")
 	}
 	return &result, nil
-}
-
-// LocalResolver is an implementation of Resolver that passes through the parameters into the sdk implementation that
-// resolves DIDs. This is done because, when this is being written, the didsdk.Resolution interface does not let callers
-// pass in their own context.
-type LocalResolver struct {
-	*didsdk.Resolver
-}
-
-func (lr LocalResolver) Resolve(_ context.Context, did string, opts ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
-	return lr.Resolver.Resolve(did, opts...)
 }
