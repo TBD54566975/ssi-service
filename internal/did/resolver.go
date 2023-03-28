@@ -7,12 +7,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-// BuildResolver builds a DID resolver from a list of methods to support resolution for
-func BuildResolver(methods []string) (*didsdk.Resolver, error) {
+// BuildMultiMethodResolver builds a multi method DID resolver from a list of methods to support resolution for
+func BuildMultiMethodResolver(methods []string) (*didsdk.MultiMethodResolver, error) {
 	if len(methods) == 0 {
 		return nil, errors.New("no methods provided")
 	}
-	resolvers := make([]didsdk.Resolution, 0, len(methods))
+	resolvers := make([]didsdk.Resolver, 0, len(methods))
 	for _, method := range methods {
 		resolver, err := getKnownResolver(method)
 		if err != nil {
@@ -27,7 +27,7 @@ func BuildResolver(methods []string) (*didsdk.Resolver, error) {
 }
 
 // all possible resolvers for the DID service
-func getKnownResolver(method string) (didsdk.Resolution, error) {
+func getKnownResolver(method string) (didsdk.Resolver, error) {
 	switch didsdk.Method(method) {
 	case didsdk.KeyMethod:
 		return new(didsdk.KeyResolver), nil

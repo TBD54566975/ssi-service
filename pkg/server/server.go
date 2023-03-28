@@ -9,6 +9,7 @@ import (
 	"path"
 
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -228,7 +229,7 @@ func (s *SSIServer) OperationAPI(service svcframework.Service) (err error) {
 
 	s.Handle(http.MethodGet, handlerPath, operationRouter.GetOperations)
 	// See https://github.com/dimfeld/httptreemux#routing-rules for details on how the `*` works.
-	// In this case, it's used so that the operation id matches `presentations/submissions/{submission_id}` for the URL
+	// In this case, it's used so that the operation id matches `presentations/submissions/{submission_id}` for the url
 	// path	`/v1/operations/cancel/presentations/submissions/{id}`
 	s.Handle(http.MethodPut, path.Join(handlerPath, "/cancel/*id"), operationRouter.CancelOperation)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/*id"), operationRouter.GetOperation)

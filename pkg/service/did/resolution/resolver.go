@@ -2,9 +2,9 @@ package resolution
 
 import (
 	"context"
+	"fmt"
 
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
-	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -12,27 +12,25 @@ import (
 	utilint "github.com/tbd54566975/ssi-service/internal/util"
 )
 
-type Resolver interface {
-	Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error)
-}
-
 // ServiceResolver is a resolver that can resolve DIDs using a combination of local and universal resolvers.
 type ServiceResolver struct {
 	resolutionMethods []string
-	hr                Resolver
+	hr                didsdk.Resolver
 	lr                *localResolver
 	ur                *universalResolver
 }
 
+var _ didsdk.Resolver = (*ServiceResolver)(nil)
+
 // NewServiceResolver creates a new ServiceResolver instance which can resolve DIDs using a combination of local and
 // universal resolvers.
-func NewServiceResolver(handlerResolver Resolver, resolutionMethods []string, universalResolverURL string) (*ServiceResolver, error) {
+func NewServiceResolver(handlerResolver didsdk.Resolver, resolutionMethods []string, universalResolverURL string) (*ServiceResolver, error) {
 	if len(resolutionMethods) == 0 {
 		return nil, errors.New("no resolution methods configured")
 	}
 
 	// instantiate sdk resolver
-	sdkResolver, err := didint.BuildResolver(resolutionMethods)
+	sdkResolver, err := didint.BuildMultiMethodResolver(resolutionMethods)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating SDK DID resolver")
 	}
@@ -62,13 +60,12 @@ func NewServiceResolver(handlerResolver Resolver, resolutionMethods []string, un
 // 1. Try to resolve with the handlers we have, wrapping the resulting DID in resolution result
 // 2. Try to resolve with the local resolver
 // 3. Try to resolve with the universal resolver
-func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
+func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOption) (*didsdk.ResolutionResult, error) {
 	// check the did is valid
 	if _, err := utilint.GetMethodForDID(did); err != nil {
 		return nil, errors.Wrap(err, "getting method DID")
 	}
 
-	ae := util.NewAppendError()
 	// first, try to resolve with the handlers we have
 	if sr.hr != nil {
 		handlersResolvedDID, err := sr.hr.Resolve(ctx, did, opts...)
@@ -76,7 +73,6 @@ func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...dids
 			return handlersResolvedDID, nil
 		}
 		logrus.WithError(err).Error("error resolving DID with handler resolver")
-		ae.Append(err)
 	}
 
 	// next, try to resolve with the local resolver
@@ -86,7 +82,6 @@ func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...dids
 			return locallyResolvedDID, nil
 		}
 		logrus.WithError(err).Error("error resolving DID with local resolver")
-		ae.Append(err)
 	}
 
 	// finally, resolution with the universal resolver
@@ -97,12 +92,15 @@ func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...dids
 
 		}
 		logrus.WithError(err).Error("error resolving DID with universal resolver")
-		ae.Append(err)
 	}
 
-	if ae.IsEmpty() {
-		return nil, errors.New("unable to resolution DID")
-	}
+	return nil, fmt.Errorf("unable to resolve DID %s", did)
+}
 
-	return nil, ae.Error()
+func (sr *ServiceResolver) Methods() []didsdk.Method {
+	methods := make([]didsdk.Method, 0, len(sr.resolutionMethods))
+	for _, m := range sr.resolutionMethods {
+		methods = append(methods, didsdk.Method(m))
+	}
+	return methods
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -15,7 +16,6 @@ import (
 	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
-	"github.com/tbd54566975/ssi-service/pkg/service/did/resolution"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
@@ -32,7 +32,7 @@ type Service struct {
 	keystore   *keystore.Service
 	opsStorage *operation.Storage
 	config     config.PresentationServiceConfig
-	resolver   resolution.Resolver
+	resolver   didsdk.Resolver
 	schema     *schema.Service
 	verifier   *credential.Verifier
 }
@@ -59,7 +59,7 @@ func (s Service) Config() config.PresentationServiceConfig {
 	return s.config
 }
 
-func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage, resolver resolution.Resolver, schema *schema.Service, keystore *keystore.Service) (*Service, error) {
+func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage, resolver didsdk.Resolver, schema *schema.Service, keystore *keystore.Service) (*Service, error) {
 	presentationStorage, err := NewPresentationStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate definition storage for the presentation service")

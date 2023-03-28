@@ -63,8 +63,8 @@ func (s *Service) Config() config.DIDServiceConfig {
 	return s.config
 }
 
-func (s *Service) GetResolver() resolution.Resolver {
-	return s
+func (s *Service) GetResolver() didsdk.Resolver {
+	return s.resolver
 }
 
 func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
@@ -105,6 +105,18 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 	return &service, nil
 }
 
+func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
+	switch method {
+	case didsdk.KeyMethod:
+		s.handlers[method] = NewKeyDIDHandler(s.storage, s.keyStore)
+	case didsdk.WebMethod:
+		s.handlers[method] = NewWebDIDHandler(s.storage, s.keyStore)
+	default:
+		return util.LoggingNewErrorf("unsupported DID method: %s", method)
+	}
+	return nil
+}
+
 func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, error) {
 	if request.DID == "" {
 		return nil, util.LoggingNewError("cannot resolve empty DID")
@@ -120,8 +132,8 @@ func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, er
 	}, nil
 }
 
-func (s *Service) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
-	return s.resolver.Resolve(ctx, did)
+func (s *Service) Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOption) (*didsdk.ResolutionResult, error) {
+	return s.resolver.Resolve(ctx, did, opts)
 }
 
 func (s *Service) GetSupportedMethods() GetSupportedMethodsResponse {

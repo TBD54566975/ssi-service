@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/benbjohnson/clock"
@@ -18,7 +19,6 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
-	"github.com/tbd54566975/ssi-service/pkg/service/did/resolution"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
@@ -38,7 +38,7 @@ type Service struct {
 
 	// external dependencies
 	keyStore    *keystore.Service
-	didResolver resolution.Resolver
+	didResolver didsdk.Resolver
 	credential  *credential.Service
 
 	Clock clock.Clock
@@ -75,7 +75,7 @@ func (s Service) Config() config.ManifestServiceConfig {
 	return s.config
 }
 
-func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver resolution.Resolver, credential *credential.Service) (*Service, error) {
+func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver didsdk.Resolver, credential *credential.Service) (*Service, error) {
 	manifestStorage, err := manifeststg.NewManifestStorage(s)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the manifest service")

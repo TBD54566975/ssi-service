@@ -127,7 +127,7 @@ func (s Service) GetWebhooks(ctx context.Context) (*GetWebhooksResponse, error) 
 	return &GetWebhooksResponse{Webhooks: webhooks}, nil
 }
 
-// DeleteWebhook deletes a webhook from the storage by removing a given URL from the list of URLs associated with the webhook.
+// DeleteWebhook deletes a webhook from the storage by removing a given url from the list of URLs associated with the webhook.
 // If there are no URLs left in the list, the entire webhook is deleted from storage.
 func (s Service) DeleteWebhook(ctx context.Context, request DeleteWebhookRequest) error {
 	logrus.Debugf("deleting webhook: %s-%s", request.Noun, request.Verb)

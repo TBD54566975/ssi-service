@@ -7,7 +7,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 
-	internalutil "github.com/tbd54566975/ssi-service/internal/util"
+	utilint "github.com/tbd54566975/ssi-service/internal/util"
 )
 
 // MethodHandler describes the functionality of *all* possible DID service, regardless of method
@@ -32,9 +32,9 @@ func NewHandlerResolver(handlers map[didsdk.Method]MethodHandler) (*HandlerResol
 }
 
 // Resolve resolves a DID using the MethodHandler for the DID's method, wrapping the result in a ResolutionResult
-func (hr HandlerResolver) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error) {
+func (hr HandlerResolver) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOption) (*didsdk.ResolutionResult, error) {
 	// get method from DID
-	method, err := internalutil.GetMethodForDID(did)
+	method, err := utilint.GetMethodForDID(did)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting method from DID")
 	}
@@ -49,14 +49,10 @@ func (hr HandlerResolver) Resolve(ctx context.Context, did string, _ ...didsdk.R
 	return nil, util.LoggingNewErrorf("no handler for method %s", method)
 }
 
-func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
-	switch method {
-	case didsdk.KeyMethod:
-		s.handlers[method] = NewKeyDIDHandler(s.storage, s.keyStore)
-	case didsdk.WebMethod:
-		s.handlers[method] = NewWebDIDHandler(s.storage, s.keyStore)
-	default:
-		return util.LoggingNewErrorf("unsupported DID method: %s", method)
+func (hr HandlerResolver) Methods() []didsdk.Method {
+	methods := make([]didsdk.Method, 0, len(hr.handlers))
+	for method := range hr.handlers {
+		methods = append(methods, method)
 	}
-	return nil
+	return methods
 }
