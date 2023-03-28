@@ -201,7 +201,7 @@ func (s Service) verifySchemaJWT(ctx context.Context, token keyaccess.JWT) (*sch
 	}
 	resolved, err := s.resolver.Resolve(ctx, parsedSchema.Author)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to resolution schema author's did: %s", parsedSchema.Author)
+		return nil, errors.Wrapf(err, "failed to resolve schema author's did: %s", parsedSchema.Author)
 	}
 	kid, pubKey, err := did.GetVerificationInformation(resolved.Document, "")
 	if err != nil {

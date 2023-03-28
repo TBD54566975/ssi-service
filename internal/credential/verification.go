@@ -64,7 +64,7 @@ func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) 
 		return util.LoggingErrorMsg(err, "could not get key ID from JWT")
 	}
 
-	// resolution the issuer's key material
+	// resolve the issuer's key material
 	kid, pubKey, err := v.resolveCredentialIssuerKey(ctx, *cred)
 	if err != nil {
 		return util.LoggingError(err)
@@ -92,7 +92,7 @@ func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) 
 // VerifyDataIntegrityCredential first checks the signature on the given data integrity credential. Next, it runs
 // a set of static verification checks on the credential as per the credential service's configuration.
 func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential credsdk.VerifiableCredential) error {
-	// resolution the issuer's key material
+	// resolve the issuer's key material
 	kid, pubKey, err := v.resolveCredentialIssuerKey(ctx, credential)
 	if err != nil {
 		return util.LoggingError(err)
@@ -114,7 +114,7 @@ func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential 
 }
 
 func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT) error {
-	// resolution the did's key material
+	// resolve the did's key material
 	kid, pubKey, err := v.resolveKeyForDID(ctx, did)
 	if err != nil {
 		return util.LoggingError(err)
@@ -164,13 +164,13 @@ func (v Verifier) resolveKeyForDID(ctx context.Context, did string) (kid string,
 // staticVerificationChecks runs a set of static verification checks on the credential as per the credential
 // service's configuration, such as checking the credential's schema, expiration, and object validity.
 func (v Verifier) staticVerificationChecks(ctx context.Context, credential credsdk.VerifiableCredential) error {
-	// if the credential has a schema, resolution it before it is to be used in verification
+	// if the credential has a schema, resolve it before it is to be used in verification
 	var verificationOpts []verification.VerificationOption
 	if credential.CredentialSchema != nil {
 		schemaID := credential.CredentialSchema.ID
 		resolvedSchema, err := v.schemaResolver.Resolve(ctx, schemaID)
 		if err != nil {
-			return errors.Wrapf(err, "for credential<%s> failed to resolution schemas: %s", credential.ID, schemaID)
+			return errors.Wrapf(err, "for credential<%s> failed to resolve schemas: %s", credential.ID, schemaID)
 		}
 		schemaBytes, err := json.Marshal(resolvedSchema)
 		if err != nil {

@@ -170,7 +170,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 	// if a schema value exists, verify we can access it, validate the data against it, then set it
 	var knownSchema *schemalib.VCJSONSchema
 	if request.JSONSchema != "" {
-		// resolution schema and save it for validation later
+		// resolve schema and save it for validation later
 		gotSchema, err := s.schema.GetSchema(ctx, schema.GetSchemaRequest{ID: request.JSONSchema})
 		if err != nil {
 			return nil, util.LoggingErrorMsgf(err, "failed to create credential; could not get schema: %s", request.JSONSchema)

@@ -16,7 +16,7 @@ type Resolver interface {
 	Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOptions) (*didsdk.ResolutionResult, error)
 }
 
-// ServiceResolver is a resolver that can resolution DIDs using a combination of local and universal resolvers.
+// ServiceResolver is a resolver that can resolve DIDs using a combination of local and universal resolvers.
 type ServiceResolver struct {
 	resolutionMethods []string
 	hr                Resolver
@@ -24,7 +24,7 @@ type ServiceResolver struct {
 	ur                *universalResolver
 }
 
-// NewServiceResolver creates a new ServiceResolver instance which can resolution DIDs using a combination of local and
+// NewServiceResolver creates a new ServiceResolver instance which can resolve DIDs using a combination of local and
 // universal resolvers.
 func NewServiceResolver(handlerResolver Resolver, resolutionMethods []string, universalResolverURL string) (*ServiceResolver, error) {
 	if len(resolutionMethods) == 0 {
@@ -62,7 +62,7 @@ func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...dids
 	}
 
 	ae := util.NewAppendError()
-	// first, try to resolution with the handlers we have
+	// first, try to resolve with the handlers we have
 	if sr.hr != nil {
 		handlersResolvedDID, err := sr.hr.Resolve(ctx, did, opts...)
 		if err != nil {
@@ -73,7 +73,7 @@ func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...dids
 		}
 	}
 
-	// next, try to resolution with the local resolver
+	// next, try to resolve with the local resolver
 	if sr.lr != nil {
 		locallyResolvedDID, err := sr.lr.Resolve(ctx, did, opts...)
 		if err != nil {
