@@ -28,8 +28,11 @@ func (t Type) String() string {
 
 // Status is for service reporting on their status
 type Status struct {
-	Status  StatusState `json:"status,omitempty"`
-	Message string      `json:"message,omitempty"`
+	// Either `ready` or `not_ready`.
+	Status StatusState `json:"status,omitempty"`
+
+	// When `status` is `not_ready`, then message contains explanation of why it's not ready.
+	Message string `json:"message,omitempty"`
 }
 
 func (s Status) IsReady() bool {
