@@ -85,7 +85,7 @@ type CreateCredentialResponse struct {
 	// A verifiable credential conformant to the media type `application/vc+ld+json`.
 	Credential *credsdk.VerifiableCredential `json:"credential,omitempty"`
 
-	// The same verifiable credential, but using the syntax defined for the media type `application/vc+ld+json`. See
+	// The same verifiable credential, but using the syntax defined for the media type `application/vc+jwt`. See
 	// https://w3c.github.io/vc-jwt/ for more details.
 	CredentialJWT *keyaccess.JWT `json:"credentialJwt,omitempty"`
 }
