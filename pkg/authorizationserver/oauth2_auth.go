@@ -3,7 +3,6 @@ package authorizationserver
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/TBD54566975/ssi-sdk/oidc/issuance"
@@ -27,7 +26,7 @@ func NewAuthService(issuerMetadata *issuance.IssuerMetadata, provider fosite.OAu
 func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
 	ar, err := s.provider.NewAuthorizeRequest(ctx, req)
 	if err != nil {
-		logrus.Errorf("Error occurred in NewAuthorizeRequest: %+v", err)
+		logrus.WithError(err).Error("failed NewAuthorizeRequest")
 		s.provider.WriteAuthorizeError(ctx, rw, ar, err)
 		return nil
 	}
@@ -35,11 +34,13 @@ func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, r
 	authorizationDetailsJSON := ar.GetRequestForm().Get("authorization_details")
 	var authorizationDetails request.AuthorizationDetails
 	if err := json.Unmarshal([]byte(authorizationDetailsJSON), &authorizationDetails); err != nil {
+		logrus.WithError(err).Error("failed Unmarshal")
 		s.provider.WriteAuthorizeError(ctx, rw, ar, err)
 		return nil
 	}
 
 	if err := authorizationDetails.IsValid(); err != nil {
+		logrus.WithError(err).Error("failed Unmarshal")
 		s.provider.WriteAuthorizeError(ctx, rw, ar, err)
 		return nil
 	}
@@ -51,13 +52,16 @@ func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, r
 			switch d.Type {
 			case "openid_credential":
 				if err := s.processOpenIDCredential(d); err != nil {
+					logrus.WithError(err).Error("failed processing openid_credential")
 					s.provider.WriteAuthorizeError(ctx, rw, ar, err)
 					return nil
 				}
 				// TODO: support dynamic auth request https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-dynamic-credential-request
 
 			default:
-				s.provider.WriteAuthorizeError(ctx, rw, ar, errors.Errorf("the value of authorization_details[%d].type found was %q, which is not recognized", i, d.Type))
+				err := errors.Errorf("the value of authorization_details[%d].type found was %q, which is not recognized", i, d.Type)
+				logrus.WithError(err).Error("unrecognized type")
+				s.provider.WriteAuthorizeError(ctx, rw, ar, err)
 				return nil
 			}
 		}
@@ -72,6 +76,7 @@ func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, r
 	// Normally, this would be the place where you would check if the user is logged in and gives his consent.
 	// We're simplifying things and just checking if the request includes a valid username and password
 	if err := req.ParseForm(); err != nil {
+		logrus.WithError(err).Error("failed parsing request form")
 		s.provider.WriteAuthorizeError(ctx, rw, ar, err)
 		return nil
 	}
@@ -131,7 +136,7 @@ func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, r
 	// * invalid redirect
 	// * ...
 	if err != nil {
-		log.Printf("Error occurred in NewAuthorizeResponse: %+v", err)
+		logrus.WithError(err).Error("failed NewAuthorizeResponse")
 		s.provider.WriteAuthorizeError(ctx, rw, ar, err)
 		return nil
 	}
