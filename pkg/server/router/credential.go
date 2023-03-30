@@ -82,8 +82,12 @@ func (c CreateCredentialRequest) ToServiceRequest() credential.CreateCredentialR
 }
 
 type CreateCredentialResponse struct {
-	Credential    *credsdk.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT *keyaccess.JWT                `json:"credentialJwt,omitempty"`
+	// A verifiable credential conformant to the media type `application/vc+ld+json`.
+	Credential *credsdk.VerifiableCredential `json:"credential,omitempty"`
+
+	// The same verifiable credential, but using the syntax defined for the media type `application/vc+jwt`. See
+	// https://w3c.github.io/vc-jwt/ for more details.
+	CredentialJWT *keyaccess.JWT `json:"credentialJwt,omitempty"`
 }
 
 // CreateCredential godoc
@@ -392,6 +396,7 @@ func (cr CredentialRouter) VerifyCredential(ctx context.Context, w http.Response
 }
 
 type GetCredentialsResponse struct {
+	// Array of credential containers.
 	Credentials []credmodel.Container `json:"credentials"`
 }
 
