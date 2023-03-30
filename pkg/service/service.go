@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -11,6 +12,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
+	"github.com/tbd54566975/ssi-service/pkg/service/oidc"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -135,5 +137,18 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, util.LoggingErrorMsg(err, "could not instantiate the operation service")
 	}
 
-	return []framework.Service{keyStoreService, didService, schemaService, issuingService, credentialService, manifestService, presentationService, operationService, webhookService}, nil
+	opts := make([]oidc.Option, 0)
+
+	if config.OIDCCredentialConfig.CNonceExpiresIn != nil {
+		opts = append(opts, oidc.WithCNonceExpiresIn(*config.OIDCCredentialConfig.CNonceExpiresIn))
+	}
+	serviceKey, err := keyStoreService.GetServiceKey(context.Background())
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not get service key")
+	}
+	var serviceKeyArr [32]byte
+	copy(serviceKeyArr[:], serviceKey)
+	oidcService := oidc.NewOIDCService(didResolver, credentialService, serviceKeyArr, opts...)
+
+	return []framework.Service{keyStoreService, didService, schemaService, issuingService, credentialService, manifestService, presentationService, operationService, webhookService, oidcService}, nil
 }

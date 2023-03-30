@@ -12,6 +12,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 const (
@@ -35,6 +36,11 @@ type SSIServiceConfig struct {
 	Services ServicesConfig `toml:"services"`
 }
 
+type OIDCConfig struct {
+	IntrospectEndpoint string                   `toml:"introspect_endpoint" conf:"http://authserver/introspect"`
+	ClientCredentials  clientcredentials.Config `toml:"client_credentials"`
+}
+
 // ServerConfig represents configurable properties for the HTTP server
 type ServerConfig struct {
 	APIHost             string        `toml:"api_host" conf:"default:0.0.0.0:3000"`
@@ -48,6 +54,7 @@ type ServerConfig struct {
 	LogLevel            string        `toml:"log_level" conf:"default:debug"`
 	EnableSchemaCaching bool          `toml:"enable_schema_caching" conf:"default:true"`
 	EnableAllowAllCORS  bool          `toml:"enable_allow_all_cors" conf:"default:false"`
+	OIDCConfig          OIDCConfig    `toml:"oidc_config"`
 }
 
 type IssuingServiceConfig struct {
@@ -61,6 +68,10 @@ func (s *IssuingServiceConfig) IsEmpty() bool {
 	return reflect.DeepEqual(s, &IssuingServiceConfig{})
 }
 
+type OIDCCredentialServiceConfig struct {
+	CNonceExpiresIn *time.Duration `toml:"c_nonce_expired_in,omitempty"`
+}
+
 // ServicesConfig represents configurable properties for the components of the SSI Service
 type ServicesConfig struct {
 	// at present, it is assumed that a single storage provider works for all services
@@ -71,14 +82,15 @@ type ServicesConfig struct {
 	ServiceEndpoint string      `toml:"service_endpoint"`
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
-	KeyStoreConfig       KeyStoreServiceConfig     `toml:"keystore,omitempty"`
-	DIDConfig            DIDServiceConfig          `toml:"did,omitempty"`
-	IssuingServiceConfig IssuingServiceConfig      `toml:"issuing,omitempty"`
-	SchemaConfig         SchemaServiceConfig       `toml:"schema,omitempty"`
-	CredentialConfig     CredentialServiceConfig   `toml:"credential,omitempty"`
-	ManifestConfig       ManifestServiceConfig     `toml:"manifest,omitempty"`
-	PresentationConfig   PresentationServiceConfig `toml:"presentation,omitempty"`
-	WebhookConfig        WebhookServiceConfig      `toml:"webhook,omitempty"`
+	KeyStoreConfig       KeyStoreServiceConfig       `toml:"keystore,omitempty"`
+	DIDConfig            DIDServiceConfig            `toml:"did,omitempty"`
+	IssuingServiceConfig IssuingServiceConfig        `toml:"issuing,omitempty"`
+	SchemaConfig         SchemaServiceConfig         `toml:"schema,omitempty"`
+	CredentialConfig     CredentialServiceConfig     `toml:"credential,omitempty"`
+	ManifestConfig       ManifestServiceConfig       `toml:"manifest,omitempty"`
+	PresentationConfig   PresentationServiceConfig   `toml:"presentation,omitempty"`
+	WebhookConfig        WebhookServiceConfig        `toml:"webhook,omitempty"`
+	OIDCCredentialConfig OIDCCredentialServiceConfig `toml:"oidc,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
@@ -277,6 +289,7 @@ func loadDefaultServicesConfig(config *SSIServiceConfig) {
 		WebhookConfig: WebhookServiceConfig{
 			BaseServiceConfig: &BaseServiceConfig{Name: "webhook"},
 		},
+		OIDCCredentialConfig: OIDCCredentialServiceConfig{},
 	}
 
 	config.Services = servicesConfig

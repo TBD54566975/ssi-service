@@ -17,6 +17,7 @@ const (
 	Presentation Type = "presentation"
 	Operation    Type = "operation"
 	Webhook      Type = "webhook"
+	OIDC         Type = "oidc"
 
 	StatusReady    StatusState = "ready"
 	StatusNotReady StatusState = "not_ready"
