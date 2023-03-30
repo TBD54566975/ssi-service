@@ -50,11 +50,7 @@ func RespondError(ctx context.Context, w http.ResponseWriter, err error) error {
 			Fields: webErr.Fields,
 		}
 
-		if err := Respond(ctx, w, er, webErr.StatusCode); err != nil {
-			return err
-		}
-
-		return nil
+		return Respond(ctx, w, er, webErr.StatusCode)
 	}
 
 	// if the error isn't a `SafeError`, it's not safe to send back the error
@@ -64,9 +60,5 @@ func RespondError(ctx context.Context, w http.ResponseWriter, err error) error {
 		Error: http.StatusText(http.StatusInternalServerError),
 	}
 
-	if err := Respond(ctx, w, er, http.StatusInternalServerError); err != nil {
-		return err
-	}
-
-	return nil
+	return Respond(ctx, w, er, http.StatusInternalServerError)
 }

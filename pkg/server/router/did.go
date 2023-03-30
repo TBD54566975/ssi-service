@@ -9,6 +9,7 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -39,13 +40,13 @@ func NewDIDRouter(s svcframework.Service) (*DIDRouter, error) {
 }
 
 type GetDIDMethodsResponse struct {
-	DIDMethods []didsdk.Method `json:"methods,omitempty"`
+	DIDMethods []didsdk.Method `json:"method,omitempty"`
 }
 
 // GetDIDMethods godoc
 //
 // @Summary     Get DID Methods
-// @Description Get supported DID methods
+// @Description Get supported DID method
 // @Tags        DecentralizedIdentityAPI
 // @Accept      json
 // @Produce     json
@@ -67,9 +68,9 @@ type CreateDIDByMethodRequest struct {
 }
 
 type CreateDIDByMethodResponse struct {
-	DID              didsdk.DIDDocument `json:"did,omitempty"`
-	PrivateKeyBase58 string             `json:"privateKeyBase58,omitempty"`
-	KeyType          crypto.KeyType     `json:"keyType,omitempty"`
+	DID              didsdk.Document `json:"did,omitempty"`
+	PrivateKeyBase58 string          `json:"privateKeyBase58,omitempty"`
+	KeyType          crypto.KeyType  `json:"keyType,omitempty"`
 }
 
 // CreateDIDByMethod godoc
@@ -128,7 +129,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 }
 
 type GetDIDByMethodResponse struct {
-	DID didsdk.DIDDocument `json:"did,omitempty"`
+	DID didsdk.Document `json:"did,omitempty"`
 }
 
 // GetDIDByMethod godoc
@@ -173,7 +174,7 @@ func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _
 }
 
 type GetDIDsByMethodResponse struct {
-	DIDs []didsdk.DIDDocument `json:"dids,omitempty"`
+	DIDs []didsdk.Document `json:"dids,omitempty"`
 }
 
 type GetDIDsRequest struct {
@@ -217,9 +218,9 @@ func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, 
 }
 
 type ResolveDIDResponse struct {
-	ResolutionMetadata  *didsdk.DIDResolutionMetadata `json:"didResolutionMetadata,omitempty"`
-	DIDDocument         *didsdk.DIDDocument           `json:"didDocument"`
-	DIDDocumentMetadata *didsdk.DIDDocumentMetadata   `json:"didDocumentMetadata,omitempty"`
+	ResolutionMetadata  *didsdk.ResolutionMetadata `json:"didResolutionMetadata,omitempty"`
+	DIDDocument         *didsdk.Document           `json:"didDocument"`
+	DIDDocumentMetadata *didsdk.DocumentMetadata   `json:"didDocumentMetadata,omitempty"`
 }
 
 // SoftDeleteDIDByMethod godoc

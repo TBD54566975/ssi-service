@@ -20,19 +20,22 @@ type readiness struct {
 }
 
 type GetReadinessResponse struct {
-	Status          svcframework.Status                       `json:"status"`
+	// Overall status of the ssi service.
+	Status svcframework.Status `json:"status"`
+
+	// A map from the name of the service ot the status of that current service.
 	ServiceStatuses map[svcframework.Type]svcframework.Status `json:"serviceStatuses"`
 }
 
 // Readiness godoc
 //
 // @Summary     Readiness
-// @Description ready runs a number of application specific checks to see if all the
-// @Description relied upon service are healthy. Should return a 500 if not ready.
+// @Description Readiness runs a number of application specific checks to see if all the relied upon services are
+// @Description healthy.
 // @Tags        Readiness
 // @Accept      json
 // @Produce     json
-// @Success     200 {string} string "OK"
+// @Success     200 {object} GetReadinessResponse
 // @Router      /readiness [get]
 func (r readiness) ready(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	services := r.getter.getServices()
@@ -56,7 +59,7 @@ func (r readiness) ready(ctx context.Context, w http.ResponseWriter, _ *http.Req
 	} else {
 		status = svcframework.Status{
 			Status:  svcframework.StatusReady,
-			Message: "all service ready",
+			Message: "all services ready",
 		}
 	}
 	response := GetReadinessResponse{

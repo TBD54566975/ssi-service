@@ -23,7 +23,7 @@ func TestDIDAPI(t *testing.T) {
 		_, keyStoreService := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStoreService)
 
-		// get DID methods
+		// get DID method
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids", nil)
 		w := httptest.NewRecorder()
 
@@ -353,7 +353,7 @@ func TestDIDAPI(t *testing.T) {
 		}
 		err := didService.ResolveDID(newRequestContextWithParams(badParams), w, req)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "malformed did: bad")
+		assert.Contains(tt, err.Error(), "malformed did")
 
 		w.Flush()
 
@@ -364,7 +364,7 @@ func TestDIDAPI(t *testing.T) {
 		}
 		err = didService.ResolveDID(newRequestContextWithParams(badParams), w, req)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "selected encoding not supported")
+		assert.Contains(tt, err.Error(), "unable to resolve DID did:key:abcd")
 
 		w.Flush()
 

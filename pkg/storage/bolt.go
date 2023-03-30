@@ -10,8 +10,9 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/internal/util"
 	bolt "go.etcd.io/bbolt"
+
+	"github.com/tbd54566975/ssi-service/internal/util"
 )
 
 func init() {
@@ -77,7 +78,7 @@ type boltTx struct {
 	tx *bolt.Tx
 }
 
-func (b *BoltDB) Exists(ctx context.Context, namespace, key string) (bool, error) {
+func (b *BoltDB) Exists(_ context.Context, namespace, key string) (bool, error) {
 	exists := true
 	var result []byte
 
@@ -139,7 +140,7 @@ func (b *BoltDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFun
 	return result, nil
 }
 
-func (b *BoltDB) Write(ctx context.Context, namespace string, key string, value []byte) error {
+func (b *BoltDB) Write(_ context.Context, namespace string, key string, value []byte) error {
 	return b.db.Update(writeFunc(namespace, key, value))
 }
 
@@ -149,14 +150,11 @@ func writeFunc(namespace string, key string, value []byte) func(tx *bolt.Tx) err
 		if err != nil {
 			return err
 		}
-		if err = bucket.Put([]byte(key), value); err != nil {
-			return err
-		}
-		return nil
+		return bucket.Put([]byte(key), value)
 	}
 }
 
-func (b *BoltDB) WriteMany(ctx context.Context, namespaces, keys []string, values [][]byte) error {
+func (b *BoltDB) WriteMany(_ context.Context, namespaces, keys []string, values [][]byte) error {
 	if len(namespaces) != len(keys) && len(namespaces) != len(values) {
 		return errors.New("namespaces, keys, and values, are not of equal length")
 	}
@@ -175,7 +173,7 @@ func (b *BoltDB) WriteMany(ctx context.Context, namespaces, keys []string, value
 	})
 }
 
-func (b *BoltDB) Read(ctx context.Context, namespace, key string) ([]byte, error) {
+func (b *BoltDB) Read(_ context.Context, namespace, key string) ([]byte, error) {
 	var result []byte
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
@@ -190,7 +188,7 @@ func (b *BoltDB) Read(ctx context.Context, namespace, key string) ([]byte, error
 }
 
 // ReadPrefix does a prefix query within a namespace.
-func (b *BoltDB) ReadPrefix(ctx context.Context, namespace, prefix string) (map[string][]byte, error) {
+func (b *BoltDB) ReadPrefix(_ context.Context, namespace, prefix string) (map[string][]byte, error) {
 	result := make(map[string][]byte)
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
@@ -208,7 +206,7 @@ func (b *BoltDB) ReadPrefix(ctx context.Context, namespace, prefix string) (map[
 	return result, err
 }
 
-func (b *BoltDB) ReadAll(ctx context.Context, namespace string) (map[string][]byte, error) {
+func (b *BoltDB) ReadAll(_ context.Context, namespace string) (map[string][]byte, error) {
 	result := make(map[string][]byte)
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
@@ -225,7 +223,7 @@ func (b *BoltDB) ReadAll(ctx context.Context, namespace string) (map[string][]by
 	return result, err
 }
 
-func (b *BoltDB) ReadAllKeys(ctx context.Context, namespace string) ([]string, error) {
+func (b *BoltDB) ReadAllKeys(_ context.Context, namespace string) ([]string, error) {
 	var result []string
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
@@ -242,7 +240,7 @@ func (b *BoltDB) ReadAllKeys(ctx context.Context, namespace string) ([]string, e
 	return result, err
 }
 
-func (b *BoltDB) Delete(ctx context.Context, namespace, key string) error {
+func (b *BoltDB) Delete(_ context.Context, namespace, key string) error {
 	return b.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
 		if bucket == nil {
@@ -252,7 +250,7 @@ func (b *BoltDB) Delete(ctx context.Context, namespace, key string) error {
 	})
 }
 
-func (b *BoltDB) DeleteNamespace(ctx context.Context, namespace string) error {
+func (b *BoltDB) DeleteNamespace(_ context.Context, namespace string) error {
 	return b.db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket([]byte(namespace)); err != nil {
 			return util.LoggingErrorMsgf(err, "could not delete namespace<%s>", namespace)
@@ -310,21 +308,18 @@ type ResponseSettingUpdater interface {
 
 // UpdateValueAndOperation updates the value stored in (namespace,key) with the new values specified in the map.
 // The updated value is then stored inside the (opNamespace, opKey), and the "done" value is set to true.
-func (b *BoltDB) UpdateValueAndOperation(ctx context.Context, namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error) {
+func (b *BoltDB) UpdateValueAndOperation(_ context.Context, namespace, key string, updater Updater, opNamespace, opKey string, opUpdater ResponseSettingUpdater) (first, op []byte, err error) {
 	err = b.db.Update(func(tx *bolt.Tx) error {
-		if err := updateTxFn(namespace, key, updater, &first)(tx); err != nil {
+		if err = updateTxFn(namespace, key, updater, &first)(tx); err != nil {
 			return err
 		}
 		opUpdater.SetUpdatedResponse(first)
-		if err = updateTxFn(opNamespace, opKey, opUpdater, &op)(tx); err != nil {
-			return err
-		}
-		return nil
+		return updateTxFn(opNamespace, opKey, opUpdater, &op)(tx)
 	})
 	return first, op, err
 }
 
-func (b *BoltDB) Update(ctx context.Context, namespace string, key string, values map[string]any) ([]byte, error) {
+func (b *BoltDB) Update(_ context.Context, namespace string, key string, values map[string]any) ([]byte, error) {
 	var updatedData []byte
 	err := b.db.Update(updateTxFn(namespace, key, NewUpdater(values), &updatedData))
 	return updatedData, err

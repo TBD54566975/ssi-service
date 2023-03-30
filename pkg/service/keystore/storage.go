@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -141,10 +142,7 @@ func (kss *Storage) RevokeKey(ctx context.Context, id string) error {
 
 	key.Revoked = true
 	key.RevokedAt = time.Now().UTC().Format(time.RFC3339)
-	if err = kss.StoreKey(ctx, *key); err != nil {
-		return err
-	}
-	return nil
+	return kss.StoreKey(ctx, *key)
 }
 
 func (kss *Storage) GetKey(ctx context.Context, id string) (*StoredKey, error) {
