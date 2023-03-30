@@ -108,6 +108,7 @@ type DIDServiceConfig struct {
 	ResolutionMethods        []string `toml:"resolution_methods"`
 	UniversalResolverURL     string   `toml:"universal_resolver_url"`
 	UniversalResolverMethods []string `toml:"universal_resolver_methods"`
+	IONResolverURL           string   `toml:"ion_resolver_url"`
 }
 
 func (d *DIDServiceConfig) IsEmpty() bool {

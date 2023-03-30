@@ -13,16 +13,22 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func NewWebDIDHandler(s *Storage, ks *keystore.Service) MethodHandler {
-	return &webDIDHandler{storage: s, keyStore: ks}
+func NewWebHandler(s *Storage, ks *keystore.Service) (MethodHandler, error) {
+	if s == nil {
+		return nil, errors.New("storage cannot be empty")
+	}
+	if ks == nil {
+		return nil, errors.New("keystore cannot be empty")
+	}
+	return &webHandler{storage: s, keyStore: ks}, nil
 }
 
-type webDIDHandler struct {
+type webHandler struct {
 	storage  *Storage
 	keyStore *keystore.Service
 }
 
-func (h *webDIDHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
+func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
 	logrus.Debugf("creating DID: %+v", request)
 
 	if request.DIDWebID == "" {
@@ -87,14 +93,13 @@ func (h *webDIDHandler) CreateDID(ctx context.Context, request CreateDIDRequest)
 	}, nil
 }
 
-func (h *webDIDHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {
-
+func (h *webHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {
 	logrus.Debugf("getting DID: %+v", request)
 
 	id := request.ID
 	gotDID, err := h.storage.GetDID(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("error getting DID: %s", id)
+		return nil, errors.Wrapf(err, "error getting DID: %s", id)
 	}
 	if gotDID == nil {
 		return nil, fmt.Errorf("did with id<%s> could not be found", id)
@@ -102,12 +107,12 @@ func (h *webDIDHandler) GetDID(ctx context.Context, request GetDIDRequest) (*Get
 	return &GetDIDResponse{DID: gotDID.DID}, nil
 }
 
-func (h *webDIDHandler) GetDIDs(ctx context.Context, method did.Method) (*GetDIDsResponse, error) {
-	logrus.Debugf("getting DIDs for method: %s", method)
+func (h *webHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
+	logrus.Debug("getting did:web DID")
 
-	gotDIDs, err := h.storage.GetDIDs(ctx, string(method))
+	gotDIDs, err := h.storage.GetDIDs(ctx, did.WebMethod.String())
 	if err != nil {
-		return nil, fmt.Errorf("error getting DIDs for method: %s", method)
+		return nil, errors.Wrap(err, "getting did:web DIDs")
 	}
 	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
@@ -118,13 +123,13 @@ func (h *webDIDHandler) GetDIDs(ctx context.Context, method did.Method) (*GetDID
 	return &GetDIDsResponse{DIDs: dids}, nil
 }
 
-func (h *webDIDHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error {
+func (h *webHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error {
 	logrus.Debugf("soft deleting DID: %+v", request)
 
 	id := request.ID
 	gotStoredDID, err := h.storage.GetDID(ctx, id)
 	if err != nil {
-		return fmt.Errorf("error getting DID: %s", id)
+		return errors.Wrapf(err, "getting DID: %s", id)
 	}
 	if gotStoredDID == nil {
 		return fmt.Errorf("did with id<%s> could not be found", id)
