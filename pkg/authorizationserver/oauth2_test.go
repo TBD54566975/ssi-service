@@ -12,6 +12,7 @@ import (
 
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/storage"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,9 +24,14 @@ func TestMain(m *testing.M) {
 	store = storage.NewMemoryStore()
 
 	// Create an httptest server with the metadataHandler
-	server = httptest.NewServer(NewServer(make(chan os.Signal, 1), &AuthConfig{
+	authServer, err := NewServer(make(chan os.Signal, 1), &AuthConfig{
 		CredentialIssuerFile: "../../config/credential_issuer_metadata.json",
-	}, store))
+	}, store)
+	if err != nil {
+		logrus.WithError(err).Fatal("cannot create authserver")
+		os.Exit(1)
+	}
+	server = httptest.NewServer(authServer)
 
 	code := m.Run()
 

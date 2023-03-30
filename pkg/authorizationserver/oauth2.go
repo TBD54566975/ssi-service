@@ -15,6 +15,7 @@ import (
 	"github.com/ory/fosite/handler/openid"
 	"github.com/ory/fosite/storage"
 	"github.com/ory/fosite/token/jwt"
+	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/middleware"
@@ -56,14 +57,13 @@ const (
 	issuerMetadataPath = oidcPrefix + "/.well-known/openid-credential-issuer"
 )
 
-func NewServer(shutdown chan os.Signal, config *AuthConfig, store *storage.MemoryStore) *Server {
-
+func NewServer(shutdown chan os.Signal, config *AuthConfig, store *storage.MemoryStore) (*Server, error) {
 	// This secret is used to sign authorize codes, access and refresh tokens.
 	// It has to be 32-bytes long for HMAC signing. This requirement can be configured via `compose.Config`
 	var secret = make([]byte, 32)
-	_, err := rand.Read(secret)
-	if err != nil {
-		panic(err)
+
+	if _, err := rand.Read(secret); err != nil {
+		return nil, err
 	}
 
 	// fosite requires four parameters for the server to get up and running:
@@ -95,32 +95,35 @@ func NewServer(shutdown chan os.Signal, config *AuthConfig, store *storage.Memor
 	}
 	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares...)
 
-	im := loadIssuerMetadata(config)
+	im, err := loadIssuerMetadata(config)
+	if err != nil {
+		logrus.WithError(err).Fatal("could not load issuer metadata")
+		os.Exit(1)
+	}
 
-	httpServer.Handle(http.MethodGet, issuerMetadataPath, credentialIssuerMetadata(&im))
+	httpServer.Handle(http.MethodGet, issuerMetadataPath, credentialIssuerMetadata(im))
 
 	// Set up oauth2 endpoints.
-	authService := NewAuthService(&im, oauth2)
+	authService := NewAuthService(im, oauth2)
 	httpServer.Handle(http.MethodGet, "/oauth2/auth", authService.AuthEndpoint)
 	httpServer.Handle(http.MethodPost, "/oauth2/auth", authService.AuthEndpoint)
 
 	return &Server{
 		Server: httpServer,
-	}
+	}, nil
 }
 
-func loadIssuerMetadata(config *AuthConfig) issuance.IssuerMetadata {
-	// It's ok to panic here as this is only called during startup.
+func loadIssuerMetadata(config *AuthConfig) (*issuance.IssuerMetadata, error) {
 	jsonData, err := os.ReadFile(config.CredentialIssuerFile)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	var im issuance.IssuerMetadata
 	if err := json.Unmarshal(jsonData, &im); err != nil {
-		panic(err)
+		return nil, err
 	}
-	return im
+	return &im, nil
 }
 
 type AuthConfig struct {

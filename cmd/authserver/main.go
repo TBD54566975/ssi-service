@@ -58,7 +58,11 @@ func run() error {
 	store := storage.NewMemoryStore()
 
 	var err error
-	srv := authorizationserver.NewServer(shutdown, &cfg, store)
+	srv, err := authorizationserver.NewServer(shutdown, &cfg, store)
+	if err != nil {
+		logrus.WithError(err).Fatal("cannot create authserver")
+		os.Exit(1)
+	}
 	api := http.Server{
 		Addr:         cfg.Server.APIHost,
 		Handler:      srv,

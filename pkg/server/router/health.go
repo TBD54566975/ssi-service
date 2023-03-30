@@ -8,6 +8,7 @@ import (
 )
 
 type GetHealthCheckResponse struct {
+	// Status is always equal to `OK`.
 	Status string `json:"status"`
 }
 
