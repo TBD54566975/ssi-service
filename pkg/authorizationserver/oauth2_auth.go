@@ -56,7 +56,7 @@ func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, r
 					s.provider.WriteAuthorizeError(ctx, rw, ar, err)
 					return nil
 				}
-				// TODO: support dynamic auth request https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-dynamic-credential-request
+				// TODO(https://github.com/TBD54566975/ssi-service/issues/368): support dynamic auth request
 
 			default:
 				err := errors.Errorf("the value of authorization_details[%d].type found was %q, which is not recognized", i, d.Type)
