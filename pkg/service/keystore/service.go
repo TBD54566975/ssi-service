@@ -214,3 +214,8 @@ func (s Service) Sign(ctx context.Context, keyID string, data any) (*keyaccess.J
 	}
 	return schemaToken, nil
 }
+
+// GetServiceKey returns the service key from either memory or the DB.
+func (s Service) GetServiceKey(ctx context.Context) ([]byte, error) {
+	return s.storage.getAndSetServiceKey(ctx)
+}

@@ -40,6 +40,7 @@ const (
 	KeyStorePrefix         = "/keys"
 	VerificationPath       = "/verification"
 	WebhookPrefix          = "/webhooks"
+	OIDCPrefix             = "/oidc"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -120,6 +121,8 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service, webhookServi
 		return s.IssuanceAPI(service)
 	case svcframework.Webhook:
 		return s.WebhookAPI(service)
+	case svcframework.OIDC:
+		return s.OIDCAPI(service)
 	default:
 		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
 	}
@@ -294,4 +297,18 @@ func (s *SSIServer) WebhookAPI(service svcframework.Service) (err error) {
 	s.Handle(http.MethodGet, path.Join(handlerPath, "nouns"), webhookRouter.GetSupportedNouns)
 	s.Handle(http.MethodGet, path.Join(handlerPath, "verbs"), webhookRouter.GetSupportedVerbs)
 	return
+}
+
+func (s *SSIServer) OIDCAPI(service svcframework.Service) error {
+	r, err := router.NewOIDCCredentialRouter(service)
+	if err != nil {
+		return err
+	}
+
+	handlerPath := V1Prefix + OIDCPrefix
+
+	// TODO(https://github.com/TBD54566975/ssi-service/issues/329): Communication with the Credential Endpoint MUST utilize TLS.
+	s.Handle(http.MethodPost, path.Join(handlerPath, "/credentials"), r.IssueCredential, middleware.Introspect(s.OIDCConfig.IntrospectEndpoint, s.OIDCConfig.ClientCredentials))
+
+	return nil
 }
