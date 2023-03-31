@@ -17,7 +17,7 @@ import (
 	"github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 	"github.com/sirupsen/logrus"
-	credential2 "github.com/tbd54566975/ssi-service/internal/credential"
+	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -133,7 +133,7 @@ func (s Service) CredentialEndpoint(ctx context.Context, credRequest *model.Cred
 	}, nil
 }
 
-func findCredentialToIssue(serviceResp *credential.GetCredentialsResponse, credRequest *model.CredentialRequest) (*credential2.Container, error) {
+func findCredentialToIssue(serviceResp *credential.GetCredentialsResponse, credRequest *model.CredentialRequest) (*credint.Container, error) {
 	for _, c := range serviceResp.Credentials {
 		types, err := util.InterfaceToStrings(c.Credential.Type)
 		if err != nil {
