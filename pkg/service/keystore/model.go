@@ -11,6 +11,7 @@ type StoreKeyRequest struct {
 	Type             crypto.KeyType
 	Controller       string
 	PrivateKeyBase58 string
+	PrivateKeyJWK    crypto.PrivateKeyJWK
 }
 
 type GetKeyRequest struct {

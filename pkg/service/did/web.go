@@ -6,6 +6,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -20,22 +21,43 @@ func NewWebHandler(s *Storage, ks *keystore.Service) (MethodHandler, error) {
 	if ks == nil {
 		return nil, errors.New("keystore cannot be empty")
 	}
-	return &webHandler{storage: s, keyStore: ks}, nil
+	return &webHandler{method: did.WebMethod, storage: s, keyStore: ks}, nil
 }
 
 type webHandler struct {
+	method   did.Method
 	storage  *Storage
 	keyStore *keystore.Service
+}
+
+type CreateWebDIDOptions struct {
+	URL string `json:"url" validate:"required"`
+}
+
+func (c CreateWebDIDOptions) Method() did.Method {
+	return did.WebMethod
+}
+
+func (h *webHandler) GetMethod() did.Method {
+	return h.method
 }
 
 func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
 	logrus.Debugf("creating DID: %+v", request)
 
-	if request.DIDWebID == "" {
-		return nil, errors.New("url is empty, cannot create did:web")
+	// process options
+	if request.Options == nil {
+		return nil, errors.New("options cannot be empty")
+	}
+	opts, ok := request.Options.(CreateWebDIDOptions)
+	if !ok || request.Options.Method() != did.WebMethod {
+		return nil, fmt.Errorf("invalid options for method, expected %s, got %s", did.WebMethod, request.Options.Method())
+	}
+	if err := util.IsValidStruct(opts); err != nil {
+		return nil, errors.Wrap(err, "processing options")
 	}
 
-	didWeb := did.DIDWeb(request.DIDWebID)
+	didWeb := did.DIDWeb(opts.URL)
 
 	if !didWeb.IsValid() {
 		return nil, fmt.Errorf("did:web is not valid, could not resolve did:web DID: %s", didWeb)
@@ -76,6 +98,7 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 
 	// store private key in key storage
 	keyStoreRequest := keystore.StoreKeyRequest{
+		// TODO(gabe): this should be a unique ID for the key
 		ID:               id,
 		Type:             request.KeyType,
 		Controller:       id,
@@ -83,7 +106,7 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	}
 
 	if err = h.keyStore.StoreKey(ctx, keyStoreRequest); err != nil {
-		return nil, errors.Wrap(err, "could not store did:key private key")
+		return nil, errors.Wrap(err, "could not store did:web private key")
 	}
 
 	return &CreateDIDResponse{

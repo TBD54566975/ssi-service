@@ -17,12 +17,14 @@ const (
 	namespace    = "did"
 	keyNamespace = "key"
 	webNamespace = "web"
+	ionNamespace = "ion"
 )
 
 var (
 	didMethodToNamespace = map[string]string{
-		"key": storage.MakeNamespace(namespace, keyNamespace),
-		"web": storage.MakeNamespace(namespace, webNamespace),
+		keyNamespace: storage.MakeNamespace(namespace, keyNamespace),
+		webNamespace: storage.MakeNamespace(namespace, webNamespace),
+		ionNamespace: storage.MakeNamespace(namespace, ionNamespace),
 	}
 )
 

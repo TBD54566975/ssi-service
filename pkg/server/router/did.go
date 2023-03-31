@@ -60,11 +60,11 @@ func (dr DIDRouter) GetDIDMethods(ctx context.Context, w http.ResponseWriter, _ 
 
 type CreateDIDByMethodRequest struct {
 	// Identifies the cryptographic algorithm family to use when generating this key.
-	// One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
+	// One of the following: "Ed25519", "X25519", "secp256k1", "P-224","P-256","P-384", "P-521", "RSA"
 	KeyType crypto.KeyType `json:"keyType" validate:"required"`
 
-	// Required when creating a DID with the `web` did method. E.g. `did:web:identity.foundation`.
-	DIDWebID string `json:"didWebId"`
+	// Options for creating the DID. Implementation dependent on the method.
+	Options any `json:"options,omitempty"`
 }
 
 type CreateDIDByMethodResponse struct {
@@ -110,8 +110,23 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
+	// method wrapper
+	m := didsdk.Method(*method)
+
+	// make sure we have a valid option type
+	var opts did.CreateDIDRequestOptions
+	if request.Options != nil {
+		var ok bool
+		opts, ok = request.Options.(did.CreateDIDRequestOptions)
+		if !ok {
+			errMsg := fmt.Sprintf("invalid options for method<%s>", *method)
+			logrus.Error(errMsg)
+			return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+		}
+	}
+
 	// TODO(gabe) check if the key type is supported for the method, to tell whether this is a bad req or internal error
-	createDIDRequest := did.CreateDIDRequest{Method: didsdk.Method(*method), KeyType: request.KeyType, DIDWebID: request.DIDWebID}
+	createDIDRequest := did.CreateDIDRequest{Method: m, KeyType: request.KeyType, Options: opts}
 	createDIDResponse, err := dr.service.CreateDIDByMethod(ctx, createDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)

@@ -37,14 +37,17 @@ type StoreKeyRequest struct {
 	ID string `json:"id" validate:"required"`
 
 	// Identifies the cryptographic algorithm family used with the key.
-	// One of the following: `"Ed25519","X25519","secp256k1","P-224","P-256","P-384","P-521","RSA"`.
+	// One of the following: "Ed25519", "X25519", "secp256k1", "P-224", "P-256", "P-384", "P-521", "RSA".
 	Type crypto.KeyType `json:"type,omitempty" validate:"required"`
 
 	// See https://www.w3.org/TR/did-core/#did-controller
 	Controller string `json:"controller,omitempty" validate:"required"`
 
 	// Base58 encoding of the bytes that result from marshalling the private key using golang's implementation.
-	PrivateKeyBase58 string `json:"base58PrivateKey,omitempty" validate:"required"`
+	PrivateKeyBase58 string `json:"base58PrivateKey,omitempty"`
+
+	// JSON Web Key (JWK) representation of the private key.
+	PrivateKeyJWK crypto.PrivateKeyJWK `json:"jwkPrivateKey,omitempty"`
 }
 
 func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) {
@@ -61,6 +64,7 @@ func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) 
 		Type:             sk.Type,
 		Controller:       sk.Controller,
 		PrivateKeyBase58: sk.PrivateKeyBase58,
+		PrivateKeyJWK:    sk.PrivateKeyJWK,
 	}, nil
 }
 

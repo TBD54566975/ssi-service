@@ -14,6 +14,7 @@ import (
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -44,7 +45,8 @@ func TestWellKnownGenerationTest(t *testing.T) {
 
 		createWellKnownDIDConfiguration(tt, didKey, gotKey, origin)
 
-		didWeb, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: "web", DIDWebID: "did:web:tbd.website", KeyType: "Ed25519"})
+		createOpts := did.CreateWebDIDOptions{URL: "did:web:tbd.website"}
+		didWeb, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: "web", KeyType: "Ed25519", Options: createOpts})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didWeb)
 

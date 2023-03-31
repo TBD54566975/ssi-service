@@ -20,12 +20,17 @@ func NewKeyHandler(s *Storage, ks *keystore.Service) (MethodHandler, error) {
 	if ks == nil {
 		return nil, errors.New("keystore cannot be empty")
 	}
-	return &keyHandler{storage: s, keyStore: ks}, nil
+	return &keyHandler{method: did.KeyMethod, storage: s, keyStore: ks}, nil
 }
 
 type keyHandler struct {
+	method   did.Method
 	storage  *Storage
 	keyStore *keystore.Service
+}
+
+func (h *keyHandler) GetMethod() did.Method {
+	return h.method
 }
 
 func (h *keyHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {

@@ -12,6 +12,7 @@ import (
 // TODO(gabe) consider smaller/more composable interfaces and promoting reusability across methods
 // https://github.com/TBD54566975/ssi-service/issues/362
 type MethodHandler interface {
+	GetMethod() didsdk.Method
 	CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error)
 	// TODO(gabe): support query parameters to get soft deleted and other DIDs https://github.com/TBD54566975/ssi-service/issues/364
 	GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error)

@@ -5,12 +5,21 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/ion"
+	"github.com/TBD54566975/ssi-sdk/util"
+	"github.com/google/uuid"
+	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
+)
+
+const (
+	updateKeySuffix  string = "update"
+	recoverKeySuffix string = "recover"
 )
 
 func NewIONHandler(baseURL string, s *Storage, ks *keystore.Service) (MethodHandler, error) {
@@ -27,35 +36,151 @@ func NewIONHandler(baseURL string, s *Storage, ks *keystore.Service) (MethodHand
 	if err != nil {
 		return nil, errors.Wrap(err, "creating ion resolver")
 	}
-	return &ionHandler{resolver: r, storage: s, keyStore: ks}, nil
+	return &ionHandler{method: did.IONMethod, resolver: r, storage: s, keyStore: ks}, nil
 }
 
 type ionHandler struct {
+	method   did.Method
 	resolver *ion.Resolver
 	storage  *Storage
 	keyStore *keystore.Service
 }
 
-func (i *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
-	// TODO implement me
-	panic("implement me")
+type CreateIONDIDOptions struct {
+	// TODO(gabe) for now we only allow adding service endpoints upon creation.
+	//  we do not allow adding external keys or other properties.
+	//  Related:
+	//  - https://github.com/TBD54566975/ssi-sdk/issues/336
+	//  - https://github.com/TBD54566975/ssi-sdk/issues/335
+	ServiceEndpoints []ion.Service `json:"serviceEndpoints"`
 }
 
-func (i *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {
+func (c CreateIONDIDOptions) Method() did.Method {
+	return did.IONMethod
+}
+
+func (h *ionHandler) GetMethod() did.Method {
+	return h.method
+}
+
+func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
+	// process options
+	if request.Options == nil {
+		return nil, errors.New("options cannot be empty")
+	}
+	opts, ok := request.Options.(CreateIONDIDOptions)
+	if !ok || request.Options.Method() != did.IONMethod {
+		return nil, fmt.Errorf("invalid options for method, expected %s, got %s", did.IONMethod, request.Options.Method())
+	}
+	if err := util.IsValidStruct(opts); err != nil {
+		return nil, errors.Wrap(err, "processing options")
+	}
+
+	// create a key for the doc
+	_, privKey, err := crypto.GenerateKeyByKeyType(request.KeyType)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not generate key for ion DID")
+	}
+	pubKeyJWK, privKeyJWK, err := crypto.PrivateKeyToPrivateKeyJWK(privKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not convert key to JWK")
+	}
+	keyID := uuid.NewString()
+	pubKeys := []ion.PublicKey{
+		{
+			ID:           keyID,
+			Type:         request.KeyType.String(),
+			PublicKeyJWK: *pubKeyJWK,
+			// TODO(gabe): configurable purposes
+			Purposes: []ion.PublicKeyPurpose{ion.Authentication, ion.AssertionMethod},
+		},
+	}
+
+	// generate the did document's initial state
+	doc := ion.Document{PublicKeys: pubKeys, Services: opts.ServiceEndpoints}
+	ionDID, createOp, err := ion.NewIONDID(doc)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating new ION DID")
+	}
+
+	// submit the create operation to the ION service
+	if err = h.resolver.Anchor(ctx, createOp); err != nil {
+		return nil, errors.Wrap(err, "anchoring create operation")
+	}
+
+	// store the did document and associated keys
+	// 1. update key
+	// 2. recovery key
+	// 3. key(s) in the did doc
+	updateStoreRequest, err := keyToStoreRequest(ionDID.ID()+"#"+updateKeySuffix, ionDID.GetUpdatePrivateKey(), ionDID.ID())
+	if err != nil {
+		return nil, errors.Wrap(err, "converting update private key to store request")
+	}
+	if err = h.keyStore.StoreKey(ctx, *updateStoreRequest); err != nil {
+		return nil, errors.Wrap(err, "could not store did:ion update private key")
+	}
+
+	recoveryStoreRequest, err := keyToStoreRequest(ionDID.ID()+"#"+recoverKeySuffix, ionDID.GetRecoveryPrivateKey(), ionDID.ID())
+	if err != nil {
+		return nil, errors.Wrap(err, "converting recovery private key to store request")
+	}
+	if err = h.keyStore.StoreKey(ctx, *recoveryStoreRequest); err != nil {
+		return nil, errors.Wrap(err, "could not store did:ion recovery private key")
+	}
+
+	keyStoreRequest, err := keyToStoreRequest(ionDID.ID()+"#"+keyID, *privKeyJWK, ionDID.ID())
+	if err != nil {
+		return nil, errors.Wrap(err, "converting private key to store request")
+	}
+	if err = h.keyStore.StoreKey(ctx, *keyStoreRequest); err != nil {
+		return nil, errors.Wrap(err, "could not store did:ion private key")
+	}
+
+	return &CreateDIDResponse{
+		DID:              storedDID.DID,
+		PrivateKeyBase58: privKeyBase58,
+		KeyType:          request.KeyType,
+	}, nil
+}
+
+func keyToStoreRequest(kid string, privateKeyJWK crypto.PrivateKeyJWK, controller string) (*keystore.StoreKeyRequest, error) {
+	privateKey, err := privateKeyJWK.ToKey()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting private private key from JWK")
+	}
+	keyType, err := crypto.GetKeyTypeFromPrivateKey(privateKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting private key type from private privateKeyJWK")
+	}
+	// convert to a serialized format
+	privateKeyBytes, err := crypto.PrivKeyToBytes(privateKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not encode private key as base58 string")
+	}
+	privateKeyBase58 := base58.Encode(privateKeyBytes)
+	return &keystore.StoreKeyRequest{
+		ID:               kid,
+		Type:             keyType,
+		Controller:       controller,
+		PrivateKeyBase58: privateKeyBase58,
+	}, nil
+}
+
+func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {
 	id := request.ID
 
 	// TODO(gabe) as we are fully custodying ION DIDs this is fine; as we move to a more decentralized model we will
 	//  need to either remove local storage or treat it as a cache with a TTL
 
 	// first check if the DID is in the storage
-	gotDID, err := i.storage.GetDID(ctx, id)
+	gotDID, err := h.storage.GetDID(ctx, id)
 	if err == nil {
 		return &GetDIDResponse{DID: gotDID.DID}, nil
 	}
 	logrus.WithError(err).Warnf("error getting DID from storage: %s", id)
 
 	// if not, resolve it from the network
-	resolved, err := i.resolver.Resolve(ctx, request.ID, nil)
+	resolved, err := h.resolver.Resolve(ctx, request.ID, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "resolving DID from network")
 	}
@@ -63,10 +188,10 @@ func (i *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 }
 
 // GetDIDs returns all DIDs we have in storage for ION, it is not feasible to get all DIDs from the network
-func (i *ionHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
+func (h *ionHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	logrus.Debug("getting stored did:ion DIDs")
 
-	gotDIDs, err := i.storage.GetDIDs(ctx, did.KeyMethod.String())
+	gotDIDs, err := h.storage.GetDIDs(ctx, did.KeyMethod.String())
 	if err != nil {
 		return nil, fmt.Errorf("error getting did:ion DIDs")
 	}
@@ -80,11 +205,11 @@ func (i *ionHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 }
 
 // SoftDeleteDID soft deletes a DID from storage but has no effect on the DID's state on the network
-func (i *ionHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error {
+func (h *ionHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error {
 	logrus.Debugf("soft deleting DID: %+v", request)
 
 	id := request.ID
-	gotStoredDID, err := i.storage.GetDID(ctx, id)
+	gotStoredDID, err := h.storage.GetDID(ctx, id)
 	if err != nil {
 		return fmt.Errorf("error getting DID: %s", id)
 	}
@@ -94,5 +219,5 @@ func (i *ionHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest
 
 	gotStoredDID.SoftDeleted = true
 
-	return i.storage.StoreDID(ctx, *gotStoredDID)
+	return h.storage.StoreDID(ctx, *gotStoredDID)
 }

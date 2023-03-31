@@ -106,6 +106,7 @@ func (kss *Storage) getAndSetServiceKey(ctx context.Context) ([]byte, error) {
 }
 
 func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
+	// TODO(gabe): conflict checking on key id
 	id := key.ID
 	if id == "" {
 		return util.LoggingNewError("could not store key without an ID")

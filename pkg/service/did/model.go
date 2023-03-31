@@ -21,18 +21,24 @@ type ResolveDIDResponse struct {
 	DIDDocumentMetadata *didsdk.DocumentMetadata   `json:"didDocumentMetadata,omitempty"`
 }
 
+type CreateDIDRequestOptions interface {
+	Method() didsdk.Method
+}
+
 // CreateDIDRequest is the JSON-serializable request for creating a DID across DID method
 type CreateDIDRequest struct {
-	Method   didsdk.Method  `json:"method" validate:"required"`
-	KeyType  crypto.KeyType `validate:"required"`
-	DIDWebID string         `json:"didWebId"`
+	Method  didsdk.Method           `json:"method" validate:"required"`
+	KeyType crypto.KeyType          `validate:"required"`
+	Options CreateDIDRequestOptions `json:"options"`
 }
 
 // CreateDIDResponse is the JSON-serializable response for creating a DID
 type CreateDIDResponse struct {
-	DID              didsdk.Document `json:"did"`
-	PrivateKeyBase58 string          `json:"base58PrivateKey"`
-	KeyType          crypto.KeyType  `json:"keyType"`
+	DID didsdk.Document `json:"did"`
+	// TODO(gabe): change to returning a set of public keys. private keys should be stored in the keystore,
+	//  and stay within the service boundary. This will unify the solution for both custodial and non-custodial keys.
+	PrivateKeyBase58 string         `json:"base58PrivateKey"`
+	KeyType          crypto.KeyType `json:"keyType"`
 }
 
 type GetDIDRequest struct {

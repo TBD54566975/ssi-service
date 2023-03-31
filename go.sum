@@ -2,6 +2,8 @@ github.com/BurntSushi/toml v1.2.1 h1:9F2/+DoOYIOksmaJFPw1tGFy1eDnIJXg+UHjuD8lTak
 github.com/BurntSushi/toml v1.2.1/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbicEuybxQ=
 github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230328175208-0ce55b2b0262 h1:mMd9kTYtqEHAbiYwtnH94qyY4Meanp0mWkOktrZyVv4=
 github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230328175208-0ce55b2b0262/go.mod h1:Ro9+HDADuYcLnCYKIL8pu92XWITKetTPOqfwLThplO0=
+github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230331233052-9d44b158d504 h1:SsKoZkq5U3sWDEPozRJiOCUl/p1gR1YPnzzg/nY764Y=
+github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230331233052-9d44b158d504/go.mod h1:Ro9+HDADuYcLnCYKIL8pu92XWITKetTPOqfwLThplO0=
 github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a/go.mod h1:SGnFV6hVsYE877CKEZ6tDNTjaSXYUk6QqoIK6PrAtcc=
 github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 h1:uvdUDbHQHO85qeSydJtItA4T55Pw6BtAejd0APRJOCE=
 github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302/go.mod h1:SGnFV6hVsYE877CKEZ6tDNTjaSXYUk6QqoIK6PrAtcc=

@@ -10,8 +10,9 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"golang.org/x/crypto/chacha20poly1305"
+
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -73,7 +74,6 @@ func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceSt
 }
 
 func (s Service) StoreKey(ctx context.Context, request StoreKeyRequest) error {
-
 	logrus.Debugf("storing key: %+v", request)
 
 	// check if the provided key type is supported. support entails being able to serialize/deserialize, in addition
