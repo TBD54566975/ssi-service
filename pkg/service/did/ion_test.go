@@ -49,7 +49,7 @@ func TestIONHandler(t *testing.T) {
 		assert.Equal(tt, handler.GetMethod(), did.IONMethod)
 	})
 
-	t.Run("Test Create DIDs", func(tt *testing.T) {
+	t.Run("Test Create DID", func(tt *testing.T) {
 		// create a handler
 		s := setupTestDB(tt)
 		keystoreService := testKeyStoreService(tt, s)
