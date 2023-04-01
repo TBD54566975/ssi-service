@@ -1,0 +1,57 @@
+[
+  {
+    "type":"openid_credential",
+    "actions":[
+      "read",
+      "write"
+    ],
+    "locations":[
+      "https://server.example.net/",
+      "https://resource.local/other"
+    ],
+    "datatypes":[
+      "metadata",
+      "images"
+    ],
+    "format":"jwt_vc_json",
+    "types":[
+      "VerifiableCredential",
+      "UniversityDegreeCredential"
+    ]
+  },
+  {
+    "type": "openid_credential",
+    "format": "ldp_vc",
+    "credential_definition": {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://www.w3.org/2018/credentials/examples/v1"
+      ],
+      "types": [
+        "VerifiableCredential",
+        "UniversityDegreeCredential"
+      ]
+    }
+  },
+  {
+    "type":"photo-api",
+    "actions":[
+      "read",
+      "write"
+    ],
+    "locations":[
+      "https://server.example.net/",
+      "https://resource.local/other"
+    ],
+    "datatypes":[
+      "metadata",
+      "images"
+    ]
+  },
+  {
+    "type":"financial-transaction",
+    "actions":[
+      "withdraw"
+    ]
+  }
+]

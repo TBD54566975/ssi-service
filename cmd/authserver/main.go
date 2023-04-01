@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/ardanlabs/conf"
+	"github.com/ory/fosite/storage"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
@@ -49,8 +50,19 @@ func run() error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
+	// This is the example storage that contains:
+	// * an OAuth2 Client with id "my-client" and secrets "foobar" and "foobaz" capable of all oauth2 and open id connect grant and response types.
+	// * a User for the resource owner password credentials grant type with username "peter" and password "secret".
+	//
+	// You will most likely replace this with your own logic once you set up a real world application.
+	store := storage.NewMemoryStore()
+
 	var err error
-	srv := authorizationserver.NewServer(shutdown, &cfg)
+	srv, err := authorizationserver.NewServer(shutdown, &cfg, store)
+	if err != nil {
+		logrus.WithError(err).Fatal("cannot create authserver")
+		os.Exit(1)
+	}
 	api := http.Server{
 		Addr:         cfg.Server.APIHost,
 		Handler:      srv,
