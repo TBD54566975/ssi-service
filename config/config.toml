@@ -38,8 +38,8 @@ password = "default-password"
 
 [services.did]
 name = "did"
-methods = ["key", "web"]
-resolution_methods = ["key", "web", "pkh", "peer"]
+methods = ["key", "web", "ion"]
+resolution_methods = ["key", "web", "pkh", "peer", "ion"]
 universal_resolver_url = "http://localhost:8088"
 universal_resolver_methods = ["ion"]
 

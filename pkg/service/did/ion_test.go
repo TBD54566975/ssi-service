@@ -74,6 +74,34 @@ func TestIONHandler(t *testing.T) {
 		assert.Equal(tt, crypto.Ed25519, created.KeyType)
 	})
 
+	t.Run("Test Create DID", func(tt *testing.T) {
+		// create a handler
+		s := setupTestDB(tt)
+		keystoreService := testKeyStoreService(tt, s)
+		didStorage, err := NewDIDStorage(s)
+		assert.NoError(tt, err)
+		handler, err := NewIONHandler("https://tbdwebsiteonline.com", didStorage, keystoreService)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, handler)
+
+		// create a did
+		created, err := handler.CreateDID(context.Background(), CreateDIDRequest{
+			Method:  did.IONMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, created)
+		assert.Equal(tt, crypto.Ed25519, created.KeyType)
+
+		// get the did
+		gotDID, err := handler.GetDID(context.Background(), GetDIDRequest{
+			Method: did.IONMethod,
+			ID:     created.DID.ID,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, gotDID)
+	})
+
 	t.Run("Test Get DID from storage", func(tt *testing.T) {
 		// create a handler
 		s := setupTestDB(tt)
