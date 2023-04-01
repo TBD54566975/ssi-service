@@ -19,7 +19,11 @@ func TestCreateIssuerDIDIONIntegration(t *testing.T) {
 	assert.NoError(t, err)
 
 	issuerDID, err := getJSONElement(didIONOutput, "$.did.id")
+	assert.NoError(t, err)
 	SetValue(didIONContext, "issuerDID", issuerDID)
+
+	issuerKeyID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[0].id")
+	SetValue(didIONContext, "issuerKeyID", issuerKeyID)
 
 	assert.NoError(t, err)
 	assert.Contains(t, issuerDID, "did:ion")
@@ -77,12 +81,16 @@ func TestDIDIONCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
+	issuerKeyID, err := GetValue(didIONContext, "issuerKeyID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKeyID)
+
 	schemaID, err := GetValue(didIONContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	vcOutput, err := CreateVerifiableCredential(credInputParams{
-		IssuerID:  issuerDID.(string),
+		IssuerID:  issuerDID.(string) + "#" + issuerKeyID.(string),
 		SchemaID:  schemaID.(string),
 		SubjectID: issuerDID.(string),
 	}, false)
@@ -104,12 +112,16 @@ func TestDIDIONCreateCredentialManifestIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
+	issuerKeyID, err := GetValue(didIONContext, "issuerKeyID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKeyID)
+
 	schemaID, err := GetValue(didIONContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	cmOutput, err := CreateCredentialManifest(credManifestParams{
-		IssuerID: issuerDID.(string),
+		IssuerID: issuerDID.(string) + "#" + issuerKeyID.(string),
 		SchemaID: schemaID.(string),
 	})
 	assert.NoError(t, err)
