@@ -227,7 +227,7 @@ func keyToStoreRequest(kid string, privateKeyJWK crypto.PrivateKeyJWK, controlle
 }
 
 func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {
-	// id := request.ID
+	id := request.ID
 
 	// TODO(gabe) as we are fully custodying ION DIDs this is fine; as we move to a more decentralized model we will
 	//  need to either remove local storage or treat it as a cache with a TTL
@@ -241,7 +241,7 @@ func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 	logrus.WithError(err).Warnf("error getting DID from storage: %s", id)
 
 	// if not, resolve it from the network
-	resolved, err := h.resolver.Resolve(ctx, request.ID, nil)
+	resolved, err := h.resolver.Resolve(ctx, id, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "resolving DID from network")
 	}
