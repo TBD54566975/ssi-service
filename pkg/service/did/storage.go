@@ -178,6 +178,7 @@ func validateOut(out StoredDID) error {
 	if outVal.Kind() != reflect.Ptr {
 		return fmt.Errorf("must be ptr to a struct; is %T", out)
 	}
+
 	// dereference the pointer
 	outValDeref := outVal.Elem()
 	if outValDeref.Kind() != reflect.Struct {

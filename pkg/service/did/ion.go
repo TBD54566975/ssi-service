@@ -2,8 +2,10 @@ package did
 
 import (
 	"context"
+	gocrypto "crypto"
 	"fmt"
 	"net/http"
+	"reflect"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
@@ -85,15 +87,16 @@ func (i ionStoredDID) IsSoftDeleted() bool {
 
 func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
 	// process options
-	if request.Options == nil {
-		return nil, errors.New("options cannot be empty")
-	}
-	opts, ok := request.Options.(CreateIONDIDOptions)
-	if !ok || request.Options.Method() != did.IONMethod {
-		return nil, fmt.Errorf("invalid options for method, expected %s, got %s", did.IONMethod, request.Options.Method())
-	}
-	if err := util.IsValidStruct(opts); err != nil {
-		return nil, errors.Wrap(err, "processing options")
+	var opts CreateIONDIDOptions
+	var ok bool
+	if request.Options != nil {
+		opts, ok = request.Options.(CreateIONDIDOptions)
+		if !ok || request.Options.Method() != did.IONMethod {
+			return nil, fmt.Errorf("invalid options for method, expected %s, got %s", did.IONMethod, request.Options.Method())
+		}
+		if err := util.IsValidStruct(opts); err != nil {
+			return nil, errors.Wrap(err, "processing options")
+		}
 	}
 
 	// create a key for the doc
@@ -206,6 +209,10 @@ func keyToStoreRequest(kid string, privateKeyJWK crypto.PrivateKeyJWK, controlle
 	privateKey, err := privateKeyJWK.ToKey()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting private private key from JWK")
+	}
+	if reflect.ValueOf(privateKey).Kind() == reflect.Ptr {
+		// dereference the ptr
+		privateKey = reflect.ValueOf(privateKey).Elem().Interface().(gocrypto.PrivateKey)
 	}
 	keyType, err := crypto.GetKeyTypeFromPrivateKey(privateKey)
 	if err != nil {
