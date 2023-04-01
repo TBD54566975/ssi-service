@@ -120,7 +120,7 @@ func TestDIDAPI(t *testing.T) {
 
 		err = didService.CreateDIDByMethod(newRequestContextWithParams(params), w, req)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create DID request: missing options for method<web>")
+		assert.Contains(tt, err.Error(), "could not create DID for method<web> with key type: Ed25519: options cannot be empty")
 
 		// reset recorder between calls
 		w.Flush()

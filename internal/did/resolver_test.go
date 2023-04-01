@@ -16,7 +16,7 @@ func TestResolver(t *testing.T) {
 	// unsupported method
 	_, err = BuildMultiMethodResolver([]string{"unsupported"})
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "unsupported method: unsupported")
+	assert.Contains(t, err.Error(), "no resolvers created")
 
 	// valid method
 	resolver, err := BuildMultiMethodResolver([]string{"key"})
