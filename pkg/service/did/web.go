@@ -80,7 +80,7 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 
 	// store metadata in DID storage
 	id := didWeb.String()
-	storedDID := StoredDID{
+	storedDID := DefaultStoredDID{
 		ID:          id,
 		DID:         *doc,
 		SoftDeleted: false,
@@ -120,27 +120,27 @@ func (h *webHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 	logrus.Debugf("getting DID: %+v", request)
 
 	id := request.ID
-	gotDID, err := h.storage.GetDID(ctx, id)
+	gotDID, err := h.storage.GetDIDDefault(ctx, id)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error getting DID: %s", id)
 	}
 	if gotDID == nil {
 		return nil, fmt.Errorf("did with id<%s> could not be found", id)
 	}
-	return &GetDIDResponse{DID: gotDID.DID}, nil
+	return &GetDIDResponse{DID: gotDID.GetDocument()}, nil
 }
 
 func (h *webHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	logrus.Debug("getting did:web DID")
 
-	gotDIDs, err := h.storage.GetDIDs(ctx, did.WebMethod.String())
+	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.WebMethod.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "getting did:web DIDs")
 	}
 	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
-		if !gotDID.SoftDeleted {
-			dids = append(dids, gotDID.DID)
+		if !gotDID.IsSoftDeleted() {
+			dids = append(dids, gotDID.GetDocument())
 		}
 	}
 	return &GetDIDsResponse{DIDs: dids}, nil
@@ -150,7 +150,7 @@ func (h *webHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest
 	logrus.Debugf("soft deleting DID: %+v", request)
 
 	id := request.ID
-	gotStoredDID, err := h.storage.GetDID(ctx, id)
+	gotStoredDID, err := h.storage.GetDIDDefault(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "getting DID: %s", id)
 	}

@@ -137,9 +137,8 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	}
 
 	return &CreateDIDResponse{
-		DID:              storedDID.DID,
-		PrivateKeyBase58: privKeyBase58,
-		KeyType:          request.KeyType,
+		DID:     did.Document{ID: ionDID.ID()},
+		KeyType: request.KeyType,
 	}, nil
 }
 
@@ -173,7 +172,7 @@ func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 	//  need to either remove local storage or treat it as a cache with a TTL
 
 	// first check if the DID is in the storage
-	gotDID, err := h.storage.GetDID(ctx, id)
+	gotDID, err := h.storage.GetDIDDefault(ctx, id)
 	if err == nil {
 		return &GetDIDResponse{DID: gotDID.DID}, nil
 	}
@@ -191,7 +190,7 @@ func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 func (h *ionHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	logrus.Debug("getting stored did:ion DIDs")
 
-	gotDIDs, err := h.storage.GetDIDs(ctx, did.KeyMethod.String())
+	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.KeyMethod.String())
 	if err != nil {
 		return nil, fmt.Errorf("error getting did:ion DIDs")
 	}
@@ -209,7 +208,7 @@ func (h *ionHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest
 	logrus.Debugf("soft deleting DID: %+v", request)
 
 	id := request.ID
-	gotStoredDID, err := h.storage.GetDID(ctx, id)
+	gotStoredDID, err := h.storage.GetDIDDefault(ctx, id)
 	if err != nil {
 		return fmt.Errorf("error getting DID: %s", id)
 	}

@@ -45,9 +45,6 @@ type StoreKeyRequest struct {
 
 	// Base58 encoding of the bytes that result from marshalling the private key using golang's implementation.
 	PrivateKeyBase58 string `json:"base58PrivateKey,omitempty"`
-
-	// JSON Web Key (JWK) representation of the private key.
-	PrivateKeyJWK crypto.PrivateKeyJWK `json:"jwkPrivateKey,omitempty"`
 }
 
 func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) {
@@ -64,7 +61,6 @@ func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) 
 		Type:             sk.Type,
 		Controller:       sk.Controller,
 		PrivateKeyBase58: sk.PrivateKeyBase58,
-		PrivateKeyJWK:    sk.PrivateKeyJWK,
 	}, nil
 }
 
