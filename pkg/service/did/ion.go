@@ -63,6 +63,26 @@ func (h *ionHandler) GetMethod() did.Method {
 	return h.method
 }
 
+type ionStoredDID struct {
+	ID          string       `json:"id"`
+	DID         did.Document `json:"did"`
+	SoftDeleted bool         `json:"softDeleted"`
+	LongFormDID string       `json:"longFormDID"`
+	Operations  []any        `json:"operations"`
+}
+
+func (i ionStoredDID) GetID() string {
+	return i.ID
+}
+
+func (i ionStoredDID) GetDocument() did.Document {
+	return i.DID
+}
+
+func (i ionStoredDID) IsSoftDeleted() bool {
+	return i.SoftDeleted
+}
+
 func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
 	// process options
 	if request.Options == nil {
@@ -108,7 +128,47 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "anchoring create operation")
 	}
 
-	// store the did document and associated keys
+	// construct first document state
+	ldKeyType, err := did.KeyTypeToLDKeyType(request.KeyType)
+	if err != nil {
+		return nil, errors.Wrap(err, "converting key type to LD key type")
+	}
+
+	// TODO(gabe): move this to the SDK
+	didDoc := did.Document{
+		ID: ionDID.ID(),
+		VerificationMethod: []did.VerificationMethod{
+			{
+				ID:           keyID,
+				Type:         ldKeyType,
+				Controller:   ionDID.ID(),
+				PublicKeyJWK: pubKeyJWK,
+			},
+		},
+		Authentication:  []did.VerificationMethodSet{map[string]any{"id": keyID}},
+		AssertionMethod: []did.VerificationMethodSet{map[string]any{"id": keyID}},
+	}
+	for _, s := range opts.ServiceEndpoints {
+		didDoc.Services = append(didDoc.Services, did.Service{
+			ID:              s.ID,
+			Type:            s.Type,
+			ServiceEndpoint: s.ServiceEndpoint,
+		})
+	}
+
+	// store the did document
+	storedDID := ionStoredDID{
+		ID:          ionDID.ID(),
+		DID:         didDoc,
+		SoftDeleted: false,
+		LongFormDID: ionDID.LongForm(),
+		Operations:  ionDID.Operations(),
+	}
+	if err = h.storage.StoreDID(ctx, storedDID); err != nil {
+		return nil, errors.Wrap(err, "storing ion did document")
+	}
+
+	// store associated keys
 	// 1. update key
 	// 2. recovery key
 	// 3. key(s) in the did doc
@@ -137,7 +197,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	}
 
 	return &CreateDIDResponse{
-		DID:     did.Document{ID: ionDID.ID()},
+		DID:     didDoc,
 		KeyType: request.KeyType,
 	}, nil
 }
@@ -172,8 +232,9 @@ func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 	//  need to either remove local storage or treat it as a cache with a TTL
 
 	// first check if the DID is in the storage
-	gotDID, err := h.storage.GetDIDDefault(ctx, id)
-	if err == nil {
+	gotDID := new(ionStoredDID)
+	err := h.storage.GetDID(ctx, id, gotDID)
+	if err != nil {
 		return &GetDIDResponse{DID: gotDID.DID}, nil
 	}
 	logrus.WithError(err).Warnf("error getting DID from storage: %s", id)
@@ -190,14 +251,14 @@ func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 func (h *ionHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	logrus.Debug("getting stored did:ion DIDs")
 
-	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.KeyMethod.String())
+	gotDIDs, err := h.storage.GetDIDs(ctx, did.KeyMethod.String(), new(ionStoredDID))
 	if err != nil {
 		return nil, fmt.Errorf("error getting did:ion DIDs")
 	}
 	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
-		if !gotDID.SoftDeleted {
-			dids = append(dids, gotDID.DID)
+		if !gotDID.IsSoftDeleted() {
+			dids = append(dids, gotDID.GetDocument())
 		}
 	}
 	return &GetDIDsResponse{DIDs: dids}, nil
@@ -208,15 +269,15 @@ func (h *ionHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest
 	logrus.Debugf("soft deleting DID: %+v", request)
 
 	id := request.ID
-	gotStoredDID, err := h.storage.GetDIDDefault(ctx, id)
-	if err != nil {
+	gotDID := new(ionStoredDID)
+	if err := h.storage.GetDID(ctx, id, gotDID); err != nil {
 		return fmt.Errorf("error getting DID: %s", id)
 	}
-	if gotStoredDID == nil {
+	if gotDID.GetID() == "" {
 		return fmt.Errorf("did with id<%s> could not be found", id)
 	}
 
-	gotStoredDID.SoftDeleted = true
+	gotDID.SoftDeleted = true
 
-	return h.storage.StoreDID(ctx, *gotStoredDID)
+	return h.storage.StoreDID(ctx, *gotDID)
 }

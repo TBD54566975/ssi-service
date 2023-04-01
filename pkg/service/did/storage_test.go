@@ -87,6 +87,33 @@ func TestStorage(t *testing.T) {
 		assert.Equal(tt, toStore, *outDID)
 	})
 
+	t.Run("Create and Get DID of a custom type", func(tt *testing.T) {
+		ds, err := NewDIDStorage(setupTestDB(tt))
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, ds)
+
+		// create a did
+		toStore := customStoredDID{
+			ID:    "did:key:test",
+			Party: false,
+		}
+
+		// store
+		err = ds.StoreDID(context.Background(), toStore)
+		assert.NoError(tt, err)
+
+		// get it back as a default - which won't be equal
+		got, err := ds.GetDIDDefault(context.Background(), "did:key:test")
+		assert.NoError(tt, err)
+		assert.NotEqual(tt, toStore, *got)
+
+		// get it back as a custom did
+		outDID := new(customStoredDID)
+		err = ds.GetDID(context.Background(), "did:key:test", outDID)
+		assert.NoError(tt, err)
+		assert.Equal(tt, toStore, *outDID)
+	})
+
 	t.Run("Create and Get Multiple DIDs", func(tt *testing.T) {
 		ds, err := NewDIDStorage(setupTestDB(tt))
 		assert.NoError(tt, err)
@@ -195,4 +222,24 @@ func setupTestDB(t *testing.T) storage.ServiceStorage {
 		_ = os.Remove(s.URI())
 	})
 	return s
+}
+
+// new stored DID type
+type customStoredDID struct {
+	ID    string `json:"id,omitempty"`
+	Party bool   `json:"party,omitempty"`
+}
+
+func (d customStoredDID) GetID() string {
+	return d.ID
+}
+
+func (d customStoredDID) GetDocument() didsdk.Document {
+	return didsdk.Document{
+		ID: d.ID,
+	}
+}
+
+func (d customStoredDID) IsSoftDeleted() bool {
+	return d.Party
 }
