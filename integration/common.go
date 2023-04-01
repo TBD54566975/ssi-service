@@ -17,6 +17,7 @@ import (
 	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 )
@@ -46,6 +47,16 @@ func CreateDIDKey() (string, error) {
 func CreateDIDWeb() (string, error) {
 	logrus.Println("\n\nCreate a did:web")
 	output, err := put(endpoint+version+"dids/web", getJSONFromFile("did-web-input.json"))
+	if err != nil {
+		return "", errors.Wrapf(err, "did endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
+func CreateDIDION() (string, error) {
+	logrus.Println("\n\nCreate a did:ion")
+	output, err := put(endpoint+version+"dids/ion", getJSONFromFile("did-ion-input.json"))
 	if err != nil {
 		return "", errors.Wrapf(err, "did endpoint with output: %s", output)
 	}

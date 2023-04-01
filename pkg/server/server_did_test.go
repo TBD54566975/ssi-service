@@ -121,6 +121,7 @@ func TestDIDAPI(t *testing.T) {
 
 		// reset recorder between calls
 		w.Flush()
+		
 		// store a DID
 		createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
 		requestReader := newRequestValue(tt, createDIDRequest)

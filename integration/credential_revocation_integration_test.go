@@ -24,7 +24,6 @@ func TestRevocationCreateIssuerDIDKeyIntegration(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Contains(t, issuerDID, "did:key")
-
 }
 
 func TestRevocationCreateSchemaIntegration(t *testing.T) {
