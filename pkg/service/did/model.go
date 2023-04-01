@@ -37,6 +37,7 @@ type CreateDIDResponse struct {
 	DID didsdk.Document `json:"did"`
 	// TODO(gabe): change to returning a set of public keys. private keys should be stored in the keystore,
 	//  and stay within the service boundary. This will unify the solution for both custodial and non-custodial keys.
+	// https://github.com/TBD54566975/ssi-service/issues/371
 	PrivateKeyBase58 string         `json:"base58PrivateKey"`
 	KeyType          crypto.KeyType `json:"keyType"`
 }
