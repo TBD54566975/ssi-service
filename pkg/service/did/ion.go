@@ -197,9 +197,14 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "could not store did:ion private key")
 	}
 
+	privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "converting private key to bytes")
+	}
 	return &CreateDIDResponse{
-		DID:     didDoc,
-		KeyType: request.KeyType,
+		DID:              didDoc,
+		PrivateKeyBase58: base58.Encode(privKeyBytes),
+		KeyType:          request.KeyType,
 	}, nil
 }
 
