@@ -35,16 +35,22 @@ func TestCreateAliceDIDIONIntegration(t *testing.T) {
 	assert.NotEmpty(t, didIONOutput)
 
 	aliceDID, err := getJSONElement(didIONOutput, "$.did.id")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, aliceDID)
 	SetValue(didIONContext, "aliceDID", aliceDID)
+
+	aliceKeyID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[0].id")
+	SetValue(didIONContext, "aliceKeyID", aliceKeyID)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, aliceKeyID)
 
 	assert.NoError(t, err)
 	assert.Contains(t, aliceDID, "did:ion")
 
 	aliceDIDPrivateKey, err := getJSONElement(didIONOutput, "$.privateKeyBase58")
-	SetValue(didIONContext, "aliceDIDPrivateKey", aliceDIDPrivateKey)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, aliceDID)
-
+	assert.NotEmpty(t, aliceDIDPrivateKey)
+	SetValue(didIONContext, "aliceDIDPrivateKey", aliceDIDPrivateKey)
 }
 
 func TestDIDIONCreateSchemaIntegration(t *testing.T) {
@@ -140,6 +146,10 @@ func TestDIDIONSubmitAndReviewApplicationIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
 
+	aliceKeyID, err := GetValue(didIONContext, "aliceKeyID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, aliceDID)
+
 	aliceDIDPrivateKey, err := GetValue(didIONContext, "aliceDIDPrivateKey")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDIDPrivateKey)
@@ -147,7 +157,7 @@ func TestDIDIONSubmitAndReviewApplicationIntegration(t *testing.T) {
 	credAppJWT, err := CreateCredentialApplicationJWT(credApplicationParams{
 		DefinitionID: presentationDefinitionID.(string),
 		ManifestID:   manifestID.(string),
-	}, credentialJWT.(string), aliceDID.(string), aliceDIDPrivateKey.(string))
+	}, credentialJWT.(string), aliceDID.(string)+"#"+aliceKeyID.(string), aliceDIDPrivateKey.(string))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credAppJWT)
 
