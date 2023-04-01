@@ -2,10 +2,8 @@ package did
 
 import (
 	"context"
-	gocrypto "crypto"
 	"fmt"
 	"net/http"
-	"reflect"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
@@ -206,13 +204,9 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 }
 
 func keyToStoreRequest(kid string, privateKeyJWK crypto.PrivateKeyJWK, controller string) (*keystore.StoreKeyRequest, error) {
-	privateKey, err := privateKeyJWK.ToKey()
+	privateKey, err := privateKeyJWK.ToPrivateKey()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting private private key from JWK")
-	}
-	if reflect.ValueOf(privateKey).Kind() == reflect.Ptr {
-		// dereference the ptr
-		privateKey = reflect.ValueOf(privateKey).Elem().Interface().(gocrypto.PrivateKey)
 	}
 	keyType, err := crypto.GetKeyTypeFromPrivateKey(privateKey)
 	if err != nil {
@@ -241,7 +235,7 @@ func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 	// first check if the DID is in the storage
 	gotDID := new(ionStoredDID)
 	err := h.storage.GetDID(ctx, id, gotDID)
-	if err != nil {
+	if err == nil {
 		return &GetDIDResponse{DID: gotDID.DID}, nil
 	}
 	logrus.WithError(err).Warnf("error getting DID from storage: %s", id)

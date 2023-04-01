@@ -2,6 +2,7 @@ package did
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -70,6 +71,71 @@ func TestIONHandler(t *testing.T) {
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, created)
+		assert.Equal(tt, crypto.Ed25519, created.KeyType)
+	})
+
+	t.Run("Test Get DID from storage", func(tt *testing.T) {
+		// create a handler
+		s := setupTestDB(tt)
+		keystoreService := testKeyStoreService(tt, s)
+		didStorage, err := NewDIDStorage(s)
+		assert.NoError(tt, err)
+		handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, handler)
+
+		gock.New("https://test-ion-resolver.com").
+			Post("/operations").
+			Reply(200)
+		defer gock.Off()
+
+		// create a did
+		created, err := handler.CreateDID(context.Background(), CreateDIDRequest{
+			Method:  did.IONMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, created)
+		assert.Equal(tt, crypto.Ed25519, created.KeyType)
+
+		gock.New("https://test-ion-resolver.com").
+			Get("/identifiers/" + created.DID.ID).
+			Reply(200).BodyString(fmt.Sprintf(`{"didDocument": {"id": "%s"}}`, created.DID.ID))
+		defer gock.Off()
+
+		// get the did
+		gotDID, err := handler.GetDID(context.Background(), GetDIDRequest{
+			Method: did.IONMethod,
+			ID:     created.DID.ID,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, gotDID)
+		assert.Equal(tt, created.DID.ID, gotDID.DID.ID)
+	})
+
+	t.Run("Test Get DID from resolver", func(tt *testing.T) {
+		// create a handler
+		s := setupTestDB(tt)
+		keystoreService := testKeyStoreService(tt, s)
+		didStorage, err := NewDIDStorage(s)
+		assert.NoError(tt, err)
+		handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, handler)
+
+		gock.New("https://test-ion-resolver.com").
+			Get("/identifiers/did:ion:test").
+			Reply(200).BodyString(`{"didDocument": {"id": "did:ion:test"}}`)
+		defer gock.Off()
+
+		// get the did
+		gotDID, err := handler.GetDID(context.Background(), GetDIDRequest{
+			Method: did.IONMethod,
+			ID:     "did:ion:test",
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, gotDID)
+		assert.Equal(tt, "did:ion:test", gotDID.DID.ID)
 	})
 }
 
