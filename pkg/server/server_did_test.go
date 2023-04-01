@@ -145,6 +145,10 @@ func TestDIDAPI(t *testing.T) {
 			KeyType: crypto.Ed25519,
 			Options: options,
 		}
+
+		b, _ := json.Marshal(createDIDRequest)
+		fmt.Println(string(b))
+		
 		requestReader = newRequestValue(tt, createDIDRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/web", requestReader)
 

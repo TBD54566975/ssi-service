@@ -20,6 +20,7 @@ import (
 
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/pkg/server/router"
 )
 
 const (
@@ -46,7 +47,19 @@ func CreateDIDKey() (string, error) {
 
 func CreateDIDWeb() (string, error) {
 	logrus.Println("\n\nCreate a did:web")
-	output, err := put(endpoint+version+"dids/web", getJSONFromFile("did-web-input.json"))
+
+	var createDIDWebRequest router.CreateDIDByMethodRequest
+	inputJSON := getJSONFromFile("did-web-input.json")
+	if err := json.Unmarshal([]byte(inputJSON), &createDIDWebRequest); err != nil {
+		return "", errors.Wrap(err, "unmarshalling did:web request")
+	}
+
+	createdRequestJSONBytes, err := json.Marshal(createDIDWebRequest)
+	if err != nil {
+		return "", errors.Wrap(err, "creating did:web request")
+	}
+	
+	output, err := put(endpoint+version+"dids/web", string(createdRequestJSONBytes))
 	if err != nil {
 		return "", errors.Wrapf(err, "did endpoint with output: %s", output)
 	}
