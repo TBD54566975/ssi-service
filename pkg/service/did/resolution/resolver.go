@@ -24,15 +24,15 @@ var _ didsdk.Resolver = (*ServiceResolver)(nil)
 
 // NewServiceResolver creates a new ServiceResolver instance which can resolve DIDs using a combination of local and
 // universal resolvers.
-func NewServiceResolver(handlerResolver didsdk.Resolver, resolutionMethods []string, universalResolverURL string) (*ServiceResolver, error) {
-	if len(resolutionMethods) == 0 {
-		return nil, errors.New("no resolution methods configured")
-	}
-
-	// instantiate sdk resolver
-	localResolver, err := didint.BuildMultiMethodResolver(resolutionMethods)
-	if err != nil {
-		return nil, errors.Wrap(err, "instantiating SDK DID resolver")
+func NewServiceResolver(handlerResolver didsdk.Resolver, localResolutionMethods []string, universalResolverURL string) (*ServiceResolver, error) {
+	var lr didsdk.Resolver
+	var err error
+	if len(localResolutionMethods) > 0 {
+		// instantiate sdk resolver
+		lr, err = didint.BuildMultiMethodResolver(localResolutionMethods)
+		if err != nil {
+			return nil, errors.Wrap(err, "instantiating local DID resolver")
+		}
 	}
 
 	// instantiate universal resolver
@@ -45,9 +45,9 @@ func NewServiceResolver(handlerResolver didsdk.Resolver, resolutionMethods []str
 	}
 
 	return &ServiceResolver{
-		resolutionMethods: resolutionMethods,
+		resolutionMethods: localResolutionMethods,
 		hr:                handlerResolver,
-		lr:                localResolver,
+		lr:                lr,
 		ur:                ur,
 	}, nil
 }

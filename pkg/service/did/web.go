@@ -31,7 +31,8 @@ type webHandler struct {
 }
 
 type CreateWebDIDOptions struct {
-	URL string `json:"url" validate:"required"`
+	// e.g. did:web:example.com
+	DIDWebID string `json:"didWebId" validate:"required"`
 }
 
 func (c CreateWebDIDOptions) Method() did.Method {
@@ -57,10 +58,10 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "processing options")
 	}
 
-	didWeb := did.DIDWeb(opts.URL)
+	didWeb := did.DIDWeb(opts.DIDWebID)
 
 	if !didWeb.IsValid() {
-		return nil, fmt.Errorf("did:web is not valid, could not resolve did:web DID: %s", didWeb)
+		return nil, fmt.Errorf("could not resolve did:web DID: %s", didWeb)
 	}
 
 	pubKey, privKey, err := crypto.GenerateKeyByKeyType(request.KeyType)

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
@@ -23,6 +24,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -35,6 +37,10 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
+)
+
+const (
+	testIONResolverURL = "https://test-ion-resolver.com"
 )
 
 func TestMain(t *testing.M) {
@@ -53,7 +59,7 @@ func TestHealthCheckAPI(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/health", nil)
 	w := httptest.NewRecorder()
 
-	err = router.Health(context.TODO(), w, req)
+	err = router.Health(context.Background(), w, req)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
@@ -225,11 +231,15 @@ func testIssuanceService(t *testing.T, db storage.ServiceStorage) *issuing.Servi
 	return s
 }
 
-func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service) *did.Service {
+func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, methods ...string) *did.Service {
+	if methods == nil {
+		methods = []string{"key"}
+	}
 	serviceConfig := config.DIDServiceConfig{
-		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-did"},
-		Methods:           []string{"key"},
-		ResolutionMethods: []string{"key"},
+		BaseServiceConfig:      &config.BaseServiceConfig{Name: "test-did"},
+		Methods:                methods,
+		LocalResolutionMethods: []string{"key", "web", "peer", "pkh"},
+		IONResolverURL:         testIONResolverURL,
 	}
 
 	// create a did service
@@ -239,8 +249,8 @@ func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystor
 	return didService
 }
 
-func testDIDRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service) *router.DIDRouter {
-	didService := testDIDService(t, bolt, keyStore)
+func testDIDRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, methods []string) *router.DIDRouter {
+	didService := testDIDService(t, bolt, keyStore, methods...)
 
 	// create router for service
 	didRouter, err := router.NewDIDRouter(didService)

@@ -42,7 +42,7 @@ password = "default-password"
 [services.did]
 name = "did"
 methods = ["key", "web"]
-resolution_methods = ["key", "web", "pkh", "peer"]
+local_resolution_methods = ["key", "web", "pkh", "peer"]
 
 [services.schema]
 name = "schema"

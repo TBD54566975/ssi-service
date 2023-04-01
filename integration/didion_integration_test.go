@@ -44,6 +44,7 @@ func TestCreateAliceDIDIONIntegration(t *testing.T) {
 	SetValue(didIONContext, "aliceDIDPrivateKey", aliceDIDPrivateKey)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
+
 }
 
 func TestDIDIONCreateSchemaIntegration(t *testing.T) {

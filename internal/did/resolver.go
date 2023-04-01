@@ -5,6 +5,7 @@ import (
 
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // BuildMultiMethodResolver builds a multi method DID resolver from a list of methods to support resolution for
@@ -16,7 +17,9 @@ func BuildMultiMethodResolver(methods []string) (*didsdk.MultiMethodResolver, er
 	for _, method := range methods {
 		resolver, err := getKnownResolver(method)
 		if err != nil {
-			return nil, err
+			// if we can't create a resolver for a method, we just skip it since not all methods are supported locally
+			logrus.WithError(err).Errorf("failed to create resolver for method %s", method)
+			continue
 		}
 		resolvers = append(resolvers, resolver)
 	}

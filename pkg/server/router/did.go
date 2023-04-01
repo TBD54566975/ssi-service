@@ -7,9 +7,11 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -34,9 +36,7 @@ func NewDIDRouter(s svcframework.Service) (*DIDRouter, error) {
 	if !ok {
 		return nil, fmt.Errorf("could not create DID router with service type: %s", s.Type())
 	}
-	return &DIDRouter{
-		service: didService,
-	}, nil
+	return &DIDRouter{service: didService}, nil
 }
 
 type GetDIDMethodsResponse struct {
@@ -110,24 +110,14 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	// method wrapper
-	m := didsdk.Method(*method)
-
-	// make sure we have a valid option type
-	var opts did.CreateDIDRequestOptions
-	if request.Options != nil {
-		var ok bool
-		opts, ok = request.Options.(did.CreateDIDRequestOptions)
-		if !ok {
-			errMsg := fmt.Sprintf("invalid options for method<%s>", *method)
-			logrus.Error(errMsg)
-			return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
-		}
-	}
-
 	// TODO(gabe) check if the key type is supported for the method, to tell whether this is a bad req or internal error
-	createDIDRequest := did.CreateDIDRequest{Method: m, KeyType: request.KeyType, Options: opts}
-	createDIDResponse, err := dr.service.CreateDIDByMethod(ctx, createDIDRequest)
+	createDIDRequest, err := toCreateDIDRequest(didsdk.Method(*method), request)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, invalidCreateDIDRequest), http.StatusBadRequest)
+	}
+	createDIDResponse, err := dr.service.CreateDIDByMethod(ctx, *createDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)
 		logrus.WithError(err).Error(errMsg)
@@ -141,6 +131,56 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 	}
 
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
+}
+
+// toCreateDIDRequest converts CreateDIDByMethodRequest to did.CreateDIDRequest, parsing options according to method
+func toCreateDIDRequest(m didsdk.Method, request CreateDIDByMethodRequest) (*did.CreateDIDRequest, error) {
+	createRequest := did.CreateDIDRequest{
+		Method:  m,
+		KeyType: request.KeyType,
+	}
+
+	// check if options are present
+	if request.Options == nil {
+		return &createRequest, nil
+	}
+
+	// parse options according to method
+	switch m {
+	case didsdk.IONMethod:
+		var opts did.CreateIONDIDOptions
+		if err := optionsToType(request.Options, &opts); err != nil {
+			return nil, errors.Wrap(err, "parsing ion options")
+		}
+		createRequest.Options = opts
+	case didsdk.WebMethod:
+		var opts did.CreateWebDIDOptions
+		if err := optionsToType(request.Options, &opts); err != nil {
+			return nil, errors.Wrap(err, "parsing web options")
+		}
+		createRequest.Options = opts
+	default:
+		if request.Options != nil {
+			return nil, fmt.Errorf("invalid options for method<%s>", m)
+		}
+	}
+	return &createRequest, nil
+}
+
+// optionsToType converts options to the given type where options is a map[string]interface{} and optionType
+// is a pointer to an empty struct of the desired type
+func optionsToType(options any, out any) error {
+	if !util.IsStructPtr(out) {
+		return fmt.Errorf("output object must be a pointer to a struct")
+	}
+	optionBytes, err := json.Marshal(options)
+	if err != nil {
+		return errors.Wrap(err, "marshalling options")
+	}
+	if err = json.Unmarshal(optionBytes, out); err != nil {
+		return errors.Wrap(err, "unmarshalling options")
+	}
+	return nil
 }
 
 type GetDIDByMethodResponse struct {

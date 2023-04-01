@@ -105,7 +105,7 @@ func (k *KeyStoreServiceConfig) IsEmpty() bool {
 type DIDServiceConfig struct {
 	*BaseServiceConfig
 	Methods                  []string `toml:"methods"`
-	ResolutionMethods        []string `toml:"resolution_methods"`
+	LocalResolutionMethods   []string `toml:"local_resolution_methods"`
 	UniversalResolverURL     string   `toml:"universal_resolver_url"`
 	UniversalResolverMethods []string `toml:"universal_resolver_methods"`
 	IONResolverURL           string   `toml:"ion_resolver_url"`
@@ -256,9 +256,9 @@ func loadDefaultServicesConfig(config *SSIServiceConfig) {
 			ServiceKeyPassword: "default-password",
 		},
 		DIDConfig: DIDServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "did"},
-			Methods:           []string{"key", "web"},
-			ResolutionMethods: []string{"key", "peer", "web", "pkh"},
+			BaseServiceConfig:      &BaseServiceConfig{Name: "did"},
+			Methods:                []string{"key", "web"},
+			LocalResolutionMethods: []string{"key", "peer", "web", "pkh"},
 		},
 		SchemaConfig: SchemaServiceConfig{
 			BaseServiceConfig: &BaseServiceConfig{Name: "schema"},

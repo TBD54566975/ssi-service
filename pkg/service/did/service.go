@@ -74,6 +74,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 	}
 
 	service := Service{
+		config:   config,
 		storage:  didStorage,
 		handlers: make(map[didsdk.Method]MethodHandler),
 		keyStore: keyStore,
@@ -93,7 +94,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 	}
 
 	// instantiate DID resolver
-	resolver, err := resolution.NewServiceResolver(hr, config.ResolutionMethods, config.UniversalResolverURL)
+	resolver, err := resolution.NewServiceResolver(hr, config.LocalResolutionMethods, config.UniversalResolverURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating DID resolver")
 	}
