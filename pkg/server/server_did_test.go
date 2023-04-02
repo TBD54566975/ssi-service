@@ -146,9 +146,6 @@ func TestDIDAPI(t *testing.T) {
 			Options: options,
 		}
 
-		b, _ := json.Marshal(createDIDRequest)
-		fmt.Println(string(b))
-		
 		requestReader = newRequestValue(tt, createDIDRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/web", requestReader)
 

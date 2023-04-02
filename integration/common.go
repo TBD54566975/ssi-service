@@ -58,7 +58,7 @@ func CreateDIDWeb() (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "creating did:web request")
 	}
-	
+
 	output, err := put(endpoint+version+"dids/web", string(createdRequestJSONBytes))
 	if err != nil {
 		return "", errors.Wrapf(err, "did endpoint with output: %s", output)
