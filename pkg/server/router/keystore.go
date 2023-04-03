@@ -44,7 +44,7 @@ type StoreKeyRequest struct {
 	Controller string `json:"controller,omitempty" validate:"required"`
 
 	// Base58 encoding of the bytes that result from marshalling the private key using golang's implementation.
-	PrivateKeyBase58 string `json:"base58PrivateKey,omitempty"`
+	PrivateKeyBase58 string `json:"base58PrivateKey,omitempty" validate:"required"`
 }
 
 func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) {
