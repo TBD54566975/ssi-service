@@ -27,8 +27,6 @@ github.com/PuerkitoBio/purell v1.1.1/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbt
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
-github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230331233052-9d44b158d504 h1:SsKoZkq5U3sWDEPozRJiOCUl/p1gR1YPnzzg/nY764Y=
-github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230331233052-9d44b158d504/go.mod h1:Ro9+HDADuYcLnCYKIL8pu92XWITKetTPOqfwLThplO0=
 github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230401051839-bca28f8b0fea h1:+0dl8nqYYkewqiiYKxhk3RK7ivOOzweeYa08DFOU3fE=
 github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230401051839-bca28f8b0fea/go.mod h1:9SNGqEkRihpNbgilFDRRmgi8Gi/l7/l0eyO+3Prubro=
 github.com/ajg/form v0.0.0-20160822230020-523a5da1a92f/go.mod h1:uL1WgH+h2mgNtvBq0339dVnzXdBETtL2LeUXaIv25UY=
