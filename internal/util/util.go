@@ -2,12 +2,32 @@ package util
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
+
+// IsStructPtr checks if the given object is a pointer to a struct
+func IsStructPtr(obj any) bool {
+	if obj == nil {
+		return false
+	}
+	// make sure out is a ptr to a struct
+	outVal := reflect.ValueOf(obj)
+	if outVal.Kind() != reflect.Ptr {
+		return false
+	}
+
+	// dereference the pointer
+	outValDeref := outVal.Elem()
+	if outValDeref.Kind() != reflect.Struct {
+		return false
+	}
+	return true
+}
 
 // GetMethodForDID gets a DID method from a did, the second part of the did (e.g. did:test:abcd, the method is 'test')
 func GetMethodForDID(did string) (didsdk.Method, error) {

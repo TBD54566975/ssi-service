@@ -74,6 +74,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 	}
 
 	service := Service{
+		config:   config,
 		storage:  didStorage,
 		handlers: make(map[didsdk.Method]MethodHandler),
 		keyStore: keyStore,
@@ -93,7 +94,7 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 	}
 
 	// instantiate DID resolver
-	resolver, err := resolution.NewServiceResolver(hr, config.ResolutionMethods, config.UniversalResolverURL)
+	resolver, err := resolution.NewServiceResolver(hr, config.LocalResolutionMethods, config.UniversalResolverURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "instantiating DID resolver")
 	}
@@ -105,12 +106,28 @@ func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, key
 	return &service, nil
 }
 
+// instantiateHandlerForMethod instantiates a handler for the given DID method. All handlers supported by the DID
+// service must be instantiated here.
 func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
 	switch method {
 	case didsdk.KeyMethod:
-		s.handlers[method] = NewKeyDIDHandler(s.storage, s.keyStore)
+		kh, err := NewKeyHandler(s.storage, s.keyStore)
+		if err != nil {
+			return errors.Wrap(err, "instantiating key handler")
+		}
+		s.handlers[method] = kh
 	case didsdk.WebMethod:
-		s.handlers[method] = NewWebDIDHandler(s.storage, s.keyStore)
+		wh, err := NewWebHandler(s.storage, s.keyStore)
+		if err != nil {
+			return errors.Wrap(err, "instantiating web handler")
+		}
+		s.handlers[method] = wh
+	case didsdk.IONMethod:
+		ih, err := NewIONHandler(s.Config().IONResolverURL, s.storage, s.keyStore)
+		if err != nil {
+			return errors.Wrap(err, "instantiating ion handler")
+		}
+		s.handlers[method] = ih
 	default:
 		return util.LoggingNewErrorf("unsupported DID method: %s", method)
 	}
@@ -184,7 +201,7 @@ func (s *Service) GetDIDsByMethod(ctx context.Context, request GetDIDsRequest) (
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get handler for method<%s>", method)
 	}
-	return handler.GetDIDs(ctx, method)
+	return handler.GetDIDs(ctx)
 }
 
 func (s *Service) SoftDeleteDIDByMethod(ctx context.Context, request DeleteDIDRequest) error {

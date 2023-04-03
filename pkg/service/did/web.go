@@ -6,6 +6,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -13,26 +14,54 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func NewWebDIDHandler(s *Storage, ks *keystore.Service) MethodHandler {
-	return &webDIDHandler{storage: s, keyStore: ks}
+func NewWebHandler(s *Storage, ks *keystore.Service) (MethodHandler, error) {
+	if s == nil {
+		return nil, errors.New("storage cannot be empty")
+	}
+	if ks == nil {
+		return nil, errors.New("keystore cannot be empty")
+	}
+	return &webHandler{method: did.WebMethod, storage: s, keyStore: ks}, nil
 }
 
-type webDIDHandler struct {
+type webHandler struct {
+	method   did.Method
 	storage  *Storage
 	keyStore *keystore.Service
 }
 
-func (h *webDIDHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
+type CreateWebDIDOptions struct {
+	// e.g. did:web:example.com
+	DIDWebID string `json:"didWebId" validate:"required"`
+}
+
+func (c CreateWebDIDOptions) Method() did.Method {
+	return did.WebMethod
+}
+
+func (h *webHandler) GetMethod() did.Method {
+	return h.method
+}
+
+func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
 	logrus.Debugf("creating DID: %+v", request)
 
-	if request.DIDWebID == "" {
-		return nil, errors.New("url is empty, cannot create did:web")
+	// process options
+	if request.Options == nil {
+		return nil, errors.New("options cannot be empty")
+	}
+	opts, ok := request.Options.(CreateWebDIDOptions)
+	if !ok || request.Options.Method() != did.WebMethod {
+		return nil, fmt.Errorf("invalid options for method, expected %s, got %s", did.WebMethod, request.Options.Method())
+	}
+	if err := util.IsValidStruct(opts); err != nil {
+		return nil, errors.Wrap(err, "processing options")
 	}
 
-	didWeb := did.DIDWeb(request.DIDWebID)
+	didWeb := did.DIDWeb(opts.DIDWebID)
 
 	if !didWeb.IsValid() {
-		return nil, fmt.Errorf("did:web is not valid, could not resolve did:web DID: %s", didWeb)
+		return nil, fmt.Errorf("could not resolve did:web DID: %s", didWeb)
 	}
 
 	pubKey, privKey, err := crypto.GenerateKeyByKeyType(request.KeyType)
@@ -52,7 +81,7 @@ func (h *webDIDHandler) CreateDID(ctx context.Context, request CreateDIDRequest)
 
 	// store metadata in DID storage
 	id := didWeb.String()
-	storedDID := StoredDID{
+	storedDID := DefaultStoredDID{
 		ID:          id,
 		DID:         *doc,
 		SoftDeleted: false,
@@ -70,6 +99,7 @@ func (h *webDIDHandler) CreateDID(ctx context.Context, request CreateDIDRequest)
 
 	// store private key in key storage
 	keyStoreRequest := keystore.StoreKeyRequest{
+		// TODO(gabe): this should be a unique ID for the key
 		ID:               id,
 		Type:             request.KeyType,
 		Controller:       id,
@@ -77,7 +107,7 @@ func (h *webDIDHandler) CreateDID(ctx context.Context, request CreateDIDRequest)
 	}
 
 	if err = h.keyStore.StoreKey(ctx, keyStoreRequest); err != nil {
-		return nil, errors.Wrap(err, "could not store did:key private key")
+		return nil, errors.Wrap(err, "could not store did:web private key")
 	}
 
 	return &CreateDIDResponse{
@@ -87,44 +117,43 @@ func (h *webDIDHandler) CreateDID(ctx context.Context, request CreateDIDRequest)
 	}, nil
 }
 
-func (h *webDIDHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {
-
+func (h *webHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {
 	logrus.Debugf("getting DID: %+v", request)
 
 	id := request.ID
-	gotDID, err := h.storage.GetDID(ctx, id)
+	gotDID, err := h.storage.GetDIDDefault(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("error getting DID: %s", id)
+		return nil, errors.Wrapf(err, "error getting DID: %s", id)
 	}
 	if gotDID == nil {
 		return nil, fmt.Errorf("did with id<%s> could not be found", id)
 	}
-	return &GetDIDResponse{DID: gotDID.DID}, nil
+	return &GetDIDResponse{DID: gotDID.GetDocument()}, nil
 }
 
-func (h *webDIDHandler) GetDIDs(ctx context.Context, method did.Method) (*GetDIDsResponse, error) {
-	logrus.Debugf("getting DIDs for method: %s", method)
+func (h *webHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
+	logrus.Debug("getting did:web DID")
 
-	gotDIDs, err := h.storage.GetDIDs(ctx, string(method))
+	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.WebMethod.String())
 	if err != nil {
-		return nil, fmt.Errorf("error getting DIDs for method: %s", method)
+		return nil, errors.Wrap(err, "getting did:web DIDs")
 	}
 	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
-		if !gotDID.SoftDeleted {
-			dids = append(dids, gotDID.DID)
+		if !gotDID.IsSoftDeleted() {
+			dids = append(dids, gotDID.GetDocument())
 		}
 	}
 	return &GetDIDsResponse{DIDs: dids}, nil
 }
 
-func (h *webDIDHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error {
+func (h *webHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error {
 	logrus.Debugf("soft deleting DID: %+v", request)
 
 	id := request.ID
-	gotStoredDID, err := h.storage.GetDID(ctx, id)
+	gotStoredDID, err := h.storage.GetDIDDefault(ctx, id)
 	if err != nil {
-		return fmt.Errorf("error getting DID: %s", id)
+		return errors.Wrapf(err, "getting DID: %s", id)
 	}
 	if gotStoredDID == nil {
 		return fmt.Errorf("did with id<%s> could not be found", id)

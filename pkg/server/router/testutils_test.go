@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -35,8 +36,8 @@ func testDIDService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.
 		BaseServiceConfig: &config.BaseServiceConfig{
 			Name: "did",
 		},
-		Methods:           []string{"key"},
-		ResolutionMethods: []string{"key"},
+		Methods:                []string{"key"},
+		LocalResolutionMethods: []string{"key"},
 	}
 	// create a did service
 	didService, err := did.NewDIDService(serviceConfig, db, keyStore)
