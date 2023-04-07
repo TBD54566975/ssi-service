@@ -194,7 +194,7 @@ type credApplicationParams struct {
 	ManifestID   string
 }
 
-func CreateCredentialApplicationJWT(credApplication credApplicationParams, credentialJWT, aliceDID, aliceDIDPrivateKey string) (string, error) {
+func CreateCredentialApplicationJWT(credApplication credApplicationParams, credentialJWT, aliceDID, aliceKID, aliceDIDPrivateKey string) (string, error) {
 	logrus.Println("\n\nCreate an Application JWT:")
 	applicationJSON, err := resolveTemplate(credApplication, "application-input.json")
 	if err != nil {
@@ -211,7 +211,7 @@ func CreateCredentialApplicationJWT(credApplication credApplicationParams, crede
 		return "", errors.Wrap(err, "bytes to priv key")
 	}
 
-	signer, err := keyaccess.NewJWKKeyAccess(aliceDID, alicePrivKey)
+	signer, err := keyaccess.NewJWKKeyAccess(aliceDID, aliceKID, alicePrivKey)
 	if err != nil {
 		return "", errors.Wrap(err, "creating signer")
 	}
@@ -257,6 +257,7 @@ func ReviewSubmission(id string) (string, error) {
 
 type submissionParams struct {
 	HolderID      string
+	HolderKID     string
 	DefinitionID  string
 	CredentialJWT string
 	SubmissionID  string
@@ -283,7 +284,7 @@ func CreateSubmission(params submissionParams, holderPrivateKey string) (string,
 		return "", errors.Wrap(err, "bytes to priv key")
 	}
 
-	signer, err := keyaccess.NewJWKKeyAccess(params.HolderID, pkCrypto)
+	signer, err := keyaccess.NewJWKKeyAccess(params.HolderID, params.HolderKID, pkCrypto)
 	if err != nil {
 		return "", errors.Wrap(err, "creating signer")
 	}

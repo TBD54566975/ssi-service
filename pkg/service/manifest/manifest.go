@@ -5,6 +5,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/goccy/go-json"
+	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
 
 	didint "github.com/tbd54566975/ssi-service/internal/did"
@@ -19,7 +20,7 @@ func (s Service) signManifestJWT(ctx context.Context, m CredentialManifestContai
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key for signing manifest with key<%s>", issuerID)
 	}
-	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
+	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not create key access for signing manifest with key<%s>", gotKey.ID)
 	}
@@ -38,6 +39,15 @@ func (s Service) verifyManifestJWT(ctx context.Context, token keyaccess.JWT) (*m
 		return nil, util.LoggingErrorMsg(err, "could not parse JWT")
 	}
 
+	jwtKID, ok := parsed.Get(jws.KeyIDKey)
+	if !ok {
+		return nil, util.LoggingErrorMsg(err, "could not get key ID from JWT")
+	}
+	kid, ok := jwtKID.(string)
+	if !ok {
+		return nil, util.LoggingErrorMsg(err, "could not convert key ID to string")
+	}
+
 	claims := parsed.PrivateClaims()
 	claimsJSONBytes, err := json.Marshal(claims)
 	if err != nil {
@@ -49,7 +59,7 @@ func (s Service) verifyManifestJWT(ctx context.Context, token keyaccess.JWT) (*m
 		return nil, util.LoggingErrorMsg(err, "unmarshalling claims into manifest")
 	}
 
-	if err = didint.VerifyTokenFromDID(ctx, s.didResolver, parsedManifest.Manifest.Issuer.ID, token); err != nil {
+	if err = didint.VerifyTokenFromDID(ctx, s.didResolver, parsedManifest.Manifest.Issuer.ID, kid, token); err != nil {
 		return nil, util.LoggingErrorMsg(err, "verifying manifest JWT")
 	}
 	return &parsedManifest.Manifest, nil

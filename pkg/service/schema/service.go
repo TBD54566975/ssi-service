@@ -11,12 +11,12 @@ import (
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
+	"github.com/lestrrat-go/jwx/jws"
 	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
-	"github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -148,7 +148,7 @@ func (s Service) signSchemaJWT(ctx context.Context, author string, schema schema
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key for signing schema for author<%s>", author)
 	}
-	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
+	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not create key access for signing schema for author<%s>", author)
 	}
@@ -189,6 +189,14 @@ func (s Service) verifySchemaJWT(ctx context.Context, token keyaccess.JWT) (*sch
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not parse JWT")
 	}
+	jwtKID, ok := parsed.Get(jws.KeyIDKey)
+	if !ok {
+		return nil, util.LoggingNewError("JWT does not contain a kid")
+	}
+	kid, ok := jwtKID.(string)
+	if !ok {
+		return nil, util.LoggingNewError("JWT kid is not a string")
+	}
 	claims := parsed.PrivateClaims()
 	claimsJSONBytes, err := json.Marshal(claims)
 	if err != nil {
@@ -202,11 +210,11 @@ func (s Service) verifySchemaJWT(ctx context.Context, token keyaccess.JWT) (*sch
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to resolve schema author's did: %s", parsedSchema.Author)
 	}
-	kid, pubKey, err := did.GetVerificationInformation(resolved.Document, "")
+	pubKey, err := didsdk.GetKeyFromVerificationMethod(resolved.Document, kid)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not get verification information from schema")
 	}
-	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
+	verifier, err := keyaccess.NewJWKKeyAccessVerifier(parsedSchema.Author, kid, pubKey)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not create schema verifier")
 	}

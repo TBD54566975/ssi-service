@@ -342,7 +342,7 @@ func (s Service) signCredentialJWT(ctx context.Context, issuer string, cred cred
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key for signing credential with key<%s>", issuer)
 	}
-	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
+	keyAccess, err := keyaccess.NewJWKKeyAccess(issuer, gotKey.ID, gotKey.Key)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not create key access for signing credential with key<%s>", gotKey.ID)
 	}

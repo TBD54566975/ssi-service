@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 
@@ -116,7 +117,7 @@ func TestManifestRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
 		assert.NoError(tt, err)
-		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantPrivKey)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantDID.DID.VerificationMethod[0].ID, applicantPrivKey)
 		assert.NoError(tt, err)
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)

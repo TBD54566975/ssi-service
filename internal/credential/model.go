@@ -45,7 +45,7 @@ func (c Container) HasJWTCredential() bool {
 
 // NewCredentialContainerFromJWT attempts to parse a VC-JWT credential from a string into a Container
 func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
-	cred, err := signing.ParseVerifiableCredentialFromJWT(credentialJWT)
+	_, cred, err := signing.ParseVerifiableCredentialFromJWT(credentialJWT)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse credential from JWT")
 	}

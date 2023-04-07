@@ -8,6 +8,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/lestrrat-go/jwx/jws"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -161,14 +162,23 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 		return nil, errors.Wrap(err, "provided value is not a valid presentation submission")
 	}
 
-	sdkVP, err := signing.ParseVerifiablePresentationFromJWT(request.SubmissionJWT.String())
+	token, vp, err := signing.ParseVerifiablePresentationFromJWT(request.SubmissionJWT.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing vp from jwt")
 	}
 
+	gotKID, ok := token.Get(jws.KeyIDKey)
+	if !ok {
+		return nil, errors.New("kid not found in token")
+	}
+	kid, ok := gotKID.(string)
+	if !ok {
+		return nil, errors.New("kid not a string")
+	}
+
 	// verify the token with the did by first resolving the did and getting the public key and next verifying the token
-	if err = didint.VerifyTokenFromDID(ctx, s.resolver, sdkVP.Holder, request.SubmissionJWT); err != nil {
-		return nil, errors.Wrap(err, "verifying token from did")
+	if err = didint.VerifyTokenFromDID(ctx, s.resolver, vp.Holder, kid, request.SubmissionJWT); err != nil {
+		return nil, errors.Wrapf(err, "verifying token from did<%s> with kid<%s>", vp.Holder, kid)
 	}
 
 	if _, err = s.storage.GetSubmission(ctx, request.Submission.ID); !errors.Is(err, presentationstorage.ErrSubmissionNotFound) {

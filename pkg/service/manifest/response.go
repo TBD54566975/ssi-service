@@ -12,6 +12,7 @@ import (
 	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -31,7 +32,7 @@ func (s Service) signCredentialResponseJWT(ctx context.Context, signingDID strin
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key for signing response with key<%s>", signingDID)
 	}
-	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
+	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(
 			err,

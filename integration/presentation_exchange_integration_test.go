@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 )
 
@@ -89,6 +90,7 @@ func TestSubmissionFlow(t *testing.T) {
 
 	toBeCancelledOp, err := CreateSubmission(submissionParams{
 		HolderID:      holderDID.(string),
+		HolderKID:     holderDID.(string),
 		DefinitionID:  definitionID.(string),
 		CredentialJWT: credentialJWT,
 		SubmissionID:  uuid.NewString(),
@@ -105,6 +107,7 @@ func TestSubmissionFlow(t *testing.T) {
 
 	submissionOpOutput, err := CreateSubmission(submissionParams{
 		HolderID:      holderDID.(string),
+		HolderKID:     holderDID.(string),
 		DefinitionID:  definitionID.(string),
 		CredentialJWT: credentialJWT,
 		SubmissionID:  uuid.NewString(),

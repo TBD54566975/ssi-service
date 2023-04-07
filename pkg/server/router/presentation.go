@@ -10,6 +10,8 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"go.einride.tech/aip/filtering"
+
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -17,7 +19,6 @@ import (
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
-	"go.einride.tech/aip/filtering"
 )
 
 type PresentationRouter struct {
@@ -242,15 +243,15 @@ type CreateSubmissionRequest struct {
 }
 
 func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequest, error) {
-	sdkVP, err := signing.ParseVerifiablePresentationFromJWT(r.SubmissionJWT.String())
+	_, vp, err := signing.ParseVerifiablePresentationFromJWT(r.SubmissionJWT.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing presentation from jwt")
 	}
-	if err := sdkVP.IsValid(); err != nil {
+	if err := vp.IsValid(); err != nil {
 		return nil, errors.Wrap(err, "verifying vp validity")
 	}
 
-	submissionData, err := json.Marshal(sdkVP.PresentationSubmission)
+	submissionData, err := json.Marshal(vp.PresentationSubmission)
 	if err != nil {
 		return nil, errors.Wrap(err, "marshalling presentation_submission")
 	}
@@ -261,15 +262,15 @@ func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequ
 	if err := s.IsValid(); err != nil {
 		return nil, errors.Wrap(err, "verifying submission validity")
 	}
-	sdkVP.PresentationSubmission = s
+	vp.PresentationSubmission = s
 
-	credContainers, err := credint.NewCredentialContainerFromArray(sdkVP.VerifiableCredential)
+	credContainers, err := credint.NewCredentialContainerFromArray(vp.VerifiableCredential)
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing verifiable credential array")
 	}
 
 	return &model.CreateSubmissionRequest{
-		Presentation:  *sdkVP,
+		Presentation:  *vp,
 		SubmissionJWT: r.SubmissionJWT,
 		Submission:    s,
 		Credentials:   credContainers}, nil

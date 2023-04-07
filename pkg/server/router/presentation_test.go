@@ -11,6 +11,7 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -55,7 +56,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 	require.NoError(t, err)
 	privKey, err := crypto.BytesToPrivKey(privKeyBytes, authorDID.KeyType)
 	require.NoError(t, err)
-	ka, err := keyaccess.NewJWKKeyAccessVerifier(authorDID.DID.ID, privKey.(Public).Public())
+	ka, err := keyaccess.NewJWKKeyAccessVerifier(authorDID.DID.ID, authorDID.DID.ID, privKey.(Public).Public())
 	require.NoError(t, err)
 
 	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s, didService.GetResolver(), schemaService, keyStoreService)

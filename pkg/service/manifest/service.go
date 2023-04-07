@@ -277,11 +277,10 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 	}
 
 	opID := opcredential.IDFromResponseID(applicationID)
+
 	// validate the application
-	if unfulfilledInputDescriptorIDs, validationErr := s.validateCredentialApplication(
-		ctx, gotManifest.Manifest,
-		request,
-	); validationErr != nil {
+	unfulfilledInputDescriptorIDs, validationErr := s.validateCredentialApplication(ctx, gotManifest.Manifest, request)
+	if validationErr != nil {
 		resp := errresp.GetErrorResponse(validationErr)
 		if resp.ErrorType == DenialResponse {
 			denialResp, err := buildDenialCredentialResponse(
@@ -326,9 +325,7 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 		return nil, util.LoggingErrorMsg(err, "could not store application")
 	}
 
-	storedOp := &opstorage.StoredOperation{
-		ID: opID,
-	}
+	storedOp := &opstorage.StoredOperation{ID: opID}
 	if err = s.opsStorage.StoreOperation(ctx, *storedOp); err != nil {
 		return nil, errors.Wrap(err, "storing operation")
 	}

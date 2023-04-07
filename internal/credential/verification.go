@@ -2,14 +2,16 @@ package credential
 
 import (
 	"context"
-	"crypto"
 	"fmt"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/credential/verification"
+	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
+	"github.com/lestrrat-go/jwx/jws"
+	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/pkg/errors"
 
 	didint "github.com/tbd54566975/ssi-service/internal/did"
@@ -52,30 +54,32 @@ func NewCredentialVerifier(didResolver didsdk.Resolver, schemaResolver schema.Re
 // a set of static verification checks on the credential as per the credential service's configuration.
 func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
 	// first, parse the token to see if it contains a valid verifiable credential
-	cred, err := signing.ParseVerifiableCredentialFromJWT(token.String())
+	gotJWT, cred, err := signing.ParseVerifiableCredentialFromJWT(token.String())
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not parse credential from JWT")
 	}
 
-	// TODO(gabe) support resolving keys by ID
-	jwtKID, err := util.GetKeyIDFromJWT(token)
-	if err != nil {
-		return util.LoggingErrorMsg(err, "could not get key ID from JWT")
+	kid, ok := gotJWT.Get(jws.KeyIDKey)
+	if !ok {
+		return util.LoggingErrorMsg(err, "could not find key ID in JWT")
+	}
+	jwtKID, ok := kid.(string)
+	if !ok {
+		return util.LoggingNewErrorf("could not convert key ID to string: %v", kid)
 	}
 
 	// resolve the issuer's key material
-	kid, pubKey, err := v.resolveCredentialIssuerKey(ctx, *cred)
+	issuerDID, ok := cred.Issuer.(string)
+	if !ok {
+		return util.LoggingNewErrorf("could not convert issuer to string: %v", cred.Issuer)
+	}
+	pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, issuerDID, jwtKID)
 	if err != nil {
 		return util.LoggingError(err)
 	}
 
-	if jwtKID != kid {
-		errMsg := fmt.Sprintf("JWT<%s> and credential<%s> key IDs do not match", jwtKID, kid)
-		return util.LoggingErrorMsg(err, errMsg)
-	}
-
 	// construct a signature verifier from the verification information
-	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
+	verifier, err := keyaccess.NewJWKKeyAccessVerifier(issuerDID, jwtKID, pubKey)
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not create verifier")
 	}
@@ -92,15 +96,29 @@ func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) 
 // a set of static verification checks on the credential as per the credential service's configuration.
 func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential credsdk.VerifiableCredential) error {
 	// resolve the issuer's key material
-	kid, pubKey, err := v.resolveCredentialIssuerKey(ctx, credential)
+	issuer, ok := credential.Issuer.(string)
+	if !ok {
+		return util.LoggingNewErrorf("could not convert issuer to string: %v", credential.Issuer)
+	}
+
+	maybeVerificationMethod, err := getKeyFromProof(*credential.Proof, "verificationMethod")
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not get verification method from proof")
+	}
+	verificationMethod, ok := maybeVerificationMethod.(string)
+	if !ok {
+		return util.LoggingNewErrorf("could not convert verification method to string: %v", maybeVerificationMethod)
+	}
+
+	pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, issuer, verificationMethod)
 	if err != nil {
 		return util.LoggingError(err)
 	}
 
 	// construct a signature verifier from the verification information
-	verifier, err := keyaccess.NewDataIntegrityKeyAccess(kid, pubKey)
+	verifier, err := keyaccess.NewDataIntegrityKeyAccess(issuer, verificationMethod, pubKey)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create verifier for kid %s", kid)
+		errMsg := fmt.Sprintf("could not create verifier for kid %s", verificationMethod)
 		return util.LoggingErrorMsg(err, errMsg)
 	}
 
@@ -112,15 +130,40 @@ func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential 
 	return v.staticVerificationChecks(ctx, credential)
 }
 
+func getKeyFromProof(proof crypto.Proof, key string) (any, error) {
+	proofBytes, err := json.Marshal(proof)
+	if err != nil {
+		return nil, err
+	}
+	var proofMap map[string]any
+	if err = json.Unmarshal(proofBytes, &proofMap); err != nil {
+		return nil, err
+	}
+	return proofMap[key], nil
+}
+
 func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT) error {
-	// resolve the did's key material
-	kid, pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, did)
+	gotJWT, err := jwt.Parse([]byte(token))
+	if err != nil {
+		return util.LoggingErrorMsg(err, "could not parse JWT")
+	}
+	kid, ok := gotJWT.Get(jws.KeyIDKey)
+	if !ok {
+		return util.LoggingErrorMsg(err, "could not find key ID in JWT")
+	}
+	jwtKID, ok := kid.(string)
+	if !ok {
+		return util.LoggingNewErrorf("could not convert key ID to string: %v", kid)
+	}
+
+	// resolve key material from the DID
+	pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, did, jwtKID)
 	if err != nil {
 		return util.LoggingError(err)
 	}
 
 	// construct a signature verifier from the verification information
-	verifier, err := keyaccess.NewJWKKeyAccessVerifier(kid, pubKey)
+	verifier, err := keyaccess.NewJWKKeyAccessVerifier(did, jwtKID, pubKey)
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "could not create verifier for kid %s", kid)
 	}
@@ -131,14 +174,6 @@ func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT
 	}
 
 	return nil
-}
-
-// resolveCredentialIssuerKey resolves the issuer's public key from the credential's issuer DID.
-// TODO(gabe): perhaps this should be a verification method referenced on the proof object, not the issuer
-// TODO(gabe): support issuers that are not strings, but objects
-func (v Verifier) resolveCredentialIssuerKey(ctx context.Context, credential credsdk.VerifiableCredential) (kid string, pubKey crypto.PublicKey, err error) {
-	issuerDID := credential.Issuer.(string)
-	return didint.ResolveKeyForDID(ctx, v.didResolver, issuerDID)
 }
 
 // staticVerificationChecks runs a set of static verification checks on the credential as per the credential

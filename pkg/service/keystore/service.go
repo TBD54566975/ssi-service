@@ -204,7 +204,7 @@ func (s Service) Sign(ctx context.Context, keyID string, data any) (*keyaccess.J
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not get key for signing schema for keyID<%s>", keyID)
 	}
-	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
+	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "could not create key access for signing schema for keyID<%s>", keyID)
 	}
