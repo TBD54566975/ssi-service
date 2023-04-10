@@ -35,6 +35,7 @@ type StoredCredential struct {
 	CredentialJWT *keyaccess.JWT                   `json:"token,omitempty"`
 
 	Issuer       string `json:"issuer"`
+	IssuerKID    string `json:"issuerKid"`
 	Subject      string `json:"subject"`
 	Schema       string `json:"schema"`
 	IssuanceDate string `json:"issuanceDate"`
@@ -307,6 +308,7 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 		Credential:    cred,
 		CredentialJWT: request.CredentialJWT,
 		Issuer:        issuer,
+		IssuerKID:     request.IssuerKID,
 		Subject:       subject,
 		Schema:        schema,
 		IssuanceDate:  cred.IssuanceDate,

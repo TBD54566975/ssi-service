@@ -154,7 +154,7 @@ func TestSchemaSigning(t *testing.T) {
 		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema, Sign: true})
 		assert.Error(tt, err)
 		assert.Empty(tt, createdSchema)
-		assert.Contains(tt, err.Error(), "could not get key for signing schema for author<me>")
+		assert.Contains(tt, err.Error(), "could not get key for signing schema for authorKID<>: getting key with id:")
 
 		// create an author DID
 		authorDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{

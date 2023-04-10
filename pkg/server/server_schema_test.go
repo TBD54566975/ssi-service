@@ -71,7 +71,7 @@ func TestSchemaAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		err := schemaService.CreateSchema(newRequestContext(), w, req)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not create schema with authoring DID: did:test")
+		assert.Contains(tt, err.Error(), "cannot sign schema without authorKID")
 
 		// create a DID
 		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
@@ -82,7 +82,8 @@ func TestSchemaAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// sign with known DID
-		schemaRequest = router.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "test schema", Schema: simpleSchema, Sign: true}
+		kid := issuerDID.DID.VerificationMethod[0].ID
+		schemaRequest = router.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "test schema", Schema: simpleSchema, Sign: true}
 		schemaRequestValue = newRequestValue(tt, schemaRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		err = schemaService.CreateSchema(newRequestContext(), w, req)

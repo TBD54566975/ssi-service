@@ -40,6 +40,7 @@ func TestIssuanceRouter(t *testing.T) {
 					IssuanceTemplate: issuing.IssuanceTemplate{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
+						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
 						Credentials: []issuing.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
@@ -62,6 +63,7 @@ func TestIssuanceRouter(t *testing.T) {
 					IssuanceTemplate: issuing.IssuanceTemplate{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
+						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
 						Credentials: []issuing.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
@@ -108,6 +110,7 @@ func TestIssuanceRouter(t *testing.T) {
 					IssuanceTemplate: issuing.IssuanceTemplate{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
+						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
 						Credentials: []issuing.CredentialTemplate{
 							{
 								ID:     "",
@@ -131,6 +134,7 @@ func TestIssuanceRouter(t *testing.T) {
 					IssuanceTemplate: issuing.IssuanceTemplate{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
+						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
 						Credentials: []issuing.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
@@ -155,6 +159,7 @@ func TestIssuanceRouter(t *testing.T) {
 					IssuanceTemplate: issuing.IssuanceTemplate{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
+						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
 						Credentials: []issuing.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
@@ -178,6 +183,7 @@ func TestIssuanceRouter(t *testing.T) {
 					IssuanceTemplate: issuing.IssuanceTemplate{
 						CredentialManifest: "fake manifest id",
 						Issuer:             issuerResp.DID.ID,
+						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
 						Credentials: []issuing.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
@@ -239,6 +245,7 @@ func TestIssuanceRouter(t *testing.T) {
 		inputTemplate := issuing.IssuanceTemplate{
 			CredentialManifest: manifest.Manifest.ID,
 			Issuer:             issuerResp.DID.ID,
+			IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
 			Credentials: []issuing.CredentialTemplate{
 				{
 					ID:     "output_descriptor_1",
@@ -357,6 +364,7 @@ func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, 
 			IssuanceTemplate: issuing.IssuanceTemplate{
 				CredentialManifest: manifest.Manifest.ID,
 				Issuer:             issuerResp.DID.ID,
+				IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
 				Credentials: []issuing.CredentialTemplate{
 					{
 						ID:     "output_descriptor_1",

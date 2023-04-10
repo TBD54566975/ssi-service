@@ -17,6 +17,7 @@ import (
 type Container struct {
 	// Credential ID
 	ID            string
+	IssuerKID     string
 	Credential    *credential.VerifiableCredential
 	CredentialJWT *keyaccess.JWT
 	Revoked       bool

@@ -282,6 +282,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 
 	container := credint.Container{
 		ID:            cred.ID,
+		IssuerKID:     request.IssuerKID,
 		Credential:    cred,
 		CredentialJWT: credJWT,
 		Revoked:       false,
@@ -323,6 +324,7 @@ func createStatusListCredential(ctx context.Context, tx storage.Tx, s Service, s
 
 	statusListContainer := credint.Container{
 		ID:            generatedStatusListCredential.ID,
+		IssuerKID:     issuerKID,
 		Credential:    generatedStatusListCredential,
 		CredentialJWT: statusListCredJWT,
 	}
@@ -615,6 +617,7 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 	// store the credential with updated status
 	container := credint.Container{
 		ID:            gotCred.ID,
+		IssuerKID:     gotCred.IssuerKID,
 		Credential:    gotCred.Credential,
 		CredentialJWT: gotCred.CredentialJWT,
 		Revoked:       request.Revoked,
@@ -672,7 +675,7 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 
 	generatedStatusListCredential.CredentialSchema = gotCred.Credential.CredentialSchema
 
-	statusListCredJWT, err := s.signCredentialJWT(ctx, gotCred.Issuer, *generatedStatusListCredential)
+	statusListCredJWT, err := s.signCredentialJWT(ctx, gotCred.IssuerKID, *generatedStatusListCredential)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not sign status list credential")
 	}
@@ -680,6 +683,7 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 	// store the status list credential
 	statusListContainer := credint.Container{
 		ID:            generatedStatusListCredential.ID,
+		IssuerKID:     gotCred.IssuerKID,
 		Credential:    generatedStatusListCredential,
 		CredentialJWT: statusListCredJWT,
 	}

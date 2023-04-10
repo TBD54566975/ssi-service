@@ -94,7 +94,7 @@ func TestManifestRouter(t *testing.T) {
 		assert.NotEmpty(tt, createdCred)
 
 		// good manifest request, which asks for a single verifiable credential in the VC-JWT format
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, kid, createdSchema.ID)
 		createdManifest, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
@@ -146,9 +146,10 @@ func TestManifestRouter(t *testing.T) {
 }
 
 // getValidManifestRequest returns a valid manifest request, expecting a single JWT-VC EdDSA credential
-func getValidManifestRequest(issuerDID, schemaID string) model.CreateManifestRequest {
+func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.CreateManifestRequest {
 	createManifestRequest := model.CreateManifestRequest{
 		IssuerDID: issuerDID,
+		IssuerKID: issuerKID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},

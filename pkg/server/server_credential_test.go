@@ -73,7 +73,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", missingIssuerRequestValue)
 		err = credRouter.CreateCredential(newRequestContext(), w, req)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not get key for signing credential with key<did:abc:123#key-1>")
+		assert.Contains(tt, err.Error(), "getting key for signing credential<did:abc:123#key-1>")
 
 		// reset the http recorder
 		w.Flush()
