@@ -35,6 +35,10 @@ github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410182513-ac2084ff8094 h1:N0t
 github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410182513-ac2084ff8094/go.mod h1:Ro9+HDADuYcLnCYKIL8pu92XWITKetTPOqfwLThplO0=
 github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410184545-8e1086c3822a h1:QwoAvRTQkYUlwKuuC256FIgUm0YT6NGb5X2hekNqTaU=
 github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410184545-8e1086c3822a/go.mod h1:Ro9+HDADuYcLnCYKIL8pu92XWITKetTPOqfwLThplO0=
+github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410205511-7a5730cdd712 h1:err5jP/g05qrJTn71t2qr8YX24G4w+BbPEWU2pDGRZI=
+github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410205511-7a5730cdd712/go.mod h1:Ro9+HDADuYcLnCYKIL8pu92XWITKetTPOqfwLThplO0=
+github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410220001-cbd9818e8367 h1:dYkvkaLS7fLBPy06PDal2DZBHYiD79Z//1sOjaojR1U=
+github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410220001-cbd9818e8367/go.mod h1:Ro9+HDADuYcLnCYKIL8pu92XWITKetTPOqfwLThplO0=
 github.com/ajg/form v0.0.0-20160822230020-523a5da1a92f/go.mod h1:uL1WgH+h2mgNtvBq0339dVnzXdBETtL2LeUXaIv25UY=
 github.com/ajstarks/svgo v0.0.0-20180226025133-644b8db467af/go.mod h1:K08gAheRH3/J6wwsYMMT4xOr94bZjxIelGM0+d/wbFw=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=

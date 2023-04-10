@@ -2,11 +2,13 @@ package keyaccess
 
 import (
 	gocrypto "crypto"
+	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
+	"github.com/lestrrat-go/jwx/jws"
 	"github.com/pkg/errors"
 )
 
@@ -155,4 +157,16 @@ func (ka JWKKeyAccess) VerifyVerifiablePresentation(token JWT) (*credential.Veri
 	}
 	_, _, presentation, err := signing.VerifyVerifiablePresentationJWT(*ka.JWTVerifier, token.String())
 	return presentation, err
+}
+
+// GetJWTHeaders returns the headers of a JWT token, assuming there is only one signature.
+func GetJWTHeaders(token []byte) (jws.Headers, error) {
+	msg, err := jws.Parse(token)
+	if err != nil {
+		return nil, err
+	}
+	if len(msg.Signatures()) != 1 {
+		return nil, fmt.Errorf("expected 1 signature, got %d", len(msg.Signatures()))
+	}
+	return msg.Signatures()[0].ProtectedHeaders(), nil
 }

@@ -11,7 +11,6 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/lestrrat-go/jwx/jws"
-	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/pkg/errors"
 
 	didint "github.com/tbd54566975/ssi-service/internal/did"
@@ -143,27 +142,28 @@ func getKeyFromProof(proof crypto.Proof, key string) (any, error) {
 }
 
 func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT) error {
-	gotJWT, err := jwt.Parse([]byte(token))
+	// parse headers
+	headers, err := keyaccess.GetJWTHeaders([]byte(token))
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not parse JWT")
+		return util.LoggingErrorMsg(err, "could not parse JWT headers")
 	}
-	kid, ok := gotJWT.Get(jws.KeyIDKey)
+	jwtKID, ok := headers.Get(jws.KeyIDKey)
 	if !ok {
-		return util.LoggingErrorMsg(err, "could not find key ID in JWT")
+		return util.LoggingNewError("JWT does not contain a kid")
 	}
-	jwtKID, ok := kid.(string)
+	kid, ok := jwtKID.(string)
 	if !ok {
-		return util.LoggingNewErrorf("could not convert key ID to string: %v", kid)
+		return util.LoggingNewError("JWT kid is not a string")
 	}
 
 	// resolve key material from the DID
-	pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, did, jwtKID)
+	pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, did, kid)
 	if err != nil {
 		return util.LoggingError(err)
 	}
 
 	// construct a signature verifier from the verification information
-	verifier, err := keyaccess.NewJWKKeyAccessVerifier(did, jwtKID, pubKey)
+	verifier, err := keyaccess.NewJWKKeyAccessVerifier(did, kid, pubKey)
 	if err != nil {
 		return util.LoggingErrorMsgf(err, "could not create verifier for kid %s", kid)
 	}

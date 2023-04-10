@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/lestrrat-go/jwx/v2/jws"
 
 	didint "github.com/tbd54566975/ssi-service/internal/did"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
@@ -22,24 +22,25 @@ import (
 // is a valid credential application, and complies with its corresponding manifest. it returns the ids of unfulfilled
 // input descriptors along with an error if validation fails.
 func (s Service) validateCredentialApplication(ctx context.Context, credManifest manifest.CredentialManifest, request model.SubmitApplicationRequest) (inputDescriptorIDs []string, err error) {
-	gotJWT, err := jwt.Parse([]byte(request.ApplicationJWT))
+	// parse headers
+	headers, err := keyaccess.GetJWTHeaders([]byte(request.ApplicationJWT.String()))
 	if err != nil {
-		err = util.LoggingErrorMsg(err, "could not parse application JWT")
+		err = util.LoggingErrorMsg(err, "could not parse JWT headers")
 		return
 	}
-	kid, ok := gotJWT.Get(jws.KeyIDKey)
+	jwtKID, ok := headers.Get(jws.KeyIDKey)
 	if !ok {
-		err = util.LoggingErrorMsg(err, "could not get kid from application JWT")
+		err = util.LoggingNewError("JWT does not contain a kid")
 		return
 	}
-	kidStr, ok := kid.(string)
+	kid, ok := jwtKID.(string)
 	if !ok {
-		err = util.LoggingErrorMsg(err, "could not get kid from application JWT")
+		err = util.LoggingNewError("JWT kid is not a string")
 		return
 	}
 
 	// validate the payload's signature
-	if verificationErr := didint.VerifyTokenFromDID(ctx, s.didResolver, request.ApplicantDID, kidStr, request.ApplicationJWT); verificationErr != nil {
+	if verificationErr := didint.VerifyTokenFromDID(ctx, s.didResolver, request.ApplicantDID, kid, request.ApplicationJWT); verificationErr != nil {
 		err = util.LoggingErrorMsgf(err, "could not verify application<%s>'s signature", request.Application.ID)
 		return
 	}

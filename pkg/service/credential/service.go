@@ -277,7 +277,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 	}
 	credJWT, err := s.signCredentialJWT(ctx, request.IssuerKID, *credCopy)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not sign credential")
+		return nil, util.LoggingErrorMsg(err, "signing credential")
 	}
 
 	container := credint.Container{
@@ -293,7 +293,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 	}
 
 	if err = s.storage.StoreCredentialTx(ctx, tx, credentialStorageRequest); err != nil {
-		return nil, util.LoggingErrorMsg(err, "failed to save vc")
+		return nil, util.LoggingErrorMsg(err, "saving credential")
 	}
 
 	response := CreateCredentialResponse{Container: container}

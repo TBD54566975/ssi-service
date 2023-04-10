@@ -164,7 +164,7 @@ func (s *SSIServer) SchemaAPI(service svcframework.Service, webhookService *webh
 func (s *SSIServer) CredentialAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
 	credRouter, err := router.NewCredentialRouter(service)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create credential router")
+		return util.LoggingErrorMsg(err, "creating credential router")
 	}
 
 	credentialHandlerPath := V1Prefix + CredentialsPrefix
@@ -187,7 +187,7 @@ func (s *SSIServer) CredentialAPI(service svcframework.Service, webhookService *
 func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
 	pRouter, err := router.NewPresentationRouter(service)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create credential router")
+		return util.LoggingErrorMsg(err, "creating credential router")
 	}
 
 	handlerPath := V1Prefix + PresentationsPrefix + DefinitionsPrefix

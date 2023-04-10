@@ -125,7 +125,7 @@ func TestManifestRouter(t *testing.T) {
 		assert.NoError(tt, err)
 
 		submitApplicationRequest := SubmitApplicationRequest{ApplicationJWT: *signed}
-		sar, err := submitApplicationRequest.ToServiceRequest()
+		sar, err := submitApplicationRequest.toServiceRequest()
 		assert.NoError(tt, err)
 		createdApplicationResponseOp, err := manifestService.ProcessApplicationSubmission(context.Background(), *sar)
 		assert.NoError(tt, err)

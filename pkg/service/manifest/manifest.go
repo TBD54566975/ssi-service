@@ -33,18 +33,24 @@ func (s Service) signManifestJWT(ctx context.Context, keyID string, m Credential
 }
 
 func (s Service) verifyManifestJWT(ctx context.Context, token keyaccess.JWT) (*manifest.CredentialManifest, error) {
-	parsed, err := jwt.Parse([]byte(token))
+	// parse headers
+	headers, err := keyaccess.GetJWTHeaders([]byte(token))
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not parse JWT")
+		return nil, util.LoggingErrorMsg(err, "could not parse JWT headers")
 	}
-
-	jwtKID, ok := parsed.Get(jws.KeyIDKey)
+	jwtKID, ok := headers.Get(jws.KeyIDKey)
 	if !ok {
-		return nil, util.LoggingErrorMsg(err, "could not get key ID from JWT")
+		return nil, util.LoggingNewError("JWT does not contain a kid")
 	}
 	kid, ok := jwtKID.(string)
 	if !ok {
-		return nil, util.LoggingErrorMsg(err, "could not convert key ID to string")
+		return nil, util.LoggingNewError("JWT kid is not a string")
+	}
+
+	// parse token
+	parsed, err := jwt.Parse([]byte(token))
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not parse JWT")
 	}
 
 	claims := parsed.PrivateClaims()

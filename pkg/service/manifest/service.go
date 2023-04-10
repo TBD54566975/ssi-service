@@ -175,6 +175,7 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 	storageRequest := manifeststg.StoredManifest{
 		ID:          m.ID,
 		Issuer:      m.Issuer.ID,
+		IssuerKID:   request.IssuerKID,
 		Manifest:    *m,
 		ManifestJWT: *manifestJWT,
 	}
@@ -261,19 +262,12 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 	gotManifest, err := s.storage.GetManifest(ctx, manifestID)
 	applicationID := request.Application.ID
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(
-			err,
-			"problem with retrieving manifest<%s> during application<%s>'s validation",
-			manifestID,
-			applicationID,
-		)
+		return nil, util.LoggingErrorMsgf(err,
+			"problem with retrieving manifest<%s> during application<%s>'s validation", manifestID, applicationID)
 	}
 	if gotManifest == nil {
 		return nil, util.LoggingNewErrorf(
-			"application<%s> is not valid; a manifest does not exist with id: %s",
-			applicationID,
-			manifestID,
-		)
+			"application<%s> is not valid; a manifest does not exist with id: %s", applicationID, manifestID)
 	}
 
 	opID := opcredential.IDFromResponseID(applicationID)
@@ -283,26 +277,21 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 	if validationErr != nil {
 		resp := errresp.GetErrorResponse(validationErr)
 		if resp.ErrorType == DenialResponse {
-			denialResp, err := buildDenialCredentialResponse(
-				manifestID,
-				applicationID,
-				resp.Err.Error(),
-				unfulfilledInputDescriptorIDs...,
-			)
+			denialResp, err := buildDenialCredentialResponse(manifestID, applicationID, resp.Err.Error(), unfulfilledInputDescriptorIDs...)
 			if err != nil {
 				return nil, util.LoggingErrorMsg(err, "could not build denial credential response")
 			}
 			sarData, err := json.Marshal(manifeststg.StoredResponse{Response: *denialResp})
 			if err != nil {
-				return nil, errors.Wrap(err, "marshalling response")
+				return nil, util.LoggingErrorMsg(err, "marshalling response")
 			}
 			storedOp := opstorage.StoredOperation{
 				ID:       opID,
 				Done:     true,
 				Response: sarData,
 			}
-			if err := s.opsStorage.StoreOperation(ctx, storedOp); err != nil {
-				return nil, errors.Wrap(err, "storing operation")
+			if err = s.opsStorage.StoreOperation(ctx, storedOp); err != nil {
+				return nil, util.LoggingErrorMsg(err, "storing operation")
 			}
 
 			return operation.ServiceModel(storedOp)
@@ -330,7 +319,7 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 		return nil, errors.Wrap(err, "storing operation")
 	}
 
-	autoStoredOp, err := s.maybeIssueAutomatically(ctx, request, manifestID, applicantDID, applicationID, gotManifest)
+	autoStoredOp, err := s.attemptAutomaticIssuance(ctx, request, manifestID, applicantDID, applicationID, *gotManifest)
 	if err != nil {
 		return nil, err
 	}
@@ -341,41 +330,35 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 	return operation.ServiceModel(*storedOp)
 }
 
-func (s Service) maybeIssueAutomatically(
-	ctx context.Context,
-	request model.SubmitApplicationRequest,
-	manifestID string,
-	applicantDID string,
-	applicationID string,
-	gotManifest *manifeststg.StoredManifest,
-) (*opstorage.StoredOperation, error) {
+// attemptAutomaticIssuance checks if there is an issuance template for the manifest, and if so,
+// attempts to issue a credential against it
+func (s Service) attemptAutomaticIssuance(ctx context.Context, request model.SubmitApplicationRequest, manifestID,
+	applicantDID, applicationID string, gotManifest manifeststg.StoredManifest) (*opstorage.StoredOperation, error) {
 	issuanceTemplates, err := s.issuanceTemplateStorage.GetIssuanceTemplatesByManifestID(ctx, manifestID)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching issuance templates by manifest ID")
 	}
 	if len(issuanceTemplates) == 0 {
+		logrus.Warnf("no issuance templates found for manifest<%s>, processing application<%s>", manifestID, applicationID)
 		return nil, nil
 	}
 
 	issuanceTemplate := issuanceTemplates[0].IssuanceTemplate
-
 	if len(issuanceTemplates) > 1 {
-		logrus.Warnf("found multiple issuance templates, using first entry only")
+		logrus.Warnf("found multiple issuance templates for manifest<%s>, using first entry only", manifestID)
 	}
 
-	credResp, creds, err := s.buildCredentialResponse(ctx, applicantDID, manifestID, gotManifest.Manifest, true, "automatic creation via issuance template", &issuanceTemplate, request.Application, request.ApplicationJSON, nil)
+	credResp, creds, err := s.buildCredentialResponse(ctx, applicantDID, manifestID, gotManifest.IssuerKID,
+		gotManifest.Manifest, true, "automatic creation via issuance template", &issuanceTemplate,
+		request.Application, request.ApplicationJSON, nil)
 	if err != nil {
 		return nil, err
 	}
-	credentials := credint.ContainersToInterface(creds)
 
-	responseJWT, err := s.signCredentialResponseJWT(
-		ctx,
-		gotManifest.Issuer, CredentialResponseContainer{
-			Response:    *credResp,
-			Credentials: credentials,
-		},
-	)
+	responseJWT, err := s.signCredentialResponseJWT(ctx, gotManifest.IssuerKID, CredentialResponseContainer{
+		Response:    *credResp,
+		Credentials: credint.ContainersToInterface(creds),
+	})
 	if err != nil {
 		return nil, errors.Wrap(err, "signing credential response")
 	}
@@ -388,14 +371,8 @@ func (s Service) maybeIssueAutomatically(
 		Credentials:  creds,
 		ResponseJWT:  *responseJWT,
 	}
-	_, storedOp, err := s.storage.ReviewApplication(
-		ctx,
-		applicationID,
-		true,
-		"automatic from issuing template",
-		opcredential.IDFromResponseID(applicationID),
-		storedResponse,
-	)
+	_, storedOp, err := s.storage.ReviewApplication(ctx, applicationID, true,
+		"automatic from issuing template", opcredential.IDFromResponseID(applicationID), storedResponse)
 	if err != nil {
 		return nil, errors.Wrap(err, "reviewing application")
 	}
@@ -427,18 +404,8 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 	applicantDID := application.ApplicantDID
 
 	// build the credential response
-	credResp, creds, err := s.buildCredentialResponse(
-		ctx,
-		applicantDID,
-		manifestID,
-		credManifest,
-		request.Approved,
-		request.Reason,
-		nil,
-		application.Application,
-		nil,
-		request.CredentialOverrides,
-	)
+	credResp, creds, err := s.buildCredentialResponse(ctx, applicantDID, manifestID, gotManifest.IssuerKID,
+		credManifest, request.Approved, request.Reason, nil, application.Application, nil, request.CredentialOverrides)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not build credential response")
 	}
@@ -466,13 +433,8 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 		Credentials:  creds,
 		ResponseJWT:  *responseJWT,
 	}
-	storedResponse, _, err := s.storage.ReviewApplication(
-		ctx, request.ID,
-		request.Approved,
-		request.Reason,
-		opcredential.IDFromResponseID(request.ID),
-		storeResponseRequest,
-	)
+	storedResponse, _, err := s.storage.ReviewApplication(ctx, request.ID, request.Approved, request.Reason,
+		opcredential.IDFromResponseID(request.ID), storeResponseRequest)
 	if err != nil {
 		return nil, errors.Wrap(err, "updating submission")
 	}
@@ -482,7 +444,6 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 }
 
 func (s Service) GetApplication(ctx context.Context, request model.GetApplicationRequest) (*model.GetApplicationResponse, error) {
-
 	logrus.Debugf("getting application: %s", request.ID)
 
 	gotApp, err := s.storage.GetApplication(ctx, request.ID)
@@ -495,7 +456,6 @@ func (s Service) GetApplication(ctx context.Context, request model.GetApplicatio
 }
 
 func (s Service) GetApplications(ctx context.Context) (*model.GetApplicationsResponse, error) {
-
 	logrus.Debugf("getting application(s)")
 
 	gotApps, err := s.storage.GetApplications(ctx)

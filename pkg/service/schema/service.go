@@ -186,7 +186,7 @@ func (s Service) VerifySchema(ctx context.Context, request VerifySchemaRequest) 
 
 func (s Service) verifySchemaJWT(ctx context.Context, token keyaccess.JWT) (*schema.VCJSONSchema, error) {
 	// parse headers
-	headers, err := getJWTHeaders([]byte(token))
+	headers, err := keyaccess.GetJWTHeaders([]byte(token))
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not parse JWT headers")
 	}
@@ -229,17 +229,6 @@ func (s Service) verifySchemaJWT(ctx context.Context, token keyaccess.JWT) (*sch
 		return nil, util.LoggingErrorMsg(err, "could not verify the schema's signature")
 	}
 	return &parsedSchema, nil
-}
-
-func getJWTHeaders(token []byte) (jws.Headers, error) {
-	msg, err := jws.Parse(token)
-	if err != nil {
-		return nil, err
-	}
-	if len(msg.Signatures()) != 1 {
-		return nil, fmt.Errorf("expected 1 signature, got %d", len(msg.Signatures()))
-	}
-	return msg.Signatures()[0].ProtectedHeaders(), nil
 }
 
 func (s Service) GetSchemas(ctx context.Context) (*GetSchemasResponse, error) {
