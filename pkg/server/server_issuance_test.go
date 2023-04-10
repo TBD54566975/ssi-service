@@ -14,6 +14,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -375,7 +377,7 @@ func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, 
 		w := httptest.NewRecorder()
 
 		err := r.CreateIssuanceTemplate(newRequestContext(), w, req)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 }
 
@@ -392,7 +394,7 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 		Method:  "key",
 		KeyType: crypto.Ed25519,
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	licenseSchema := map[string]any{
 		"type": "object",
@@ -403,12 +405,15 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 		},
 		"additionalProperties": true,
 	}
-	createdSchema, err := schemaSvc.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerResp.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
-	assert.NoError(t, err)
+	keyID := issuerResp.DID.VerificationMethod[0].ID
+	createdSchema, err := schemaSvc.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerResp.DID.ID, AuthorKID: keyID, Name: "license schema", Schema: licenseSchema, Sign: true})
+	require.NoError(t, err)
+
 	sillyName := "some silly name"
 	manifest, err := manifestSvc.CreateManifest(context.Background(), model.CreateManifestRequest{
 		Name:      &sillyName,
 		IssuerDID: issuerResp.DID.ID,
+		IssuerKID: issuerResp.DID.VerificationMethod[0].ID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWT: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
@@ -419,19 +424,18 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 			},
 		},
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	r := testIssuanceRouter(t, s)
 	return issuerResp, createdSchema, manifest, r
 }
 
 func testIssuanceRouter(t *testing.T, s storage.ServiceStorage) *router.IssuanceRouter {
-	svc, err := issuing.NewIssuingService(config.IssuingServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{
-		Name: "test-issuing",
-	}}, s)
-	assert.NoError(t, err)
+	serviceConfig := config.IssuingServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-issuing"}}
+	svc, err := issuing.NewIssuingService(serviceConfig, s)
+	require.NoError(t, err)
 
 	r, err := router.NewIssuanceRouter(svc)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	return r
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/goccy/go-json"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -39,7 +40,6 @@ func TestCredentialRouter(t *testing.T) {
 	})
 
 	t.Run("Credential Service Test", func(tt *testing.T) {
-
 		bolt := setupTestDB(tt)
 		assert.NotNil(tt, bolt)
 
@@ -64,8 +64,9 @@ func TestCredentialRouter(t *testing.T) {
 		issuer := issuerDID.DID.ID
 		subject := "did:test:345"
 		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:  issuer,
-			Subject: subject,
+			Issuer:    issuer,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   subject,
 			Data: map[string]any{
 				"firstName": "Satoshi",
 				"lastName":  "Nakamoto",
@@ -91,6 +92,11 @@ func TestCredentialRouter(t *testing.T) {
 
 		// compare for object equality
 		assert.Equal(tt, createdCred.CredentialJWT, gotCred.CredentialJWT)
+
+		// verify it
+		verified, err := credService.VerifyCredential(context.Background(), credential.VerifyCredentialRequest{CredentialJWT: gotCred.CredentialJWT})
+		assert.NoError(tt, err)
+		assert.True(tt, verified.Verified)
 
 		// get a cred that doesn't exist
 		_, err = credService.GetCredential(context.Background(), credential.GetCredentialRequest{ID: "bad"})
@@ -121,9 +127,10 @@ func TestCredentialRouter(t *testing.T) {
 
 		// create another cred with the same issuer, different subject, different schema that doesn't exist
 		_, err = credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuer,
-			Subject:    "did:abcd:efghi",
-			JSONSchema: "https://test-schema.com",
+			Issuer:    issuer,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   "did:abcd:efghi",
+			SchemaID:  "https://test-schema.com",
 			Data: map[string]any{
 				"email": "satoshi@nakamoto.com",
 			},
@@ -143,15 +150,16 @@ func TestCredentialRouter(t *testing.T) {
 			"required":             []any{"email"},
 			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// create another cred with the same issuer, different subject, different schema that does exist
 		createdCredWithSchema, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuer,
-			Subject:    "did:abcd:efghi",
-			JSONSchema: createdSchema.ID,
+			Issuer:    issuer,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   "did:abcd:efghi",
+			SchemaID:  createdSchema.ID,
 			Data: map[string]any{
 				"email": "satoshi@nakamoto.com",
 			},
@@ -227,7 +235,7 @@ func TestCredentialRouter(t *testing.T) {
 			"additionalProperties": false,
 		}
 
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -235,9 +243,10 @@ func TestCredentialRouter(t *testing.T) {
 		subject := "did:test:345"
 
 		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuer,
-			Subject:    subject,
-			JSONSchema: createdSchema.ID,
+			Issuer:    issuer,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   subject,
+			SchemaID:  createdSchema.ID,
 			Data: map[string]any{
 				"email": "Satoshi@Nakamoto.btc",
 			},
@@ -257,9 +266,10 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
 
 		createdCredTwo, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuer,
-			Subject:    subject,
-			JSONSchema: createdSchema.ID,
+			Issuer:    issuer,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   subject,
+			SchemaID:  createdSchema.ID,
 			Data: map[string]any{
 				"email": "Satoshi2@Nakamoto2.btc",
 			},
@@ -281,14 +291,15 @@ func TestCredentialRouter(t *testing.T) {
 		// Cred with same <issuer, schema> pair share the same statusListCredential
 		assert.Equal(tt, credStatusMapTwo["statusListCredential"], credStatusMap["statusListCredential"])
 
-		createdSchemaTwo, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		createdSchemaTwo, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchemaTwo)
 
 		createdCredThree, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuer,
-			Subject:    subject,
-			JSONSchema: createdSchemaTwo.ID,
+			Issuer:    issuer,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   subject,
+			SchemaID:  createdSchemaTwo.ID,
 			Data: map[string]any{
 				"email": "Satoshi2@Nakamoto2.btc",
 			},
@@ -337,8 +348,9 @@ func TestCredentialRouter(t *testing.T) {
 		subject := "did:test:345"
 
 		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:  issuer,
-			Subject: subject,
+			Issuer:    issuer,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   subject,
 			Data: map[string]any{
 				"email": "Satoshi@Nakamoto.btc",
 			},
@@ -358,8 +370,9 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
 
 		createdCredTwo, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:  issuer,
-			Subject: subject,
+			Issuer:    issuer,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   subject,
 			Data: map[string]any{
 				"email": "Satoshi2@Nakamoto2.btc",
 			},
@@ -392,14 +405,15 @@ func TestCredentialRouter(t *testing.T) {
 			"additionalProperties": false,
 		}
 
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		createdCredThree, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuer,
-			Subject:    subject,
-			JSONSchema: createdSchema.ID,
+			Issuer:    issuer,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   subject,
+			SchemaID:  createdSchema.ID,
 			Data: map[string]any{
 				"email": "Satoshi2@Nakamoto2.btc",
 			},
@@ -454,7 +468,7 @@ func TestCredentialRouter(t *testing.T) {
 			"additionalProperties": false,
 		}
 
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -462,9 +476,10 @@ func TestCredentialRouter(t *testing.T) {
 		subject := "did:test:345"
 
 		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuer,
-			Subject:    subject,
-			JSONSchema: createdSchema.ID,
+			Issuer:    issuer,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   subject,
+			SchemaID:  createdSchema.ID,
 			Data: map[string]any{
 				"email": "Satoshi@Nakamoto.btc",
 			},
@@ -565,16 +580,17 @@ func TestCredentialRouter(t *testing.T) {
 			"additionalProperties": false,
 		}
 
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		subject := "did:test:345"
 
 		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuerDID.DID.ID,
-			Subject:    subject,
-			JSONSchema: createdSchema.ID,
+			Issuer:    issuerDID.DID.ID,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   subject,
+			SchemaID:  createdSchema.ID,
 			Data: map[string]any{
 				"email": "Satoshi@Nakamoto.btc",
 			},
@@ -585,9 +601,10 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, createdCred)
 
 		createdCredSuspendable, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuerDID.DID.ID,
-			Subject:    subject,
-			JSONSchema: createdSchema.ID,
+			Issuer:    issuerDID.DID.ID,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   subject,
+			SchemaID:  createdSchema.ID,
 			Data: map[string]any{
 				"email": "Satoshi@Nakamoto.btc",
 			},
@@ -627,13 +644,14 @@ func TestCredentialRouter(t *testing.T) {
 	})
 
 	t.Run("Create Suspendable Credential", func(tt *testing.T) {
-		issuer, schema, credService := createCredServicePrereqs(tt)
+		issuer, issuerKID, schemaID, credService := createCredServicePrereqs(tt)
 		subject := "did:test:345"
 
 		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuer,
-			Subject:    subject,
-			JSONSchema: schema,
+			Issuer:    issuer,
+			IssuerKID: issuerKID,
+			Subject:   subject,
+			SchemaID:  schemaID,
 			Data: map[string]any{
 				"email": "Satoshi@Nakamoto.btc",
 			},
@@ -682,13 +700,14 @@ func TestCredentialRouter(t *testing.T) {
 	})
 
 	t.Run("Update Suspendable Credential To Suspended", func(tt *testing.T) {
-		issuer, schema, credService := createCredServicePrereqs(tt)
+		issuer, issuerKID, schemaID, credService := createCredServicePrereqs(tt)
 		subject := "did:test:345"
 
 		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuer,
-			Subject:    subject,
-			JSONSchema: schema,
+			Issuer:    issuer,
+			IssuerKID: issuerKID,
+			Subject:   subject,
+			SchemaID:  schemaID,
 			Data: map[string]any{
 				"email": "Satoshi@Nakamoto.btc",
 			},
@@ -759,13 +778,14 @@ func TestCredentialRouter(t *testing.T) {
 	})
 
 	t.Run("Update Suspendable Credential To Suspended then Unsuspended", func(tt *testing.T) {
-		issuer, schema, credService := createCredServicePrereqs(tt)
+		issuer, issuerKID, schemaID, credService := createCredServicePrereqs(tt)
 		subject := "did:test:345"
 
 		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuer,
-			Subject:    subject,
-			JSONSchema: schema,
+			Issuer:    issuer,
+			IssuerKID: issuerKID,
+			Subject:   subject,
+			SchemaID:  schemaID,
 			Data: map[string]any{
 				"email": "Satoshi@Nakamoto.btc",
 			},
@@ -841,13 +861,14 @@ func TestCredentialRouter(t *testing.T) {
 	})
 
 	t.Run("Create Suspendable and Revocable Credential Should Be Error", func(tt *testing.T) {
-		issuer, schema, credService := createCredServicePrereqs(tt)
+		issuer, issuerKID, schemaID, credService := createCredServicePrereqs(tt)
 		subject := "did:test:345"
 
 		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuer,
-			Subject:    subject,
-			JSONSchema: schema,
+			Issuer:    issuer,
+			IssuerKID: issuerKID,
+			Subject:   subject,
+			SchemaID:  schemaID,
 			Data: map[string]any{
 				"email": "Satoshi@Nakamoto.btc",
 			},
@@ -862,13 +883,14 @@ func TestCredentialRouter(t *testing.T) {
 	})
 
 	t.Run("Update Suspendable and Revocable Credential Should Be Error", func(tt *testing.T) {
-		issuer, schema, credService := createCredServicePrereqs(tt)
+		issuer, issuerKID, schemaID, credService := createCredServicePrereqs(tt)
 		subject := "did:test:345"
 
 		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuer,
-			Subject:    subject,
-			JSONSchema: schema,
+			Issuer:    issuer,
+			IssuerKID: issuerKID,
+			Subject:   subject,
+			SchemaID:  schemaID,
 			Data: map[string]any{
 				"email": "Satoshi@Nakamoto.btc",
 			},
@@ -886,13 +908,14 @@ func TestCredentialRouter(t *testing.T) {
 	})
 
 	t.Run("Update Suspended On Revoked Credential Should Be Error", func(tt *testing.T) {
-		issuer, schema, credService := createCredServicePrereqs(tt)
+		issuer, issuerKID, schemaID, credService := createCredServicePrereqs(tt)
 		subject := "did:test:345"
 
 		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuer,
-			Subject:    subject,
-			JSONSchema: schema,
+			Issuer:    issuer,
+			IssuerKID: issuerKID,
+			Subject:   subject,
+			SchemaID:  schemaID,
 			Data: map[string]any{
 				"email": "Satoshi@Nakamoto.btc",
 			},
@@ -910,7 +933,7 @@ func TestCredentialRouter(t *testing.T) {
 	})
 }
 
-func createCredServicePrereqs(tt *testing.T) (string, string, credential.Service) {
+func createCredServicePrereqs(tt *testing.T) (issuer, issuerKID, schemaID string, credSvc credential.Service) {
 	bolt := setupTestDB(tt)
 	require.NotNil(tt, bolt)
 
@@ -943,9 +966,9 @@ func createCredServicePrereqs(tt *testing.T) (string, string, credential.Service
 		"additionalProperties": false,
 	}
 
-	createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: emailSchema})
+	createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 	require.NoError(tt, err)
 	require.NotEmpty(tt, createdSchema)
 
-	return issuerDID.DID.ID, createdSchema.ID, *credService
+	return issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID, *credService
 }

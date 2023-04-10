@@ -80,7 +80,7 @@ func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorag
 }
 
 // CreateSchema houses the main service logic for schema creation. It validates the input, and
-// produces a schema value that conforms with the VC JSON JSONSchema specification.
+// produces a schema value that conforms with the VC JSON SchemaID specification.
 // TODO(gabe) support data integrity proof generation on schemas, versioning, and more
 func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) (*CreateSchemaResponse, error) {
 
@@ -114,7 +114,7 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 
 	// sign the schema
 	if request.Sign {
-		signedSchema, err := s.signSchemaJWT(ctx, request.Author, schemaValue)
+		signedSchema, err := s.signSchemaJWT(ctx, request.AuthorKID, schemaValue)
 		if err != nil {
 			return nil, util.LoggingError(err)
 		}
@@ -143,25 +143,25 @@ func prepareJSONSchema(id, name string, s schema.JSONSchema) schema.JSONSchema {
 }
 
 // signSchemaJWT signs a schema after the key associated with the provided author for the schema as a JWT
-func (s Service) signSchemaJWT(ctx context.Context, author string, schema schema.VCJSONSchema) (*keyaccess.JWT, error) {
-	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: author})
+func (s Service) signSchemaJWT(ctx context.Context, authorKID string, schema schema.VCJSONSchema) (*keyaccess.JWT, error) {
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: authorKID})
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get key for signing schema for author<%s>", author)
+		return nil, util.LoggingErrorMsgf(err, "could not get key for signing schema for authorKID<%s>", authorKID)
 	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not create key access for signing schema for author<%s>", author)
+		return nil, util.LoggingErrorMsgf(err, "could not create key access for signing schema for authorKID<%s>", authorKID)
 	}
 	schemaJSONBytes, err := sdkutil.ToJSONMap(schema)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not marshal schema for signing for author<%s>", author)
+		return nil, util.LoggingErrorMsgf(err, "could not marshal schema for signing for authorKID<%s>", authorKID)
 	}
 	schemaToken, err := keyAccess.SignWithDefaults(schemaJSONBytes)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not sign schema for author<%s>", author)
+		return nil, util.LoggingErrorMsgf(err, "could not sign schema for authorKID<%s>", authorKID)
 	}
 	if _, err = s.verifySchemaJWT(ctx, keyaccess.JWT(schemaToken)); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not verify signed schema")
+		return nil, util.LoggingErrorMsg(err, "could not verify schema was signed correctly")
 	}
 	return keyaccess.JWTPtr(string(schemaToken)), nil
 }
@@ -185,11 +185,12 @@ func (s Service) VerifySchema(ctx context.Context, request VerifySchemaRequest) 
 }
 
 func (s Service) verifySchemaJWT(ctx context.Context, token keyaccess.JWT) (*schema.VCJSONSchema, error) {
-	parsed, err := jwt.Parse([]byte(token))
+	// parse headers
+	headers, err := getJWTHeaders([]byte(token))
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not parse JWT")
+		return nil, util.LoggingErrorMsg(err, "could not parse JWT headers")
 	}
-	jwtKID, ok := parsed.Get(jws.KeyIDKey)
+	jwtKID, ok := headers.Get(jws.KeyIDKey)
 	if !ok {
 		return nil, util.LoggingNewError("JWT does not contain a kid")
 	}
@@ -197,7 +198,13 @@ func (s Service) verifySchemaJWT(ctx context.Context, token keyaccess.JWT) (*sch
 	if !ok {
 		return nil, util.LoggingNewError("JWT kid is not a string")
 	}
-	claims := parsed.PrivateClaims()
+
+	// parse token
+	parsedToken, err := jwt.Parse([]byte(token))
+	if err != nil {
+		return nil, util.LoggingErrorMsg(err, "could not parse JWT")
+	}
+	claims := parsedToken.PrivateClaims()
 	claimsJSONBytes, err := json.Marshal(claims)
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not marshal claims")
@@ -222,6 +229,17 @@ func (s Service) verifySchemaJWT(ctx context.Context, token keyaccess.JWT) (*sch
 		return nil, util.LoggingErrorMsg(err, "could not verify the schema's signature")
 	}
 	return &parsedSchema, nil
+}
+
+func getJWTHeaders(token []byte) (jws.Headers, error) {
+	msg, err := jws.Parse(token)
+	if err != nil {
+		return nil, err
+	}
+	if len(msg.Signatures()) != 1 {
+		return nil, fmt.Errorf("expected 1 signature, got %d", len(msg.Signatures()))
+	}
+	return msg.Signatures()[0].ProtectedHeaders(), nil
 }
 
 func (s Service) GetSchemas(ctx context.Context) (*GetSchemasResponse, error) {

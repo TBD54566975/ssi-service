@@ -166,7 +166,7 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 	}
 
 	// sign the manifest
-	manifestJWT, err := s.signManifestJWT(ctx, CredentialManifestContainer{Manifest: *m})
+	manifestJWT, err := s.signManifestJWT(ctx, request.IssuerKID, CredentialManifestContainer{Manifest: *m})
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not sign manifest")
 	}

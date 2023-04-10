@@ -101,7 +101,7 @@ func (s Service) GetKey(ctx context.Context, request GetKeyRequest) (*GetKeyResp
 	id := request.ID
 	gotKey, err := s.storage.GetKey(ctx, id)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get key for key: %s", id)
+		return nil, util.LoggingErrorMsgf(err, "getting key with id: %s", id)
 	}
 	if gotKey == nil {
 		return nil, util.LoggingErrorMsgf(err, "key with id<%s> could not be found", id)

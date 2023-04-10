@@ -131,7 +131,7 @@ func (ka JWKKeyAccess) VerifyVerifiableCredential(token JWT) (*credential.Verifi
 	if token == "" {
 		return nil, errors.New("token cannot be empty")
 	}
-	_, verifiableCredential, err := signing.VerifyVerifiableCredentialJWT(*ka.JWTVerifier, token.String())
+	_, _, verifiableCredential, err := signing.VerifyVerifiableCredentialJWT(*ka.JWTVerifier, token.String())
 	return verifiableCredential, err
 }
 
@@ -153,6 +153,6 @@ func (ka JWKKeyAccess) VerifyVerifiablePresentation(token JWT) (*credential.Veri
 	if token == "" {
 		return nil, errors.New("token cannot be empty")
 	}
-	_, presentation, err := signing.VerifyVerifiablePresentationJWT(*ka.JWTVerifier, token.String())
+	_, _, presentation, err := signing.VerifyVerifiablePresentationJWT(*ka.JWTVerifier, token.String())
 	return presentation, err
 }

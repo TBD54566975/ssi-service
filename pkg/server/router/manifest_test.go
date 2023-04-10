@@ -77,16 +77,18 @@ func TestManifestRouter(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		kid := issuerDID.DID.VerificationMethod[0].ID
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
 		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuerDID.DID.ID,
-			Subject:    applicantDID.DID.ID,
-			JSONSchema: createdSchema.ID,
-			Data:       map[string]any{"licenseType": "WA-DL-CLASS-A"},
+			Issuer:    issuerDID.DID.ID,
+			IssuerKID: kid,
+			Subject:   applicantDID.DID.ID,
+			SchemaID:  createdSchema.ID,
+			Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)

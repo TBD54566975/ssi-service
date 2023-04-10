@@ -8,6 +8,7 @@ import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -43,6 +44,9 @@ type CreateCredentialRequest struct {
 	// The issuer id.
 	Issuer string `json:"issuer" validate:"required" example:"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
 
+	// The KID used to sign the credential
+	IssuerKID string `json:"issuerKid" validate:"required" example:"#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
+
 	// The subject id.
 	Subject string `json:"subject" validate:"required" example:"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
 
@@ -71,9 +75,10 @@ type CreateCredentialRequest struct {
 func (c CreateCredentialRequest) ToServiceRequest() credential.CreateCredentialRequest {
 	return credential.CreateCredentialRequest{
 		Issuer:      c.Issuer,
+		IssuerKID:   c.IssuerKID,
 		Subject:     c.Subject,
 		Context:     c.Context,
-		JSONSchema:  c.Schema,
+		SchemaID:    c.Schema,
 		Data:        c.Data,
 		Expiry:      c.Expiry,
 		Revocable:   c.Revocable,

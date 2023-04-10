@@ -54,14 +54,14 @@ func NewCredentialVerifier(didResolver didsdk.Resolver, schemaResolver schema.Re
 // a set of static verification checks on the credential as per the credential service's configuration.
 func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
 	// first, parse the token to see if it contains a valid verifiable credential
-	gotJWT, cred, err := signing.ParseVerifiableCredentialFromJWT(token.String())
+	gotHeaders, _, cred, err := signing.ParseVerifiableCredentialFromJWT(token.String())
 	if err != nil {
 		return util.LoggingErrorMsg(err, "could not parse credential from JWT")
 	}
 
-	kid, ok := gotJWT.Get(jws.KeyIDKey)
+	kid, ok := gotHeaders.Get(jws.KeyIDKey)
 	if !ok {
-		return util.LoggingErrorMsg(err, "could not find key ID in JWT")
+		return util.LoggingNewError("could not find key ID in JWT headers")
 	}
 	jwtKID, ok := kid.(string)
 	if !ok {

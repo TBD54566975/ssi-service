@@ -81,9 +81,9 @@ func (s Service) buildCredentialResponse(
 	creds := make([]cred.Container, 0, len(credManifest.OutputDescriptors))
 	for _, od := range credManifest.OutputDescriptors {
 		credentialRequest := credential.CreateCredentialRequest{
-			Issuer:     credManifest.Issuer.ID,
-			Subject:    applicantDID,
-			JSONSchema: od.Schema,
+			Issuer:   credManifest.Issuer.ID,
+			Subject:  applicantDID,
+			SchemaID: od.Schema,
 			// TODO(gabe) need to add in data here to match the request + schema
 			Data: make(map[string]any),
 		}

@@ -14,11 +14,10 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
-func (s Service) signManifestJWT(ctx context.Context, m CredentialManifestContainer) (*keyaccess.JWT, error) {
-	issuerID := m.Manifest.Issuer.ID
-	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: issuerID})
+func (s Service) signManifestJWT(ctx context.Context, keyID string, m CredentialManifestContainer) (*keyaccess.JWT, error) {
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: keyID})
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get key for signing manifest with key<%s>", issuerID)
+		return nil, util.LoggingErrorMsgf(err, "could not get key for signing manifest with key<%s>", keyID)
 	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {

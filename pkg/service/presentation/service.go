@@ -162,14 +162,14 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 		return nil, errors.Wrap(err, "provided value is not a valid presentation submission")
 	}
 
-	token, vp, err := signing.ParseVerifiablePresentationFromJWT(request.SubmissionJWT.String())
+	headers, _, vp, err := signing.ParseVerifiablePresentationFromJWT(request.SubmissionJWT.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing vp from jwt")
 	}
 
-	gotKID, ok := token.Get(jws.KeyIDKey)
+	gotKID, ok := headers.Get(jws.KeyIDKey)
 	if !ok {
-		return nil, errors.New("kid not found in token")
+		return nil, errors.New("kid not found in token headers")
 	}
 	kid, ok := gotKID.(string)
 	if !ok {

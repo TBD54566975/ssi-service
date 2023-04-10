@@ -150,7 +150,7 @@ func TestSchemaSigning(t *testing.T) {
 		assert.Equal(tt, "me", createdSchema.Schema.Author)
 		assert.Equal(tt, "simple schema", createdSchema.Schema.Name)
 
-		// missing DID
+		// missing kid
 		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema, Sign: true})
 		assert.Error(tt, err)
 		assert.Empty(tt, createdSchema)
@@ -164,7 +164,8 @@ func TestSchemaSigning(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, authorDID)
 
-		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: authorDID.DID.ID, Name: "simple schema", Schema: simpleSchema, Sign: true})
+		kid := authorDID.DID.VerificationMethod[0].ID
+		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: authorDID.DID.ID, AuthorKID: kid, Name: "simple schema", Schema: simpleSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.SchemaJWT)

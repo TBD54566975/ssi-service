@@ -282,7 +282,7 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 	// assume we have a Data Integrity credential
 	cred := request.Credential
 	if request.HasJWTCredential() {
-		_, parsedCred, err := signing.ParseVerifiableCredentialFromJWT(request.CredentialJWT.String())
+		_, _, parsedCred, err := signing.ParseVerifiableCredentialFromJWT(request.CredentialJWT.String())
 		if err != nil {
 			return nil, errors.Wrap(err, "could not parse credential from jwt")
 		}

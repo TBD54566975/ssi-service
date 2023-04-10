@@ -8,6 +8,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestJWKKeyAccessForEachKeyType(t *testing.T) {
@@ -168,7 +169,8 @@ func TestJWKKeyAccessSignVerifyCredentials(t *testing.T) {
 
 		// sign
 		testCred := getTestCredential()
-		signedCred, err := ka.SignVerifiableCredential(testCred)
+		testCredCopy := copyCred(t, testCred)
+		signedCred, err := ka.SignVerifiableCredential(testCredCopy)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, signedCred)
 
@@ -178,9 +180,6 @@ func TestJWKKeyAccessSignVerifyCredentials(t *testing.T) {
 		assert.NotEmpty(tt, verifiedCred)
 
 		// check equality
-		// TODO(GabE) make sure cred not modified
-		testCred = getTestCredential()
-
 		testJSON, err := json.Marshal(testCred)
 		assert.NoError(tt, err)
 		verifiedJSON, err := json.Marshal(verifiedCred)
@@ -315,4 +314,13 @@ func getTestPresentation() credential.VerifiablePresentation {
 		Holder:               knownHolder,
 		VerifiableCredential: []any{getTestCredential()},
 	}
+}
+
+func copyCred(t *testing.T, cred credential.VerifiableCredential) credential.VerifiableCredential {
+	credBytes, err := json.Marshal(cred)
+	require.NoError(t, err)
+	var newCred credential.VerifiableCredential
+	err = json.Unmarshal(credBytes, &newCred)
+	require.NoError(t, err)
+	return newCred
 }
