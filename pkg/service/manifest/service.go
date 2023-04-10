@@ -414,12 +414,10 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 	credentials := credint.ContainersToInterface(creds)
 
 	// sign the response before returning
-	responseJWT, err := s.signCredentialResponseJWT(
-		ctx, gotManifest.IssuerKID, CredentialResponseContainer{
-			Response:    *credResp,
-			Credentials: credentials,
-		},
-	)
+	responseJWT, err := s.signCredentialResponseJWT(ctx, gotManifest.IssuerKID, CredentialResponseContainer{
+		Response:    *credResp,
+		Credentials: credentials,
+	})
 	if err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not sign credential response")
 	}

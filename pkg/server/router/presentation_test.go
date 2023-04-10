@@ -64,7 +64,11 @@ func TestPresentationDefinitionService(t *testing.T) {
 
 	t.Run("Create returns the created definition", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
-		created, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{PresentationDefinition: *pd, Author: authorDID.DID.ID})
+		created, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{
+			PresentationDefinition: *pd,
+			Author:                 authorDID.DID.ID,
+			AuthorKID:              authorDID.DID.VerificationMethod[0].ID,
+		})
 
 		assert.NoError(t, err)
 		assert.Equal(t, pd, &created.PresentationDefinition)
@@ -73,7 +77,11 @@ func TestPresentationDefinitionService(t *testing.T) {
 
 	t.Run("Get returns the created definition", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
-		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{PresentationDefinition: *pd, Author: authorDID.DID.ID})
+		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{
+			PresentationDefinition: *pd,
+			Author:                 authorDID.DID.ID,
+			AuthorKID:              authorDID.DID.VerificationMethod[0].ID,
+		})
 		assert.NoError(t, err)
 
 		getPd, err := service.GetPresentationDefinition(context.Background(), model.GetPresentationDefinitionRequest{ID: pd.ID})
@@ -86,7 +94,11 @@ func TestPresentationDefinitionService(t *testing.T) {
 
 	t.Run("Get does not return after deletion", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
-		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{PresentationDefinition: *pd, Author: authorDID.DID.ID})
+		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{
+			PresentationDefinition: *pd,
+			Author:                 authorDID.DID.ID,
+			AuthorKID:              authorDID.DID.VerificationMethod[0].ID,
+		})
 		assert.NoError(t, err)
 
 		assert.NoError(t, service.DeletePresentationDefinition(context.Background(), model.DeletePresentationDefinitionRequest{ID: pd.ID}))

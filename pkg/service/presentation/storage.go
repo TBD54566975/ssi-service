@@ -8,13 +8,14 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"go.einride.tech/aip/filtering"
+
 	"github.com/tbd54566975/ssi-service/internal/util"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage/namespace"
 	opsubmission "github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	prestorage "github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"go.einride.tech/aip/filtering"
 )
 
 const (
@@ -25,6 +26,7 @@ type StoredPresentation struct {
 	ID                     string                          `json:"id"`
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
 	Author                 string                          `json:"issuerID"`
+	AuthorKID              string                          `json:"issuerKid"`
 }
 
 type Storage struct {

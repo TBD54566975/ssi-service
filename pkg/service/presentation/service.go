@@ -104,12 +104,13 @@ func (s Service) CreatePresentationDefinition(ctx context.Context, request model
 		ID:                     request.PresentationDefinition.ID,
 		PresentationDefinition: request.PresentationDefinition,
 		Author:                 request.Author,
+		AuthorKID:              request.AuthorKID,
 	}
 
 	if err := s.storage.StorePresentation(ctx, storedPresentation); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store presentation")
 	}
-	defJWT, err := s.keystore.Sign(context.Background(), storedPresentation.Author, exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
+	defJWT, err := s.keystore.Sign(context.Background(), storedPresentation.AuthorKID, exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "signing presentation definition enveloper with author<%s>", storedPresentation.Author)
 	}
@@ -130,7 +131,8 @@ func (s Service) GetPresentationDefinition(ctx context.Context, request model.Ge
 	if storedPresentation == nil {
 		return nil, util.LoggingNewErrorf("presentation definition with id<%s> could not be found", request.ID)
 	}
-	defJWT, err := s.keystore.Sign(ctx, storedPresentation.Author, exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
+	// TODO(gabe) decouple this to a separate endpoint for presentation requests https://github.com/TBD54566975/ssi-service/issues/375
+	defJWT, err := s.keystore.Sign(ctx, storedPresentation.AuthorKID, exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "signing presentation definition envelope by issuer<%s>", storedPresentation.Author)
 	}
