@@ -415,7 +415,7 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 
 	// sign the response before returning
 	responseJWT, err := s.signCredentialResponseJWT(
-		ctx, gotManifest.Issuer, CredentialResponseContainer{
+		ctx, gotManifest.IssuerKID, CredentialResponseContainer{
 			Response:    *credResp,
 			Credentials: credentials,
 		},
