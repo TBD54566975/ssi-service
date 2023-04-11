@@ -15,7 +15,10 @@ type CreateSchemaRequest struct {
 	Author string            `json:"author" validate:"required"`
 	Name   string            `json:"name" validate:"required"`
 	Schema schema.JSONSchema `json:"schema" validate:"required"`
-	Sign   bool              `json:"signed"`
+
+	// If sign == true, the schema will be signed by the author's private key with the specified KID
+	Sign      bool   `json:"signed"`
+	AuthorKID string `json:"authorKid"`
 }
 
 func (csr CreateSchemaRequest) IsValid() bool {

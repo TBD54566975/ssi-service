@@ -68,7 +68,7 @@ func (h *keyHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 
 	// store private key in key storage
 	keyStoreRequest := keystore.StoreKeyRequest{
-		ID:               id,
+		ID:               expanded.VerificationMethod[0].ID,
 		Type:             request.KeyType,
 		Controller:       id,
 		PrivateKeyBase58: privKeyBase58,

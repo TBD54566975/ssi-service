@@ -92,7 +92,7 @@ func createWellKnownDIDConfiguration(tt *testing.T, didResponse *did.CreateDIDRe
 	cred, err := builder.Build()
 	assert.NoError(tt, err)
 
-	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
+	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	assert.NoError(tt, err)
 
 	jwtToken := jwt.New()

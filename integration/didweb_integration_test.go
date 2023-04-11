@@ -19,10 +19,14 @@ func TestCreateIssuerDIDWebIntegration(t *testing.T) {
 	assert.NoError(t, err)
 
 	issuerDID, err := getJSONElement(didWebOutput, "$.did.id")
-	SetValue(didWebContext, "issuerDID", issuerDID)
-
 	assert.NoError(t, err)
 	assert.Contains(t, issuerDID, "did:web")
+	SetValue(didWebContext, "issuerDID", issuerDID)
+
+	issuerKID, err := getJSONElement(didWebOutput, "$.did.verificationMethod[0].id")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKID)
+	SetValue(didWebContext, "issuerKID", issuerKID)
 }
 
 func TestCreateAliceDIDWebIntegration(t *testing.T) {
@@ -35,15 +39,19 @@ func TestCreateAliceDIDWebIntegration(t *testing.T) {
 	assert.NotEmpty(t, didWebOutput)
 
 	aliceDID, err := getJSONElement(didWebOutput, "$.did.id")
-	SetValue(didWebContext, "aliceDID", aliceDID)
-
 	assert.NoError(t, err)
 	assert.Contains(t, aliceDID, "did:web")
+	SetValue(didWebContext, "aliceDID", aliceDID)
+
+	aliceKID, err := getJSONElement(didWebOutput, "$.did.verificationMethod[0].id")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, aliceKID)
+	SetValue(didWebContext, "aliceKID", aliceKID)
 
 	aliceDIDPrivateKey, err := getJSONElement(didWebOutput, "$.privateKeyBase58")
-	SetValue(didWebContext, "aliceDIDPrivateKey", aliceDIDPrivateKey)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
+	SetValue(didWebContext, "aliceDIDPrivateKey", aliceDIDPrivateKey)
 }
 
 func TestDIDWebCreateSchemaIntegration(t *testing.T) {
@@ -55,10 +63,9 @@ func TestDIDWebCreateSchemaIntegration(t *testing.T) {
 	assert.NoError(t, err)
 
 	schemaID, err := getJSONElement(output, "$.id")
-	SetValue(didWebContext, "schemaID", schemaID)
-
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
+	SetValue(didWebContext, "schemaID", schemaID)
 }
 
 func TestDIDWebCreateVerifiableCredentialIntegration(t *testing.T) {
@@ -70,12 +77,17 @@ func TestDIDWebCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
+	issuerKID, err := GetValue(didWebContext, "issuerKID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKID)
+
 	schemaID, err := GetValue(didWebContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	vcOutput, err := CreateVerifiableCredential(credInputParams{
 		IssuerID:  issuerDID.(string),
+		IssuerKID: issuerKID.(string),
 		SchemaID:  schemaID.(string),
 		SubjectID: issuerDID.(string),
 	}, false)
@@ -83,9 +95,9 @@ func TestDIDWebCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NotEmpty(t, vcOutput)
 
 	credentialJWT, err := getJSONElement(vcOutput, "$.credentialJwt")
-	SetValue(didWebContext, "credentialJWT", credentialJWT)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credentialJWT)
+	SetValue(didWebContext, "credentialJWT", credentialJWT)
 }
 
 func TestDIDWebCreateCredentialManifestIntegration(t *testing.T) {
@@ -97,25 +109,30 @@ func TestDIDWebCreateCredentialManifestIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
+	issuerKID, err := GetValue(didWebContext, "issuerKID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKID)
+
 	schemaID, err := GetValue(didWebContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	cmOutput, err := CreateCredentialManifest(credManifestParams{
-		IssuerID: issuerDID.(string),
-		SchemaID: schemaID.(string),
+		IssuerID:  issuerDID.(string),
+		IssuerKID: issuerKID.(string),
+		SchemaID:  schemaID.(string),
 	})
 	assert.NoError(t, err)
 
 	presentationDefinitionID, err := getJSONElement(cmOutput, "$.credential_manifest.presentation_definition.id")
-	SetValue(didWebContext, "presentationDefinitionID", presentationDefinitionID)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, presentationDefinitionID)
+	SetValue(didWebContext, "presentationDefinitionID", presentationDefinitionID)
 
 	manifestID, err := getJSONElement(cmOutput, "$.credential_manifest.id")
-	SetValue(didWebContext, "manifestID", manifestID)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, manifestID)
+	SetValue(didWebContext, "manifestID", manifestID)
 }
 
 func TestDIDWebSubmitAndReviewApplicationIntegration(t *testing.T) {
@@ -139,6 +156,10 @@ func TestDIDWebSubmitAndReviewApplicationIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
 
+	aliceKID, err := GetValue(didWebContext, "aliceKID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, aliceKID)
+
 	aliceDIDPrivateKey, err := GetValue(didWebContext, "aliceDIDPrivateKey")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDIDPrivateKey)
@@ -146,7 +167,7 @@ func TestDIDWebSubmitAndReviewApplicationIntegration(t *testing.T) {
 	credAppJWT, err := CreateCredentialApplicationJWT(credApplicationParams{
 		DefinitionID: presentationDefinitionID.(string),
 		ManifestID:   manifestID.(string),
-	}, credentialJWT.(string), aliceDID.(string), aliceDIDPrivateKey.(string))
+	}, credentialJWT.(string), aliceDID.(string), aliceKID.(string), aliceDIDPrivateKey.(string))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credAppJWT)
 

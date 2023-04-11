@@ -19,9 +19,9 @@ type DataIntegrityKeyAccess struct {
 	cryptosuite.CryptoSuite
 }
 
-// NewDataIntegrityKeyAccess creates a new DataIntegrityKeyAccess object from a key id and private key, generating both
+// NewDataIntegrityKeyAccess creates a new DataIntegrityKeyAccess object from an id, key id, and private key, generating both
 // JSON Web Key Signer and Verifier objects.
-func NewDataIntegrityKeyAccess(kid string, key gocrypto.PrivateKey) (*DataIntegrityKeyAccess, error) {
+func NewDataIntegrityKeyAccess(id, kid string, key gocrypto.PrivateKey) (*DataIntegrityKeyAccess, error) {
 	if kid == "" {
 		return nil, errors.New("kid cannot be empty")
 	}
@@ -32,11 +32,11 @@ func NewDataIntegrityKeyAccess(kid string, key gocrypto.PrivateKey) (*DataIntegr
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not convert private key to JWK: %s", kid)
 	}
-	signer, err := cryptosuite.NewJSONWebKeySigner(kid, *privateKeyJWK, cryptosuite.AssertionMethod)
+	signer, err := cryptosuite.NewJSONWebKeySigner(id, kid, *privateKeyJWK, cryptosuite.AssertionMethod)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not create JWK signer: %s", kid)
 	}
-	verifier, err := cryptosuite.NewJSONWebKeyVerifier(kid, *publicKeyJWK)
+	verifier, err := cryptosuite.NewJSONWebKeyVerifier(id, kid, *publicKeyJWK)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not create JWK verifier: %s", kid)
 	}

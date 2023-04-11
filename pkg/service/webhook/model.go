@@ -12,7 +12,7 @@ const (
 	Credential   = Noun("Credential")
 	DID          = Noun("DID")
 	Manifest     = Noun("Manifest")
-	Schema       = Noun("Schema")
+	Schema       = Noun("SchemaID")
 	Presentation = Noun("Presentation")
 )
 

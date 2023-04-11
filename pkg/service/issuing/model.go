@@ -1,6 +1,7 @@
 package issuing
 
 import (
+	"reflect"
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/util"
@@ -58,8 +59,22 @@ type IssuanceTemplate struct {
 	// ID of the issuer that will be issuing the credentials.
 	Issuer string `json:"issuer" validate:"required"`
 
+	// ID of the key that will be used to sign the credentials.
+	IssuerKID string `json:"issuerKid" validate:"required"`
+
 	// Info required to create a credential from a credential application.
 	Credentials []CredentialTemplate `json:"credentials"`
+}
+
+func (it *IssuanceTemplate) IsEmpty() bool {
+	if it == nil {
+		return true
+	}
+	return reflect.DeepEqual(*it, IssuanceTemplate{})
+}
+
+func (it *IssuanceTemplate) IsValid() bool {
+	return util.IsValidStruct(it) == nil
 }
 
 type GetIssuanceTemplateResponse struct {

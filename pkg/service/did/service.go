@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/tbd54566975/ssi-service/config"
-	"github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/did/resolution"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -184,13 +183,13 @@ func (s *Service) GetKeyFromDID(ctx context.Context, request GetKeyFromDIDReques
 	}
 
 	// next, get the verification information (key) from the did document
-	kid, pubKey, err := did.GetVerificationInformation(resolved.Document, request.KeyID)
+	pubKey, err := didsdk.GetKeyFromVerificationMethod(resolved.Document, request.KeyID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting verification information from the did document: %s", request.ID)
 	}
 
 	return &GetKeyFromDIDResponse{
-		KeyID:     kid,
+		KeyID:     request.KeyID,
 		PublicKey: pubKey,
 	}, nil
 }

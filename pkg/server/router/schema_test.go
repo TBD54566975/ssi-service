@@ -30,7 +30,7 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create schema router with service type: test")
 	})
 
-	t.Run("Schema Service Test", func(tt *testing.T) {
+	t.Run("SchemaID Service Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotNil(tt, bolt)
 
@@ -116,7 +116,7 @@ func TestSchemaRouter(t *testing.T) {
 
 func TestSchemaSigning(t *testing.T) {
 
-	t.Run("Unsigned Schema Test", func(tt *testing.T) {
+	t.Run("Unsigned SchemaID Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotNil(tt, bolt)
 
@@ -150,11 +150,11 @@ func TestSchemaSigning(t *testing.T) {
 		assert.Equal(tt, "me", createdSchema.Schema.Author)
 		assert.Equal(tt, "simple schema", createdSchema.Schema.Name)
 
-		// missing DID
+		// missing kid
 		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema, Sign: true})
 		assert.Error(tt, err)
 		assert.Empty(tt, createdSchema)
-		assert.Contains(tt, err.Error(), "could not get key for signing schema for author<me>")
+		assert.Contains(tt, err.Error(), "could not get key for signing schema for authorKID<>: getting key with id:")
 
 		// create an author DID
 		authorDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
@@ -164,7 +164,8 @@ func TestSchemaSigning(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, authorDID)
 
-		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: authorDID.DID.ID, Name: "simple schema", Schema: simpleSchema, Sign: true})
+		kid := authorDID.DID.VerificationMethod[0].ID
+		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: authorDID.DID.ID, AuthorKID: kid, Name: "simple schema", Schema: simpleSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.SchemaJWT)
