@@ -183,6 +183,7 @@ func TestCreateIssuanceTemplateIntegration(t *testing.T) {
 		SchemaID:   schemaID.(string),
 		ManifestID: manifestID,
 		IssuerID:   issuerDID.(string),
+		IssuerKID:  issuerKID.(string),
 	})
 	assert.NoError(t, err)
 

@@ -483,6 +483,7 @@ type issuanceTemplateParams struct {
 	SchemaID   string
 	ManifestID string
 	IssuerID   string
+	IssuerKID  string
 }
 
 func CreateIssuanceTemplate(params issuanceTemplateParams) (string, error) {
