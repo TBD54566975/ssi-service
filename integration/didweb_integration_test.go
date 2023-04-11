@@ -43,10 +43,10 @@ func TestCreateAliceDIDWebIntegration(t *testing.T) {
 	assert.Contains(t, aliceDID, "did:web")
 	SetValue(didWebContext, "aliceDID", aliceDID)
 
-	issuerKID, err := getJSONElement(didWebOutput, "$.did.verificationMethod[0].id")
+	aliceKID, err := getJSONElement(didWebOutput, "$.did.verificationMethod[0].id")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
-	SetValue(didWebContext, "issuerKID", issuerKID)
+	assert.NotEmpty(t, aliceKID)
+	SetValue(didWebContext, "aliceKID", aliceKID)
 
 	aliceDIDPrivateKey, err := getJSONElement(didWebOutput, "$.privateKeyBase58")
 	assert.NoError(t, err)
@@ -156,6 +156,10 @@ func TestDIDWebSubmitAndReviewApplicationIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
 
+	aliceKID, err := GetValue(didWebContext, "aliceKID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, aliceKID)
+
 	aliceDIDPrivateKey, err := GetValue(didWebContext, "aliceDIDPrivateKey")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDIDPrivateKey)
@@ -163,7 +167,7 @@ func TestDIDWebSubmitAndReviewApplicationIntegration(t *testing.T) {
 	credAppJWT, err := CreateCredentialApplicationJWT(credApplicationParams{
 		DefinitionID: presentationDefinitionID.(string),
 		ManifestID:   manifestID.(string),
-	}, credentialJWT.(string), aliceDID.(string), aliceDID.(string), aliceDIDPrivateKey.(string))
+	}, credentialJWT.(string), aliceDID.(string), aliceKID.(string), aliceDIDPrivateKey.(string))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credAppJWT)
 

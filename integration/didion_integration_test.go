@@ -159,7 +159,7 @@ func TestDIDIONSubmitAndReviewApplicationIntegration(t *testing.T) {
 
 	aliceKID, err := GetValue(didIONContext, "aliceKID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, aliceDID)
+	assert.NotEmpty(t, aliceKID)
 
 	aliceDIDPrivateKey, err := GetValue(didIONContext, "aliceDIDPrivateKey")
 	assert.NoError(t, err)
