@@ -79,7 +79,7 @@ func TestDIDWebCreateVerifiableCredentialIntegration(t *testing.T) {
 
 	issuerKID, err := GetValue(didWebContext, "issuerKID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerDID)
+	assert.NotEmpty(t, issuerKID)
 
 	schemaID, err := GetValue(didWebContext, "schemaID")
 	assert.NoError(t, err)
