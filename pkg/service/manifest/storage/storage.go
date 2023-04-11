@@ -84,7 +84,7 @@ func (ms *Storage) GetManifest(ctx context.Context, id string) (*StoredManifest,
 		return nil, sdkutil.LoggingNewErrorf("manifest not found with id: %s", id)
 	}
 	var stored StoredManifest
-	if err := json.Unmarshal(manifestBytes, &stored); err != nil {
+	if err = json.Unmarshal(manifestBytes, &stored); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "unmarshalling stored manifest: %s", id)
 	}
 	return &stored, nil

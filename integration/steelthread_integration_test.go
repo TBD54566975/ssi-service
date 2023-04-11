@@ -58,6 +58,11 @@ func TestCreateAliceDIDKeyIntegration(t *testing.T) {
 	assert.Contains(t, aliceDID, "did:key")
 	SetValue(steelThreadContext, "aliceDID", aliceDID)
 
+	aliceKID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, aliceKID)
+	SetValue(steelThreadContext, "aliceKID", aliceKID)
+
 	aliceDIDPrivateKey, err := getJSONElement(didKeyOutput, "$.privateKeyBase58")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
@@ -214,6 +219,10 @@ func TestSubmitApplicationWithIssuanceTemplateIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
 
+	aliceKID, err := GetValue(steelThreadContext, "aliceKID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, aliceKID)
+
 	aliceDIDPrivateKey, err := GetValue(steelThreadContext, "aliceDIDPrivateKey")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDIDPrivateKey)
@@ -221,7 +230,7 @@ func TestSubmitApplicationWithIssuanceTemplateIntegration(t *testing.T) {
 	credAppJWT, err := CreateCredentialApplicationJWT(credApplicationParams{
 		DefinitionID: presentationDefinitionID.(string),
 		ManifestID:   manifestID.(string),
-	}, credentialJWT.(string), aliceDID.(string), aliceDID.(string), aliceDIDPrivateKey.(string))
+	}, credentialJWT.(string), aliceDID.(string), aliceKID.(string), aliceDIDPrivateKey.(string))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credAppJWT)
 
@@ -267,6 +276,10 @@ func TestSubmitAndReviewApplicationIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
 
+	aliceKID, err := GetValue(steelThreadContext, "aliceKID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, aliceKID)
+
 	aliceDIDPrivateKey, err := GetValue(steelThreadContext, "aliceDIDPrivateKey")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDIDPrivateKey)
@@ -274,7 +287,7 @@ func TestSubmitAndReviewApplicationIntegration(t *testing.T) {
 	credAppJWT, err := CreateCredentialApplicationJWT(credApplicationParams{
 		DefinitionID: presentationDefinitionID.(string),
 		ManifestID:   manifestID.(string),
-	}, credentialJWT.(string), aliceDID.(string), aliceDID.(string), aliceDIDPrivateKey.(string))
+	}, credentialJWT.(string), aliceDID.(string), aliceKID.(string), aliceDIDPrivateKey.(string))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credAppJWT)
 
