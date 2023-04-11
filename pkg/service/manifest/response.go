@@ -45,7 +45,7 @@ func (s Service) signCredentialResponseJWT(ctx context.Context, issuerKID string
 	return responseToken, nil
 }
 
-// TODO(gabe) refactor this method to distinguish between templates and non-templates; remove side effects; handle denial separately
+// TODO(gabe) refactor this method to distinguish between templates and non-templates; remove side effects; handle denial separately https://github.com/TBD54566975/ssi-service/issues/377
 func (s Service) buildCredentialResponse(
 	ctx context.Context,
 	applicantDID, manifestID, issuerKID string,
