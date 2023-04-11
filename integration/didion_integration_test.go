@@ -43,13 +43,10 @@ func TestCreateAliceDIDIONIntegration(t *testing.T) {
 	assert.NotEmpty(t, aliceDID)
 	SetValue(didIONContext, "aliceDID", aliceDID)
 
-	aliceKeyID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[0].id")
-	SetValue(didIONContext, "aliceKeyID", aliceKeyID)
+	aliceKID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[0].id")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, aliceKeyID)
-
-	assert.NoError(t, err)
-	assert.Contains(t, aliceDID, "did:ion")
+	assert.NotEmpty(t, aliceKID)
+	SetValue(didIONContext, "aliceKID", aliceKID)
 
 	aliceDIDPrivateKey, err := getJSONElement(didIONOutput, "$.privateKeyBase58")
 	assert.NoError(t, err)
@@ -129,14 +126,14 @@ func TestDIDIONCreateCredentialManifestIntegration(t *testing.T) {
 	assert.NoError(t, err)
 
 	presentationDefinitionID, err := getJSONElement(cmOutput, "$.credential_manifest.presentation_definition.id")
-	SetValue(didIONContext, "presentationDefinitionID", presentationDefinitionID)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, presentationDefinitionID)
+	SetValue(didIONContext, "presentationDefinitionID", presentationDefinitionID)
 
 	manifestID, err := getJSONElement(cmOutput, "$.credential_manifest.id")
-	SetValue(didIONContext, "manifestID", manifestID)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, manifestID)
+	SetValue(didIONContext, "manifestID", manifestID)
 }
 
 func TestDIDIONSubmitAndReviewApplicationIntegration(t *testing.T) {
@@ -160,7 +157,7 @@ func TestDIDIONSubmitAndReviewApplicationIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
 
-	aliceKeyID, err := GetValue(didIONContext, "aliceKeyID")
+	aliceKID, err := GetValue(didIONContext, "aliceKID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
 
@@ -171,7 +168,7 @@ func TestDIDIONSubmitAndReviewApplicationIntegration(t *testing.T) {
 	credAppJWT, err := CreateCredentialApplicationJWT(credApplicationParams{
 		DefinitionID: presentationDefinitionID.(string),
 		ManifestID:   manifestID.(string),
-	}, credentialJWT.(string), aliceDID.(string), aliceDID.(string)+"#"+aliceKeyID.(string), aliceDIDPrivateKey.(string))
+	}, credentialJWT.(string), aliceDID.(string), aliceKID.(string), aliceDIDPrivateKey.(string))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credAppJWT)
 

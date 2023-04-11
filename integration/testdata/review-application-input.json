@@ -1,5 +1,5 @@
 {
-  "approved": {{.Approved}},
+  "approved": "{{.Approved}}",
   "reason": "{{.Reason}}",
   "credential_overrides": {
     "kyc_credential": {
