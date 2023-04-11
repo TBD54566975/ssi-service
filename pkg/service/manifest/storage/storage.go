@@ -2,12 +2,12 @@ package storage
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -27,6 +27,7 @@ const (
 type StoredManifest struct {
 	ID          string                      `json:"id"`
 	Issuer      string                      `json:"issuer"`
+	IssuerKID   string                      `json:"issuerKid"`
 	Manifest    manifest.CredentialManifest `json:"manifest"`
 	ManifestJWT keyaccess.JWT               `json:"manifestJwt"`
 }
@@ -65,15 +66,11 @@ func NewManifestStorage(db storage.ServiceStorage) (*Storage, error) {
 func (ms *Storage) StoreManifest(ctx context.Context, manifest StoredManifest) error {
 	id := manifest.Manifest.ID
 	if id == "" {
-		err := errors.New("could not store manifest without an ID")
-		logrus.WithError(err).Error()
-		return err
+		return util.LoggingNewError("could not store manifest without an ID")
 	}
 	manifestBytes, err := json.Marshal(manifest)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not store manifest: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return errors.Wrapf(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not store manifest: %s", id)
 	}
 	return ms.db.Write(ctx, manifestNamespace, id, manifestBytes)
 }
@@ -81,20 +78,14 @@ func (ms *Storage) StoreManifest(ctx context.Context, manifest StoredManifest) e
 func (ms *Storage) GetManifest(ctx context.Context, id string) (*StoredManifest, error) {
 	manifestBytes, err := ms.db.Read(ctx, manifestNamespace, id)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get manifest: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrapf(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "getting manifest: %s", id)
 	}
 	if len(manifestBytes) == 0 {
-		err := fmt.Errorf("manifest not found with id: %s", id)
-		logrus.WithError(err).Error("could not get manifest from storage")
-		return nil, err
+		return nil, util.LoggingNewErrorf("manifest not found with id: %s", id)
 	}
 	var stored StoredManifest
 	if err := json.Unmarshal(manifestBytes, &stored); err != nil {
-		errMsg := fmt.Sprintf("could not unmarshal stored manifest: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrapf(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "unmarshalling stored manifest: %s", id)
 	}
 	return &stored, nil
 }
@@ -103,9 +94,7 @@ func (ms *Storage) GetManifest(ctx context.Context, id string) (*StoredManifest,
 func (ms *Storage) GetManifests(ctx context.Context) ([]StoredManifest, error) {
 	gotManifests, err := ms.db.ReadAll(ctx, manifestNamespace)
 	if err != nil {
-		errMsg := "could not get all manifests"
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "getting all manifests")
 	}
 	if len(gotManifests) == 0 {
 		logrus.Info("no manifests to get")
@@ -116,6 +105,8 @@ func (ms *Storage) GetManifests(ctx context.Context) ([]StoredManifest, error) {
 		var nextManifest StoredManifest
 		if err = json.Unmarshal(manifestBytes, &nextManifest); err == nil {
 			stored = append(stored, nextManifest)
+		} else {
+			logrus.Errorf("could not unmarshal manifest while getting all manifests: %s", err.Error())
 		}
 	}
 	return stored, nil
@@ -123,7 +114,7 @@ func (ms *Storage) GetManifests(ctx context.Context) ([]StoredManifest, error) {
 
 func (ms *Storage) DeleteManifest(ctx context.Context, id string) error {
 	if err := ms.db.Delete(ctx, manifestNamespace, id); err != nil {
-		return util.LoggingErrorMsgf(err, "could not delete manifest: %s", id)
+		return util.LoggingErrorMsgf(err, "deleting manifest: %s", id)
 	}
 	return nil
 }
@@ -150,7 +141,7 @@ func (ms *Storage) GetApplication(ctx context.Context, id string) (*StoredApplic
 	}
 	var stored StoredApplication
 	if err = json.Unmarshal(applicationBytes, &stored); err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored application: %s", id)
+		return nil, util.LoggingErrorMsgf(err, "unmarshalling stored application: %s", id)
 	}
 	return &stored, nil
 }
@@ -159,7 +150,7 @@ func (ms *Storage) GetApplication(ctx context.Context, id string) (*StoredApplic
 func (ms *Storage) GetApplications(ctx context.Context) ([]StoredApplication, error) {
 	gotApplications, err := ms.db.ReadAll(ctx, credential.ApplicationNamespace)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not get all applications")
+		return nil, util.LoggingErrorMsg(err, "getting all applications")
 	}
 	if len(gotApplications) == 0 {
 		logrus.Info("no applications to get")
@@ -171,7 +162,7 @@ func (ms *Storage) GetApplications(ctx context.Context) ([]StoredApplication, er
 		if err = json.Unmarshal(applicationBytes, &nextApplication); err == nil {
 			stored = append(stored, nextApplication)
 		} else {
-			logrus.WithError(err).Errorf("could not unmarshal stored application: %s", appKey)
+			logrus.WithError(err).Errorf("could not unmarshal stored application while getting all applications: %s", appKey)
 		}
 	}
 	return stored, nil
@@ -179,7 +170,7 @@ func (ms *Storage) GetApplications(ctx context.Context) ([]StoredApplication, er
 
 func (ms *Storage) DeleteApplication(ctx context.Context, id string) error {
 	if err := ms.db.Delete(ctx, credential.ApplicationNamespace, id); err != nil {
-		return util.LoggingErrorMsgf(err, "could not delete application: %s", id)
+		return util.LoggingErrorMsgf(err, "deleting application: %s", id)
 	}
 	return nil
 }
@@ -191,7 +182,7 @@ func (ms *Storage) StoreResponse(ctx context.Context, response StoredResponse) e
 	}
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
-		return util.LoggingErrorMsgf(err, "could not store response: %s", id)
+		return util.LoggingErrorMsgf(err, "storing response: %s", id)
 	}
 	return ms.db.Write(ctx, responseNamespace, id, responseBytes)
 }
@@ -199,14 +190,14 @@ func (ms *Storage) StoreResponse(ctx context.Context, response StoredResponse) e
 func (ms *Storage) GetResponse(ctx context.Context, id string) (*StoredResponse, error) {
 	responseBytes, err := ms.db.Read(ctx, responseNamespace, id)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get response: %s", id)
+		return nil, util.LoggingErrorMsgf(err, "getting response: %s", id)
 	}
 	if len(responseBytes) == 0 {
 		return nil, util.LoggingNewErrorf("response not found with id: %s", id)
 	}
 	var stored StoredResponse
 	if err = json.Unmarshal(responseBytes, &stored); err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored response: %s", id)
+		return nil, util.LoggingErrorMsgf(err, "unmarshalling stored response: %s", id)
 	}
 	return &stored, nil
 }
@@ -215,7 +206,7 @@ func (ms *Storage) GetResponse(ctx context.Context, id string) (*StoredResponse,
 func (ms *Storage) GetResponses(ctx context.Context) ([]StoredResponse, error) {
 	gotResponses, err := ms.db.ReadAll(ctx, responseNamespace)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not get all responses")
+		return nil, util.LoggingErrorMsg(err, "getting all responses")
 	}
 	if len(gotResponses) == 0 {
 		logrus.Info("no responses to get")
@@ -227,7 +218,7 @@ func (ms *Storage) GetResponses(ctx context.Context) ([]StoredResponse, error) {
 		if err = json.Unmarshal(responseBytes, &nextResponse); err == nil {
 			stored = append(stored, nextResponse)
 		} else {
-			logrus.WithError(err).Errorf("could not unmarshal stored response: %s", responseKey)
+			logrus.WithError(err).Errorf("could not unmarshal stored response while getting all responses: %s", responseKey)
 		}
 	}
 	return stored, nil
@@ -235,7 +226,7 @@ func (ms *Storage) GetResponses(ctx context.Context) ([]StoredResponse, error) {
 
 func (ms *Storage) DeleteResponse(ctx context.Context, id string) error {
 	if err := ms.db.Delete(ctx, responseNamespace, id); err != nil {
-		return util.LoggingErrorMsgf(err, "could not delete response: %s", id)
+		return util.LoggingErrorMsgf(err, "deleting response: %s", id)
 	}
 	return nil
 }
@@ -264,18 +255,9 @@ func (ms *Storage) ReviewApplication(ctx context.Context, applicationID string, 
 		return nil, nil, errors.Wrap(err, "storing credential response")
 	}
 
-	responseData, operationData, err := ms.db.UpdateValueAndOperation(
-		ctx,
-		responseNamespace,
-		response.ID,
-		storage.NewUpdater(m),
-		namespace.FromID(opID),
-		opID,
-		opsubmission.OperationUpdater{
-			UpdaterWithMap: storage.NewUpdater(map[string]any{
-				"done": true,
-			}),
-		})
+	responseData, operationData, err := ms.db.UpdateValueAndOperation(ctx, responseNamespace, response.ID,
+		storage.NewUpdater(m), namespace.FromID(opID), opID,
+		opsubmission.OperationUpdater{UpdaterWithMap: storage.NewUpdater(map[string]any{"done": true})})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "updating value and operation")
 	}

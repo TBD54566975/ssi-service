@@ -51,7 +51,7 @@ func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceSt
 	// First, generate a service key
 	serviceKey, serviceKeySalt, err := GenerateServiceKey(config.ServiceKeyPassword)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not generate service key")
+		return nil, util.LoggingErrorMsg(err, "generating service key")
 	}
 
 	// Next, instantiate the key storage
@@ -60,7 +60,7 @@ func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceSt
 		Base58Salt: serviceKeySalt,
 	})
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the keystore service")
+		return nil, util.LoggingErrorMsg(err, "instantiating storage for the keystore service")
 	}
 
 	service := Service{
@@ -90,7 +90,7 @@ func (s Service) StoreKey(ctx context.Context, request StoreKeyRequest) error {
 		CreatedAt:  time.Now().Format(time.RFC3339),
 	}
 	if err := s.storage.StoreKey(ctx, key); err != nil {
-		return util.LoggingErrorMsgf(err, "could not store key: %s", request.ID)
+		return util.LoggingErrorMsgf(err, "storing key: %s", request.ID)
 	}
 	return nil
 }
@@ -101,7 +101,7 @@ func (s Service) GetKey(ctx context.Context, request GetKeyRequest) (*GetKeyResp
 	id := request.ID
 	gotKey, err := s.storage.GetKey(ctx, id)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get key for key: %s", id)
+		return nil, util.LoggingErrorMsgf(err, "getting key with id: %s", id)
 	}
 	if gotKey == nil {
 		return nil, util.LoggingErrorMsgf(err, "key with id<%s> could not be found", id)
@@ -165,13 +165,13 @@ func (s Service) GetKeyDetails(ctx context.Context, request GetKeyDetailsRequest
 func GenerateServiceKey(skPassword string) (key, salt string, err error) {
 	saltBytes, err := util.GenerateSalt(util.Argon2SaltSize)
 	if err != nil {
-		err = errors.Wrap(err, "could not generate salt for service key")
+		err = errors.Wrap(err, "generating salt for service key")
 		return "", "", util.LoggingError(err)
 	}
 
 	keyBytes, err := util.Argon2KeyGen(skPassword, saltBytes, chacha20poly1305.KeySize)
 	if err != nil {
-		err = errors.Wrap(err, "could not generate key for service key")
+		err = errors.Wrap(err, "generating key for service key")
 		return "", "", util.LoggingError(err)
 	}
 
@@ -184,7 +184,7 @@ func GenerateServiceKey(skPassword string) (key, salt string, err error) {
 func EncryptKey(serviceKey, key []byte) ([]byte, error) {
 	encryptedKey, err := util.XChaCha20Poly1305Encrypt(serviceKey, key)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not encrypt key with service key")
+		return nil, errors.Wrap(err, "encrypting key with service key")
 	}
 	return encryptedKey, nil
 }
@@ -193,7 +193,7 @@ func EncryptKey(serviceKey, key []byte) ([]byte, error) {
 func DecryptKey(serviceKey, encryptedKey []byte) ([]byte, error) {
 	decryptedKey, err := util.XChaCha20Poly1305Decrypt(serviceKey, encryptedKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not decrypt key with service key")
+		return nil, errors.Wrap(err, "decrypting key with service key")
 	}
 	return decryptedKey, nil
 }
@@ -202,15 +202,15 @@ func DecryptKey(serviceKey, encryptedKey []byte) ([]byte, error) {
 func (s Service) Sign(ctx context.Context, keyID string, data any) (*keyaccess.JWT, error) {
 	gotKey, err := s.GetKey(ctx, GetKeyRequest{ID: keyID})
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get key for signing schema for keyID<%s>", keyID)
+		return nil, util.LoggingErrorMsgf(err, "getting key with keyID<%s>", keyID)
 	}
-	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
+	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not create key access for signing schema for keyID<%s>", keyID)
+		return nil, util.LoggingErrorMsgf(err, "creating key access for keyID<%s>", keyID)
 	}
 	schemaToken, err := keyAccess.SignJSON(data)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not sign schema for keyID<%s>", keyID)
+		return nil, util.LoggingErrorMsgf(err, "signing data with keyID<%s>", keyID)
 	}
 	return schemaToken, nil
 }

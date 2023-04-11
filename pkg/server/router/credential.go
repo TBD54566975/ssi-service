@@ -8,6 +8,7 @@ import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -43,14 +44,17 @@ type CreateCredentialRequest struct {
 	// The issuer id.
 	Issuer string `json:"issuer" validate:"required" example:"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
 
+	// The KID used to sign the credential
+	IssuerKID string `json:"issuerKid" validate:"required" example:"#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
+
 	// The subject id.
 	Subject string `json:"subject" validate:"required" example:"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
 
 	// A context is optional. If not present, we'll apply default, required context values.
-	Context string `json:"@context"`
+	Context string `json:"@context,omitempty"`
 
-	// A schema is optional. If present, we'll attempt to look it up and validate the data against it.
-	Schema string `json:"schema"`
+	// A schema ID is optional. If present, we'll attempt to look it up and validate the data against it.
+	SchemaID string `json:"schemaId,omitempty"`
 
 	// Claims about the subject. The keys should be predicates (e.g. "alumniOf"), and the values can be any object.
 	Data map[string]any `json:"data" validate:"required" swaggertype:"object,string" example:"alumniOf:did_for_uni"`
@@ -65,15 +69,16 @@ type CreateCredentialRequest struct {
 	// Whether this credential can be suspended. When true, the created VC will have the "credentialStatus"
 	// property set.
 	Suspendable bool `json:"suspendable"`
-	// TODO(gabe) support more capabilities like signature type, format, status, and more.
+	// TODO(gabe) support more capabilities like signature type, format, and more.
 }
 
 func (c CreateCredentialRequest) ToServiceRequest() credential.CreateCredentialRequest {
 	return credential.CreateCredentialRequest{
 		Issuer:      c.Issuer,
+		IssuerKID:   c.IssuerKID,
 		Subject:     c.Subject,
 		Context:     c.Context,
-		JSONSchema:  c.Schema,
+		SchemaID:    c.SchemaID,
 		Data:        c.Data,
 		Expiry:      c.Expiry,
 		Revocable:   c.Revocable,

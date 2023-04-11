@@ -82,12 +82,13 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		kid := issuerDID.DID.VerificationMethod[0].ID
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -100,6 +101,8 @@ func TestManifestAPI(t *testing.T) {
 
 		assert.NotEmpty(tt, resp.Manifest)
 		assert.Equal(tt, resp.Manifest.Issuer.ID, issuerDID.DID.ID)
+
+		println(string(resp.ManifestJWT))
 
 		// verify the manifest
 		verificationResponse, err := manifestService.VerifyManifest(context.Background(), manifestsvc.VerifyManifestRequest{ManifestJWT: resp.ManifestJWT})
@@ -156,12 +159,13 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		kid := issuerDID.DID.VerificationMethod[0].ID
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -214,12 +218,13 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		kid := issuerDID.DID.VerificationMethod[0].ID
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -279,12 +284,13 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		kid := issuerDID.DID.VerificationMethod[0].ID
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -335,23 +341,20 @@ func TestManifestAPI(t *testing.T) {
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credentialService := testCredentialService(tt, bolt, keyStoreService, didService, schemaService)
 		manifestRouter, manifestSvc := testManifest(tt, bolt, keyStoreService, didService, credentialService)
+
 		// create an issuer
-		issuerDID, err := didService.CreateDIDByMethod(
-			context.Background(),
-			did.CreateDIDRequest{
-				Method:  didsdk.KeyMethod,
-				KeyType: crypto.Ed25519,
-			})
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
 		// create an applicant
-		applicantDID, err := didService.CreateDIDByMethod(
-			context.Background(),
-			did.CreateDIDRequest{
-				Method:  didsdk.KeyMethod,
-				KeyType: crypto.Ed25519,
-			})
+		applicantDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
@@ -365,9 +368,10 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
+		kid := issuerDID.DID.VerificationMethod[0].ID
 		createdSchema, err := schemaService.CreateSchema(
 			context.Background(),
-			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -375,9 +379,10 @@ func TestManifestAPI(t *testing.T) {
 		createdCred, err := credentialService.CreateCredential(
 			context.Background(),
 			credential.CreateCredentialRequest{
-				Issuer:     issuerDID.DID.ID,
-				Subject:    applicantDID.DID.ID,
-				JSONSchema: createdSchema.ID,
+				Issuer:    issuerDID.DID.ID,
+				IssuerKID: kid,
+				Subject:   applicantDID.DID.ID,
+				SchemaID:  createdSchema.ID,
 				Data: map[string]any{
 					"licenseType": "WA-DL-CLASS-A",
 					"firstName":   "Tester",
@@ -388,7 +393,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, createdCred)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -413,19 +418,18 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
 		assert.NoError(tt, err)
-		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantPrivKey)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantDID.DID.VerificationMethod[0].ID, applicantPrivKey)
 		assert.NoError(tt, err)
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)
 
-		now := time.Date(2022, 10, 31, 0, 0, 0, 0, time.UTC)
+		expiryDateTime := time.Date(2022, 10, 31, 0, 0, 0, 0, time.UTC)
 		mockClock := clock.NewMock()
 		manifestSvc.Clock = mockClock
-		mockClock.Set(now)
-		duration := 5 * time.Second
-		issuanceTemplate, err := issuanceService.CreateIssuanceTemplate(
-			context.Background(),
-			getValidIssuanceTemplateRequest(m, issuerDID, createdSchema, now, duration))
+		mockClock.Set(expiryDateTime)
+		expiryDuration := 5 * time.Second
+		issuanceTemplate, err := issuanceService.CreateIssuanceTemplate(context.Background(),
+			getValidIssuanceTemplateRequest(m, issuerDID, createdSchema, expiryDateTime, expiryDuration))
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuanceTemplate)
 
@@ -444,23 +448,24 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		err = json.Unmarshal(respData, &appResp)
 		assert.NoError(tt, err)
-
 		assert.Len(tt, appResp.Credentials, 2, "each output_descriptor in the definition should result in a credential")
+
 		vc, err := util.CredentialsFromInterface(appResp.Credentials.([]any)[0])
 		assert.NoError(tt, err)
-		assert.Equal(tt, credsdk.CredentialSubject{
+		expectedSubject := credsdk.CredentialSubject{
 			"id":        applicantDID.DID.ID,
 			"state":     "CA",
 			"firstName": "Tester",
 			"lastName":  "McTest",
-		}, vc.CredentialSubject)
+		}
+		assert.Equal(tt, expectedSubject, vc.CredentialSubject)
 		assert.Equal(tt, time.Date(2022, 10, 31, 0, 0, 0, 0, time.UTC).Format(time.RFC3339), vc.ExpirationDate)
 		assert.Equal(tt, createdSchema.ID, vc.CredentialSchema.ID)
 		assert.Empty(tt, vc.CredentialStatus)
 
 		vc2, err := util.CredentialsFromInterface(appResp.Credentials.([]any)[1])
 		assert.NoError(tt, err)
-		assert.Equal(tt, credsdk.CredentialSubject{
+		expectedSubject = credsdk.CredentialSubject{
 			"id": applicantDID.DID.ID,
 			"someCrazyObject": map[string]any{
 				"foo": 123.,
@@ -469,15 +474,16 @@ func TestManifestAPI(t *testing.T) {
 					"yay", 123., nil,
 				},
 			},
-		}, vc2.CredentialSubject)
-		assert.Equal(
-			tt,
+		}
+		assert.Equal(tt, expectedSubject, vc2.CredentialSubject)
+		assert.Equal(tt,
 			time.Date(2022, 10, 31, 0, 0, 5, 0, time.UTC).Format(time.RFC3339),
 			vc2.ExpirationDate,
 		)
 		assert.Equal(tt, createdSchema.ID, vc2.CredentialSchema.ID)
 		assert.NotEmpty(tt, vc2.CredentialStatus)
 	})
+
 	t.Run("Test Submit Application", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotNil(tt, bolt)
@@ -489,10 +495,7 @@ func TestManifestAPI(t *testing.T) {
 		manifestRouter, _ := testManifest(tt, bolt, keyStoreService, didService, credentialService)
 
 		// missing required field: Application
-		badManifestRequest := router.SubmitApplicationRequest{
-			ApplicationJWT: "bad",
-		}
-
+		badManifestRequest := router.SubmitApplicationRequest{ApplicationJWT: "bad"}
 		badRequestValue := newRequestValue(tt, badManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", badRequestValue)
 		w := httptest.NewRecorder()
@@ -530,22 +533,25 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		kid := issuerDID.DID.VerificationMethod[0].ID
+		createdSchema, err := schemaService.CreateSchema(context.Background(),
+			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
 		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuerDID.DID.ID,
-			Subject:    applicantDID.DID.ID,
-			JSONSchema: createdSchema.ID,
-			Data:       map[string]any{"licenseType": "WA-DL-CLASS-A"},
+			Issuer:    issuerDID.DID.ID,
+			IssuerKID: kid,
+			Subject:   applicantDID.DID.ID,
+			SchemaID:  createdSchema.ID,
+			Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		w.Flush()
 
@@ -571,7 +577,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
 		assert.NoError(tt, err)
-		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantPrivKey)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantDID.DID.VerificationMethod[0].ID, applicantPrivKey)
 		assert.NoError(tt, err)
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)
@@ -684,16 +690,19 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		kid := issuerDID.DID.VerificationMethod[0].ID
+		createdSchema, err := schemaService.CreateSchema(context.Background(),
+			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
 		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuerDID.DID.ID,
-			Subject:    applicantDID.DID.ID,
-			JSONSchema: createdSchema.ID,
-			Data:       map[string]any{"licenseType": "WA-DL-CLASS-A"},
+			Issuer:    issuerDID.DID.ID,
+			IssuerKID: kid,
+			Subject:   applicantDID.DID.ID,
+			SchemaID:  createdSchema.ID,
+			Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)
@@ -701,7 +710,7 @@ func TestManifestAPI(t *testing.T) {
 		w.Flush()
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -729,7 +738,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
 		assert.NoError(tt, err)
-		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantPrivKey)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantDID.DID.VerificationMethod[0].ID, applicantPrivKey)
 		assert.NoError(tt, err)
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)
@@ -834,22 +843,25 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		kid := issuerDID.DID.VerificationMethod[0].ID
+		createdSchema, err := schemaService.CreateSchema(context.Background(),
+			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
 		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuerDID.DID.ID,
-			Subject:    applicantDID.DID.ID,
-			JSONSchema: createdSchema.ID,
-			Data:       map[string]any{"licenseType": "WA-DL-CLASS-A"},
+			Issuer:    issuerDID.DID.ID,
+			IssuerKID: kid,
+			Subject:   applicantDID.DID.ID,
+			SchemaID:  createdSchema.ID,
+			Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -873,7 +885,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
 		assert.NoError(tt, err)
-		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantPrivKey)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantDID.DID.VerificationMethod[0].ID, applicantPrivKey)
 		assert.NoError(tt, err)
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)
@@ -986,22 +998,25 @@ func TestManifestAPI(t *testing.T) {
 			},
 			"additionalProperties": true,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "license schema", Schema: licenseSchema, Sign: true})
+		kid := issuerDID.DID.VerificationMethod[0].ID
+		createdSchema, err := schemaService.CreateSchema(context.Background(),
+			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
 		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-			Issuer:     issuerDID.DID.ID,
-			Subject:    applicantDID.DID.ID,
-			JSONSchema: createdSchema.ID,
-			Data:       map[string]any{"licenseType": "WA-DL-CLASS-A"},
+			Issuer:    issuerDID.DID.ID,
+			IssuerKID: kid,
+			Subject:   applicantDID.DID.ID,
+			SchemaID:  createdSchema.ID,
+			Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, createdSchema.ID)
+		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -1025,7 +1040,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
 		assert.NoError(tt, err)
-		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantPrivKey)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantDID.DID.VerificationMethod[0].ID, applicantPrivKey)
 		assert.NoError(tt, err)
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)
@@ -1077,12 +1092,14 @@ func TestManifestAPI(t *testing.T) {
 	})
 }
 
-func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *did.CreateDIDResponse, createdSchema *schema.CreateSchemaResponse, now time.Time, duration time.Duration) *issuing.CreateIssuanceTemplateRequest {
+func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *did.CreateDIDResponse,
+	createdSchema *schema.CreateSchemaResponse, expiry1 time.Time, expiry2 time.Duration) *issuing.CreateIssuanceTemplateRequest {
 	return &issuing.CreateIssuanceTemplateRequest{
 		IssuanceTemplate: issuing.IssuanceTemplate{
 			ID:                 uuid.NewString(),
 			CredentialManifest: m.ID,
 			Issuer:             issuerDID.DID.ID,
+			IssuerKID:          issuerDID.DID.VerificationMethod[0].ID,
 			Credentials: []issuing.CredentialTemplate{
 				{
 					ID:                        "id1",
@@ -1094,7 +1111,7 @@ func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *d
 						"state":     "CA",
 					},
 					Expiry: issuing.TimeLike{
-						Time: &now,
+						Time: &expiry1,
 					},
 				},
 				{
@@ -1110,7 +1127,7 @@ func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *d
 							},
 						},
 					},
-					Expiry:    issuing.TimeLike{Duration: &duration},
+					Expiry:    issuing.TimeLike{Duration: &expiry2},
 					Revocable: true,
 				},
 			},

@@ -8,6 +8,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/goccy/go-json"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 
 	"github.com/tbd54566975/ssi-service/internal/credential"
@@ -34,9 +35,7 @@ func NewManifestRouter(s svcframework.Service) (*ManifestRouter, error) {
 	if !ok {
 		return nil, fmt.Errorf("could not create manifest router with service type: %s", s.Type())
 	}
-	return &ManifestRouter{
-		service: manifestService,
-	}, nil
+	return &ManifestRouter{service: manifestService}, nil
 }
 
 // CreateManifestRequest is the request body for creating a manifest, which populates all remaining fields
@@ -45,6 +44,7 @@ type CreateManifestRequest struct {
 	Name                   *string                          `json:"name,omitempty"`
 	Description            *string                          `json:"description,omitempty"`
 	IssuerDID              string                           `json:"issuerDid" validate:"required"`
+	IssuerKID              string                           `json:"issuerKid" validate:"required"`
 	IssuerName             *string                          `json:"issuerName,omitempty"`
 	ClaimFormat            *exchange.ClaimFormat            `json:"format" validate:"required,dive"`
 	OutputDescriptors      []manifestsdk.OutputDescriptor   `json:"outputDescriptors" validate:"required,dive"`
@@ -56,6 +56,7 @@ func (c CreateManifestRequest) ToServiceRequest() model.CreateManifestRequest {
 		Name:                   c.Name,
 		Description:            c.Description,
 		IssuerDID:              c.IssuerDID,
+		IssuerKID:              c.IssuerKID,
 		IssuerName:             c.IssuerName,
 		OutputDescriptors:      c.OutputDescriptors,
 		ClaimFormat:            c.ClaimFormat,
@@ -227,15 +228,14 @@ const (
 	verifiableCredentialsJSONProperty = "verifiableCredentials"
 )
 
-func (sar SubmitApplicationRequest) ToServiceRequest() (*model.SubmitApplicationRequest, error) {
-	signature, token, err := util.ParseJWT(sar.ApplicationJWT)
+func (sar SubmitApplicationRequest) toServiceRequest() (*model.SubmitApplicationRequest, error) {
+	_, token, err := util.ParseJWT(sar.ApplicationJWT)
 	if err != nil {
-		logrus.WithError(err).Error("could not parse application JWT")
-		return nil, err
+		return nil, util.LoggingErrorMsg(err, "could not parse application JWT")
 	}
-	kid := signature.ProtectedHeaders().KeyID()
-	if kid == "" {
-		return nil, errors.New("Credential Application token missing kid")
+	iss := token.Issuer()
+	if iss == "" {
+		return nil, util.LoggingNewError("credential application token missing iss")
 	}
 
 	// make sure the known properties are present (Application and Credentials)
@@ -250,9 +250,7 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*model.SubmitApplication
 	}
 	creds, ok = credentials.([]any)
 	if !ok {
-		errMsg := fmt.Sprintf("could not parse Credential Application token, %s is not an array", vcsJSONProperty)
-		logrus.Errorf("%s: %s", errMsg, credentials)
-		return nil, errors.New(errMsg)
+		return nil, util.LoggingNewErrorf("could not parse Credential Application token, %s is not an array", vcsJSONProperty)
 	}
 
 	// marshal known properties into their respective types
@@ -266,9 +264,7 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*model.SubmitApplication
 	}
 	var application manifestsdk.CredentialApplication
 	if err = json.Unmarshal(applicationTokenBytes, &application); err != nil {
-		errMsg := "could not reconstruct Credential Application"
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not reconstruct Credential Application")
 	}
 
 	credContainer, err := credential.NewCredentialContainerFromArray(creds)
@@ -276,7 +272,7 @@ func (sar SubmitApplicationRequest) ToServiceRequest() (*model.SubmitApplication
 		return nil, errors.Wrap(err, "could not parse submitted credentials")
 	}
 	return &model.SubmitApplicationRequest{
-		ApplicantDID:    kid,
+		ApplicantDID:    iss,
 		Application:     application,
 		Credentials:     credContainer,
 		ApplicationJWT:  sar.ApplicationJWT,
@@ -314,7 +310,7 @@ func (mr ManifestRouter) SubmitApplication(ctx context.Context, w http.ResponseW
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	req, err := request.ToServiceRequest()
+	req, err := request.toServiceRequest()
 	if err != nil {
 		errMsg := "invalid submit application request"
 		logrus.WithError(err).Error(errMsg)

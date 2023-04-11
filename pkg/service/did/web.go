@@ -99,8 +99,7 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 
 	// store private key in key storage
 	keyStoreRequest := keystore.StoreKeyRequest{
-		// TODO(gabe): this should be a unique ID for the key
-		ID:               id,
+		ID:               doc.VerificationMethod[0].ID,
 		Type:             request.KeyType,
 		Controller:       id,
 		PrivateKeyBase58: privKeyBase58,

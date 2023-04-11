@@ -5,15 +5,17 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
+	"go.einride.tech/aip/filtering"
+
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
-	"go.einride.tech/aip/filtering"
 )
 
 type CreatePresentationDefinitionRequest struct {
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition" validate:"required"`
 	Author                 string                          `json:"author" validate:"required"`
+	AuthorKID              string                          `json:"authorKid" validate:"required"`
 }
 
 func (cpr CreatePresentationDefinitionRequest) IsValid() error {

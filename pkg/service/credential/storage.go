@@ -13,6 +13,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -34,6 +35,7 @@ type StoredCredential struct {
 	CredentialJWT *keyaccess.JWT                   `json:"token,omitempty"`
 
 	Issuer       string `json:"issuer"`
+	IssuerKID    string `json:"issuerKid"`
 	Subject      string `json:"subject"`
 	Schema       string `json:"schema"`
 	IssuanceDate string `json:"issuanceDate"`
@@ -281,7 +283,7 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 	// assume we have a Data Integrity credential
 	cred := request.Credential
 	if request.HasJWTCredential() {
-		parsedCred, err := signing.ParseVerifiableCredentialFromJWT(request.CredentialJWT.String())
+		_, _, parsedCred, err := signing.ParseVerifiableCredentialFromJWT(request.CredentialJWT.String())
 		if err != nil {
 			return nil, errors.Wrap(err, "could not parse credential from jwt")
 		}
@@ -306,6 +308,7 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 		Credential:    cred,
 		CredentialJWT: request.CredentialJWT,
 		Issuer:        issuer,
+		IssuerKID:     request.IssuerKID,
 		Subject:       subject,
 		Schema:        schema,
 		IssuanceDate:  cred.IssuanceDate,

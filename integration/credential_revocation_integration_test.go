@@ -20,10 +20,14 @@ func TestRevocationCreateIssuerDIDKeyIntegration(t *testing.T) {
 	assert.NoError(t, err)
 
 	issuerDID, err := getJSONElement(didKeyOutput, "$.did.id")
-	SetValue(credentialRevocationContext, "issuerDID", issuerDID)
-
 	assert.NoError(t, err)
 	assert.Contains(t, issuerDID, "did:key")
+	SetValue(credentialRevocationContext, "issuerDID", issuerDID)
+
+	issuerKID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKID)
+	SetValue(credentialRevocationContext, "issuerKID", issuerKID)
 }
 
 func TestRevocationCreateSchemaIntegration(t *testing.T) {
@@ -35,10 +39,9 @@ func TestRevocationCreateSchemaIntegration(t *testing.T) {
 	assert.NoError(t, err)
 
 	schemaID, err := getJSONElement(output, "$.id")
-	SetValue(credentialRevocationContext, "schemaID", schemaID)
-
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
+	SetValue(credentialRevocationContext, "schemaID", schemaID)
 }
 
 func TestRevocationCreateVerifiableCredentialIntegration(t *testing.T) {
@@ -50,12 +53,17 @@ func TestRevocationCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
+	issuerKID, err := GetValue(credentialRevocationContext, "issuerKID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKID)
+
 	schemaID, err := GetValue(credentialRevocationContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	vcOutput, err := CreateVerifiableCredential(credInputParams{
 		IssuerID:  issuerDID.(string),
+		IssuerKID: issuerKID.(string),
 		SchemaID:  schemaID.(string),
 		SubjectID: issuerDID.(string),
 	}, true)
@@ -63,21 +71,21 @@ func TestRevocationCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NotEmpty(t, vcOutput)
 
 	cred, err := getJSONElement(vcOutput, "$.credential")
-	SetValue(credentialRevocationContext, "cred", cred)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, cred)
+	SetValue(credentialRevocationContext, "cred", cred)
 
 	credStatusURL, err := getJSONElement(vcOutput, "$.credential.credentialStatus.id")
-	SetValue(credentialRevocationContext, "credStatusURL", credStatusURL)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credStatusURL)
 	assert.Contains(t, credStatusURL, "http")
+	SetValue(credentialRevocationContext, "credStatusURL", credStatusURL)
 
 	statusListCredentialURL, err := getJSONElement(vcOutput, "$.credential.credentialStatus.statusListCredential")
-	SetValue(credentialRevocationContext, "statusListCredentialURL", statusListCredentialURL)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, statusListCredentialURL)
 	assert.Contains(t, statusListCredentialURL, "http")
+	SetValue(credentialRevocationContext, "statusListCredentialURL", statusListCredentialURL)
 
 	credStatusListCredentialOutput, err := get(statusListCredentialURL)
 	assert.NoError(t, err)
@@ -87,7 +95,6 @@ func TestRevocationCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, encodedListOriginal)
 	SetValue(credentialRevocationContext, "encodedListOriginal", encodedListOriginal)
-
 }
 
 func TestRevocationCheckStatusIntegration(t *testing.T) {

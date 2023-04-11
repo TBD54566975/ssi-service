@@ -128,9 +128,10 @@ func newRequestContextWithParams(params map[string]string) context.Context {
 	return httptreemux.AddParamsToContext(ctx, params)
 }
 
-func getValidManifestRequest(issuerDID, schemaID string) model.CreateManifestRequest {
-	createManifestRequest := model.CreateManifestRequest{
+func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.CreateManifestRequest {
+	return model.CreateManifestRequest{
 		IssuerDID: issuerDID,
+		IssuerKID: issuerKID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
@@ -164,8 +165,6 @@ func getValidManifestRequest(issuerDID, schemaID string) model.CreateManifestReq
 			},
 		},
 	}
-
-	return createManifestRequest
 }
 
 func getValidApplicationRequest(manifestID, presDefID, submissionDescriptorID string, credentials []credmodel.Container) manifestsdk.CredentialApplicationWrapper {
