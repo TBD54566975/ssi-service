@@ -9,7 +9,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/internal/util"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	manifestmodel "github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
@@ -130,7 +130,7 @@ func (s Service) CancelOperation(ctx context.Context, request CancelOperationReq
 func NewOperationService(s storage.ServiceStorage) (*Service, error) {
 	opStorage, err := NewOperationStorage(s)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "creating operation storage")
+		return nil, sdkutil.LoggingErrorMsg(err, "creating operation storage")
 	}
 	service := &Service{storage: opStorage}
 	if !service.Status().IsReady() {

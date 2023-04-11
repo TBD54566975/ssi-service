@@ -7,6 +7,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
@@ -231,11 +232,11 @@ const (
 func (sar SubmitApplicationRequest) toServiceRequest() (*model.SubmitApplicationRequest, error) {
 	_, token, err := util.ParseJWT(sar.ApplicationJWT)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not parse application JWT")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not parse application JWT")
 	}
 	iss := token.Issuer()
 	if iss == "" {
-		return nil, util.LoggingNewError("credential application token missing iss")
+		return nil, sdkutil.LoggingNewError("credential application token missing iss")
 	}
 
 	// make sure the known properties are present (Application and Credentials)
@@ -250,7 +251,7 @@ func (sar SubmitApplicationRequest) toServiceRequest() (*model.SubmitApplication
 	}
 	creds, ok = credentials.([]any)
 	if !ok {
-		return nil, util.LoggingNewErrorf("could not parse Credential Application token, %s is not an array", vcsJSONProperty)
+		return nil, sdkutil.LoggingNewErrorf("could not parse Credential Application token, %s is not an array", vcsJSONProperty)
 	}
 
 	// marshal known properties into their respective types
@@ -264,7 +265,7 @@ func (sar SubmitApplicationRequest) toServiceRequest() (*model.SubmitApplication
 	}
 	var application manifestsdk.CredentialApplication
 	if err = json.Unmarshal(applicationTokenBytes, &application); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not reconstruct Credential Application")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not reconstruct Credential Application")
 	}
 
 	credContainer, err := credential.NewCredentialContainerFromArray(creds)
@@ -559,19 +560,19 @@ func (mr ManifestRouter) ReviewApplication(ctx context.Context, w http.ResponseW
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
-			util.LoggingNewError("review application request requires id"), http.StatusBadRequest)
+			sdkutil.LoggingNewError("review application request requires id"), http.StatusBadRequest)
 	}
 
 	var request ReviewApplicationRequest
 	if err := framework.Decode(r, &request); err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "invalid review application request"), http.StatusBadRequest)
+			sdkutil.LoggingErrorMsg(err, "invalid review application request"), http.StatusBadRequest)
 	}
 
 	applicationResponse, err := mr.service.ReviewApplication(ctx, request.toServiceRequest(*id))
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "failed reviewing application"), http.StatusInternalServerError)
+			sdkutil.LoggingErrorMsg(err, "failed reviewing application"), http.StatusInternalServerError)
 	}
 	return framework.Respond(ctx, w, SubmitApplicationResponse{
 		Response:    applicationResponse.Response,

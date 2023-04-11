@@ -10,6 +10,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -89,36 +90,35 @@ type StatusListIndex struct {
 
 func NewCredentialStorage(db storage.ServiceStorage) (*Storage, error) {
 	if db == nil {
-		return nil, util.LoggingNewError("bolt db reference is nil")
+		return nil, sdkutil.LoggingNewError("bolt db reference is nil")
 	}
 
 	return &Storage{db: db}, nil
 }
 
 func (cs *Storage) GetNextStatusListRandomIndex(ctx context.Context, slcMetadata StatusListCredentialMetadata) (int, error) {
-
 	gotUniqueNumBytes, err := cs.db.Read(ctx, slcMetadata.statusListIndexPoolWatchKey.Namespace, slcMetadata.statusListIndexPoolWatchKey.Key)
 	if err != nil {
-		return -1, util.LoggingErrorMsgf(err, "reading status list")
+		return -1, sdkutil.LoggingErrorMsgf(err, "reading status list")
 	}
 
 	if len(gotUniqueNumBytes) == 0 {
-		return -1, util.LoggingNewErrorf("could not get unique numbers from db")
+		return -1, sdkutil.LoggingNewErrorf("could not get unique numbers from db")
 	}
 
 	var uniqueNums []int
 	if err = json.Unmarshal(gotUniqueNumBytes, &uniqueNums); err != nil {
-		return -1, util.LoggingErrorMsgf(err, "unmarshalling unique numbers")
+		return -1, sdkutil.LoggingErrorMsgf(err, "unmarshalling unique numbers")
 	}
 
 	gotCurrentListIndexBytes, err := cs.db.Read(ctx, slcMetadata.statusListCurrentIndexWatchKey.Namespace, slcMetadata.statusListCurrentIndexWatchKey.Key)
 	if err != nil {
-		return -1, util.LoggingErrorMsgf(err, "could not get list index")
+		return -1, sdkutil.LoggingErrorMsgf(err, "could not get list index")
 	}
 
 	var statusListIndex StatusListIndex
 	if err = json.Unmarshal(gotCurrentListIndexBytes, &statusListIndex); err != nil {
-		return -1, util.LoggingErrorMsgf(err, "unmarshalling unique numbers")
+		return -1, sdkutil.LoggingErrorMsgf(err, "unmarshalling unique numbers")
 	}
 
 	return uniqueNums[statusListIndex.Index], nil
@@ -141,25 +141,25 @@ func (cs *Storage) WriteMany(ctx context.Context, writeContexts []WriteContext) 
 func (cs *Storage) IncrementStatusListIndexTx(ctx context.Context, tx storage.Tx, slcMetadata StatusListCredentialMetadata) error {
 	gotCurrentListIndexBytes, err := cs.db.Read(ctx, slcMetadata.statusListCurrentIndexWatchKey.Namespace, slcMetadata.statusListCurrentIndexWatchKey.Key)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not get list index")
+		return sdkutil.LoggingErrorMsg(err, "could not get list index")
 	}
 
 	var statusListIndex StatusListIndex
 	if err = json.Unmarshal(gotCurrentListIndexBytes, &statusListIndex); err != nil {
-		return util.LoggingErrorMsg(err, "unmarshalling unique numbers")
+		return sdkutil.LoggingErrorMsg(err, "unmarshalling unique numbers")
 	}
 
 	if statusListIndex.Index >= bitStringLength-1 {
-		return util.LoggingErrorMsg(err, "no more indexes available for status list index")
+		return sdkutil.LoggingErrorMsg(err, "no more indexes available for status list index")
 	}
 
 	statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: statusListIndex.Index + 1})
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not marshal status list index bytes")
+		return sdkutil.LoggingErrorMsg(err, "could not marshal status list index bytes")
 	}
 
 	if err := tx.Write(ctx, slcMetadata.statusListCurrentIndexWatchKey.Namespace, slcMetadata.statusListCurrentIndexWatchKey.Key, statusListIndexBytes); err != nil {
-		return util.LoggingErrorMsg(err, "problem writing current list index to db")
+		return sdkutil.LoggingErrorMsg(err, "problem writing current list index to db")
 	}
 
 	return nil
@@ -181,21 +181,21 @@ func (cs *Storage) CreateStatusListCredentialTx(ctx context.Context, tx storage.
 	randUniqueList := randomUniqueNum(bitStringLength)
 	uniqueNumBytes, err := json.Marshal(randUniqueList)
 	if err != nil {
-		return -1, util.LoggingErrorMsg(err, "could not marshal random unique numbers")
+		return -1, sdkutil.LoggingErrorMsg(err, "could not marshal random unique numbers")
 	}
 
 	if err := tx.Write(context.Background(), slcMetadata.statusListIndexPoolWatchKey.Namespace, slcMetadata.statusListIndexPoolWatchKey.Key, uniqueNumBytes); err != nil {
-		return -1, util.LoggingErrorMsg(err, "problem writing status list indexes to db")
+		return -1, sdkutil.LoggingErrorMsg(err, "problem writing status list indexes to db")
 	}
 
 	// Set the index to 1 since this is a new statusListCredential
 	statusListIndexBytes, err := json.Marshal(StatusListIndex{Index: 1})
 	if err != nil {
-		return -1, util.LoggingErrorMsg(err, "could not marshal status list index bytes")
+		return -1, sdkutil.LoggingErrorMsg(err, "could not marshal status list index bytes")
 	}
 
 	if err := tx.Write(context.Background(), slcMetadata.statusListCurrentIndexWatchKey.Namespace, slcMetadata.statusListCurrentIndexWatchKey.Key, statusListIndexBytes); err != nil {
-		return -1, util.LoggingErrorMsg(err, "problem writing current list index to db")
+		return -1, sdkutil.LoggingErrorMsg(err, "problem writing current list index to db")
 	}
 
 	return randUniqueList[0], cs.StoreStatusListCredentialTx(ctx, tx, request, slcMetadata)
@@ -203,7 +203,7 @@ func (cs *Storage) CreateStatusListCredentialTx(ctx context.Context, tx storage.
 
 func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, tx storage.Tx, request StoreCredentialRequest, slcMetadata StatusListCredentialMetadata) error {
 	if !request.IsValid() {
-		return util.LoggingNewError("store request request is not valid")
+		return sdkutil.LoggingNewError("store request request is not valid")
 	}
 
 	// transform the credential into its denormalized form for storage
@@ -214,7 +214,7 @@ func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, tx storage.T
 
 	storedCredBytes, err := json.Marshal(storedCredential)
 	if err != nil {
-		return util.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.CredentialID)
+		return sdkutil.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.CredentialID)
 	}
 
 	return tx.Write(ctx, slcMetadata.statusListCredentialWatchKey.Namespace, slcMetadata.statusListCredentialWatchKey.Key, storedCredBytes)
@@ -223,7 +223,7 @@ func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, tx storage.T
 func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, statusListCredentialNamespace)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for cred with id: %s", id)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for cred with id: %s", id)
 	}
 
 	var storedCreds []StoredCredential
@@ -255,7 +255,7 @@ func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*Sto
 
 func (cs *Storage) getStoreCredentialWriteContext(request StoreCredentialRequest, namespace string) (*WriteContext, error) {
 	if !request.IsValid() {
-		return nil, util.LoggingNewError("store request request is not valid")
+		return nil, sdkutil.LoggingNewError("store request request is not valid")
 	}
 
 	// transform the credential into its denormalized form for storage
@@ -266,7 +266,7 @@ func (cs *Storage) getStoreCredentialWriteContext(request StoreCredentialRequest
 
 	storedCredBytes, err := json.Marshal(storedCredential)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.CredentialID)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.CredentialID)
 	}
 
 	wc := WriteContext{
@@ -324,10 +324,10 @@ func (cs *Storage) GetCredential(ctx context.Context, id string) (*StoredCredent
 func (cs *Storage) getCredential(ctx context.Context, id string, namespace string) (*StoredCredential, error) {
 	prefixValues, err := cs.db.ReadPrefix(ctx, namespace, id)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get credential from storage: %s", id)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not get credential from storage: %s", id)
 	}
 	if len(prefixValues) > 1 {
-		return nil, util.LoggingNewErrorf("could not get credential from storage; multiple prefix values matched credential id: %s", id)
+		return nil, sdkutil.LoggingNewErrorf("could not get credential from storage; multiple prefix values matched credential id: %s", id)
 	}
 
 	// since we know the map now only has a single value, we break after the first element
@@ -337,12 +337,12 @@ func (cs *Storage) getCredential(ctx context.Context, id string, namespace strin
 		break
 	}
 	if len(credBytes) == 0 {
-		return nil, util.LoggingNewErrorf("could not get credential from storage %s with id: %s", credentialNotFoundErrMsg, id)
+		return nil, sdkutil.LoggingNewErrorf("could not get credential from storage %s with id: %s", credentialNotFoundErrMsg, id)
 	}
 
 	var stored StoredCredential
 	if err = json.Unmarshal(credBytes, &stored); err != nil {
-		return nil, util.LoggingErrorMsgf(err, "unmarshalling stored credential: %s", id)
+		return nil, sdkutil.LoggingErrorMsgf(err, "unmarshalling stored credential: %s", id)
 	}
 	return &stored, nil
 }
@@ -357,7 +357,7 @@ func (cs *Storage) getCredential(ctx context.Context, id string, namespace strin
 func (cs *Storage) GetCredentialsByIssuer(ctx context.Context, issuer string) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
 	}
 	// see if the prefix keys contains the issuer value
 	var issuerKeys []string
@@ -399,7 +399,7 @@ func (cs *Storage) GetCredentialsByIssuer(ctx context.Context, issuer string) ([
 func (cs *Storage) GetCredentialsBySubject(ctx context.Context, subject string) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for subject: %s", subject)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for subject: %s", subject)
 	}
 
 	// see if the prefix keys contains the subject value
@@ -442,7 +442,7 @@ func (cs *Storage) GetCredentialsBySubject(ctx context.Context, subject string) 
 func (cs *Storage) GetCredentialsBySchema(ctx context.Context, schema string) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for schema: %s", schema)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for schema: %s", schema)
 	}
 
 	// see if the prefix keys contains the schema value
@@ -490,7 +490,7 @@ func (cs *Storage) GetCredentialsByIssuerAndSchema(ctx context.Context, issuer s
 func (cs *Storage) GetStatusListCredentialsByIssuerSchemaPurpose(ctx context.Context, issuer string, schema string, statusPurpose statussdk.StatusPurpose) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, statusListCredentialNamespace)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
 	}
 
 	query := "sc:" + schema + "-sp:" + string(statusPurpose)
@@ -533,7 +533,7 @@ func (cs *Storage) GetStatusListCredentialsByIssuerSchemaPurpose(ctx context.Con
 func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer string, schema string, namespace string) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, namespace)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
 	}
 
 	query := "sc:" + schema
@@ -591,7 +591,7 @@ func (cs *Storage) deleteCredential(ctx context.Context, id string, namespace st
 			return nil
 		}
 
-		return util.LoggingErrorMsgf(err, "could not get credential<%s> before deletion", id)
+		return sdkutil.LoggingErrorMsgf(err, "could not get credential<%s> before deletion", id)
 	}
 
 	// no error on deletion for a non-existent credential
@@ -603,7 +603,7 @@ func (cs *Storage) deleteCredential(ctx context.Context, id string, namespace st
 	// re-create the prefix key to delete
 	prefix := createPrefixKey(id, gotCred.Issuer, gotCred.Subject, gotCred.Schema)
 	if err = cs.db.Delete(ctx, namespace, prefix); err != nil {
-		return util.LoggingErrorMsgf(err, "could not delete credential: %s", id)
+		return sdkutil.LoggingErrorMsgf(err, "could not delete credential: %s", id)
 	}
 	return nil
 }
@@ -623,12 +623,12 @@ func (cs *Storage) GetStatusListCurrentIndexWatchKey(issuer, schema, statusPurpo
 func (cs *Storage) GetStatusListCredentialKeyData(ctx context.Context, issuer string, schema string, statusPurpose statussdk.StatusPurpose) (*StoredCredential, error) {
 	storedStatusListCreds, err := cs.GetStatusListCredentialsByIssuerSchemaPurpose(ctx, issuer, schema, statusPurpose)
 	if err != nil {
-		return nil, util.LoggingNewErrorf("getting status list credential for issuer: %s schema: %s", issuer, schema)
+		return nil, sdkutil.LoggingNewErrorf("getting status list credential for issuer: %s schema: %s", issuer, schema)
 	}
 
 	// This should never happen, there should always be only 1 status list credential per <issuer,schema, statusPurpose> triplet
 	if len(storedStatusListCreds) > 1 {
-		return nil, util.LoggingNewErrorf("only one status list credential per <issuer,schema> pair allowed. issuer: %s schema: %s", issuer, schema)
+		return nil, sdkutil.LoggingNewErrorf("only one status list credential per <issuer,schema> pair allowed. issuer: %s schema: %s", issuer, schema)
 	}
 
 	// No Status List Credential Exists, create a new uuid

@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/tbd54566975/ssi-service/config"
-	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/did/resolution"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
@@ -128,14 +127,14 @@ func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
 		}
 		s.handlers[method] = ih
 	default:
-		return util.LoggingNewErrorf("unsupported DID method: %s", method)
+		return sdkutil.LoggingNewErrorf("unsupported DID method: %s", method)
 	}
 	return nil
 }
 
 func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, error) {
 	if request.DID == "" {
-		return nil, util.LoggingNewError("cannot resolve empty DID")
+		return nil, sdkutil.LoggingNewError("cannot resolve empty DID")
 	}
 	resolved, err := s.Resolve(context.Background(), request.DID)
 	if err != nil {
@@ -163,7 +162,7 @@ func (s *Service) GetSupportedMethods() GetSupportedMethodsResponse {
 func (s *Service) CreateDIDByMethod(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
 	}
 	return handler.CreateDID(ctx, request)
 }
@@ -171,7 +170,7 @@ func (s *Service) CreateDIDByMethod(ctx context.Context, request CreateDIDReques
 func (s *Service) GetDIDByMethod(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
 	}
 	return handler.GetDID(ctx, request)
 }
@@ -179,7 +178,7 @@ func (s *Service) GetDIDByMethod(ctx context.Context, request GetDIDRequest) (*G
 func (s *Service) GetKeyFromDID(ctx context.Context, request GetKeyFromDIDRequest) (*GetKeyFromDIDResponse, error) {
 	resolved, err := s.Resolve(ctx, request.ID)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "resolving DID<%s>", request.ID)
+		return nil, sdkutil.LoggingErrorMsgf(err, "resolving DID<%s>", request.ID)
 	}
 
 	// next, get the verification information (key) from the did document
@@ -198,7 +197,7 @@ func (s *Service) GetDIDsByMethod(ctx context.Context, request GetDIDsRequest) (
 	method := request.Method
 	handler, err := s.getHandler(method)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get handler for method<%s>", method)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", method)
 	}
 	return handler.GetDIDs(ctx)
 }
@@ -206,7 +205,7 @@ func (s *Service) GetDIDsByMethod(ctx context.Context, request GetDIDsRequest) (
 func (s *Service) SoftDeleteDIDByMethod(ctx context.Context, request DeleteDIDRequest) error {
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
-		return util.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
+		return sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
 	}
 	return handler.SoftDeleteDID(ctx, request)
 }
@@ -214,7 +213,7 @@ func (s *Service) SoftDeleteDIDByMethod(ctx context.Context, request DeleteDIDRe
 func (s *Service) getHandler(method didsdk.Method) (MethodHandler, error) {
 	handler, ok := s.handlers[method]
 	if !ok {
-		return nil, util.LoggingNewErrorf("could not get handler for DID method: %s", method)
+		return nil, sdkutil.LoggingNewErrorf("could not get handler for DID method: %s", method)
 	}
 	return handler, nil
 }

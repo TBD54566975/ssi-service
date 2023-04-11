@@ -4,8 +4,10 @@ import "net/url"
 
 // In the context of webhooks, it's common to use noun.verb notation to describe events,
 // such as "credential.create" or "schema.delete".
-type Noun string
-type Verb string
+type (
+	Noun string
+	Verb string
+)
 
 // Supported Nouns
 const (
@@ -105,8 +107,9 @@ func (v Verb) isValid() bool {
 	switch v {
 	case Create, Delete:
 		return true
+	default:
+		return false
 	}
-	return false
 }
 
 // isValidURL checks if there were any errors during parsing and if the parsed DIDWebID has a non-empty Scheme and Host.

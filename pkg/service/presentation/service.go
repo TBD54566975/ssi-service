@@ -15,7 +15,6 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	didint "github.com/tbd54566975/ssi-service/internal/did"
-	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
@@ -62,15 +61,15 @@ func (s Service) Config() config.PresentationServiceConfig {
 func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage, resolver didsdk.Resolver, schema *schema.Service, keystore *keystore.Service) (*Service, error) {
 	presentationStorage, err := NewPresentationStorage(s)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not instantiate definition storage for the presentation service")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate definition storage for the presentation service")
 	}
 	opsStorage, err := operation.NewOperationStorage(s)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the operations")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the operations")
 	}
 	verifier, err := credential.NewCredentialVerifier(resolver, schema)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not instantiate verifier")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate verifier")
 	}
 	service := Service{
 		storage:    presentationStorage,
@@ -93,11 +92,11 @@ func (s Service) CreatePresentationDefinition(ctx context.Context, request model
 	logrus.Debugf("creating presentation definition: %+v", request)
 
 	if err := request.IsValid(); err != nil {
-		return nil, util.LoggingErrorMsgf(err, "invalid create presentation definition request: %+v", request)
+		return nil, sdkutil.LoggingErrorMsgf(err, "invalid create presentation definition request: %+v", request)
 	}
 
 	if err := exchange.IsValidPresentationDefinition(request.PresentationDefinition); err != nil {
-		return nil, util.LoggingErrorMsg(err, "provided value is not a valid presentation definition")
+		return nil, sdkutil.LoggingErrorMsg(err, "provided value is not a valid presentation definition")
 	}
 
 	storedPresentation := StoredPresentation{
@@ -108,11 +107,11 @@ func (s Service) CreatePresentationDefinition(ctx context.Context, request model
 	}
 
 	if err := s.storage.StorePresentation(ctx, storedPresentation); err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not store presentation")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not store presentation")
 	}
 	defJWT, err := s.keystore.Sign(context.Background(), storedPresentation.AuthorKID, exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "signing presentation definition enveloper with author<%s>", storedPresentation.Author)
+		return nil, sdkutil.LoggingErrorMsgf(err, "signing presentation definition enveloper with author<%s>", storedPresentation.Author)
 	}
 
 	var m model.CreatePresentationDefinitionResponse
@@ -126,15 +125,15 @@ func (s Service) GetPresentationDefinition(ctx context.Context, request model.Ge
 
 	storedPresentation, err := s.storage.GetPresentation(ctx, request.ID)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "error getting presentation definition: %s", request.ID)
+		return nil, sdkutil.LoggingErrorMsgf(err, "error getting presentation definition: %s", request.ID)
 	}
 	if storedPresentation == nil {
-		return nil, util.LoggingNewErrorf("presentation definition with id<%s> could not be found", request.ID)
+		return nil, sdkutil.LoggingNewErrorf("presentation definition with id<%s> could not be found", request.ID)
 	}
 	// TODO(gabe) decouple this to a separate endpoint for presentation requests https://github.com/TBD54566975/ssi-service/issues/375
 	defJWT, err := s.keystore.Sign(ctx, storedPresentation.AuthorKID, exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "signing presentation definition envelope by issuer<%s>", storedPresentation.Author)
+		return nil, sdkutil.LoggingErrorMsgf(err, "signing presentation definition envelope by issuer<%s>", storedPresentation.Author)
 	}
 	return &model.GetPresentationDefinitionResponse{
 		ID:                        storedPresentation.ID,
@@ -147,7 +146,7 @@ func (s Service) DeletePresentationDefinition(ctx context.Context, request model
 	logrus.Debugf("deleting presentation definition: %s", request.ID)
 
 	if err := s.storage.DeletePresentation(ctx, request.ID); err != nil {
-		return util.LoggingNewErrorf("could not delete presentation definition with id: %s", request.ID)
+		return sdkutil.LoggingNewErrorf("could not delete presentation definition with id: %s", request.ID)
 	}
 
 	return nil

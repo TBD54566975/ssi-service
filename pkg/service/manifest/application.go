@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/lestrrat-go/jwx/v2/jws"
 
 	didint "github.com/tbd54566975/ssi-service/internal/did"
@@ -14,7 +15,6 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
 
-	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 )
 
@@ -25,30 +25,30 @@ func (s Service) validateCredentialApplication(ctx context.Context, credManifest
 	// parse headers
 	headers, err := keyaccess.GetJWTHeaders([]byte(request.ApplicationJWT.String()))
 	if err != nil {
-		err = util.LoggingErrorMsg(err, "could not parse JWT headers")
+		err = sdkutil.LoggingErrorMsg(err, "could not parse JWT headers")
 		return
 	}
 	jwtKID, ok := headers.Get(jws.KeyIDKey)
 	if !ok {
-		err = util.LoggingNewError("JWT does not contain a kid")
+		err = sdkutil.LoggingNewError("JWT does not contain a kid")
 		return
 	}
 	kid, ok := jwtKID.(string)
 	if !ok {
-		err = util.LoggingNewError("JWT kid is not a string")
+		err = sdkutil.LoggingNewError("JWT kid is not a string")
 		return
 	}
 
 	// validate the payload's signature
 	if verificationErr := didint.VerifyTokenFromDID(ctx, s.didResolver, request.ApplicantDID, kid, request.ApplicationJWT); verificationErr != nil {
-		err = util.LoggingErrorMsgf(err, "could not verify application<%s>'s signature", request.Application.ID)
+		err = sdkutil.LoggingErrorMsgf(err, "could not verify application<%s>'s signature", request.Application.ID)
 		return
 	}
 
 	// validate the application
 	credApp := request.Application
 	if credErr := credApp.IsValid(); credErr != nil {
-		err = util.LoggingErrorMsg(credErr, "application is not valid")
+		err = sdkutil.LoggingErrorMsg(credErr, "application is not valid")
 		return
 	}
 
@@ -72,7 +72,7 @@ func (s Service) validateCredentialApplication(ctx context.Context, credManifest
 		}
 
 		// otherwise, we have an internal error and  set the error to the value of the errResp's error
-		err = util.LoggingErrorMsgf(resp.Err, "could not validate application: %s", credApp.ID)
+		err = sdkutil.LoggingErrorMsgf(resp.Err, "could not validate application: %s", credApp.ID)
 		return
 	}
 
@@ -84,12 +84,12 @@ func (s Service) validateCredentialApplication(ctx context.Context, credManifest
 		})
 
 		if verificationErr != nil {
-			err = util.LoggingNewErrorf("could not verify credential: %s", credentialContainer.Credential.ID)
+			err = sdkutil.LoggingNewErrorf("could not verify credential: %s", credentialContainer.Credential.ID)
 			return
 		}
 
 		if !verificationResult.Verified {
-			err = util.LoggingNewErrorf("submitted credential<%s> is not valid: %s", credentialContainer.Credential.ID, verificationResult.Reason)
+			err = sdkutil.LoggingNewErrorf("submitted credential<%s> is not valid: %s", credentialContainer.Credential.ID, verificationResult.Reason)
 			return
 		}
 	}

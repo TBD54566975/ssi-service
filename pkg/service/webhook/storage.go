@@ -3,10 +3,11 @@ package webhook
 import (
 	"context"
 
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/internal/util"
+
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -26,7 +27,7 @@ func NewWebhookStorage(db storage.ServiceStorage) (*Storage, error) {
 func (whs *Storage) StoreWebhook(ctx context.Context, noun, verb string, webhook Webhook) error {
 	storedWebhookBytes, err := json.Marshal(webhook)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "webhook marshal")
+		return sdkutil.LoggingErrorMsg(err, "webhook marshal")
 	}
 	return whs.db.Write(ctx, webhookNamespace, getWebhookKey(noun, verb), storedWebhookBytes)
 }
@@ -34,7 +35,7 @@ func (whs *Storage) StoreWebhook(ctx context.Context, noun, verb string, webhook
 func (whs *Storage) GetWebhook(ctx context.Context, noun, verb string) (*Webhook, error) {
 	webhookBytes, err := whs.db.Read(ctx, webhookNamespace, getWebhookKey(noun, verb))
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "read db")
+		return nil, sdkutil.LoggingErrorMsg(err, "read db")
 	}
 
 	if webhookBytes == nil || len(webhookBytes) == 0 {
@@ -43,7 +44,7 @@ func (whs *Storage) GetWebhook(ctx context.Context, noun, verb string) (*Webhook
 
 	var webhook Webhook
 	if err = json.Unmarshal(webhookBytes, &webhook); err != nil {
-		return nil, util.LoggingErrorMsgf(err, "unmarshalling webhoook with key: %s", getWebhookKey(noun, verb))
+		return nil, sdkutil.LoggingErrorMsgf(err, "unmarshalling webhoook with key: %s", getWebhookKey(noun, verb))
 	}
 	return &webhook, nil
 }
@@ -51,7 +52,7 @@ func (whs *Storage) GetWebhook(ctx context.Context, noun, verb string) (*Webhook
 func (whs *Storage) GetWebhooks(ctx context.Context) ([]Webhook, error) {
 	gotWebhooks, err := whs.db.ReadAll(ctx, webhookNamespace)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not get all webhooks")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not get all webhooks")
 	}
 
 	var webhooks []Webhook

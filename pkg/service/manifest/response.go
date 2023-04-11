@@ -9,6 +9,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -30,17 +31,17 @@ const (
 func (s Service) signCredentialResponseJWT(ctx context.Context, issuerKID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
 	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: issuerKID})
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "getting key for signing response with key<%s>", issuerKID)
+		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing response with key<%s>", issuerKID)
 	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "creating key access for signing response with key<%s>", gotKey.ID)
+		return nil, sdkutil.LoggingErrorMsgf(err, "creating key access for signing response with key<%s>", gotKey.ID)
 	}
 
 	// signing the response as a JWT
 	responseToken, err := keyAccess.SignJSON(r)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not sign response with key<%s>", gotKey.ID)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not sign response with key<%s>", gotKey.ID)
 	}
 	return responseToken, nil
 }
@@ -61,7 +62,7 @@ func (s Service) buildCredentialResponse(
 	applicationID := application.ID
 	responseBuilder := manifest.NewCredentialResponseBuilder(manifestID)
 	if err := responseBuilder.SetApplicationID(applicationID); err != nil {
-		return nil, nil, util.LoggingErrorMsgf(err,
+		return nil, nil, sdkutil.LoggingErrorMsgf(err,
 			"could not fulfill credential credentials: could not set credentials id: %s", applicationID)
 	}
 
@@ -96,7 +97,7 @@ func (s Service) buildCredentialResponse(
 
 		credentialResponse, err := s.credential.CreateCredential(ctx, credentialRequest)
 		if err != nil {
-			return nil, nil, util.LoggingErrorMsg(err, "could not create credential")
+			return nil, nil, sdkutil.LoggingErrorMsg(err, "could not create credential")
 		}
 
 		creds = append(creds, credentialResponse.Container)
@@ -124,7 +125,7 @@ func (s Service) buildCredentialResponse(
 	// set the information for the fulfilled credentials in the response
 	if approved {
 		if err := responseBuilder.SetFulfillment(descriptors); err != nil {
-			return nil, nil, util.LoggingErrorMsg(
+			return nil, nil, sdkutil.LoggingErrorMsg(
 				err,
 				"could not fulfill credential credentials: could not set fulfillment",
 			)
@@ -136,7 +137,7 @@ func (s Service) buildCredentialResponse(
 	}
 	credRes, err := responseBuilder.Build()
 	if err != nil {
-		return nil, nil, util.LoggingErrorMsg(err, "could not build response")
+		return nil, nil, sdkutil.LoggingErrorMsg(err, "could not build response")
 	}
 	return credRes, creds, nil
 }

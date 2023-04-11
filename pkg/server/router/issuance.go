@@ -4,8 +4,9 @@ import (
 	"context"
 	"net/http"
 
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/ssi-service/internal/util"
+
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
@@ -38,13 +39,13 @@ func (ir IssuanceRouter) GetIssuanceTemplate(ctx context.Context, w http.Respons
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
-			util.LoggingNewError("cannot get issuance template without an ID"), http.StatusBadRequest)
+			sdkutil.LoggingNewError("cannot get issuance template without an ID"), http.StatusBadRequest)
 	}
 
 	issuanceTemplate, err := ir.service.GetIssuanceTemplate(ctx, &issuing.GetIssuanceTemplateRequest{ID: *id})
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "getting issuance template"), http.StatusInternalServerError)
+			sdkutil.LoggingErrorMsg(err, "getting issuance template"), http.StatusInternalServerError)
 	}
 	return framework.Respond(ctx, w, issuanceTemplate.IssuanceTemplate, http.StatusOK)
 }
@@ -76,13 +77,13 @@ func (ir IssuanceRouter) CreateIssuanceTemplate(ctx context.Context, w http.Resp
 	errMsg := "Invalid Issuance Template Request"
 	if err := framework.Decode(r, &request); err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, errMsg), http.StatusBadRequest)
+			sdkutil.LoggingErrorMsg(err, errMsg), http.StatusBadRequest)
 	}
 
 	template, err := ir.service.CreateIssuanceTemplate(ctx, request.ToServiceRequest())
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "creating issuance template"), http.StatusInternalServerError)
+			sdkutil.LoggingErrorMsg(err, "creating issuance template"), http.StatusInternalServerError)
 	}
 
 	return framework.Respond(ctx, w, template, http.StatusCreated)
@@ -104,12 +105,12 @@ func (ir IssuanceRouter) DeleteIssuanceTemplate(ctx context.Context, w http.Resp
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
-			util.LoggingNewError("cannot delete an issuance template without an ID parameter"), http.StatusBadRequest)
+			sdkutil.LoggingNewError("cannot delete an issuance template without an ID parameter"), http.StatusBadRequest)
 	}
 
 	if err := ir.service.DeleteIssuanceTemplate(ctx, &issuing.DeleteIssuanceTemplateRequest{ID: *id}); err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsgf(err, "could not delete issuance template with id: %s", *id), http.StatusInternalServerError)
+			sdkutil.LoggingErrorMsgf(err, "could not delete issuance template with id: %s", *id), http.StatusInternalServerError)
 	}
 
 	return framework.Respond(ctx, w, nil, http.StatusNoContent)
@@ -135,7 +136,7 @@ func (ir IssuanceRouter) ListIssuanceTemplates(ctx context.Context, w http.Respo
 
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "could not get templates"), http.StatusBadRequest)
+			sdkutil.LoggingErrorMsg(err, "could not get templates"), http.StatusBadRequest)
 	}
 
 	resp := ListIssuanceTemplatesResponse{IssuanceTemplates: gotManifests.IssuanceTemplates}

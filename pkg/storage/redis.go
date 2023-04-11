@@ -13,6 +13,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+func init() {
+	if err := RegisterStorage(new(RedisDB)); err != nil {
+		panic(err)
+	}
+}
+
 const (
 	NamespaceKeySeparator = ":"
 	Pong                  = "PONG"
@@ -31,13 +37,6 @@ type redisTx struct {
 func (rtx *redisTx) Write(ctx context.Context, namespace, key string, value []byte) error {
 	nameSpaceKey := getRedisKey(namespace, key)
 	return rtx.pipe.Set(ctx, nameSpaceKey, value, 0).Err()
-}
-
-func init() {
-	err := RegisterStorage(new(RedisDB))
-	if err != nil {
-		panic(err)
-	}
 }
 
 func (b *RedisDB) Init(i interface{}) error {
