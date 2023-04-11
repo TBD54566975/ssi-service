@@ -22,6 +22,12 @@ func TestCreateParticipants(t *testing.T) {
 	issuerDID, err := getJSONElement(didKeyOutput, "$.did.id")
 	assert.NoError(t, err)
 	assert.Contains(t, issuerDID, "did:key")
+	SetValue(presentationExchangeContext, "issuerDID", issuerDID)
+
+	issuerKID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKID)
+	SetValue(presentationExchangeContext, "issuerKID", issuerKID)
 
 	holderOutput, err := CreateDIDKey()
 	assert.NoError(t, err)
@@ -29,9 +35,16 @@ func TestCreateParticipants(t *testing.T) {
 	holderDID, err := getJSONElement(holderOutput, "$.did.id")
 	assert.NoError(t, err)
 	assert.Contains(t, holderDID, "did:key")
+	SetValue(presentationExchangeContext, "holderDID", holderDID)
+
+	holderKID, err := getJSONElement(holderOutput, "$.did.verificationMethod[0].id")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, holderKID)
+	SetValue(presentationExchangeContext, "holderKID", holderKID)
 
 	holderPrivateKey, err := getJSONElement(holderOutput, "$.privateKeyBase58")
 	assert.NoError(t, err)
+	SetValue(presentationExchangeContext, "holderPrivateKey", holderPrivateKey)
 
 	verifierOutput, err := CreateDIDKey()
 	assert.NoError(t, err)
@@ -39,11 +52,12 @@ func TestCreateParticipants(t *testing.T) {
 	verifierDID, err := getJSONElement(verifierOutput, "$.did.id")
 	assert.NoError(t, err)
 	assert.Contains(t, holderDID, "did:key")
-
-	SetValue(presentationExchangeContext, "issuerDID", issuerDID)
-	SetValue(presentationExchangeContext, "holderDID", holderDID)
 	SetValue(presentationExchangeContext, "verifierDID", verifierDID)
-	SetValue(presentationExchangeContext, "holderPrivateKey", holderPrivateKey)
+
+	verifierKID, err := getJSONElement(verifierOutput, "$.did.verificationMethod[0].id")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, verifierKID)
+	SetValue(presentationExchangeContext, "verifierKID", verifierKID)
 }
 
 func TestCreatePresentationDefinition(t *testing.T) {
@@ -54,7 +68,13 @@ func TestCreatePresentationDefinition(t *testing.T) {
 	verifierDID, err := GetValue(presentationExchangeContext, "verifierDID")
 	assert.NoError(t, err)
 
-	definition, err := CreatePresentationDefinition(definitionParams{Author: verifierDID.(string)})
+	verifierKID, err := GetValue(presentationExchangeContext, "verifierKID")
+	assert.NoError(t, err)
+
+	definition, err := CreatePresentationDefinition(definitionParams{
+		Author:    verifierDID.(string),
+		AuthorKID: verifierKID.(string),
+	})
 	assert.NoError(t, err)
 
 	definitionID, err := getJSONElement(definition, "$.presentation_definition.id")
@@ -73,14 +93,21 @@ func TestSubmissionFlow(t *testing.T) {
 	holderDID, err := GetValue(presentationExchangeContext, "holderDID")
 	assert.NoError(t, err)
 
+	holderKID, err := GetValue(presentationExchangeContext, "holderKID")
+	assert.NoError(t, err)
+
 	holderPrivateKey, err := GetValue(presentationExchangeContext, "holderPrivateKey")
 	assert.NoError(t, err)
 
 	issuerDID, err := GetValue(presentationExchangeContext, "issuerDID")
 	assert.NoError(t, err)
 
+	issuerKID, err := GetValue(presentationExchangeContext, "issuerKID")
+	assert.NoError(t, err)
+
 	credOutput, err := CreateSubmissionCredential(credInputParams{
 		IssuerID:  issuerDID.(string),
+		IssuerKID: issuerKID.(string),
 		SubjectID: holderDID.(string),
 	})
 	assert.NoError(t, err)
@@ -90,7 +117,7 @@ func TestSubmissionFlow(t *testing.T) {
 
 	toBeCancelledOp, err := CreateSubmission(submissionParams{
 		HolderID:      holderDID.(string),
-		HolderKID:     holderDID.(string),
+		HolderKID:     holderKID.(string),
 		DefinitionID:  definitionID.(string),
 		CredentialJWT: credentialJWT,
 		SubmissionID:  uuid.NewString(),
@@ -107,7 +134,7 @@ func TestSubmissionFlow(t *testing.T) {
 
 	submissionOpOutput, err := CreateSubmission(submissionParams{
 		HolderID:      holderDID.(string),
-		HolderKID:     holderDID.(string),
+		HolderKID:     holderKID.(string),
 		DefinitionID:  definitionID.(string),
 		CredentialJWT: credentialJWT,
 		SubmissionID:  uuid.NewString(),

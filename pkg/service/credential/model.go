@@ -14,7 +14,7 @@ type CreateCredentialRequest struct {
 	Subject   string `json:"subject" validate:"required"`
 	// A context is optional. If not present, we'll apply default, required context values.
 	Context string `json:"context,omitempty"`
-	// A schema is optional. If present, we'll attempt to look it up and validate the data against it.
+	// A schema ID is optional. If present, we'll attempt to look it up and validate the data against it.
 	SchemaID    string         `json:"schemaId,omitempty"`
 	Data        map[string]any `json:"data,omitempty"`
 	Expiry      string         `json:"expiry,omitempty"`

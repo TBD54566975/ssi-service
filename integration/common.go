@@ -99,6 +99,7 @@ func CreateKYCSchema() (string, error) {
 
 type credInputParams struct {
 	IssuerID  string
+	IssuerKID string
 	SchemaID  string
 	SubjectID string
 }
@@ -171,8 +172,9 @@ func resolveTemplate(input any, fileName string) (string, error) {
 }
 
 type credManifestParams struct {
-	IssuerID string
-	SchemaID string
+	IssuerID  string
+	IssuerKID string
+	SchemaID  string
 }
 
 func CreateCredentialManifest(credManifest credManifestParams) (string, error) {
@@ -227,7 +229,8 @@ func CreateCredentialApplicationJWT(credApplication credApplicationParams, crede
 }
 
 type definitionParams struct {
-	Author string
+	Author    string
+	AuthorKID string
 }
 
 func CreatePresentationDefinition(params definitionParams) (string, error) {

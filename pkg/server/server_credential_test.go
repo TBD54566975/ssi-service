@@ -103,7 +103,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
 	})
 
-	t.Run("Test Create Credential with Schema", func(tt *testing.T) {
+	t.Run("Test Create Credential with SchemaID", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotNil(tt, bolt)
 
@@ -143,7 +143,7 @@ func TestCredentialAPI(t *testing.T) {
 			Issuer:    issuerDID.DID.ID,
 			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
 			Subject:   "did:abc:456",
-			Schema:    createdSchema.ID,
+			SchemaID:  createdSchema.ID,
 			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
@@ -183,7 +183,7 @@ func TestCredentialAPI(t *testing.T) {
 			Issuer:    issuerDID.DID.ID,
 			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
 			Subject:   "did:abc:456",
-			Schema:    "bad",
+			SchemaID:  "bad",
 			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",
@@ -268,7 +268,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.ID, getCredResp.ID)
 	})
 
-	t.Run("Test Get Credential By Schema", func(tt *testing.T) {
+	t.Run("Test Get Credential By SchemaID", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotNil(tt, bolt)
 
@@ -308,7 +308,7 @@ func TestCredentialAPI(t *testing.T) {
 			Issuer:    issuerDID.DID.ID,
 			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
 			Subject:   "did:abc:456",
-			Schema:    createdSchema.ID,
+			SchemaID:  createdSchema.ID,
 			Data: map[string]any{
 				"firstName": "Jack",
 				"lastName":  "Dorsey",

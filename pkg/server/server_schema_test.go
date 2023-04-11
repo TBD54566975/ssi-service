@@ -19,7 +19,7 @@ import (
 )
 
 func TestSchemaAPI(t *testing.T) {
-	t.Run("Test Create Schema", func(tt *testing.T) {
+	t.Run("Test Create SchemaID", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotNil(tt, bolt)
 
@@ -54,7 +54,7 @@ func TestSchemaAPI(t *testing.T) {
 		assert.EqualValues(tt, schemaRequest.Schema, resp.Schema.Schema)
 	})
 
-	t.Run("Test Sign & Verify Schema", func(tt *testing.T) {
+	t.Run("Test Sign & Verify SchemaID", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotNil(tt, bolt)
 
@@ -124,7 +124,7 @@ func TestSchemaAPI(t *testing.T) {
 		assert.Contains(tt, verifyResp.Reason, "could not verify schema")
 	})
 
-	t.Run("Test Get Schema and Get Schemas", func(tt *testing.T) {
+	t.Run("Test Get SchemaID and Get Schemas", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotNil(tt, bolt)
 
@@ -207,7 +207,7 @@ func TestSchemaAPI(t *testing.T) {
 		assert.Len(tt, getSchemasResp.Schemas, 1)
 	})
 
-	t.Run("Test Delete Schema", func(tt *testing.T) {
+	t.Run("Test Delete SchemaID", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotNil(tt, bolt)
 

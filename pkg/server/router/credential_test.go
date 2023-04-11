@@ -548,7 +548,7 @@ func TestCredentialRouter(t *testing.T) {
 
 	})
 
-	t.Run("Create Multiple Suspendable Credential Different Issuer Schema StatusPurpose Triples", func(tt *testing.T) {
+	t.Run("Create Multiple Suspendable Credential Different Issuer SchemaID StatusPurpose Triples", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotNil(tt, bolt)
 

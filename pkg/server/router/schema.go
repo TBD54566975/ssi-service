@@ -50,7 +50,7 @@ type CreateSchemaResponse struct {
 
 // CreateSchema godoc
 //
-// @Summary     Create Schema
+// @Summary     Create SchemaID
 // @Description Create schema
 // @Tags        SchemaAPI
 // @Accept      json
@@ -95,7 +95,7 @@ func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, 
 
 // GetSchema godoc
 //
-// @Summary     Get Schema
+// @Summary     Get SchemaID
 // @Description Get a schema by its ID
 // @Tags        SchemaAPI
 // @Accept      json
@@ -171,7 +171,7 @@ type VerifySchemaResponse struct {
 
 // VerifySchema godoc
 //
-// @Summary     Verify Schema
+// @Summary     Verify SchemaID
 // @Description Verify a given schema by its id
 // @Tags        SchemaAPI
 // @Accept      json
@@ -201,7 +201,7 @@ func (sr SchemaRouter) VerifySchema(ctx context.Context, w http.ResponseWriter, 
 
 // DeleteSchema godoc
 //
-// @Summary     Delete Schema
+// @Summary     Delete SchemaID
 // @Description Delete a schema by its ID
 // @Tags        SchemaAPI
 // @Accept      json

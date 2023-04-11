@@ -30,7 +30,7 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create schema router with service type: test")
 	})
 
-	t.Run("Schema Service Test", func(tt *testing.T) {
+	t.Run("SchemaID Service Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotNil(tt, bolt)
 
@@ -116,7 +116,7 @@ func TestSchemaRouter(t *testing.T) {
 
 func TestSchemaSigning(t *testing.T) {
 
-	t.Run("Unsigned Schema Test", func(tt *testing.T) {
+	t.Run("Unsigned SchemaID Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotNil(tt, bolt)
 

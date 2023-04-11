@@ -51,10 +51,10 @@ type CreateCredentialRequest struct {
 	Subject string `json:"subject" validate:"required" example:"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
 
 	// A context is optional. If not present, we'll apply default, required context values.
-	Context string `json:"@context"`
+	Context string `json:"@context,omitempty"`
 
-	// A schema is optional. If present, we'll attempt to look it up and validate the data against it.
-	Schema string `json:"schema"`
+	// A schema ID is optional. If present, we'll attempt to look it up and validate the data against it.
+	SchemaID string `json:"schemaId,omitempty"`
 
 	// Claims about the subject. The keys should be predicates (e.g. "alumniOf"), and the values can be any object.
 	Data map[string]any `json:"data" validate:"required" swaggertype:"object,string" example:"alumniOf:did_for_uni"`
@@ -69,7 +69,7 @@ type CreateCredentialRequest struct {
 	// Whether this credential can be suspended. When true, the created VC will have the "credentialStatus"
 	// property set.
 	Suspendable bool `json:"suspendable"`
-	// TODO(gabe) support more capabilities like signature type, format, status, and more.
+	// TODO(gabe) support more capabilities like signature type, format, and more.
 }
 
 func (c CreateCredentialRequest) ToServiceRequest() credential.CreateCredentialRequest {
@@ -78,7 +78,7 @@ func (c CreateCredentialRequest) ToServiceRequest() credential.CreateCredentialR
 		IssuerKID:   c.IssuerKID,
 		Subject:     c.Subject,
 		Context:     c.Context,
-		SchemaID:    c.Schema,
+		SchemaID:    c.SchemaID,
 		Data:        c.Data,
 		Expiry:      c.Expiry,
 		Revocable:   c.Revocable,

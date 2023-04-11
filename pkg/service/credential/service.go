@@ -181,7 +181,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 			Type: SchemaLDType,
 		}
 		if err = builder.SetCredentialSchema(credSchema); err != nil {
-			return nil, util.LoggingErrorMsgf(err, "could not set JSON Schema for credential: %s", request.SchemaID)
+			return nil, util.LoggingErrorMsgf(err, "could not set JSON SchemaID for credential: %s", request.SchemaID)
 		}
 	}
 

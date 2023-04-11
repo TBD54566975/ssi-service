@@ -144,7 +144,7 @@ func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service, webho
 	return
 }
 
-// SchemaAPI registers all HTTP router for the Schema Service
+// SchemaAPI registers all HTTP router for the SchemaID Service
 func (s *SSIServer) SchemaAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
 	schemaRouter, err := router.NewSchemaRouter(service)
 	if err != nil {
