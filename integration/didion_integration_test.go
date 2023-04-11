@@ -20,13 +20,13 @@ func TestCreateIssuerDIDIONIntegration(t *testing.T) {
 
 	issuerDID, err := getJSONElement(didIONOutput, "$.did.id")
 	assert.NoError(t, err)
+	assert.Contains(t, issuerDID, "did:ion")
 	SetValue(didIONContext, "issuerDID", issuerDID)
 
-	issuerKeyID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[0].id")
-	SetValue(didIONContext, "issuerKeyID", issuerKeyID)
-
+	issuerKID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[0].id")
 	assert.NoError(t, err)
-	assert.Contains(t, issuerDID, "did:ion")
+	assert.NotEmpty(t, issuerKID)
+	SetValue(didIONContext, "issuerKID", issuerKID)
 }
 
 func TestCreateAliceDIDIONIntegration(t *testing.T) {
@@ -43,13 +43,10 @@ func TestCreateAliceDIDIONIntegration(t *testing.T) {
 	assert.NotEmpty(t, aliceDID)
 	SetValue(didIONContext, "aliceDID", aliceDID)
 
-	aliceKeyID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[0].id")
-	SetValue(didIONContext, "aliceKeyID", aliceKeyID)
+	aliceKID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[0].id")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, aliceKeyID)
-
-	assert.NoError(t, err)
-	assert.Contains(t, aliceDID, "did:ion")
+	assert.NotEmpty(t, aliceKID)
+	SetValue(didIONContext, "aliceKID", aliceKID)
 
 	aliceDIDPrivateKey, err := getJSONElement(didIONOutput, "$.privateKeyBase58")
 	assert.NoError(t, err)
@@ -81,16 +78,17 @@ func TestDIDIONCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKeyID, err := GetValue(didIONContext, "issuerKeyID")
+	issuerKID, err := GetValue(didIONContext, "issuerKID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKeyID)
+	assert.NotEmpty(t, issuerKID)
 
 	schemaID, err := GetValue(didIONContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	vcOutput, err := CreateVerifiableCredential(credInputParams{
-		IssuerID:  issuerDID.(string) + "#" + issuerKeyID.(string),
+		IssuerID:  issuerDID.(string),
+		IssuerKID: issuerKID.(string),
 		SchemaID:  schemaID.(string),
 		SubjectID: issuerDID.(string),
 	}, false)
@@ -98,9 +96,9 @@ func TestDIDIONCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NotEmpty(t, vcOutput)
 
 	credentialJWT, err := getJSONElement(vcOutput, "$.credentialJwt")
-	SetValue(didIONContext, "credentialJWT", credentialJWT)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credentialJWT)
+	SetValue(didIONContext, "credentialJWT", credentialJWT)
 }
 
 func TestDIDIONCreateCredentialManifestIntegration(t *testing.T) {
@@ -112,29 +110,30 @@ func TestDIDIONCreateCredentialManifestIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKeyID, err := GetValue(didIONContext, "issuerKeyID")
+	issuerKID, err := GetValue(didIONContext, "issuerKID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKeyID)
+	assert.NotEmpty(t, issuerKID)
 
 	schemaID, err := GetValue(didIONContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	cmOutput, err := CreateCredentialManifest(credManifestParams{
-		IssuerID: issuerDID.(string) + "#" + issuerKeyID.(string),
-		SchemaID: schemaID.(string),
+		IssuerID:  issuerDID.(string),
+		IssuerKID: issuerKID.(string),
+		SchemaID:  schemaID.(string),
 	})
 	assert.NoError(t, err)
 
 	presentationDefinitionID, err := getJSONElement(cmOutput, "$.credential_manifest.presentation_definition.id")
-	SetValue(didIONContext, "presentationDefinitionID", presentationDefinitionID)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, presentationDefinitionID)
+	SetValue(didIONContext, "presentationDefinitionID", presentationDefinitionID)
 
 	manifestID, err := getJSONElement(cmOutput, "$.credential_manifest.id")
-	SetValue(didIONContext, "manifestID", manifestID)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, manifestID)
+	SetValue(didIONContext, "manifestID", manifestID)
 }
 
 func TestDIDIONSubmitAndReviewApplicationIntegration(t *testing.T) {
@@ -158,9 +157,9 @@ func TestDIDIONSubmitAndReviewApplicationIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
 
-	aliceKeyID, err := GetValue(didIONContext, "aliceKeyID")
+	aliceKID, err := GetValue(didIONContext, "aliceKID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, aliceDID)
+	assert.NotEmpty(t, aliceKID)
 
 	aliceDIDPrivateKey, err := GetValue(didIONContext, "aliceDIDPrivateKey")
 	assert.NoError(t, err)
@@ -169,7 +168,7 @@ func TestDIDIONSubmitAndReviewApplicationIntegration(t *testing.T) {
 	credAppJWT, err := CreateCredentialApplicationJWT(credApplicationParams{
 		DefinitionID: presentationDefinitionID.(string),
 		ManifestID:   manifestID.(string),
-	}, credentialJWT.(string), aliceDID.(string)+"#"+aliceKeyID.(string), aliceDIDPrivateKey.(string))
+	}, credentialJWT.(string), aliceDID.(string), aliceKID.(string), aliceDIDPrivateKey.(string))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credAppJWT)
 

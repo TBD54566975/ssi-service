@@ -34,8 +34,12 @@ type CreateSchemaRequest struct {
 	Author string               `json:"author" validate:"required"`
 	Name   string               `json:"name" validate:"required"`
 	Schema schemalib.JSONSchema `json:"schema" validate:"required"`
+
 	// Sign represents whether the schema should be signed by the author. Default is false.
+	// If sign is true, the schema will be signed by the author's private key with the specified KID
 	Sign bool `json:"sign"`
+	// AuthorKID represents the KID of the author's private key to sign the schema. Required if sign is true.
+	AuthorKID string `json:"authorKid"`
 }
 
 type CreateSchemaResponse struct {
@@ -46,7 +50,7 @@ type CreateSchemaResponse struct {
 
 // CreateSchema godoc
 //
-// @Summary     Create Schema
+// @Summary     Create SchemaID
 // @Description Create schema
 // @Tags        SchemaAPI
 // @Accept      json
@@ -71,7 +75,13 @@ func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, 
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	req := schema.CreateSchemaRequest{Author: request.Author, Name: request.Name, Schema: request.Schema, Sign: request.Sign}
+	if request.Sign && request.AuthorKID == "" {
+		errMsg := "cannot sign schema without authorKID"
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+	}
+
+	req := schema.CreateSchemaRequest{Author: request.Author, AuthorKID: request.AuthorKID, Name: request.Name, Schema: request.Schema, Sign: request.Sign}
 	createSchemaResponse, err := sr.service.CreateSchema(ctx, req)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create schema with authoring DID: %s", request.Author)
@@ -85,7 +95,7 @@ func (sr SchemaRouter) CreateSchema(ctx context.Context, w http.ResponseWriter, 
 
 // GetSchema godoc
 //
-// @Summary     Get Schema
+// @Summary     Get SchemaID
 // @Description Get a schema by its ID
 // @Tags        SchemaAPI
 // @Accept      json
@@ -161,7 +171,7 @@ type VerifySchemaResponse struct {
 
 // VerifySchema godoc
 //
-// @Summary     Verify Schema
+// @Summary     Verify SchemaID
 // @Description Verify a given schema by its id
 // @Tags        SchemaAPI
 // @Accept      json
@@ -191,7 +201,7 @@ func (sr SchemaRouter) VerifySchema(ctx context.Context, w http.ResponseWriter, 
 
 // DeleteSchema godoc
 //
-// @Summary     Delete Schema
+// @Summary     Delete SchemaID
 // @Description Delete a schema by its ID
 // @Tags        SchemaAPI
 // @Accept      json

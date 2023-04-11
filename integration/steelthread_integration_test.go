@@ -5,6 +5,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/util"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 )
 
@@ -19,11 +20,14 @@ func TestCreateIssuerDIDKeyIntegration(t *testing.T) {
 	assert.NoError(t, err)
 
 	issuerDID, err := getJSONElement(didKeyOutput, "$.did.id")
-	SetValue(steelThreadContext, "issuerDID", issuerDID)
-
 	assert.NoError(t, err)
 	assert.Contains(t, issuerDID, "did:key")
+	SetValue(steelThreadContext, "issuerDID", issuerDID)
 
+	issuerKID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKID)
+	SetValue(steelThreadContext, "issuerKID", issuerKID)
 }
 
 func TestResolveIONDIDIntegration(t *testing.T) {
@@ -50,16 +54,14 @@ func TestCreateAliceDIDKeyIntegration(t *testing.T) {
 	assert.NotEmpty(t, didKeyOutput)
 
 	aliceDID, err := getJSONElement(didKeyOutput, "$.did.id")
-	SetValue(steelThreadContext, "aliceDID", aliceDID)
-
 	assert.NoError(t, err)
 	assert.Contains(t, aliceDID, "did:key")
+	SetValue(steelThreadContext, "aliceDID", aliceDID)
 
 	aliceDIDPrivateKey, err := getJSONElement(didKeyOutput, "$.privateKeyBase58")
-	SetValue(steelThreadContext, "aliceDIDPrivateKey", aliceDIDPrivateKey)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
-
+	SetValue(steelThreadContext, "aliceDIDPrivateKey", aliceDIDPrivateKey)
 }
 
 func TestCreateSchemaIntegration(t *testing.T) {
@@ -71,10 +73,9 @@ func TestCreateSchemaIntegration(t *testing.T) {
 	assert.NoError(t, err)
 
 	schemaID, err := getJSONElement(output, "$.id")
-	SetValue(steelThreadContext, "schemaID", schemaID)
-
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
+	SetValue(steelThreadContext, "schemaID", schemaID)
 }
 
 func TestCreateVerifiableCredentialIntegration(t *testing.T) {
@@ -86,12 +87,17 @@ func TestCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
+	issuerKID, err := GetValue(steelThreadContext, "issuerKID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKID)
+
 	schemaID, err := GetValue(steelThreadContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	vcOutput, err := CreateVerifiableCredential(credInputParams{
 		IssuerID:  issuerDID.(string),
+		IssuerKID: issuerKID.(string),
 		SchemaID:  schemaID.(string),
 		SubjectID: issuerDID.(string),
 	}, false)
@@ -99,9 +105,9 @@ func TestCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NotEmpty(t, vcOutput)
 
 	credentialJWT, err := getJSONElement(vcOutput, "$.credentialJwt")
-	SetValue(steelThreadContext, "credentialJWT", credentialJWT)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credentialJWT)
+	SetValue(steelThreadContext, "credentialJWT", credentialJWT)
 }
 
 func TestCreateCredentialManifestIntegration(t *testing.T) {
@@ -113,25 +119,30 @@ func TestCreateCredentialManifestIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
+	issuerKID, err := GetValue(steelThreadContext, "issuerKID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKID)
+
 	schemaID, err := GetValue(steelThreadContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	cmOutput, err := CreateCredentialManifest(credManifestParams{
-		IssuerID: issuerDID.(string),
-		SchemaID: schemaID.(string),
+		IssuerID:  issuerDID.(string),
+		IssuerKID: issuerKID.(string),
+		SchemaID:  schemaID.(string),
 	})
 	assert.NoError(t, err)
 
 	presentationDefinitionID, err := getJSONElement(cmOutput, "$.credential_manifest.presentation_definition.id")
-	SetValue(steelThreadContext, "presentationDefinitionID", presentationDefinitionID)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, presentationDefinitionID)
+	SetValue(steelThreadContext, "presentationDefinitionID", presentationDefinitionID)
 
 	manifestID, err := getJSONElement(cmOutput, "$.credential_manifest.id")
-	SetValue(steelThreadContext, "manifestID", manifestID)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, manifestID)
+	SetValue(steelThreadContext, "manifestID", manifestID)
 }
 
 func TestCreateIssuanceTemplateIntegration(t *testing.T) {
@@ -143,30 +154,36 @@ func TestCreateIssuanceTemplateIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
+	issuerKID, err := GetValue(steelThreadContext, "issuerKID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKID)
+
 	schemaID, err := GetValue(steelThreadContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	cmOutput, err := CreateCredentialManifest(credManifestParams{
-		IssuerID: issuerDID.(string),
-		SchemaID: schemaID.(string),
+		IssuerID:  issuerDID.(string),
+		IssuerKID: issuerKID.(string),
+		SchemaID:  schemaID.(string),
 	})
 	assert.NoError(t, err)
 
 	manifestID, err := getJSONElement(cmOutput, "$.credential_manifest.id")
-	SetValue(steelThreadContext, "manifestWithIssuanceTemplateID", manifestID)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, manifestID)
+	SetValue(steelThreadContext, "manifestWithIssuanceTemplateID", manifestID)
 
 	presentationDefinitionID, err := getJSONElement(cmOutput, "$.credential_manifest.presentation_definition.id")
-	SetValue(steelThreadContext, "presentationDefinitionWithIssuanceTemplateID", presentationDefinitionID)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, presentationDefinitionID)
+	SetValue(steelThreadContext, "presentationDefinitionWithIssuanceTemplateID", presentationDefinitionID)
 
 	itOutput, err := CreateIssuanceTemplate(issuanceTemplateParams{
 		SchemaID:   schemaID.(string),
 		ManifestID: manifestID,
 		IssuerID:   issuerDID.(string),
+		IssuerKID:  issuerKID.(string),
 	})
 	assert.NoError(t, err)
 
@@ -204,7 +221,7 @@ func TestSubmitApplicationWithIssuanceTemplateIntegration(t *testing.T) {
 	credAppJWT, err := CreateCredentialApplicationJWT(credApplicationParams{
 		DefinitionID: presentationDefinitionID.(string),
 		ManifestID:   manifestID.(string),
-	}, credentialJWT.(string), aliceDID.(string), aliceDIDPrivateKey.(string))
+	}, credentialJWT.(string), aliceDID.(string), aliceDID.(string), aliceDIDPrivateKey.(string))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credAppJWT)
 
@@ -257,7 +274,7 @@ func TestSubmitAndReviewApplicationIntegration(t *testing.T) {
 	credAppJWT, err := CreateCredentialApplicationJWT(credApplicationParams{
 		DefinitionID: presentationDefinitionID.(string),
 		ManifestID:   manifestID.(string),
-	}, credentialJWT.(string), aliceDID.(string), aliceDIDPrivateKey.(string))
+	}, credentialJWT.(string), aliceDID.(string), aliceDID.(string), aliceDIDPrivateKey.(string))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credAppJWT)
 

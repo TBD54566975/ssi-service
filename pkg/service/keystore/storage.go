@@ -149,7 +149,7 @@ func (kss *Storage) RevokeKey(ctx context.Context, id string) error {
 func (kss *Storage) GetKey(ctx context.Context, id string) (*StoredKey, error) {
 	storedKeyBytes, err := kss.db.Read(ctx, namespace, id)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get key details for key: %s", id)
+		return nil, util.LoggingErrorMsgf(err, "getting key details for key: %s", id)
 	}
 	if len(storedKeyBytes) == 0 {
 		return nil, util.LoggingNewErrorf("could not find key details for key: %s", id)
@@ -169,7 +169,7 @@ func (kss *Storage) GetKey(ctx context.Context, id string) (*StoredKey, error) {
 
 	var stored StoredKey
 	if err = json.Unmarshal(decryptedKey, &stored); err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored key: %s", id)
+		return nil, util.LoggingErrorMsgf(err, "unmarshalling stored key: %s", id)
 	}
 	return &stored, nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/lestrrat-go/jwx/jws"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -103,12 +104,13 @@ func (s Service) CreatePresentationDefinition(ctx context.Context, request model
 		ID:                     request.PresentationDefinition.ID,
 		PresentationDefinition: request.PresentationDefinition,
 		Author:                 request.Author,
+		AuthorKID:              request.AuthorKID,
 	}
 
 	if err := s.storage.StorePresentation(ctx, storedPresentation); err != nil {
 		return nil, util.LoggingErrorMsg(err, "could not store presentation")
 	}
-	defJWT, err := s.keystore.Sign(context.Background(), storedPresentation.Author, exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
+	defJWT, err := s.keystore.Sign(context.Background(), storedPresentation.AuthorKID, exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "signing presentation definition enveloper with author<%s>", storedPresentation.Author)
 	}
@@ -129,7 +131,8 @@ func (s Service) GetPresentationDefinition(ctx context.Context, request model.Ge
 	if storedPresentation == nil {
 		return nil, util.LoggingNewErrorf("presentation definition with id<%s> could not be found", request.ID)
 	}
-	defJWT, err := s.keystore.Sign(ctx, storedPresentation.Author, exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
+	// TODO(gabe) decouple this to a separate endpoint for presentation requests https://github.com/TBD54566975/ssi-service/issues/375
+	defJWT, err := s.keystore.Sign(ctx, storedPresentation.AuthorKID, exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
 	if err != nil {
 		return nil, util.LoggingErrorMsgf(err, "signing presentation definition envelope by issuer<%s>", storedPresentation.Author)
 	}
@@ -161,14 +164,23 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 		return nil, errors.Wrap(err, "provided value is not a valid presentation submission")
 	}
 
-	sdkVP, err := signing.ParseVerifiablePresentationFromJWT(request.SubmissionJWT.String())
+	headers, _, vp, err := signing.ParseVerifiablePresentationFromJWT(request.SubmissionJWT.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing vp from jwt")
 	}
 
+	gotKID, ok := headers.Get(jws.KeyIDKey)
+	if !ok {
+		return nil, errors.New("kid not found in token headers")
+	}
+	kid, ok := gotKID.(string)
+	if !ok {
+		return nil, errors.New("kid not a string")
+	}
+
 	// verify the token with the did by first resolving the did and getting the public key and next verifying the token
-	if err = didint.VerifyTokenFromDID(ctx, s.resolver, sdkVP.Holder, request.SubmissionJWT); err != nil {
-		return nil, errors.Wrap(err, "verifying token from did")
+	if err = didint.VerifyTokenFromDID(ctx, s.resolver, vp.Holder, kid, request.SubmissionJWT); err != nil {
+		return nil, errors.Wrapf(err, "verifying token from did<%s> with kid<%s>", vp.Holder, kid)
 	}
 
 	if _, err = s.storage.GetSubmission(ctx, request.Submission.ID); !errors.Is(err, presentationstorage.ErrSubmissionNotFound) {

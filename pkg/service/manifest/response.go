@@ -12,6 +12,7 @@ import (
 	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -26,18 +27,14 @@ const (
 	DenialResponse errresp.Type = "DenialResponse"
 )
 
-func (s Service) signCredentialResponseJWT(ctx context.Context, signingDID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
-	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: signingDID})
+func (s Service) signCredentialResponseJWT(ctx context.Context, issuerKID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: issuerKID})
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get key for signing response with key<%s>", signingDID)
+		return nil, util.LoggingErrorMsgf(err, "getting key for signing response with key<%s>", issuerKID)
 	}
-	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.ID, gotKey.Key)
+	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(
-			err,
-			"could not create key access for signing response with key<%s>",
-			gotKey.ID,
-		)
+		return nil, util.LoggingErrorMsgf(err, "creating key access for signing response with key<%s>", gotKey.ID)
 	}
 
 	// signing the response as a JWT
@@ -48,9 +45,10 @@ func (s Service) signCredentialResponseJWT(ctx context.Context, signingDID strin
 	return responseToken, nil
 }
 
+// TODO(gabe) refactor this method to distinguish between templates and non-templates; remove side effects; handle denial separately https://github.com/TBD54566975/ssi-service/issues/377
 func (s Service) buildCredentialResponse(
 	ctx context.Context,
-	applicantDID, manifestID string,
+	applicantDID, manifestID, issuerKID string,
 	credManifest manifest.CredentialManifest,
 	approved bool,
 	reason string,
@@ -63,15 +61,16 @@ func (s Service) buildCredentialResponse(
 	applicationID := application.ID
 	responseBuilder := manifest.NewCredentialResponseBuilder(manifestID)
 	if err := responseBuilder.SetApplicationID(applicationID); err != nil {
-		return nil, nil, util.LoggingErrorMsgf(
-			err,
-			"could not fulfill credential credentials: could not set credentials id: %s",
-			applicationID,
-		)
+		return nil, nil, util.LoggingErrorMsgf(err,
+			"could not fulfill credential credentials: could not set credentials id: %s", applicationID)
 	}
 
 	templateMap := make(map[string]*issuing.CredentialTemplate)
+	issuingKID := issuerKID
 	if template != nil {
+		if template.IssuerKID != "" {
+			issuingKID = template.IssuerKID
+		}
 		for _, templateCred := range template.Credentials {
 			templateCred := templateCred
 			templateMap[templateCred.ID] = &templateCred
@@ -80,22 +79,15 @@ func (s Service) buildCredentialResponse(
 	creds := make([]cred.Container, 0, len(credManifest.OutputDescriptors))
 	for _, od := range credManifest.OutputDescriptors {
 		credentialRequest := credential.CreateCredentialRequest{
-			Issuer:     credManifest.Issuer.ID,
-			Subject:    applicantDID,
-			JSONSchema: od.Schema,
+			Issuer:    credManifest.Issuer.ID,
+			IssuerKID: issuingKID,
+			Subject:   applicantDID,
+			SchemaID:  od.Schema,
 			// TODO(gabe) need to add in data here to match the request + schema
 			Data: make(map[string]any),
 		}
 		if template != nil {
-			err := s.applyIssuanceTemplate(
-				&credentialRequest,
-				template,
-				templateMap,
-				od,
-				applicationJSON,
-				credManifest,
-				application,
-			)
+			err := s.applyIssuanceTemplate(&credentialRequest, template, templateMap, od, applicationJSON, credManifest, application)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -261,10 +253,7 @@ func fromFormat(format exchange.CredentialFormat, claim any) (any, error) {
 	}
 }
 
-func buildDenialCredentialResponse(
-	manifestID, applicationID, reason string,
-	failedOutputDescriptorIDs ...string,
-) (*manifest.CredentialResponse, error) {
+func buildDenialCredentialResponse(manifestID, applicationID, reason string, failedOutputDescriptorIDs ...string) (*manifest.CredentialResponse, error) {
 	builder := manifest.NewCredentialResponseBuilder(manifestID)
 	if err := builder.SetApplicationID(applicationID); err != nil {
 		return nil, err

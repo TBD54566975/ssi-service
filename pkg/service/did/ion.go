@@ -189,7 +189,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "could not store did:ion recovery private key")
 	}
 
-	keyStoreRequest, err := keyToStoreRequest(ionDID.ID()+"#"+keyID, *privKeyJWK, ionDID.ID())
+	keyStoreRequest, err := keyToStoreRequest(keyID, *privKeyJWK, ionDID.ID())
 	if err != nil {
 		return nil, errors.Wrap(err, "converting private key to store request")
 	}
