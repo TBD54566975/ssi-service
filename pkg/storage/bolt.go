@@ -7,17 +7,15 @@ import (
 	"strings"
 	"time"
 
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
-
-	"github.com/tbd54566975/ssi-service/internal/util"
 )
 
 func init() {
-	err := RegisterStorage(&BoltDB{})
-	if err != nil {
+	if err := RegisterStorage(new(BoltDB)); err != nil {
 		panic(err)
 	}
 }
@@ -244,7 +242,7 @@ func (b *BoltDB) Delete(_ context.Context, namespace, key string) error {
 	return b.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(namespace))
 		if bucket == nil {
-			return util.LoggingNewErrorf("namespace<%s> does not exist", namespace)
+			return sdkutil.LoggingNewErrorf("namespace<%s> does not exist", namespace)
 		}
 		return bucket.Delete([]byte(key))
 	})
@@ -253,7 +251,7 @@ func (b *BoltDB) Delete(_ context.Context, namespace, key string) error {
 func (b *BoltDB) DeleteNamespace(_ context.Context, namespace string) error {
 	return b.db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket([]byte(namespace)); err != nil {
-			return util.LoggingErrorMsgf(err, "could not delete namespace<%s>", namespace)
+			return sdkutil.LoggingErrorMsgf(err, "could not delete namespace<%s>", namespace)
 		}
 		return nil
 	})
@@ -339,14 +337,14 @@ func updateTxFn(namespace string, key string, updater Updater, updatedData *[]by
 func updateTx(tx *bolt.Tx, namespace string, key string, updater Updater) ([]byte, error) {
 	bucket := tx.Bucket([]byte(namespace))
 	if bucket == nil {
-		return nil, util.LoggingNewErrorf("namespace<%s> does not exist", namespace)
+		return nil, sdkutil.LoggingNewErrorf("namespace<%s> does not exist", namespace)
 	}
 	v := bucket.Get([]byte(key))
 	if v == nil {
-		return nil, util.LoggingNewErrorf("key not found %s", key)
+		return nil, sdkutil.LoggingNewErrorf("key not found %s", key)
 	}
 	if err := updater.Validate(v); err != nil {
-		return nil, util.LoggingErrorMsg(err, "validating update")
+		return nil, sdkutil.LoggingErrorMsg(err, "validating update")
 	}
 	data, err := updater.Update(v)
 	if err != nil {

@@ -4,16 +4,17 @@ import (
 	"context"
 	"strings"
 
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/internal/util"
+	"go.einride.tech/aip/filtering"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage/namespace"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-	"go.einride.tech/aip/filtering"
 )
 
 const (
@@ -70,14 +71,14 @@ func (b Storage) CancelOperation(ctx context.Context, id string) (*opstorage.Sto
 func (b Storage) StoreOperation(ctx context.Context, op opstorage.StoredOperation) error {
 	id := op.ID
 	if id == "" {
-		return util.LoggingNewError("ID is required for storing operations")
+		return sdkutil.LoggingNewError("ID is required for storing operations")
 	}
 	jsonBytes, err := json.Marshal(op)
 	if err != nil {
-		return util.LoggingErrorMsgf(err, "marshalling operation with id: %s", id)
+		return sdkutil.LoggingErrorMsgf(err, "marshalling operation with id: %s", id)
 	}
 	if err = b.db.Write(ctx, namespace.FromID(id), id, jsonBytes); err != nil {
-		return util.LoggingErrorMsg(err, "writing to db")
+		return sdkutil.LoggingErrorMsg(err, "writing to db")
 	}
 	return nil
 }
@@ -86,13 +87,13 @@ func (b Storage) GetOperation(ctx context.Context, id string) (opstorage.StoredO
 	var stored opstorage.StoredOperation
 	jsonBytes, err := b.db.Read(ctx, namespace.FromID(id), id)
 	if err != nil {
-		return stored, util.LoggingErrorMsgf(err, "reading operation with id: %s", id)
+		return stored, sdkutil.LoggingErrorMsgf(err, "reading operation with id: %s", id)
 	}
 	if len(jsonBytes) == 0 {
-		return stored, util.LoggingNewErrorf("operation not found with id: %s", id)
+		return stored, sdkutil.LoggingNewErrorf("operation not found with id: %s", id)
 	}
 	if err := json.Unmarshal(jsonBytes, &stored); err != nil {
-		return stored, util.LoggingErrorMsgf(err, "unmarshalling stored operation: %s", id)
+		return stored, sdkutil.LoggingErrorMsgf(err, "unmarshalling stored operation: %s", id)
 	}
 	return stored, nil
 }
@@ -100,7 +101,7 @@ func (b Storage) GetOperation(ctx context.Context, id string) (opstorage.StoredO
 func (b Storage) GetOperations(ctx context.Context, parent string, filter filtering.Filter) ([]opstorage.StoredOperation, error) {
 	operations, err := b.db.ReadAll(ctx, namespace.FromParent(parent))
 	if err != nil {
-		return nil, util.LoggingErrorMsgf(err, "could not get all operations")
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not get all operations")
 	}
 
 	shouldInclude, err := storage.NewIncludeFunc(filter)
@@ -124,7 +125,7 @@ func (b Storage) GetOperations(ctx context.Context, parent string, filter filter
 
 func (b Storage) DeleteOperation(ctx context.Context, id string) error {
 	if err := b.db.Delete(ctx, namespace.FromID(id), id); err != nil {
-		return util.LoggingErrorMsgf(err, "deleting operation: %s", id)
+		return sdkutil.LoggingErrorMsgf(err, "deleting operation: %s", id)
 	}
 	return nil
 }

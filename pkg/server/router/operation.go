@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.einride.tech/aip/filtering"
 
-	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	manifestsvc "github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
@@ -47,14 +47,13 @@ func (o OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
-			util.LoggingNewError("get operation request requires id"), http.StatusBadRequest)
+			sdkutil.LoggingNewError("get operation request requires id"), http.StatusBadRequest)
 	}
 
 	op, err := o.service.GetOperation(ctx, operation.GetOperationRequest{ID: *id})
-
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "failed getting operation"), http.StatusInternalServerError)
+			sdkutil.LoggingErrorMsg(err, "failed getting operation"), http.StatusInternalServerError)
 	}
 	return framework.Respond(ctx, w, routerModel(*op), http.StatusOK)
 }
@@ -129,18 +128,18 @@ func (o OperationRouter) GetOperations(ctx context.Context, w http.ResponseWrite
 	var request GetOperationsRequest
 	if err := framework.Decode(r, &request); err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
+			sdkutil.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
 	}
 
 	if err := framework.ValidateRequest(request); err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
+			sdkutil.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
 	}
 
 	req, err := request.ToServiceRequest()
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
+			sdkutil.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
 	}
 
 	ops, err := o.service.GetOperations(ctx, req)
@@ -194,14 +193,13 @@ func (o OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWri
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
-			util.LoggingNewError("get operation request requires id"), http.StatusBadRequest)
+			sdkutil.LoggingNewError("get operation request requires id"), http.StatusBadRequest)
 	}
 
 	op, err := o.service.CancelOperation(ctx, operation.CancelOperationRequest{ID: *id})
-
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "failed cancelling operation"), http.StatusInternalServerError)
+			sdkutil.LoggingErrorMsg(err, "failed cancelling operation"), http.StatusInternalServerError)
 	}
 	return framework.Respond(ctx, w, routerModel(*op), http.StatusOK)
 }

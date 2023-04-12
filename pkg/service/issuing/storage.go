@@ -5,6 +5,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -18,9 +19,7 @@ func NewIssuingStorage(s storage.ServiceStorage) (*Storage, error) {
 	if s == nil {
 		return nil, errors.New("s cannot be nil")
 	}
-	return &Storage{
-		db: s,
-	}, nil
+	return &Storage{db: s}, nil
 }
 
 type StoredIssuanceTemplate struct {

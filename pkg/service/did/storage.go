@@ -6,6 +6,7 @@ import (
 	"reflect"
 
 	"github.com/TBD54566975/ssi-sdk/did"
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -71,11 +72,11 @@ func (ds *Storage) StoreDID(ctx context.Context, did StoredDID) error {
 	couldNotStoreDIDErr := fmt.Sprintf("could not store DID: %s", did.GetID())
 	ns, err := getNamespaceForDID(did.GetID())
 	if err != nil {
-		return util.LoggingErrorMsg(err, couldNotStoreDIDErr)
+		return sdkutil.LoggingErrorMsg(err, couldNotStoreDIDErr)
 	}
 	didBytes, err := json.Marshal(did)
 	if err != nil {
-		return util.LoggingErrorMsg(err, couldNotStoreDIDErr)
+		return sdkutil.LoggingErrorMsg(err, couldNotStoreDIDErr)
 	}
 	return ds.db.Write(ctx, ns, did.GetID(), didBytes)
 }
@@ -89,18 +90,18 @@ func (ds *Storage) GetDID(ctx context.Context, id string, out StoredDID) error {
 	couldNotGetDIDErr := fmt.Sprintf("could not get DID: %s", id)
 	ns, err := getNamespaceForDID(id)
 	if err != nil {
-		return util.LoggingErrorMsg(err, couldNotGetDIDErr)
+		return sdkutil.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
 	docBytes, err := ds.db.Read(ctx, ns, id)
 	if err != nil {
-		return util.LoggingErrorMsg(err, couldNotGetDIDErr)
+		return sdkutil.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
 	if len(docBytes) == 0 {
 		err = fmt.Errorf("did not found: %s", id)
-		return util.LoggingErrorMsg(err, couldNotGetDIDErr)
+		return sdkutil.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
 	if err = json.Unmarshal(docBytes, out); err != nil {
-		return util.LoggingErrorMsgf(err, "could not ummarshal stored DID: %s", id)
+		return sdkutil.LoggingErrorMsgf(err, "could not ummarshal stored DID: %s", id)
 	}
 	return nil
 }
@@ -124,11 +125,11 @@ func (ds *Storage) GetDIDs(ctx context.Context, method string, outType StoredDID
 	couldNotGetDIDsErr := fmt.Sprintf("could not get DIDs for method: %s", method)
 	ns, err := getNamespaceForMethod(method)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, couldNotGetDIDsErr)
+		return nil, sdkutil.LoggingErrorMsg(err, couldNotGetDIDsErr)
 	}
 	gotDIDs, err := ds.db.ReadAll(ctx, ns)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, couldNotGetDIDsErr)
+		return nil, sdkutil.LoggingErrorMsg(err, couldNotGetDIDsErr)
 	}
 	if len(gotDIDs) == 0 {
 		logrus.Infof("no DIDs found for method: %s", method)
@@ -161,10 +162,10 @@ func (ds *Storage) DeleteDID(ctx context.Context, id string) error {
 	couldNotGetDIDErr := fmt.Sprintf("could not delete DID: %s", id)
 	ns, err := getNamespaceForDID(id)
 	if err != nil {
-		return util.LoggingErrorMsg(err, couldNotGetDIDErr)
+		return sdkutil.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
 	if err = ds.db.Delete(ctx, ns, id); err != nil {
-		return util.LoggingErrorMsgf(err, "could not delete DID: %s", id)
+		return sdkutil.LoggingErrorMsgf(err, "could not delete DID: %s", id)
 	}
 	return nil
 }

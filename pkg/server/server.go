@@ -8,10 +8,10 @@ import (
 	"os"
 	"path"
 
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
-	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/middleware"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
@@ -88,8 +88,7 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 	logrus.Infof("Starting [%d] service routers...\n", len(services))
 	for _, s := range services {
 		if err := server.instantiateRouter(s, webhookService); err != nil {
-			logrus.WithError(err).Fatalf("unable to instaniate service router<%s>", s.Type())
-			return nil, err
+			return nil, sdkutil.LoggingErrorMsgf(err, "unable to instantiate service router<%s>", s.Type())
 		}
 		logrus.Infof("Service router<%s> started successfully", s.Type())
 	}
@@ -129,7 +128,7 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service, webhookServi
 func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
 	didRouter, err := router.NewDIDRouter(service)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create DID router")
+		return sdkutil.LoggingErrorMsg(err, "creating DID router")
 	}
 
 	handlerPath := V1Prefix + DIDsPrefix
@@ -148,7 +147,7 @@ func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service, webho
 func (s *SSIServer) SchemaAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
 	schemaRouter, err := router.NewSchemaRouter(service)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create schema router")
+		return sdkutil.LoggingErrorMsg(err, "creating schema router")
 	}
 
 	handlerPath := V1Prefix + SchemasPrefix
@@ -164,7 +163,7 @@ func (s *SSIServer) SchemaAPI(service svcframework.Service, webhookService *webh
 func (s *SSIServer) CredentialAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
 	credRouter, err := router.NewCredentialRouter(service)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "creating credential router")
+		return sdkutil.LoggingErrorMsg(err, "creating credential router")
 	}
 
 	credentialHandlerPath := V1Prefix + CredentialsPrefix
@@ -187,7 +186,7 @@ func (s *SSIServer) CredentialAPI(service svcframework.Service, webhookService *
 func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
 	pRouter, err := router.NewPresentationRouter(service)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "creating credential router")
+		return sdkutil.LoggingErrorMsg(err, "creating credential router")
 	}
 
 	handlerPath := V1Prefix + PresentationsPrefix + DefinitionsPrefix
@@ -209,7 +208,7 @@ func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
 func (s *SSIServer) KeyStoreAPI(service svcframework.Service) (err error) {
 	keyStoreRouter, err := router.NewKeyStoreRouter(service)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create key store router")
+		return sdkutil.LoggingErrorMsg(err, "creating key store router")
 	}
 
 	handlerPath := V1Prefix + KeyStorePrefix
@@ -222,7 +221,7 @@ func (s *SSIServer) KeyStoreAPI(service svcframework.Service) (err error) {
 func (s *SSIServer) OperationAPI(service svcframework.Service) (err error) {
 	operationRouter, err := router.NewOperationRouter(service)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "creating operation router")
+		return sdkutil.LoggingErrorMsg(err, "creating operation router")
 	}
 
 	handlerPath := V1Prefix + OperationPrefix
@@ -240,7 +239,7 @@ func (s *SSIServer) OperationAPI(service svcframework.Service) (err error) {
 func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
 	manifestRouter, err := router.NewManifestRouter(service)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create manifest router")
+		return sdkutil.LoggingErrorMsg(err, "creating manifest router")
 	}
 
 	manifestHandlerPath := V1Prefix + ManifestsPrefix
@@ -268,7 +267,7 @@ func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
 func (s *SSIServer) IssuanceAPI(service svcframework.Service) error {
 	issuanceRouter, err := router.NewIssuanceRouter(service)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create issuance router")
+		return sdkutil.LoggingErrorMsg(err, "creating issuance router")
 	}
 
 	issuanceHandlerPath := V1Prefix + IssuanceTemplatePrefix
@@ -282,7 +281,7 @@ func (s *SSIServer) IssuanceAPI(service svcframework.Service) error {
 func (s *SSIServer) WebhookAPI(service svcframework.Service) (err error) {
 	webhookRouter, err := router.NewWebhookRouter(service)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create webhook router")
+		return sdkutil.LoggingErrorMsg(err, "creating webhook router")
 	}
 
 	handlerPath := V1Prefix + WebhookPrefix

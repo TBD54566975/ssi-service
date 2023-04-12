@@ -9,6 +9,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/verification"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/pkg/errors"
@@ -16,7 +17,6 @@ import (
 	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/schema"
-	"github.com/tbd54566975/ssi-service/internal/util"
 )
 
 type Verifier struct {
@@ -55,37 +55,37 @@ func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) 
 	// first, parse the token to see if it contains a valid verifiable credential
 	gotHeaders, _, cred, err := signing.ParseVerifiableCredentialFromJWT(token.String())
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not parse credential from JWT")
+		return sdkutil.LoggingErrorMsg(err, "could not parse credential from JWT")
 	}
 
 	kid, ok := gotHeaders.Get(jws.KeyIDKey)
 	if !ok {
-		return util.LoggingNewError("could not find key ID in JWT headers")
+		return sdkutil.LoggingNewError("could not find key ID in JWT headers")
 	}
 	jwtKID, ok := kid.(string)
 	if !ok {
-		return util.LoggingNewErrorf("could not convert key ID to string: %v", kid)
+		return sdkutil.LoggingNewErrorf("could not convert key ID to string: %v", kid)
 	}
 
 	// resolve the issuer's key material
 	issuerDID, ok := cred.Issuer.(string)
 	if !ok {
-		return util.LoggingNewErrorf("could not convert issuer to string: %v", cred.Issuer)
+		return sdkutil.LoggingNewErrorf("could not convert issuer to string: %v", cred.Issuer)
 	}
 	pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, issuerDID, jwtKID)
 	if err != nil {
-		return util.LoggingError(err)
+		return sdkutil.LoggingError(err)
 	}
 
 	// construct a signature verifier from the verification information
 	verifier, err := keyaccess.NewJWKKeyAccessVerifier(issuerDID, jwtKID, pubKey)
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not create verifier")
+		return sdkutil.LoggingErrorMsg(err, "could not create verifier")
 	}
 
 	// verify the signature on the credential
 	if err = verifier.Verify(token); err != nil {
-		return util.LoggingErrorMsg(err, "could not verify credential's signature")
+		return sdkutil.LoggingErrorMsg(err, "could not verify credential's signature")
 	}
 
 	return v.staticVerificationChecks(ctx, *cred)
@@ -97,33 +97,33 @@ func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential 
 	// resolve the issuer's key material
 	issuer, ok := credential.Issuer.(string)
 	if !ok {
-		return util.LoggingNewErrorf("could not convert issuer to string: %v", credential.Issuer)
+		return sdkutil.LoggingNewErrorf("could not convert issuer to string: %v", credential.Issuer)
 	}
 
 	maybeVerificationMethod, err := getKeyFromProof(*credential.Proof, "verificationMethod")
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not get verification method from proof")
+		return sdkutil.LoggingErrorMsg(err, "could not get verification method from proof")
 	}
 	verificationMethod, ok := maybeVerificationMethod.(string)
 	if !ok {
-		return util.LoggingNewErrorf("could not convert verification method to string: %v", maybeVerificationMethod)
+		return sdkutil.LoggingNewErrorf("could not convert verification method to string: %v", maybeVerificationMethod)
 	}
 
 	pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, issuer, verificationMethod)
 	if err != nil {
-		return util.LoggingError(err)
+		return sdkutil.LoggingError(err)
 	}
 
 	// construct a signature verifier from the verification information
 	verifier, err := keyaccess.NewDataIntegrityKeyAccess(issuer, verificationMethod, pubKey)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create verifier for kid %s", verificationMethod)
-		return util.LoggingErrorMsg(err, errMsg)
+		return sdkutil.LoggingErrorMsg(err, errMsg)
 	}
 
 	// verify the signature on the credential
 	if err = verifier.Verify(&credential); err != nil {
-		return util.LoggingErrorMsg(err, "could not verify the credential's signature")
+		return sdkutil.LoggingErrorMsg(err, "could not verify the credential's signature")
 	}
 
 	return v.staticVerificationChecks(ctx, credential)
@@ -145,32 +145,32 @@ func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT
 	// parse headers
 	headers, err := keyaccess.GetJWTHeaders([]byte(token))
 	if err != nil {
-		return util.LoggingErrorMsg(err, "could not parse JWT headers")
+		return sdkutil.LoggingErrorMsg(err, "could not parse JWT headers")
 	}
 	jwtKID, ok := headers.Get(jws.KeyIDKey)
 	if !ok {
-		return util.LoggingNewError("JWT does not contain a kid")
+		return sdkutil.LoggingNewError("JWT does not contain a kid")
 	}
 	kid, ok := jwtKID.(string)
 	if !ok {
-		return util.LoggingNewError("JWT kid is not a string")
+		return sdkutil.LoggingNewError("JWT kid is not a string")
 	}
 
 	// resolve key material from the DID
 	pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, did, kid)
 	if err != nil {
-		return util.LoggingError(err)
+		return sdkutil.LoggingError(err)
 	}
 
 	// construct a signature verifier from the verification information
 	verifier, err := keyaccess.NewJWKKeyAccessVerifier(did, kid, pubKey)
 	if err != nil {
-		return util.LoggingErrorMsgf(err, "could not create verifier for kid %s", kid)
+		return sdkutil.LoggingErrorMsgf(err, "could not create verifier for kid %s", kid)
 	}
 
 	// verify the signature on the credential
 	if err = verifier.Verify(token); err != nil {
-		return util.LoggingErrorMsg(err, "could not verify the JWT signature")
+		return sdkutil.LoggingErrorMsg(err, "could not verify the JWT signature")
 	}
 
 	return nil
@@ -196,7 +196,7 @@ func (v Verifier) staticVerificationChecks(ctx context.Context, credential creds
 
 	// run the configured static checks on the credential
 	if err := v.verifier.VerifyCredential(credential, verificationOpts...); err != nil {
-		return util.LoggingErrorMsg(err, "static credential verification failed")
+		return sdkutil.LoggingErrorMsg(err, "static credential verification failed")
 	}
 
 	return nil

@@ -7,6 +7,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/signing"
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -14,7 +15,6 @@ import (
 
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
-	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
@@ -295,24 +295,22 @@ func (pr PresentationRouter) CreateSubmission(ctx context.Context, w http.Respon
 	var request CreateSubmissionRequest
 	if err := framework.Decode(r, &request); err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
+			sdkutil.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
 	}
 
 	req, err := request.toServiceRequest()
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
+			sdkutil.LoggingErrorMsg(err, "invalid create submission request"), http.StatusBadRequest)
 	}
 
 	operation, err := pr.service.CreateSubmission(ctx, *req)
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "cannot create submission"), http.StatusInternalServerError)
+			sdkutil.LoggingErrorMsg(err, "cannot create submission"), http.StatusInternalServerError)
 	}
 
-	resp := Operation{
-		ID: operation.ID,
-	}
+	resp := Operation{ID: operation.ID}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
@@ -336,14 +334,14 @@ func (pr PresentationRouter) GetSubmission(ctx context.Context, w http.ResponseW
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
-			util.LoggingNewError("get submission request requires id"), http.StatusBadRequest)
+			sdkutil.LoggingNewError("get submission request requires id"), http.StatusBadRequest)
 	}
 
 	submission, err := pr.service.GetSubmission(ctx, model.GetSubmissionRequest{ID: *id})
 
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "failed getting submission"), http.StatusBadRequest)
+			sdkutil.LoggingErrorMsg(err, "failed getting submission"), http.StatusBadRequest)
 	}
 	resp := GetSubmissionResponse{
 		Submission: &submission.Submission,
@@ -381,7 +379,7 @@ func (pr PresentationRouter) ListSubmissions(ctx context.Context, w http.Respons
 	var request ListSubmissionRequest
 	if err := framework.Decode(r, &request); err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "invalid list submissions request"), http.StatusBadRequest)
+			sdkutil.LoggingErrorMsg(err, "invalid list submissions request"), http.StatusBadRequest)
 	}
 
 	const StatusIdentifier = "status"
@@ -393,7 +391,7 @@ func (pr PresentationRouter) ListSubmissions(ctx context.Context, w http.Respons
 	)
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "creating filter declarations"), http.StatusInternalServerError)
+			sdkutil.LoggingErrorMsg(err, "creating filter declarations"), http.StatusInternalServerError)
 	}
 
 	// Because parsing filters can be expensive, we limit is to a fixed len of chars. That should be more than enough
@@ -401,20 +399,18 @@ func (pr PresentationRouter) ListSubmissions(ctx context.Context, w http.Respons
 	if len(request.GetFilter()) > FilterCharacterLimit {
 		err := errors.Errorf("filter longer than %d character size limit", FilterCharacterLimit)
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "invalid filter"), http.StatusBadRequest)
+			sdkutil.LoggingErrorMsg(err, "invalid filter"), http.StatusBadRequest)
 
 	}
 	filter, err := filtering.ParseFilter(request, declarations)
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "invalid filter"), http.StatusBadRequest)
+			sdkutil.LoggingErrorMsg(err, "invalid filter"), http.StatusBadRequest)
 	}
-	resp, err := pr.service.ListSubmissions(ctx, model.ListSubmissionRequest{
-		Filter: filter,
-	})
+	resp, err := pr.service.ListSubmissions(ctx, model.ListSubmissionRequest{Filter: filter})
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "failed listing submissions"), http.StatusInternalServerError)
+			sdkutil.LoggingErrorMsg(err, "failed listing submissions"), http.StatusInternalServerError)
 	}
 	return framework.Respond(ctx, w, ListSubmissionResponse{Submissions: resp.Submissions}, http.StatusOK)
 }
@@ -452,22 +448,20 @@ func (pr PresentationRouter) ReviewSubmission(ctx context.Context, w http.Respon
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
-			util.LoggingNewError("review submission request requires id"), http.StatusBadRequest)
+			sdkutil.LoggingNewError("review submission request requires id"), http.StatusBadRequest)
 	}
 
 	var request ReviewSubmissionRequest
 	if err := framework.Decode(r, &request); err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "invalid review submissions request"), http.StatusBadRequest)
+			sdkutil.LoggingErrorMsg(err, "invalid review submissions request"), http.StatusBadRequest)
 	}
 
 	req := request.toServiceRequest(*id)
 	submission, err := pr.service.ReviewSubmission(ctx, req)
 	if err != nil {
 		return framework.NewRequestError(
-			util.LoggingErrorMsg(err, "failed reviewing submission"), http.StatusInternalServerError)
+			sdkutil.LoggingErrorMsg(err, "failed reviewing submission"), http.StatusInternalServerError)
 	}
-	return framework.Respond(ctx, w, ReviewSubmissionResponse{
-		Submission: submission,
-	}, http.StatusOK)
+	return framework.Respond(ctx, w, ReviewSubmissionResponse{Submission: submission}, http.StatusOK)
 }

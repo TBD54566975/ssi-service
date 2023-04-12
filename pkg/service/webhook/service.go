@@ -13,7 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
-	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 
@@ -52,7 +51,7 @@ func (s Service) Config() config.WebhookServiceConfig {
 func NewWebhookService(config config.WebhookServiceConfig, s storage.ServiceStorage) (*Service, error) {
 	webhookStorage, err := NewWebhookStorage(s)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not instantiate storage for the webhook service")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the webhook service")
 	}
 
 	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
@@ -74,7 +73,7 @@ func (s Service) CreateWebhook(ctx context.Context, request CreateWebhookRequest
 
 	webhook, err := s.storage.GetWebhook(ctx, string(request.Noun), string(request.Verb))
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "get webhook")
+		return nil, sdkutil.LoggingErrorMsg(err, "get webhook")
 	}
 
 	if webhook == nil {
@@ -95,7 +94,7 @@ func (s Service) CreateWebhook(ctx context.Context, request CreateWebhookRequest
 
 	err = s.storage.StoreWebhook(ctx, string(request.Noun), string(request.Verb), *webhook)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "store webhook")
+		return nil, sdkutil.LoggingErrorMsg(err, "store webhook")
 	}
 
 	return &CreateWebhookResponse{Webhook: *webhook}, nil
@@ -106,11 +105,11 @@ func (s Service) GetWebhook(ctx context.Context, request GetWebhookRequest) (*Ge
 
 	webhook, err := s.storage.GetWebhook(ctx, string(request.Noun), string(request.Verb))
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "get webhook")
+		return nil, sdkutil.LoggingErrorMsg(err, "get webhook")
 	}
 
 	if webhook == nil {
-		return nil, util.LoggingNewError("webhook does not exist")
+		return nil, sdkutil.LoggingNewError("webhook does not exist")
 	}
 
 	return &GetWebhookResponse{Webhook: *webhook}, nil
@@ -121,7 +120,7 @@ func (s Service) GetWebhooks(ctx context.Context) (*GetWebhooksResponse, error) 
 
 	webhooks, err := s.storage.GetWebhooks(ctx)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "get webhooks")
+		return nil, sdkutil.LoggingErrorMsg(err, "get webhooks")
 	}
 
 	return &GetWebhooksResponse{Webhooks: webhooks}, nil
@@ -133,11 +132,11 @@ func (s Service) DeleteWebhook(ctx context.Context, request DeleteWebhookRequest
 	logrus.Debugf("deleting webhook: %s-%s", request.Noun, request.Verb)
 	webhook, err := s.storage.GetWebhook(ctx, string(request.Noun), string(request.Verb))
 	if err != nil {
-		return util.LoggingErrorMsg(err, "get webhook")
+		return sdkutil.LoggingErrorMsg(err, "get webhook")
 	}
 
 	if webhook == nil {
-		return util.LoggingNewError("webhook does not exist")
+		return sdkutil.LoggingNewError("webhook does not exist")
 	}
 
 	index := -1
