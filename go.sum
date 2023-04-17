@@ -27,16 +27,6 @@ github.com/PuerkitoBio/purell v1.1.1/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbt
 github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578/go.mod h1:uGdkoq3SwY9Y+13GIhn11/XLaGBb4BfwItxLd5jeuXE=
 github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWXgklEdEo=
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
-github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230401051839-bca28f8b0fea h1:+0dl8nqYYkewqiiYKxhk3RK7ivOOzweeYa08DFOU3fE=
-github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230401051839-bca28f8b0fea/go.mod h1:9SNGqEkRihpNbgilFDRRmgi8Gi/l7/l0eyO+3Prubro=
-github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230407190356-7a28bcc93aa7 h1:0hpEShDTX43lmVcN7Q5pTupUq7za72ElaK1MdjybzMk=
-github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230407190356-7a28bcc93aa7/go.mod h1:Ro9+HDADuYcLnCYKIL8pu92XWITKetTPOqfwLThplO0=
-github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410182513-ac2084ff8094 h1:N0t7vG6XixCrav2vte6wLqEUWH3x2iabic5Yqdf3mdo=
-github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410182513-ac2084ff8094/go.mod h1:Ro9+HDADuYcLnCYKIL8pu92XWITKetTPOqfwLThplO0=
-github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410184545-8e1086c3822a h1:QwoAvRTQkYUlwKuuC256FIgUm0YT6NGb5X2hekNqTaU=
-github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410184545-8e1086c3822a/go.mod h1:Ro9+HDADuYcLnCYKIL8pu92XWITKetTPOqfwLThplO0=
-github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410205511-7a5730cdd712 h1:err5jP/g05qrJTn71t2qr8YX24G4w+BbPEWU2pDGRZI=
-github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410205511-7a5730cdd712/go.mod h1:Ro9+HDADuYcLnCYKIL8pu92XWITKetTPOqfwLThplO0=
 github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410220001-cbd9818e8367 h1:dYkvkaLS7fLBPy06PDal2DZBHYiD79Z//1sOjaojR1U=
 github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410220001-cbd9818e8367/go.mod h1:Ro9+HDADuYcLnCYKIL8pu92XWITKetTPOqfwLThplO0=
 github.com/ajg/form v0.0.0-20160822230020-523a5da1a92f/go.mod h1:uL1WgH+h2mgNtvBq0339dVnzXdBETtL2LeUXaIv25UY=
@@ -929,8 +919,8 @@ github.com/rogpeppe/go-internal v1.3.2/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTE
 github.com/rogpeppe/go-internal v1.4.0/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTEfhy4qGm1nDQc=
 github.com/rogpeppe/go-internal v1.5.2/go.mod h1:xXDCJY+GAPziupqXw64V24skbSoqbTEfhy4qGm1nDQc=
 github.com/rs/cors v1.6.0/go.mod h1:gFx+x8UowdsKA9AchylcLynDq+nNFfI8FkUZdN/jGCU=
-github.com/rs/cors v1.8.3 h1:O+qNyWn7Z+F9M0ILBHgMVPuB1xTOucVd5gtaYyXBpRo=
-github.com/rs/cors v1.8.3/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
+github.com/rs/cors v1.9.0 h1:l9HGsTsHJcvW14Nk7J9KFz8bzeAWXn3CG6bgt7LsrAE=
+github.com/rs/cors v1.9.0/go.mod h1:XyqrcTp5zjWr1wsJ8PIRZssZ8b/WMcMf71DJnit4EMU=
 github.com/rs/xid v1.2.1/go.mod h1:+uKXf+4Djp6Md1KODXJxgGQPKngRmWyn10oCKFzNHOQ=
 github.com/rs/zerolog v1.13.0/go.mod h1:YbFCdg8HfsridGWAh22vktObvhZbQsZXe4/zB0OKkWU=
 github.com/rs/zerolog v1.15.0/go.mod h1:xYTKnLHcpfU2225ny5qZjxnj9NvkumZYjJHlAThCjNc=
