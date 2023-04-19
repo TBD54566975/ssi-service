@@ -120,11 +120,11 @@ if st.button("Create Schema"):
 
 if st.button("Issue Verifiable Credential"):
     payload = {
-        "Issuer": did['did']['id'],
-        "Subject": did['did']['id'],
-        "Schema": st.session_state.schema_id,
-        "Data": json.loads(data),
-        "Expiry": str(expiry) + "T00:00:00+00:00"
+        "issuer": did['did']['id'],
+        "subject": did['did']['id'],
+        "schemaId": st.session_state.schema_id,
+        "data": json.loads(data),
+        "expiry": str(expiry) + "T00:00:00+00:00"
     }
     vc = requests.put('http://web:3000/v1/credentials', data=json.dumps(payload)).json()
     st.write(vc)
