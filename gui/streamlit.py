@@ -121,6 +121,7 @@ if st.button("Create Schema"):
 if st.button("Issue Verifiable Credential"):
     payload = {
         "issuer": did['did']['id'],
+        "issuerKid": did['did']['verificationMethod'][0]['id'],
         "subject": did['did']['id'],
         "schemaId": st.session_state.schema_id,
         "data": json.loads(data),
