@@ -161,7 +161,7 @@ func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.Create
 					Constraints: &exchange.Constraints{
 						Fields: []exchange.Field{
 							{
-								Path: []string{"$.credentialSubject.licenseType"},
+								Path: []string{"$.vc.credentialSubject.licenseType"},
 							},
 						},
 					},

@@ -50,7 +50,7 @@ func TestDataIntegrityKeyAccessSignVerify(t *testing.T) {
 		assert.NotEmpty(tt, ka)
 
 		// sign
-		testCred := getTestCredential()
+		testCred := getTestCredential(id)
 		signedCred, err := ka.Sign(&testCred)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, signedCred)
@@ -94,27 +94,28 @@ func TestDataIntegrityKeyAccessSignVerify(t *testing.T) {
 		assert.Contains(tt, err.Error(), "payload cannot be nil")
 	})
 
-	t.Run("Sign and Verify Presentation", func(tt *testing.T) {
-		_, privKey, err := crypto.GenerateEd25519Key()
-		id := "test-id"
-		kid := "test-kid"
-		assert.NoError(tt, err)
-		ka, err := NewDataIntegrityKeyAccess(id, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
-
-		// sign
-		testPres := getTestPresentation()
-		signedPres, err := ka.Sign(&testPres)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, signedPres)
-
-		var pres credential.VerifiablePresentation
-		err = json.Unmarshal(signedPres.Data, &pres)
-		assert.NoError(tt, err)
-
-		// verify
-		err = ka.Verify(&pres)
-		assert.NoError(tt, err)
-	})
+	// TODO(gabe) enable with https://github.com/TBD54566975/ssi-sdk/issues/352
+	// t.Run("Sign and Verify Presentation", func(tt *testing.T) {
+	// 	_, privKey, err := crypto.GenerateEd25519Key()
+	// 	id := "test-id"
+	// 	kid := "test-kid"
+	// 	assert.NoError(tt, err)
+	// 	ka, err := NewDataIntegrityKeyAccess(id, kid, privKey)
+	// 	assert.NoError(tt, err)
+	// 	assert.NotEmpty(tt, ka)
+	//
+	// 	// sign
+	// 	testPres := getTestPresentation()
+	// 	signedPres, err := ka.Sign(&testPres)
+	// 	assert.NoError(tt, err)
+	// 	assert.NotEmpty(tt, signedPres)
+	//
+	// 	var pres credential.VerifiablePresentation
+	// 	err = json.Unmarshal(signedPres.Data, &pres)
+	// 	assert.NoError(tt, err)
+	//
+	// 	// verify
+	// 	err = ka.Verify(&pres)
+	// 	assert.NoError(tt, err)
+	// })
 }

@@ -283,8 +283,8 @@ func (sar SubmitApplicationRequest) toServiceRequest() (*model.SubmitApplication
 
 type SubmitApplicationResponse struct {
 	Response manifestsdk.CredentialResponse `json:"credential_response"`
-	// this is an interface type to union Data Integrity and JWT style VCs
-	Credentials any           `json:"verifiableCredentials,omitempty"`
+	// this is an any type to union Data Integrity and JWT style VCs
+	Credentials []any         `json:"verifiableCredentials,omitempty"`
 	ResponseJWT keyaccess.JWT `json:"responseJwt,omitempty"`
 }
 

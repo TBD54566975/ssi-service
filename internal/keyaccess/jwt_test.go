@@ -1,10 +1,12 @@
 package keyaccess
 
 import (
+	"context"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -168,7 +170,7 @@ func TestJWKKeyAccessSignVerifyCredentials(t *testing.T) {
 		assert.NotEmpty(tt, ka)
 
 		// sign
-		testCred := getTestCredential()
+		testCred := getTestCredential(testID)
 		testCredCopy := copyCred(t, testCred)
 		signedCred, err := ka.SignVerifiableCredential(testCredCopy)
 		assert.NoError(tt, err)
@@ -220,24 +222,26 @@ func TestJWKKeyAccessSignVerifyCredentials(t *testing.T) {
 
 func TestJWKKeyAccessSignVerifyPresentations(t *testing.T) {
 	t.Run("Sign and Verify Presentations - Happy Path", func(tt *testing.T) {
-		_, privKey, err := crypto.GenerateEd25519Key()
-		kid := "test-kid"
+		privKey, didKey, err := did.GenerateDIDKey(crypto.Ed25519)
 		assert.NoError(tt, err)
-		testID := "test-id"
-		ka, err := NewJWKKeyAccess(testID, kid, privKey)
+		assert.NotEmpty(tt, privKey)
+		expanded, err := didKey.Expand()
+		assert.NoError(tt, err)
+		kid := expanded.VerificationMethod[0].ID
+		ka, err := NewJWKKeyAccess(didKey.String(), kid, privKey)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, ka)
 
 		// sign
-		testPres := getTestPresentation()
-		signedPres, err := ka.SignVerifiablePresentation("test-audience", testPres)
+		testPres := getTestPresentation(*ka)
+		signedPres, err := ka.SignVerifiablePresentation(didKey.String(), testPres)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, signedPres)
 
-		println(string(*signedPres))
-
 		// verify
-		verifiedPres, err := ka.VerifyVerifiablePresentation(*signedPres)
+		resolver, err := did.NewResolver([]did.Resolver{did.KeyResolver{}}...)
+		assert.NoError(tt, err)
+		verifiedPres, err := ka.VerifyVerifiablePresentation(context.Background(), resolver, *signedPres)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, verifiedPres)
 
@@ -274,17 +278,18 @@ func TestJWKKeyAccessSignVerifyPresentations(t *testing.T) {
 		assert.NotEmpty(tt, ka)
 
 		// verify
-		_, err = ka.VerifyVerifiablePresentation("bad")
+		resolver, err := did.NewResolver([]did.Resolver{did.KeyResolver{}}...)
+		assert.NoError(tt, err)
+		_, err = ka.VerifyVerifiablePresentation(context.Background(), resolver, "bad")
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid JWT")
 	})
 }
 
-func getTestCredential() credential.VerifiableCredential {
+func getTestCredential(issuerDID string) credential.VerifiableCredential {
 	knownContext := []string{"https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1"}
 	knownID := uuid.NewString()
 	knownType := []string{"VerifiableCredential", "HappyCredential"}
-	knownIssuer := "https://example.com/issuers/565049"
 	knownIssuanceDate := "2010-01-01T19:23:24Z"
 	knownSubject := map[string]any{
 		"id": "did:example:ebfeb1f712ebc6f1c276e12ec21",
@@ -296,23 +301,25 @@ func getTestCredential() credential.VerifiableCredential {
 		Context:           knownContext,
 		ID:                knownID,
 		Type:              knownType,
-		Issuer:            knownIssuer,
+		Issuer:            issuerDID,
 		IssuanceDate:      knownIssuanceDate,
 		CredentialSubject: knownSubject,
 	}
 }
 
-func getTestPresentation() credential.VerifiablePresentation {
+func getTestPresentation(ka JWKKeyAccess) credential.VerifiablePresentation {
 	knownContext := []string{"https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1"}
 	knownID := uuid.NewString()
 	knownType := []string{"VerifiablePresentation", "HappyPresentation"}
 	knownHolder := "did:example:ebfeb1f712ebc6f1c276e12ec21"
+	testCredential := getTestCredential(ka.JWTSigner.ID)
+	signedJWT, _ := ka.SignVerifiableCredential(testCredential)
 	return credential.VerifiablePresentation{
 		Context:              knownContext,
 		ID:                   knownID,
 		Type:                 knownType,
 		Holder:               knownHolder,
-		VerifiableCredential: []any{getTestCredential()},
+		VerifiableCredential: []any{signedJWT},
 	}
 }
 

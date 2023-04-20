@@ -36,7 +36,7 @@ func NewDataIntegrityKeyAccess(id, kid string, key gocrypto.PrivateKey) (*DataIn
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not create JWK signer: %s", kid)
 	}
-	verifier, err := cryptosuite.NewJSONWebKeyVerifier(id, kid, *publicKeyJWK)
+	verifier, err := cryptosuite.NewJSONWebKeyVerifier(id, *publicKeyJWK)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not create JWK verifier: %s", kid)
 	}

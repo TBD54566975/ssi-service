@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
-	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 
@@ -46,7 +45,7 @@ func (c Container) HasJWTCredential() bool {
 
 // NewCredentialContainerFromJWT attempts to parse a VC-JWT credential from a string into a Container
 func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
-	_, _, cred, err := signing.ParseVerifiableCredentialFromJWT(credentialJWT)
+	_, _, cred, err := credential.ParseVerifiableCredentialFromJWT(credentialJWT)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse credential from JWT")
 	}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
-	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	"github.com/TBD54566975/ssi-sdk/credential/verification"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
@@ -35,7 +34,7 @@ func NewCredentialVerifier(didResolver didsdk.Resolver, schemaResolver schema.Re
 		return nil, errors.New("schemaResolver cannot be nil")
 	}
 	// TODO(gabe): consider making this configurable
-	verifiers := verification.KnownVerifiers
+	verifiers := verification.GetKnownVerifiers()
 	verifier, err := verification.NewCredentialVerifier(verifiers)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create static credential verifier")
@@ -53,7 +52,7 @@ func NewCredentialVerifier(didResolver didsdk.Resolver, schemaResolver schema.Re
 // a set of static verification checks on the credential as per the credential service's configuration.
 func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
 	// first, parse the token to see if it contains a valid verifiable credential
-	gotHeaders, _, cred, err := signing.ParseVerifiableCredentialFromJWT(token.String())
+	gotHeaders, _, cred, err := credsdk.ParseVerifiableCredentialFromJWT(token.String())
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could not parse credential from JWT")
 	}
@@ -180,7 +179,7 @@ func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT
 // service's configuration, such as checking the credential's schema, expiration, and object validity.
 func (v Verifier) staticVerificationChecks(ctx context.Context, credential credsdk.VerifiableCredential) error {
 	// if the credential has a schema, resolve it before it is to be used in verification
-	var verificationOpts []verification.VerificationOption
+	var verificationOpts []verification.Option
 	if credential.CredentialSchema != nil {
 		schemaID := credential.CredentialSchema.ID
 		resolvedSchema, err := v.schemaResolver.Resolve(ctx, schemaID)
