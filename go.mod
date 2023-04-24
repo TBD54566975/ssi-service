@@ -7,7 +7,7 @@ require (
 	github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410220001-cbd9818e8367
 	github.com/alicebob/miniredis/v2 v2.30.1
 	github.com/ardanlabs/conf v1.5.0
-	github.com/benbjohnson/clock v1.3.0
+	github.com/benbjohnson/clock v1.3.3
 	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/dimfeld/httptreemux/v5 v5.5.0
 	github.com/go-playground/locales v0.14.1
