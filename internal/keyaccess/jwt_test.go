@@ -233,7 +233,7 @@ func TestJWKKeyAccessSignVerifyPresentations(t *testing.T) {
 		assert.NotEmpty(tt, ka)
 
 		// sign
-		testPres := getTestPresentation(*ka)
+		testPres := getJWTTestPresentation(*ka)
 		signedPres, err := ka.SignVerifiablePresentation(didKey.String(), testPres)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, signedPres)
@@ -307,7 +307,23 @@ func getTestCredential(issuerDID string) credential.VerifiableCredential {
 	}
 }
 
-func getTestPresentation(ka JWKKeyAccess) credential.VerifiablePresentation {
+func getDataIntegrityTestPresentation(ka DataIntegrityKeyAccess) credential.VerifiablePresentation {
+	knownContext := []string{"https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1"}
+	knownID := uuid.NewString()
+	knownType := []string{"VerifiablePresentation", "HappyPresentation"}
+	knownHolder := "did:example:ebfeb1f712ebc6f1c276e12ec21"
+	testCredential := getTestCredential(ka.JWTSigner.ID)
+	signedCred, _ := ka.Sign(&testCredential)
+	return credential.VerifiablePresentation{
+		Context:              knownContext,
+		ID:                   knownID,
+		Type:                 knownType,
+		Holder:               knownHolder,
+		VerifiableCredential: []any{signedCred},
+	}
+}
+
+func getJWTTestPresentation(ka JWKKeyAccess) credential.VerifiablePresentation {
 	knownContext := []string{"https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1"}
 	knownID := uuid.NewString()
 	knownType := []string{"VerifiablePresentation", "HappyPresentation"}
