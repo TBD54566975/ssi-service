@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/BurntSushi/toml v1.2.1
-	github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230410220001-cbd9818e8367
+	github.com/TBD54566975/ssi-sdk v0.0.3-alpha.0.20230420000447-6d87cd195314
 	github.com/alicebob/miniredis/v2 v2.30.2
 	github.com/ardanlabs/conf v1.5.0
 	github.com/benbjohnson/clock v1.3.3
