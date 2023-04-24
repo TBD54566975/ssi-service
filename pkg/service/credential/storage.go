@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
-	"github.com/TBD54566975/ssi-sdk/credential/signing"
 	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
@@ -283,7 +282,7 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 	// assume we have a Data Integrity credential
 	cred := request.Credential
 	if request.HasJWTCredential() {
-		_, _, parsedCred, err := signing.ParseVerifiableCredentialFromJWT(request.CredentialJWT.String())
+		_, _, parsedCred, err := credential.ParseVerifiableCredentialFromJWT(request.CredentialJWT.String())
 		if err != nil {
 			return nil, errors.Wrap(err, "could not parse credential from jwt")
 		}

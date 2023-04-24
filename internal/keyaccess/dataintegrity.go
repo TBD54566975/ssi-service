@@ -3,6 +3,7 @@ package keyaccess
 import (
 	gocrypto "crypto"
 
+	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/cryptosuite"
 	"github.com/goccy/go-json"
@@ -36,7 +37,7 @@ func NewDataIntegrityKeyAccess(id, kid string, key gocrypto.PrivateKey) (*DataIn
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not create JWK signer: %s", kid)
 	}
-	verifier, err := cryptosuite.NewJSONWebKeyVerifier(id, kid, *publicKeyJWK)
+	verifier, err := cryptosuite.NewJSONWebKeyVerifier(id, *publicKeyJWK)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not create JWK verifier: %s", kid)
 	}
@@ -75,4 +76,12 @@ func (ka DataIntegrityKeyAccess) Verify(payload cryptosuite.Provable) error {
 		return errors.Wrap(err, "could not verify payload")
 	}
 	return nil
+}
+
+func (ka DataIntegrityKeyAccess) SignVerifiablePresentation(audience string, presentation credential.VerifiablePresentation) (*DataIntegrityJSON, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (ka DataIntegrityKeyAccess) VerifyVerifiablePresentation(presentation cryptosuite.Provable) error {
+	return errors.New("not implemented")
 }

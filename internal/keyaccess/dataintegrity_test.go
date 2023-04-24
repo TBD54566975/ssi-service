@@ -50,7 +50,7 @@ func TestDataIntegrityKeyAccessSignVerify(t *testing.T) {
 		assert.NotEmpty(tt, ka)
 
 		// sign
-		testCred := getTestCredential()
+		testCred := getTestCredential(id)
 		signedCred, err := ka.Sign(&testCred)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, signedCred)
@@ -104,7 +104,7 @@ func TestDataIntegrityKeyAccessSignVerify(t *testing.T) {
 		assert.NotEmpty(tt, ka)
 
 		// sign
-		testPres := getTestPresentation()
+		testPres := getDataIntegrityTestPresentation(*ka)
 		signedPres, err := ka.Sign(&testPres)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, signedPres)
@@ -116,5 +116,10 @@ func TestDataIntegrityKeyAccessSignVerify(t *testing.T) {
 		// verify
 		err = ka.Verify(&pres)
 		assert.NoError(tt, err)
+
+		// TODO(gabe) enable with https://github.com/TBD54566975/ssi-sdk/issues/352, https://github.com/TBD54566975/ssi-service/issues/105
+		err = ka.VerifyVerifiablePresentation(&pres)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "not implemented")
 	})
 }
