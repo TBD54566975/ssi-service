@@ -97,14 +97,17 @@ func TestStoreAndGetKey(t *testing.T) {
 	require.NoError(t, err)
 	name := file.Name()
 	assert.NoError(t, file.Close())
-	bolt, err := storage.NewStorage(storage.Bolt, name)
+	s, err := storage.NewStorage(storage.Bolt, storage.Option{
+		ID:     storage.BoltDBFilePathOption,
+		Option: name,
+	})
 	assert.NoError(t, err)
-	assert.NotEmpty(t, bolt)
+	assert.NotEmpty(t, s)
 
 	// remove the db file after the test
 	t.Cleanup(func() {
-		_ = bolt.Close()
-		_ = os.Remove(bolt.URI())
+		_ = s.Close()
+		_ = os.Remove(s.URI())
 	})
 
 	keyStore, err := NewKeyStoreService(
@@ -114,7 +117,7 @@ func TestStoreAndGetKey(t *testing.T) {
 			},
 			ServiceKeyPassword: "test-password",
 		},
-		bolt)
+		s)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, keyStore)
 

@@ -24,12 +24,24 @@ enable_allow_all_cors = true
 
 # Storage Configuration
 [services]
-service_endpoint = "http://localhost:3000"
+# service_endpoint = "http://localhost:3000"
+
+# exmaple redis config with two options
 storage = "redis"
 
-[services.storage_option]
-address = "localhost:6379"
-password = ""
+[[services.storage_option]]
+id = "redis-address-option"
+option = "localhost:6379"
+
+[[services.storage_option]]
+id = "redis-password-option"
+option = "password"
+
+#storage = "bolt"
+#
+#[[services.storage_option]]
+#id = "boltdb-filepath-option"
+#option = "bolt.db"
 
 # per-service configuration
 [services.keystore]
