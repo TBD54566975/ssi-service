@@ -22,15 +22,29 @@ type Tx interface {
 const (
 	Bolt  Type = "bolt"
 	Redis Type = "redis"
+
+	// Common options
+	PasswordOption OptionKey = "storage-password-option"
 )
 
 var (
 	availableStorages = make(map[Type]ServiceStorage)
 )
 
+type (
+	// OptionKey uniquely represents an option to be used in a storage provider
+	OptionKey string
+)
+
+// Option represents a single option that may be required for a storage provider
+type Option struct {
+	ID     OptionKey `json:"id,omitempty"`
+	Option any       `json:"option,omitempty"`
+}
+
 // ServiceStorage describes the api for storage independent of DB providers
 type ServiceStorage interface {
-	Init(interface{}) error
+	Init(opts ...Option) error
 	Type() Type
 	URI() string
 	IsOpen() bool
@@ -51,12 +65,12 @@ type ServiceStorage interface {
 
 // NewStorage returns the instance of the given storageProvider. If it doesn't exist, then a default implementation
 // is created with the given option parameter.
-func NewStorage(storageProvider Type, option interface{}) (ServiceStorage, error) {
+func NewStorage(storageProvider Type, opts ...Option) (ServiceStorage, error) {
 	impl := GetStorage(storageProvider)
 	if impl == nil {
 		return impl, fmt.Errorf("unsupported storage provider: %s", storageProvider)
 	}
-	err := impl.Init(option)
+	err := impl.Init(opts...)
 	return impl, err
 }
 

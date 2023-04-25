@@ -12,14 +12,16 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
+	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 const (
 	DefaultConfigPath = "config/config.toml"
 	DefaultEnvPath    = "config/.env"
-	ConfigFileName    = "config.toml"
+	Filename          = "config.toml"
 	ServiceName       = "ssi-service"
-	ConfigExtension   = ".toml"
+	Extension         = ".toml"
 
 	DefaultServiceEndpoint = "http://localhost:8080"
 
@@ -28,6 +30,10 @@ const (
 )
 
 type EnvironmentVariable string
+
+func (e EnvironmentVariable) String() string {
+	return string(e)
+}
 
 type SSIServiceConfig struct {
 	conf.Version
@@ -66,9 +72,9 @@ type ServicesConfig struct {
 	// at present, it is assumed that a single storage provider works for all services
 	// in the future it may make sense to have per-service storage providers (e.g. mysql for one service,
 	// mongo for another)
-	StorageProvider string      `toml:"storage"`
-	StorageOption   interface{} `toml:"storage_option"`
-	ServiceEndpoint string      `toml:"service_endpoint"`
+	StorageProvider string           `toml:"storage"`
+	StorageOptions  []storage.Option `toml:"storage_option"`
+	ServiceEndpoint string           `toml:"service_endpoint"`
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
 	KeyStoreConfig       KeyStoreServiceConfig     `toml:"keystore,omitempty"`
@@ -211,7 +217,7 @@ func checkValidConfigPath(path string) (bool, error) {
 	if path == "" {
 		logrus.Info("no config path provided, loading default config...")
 		defaultConfig = true
-	} else if filepath.Ext(path) != ConfigExtension {
+	} else if filepath.Ext(path) != Extension {
 		return false, fmt.Errorf("path<%s> did not match the expected TOML format", path)
 	}
 
@@ -309,26 +315,21 @@ func applyEnvVariables(config *SSIServiceConfig) error {
 		return errors.Wrap(err, "dotenv parsing")
 	}
 
-	keystorePassword, present := os.LookupEnv(string(KeystorePassword))
-
+	keystorePassword, present := os.LookupEnv(KeystorePassword.String())
 	if present {
 		config.Services.KeyStoreConfig.ServiceKeyPassword = keystorePassword
 	}
 
-	dbPassword, present := os.LookupEnv(string(DBPassword))
-
+	dbPassword, present := os.LookupEnv(DBPassword.String())
 	if present {
-		if config.Services.StorageOption == nil {
-			config.Services.StorageOption = make(map[string]interface{})
+		if len(config.Services.StorageOptions) != 0 {
+			for _, storageOption := range config.Services.StorageOptions {
+				if storageOption.ID == storage.PasswordOption {
+					storageOption.Option = dbPassword
+					break
+				}
+			}
 		}
-
-		storageOptionMap, ok := config.Services.StorageOption.(map[string]interface{})
-		if !ok {
-			return errors.New("storage option must be of type map[string]interface{}")
-		}
-
-		storageOptionMap["password"] = dbPassword
-		config.Services.StorageOption = storageOptionMap
 	}
 
 	return nil

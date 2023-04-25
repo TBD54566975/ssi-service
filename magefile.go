@@ -189,7 +189,7 @@ func ColorizeTestOutput(w io.Writer) io.Writer {
 }
 
 func ColorizeTestStdout() io.Writer {
-	stdout := int(syscall.Stdout)
+	stdout := syscall.Stdout
 	if terminal.IsTerminal(stdout) {
 		return ColorizeTestOutput(os.Stdout)
 	}

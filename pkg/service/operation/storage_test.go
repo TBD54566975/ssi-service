@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
+
 	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -20,7 +21,10 @@ func setupTestDB(t *testing.T) storage.ServiceStorage {
 	file, err := os.CreateTemp("", "bolt")
 	require.NoError(t, err)
 	name := file.Name()
-	s, err := storage.NewStorage(storage.Bolt, name)
+	s, err := storage.NewStorage(storage.Bolt, storage.Option{
+		ID:     storage.BoltDBFilePathOption,
+		Option: name,
+	})
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = s.Close()

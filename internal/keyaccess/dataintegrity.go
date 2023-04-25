@@ -78,10 +78,10 @@ func (ka DataIntegrityKeyAccess) Verify(payload cryptosuite.Provable) error {
 	return nil
 }
 
-func (ka DataIntegrityKeyAccess) SignVerifiablePresentation(audience string, presentation credential.VerifiablePresentation) (*DataIntegrityJSON, error) {
+func (ka DataIntegrityKeyAccess) SignVerifiablePresentation(_ string, _ credential.VerifiablePresentation) (*DataIntegrityJSON, error) {
 	return nil, errors.New("not implemented")
 }
 
-func (ka DataIntegrityKeyAccess) VerifyVerifiablePresentation(presentation cryptosuite.Provable) error {
+func (ka DataIntegrityKeyAccess) VerifyVerifiablePresentation(_ cryptosuite.Provable) error {
 	return errors.New("not implemented")
 }
