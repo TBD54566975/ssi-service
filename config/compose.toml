@@ -29,7 +29,7 @@ storage = "redis"
 
 [[services.storage_option]]
 id = "redis-address-option"
-option = "localhost:6379"
+option = "redis:6379"
 
 [[services.storage_option]]
 id = "storage-password-option"
