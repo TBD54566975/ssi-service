@@ -257,7 +257,7 @@ func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 func (h *ionHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	logrus.Debug("getting stored did:ion DIDs")
 
-	gotDIDs, err := h.storage.GetDIDs(ctx, did.KeyMethod.String(), new(ionStoredDID))
+	gotDIDs, err := h.storage.GetDIDs(ctx, did.IONMethod.String(), new(ionStoredDID))
 	if err != nil {
 		return nil, fmt.Errorf("error getting did:ion DIDs")
 	}
