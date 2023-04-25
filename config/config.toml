@@ -33,7 +33,7 @@ storage = "bolt"
 id = "boltdb-filepath-option"
 option = "bolt.db"
 
-# exmaple redis config with two options
+# example redis config with two options
 # storage = "redis"
 #
 # [[services.storage_option]]

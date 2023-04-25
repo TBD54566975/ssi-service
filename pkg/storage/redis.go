@@ -93,12 +93,8 @@ func processRedisOptions(opts ...Option) (address, password string, err error) {
 			password = maybePassword
 		}
 	}
-	if len(address) == 0 {
-		err = errors.New("redis address must not be empty")
-		return
-	}
-	if len(password) == 0 {
-		err = errors.New("redis password must not be empty")
+	if len(address) == 0 || len(password) == 0 {
+		err = errors.New("redis address and password must not be empty")
 		return
 	}
 	return address, password, nil
