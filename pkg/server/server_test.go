@@ -80,7 +80,12 @@ func TestReadinessAPI(t *testing.T) {
 	shutdown := make(chan os.Signal, 1)
 	serviceConfig, err := config.LoadConfig("")
 	assert.NoError(t, err)
-	serviceConfig.Services.StorageOption = dbFile
+	serviceConfig.Services.StorageOptions = []storage.Option{
+		{
+			ID:     storage.BoltDBFilePathOption,
+			Option: dbFile,
+		},
+	}
 
 	server, err := NewSSIServer(shutdown, *serviceConfig)
 	assert.NoError(t, err)

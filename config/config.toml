@@ -25,11 +25,24 @@ enable_allow_all_cors = true
 # Storage Configuration
 [services]
 service_endpoint = "http://localhost:3000"
-storage = "redis"
 
-[services.storage_option]
-address = "localhost:6379"
-password = ""
+# example bolt config with filepath option
+storage = "bolt"
+
+[[services.storage_option]]
+id = "boltdb-filepath-option"
+option = "bolt.db"
+
+# example redis config with two options
+# storage = "redis"
+#
+# [[services.storage_option]]
+# id = "redis-address-option"
+# option = "localhost:6379"
+#
+# [[services.storage_option]]
+# id = "storage-password-option"
+# option = "password"
 
 # per-service configuration
 [services.keystore]
@@ -38,7 +51,7 @@ password = "default-password"
 
 [services.did]
 name = "did"
-methods = ["key", "web", "ion"]
+methods = ["key", "web"]
 local_resolution_methods = ["key", "web", "pkh", "peer"]
 universal_resolver_url = "http://localhost:8088"
 universal_resolver_methods = ["ion"]

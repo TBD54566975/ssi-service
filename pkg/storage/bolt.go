@@ -21,7 +21,8 @@ func init() {
 }
 
 const (
-	DBFilePrefix = "ssi-service"
+	DBFilePrefix                   = "ssi-service"
+	BoltDBFilePathOption OptionKey = "boltdb-filepath-option"
 )
 
 type BoltDB struct {
@@ -29,26 +30,39 @@ type BoltDB struct {
 }
 
 // Init instantiates a file-based storage instance for Bolt https://github.com/boltdb/bolt
-func (b *BoltDB) Init(options interface{}) error {
+func (b *BoltDB) Init(opts ...Option) error {
 	if b.db != nil && b.IsOpen() {
-		return fmt.Errorf("bolit db already opened with name %s", b.URI())
+		return fmt.Errorf("bolt db already opened with name %s", b.URI())
 	}
-	dbFilePath := fmt.Sprintf("%s_%s.db", DBFilePrefix, b.Type())
-	if options != nil {
-		customPath, ok := options.(string)
-		if !ok {
-			return fmt.Errorf("options should be a string value")
-		}
-		if customPath != "" {
-			dbFilePath = customPath
-		}
+	defaultDBFilePath := fmt.Sprintf("%s_%s.db", DBFilePrefix, b.Type())
+	dbFilePath, err := processBoltOptions(defaultDBFilePath, opts...)
+	if err != nil {
+		return errors.Wrap(err, "processing bolt options")
 	}
+
 	db, err := bolt.Open(dbFilePath, 0600, &bolt.Options{Timeout: 3 * time.Second})
 	if err != nil {
 		return err
 	}
 	b.db = db
 	return nil
+}
+
+func processBoltOptions(filePath string, opts ...Option) (string, error) {
+	if len(opts) == 0 {
+		return filePath, nil
+	}
+	if len(opts) > 1 {
+		return filePath, fmt.Errorf("invalid number of options provided")
+	}
+	if opts[0].ID != BoltDBFilePathOption {
+		return filePath, fmt.Errorf("invalid option provided: %s", opts[0].ID)
+	}
+	customFilePath, ok := opts[0].Option.(string)
+	if !ok || customFilePath == "" {
+		return filePath, fmt.Errorf("options should be a non-empty string value")
+	}
+	return customFilePath, nil
 }
 
 // URI return filepath of boltDB,

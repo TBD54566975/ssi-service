@@ -22,24 +22,34 @@ func getDBImplementations(t *testing.T) []ServiceStorage {
 }
 
 func setupBoltDB(t *testing.T) *BoltDB {
-	db, err := NewStorage(Bolt, "test.db")
+	dbName := "test.db"
+	db, err := NewStorage(Bolt, Option{
+		ID:     BoltDBFilePathOption,
+		Option: dbName,
+	})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, db)
 
 	t.Cleanup(func() {
 		_ = db.Close()
-		_ = os.Remove("test.db")
+		_ = os.Remove(dbName)
 	})
 	return db.(*BoltDB)
 }
 
 func setupRedisDB(t *testing.T) *RedisDB {
 	server := miniredis.RunT(t)
-	options := make(map[string]interface{})
-	options["address"] = server.Addr()
-	options["password"] = ""
-
-	db, err := NewStorage(Redis, options)
+	options := []Option{
+		{
+			ID:     RedisAddressOption,
+			Option: server.Addr(),
+		},
+		{
+			ID:     PasswordOption,
+			Option: "test-password",
+		},
+	}
+	db, err := NewStorage(Redis, options...)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, db)
 

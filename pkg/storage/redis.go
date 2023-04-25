@@ -20,10 +20,11 @@ func init() {
 }
 
 const (
-	NamespaceKeySeparator = ":"
-	Pong                  = "PONG"
-	RedisScanBatchSize    = 1000
-	MaxElapsedTime        = 6 * time.Second
+	NamespaceKeySeparator           = ":"
+	Pong                            = "PONG"
+	RedisScanBatchSize              = 1000
+	MaxElapsedTime                  = 6 * time.Second
+	RedisAddressOption    OptionKey = "redis-address-option"
 )
 
 type RedisDB struct {
@@ -39,12 +40,14 @@ func (rtx *redisTx) Write(ctx context.Context, namespace, key string, value []by
 	return rtx.pipe.Set(ctx, nameSpaceKey, value, 0).Err()
 }
 
-func (b *RedisDB) Init(i interface{}) error {
-	options := i.(map[string]interface{})
-
+func (b *RedisDB) Init(opts ...Option) error {
+	address, password, err := processRedisOptions(opts...)
+	if err != nil {
+		return errors.Wrap(err, "processing redis options")
+	}
 	client := goredislib.NewClient(&goredislib.Options{
-		Addr:     options["address"].(string),
-		Password: options["password"].(string),
+		Addr:     address,
+		Password: password,
 	})
 
 	if err := redisotel.InstrumentTracing(client); err != nil {
@@ -58,6 +61,43 @@ func (b *RedisDB) Init(i interface{}) error {
 	b.db = client
 
 	return nil
+}
+
+func processRedisOptions(opts ...Option) (address, password string, err error) {
+	if len(opts) != 2 {
+		return "", "", errors.New("redis options must contain address and password")
+	}
+	for _, opt := range opts {
+		switch opt.ID {
+		case RedisAddressOption:
+			maybeAddress, ok := opt.Option.(string)
+			if !ok {
+				err = errors.New("redis address must be a string")
+				return
+			}
+			if len(maybeAddress) == 0 {
+				err = errors.New("redis address must not be empty")
+				return
+			}
+			address = maybeAddress
+		case PasswordOption:
+			maybePassword, ok := opt.Option.(string)
+			if !ok {
+				err = errors.New("redis password must be a string")
+				return
+			}
+			if len(maybePassword) == 0 {
+				err = errors.New("redis password must not be empty")
+				return
+			}
+			password = maybePassword
+		}
+	}
+	if len(address) == 0 || len(password) == 0 {
+		err = errors.New("redis address and password must not be empty")
+		return
+	}
+	return address, password, nil
 }
 
 func (b *RedisDB) URI() string {

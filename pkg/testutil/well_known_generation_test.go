@@ -185,7 +185,10 @@ func setupTestDB(t *testing.T) storage.ServiceStorage {
 	name := file.Name()
 	err = file.Close()
 	require.NoError(t, err)
-	s, err := storage.NewStorage(storage.Bolt, name)
+	s, err := storage.NewStorage(storage.Bolt, storage.Option{
+		ID:     storage.BoltDBFilePathOption,
+		Option: name,
+	})
 	require.NoError(t, err)
 	t.Cleanup(func() {
 		_ = s.Close()

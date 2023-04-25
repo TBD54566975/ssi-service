@@ -7,7 +7,7 @@ import (
 )
 
 func TestConfig(t *testing.T) {
-	config, err := LoadConfig(ConfigFileName)
+	config, err := LoadConfig(Filename)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, config)
 

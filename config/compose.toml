@@ -27,9 +27,13 @@ enable_allow_all_cors = true
 service_endpoint = "http://localhost:8080"
 storage = "redis"
 
-[services.storage_option]
-address = "redis:6379"
-password = ""
+[[services.storage_option]]
+id = "redis-address-option"
+option = "redis:6379"
+
+[[services.storage_option]]
+id = "storage-password-option"
+option = "password"
 
 # per-service configuration
 [services.keystore]
