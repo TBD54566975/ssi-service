@@ -183,7 +183,7 @@ func (s Service) PublishWebhook(noun Noun, verb Verb, payloadReader io.Reader) {
 		return
 	}
 
-	postPayload := Payload{Noun: noun, Verb: verb, Data: string(payloadBytes)}
+	postPayload := Payload{Noun: noun, Verb: verb, Data: payloadBytes}
 
 	for _, url := range webhook.URLS {
 		postPayload.URL = url
