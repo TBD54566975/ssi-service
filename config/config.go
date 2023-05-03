@@ -172,6 +172,7 @@ func (p *PresentationServiceConfig) IsEmpty() bool {
 
 type WebhookServiceConfig struct {
 	*BaseServiceConfig
+	WebhookTimeoutInSeconds int `toml:"webhook_timeout_in_seconds"`
 }
 
 func (p *WebhookServiceConfig) IsEmpty() bool {
@@ -282,7 +283,8 @@ func loadDefaultServicesConfig(config *SSIServiceConfig) {
 			BaseServiceConfig: &BaseServiceConfig{Name: "issuing"},
 		},
 		WebhookConfig: WebhookServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "webhook"},
+			BaseServiceConfig:       &BaseServiceConfig{Name: "webhook"},
+			WebhookTimeoutInSeconds: 10,
 		},
 	}
 

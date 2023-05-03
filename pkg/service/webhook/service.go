@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
@@ -192,10 +193,13 @@ func (s Service) PublishWebhook(noun Noun, verb Verb, payloadReader io.Reader) {
 			continue
 		}
 
-		err = s.post(context.Background(), url, string(postJSONData))
+		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.config.WebhookTimeoutInSeconds)*time.Second)
+		defer cancel()
+		err = s.post(ctx, url, string(postJSONData))
 		if err != nil {
 			logrus.Warnf("posting payload to %s with error: %s", url, err)
 		}
+
 	}
 }
 
