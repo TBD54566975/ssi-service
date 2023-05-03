@@ -165,7 +165,7 @@ func (s Service) GetSupportedVerbs() GetSupportedVerbsResponse {
 	return GetSupportedVerbsResponse{Verbs: []Verb{Create, Delete}}
 }
 
-func (s Service) PublishWebhook(ctx context.Context, noun Noun, verb Verb, payloadReader io.Reader) {
+func (s Service) PublishWebhook(noun Noun, verb Verb, payloadReader io.Reader) {
 	webhook, err := s.storage.GetWebhook(context.Background(), string(noun), string(verb))
 	if err != nil {
 		logrus.WithError(err).Warn("get webhook")
@@ -183,6 +183,7 @@ func (s Service) PublishWebhook(ctx context.Context, noun Noun, verb Verb, paylo
 	}
 
 	postPayload := Payload{Noun: noun, Verb: verb, Data: string(payloadBytes)}
+
 	for _, url := range webhook.URLS {
 		postPayload.URL = url
 		postJSONData, err := json.Marshal(postPayload)
@@ -191,9 +192,9 @@ func (s Service) PublishWebhook(ctx context.Context, noun Noun, verb Verb, paylo
 			continue
 		}
 
-		err = s.post(ctx, url, string(postJSONData))
+		err = s.post(context.Background(), url, string(postJSONData))
 		if err != nil {
-			logrus.Warnf("posting payload to %s", url)
+			logrus.Warnf("posting payload to %s with error: %s", url, err)
 		}
 	}
 }
