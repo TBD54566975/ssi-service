@@ -70,4 +70,4 @@ name = "presentation"
 
 [services.webhook]
 name = "webhook"
-webhook_timeout_in_seconds = 10
+webhook_timeout = "10s"

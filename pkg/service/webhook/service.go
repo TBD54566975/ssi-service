@@ -193,7 +193,12 @@ func (s Service) PublishWebhook(noun Noun, verb Verb, payloadReader io.Reader) {
 			continue
 		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Duration(s.config.WebhookTimeoutInSeconds)*time.Second)
+		duration, err := time.ParseDuration(s.config.WebhookTimeout)
+		if err != nil {
+			logrus.Error("problem parsing webhook timeout")
+			return
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), duration)
 		defer cancel()
 		err = s.post(ctx, url, string(postJSONData))
 		if err != nil {
