@@ -167,7 +167,16 @@ func (s Service) GetSupportedVerbs() GetSupportedVerbsResponse {
 }
 
 func (s Service) PublishWebhook(noun Noun, verb Verb, payloadReader io.Reader) {
-	webhook, err := s.storage.GetWebhook(context.Background(), string(noun), string(verb))
+	duration, err := time.ParseDuration(s.config.WebhookTimeout)
+	if err != nil {
+		logrus.WithError(err).Error("problem parsing webhook timeout")
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), duration)
+	defer cancel()
+
+	webhook, err := s.storage.GetWebhook(ctx, string(noun), string(verb))
 	if err != nil {
 		logrus.WithError(err).Warn("get webhook")
 		return
@@ -193,18 +202,10 @@ func (s Service) PublishWebhook(noun Noun, verb Verb, payloadReader io.Reader) {
 			continue
 		}
 
-		duration, err := time.ParseDuration(s.config.WebhookTimeout)
-		if err != nil {
-			logrus.Error("problem parsing webhook timeout")
-			return
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), duration)
-		defer cancel()
 		err = s.post(ctx, url, string(postJSONData))
 		if err != nil {
-			logrus.Warnf("posting payload to %s with error: %s", url, err)
+			logrus.WithError(err).Warnf("posting payload to %s", url)
 		}
-
 	}
 }
 
