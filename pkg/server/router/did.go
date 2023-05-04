@@ -3,7 +3,9 @@ package router
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
@@ -18,8 +20,9 @@ import (
 )
 
 const (
-	MethodParam = "method"
-	IDParam     = "id"
+	MethodParam  = "method"
+	IDParam      = "id"
+	DeletedParam = "deleted"
 )
 
 // DIDRouter represents the dependencies required to instantiate a DID-HTTP service
@@ -244,17 +247,24 @@ type GetDIDsRequest struct {
 // @Failure     400     {string} string "Bad request"
 // @Failure     500     {string} string "Internal server error"
 // @Router      /v1/dids [get]
-func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
+	deleted := framework.GetQueryValue(r, DeletedParam)
 	if method == nil {
 		errMsg := "get DIDs by method request missing method parameter"
 		logrus.Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
+	isDeleted, err := strconv.ParseBool(*deleted)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
 	// TODO(gabe) differentiate between internal errors and not found DIDs
-	getDIDsRequest := did.GetDIDsRequest{Method: didsdk.Method(*method)}
+	getDIDsRequest := did.GetDIDsRequest{Method: didsdk.Method(*method), Deleted: isDeleted}
 	gotDIDs, err := dr.service.GetDIDsByMethod(ctx, getDIDsRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get DIDs for method: %s", *method)
