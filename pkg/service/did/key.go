@@ -94,18 +94,16 @@ func (h *keyHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 	return &GetDIDResponse{DID: gotDID.DID}, nil
 }
 
-func (h *keyHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
+func (h *keyHandler) GetDIDs(ctx context.Context, deleted bool) (*GetDIDsResponse, error) {
 	logrus.Debug("getting did:key DIDs")
 
-	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.KeyMethod.String())
+	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.KeyMethod.String(), deleted)
 	if err != nil {
 		return nil, fmt.Errorf("error getting did:key DIDs")
 	}
 	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
-		if !gotDID.IsSoftDeleted() {
-			dids = append(dids, gotDID.GetDocument())
-		}
+		dids = append(dids, gotDID.GetDocument())
 	}
 	return &GetDIDsResponse{DIDs: dids}, nil
 }

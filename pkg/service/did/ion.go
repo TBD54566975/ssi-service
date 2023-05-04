@@ -249,16 +249,13 @@ func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 func (h *ionHandler) GetDIDs(ctx context.Context, deleted bool) (*GetDIDsResponse, error) {
 	logrus.Debug("getting stored did:ion DIDs")
 
-	gotDIDs, err := h.storage.GetDIDs(ctx, did.IONMethod.String(), new(ionStoredDID))
+	gotDIDs, err := h.storage.GetDIDs(ctx, did.IONMethod.String(), new(ionStoredDID), deleted)
 	if err != nil {
 		return nil, fmt.Errorf("error getting did:ion DIDs")
 	}
 	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
-		if (deleted && gotDID.IsSoftDeleted()) || (!deleted && !gotDID.IsSoftDeleted()) {
-			dids = append(dids, gotDID.GetDocument())
-		}
-
+		dids = append(dids, gotDID.GetDocument())
 	}
 	return &GetDIDsResponse{DIDs: dids}, nil
 }
@@ -279,20 +276,4 @@ func (h *ionHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest
 	gotDID.SoftDeleted = true
 
 	return h.storage.StoreDID(ctx, *gotDID)
-}
-
-func (h *ionHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error) {
-	logrus.Debug("getting stored did:ion DIDs")
-
-	gotDIDs, err := h.storage.GetDIDs(ctx, did.IONMethod.String(), new(ionStoredDID))
-	if err != nil {
-		return nil, fmt.Errorf("error getting did:ion DIDs")
-	}
-	dids := make([]did.Document, 0, len(gotDIDs))
-	for _, gotDID := range gotDIDs {
-		if gotDID.IsSoftDeleted() {
-			dids = append(dids, gotDID.GetDocument())
-		}
-	}
-	return &GetDIDsResponse{DIDs: dids}, nil
 }

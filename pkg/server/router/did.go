@@ -255,11 +255,14 @@ func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, 
 		logrus.Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
+	isDeleted := false
+	if deleted != nil {
+		checkDeleted, err := strconv.ParseBool(*deleted)
+		isDeleted = checkDeleted
 
-	isDeleted, err := strconv.ParseBool(*deleted)
-
-	if err != nil {
-		log.Fatal(err)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
