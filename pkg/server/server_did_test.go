@@ -408,6 +408,16 @@ func TestDIDAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&gotDIDsResponseAfterDelete)
 		assert.NoError(tt, err)
 		assert.Len(tt, gotDIDsResponseAfterDelete.DIDs, 0)
+
+		// get all deleted dids for method
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key?deleted=true", requestReader)
+		err = didService.GetDIDsByMethod(newRequestContextWithParams(params), w, req)
+		assert.NoError(tt, err)
+
+		var gotDeletedDIDsResponseAfterDelete router.GetDIDsByMethodResponse
+		err = json.NewDecoder(w.Body).Decode(&gotDeletedDIDsResponseAfterDelete)
+		assert.NoError(tt, err)
+		assert.Len(tt, gotDeletedDIDsResponseAfterDelete.DIDs, 1)
 	})
 
 	t.Run("Test Get DIDs By Method", func(tt *testing.T) {
