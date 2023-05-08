@@ -56,3 +56,10 @@ name = "credential"
 
 [services.manifest]
 name = "manifest"
+
+[services.presentation]
+name = "presentation"
+
+[services.webhook]
+name = "webhook"
+webhook_timeout = "10s"
