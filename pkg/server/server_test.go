@@ -319,6 +319,7 @@ func testManifest(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Se
 func testWebhookService(t *testing.T, bolt storage.ServiceStorage) *webhook.Service {
 	serviceConfig := config.WebhookServiceConfig{
 		BaseServiceConfig: &config.BaseServiceConfig{Name: "webhook"},
+		WebhookTimeout:    "10s",
 	}
 
 	// create a webhook service
