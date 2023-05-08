@@ -219,7 +219,7 @@ func runGo(cmd string, args ...string) error {
 	return sh.Run(findOnPathOrGoPath("go"), append([]string{"run", cmd}, args...)...)
 }
 
-// InstallIfNotPresent installs a go based tool (if not already installed)
+// InstallIfNotPresent installs a go based tool (if not already installed).
 func installIfNotPresent(execName, goPackage string) error {
 	usr, err := user.Current()
 	if err != nil {
