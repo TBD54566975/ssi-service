@@ -29,7 +29,7 @@ func TestWebhookRouter(t *testing.T) {
 		db := setupTestDB(tt)
 		assert.NotNil(tt, db)
 
-		serviceConfig := config.WebhookServiceConfig{}
+		serviceConfig := config.WebhookServiceConfig{WebhookTimeout: "10s"}
 		webhookService, err := webhook.NewWebhookService(serviceConfig, db)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, webhookService)
