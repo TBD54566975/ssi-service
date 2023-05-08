@@ -21,9 +21,10 @@ import (
 )
 
 type Service struct {
-	storage    *Storage
-	config     config.WebhookServiceConfig
-	httpClient *http.Client
+	storage         *Storage
+	config          config.WebhookServiceConfig
+	httpClient      *http.Client
+	timeoutDuration time.Duration
 }
 
 func (s Service) Type() framework.Type {
@@ -57,10 +58,16 @@ func NewWebhookService(config config.WebhookServiceConfig, s storage.ServiceStor
 
 	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 
+	duration, err := time.ParseDuration(config.WebhookTimeout)
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "parsing webhook timeout")
+	}
+
 	service := Service{
-		storage:    webhookStorage,
-		config:     config,
-		httpClient: client,
+		storage:         webhookStorage,
+		config:          config,
+		httpClient:      client,
+		timeoutDuration: duration,
 	}
 
 	if !service.Status().IsReady() {
@@ -167,13 +174,7 @@ func (s Service) GetSupportedVerbs() GetSupportedVerbsResponse {
 }
 
 func (s Service) PublishWebhook(noun Noun, verb Verb, payloadReader io.Reader) {
-	duration, err := time.ParseDuration(s.config.WebhookTimeout)
-	if err != nil {
-		logrus.WithError(err).Error("problem parsing webhook timeout")
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), duration)
+	ctx, cancel := context.WithTimeout(context.Background(), s.timeoutDuration)
 	defer cancel()
 
 	webhook, err := s.storage.GetWebhook(ctx, string(noun), string(verb))
