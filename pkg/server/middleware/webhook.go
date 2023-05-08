@@ -43,7 +43,7 @@ func Webhook(webhookService svcframework.Service, noun webhook.Noun, verb webhoo
 			err := handler(ctx, wrappedWriter, r)
 
 			whService := webhookService.(*webhook.Service)
-			go whService.PublishWebhook(ctx, noun, verb, buf)
+			go whService.PublishWebhook(noun, verb, buf)
 
 			return err
 		}
