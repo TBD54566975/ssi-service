@@ -32,10 +32,10 @@ require (
 	go.einride.tech/aip v0.60.0
 	go.etcd.io/bbolt v1.3.7
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.40.0
-	go.opentelemetry.io/otel v1.15.0
-	go.opentelemetry.io/otel/exporters/jaeger v1.15.0
-	go.opentelemetry.io/otel/sdk v1.15.0
-	go.opentelemetry.io/otel/trace v1.15.0
+	go.opentelemetry.io/otel v1.15.1
+	go.opentelemetry.io/otel/exporters/jaeger v1.15.1
+	go.opentelemetry.io/otel/sdk v1.15.1
+	go.opentelemetry.io/otel/trace v1.15.1
 	golang.org/x/crypto v0.8.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/h2non/gock.v1 v1.1.2
