@@ -2,6 +2,7 @@ package integration
 
 import (
 	"bytes"
+	gocrypto "crypto"
 	"embed"
 	"fmt"
 	"io"
@@ -196,24 +197,14 @@ type credApplicationParams struct {
 	ManifestID   string
 }
 
-func CreateCredentialApplicationJWT(credApplication credApplicationParams, credentialJWT, aliceDID, aliceKID, aliceDIDPrivateKey string) (string, error) {
+func CreateCredentialApplicationJWT(credApplication credApplicationParams, credentialJWT, aliceDID, aliceKID string, aliceDIDPrivateKey gocrypto.PrivateKey) (string, error) {
 	logrus.Println("\n\nCreate an Application JWT:")
 	applicationJSON, err := resolveTemplate(credApplication, "application-input.json")
 	if err != nil {
 		return "", err
 	}
 
-	alicePrivKeyBytes, err := base58.Decode(aliceDIDPrivateKey)
-	if err != nil {
-		return "", errors.Wrap(err, "base58 decoding")
-	}
-
-	alicePrivKey, err := crypto.BytesToPrivKey(alicePrivKeyBytes, crypto.Ed25519)
-	if err != nil {
-		return "", errors.Wrap(err, "bytes to priv key")
-	}
-
-	signer, err := keyaccess.NewJWKKeyAccess(aliceDID, aliceKID, alicePrivKey)
+	signer, err := keyaccess.NewJWKKeyAccess(aliceDID, aliceKID, aliceDIDPrivateKey)
 	if err != nil {
 		return "", errors.Wrap(err, "creating signer")
 	}
