@@ -112,7 +112,7 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service, webhookServi
 	case svcframework.Manifest:
 		return s.ManifestAPI(service, webhookService)
 	case svcframework.Presentation:
-		return s.PresentationAPI(service)
+		return s.PresentationAPI(service, webhookService)
 	case svcframework.Operation:
 		return s.OperationAPI(service)
 	case svcframework.Issuing:
@@ -183,7 +183,7 @@ func (s *SSIServer) CredentialAPI(service svcframework.Service, webhookService *
 	return
 }
 
-func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
+func (s *SSIServer) PresentationAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
 	pRouter, err := router.NewPresentationRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating credential router")
@@ -198,7 +198,7 @@ func (s *SSIServer) PresentationAPI(service svcframework.Service) (err error) {
 
 	submissionHandlerPath := V1Prefix + PresentationsPrefix + SubmissionsPrefix
 
-	s.Handle(http.MethodPut, submissionHandlerPath, pRouter.CreateSubmission)
+	s.Handle(http.MethodPut, submissionHandlerPath, pRouter.CreateSubmission, middleware.Webhook(webhookService, webhook.Submission, webhook.Create))
 	s.Handle(http.MethodGet, path.Join(submissionHandlerPath, "/:id"), pRouter.GetSubmission)
 	s.Handle(http.MethodGet, submissionHandlerPath, pRouter.ListSubmissions)
 	s.Handle(http.MethodPut, path.Join(submissionHandlerPath, "/:id", "/review"), pRouter.ReviewSubmission)
