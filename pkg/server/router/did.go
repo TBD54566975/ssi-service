@@ -241,7 +241,7 @@ type GetDIDsRequest struct {
 // @Tags        DecentralizedIdentityAPI
 // @Accept      json
 // @Produce     json
-// @Param       deleted  query    boolean false
+// @Param       deleted  query    boolean false "When true, returns soft-deleted DIDs. Otherwise, returns DIDs that have not been soft-deleted. Default is false."
 // @Param       request body     GetDIDsRequest true "request body"
 // @Success     200     {object} GetDIDsByMethodResponse
 // @Failure     400     {string} string "Bad request"
