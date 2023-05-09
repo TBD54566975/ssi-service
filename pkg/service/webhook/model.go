@@ -1,6 +1,9 @@
 package webhook
 
-import "net/url"
+import (
+	"encoding/json"
+	"net/url"
+)
 
 // In the context of webhooks, it's common to use noun.verb notation to describe events,
 // such as "credential.create" or "schema.delete".
@@ -31,10 +34,10 @@ type Webhook struct {
 }
 
 type Payload struct {
-	Noun Noun   `json:"noun" validate:"required"`
-	Verb Verb   `json:"verb" validate:"required"`
-	URL  string `json:"url" validate:"required"`
-	Data any    `json:"data,omitempty"`
+	Noun Noun            `json:"noun" validate:"required"`
+	Verb Verb            `json:"verb" validate:"required"`
+	URL  string          `json:"url" validate:"required"`
+	Data json.RawMessage `json:"data,omitempty"`
 }
 
 type CreateWebhookRequest struct {

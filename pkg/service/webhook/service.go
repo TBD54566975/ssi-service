@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
@@ -20,9 +21,10 @@ import (
 )
 
 type Service struct {
-	storage    *Storage
-	config     config.WebhookServiceConfig
-	httpClient *http.Client
+	storage         *Storage
+	config          config.WebhookServiceConfig
+	httpClient      *http.Client
+	timeoutDuration time.Duration
 }
 
 func (s Service) Type() framework.Type {
@@ -56,10 +58,16 @@ func NewWebhookService(config config.WebhookServiceConfig, s storage.ServiceStor
 
 	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 
+	duration, err := time.ParseDuration(config.WebhookTimeout)
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "parsing webhook timeout")
+	}
+
 	service := Service{
-		storage:    webhookStorage,
-		config:     config,
-		httpClient: client,
+		storage:         webhookStorage,
+		config:          config,
+		httpClient:      client,
+		timeoutDuration: duration,
 	}
 
 	if !service.Status().IsReady() {
@@ -165,8 +173,11 @@ func (s Service) GetSupportedVerbs() GetSupportedVerbsResponse {
 	return GetSupportedVerbsResponse{Verbs: []Verb{Create, Delete}}
 }
 
-func (s Service) PublishWebhook(ctx context.Context, noun Noun, verb Verb, payloadReader io.Reader) {
-	webhook, err := s.storage.GetWebhook(context.Background(), string(noun), string(verb))
+func (s Service) PublishWebhook(noun Noun, verb Verb, payloadReader io.Reader) {
+	ctx, cancel := context.WithTimeout(context.Background(), s.timeoutDuration)
+	defer cancel()
+
+	webhook, err := s.storage.GetWebhook(ctx, string(noun), string(verb))
 	if err != nil {
 		logrus.WithError(err).Warn("get webhook")
 		return
@@ -182,7 +193,8 @@ func (s Service) PublishWebhook(ctx context.Context, noun Noun, verb Verb, paylo
 		return
 	}
 
-	postPayload := Payload{Noun: noun, Verb: verb, Data: string(payloadBytes)}
+	postPayload := Payload{Noun: noun, Verb: verb, Data: payloadBytes}
+
 	for _, url := range webhook.URLS {
 		postPayload.URL = url
 		postJSONData, err := json.Marshal(postPayload)
@@ -193,7 +205,7 @@ func (s Service) PublishWebhook(ctx context.Context, noun Noun, verb Verb, paylo
 
 		err = s.post(ctx, url, string(postJSONData))
 		if err != nil {
-			logrus.Warnf("posting payload to %s", url)
+			logrus.WithError(err).Warnf("posting payload to %s", url)
 		}
 	}
 }
