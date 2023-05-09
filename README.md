@@ -31,10 +31,10 @@ Decentralized Web Platform architecture which you can learn more about in our
 Steps to issue an Employment Status Credential:
 1. Spin up and host the SSI-Service
 2. Add the ability for your employees to click 'apply for a credential' on your internal EMS (should we show a front end button code example)
-3. [Create an Issuer DID](blob/main/integration/common.go#L36) for your business
-4. [Create a Schema](blob/main/integration/common.go#L66)
-5. [Create a Credential Manifest](blob/main/integration/common.go#L154)
-6. [Submit a Credential Application](blob/main/integration/common.go#L173)
+3. [Create an Issuer DID](https://github.com/TBD54566975/ssi-service/blob/eabbb2a58eec06ce3998d088811c4afc53026afd/integration/common.go#L38) for your business
+4. [Create a Schema](https://github.com/TBD54566975/ssi-service/blob/eabbb2a58eec06ce3998d088811c4afc53026afd/integration/common.go#L90)
+5. [Create a Credential Manifest](https://github.com/TBD54566975/ssi-service/blob/main/integration/common.go#L180)
+6. [Submit a Credential Application](https://github.com/TBD54566975/ssi-service/blob/eabbb2a58eec06ce3998d088811c4afc53026afd/integration/common.go#L199)
 
 ## Configuration
 
