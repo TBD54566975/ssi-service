@@ -110,7 +110,7 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service, webhookServi
 	case svcframework.KeyStore:
 		return s.KeyStoreAPI(service)
 	case svcframework.Manifest:
-		return s.ManifestAPI(service)
+		return s.ManifestAPI(service, webhookService)
 	case svcframework.Presentation:
 		return s.PresentationAPI(service)
 	case svcframework.Operation:
@@ -236,7 +236,7 @@ func (s *SSIServer) OperationAPI(service svcframework.Service) (err error) {
 	return
 }
 
-func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
+func (s *SSIServer) ManifestAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
 	manifestRouter, err := router.NewManifestRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating manifest router")
@@ -246,16 +246,16 @@ func (s *SSIServer) ManifestAPI(service svcframework.Service) (err error) {
 	applicationsHandlerPath := V1Prefix + ManifestsPrefix + ApplicationsPrefix
 	responsesHandlerPath := V1Prefix + ManifestsPrefix + ResponsesPrefix
 
-	s.Handle(http.MethodPut, manifestHandlerPath, manifestRouter.CreateManifest)
+	s.Handle(http.MethodPut, manifestHandlerPath, manifestRouter.CreateManifest, middleware.Webhook(webhookService, webhook.Manifest, webhook.Create))
 
 	s.Handle(http.MethodGet, manifestHandlerPath, manifestRouter.GetManifests)
 	s.Handle(http.MethodGet, path.Join(manifestHandlerPath, "/:id"), manifestRouter.GetManifest)
-	s.Handle(http.MethodDelete, path.Join(manifestHandlerPath, "/:id"), manifestRouter.DeleteManifest)
+	s.Handle(http.MethodDelete, path.Join(manifestHandlerPath, "/:id"), manifestRouter.DeleteManifest, middleware.Webhook(webhookService, webhook.Manifest, webhook.Delete))
 
-	s.Handle(http.MethodPut, applicationsHandlerPath, manifestRouter.SubmitApplication)
+	s.Handle(http.MethodPut, applicationsHandlerPath, manifestRouter.SubmitApplication, middleware.Webhook(webhookService, webhook.Application, webhook.Create))
 	s.Handle(http.MethodGet, applicationsHandlerPath, manifestRouter.GetApplications)
 	s.Handle(http.MethodGet, path.Join(applicationsHandlerPath, "/:id"), manifestRouter.GetApplication)
-	s.Handle(http.MethodDelete, path.Join(applicationsHandlerPath, "/:id"), manifestRouter.DeleteApplication)
+	s.Handle(http.MethodDelete, path.Join(applicationsHandlerPath, "/:id"), manifestRouter.DeleteApplication, middleware.Webhook(webhookService, webhook.Application, webhook.Delete))
 	s.Handle(http.MethodPut, path.Join(applicationsHandlerPath, "/:id", "/review"), manifestRouter.ReviewApplication)
 
 	s.Handle(http.MethodGet, responsesHandlerPath, manifestRouter.GetResponses)

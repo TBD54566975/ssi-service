@@ -19,6 +19,7 @@ const (
 	Manifest     = Noun("Manifest")
 	Schema       = Noun("SchemaID")
 	Presentation = Noun("Presentation")
+	Application  = Noun("Application")
 )
 
 // Supported Verbs
@@ -100,7 +101,7 @@ func (cwr CreateWebhookRequest) IsValid() bool {
 
 func (n Noun) IsValid() bool {
 	switch n {
-	case Credential, DID, Manifest, Schema, Presentation:
+	case Credential, DID, Manifest, Schema, Presentation, Application:
 		return true
 	}
 	return false
