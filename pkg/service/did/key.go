@@ -110,7 +110,7 @@ func (h *keyHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	return &GetDIDsResponse{DIDs: dids}, nil
 }
 
-// GetDeletedDIDs returns only DIDs we have in storage for ION with SoftDeleted flag set to true
+// GetDeletedDIDs returns only DIDs we have in storage for Key with SoftDeleted flag set to true
 func (h *keyHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	logrus.Debug("getting did:key DIDs")
 

@@ -237,10 +237,11 @@ type GetDIDsRequest struct {
 // GetDIDsByMethod godoc
 //
 // @Summary     Get DIDs
-// @Description Get DIDs by method
+// @Description Get DIDs by method. Checks for an optional "deleted=true" query parameter, which exclusively returns DIDs that have been "Soft Deleted".
 // @Tags        DecentralizedIdentityAPI
 // @Accept      json
 // @Produce     json
+// @Param       deleted  query    boolean false
 // @Param       request body     GetDIDsRequest true "request body"
 // @Success     200     {object} GetDIDsByMethodResponse
 // @Failure     400     {string} string "Bad request"
