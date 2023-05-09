@@ -108,6 +108,12 @@ func TestDIDRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getDIDsResponse)
 		assert.Len(tt, getDIDsResponse.DIDs, 0)
+
+		// get deleted DIDs back
+		getDIDsResponse, err = didService.GetDIDsByMethod(context.Background(), did.GetDIDsRequest{Method: didsdk.KeyMethod, Deleted: true})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, getDIDsResponse)
+		assert.Len(tt, getDIDsResponse.DIDs, 2)
 	})
 
 	t.Run("DID Web Service Test", func(tt *testing.T) {
