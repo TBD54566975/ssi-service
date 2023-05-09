@@ -11,6 +11,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/goccy/go-json"
 	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -215,10 +216,27 @@ func getCredentialJSON(applicationJSON map[string]any, ct issuing.CredentialTemp
 			if err != nil {
 				return nil, errors.Wrapf(err, "looking up json path \"%s\" for submission=\"%s\"", descriptor.Path, descriptor.ID)
 			}
-			return credsdk.ToCredentialJSONMap(c)
+
+			return toCredentialJSON(c)
 		}
 	}
 	return nil, errors.Errorf("could not find credential for input_descriptor=\"%s\"", ct.CredentialInputDescriptor)
+}
+
+func toCredentialJSON(c any) (map[string]any, error) {
+	_, _, cred, err := credsdk.ToCredential(c)
+	if err != nil {
+		return nil, errors.Wrapf(err, "converting credential to json")
+	}
+	credBytes, err := json.Marshal(cred)
+	if err != nil {
+		return nil, errors.Wrapf(err, "marshalling credential to json")
+	}
+	var credJSON map[string]any
+	if err = json.Unmarshal(credBytes, &credJSON); err != nil {
+		return nil, errors.Wrapf(err, "unmarshalling credential to json")
+	}
+	return credJSON, nil
 }
 
 // TODO(gabe) add applicant to response id once https://github.com/TBD54566975/ssi-sdk/issues/372 is in
