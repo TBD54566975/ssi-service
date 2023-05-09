@@ -140,6 +140,21 @@ func (h *webHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	}
 	return &GetDIDsResponse{DIDs: dids}, nil
 }
+func (h *webHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error) {
+	logrus.Debug("getting did:web DID")
+
+	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.WebMethod.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "getting did:web DIDs")
+	}
+	dids := make([]did.Document, 0, len(gotDIDs))
+	for _, gotDID := range gotDIDs {
+		if gotDID.IsSoftDeleted() {
+			dids = append(dids, gotDID.GetDocument())
+		}
+	}
+	return &GetDIDsResponse{DIDs: dids}, nil
+}
 
 func (h *webHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error {
 	logrus.Debugf("soft deleting DID: %+v", request)

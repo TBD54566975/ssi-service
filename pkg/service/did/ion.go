@@ -262,6 +262,23 @@ func (h *ionHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	return &GetDIDsResponse{DIDs: dids}, nil
 }
 
+// GetDeletedDIDs returns only DIDs we have in storage for ION with SoftDeleted flag set to true
+func (h *ionHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error) {
+	logrus.Debug("getting stored did:ion DIDs")
+
+	gotDIDs, err := h.storage.GetDIDs(ctx, did.IONMethod.String(), new(ionStoredDID))
+	if err != nil {
+		return nil, fmt.Errorf("error getting did:ion DIDs")
+	}
+	dids := make([]did.Document, 0, len(gotDIDs))
+	for _, gotDID := range gotDIDs {
+		if gotDID.IsSoftDeleted() {
+			dids = append(dids, gotDID.GetDocument())
+		}
+	}
+	return &GetDIDsResponse{DIDs: dids}, nil
+}
+
 // SoftDeleteDID soft deletes a DID from storage but has no effect on the DID's state on the network
 func (h *ionHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error {
 	logrus.Debugf("soft deleting DID: %+v", request)

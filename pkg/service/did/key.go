@@ -110,6 +110,23 @@ func (h *keyHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	return &GetDIDsResponse{DIDs: dids}, nil
 }
 
+// GetDeletedDIDs returns only DIDs we have in storage for Key with SoftDeleted flag set to true
+func (h *keyHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error) {
+	logrus.Debug("getting did:key DIDs")
+
+	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.KeyMethod.String())
+	if err != nil {
+		return nil, fmt.Errorf("error getting did:key DIDs")
+	}
+	dids := make([]did.Document, 0, len(gotDIDs))
+	for _, gotDID := range gotDIDs {
+		if gotDID.IsSoftDeleted() {
+			dids = append(dids, gotDID.GetDocument())
+		}
+	}
+	return &GetDIDsResponse{DIDs: dids}, nil
+}
+
 func (h *keyHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error {
 	logrus.Debugf("soft deleting DID: %+v", request)
 

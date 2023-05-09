@@ -58,7 +58,8 @@ type GetKeyFromDIDResponse struct {
 }
 
 type GetDIDsRequest struct {
-	Method didsdk.Method `json:"method" validate:"required"`
+	Method  didsdk.Method `json:"method" validate:"required"`
+	Deleted bool          `json:"deleted"`
 }
 
 // GetDIDsResponse is the JSON-serializable response for getting all DIDs for a given method
