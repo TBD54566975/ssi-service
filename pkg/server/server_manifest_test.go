@@ -1103,8 +1103,8 @@ func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *d
 					Schema:                    createdSchema.ID,
 					CredentialInputDescriptor: "test-id",
 					Data: issuing.ClaimTemplates{
-						"firstName": "$.vc.credentialSubject.firstName",
-						"lastName":  "$.vc.credentialSubject.lastName",
+						"firstName": "$.credentialSubject.firstName",
+						"lastName":  "$.credentialSubject.lastName",
 						"state":     "CA",
 					},
 					Expiry: issuing.TimeLike{
