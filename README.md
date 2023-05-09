@@ -48,8 +48,8 @@ service.
 ### Steps for SSI-Service to consume its configuration:
 1. On startup: SSI-Service loads default values into the SSIServiceConfig
 2. Checks for a TOML config file:
-  - If exists...load toml file
-  - If does not exist...it uses a default config defined in the code inline
+- If exists...load toml file
+- If does not exist...it uses a default config defined in the code inline
 3. Finally, it loads the config/.env file and adds the env variables defined in this file to the final SSIServiceConfig
 
 ## Build & Test
@@ -90,8 +90,6 @@ To use the pre-published images:
 ```shell
 cd build && docker-compose up -d
 ```
-
-
 
 ## Health and Readiness Checks
 
@@ -143,7 +141,7 @@ Note: Your port by differ, the range of the ports for swagger are between `8002`
 - [x] [DID Management](https://www.w3.org/TR/did-core/)
   - [x] [did:key](https://w3c-ccg.github.io/did-method-key/)
   - [x] [did:web](https://w3c-ccg.github.io/did-method-web/)
-  - [ ] [did:ion](https://identity.foundation/ion/)
+  - [x] [did:ion](https://identity.foundation/ion/) _Note: updates not yet supported_
 - [x] [Verifiable Credential Schema](https://w3c-ccg.github.io/vc-json-schemas/v2/index.html) Management
 - [x] [Verifiable Credential](https://www.w3.org/TR/vc-data-model) Issuance & Verification
   - [x] Signing and verification with [JWTs](https://w3c.github.io/vc-jwt/)
@@ -152,8 +150,8 @@ Note: Your port by differ, the range of the ports for swagger are between `8002`
 - [x] Requesting, Receiving, and the Validation of Verifiable Claims
   using [Presentation Exchange](https://identity.foundation/presentation-exchange/)
 - [x] Status of Verifiable Credentials using the [Status List 2021](https://w3c-ccg.github.io/vc-status-list-2021/)
-- [ ] Creating and managing Trust documents using [Trust Establishment](https://identity.foundation/trust-establishment/)
 - [x] [DID Well Known Configuration](https://identity.foundation/.well-known/resources/did-configuration/) documents
+- [ ] Creating and managing Trust documents using [Trust Establishment](https://identity.foundation/trust-establishment/)
 
 ## Vision, Features, and Development
 
@@ -161,8 +159,8 @@ The vision for the project is laid out in [this document](doc/VISION.md).
 
 The project follows a proposal-based improvement format called [SIPs, outlined here.](sip/README.md).
 
-Please [open a discussion](https://forums.tbd.website/c/self-sovereign-identity/16), join Discord [SSI conversations](https://discord.com/channels/937858703112155166/969272692891086868),
-or [issue](https://github.com/TBD54566975/ssi-service/issues) if you are interested in helping shape the future of the project.
+Please [join Discord](https://discord.com/invite/tbd),
+or open an [issue](https://github.com/TBD54566975/ssi-service/issues) if you are interested in helping shape the future of the project.
 
 ## Project Resources
 

@@ -597,9 +597,7 @@ func TestManifestAPI(t *testing.T) {
 			Reason:   "I'm the almighty approver",
 			CredentialOverrides: map[string]manifestsvc.CredentialOverride{
 				"id1": {
-					Data: map[string]any{
-						"looks": "pretty darn handsome",
-					},
+					Data:      map[string]any{"looks": "pretty darn handsome"},
 					Expiry:    &expireAt,
 					Revocable: true,
 				},

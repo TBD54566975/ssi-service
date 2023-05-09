@@ -347,14 +347,13 @@ func (s Service) attemptAutomaticIssuance(ctx context.Context, request model.Sub
 		logrus.Warnf("found multiple issuance templates for manifest<%s>, using first entry only", manifestID)
 	}
 
-	credResp, creds, err := s.buildCredentialResponse(ctx, applicantDID, manifestID, gotManifest.IssuerKID,
-		gotManifest.Manifest, true, "automatic creation via issuance template", &issuanceTemplate,
-		request.Application, request.ApplicationJSON, nil)
+	credResp, creds, err := s.buildFulfillmentCredentialResponseFromTemplate(ctx, applicantDID, manifestID, gotManifest.IssuerKID,
+		gotManifest.Manifest, issuanceTemplate, request.Application, request.ApplicationJSON)
 	if err != nil {
 		return nil, err
 	}
 
-	responseJWT, err := s.signCredentialResponseJWT(ctx, gotManifest.IssuerKID, CredentialResponseContainer{
+	responseJWT, err := s.signCredentialResponse(ctx, gotManifest.IssuerKID, CredentialResponseContainer{
 		Response:    *credResp,
 		Credentials: credint.ContainersToInterface(creds),
 	})
@@ -370,7 +369,7 @@ func (s Service) attemptAutomaticIssuance(ctx context.Context, request model.Sub
 		Credentials:  creds,
 		ResponseJWT:  *responseJWT,
 	}
-	_, storedOp, err := s.storage.ReviewApplication(ctx, applicationID, true,
+	_, storedOp, err := s.storage.StoreReviewApplication(ctx, applicationID, true,
 		"automatic from issuing template", opcredential.IDFromResponseID(applicationID), storedResponse)
 	if err != nil {
 		return nil, errors.Wrap(err, "reviewing application")
@@ -393,44 +392,51 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 	}
 	applicationID := application.ID
 	if gotManifest == nil {
-		return nil, sdkutil.LoggingNewErrorf(
-			"application<%s> is not valid; a manifest does not exist with id: %s",
-			applicationID,
-			manifestID,
-		)
+		return nil, sdkutil.LoggingNewErrorf("application<%s> is not valid; a manifest does not exist with id: %s", applicationID, manifestID)
 	}
 	credManifest := gotManifest.Manifest
 	applicantDID := application.ApplicantDID
 
-	// build the credential response
-	credResp, creds, err := s.buildCredentialResponse(ctx, applicantDID, manifestID, gotManifest.IssuerKID,
-		credManifest, request.Approved, request.Reason, nil, application.Application, nil, request.CredentialOverrides)
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not build credential response")
+	var responseContainer CredentialResponseContainer
+	var credentials []credint.Container
+	if request.Approved {
+		// build the credential response
+		approvalResponse, creds, err := s.buildFulfillmentCredentialResponse(ctx, applicantDID, applicationID, manifestID, gotManifest.IssuerKID, credManifest, request.CredentialOverrides)
+		if err != nil {
+			return nil, sdkutil.LoggingErrorMsg(err, "building credential response")
+		}
+		credentials = creds
+
+		// prepare credentials for the response
+		genericCredentials := credint.ContainersToInterface(creds)
+		responseContainer = CredentialResponseContainer{
+			Response:    *approvalResponse,
+			Credentials: genericCredentials,
+		}
+	} else {
+		denialResponse, err := buildDenialCredentialResponse(manifestID, applicationID, request.Reason)
+		if err != nil {
+			return nil, sdkutil.LoggingErrorMsg(err, "building denial credential response")
+		}
+		responseContainer = CredentialResponseContainer{Response: *denialResponse}
 	}
 
-	// prepare credentials for the response
-	credentials := credint.ContainersToInterface(creds)
-
 	// sign the response before returning
-	responseJWT, err := s.signCredentialResponseJWT(ctx, gotManifest.IssuerKID, CredentialResponseContainer{
-		Response:    *credResp,
-		Credentials: credentials,
-	})
+	responseJWT, err := s.signCredentialResponse(ctx, gotManifest.IssuerKID, responseContainer)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not sign credential response")
 	}
 
 	// store the response we've generated
 	storeResponseRequest := manifeststg.StoredResponse{
-		ID:           credResp.ID,
+		ID:           responseContainer.Response.ID,
 		ManifestID:   manifestID,
 		ApplicantDID: applicantDID,
-		Response:     *credResp,
-		Credentials:  creds,
+		Response:     responseContainer.Response,
+		Credentials:  credentials,
 		ResponseJWT:  *responseJWT,
 	}
-	storedResponse, _, err := s.storage.ReviewApplication(ctx, request.ID, request.Approved, request.Reason,
+	storedResponse, _, err := s.storage.StoreReviewApplication(ctx, request.ID, request.Approved, request.Reason,
 		opcredential.IDFromResponseID(request.ID), storeResponseRequest)
 	if err != nil {
 		return nil, errors.Wrap(err, "updating submission")
