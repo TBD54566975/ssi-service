@@ -148,9 +148,6 @@ func createWellKnownDIDConfiguration(tt *testing.T, didResponse *did.CreateDIDRe
 	fmt.Println("Created Well Known Output for DID:")
 	fmt.Println(didResponse.DID.ID)
 
-	fmt.Println("DID Private Key:")
-	fmt.Println(didResponse.PrivateKeyBase58)
-
 	fmt.Println("Well Known Config:")
 	fmt.Println(string(jsonStr))
 }

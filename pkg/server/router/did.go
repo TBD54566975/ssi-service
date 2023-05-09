@@ -68,17 +68,16 @@ type CreateDIDByMethodRequest struct {
 }
 
 type CreateDIDByMethodResponse struct {
-	DID              didsdk.Document `json:"did,omitempty"`
-	PrivateKeyBase58 string          `json:"privateKeyBase58,omitempty"`
-	KeyType          crypto.KeyType  `json:"keyType,omitempty"`
+	DID didsdk.Document `json:"did,omitempty"`
 }
 
 // CreateDIDByMethod godoc
 //
 // @Summary     Create DID Document
-// @Description Creates a DID document with the given method. The document created is stored internally and can be
-// @Description retrieved using the GetOperation. Method dependent registration (for example, DID web registration)
-// @Description is left up to the clients of this API.
+// @Description Creates a fully custodial DID document with the given method. The document created is stored internally
+// @Description and can be retrieved using the GetOperation. Method dependent registration (for example, DID web
+// @Description registration) is left up to the clients of this API. The private key(s) created by the method are stored
+// @Description internally never leave the service boundary.
 // @Tags        DecentralizedIdentityAPI
 // @Accept      json
 // @Produce     json
@@ -124,12 +123,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := CreateDIDByMethodResponse{
-		DID:              createDIDResponse.DID,
-		PrivateKeyBase58: createDIDResponse.PrivateKeyBase58,
-		KeyType:          createDIDResponse.KeyType,
-	}
-
+	resp := CreateDIDByMethodResponse{DID: createDIDResponse.DID}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 

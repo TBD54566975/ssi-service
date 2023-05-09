@@ -108,12 +108,7 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	if err = h.keyStore.StoreKey(ctx, keyStoreRequest); err != nil {
 		return nil, errors.Wrap(err, "could not store did:web private key")
 	}
-
-	return &CreateDIDResponse{
-		DID:              storedDID.DID,
-		PrivateKeyBase58: privKeyBase58,
-		KeyType:          request.KeyType,
-	}, nil
+	return &CreateDIDResponse{DID: storedDID.DID}, nil
 }
 
 func (h *webHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {

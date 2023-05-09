@@ -3,6 +3,8 @@ package integration
 import (
 	"testing"
 
+	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
@@ -29,21 +31,19 @@ func TestCreateParticipants(t *testing.T) {
 	assert.NotEmpty(t, issuerKID)
 	SetValue(presentationExchangeContext, "issuerKID", issuerKID)
 
-	holderOutput, err := CreateDIDKey()
+	holderPrivateKey, holderDIDKey, err := didsdk.GenerateDIDKey(crypto.Ed25519)
 	assert.NoError(t, err)
+	assert.NotEmpty(t, holderPrivateKey)
+	assert.NotEmpty(t, holderDIDKey)
 
-	holderDID, err := getJSONElement(holderOutput, "$.did.id")
+	holderDID, err := holderDIDKey.Expand()
 	assert.NoError(t, err)
-	assert.Contains(t, holderDID, "did:key")
-	SetValue(presentationExchangeContext, "holderDID", holderDID)
+	assert.NotEmpty(t, holderDID)
+	SetValue(presentationExchangeContext, "holderDID", holderDID.ID)
 
-	holderKID, err := getJSONElement(holderOutput, "$.did.verificationMethod[0].id")
-	assert.NoError(t, err)
+	holderKID := holderDID.VerificationMethod[0].ID
 	assert.NotEmpty(t, holderKID)
 	SetValue(presentationExchangeContext, "holderKID", holderKID)
-
-	holderPrivateKey, err := getJSONElement(holderOutput, "$.privateKeyBase58")
-	assert.NoError(t, err)
 	SetValue(presentationExchangeContext, "holderPrivateKey", holderPrivateKey)
 
 	verifierOutput, err := CreateDIDKey()
@@ -51,7 +51,7 @@ func TestCreateParticipants(t *testing.T) {
 
 	verifierDID, err := getJSONElement(verifierOutput, "$.did.id")
 	assert.NoError(t, err)
-	assert.Contains(t, holderDID, "did:key")
+	assert.Contains(t, verifierDID, "did:key")
 	SetValue(presentationExchangeContext, "verifierDID", verifierDID)
 
 	verifierKID, err := getJSONElement(verifierOutput, "$.did.verificationMethod[0].id")
@@ -121,7 +121,7 @@ func TestSubmissionFlow(t *testing.T) {
 		DefinitionID:  definitionID.(string),
 		CredentialJWT: credentialJWT,
 		SubmissionID:  uuid.NewString(),
-	}, holderPrivateKey.(string))
+	}, holderPrivateKey)
 	assert.NoError(t, err)
 
 	cancelOpID, err := getJSONElement(toBeCancelledOp, "$.id")
@@ -138,7 +138,7 @@ func TestSubmissionFlow(t *testing.T) {
 		DefinitionID:  definitionID.(string),
 		CredentialJWT: credentialJWT,
 		SubmissionID:  uuid.NewString(),
-	}, holderPrivateKey.(string))
+	}, holderPrivateKey)
 	assert.NoError(t, err)
 
 	opID, err := getJSONElement(submissionOpOutput, "$.id")
