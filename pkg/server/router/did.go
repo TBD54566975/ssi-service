@@ -3,7 +3,6 @@ package router
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -246,7 +245,7 @@ type GetDIDsRequest struct {
 // @Success     200     {object} GetDIDsByMethodResponse
 // @Failure     400     {string} string "Bad request"
 // @Failure     500     {string} string "Internal server error"
-// @Router      /v1/dids [get]
+// @Router      /v1/dids/{method} [get]
 func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	deleted := framework.GetQueryValue(r, DeletedParam)
@@ -255,19 +254,21 @@ func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, 
 		logrus.Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
-	isDeleted := false
+	getIsDeleted := false
 	if deleted != nil {
 		checkDeleted, err := strconv.ParseBool(*deleted)
-		isDeleted = checkDeleted
+		getIsDeleted = checkDeleted
 
 		if err != nil {
-			log.Fatal(err)
+			errMsg := "get DIDs by method request encountered a problem with the `deleted` query param"
+			logrus.Error(errMsg)
+			return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 		}
 	}
 
 	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
 	// TODO(gabe) differentiate between internal errors and not found DIDs
-	getDIDsRequest := did.GetDIDsRequest{Method: didsdk.Method(*method), Deleted: isDeleted}
+	getDIDsRequest := did.GetDIDsRequest{Method: didsdk.Method(*method), Deleted: getIsDeleted}
 	gotDIDs, err := dr.service.GetDIDsByMethod(ctx, getDIDsRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get DIDs for method: %s", *method)

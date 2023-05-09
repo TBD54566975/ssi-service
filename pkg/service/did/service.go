@@ -194,13 +194,16 @@ func (s *Service) GetKeyFromDID(ctx context.Context, request GetKeyFromDIDReques
 }
 
 func (s *Service) GetDIDsByMethod(ctx context.Context, request GetDIDsRequest) (*GetDIDsResponse, error) {
-	method := request.Method
-	deleted := request.Deleted
-	handler, err := s.getHandler(method)
+	handler, err := s.getHandler(request.Method)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", method)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
 	}
-	return handler.GetDIDs(ctx, deleted)
+	if request.Deleted {
+		return handler.GetDeletedDIDs(ctx)
+	} else {
+		return handler.GetDIDs(ctx)
+	}
+
 }
 
 func (s *Service) SoftDeleteDIDByMethod(ctx context.Context, request DeleteDIDRequest) error {

@@ -118,7 +118,7 @@ func (ds *Storage) GetDIDDefault(ctx context.Context, id string) (*DefaultStored
 // GetDIDs attempts to get all DIDs for a given method. It will return those it can even if it has trouble with some.
 // The out parameter must be a pointer to a struct for a type that implement the StoredDID interface.
 // The result is a slice of the type of the out parameter (an array of pointers to the type of the out parameter).)
-func (ds *Storage) GetDIDs(ctx context.Context, method string, outType StoredDID, deleted bool) ([]StoredDID, error) {
+func (ds *Storage) GetDIDs(ctx context.Context, method string, outType StoredDID) ([]StoredDID, error) {
 	if err := validateOut(outType); err != nil {
 		return nil, errors.Wrap(err, "validating the out type")
 	}
@@ -140,16 +140,14 @@ func (ds *Storage) GetDIDs(ctx context.Context, method string, outType StoredDID
 	for _, didBytes := range gotDIDs {
 		nextDID := reflect.New(reflect.TypeOf(outType).Elem()).Interface()
 		if err = json.Unmarshal(didBytes, &nextDID); err == nil {
-			if nextDID.(StoredDID).IsSoftDeleted() == deleted {
-				out = append(out, nextDID.(StoredDID))
-			}
+			out = append(out, nextDID.(StoredDID))
 		}
 	}
 	return out, nil
 }
 
-func (ds *Storage) GetDIDsDefault(ctx context.Context, method string, deleted bool) ([]DefaultStoredDID, error) {
-	gotDIDs, err := ds.GetDIDs(ctx, method, new(DefaultStoredDID), deleted)
+func (ds *Storage) GetDIDsDefault(ctx context.Context, method string) ([]DefaultStoredDID, error) {
+	gotDIDs, err := ds.GetDIDs(ctx, method, new(DefaultStoredDID))
 	if err != nil {
 		return nil, err
 	}

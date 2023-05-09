@@ -94,16 +94,35 @@ func (h *keyHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 	return &GetDIDResponse{DID: gotDID.DID}, nil
 }
 
-func (h *keyHandler) GetDIDs(ctx context.Context, deleted bool) (*GetDIDsResponse, error) {
+func (h *keyHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	logrus.Debug("getting did:key DIDs")
 
-	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.KeyMethod.String(), deleted)
+	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.KeyMethod.String())
 	if err != nil {
 		return nil, fmt.Errorf("error getting did:key DIDs")
 	}
 	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
-		dids = append(dids, gotDID.GetDocument())
+		if !gotDID.IsSoftDeleted() {
+			dids = append(dids, gotDID.GetDocument())
+		}
+	}
+	return &GetDIDsResponse{DIDs: dids}, nil
+}
+
+// GetDeletedDIDs returns only DIDs we have in storage for ION with SoftDeleted flag set to true
+func (h *keyHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error) {
+	logrus.Debug("getting did:key DIDs")
+
+	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.KeyMethod.String())
+	if err != nil {
+		return nil, fmt.Errorf("error getting did:key DIDs")
+	}
+	dids := make([]did.Document, 0, len(gotDIDs))
+	for _, gotDID := range gotDIDs {
+		if gotDID.IsSoftDeleted() {
+			dids = append(dids, gotDID.GetDocument())
+		}
 	}
 	return &GetDIDsResponse{DIDs: dids}, nil
 }
