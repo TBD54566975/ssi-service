@@ -3,6 +3,8 @@ package integration
 import (
 	"testing"
 
+	"github.com/TBD54566975/ssi-sdk/crypto"
+	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -29,29 +31,28 @@ func TestCreateIssuerDIDWebIntegration(t *testing.T) {
 	SetValue(didWebContext, "issuerKID", issuerKID)
 }
 
-func TestCreateAliceDIDWebIntegration(t *testing.T) {
+func TestCreateAliceDIDKeyForDIDWebIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
 
-	didWebOutput, err := CreateDIDWeb()
+	applicantPrivKey, applicantDIDKey, err := didsdk.GenerateDIDKey(crypto.Ed25519)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, didWebOutput)
+	assert.NotEmpty(t, applicantPrivKey)
+	assert.NotEmpty(t, applicantDIDKey)
 
-	aliceDID, err := getJSONElement(didWebOutput, "$.did.id")
+	applicantDID, err := applicantDIDKey.Expand()
 	assert.NoError(t, err)
-	assert.Contains(t, aliceDID, "did:web")
+	assert.NotEmpty(t, applicantDID)
+
+	aliceDID := applicantDID.ID
+	assert.Contains(t, aliceDID, "did:key")
 	SetValue(didWebContext, "aliceDID", aliceDID)
 
-	aliceKID, err := getJSONElement(didWebOutput, "$.did.verificationMethod[0].id")
-	assert.NoError(t, err)
+	aliceKID := applicantDID.VerificationMethod[0].ID
 	assert.NotEmpty(t, aliceKID)
 	SetValue(didWebContext, "aliceKID", aliceKID)
-
-	aliceDIDPrivateKey, err := getJSONElement(didWebOutput, "$.privateKeyBase58")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, aliceDID)
-	SetValue(didWebContext, "aliceDIDPrivateKey", aliceDIDPrivateKey)
+	SetValue(didWebContext, "aliceDIDPrivateKey", applicantPrivKey)
 }
 
 func TestDIDWebCreateSchemaIntegration(t *testing.T) {
