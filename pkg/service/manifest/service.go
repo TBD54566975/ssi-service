@@ -353,7 +353,7 @@ func (s Service) attemptAutomaticIssuance(ctx context.Context, request model.Sub
 		return nil, err
 	}
 
-	responseJWT, err := s.signCredentialResponseJWT(ctx, gotManifest.IssuerKID, CredentialResponseContainer{
+	responseJWT, err := s.signCredentialResponse(ctx, gotManifest.IssuerKID, CredentialResponseContainer{
 		Response:    *credResp,
 		Credentials: credint.ContainersToInterface(creds),
 	})
@@ -414,7 +414,7 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 			Credentials: genericCredentials,
 		}
 	} else {
-		denialResponse, err := s.buildDenialCredentialResponse(manifestID, applicationID, request.Reason, nil)
+		denialResponse, err := buildDenialCredentialResponse(manifestID, applicationID, request.Reason)
 		if err != nil {
 			return nil, sdkutil.LoggingErrorMsg(err, "building denial credential response")
 		}
@@ -422,7 +422,7 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 	}
 
 	// sign the response before returning
-	responseJWT, err := s.signCredentialResponseJWT(ctx, gotManifest.IssuerKID, responseContainer)
+	responseJWT, err := s.signCredentialResponse(ctx, gotManifest.IssuerKID, responseContainer)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not sign credential response")
 	}

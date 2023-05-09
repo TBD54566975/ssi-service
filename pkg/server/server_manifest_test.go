@@ -602,9 +602,7 @@ func TestManifestAPI(t *testing.T) {
 			Reason:   "I'm the almighty approver",
 			CredentialOverrides: map[string]manifestsvc.CredentialOverride{
 				"id1": {
-					Data: map[string]any{
-						"looks": "pretty darn handsome",
-					},
+					Data:      map[string]any{"looks": "pretty darn handsome"},
 					Expiry:    &expireAt,
 					Revocable: true,
 				},
@@ -1105,8 +1103,8 @@ func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *d
 					Schema:                    createdSchema.ID,
 					CredentialInputDescriptor: "test-id",
 					Data: issuing.ClaimTemplates{
-						"firstName": "$.credentialSubject.firstName",
-						"lastName":  "$.credentialSubject.lastName",
+						"firstName": "$.vc.credentialSubject.firstName",
+						"lastName":  "$.vc.credentialSubject.lastName",
 						"state":     "CA",
 					},
 					Expiry: issuing.TimeLike{

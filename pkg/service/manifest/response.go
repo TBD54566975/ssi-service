@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
@@ -16,7 +17,6 @@ import (
 
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
-	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
@@ -28,7 +28,7 @@ const (
 	DenialResponse errresp.Type = "DenialResponse"
 )
 
-func (s Service) signCredentialResponseJWT(ctx context.Context, issuerKID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
+func (s Service) signCredentialResponse(ctx context.Context, issuerKID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
 	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: issuerKID})
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing response with key<%s>", issuerKID)
@@ -46,32 +46,13 @@ func (s Service) signCredentialResponseJWT(ctx context.Context, issuerKID string
 	return responseToken, nil
 }
 
-func (s Service) fulfillmentCredentialResponse(ctx context.Context,
-	applicantDID, manifestID, issuerKID string, credManifest manifest.CredentialManifest,
-	application manifest.CredentialApplication,
-	template issuing.IssuanceTemplate,
-	applicationJSON map[string]any,
-	credentialOverrides map[string]model.CredentialOverride) (*manifest.CredentialResponse, []cred.Container, error) {
-	applicationID := application.ID
-	responseBuilder := manifest.NewCredentialResponseBuilder(manifestID)
-	if err := responseBuilder.SetApplicationID(applicationID); err != nil {
-		return nil, nil, sdkutil.LoggingErrorMsgf(err, "could not fulfill credential credentials: could not set credentials id: %s", applicationID)
-	}
-
-}
-
+// buildFulfillmentCredentialResponseFromTemplate builds a credential response from a template
 func (s Service) buildFulfillmentCredentialResponseFromTemplate(ctx context.Context,
 	applicantDID, manifestID, issuerKID string, credManifest manifest.CredentialManifest,
 	template issuing.IssuanceTemplate, application manifest.CredentialApplication,
 	applicationJSON map[string]any) (*manifest.CredentialResponse, []cred.Container, error) {
 	if template.IsValid() {
 		return nil, nil, errors.New("issuance template is not valid")
-	}
-
-	applicationID := application.ID
-	responseBuilder := manifest.NewCredentialResponseBuilder(manifestID)
-	if err := responseBuilder.SetApplicationID(applicationID); err != nil {
-		return nil, nil, sdkutil.LoggingErrorMsgf(err, "could not fulfill credential credentials: could not set credentials id: %s", applicationID)
 	}
 
 	templateMap := make(map[string]issuing.CredentialTemplate)
@@ -83,23 +64,52 @@ func (s Service) buildFulfillmentCredentialResponseFromTemplate(ctx context.Cont
 		templateCred := templateCred
 		templateMap[templateCred.ID] = templateCred
 	}
+	return s.fulfillmentCredentialResponse(ctx, application.ID, applicantDID, manifestID, issuingKID, credManifest, &application, templateMap, applicationJSON, nil)
+}
+
+// buildFulfillmentCredentialResponseFromOverrides builds a credential response from overrides
+func (s Service) buildFulfillmentCredentialResponse(ctx context.Context, applicantDID, applicationID, manifestID, issuerKID string,
+	credManifest manifest.CredentialManifest, overrides map[string]model.CredentialOverride) (*manifest.CredentialResponse, []cred.Container, error) {
+	return s.fulfillmentCredentialResponse(ctx, applicationID, applicantDID, manifestID, issuerKID, credManifest, nil, nil, nil, overrides)
+}
+
+// TODO(gabe) add applicant id to response once https://github.com/TBD54566975/ssi-sdk/issues/372 is in
+// unifies both templated and override paths for building a credential response
+func (s Service) fulfillmentCredentialResponse(ctx context.Context,
+	applicationID, applicantDID, manifestID, issuerKID string, credManifest manifest.CredentialManifest,
+	application *manifest.CredentialApplication,
+	templateMap map[string]issuing.CredentialTemplate,
+	applicationJSON map[string]any,
+	credentialOverrides map[string]model.CredentialOverride) (*manifest.CredentialResponse, []cred.Container, error) {
+	responseBuilder := manifest.NewCredentialResponseBuilder(manifestID)
+	if err := responseBuilder.SetApplicationID(applicationID); err != nil {
+		return nil, nil, sdkutil.LoggingErrorMsgf(err, "could not fulfill credential credentials: could not set credentials id: %s", applicationID)
+	}
 
 	creds := make([]cred.Container, 0, len(credManifest.OutputDescriptors))
 	for _, od := range credManifest.OutputDescriptors {
-		credentialRequest := credential.CreateCredentialRequest{
+		createCredentialRequest := credential.CreateCredentialRequest{
 			Issuer:    credManifest.Issuer.ID,
-			IssuerKID: issuingKID,
+			IssuerKID: issuerKID,
 			Subject:   applicantDID,
 			SchemaID:  od.Schema,
 			// TODO(gabe) need to add in data here to match the request + schema
 			Data: make(map[string]any),
 		}
-		appliedCredentialRequest, err := s.applyIssuanceTemplate(credentialRequest, template, templateMap, od, applicationJSON, credManifest, *application.PresentationSubmission)
-		if err != nil {
-			return nil, nil, err
+
+		// apply issuance template and then overrides
+		if len(templateMap) != 0 {
+			templatedCredentialRequest, err := s.applyIssuanceTemplate(createCredentialRequest, templateMap, od, applicationJSON, credManifest, *application.PresentationSubmission)
+			if err != nil {
+				return nil, nil, err
+			}
+			createCredentialRequest = *templatedCredentialRequest
+		}
+		if len(credentialOverrides) != 0 {
+			createCredentialRequest = s.applyCredentialOverrides(createCredentialRequest, credentialOverrides, od)
 		}
 
-		credentialResponse, err := s.credential.CreateCredential(ctx, *appliedCredentialRequest)
+		credentialResponse, err := s.credential.CreateCredential(ctx, createCredentialRequest)
 		if err != nil {
 			return nil, nil, sdkutil.LoggingErrorMsg(err, "could not create credential")
 		}
@@ -134,103 +144,15 @@ func (s Service) buildFulfillmentCredentialResponseFromTemplate(ctx context.Cont
 	return credRes, creds, nil
 }
 
-// TODO(gabe) add applicant id once https://github.com/TBD54566975/ssi-sdk/issues/372 is in
-func (s Service) buildFulfillmentCredentialResponse(ctx context.Context, applicantDID, applicationID, manifestID, issuerKID string,
-	credManifest manifest.CredentialManifest, credentialOverrides map[string]model.CredentialOverride) (*manifest.CredentialResponse, []cred.Container, error) {
-	responseBuilder := manifest.NewCredentialResponseBuilder(manifestID)
-	if err := responseBuilder.SetApplicationID(applicationID); err != nil {
-		return nil, nil, sdkutil.LoggingErrorMsgf(err, "building response with application ID: %s", applicationID)
-	}
-
-	creds := make([]cred.Container, 0, len(credManifest.OutputDescriptors))
-	for _, od := range credManifest.OutputDescriptors {
-		credentialRequest := credential.CreateCredentialRequest{
-			Issuer:    credManifest.Issuer.ID,
-			IssuerKID: issuerKID,
-			Subject:   applicantDID,
-			SchemaID:  od.Schema,
-			// TODO(gabe) need to add in data here to match the request + schema https://github.com/TBD54566975/ssi-service/issues/415
-			Data: make(map[string]any),
-		}
-		appliedCredentialRequest := s.applyRequestData(credentialRequest, credentialOverrides, od)
-		credentialResponse, err := s.credential.CreateCredential(ctx, appliedCredentialRequest)
-		if err != nil {
-			return nil, nil, sdkutil.LoggingErrorMsg(err, "creating credential")
-		}
-
-		creds = append(creds, credentialResponse.Container)
-	}
-
-	// build descriptor map based on credential type
-	descriptors := make([]exchange.SubmissionDescriptor, 0, len(creds))
-	for i, c := range creds {
-		var format string
-		if c.HasDataIntegrityCredential() {
-			format = string(exchange.LDPVC)
-		}
-		if c.HasJWTCredential() {
-			format = string(exchange.JWTVC)
-		}
-		descriptors = append(
-			descriptors, exchange.SubmissionDescriptor{
-				ID:     c.ID,
-				Format: format,
-				Path:   fmt.Sprintf("$.verifiableCredentials[%d]", i),
-			},
-		)
-	}
-
-	// set the information for the fulfilled credentials in the response
-	if err := responseBuilder.SetFulfillment(descriptors); err != nil {
-		return nil, nil, sdkutil.LoggingErrorMsg(err, "setting fulfillment")
-	}
-
-	credRes, err := responseBuilder.Build()
-	if err != nil {
-		return nil, nil, sdkutil.LoggingErrorMsg(err, "could not build response")
-	}
-	return credRes, creds, nil
-}
-
-func (s Service) buildDenialCredentialResponse(manifestID, applicationID, reason string, inputDescriptorIDs []string) (*manifest.CredentialResponse, error) {
-	responseBuilder := manifest.NewCredentialResponseBuilder(manifestID)
-	if err := responseBuilder.SetApplicationID(applicationID); err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "building response with application ID: %s", applicationID)
-	}
-	if err := responseBuilder.SetDenial(reason, inputDescriptorIDs...); err != nil {
-		return nil, errors.Wrap(err, "setting denial")
-	}
-	credRes, err := responseBuilder.Build()
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "building credential response")
-	}
-	return credRes, nil
-}
-
-func (s Service) applyRequestData(credentialRequest credential.CreateCredentialRequest, credentialOverrides map[string]model.CredentialOverride, od manifest.OutputDescriptor) credential.CreateCredentialRequest {
-	if credentialOverride, ok := credentialOverrides[od.ID]; ok {
-		for k, v := range credentialOverride.Data {
-			credentialRequest.Data[k] = v
-		}
-
-		if credentialOverride.Expiry != nil {
-			credentialRequest.Expiry = credentialOverride.Expiry.Format(time.RFC3339)
-		}
-		credentialRequest.Revocable = credentialOverride.Revocable
-	}
-	return credentialRequest
-}
-
 func (s Service) applyIssuanceTemplate(credentialRequest credential.CreateCredentialRequest,
-	template issuing.IssuanceTemplate, templateMap map[string]issuing.CredentialTemplate, od manifest.OutputDescriptor,
+	templateMap map[string]issuing.CredentialTemplate, od manifest.OutputDescriptor,
 	applicationJSON map[string]any, credManifest manifest.CredentialManifest, submission exchange.PresentationSubmission) (*credential.CreateCredentialRequest, error) {
-	credentialRequest.Issuer = template.Issuer
 	ct, ok := templateMap[od.ID]
 	if !ok {
 		logrus.Warnf("Did not find output_descriptor with ID \"%s\" in template. Skipping application.", od.ID)
 		return nil, nil
 	}
-	c, err := getCredential(applicationJSON, ct, credManifest, submission)
+	c, err := getCredentialJSON(applicationJSON, ct, credManifest, submission)
 	if err != nil {
 		return nil, err
 	}
@@ -259,13 +181,30 @@ func (s Service) applyIssuanceTemplate(credentialRequest credential.CreateCreden
 	return &credentialRequest, nil
 }
 
-func getCredential(applicationJSON map[string]any, ct issuing.CredentialTemplate,
+func (s Service) applyCredentialOverrides(credentialRequest credential.CreateCredentialRequest, credentialOverrides map[string]model.CredentialOverride, od manifest.OutputDescriptor) credential.CreateCredentialRequest {
+	if credentialOverride, ok := credentialOverrides[od.ID]; ok {
+		for k, v := range credentialOverride.Data {
+			if len(credentialRequest.Data) == 0 {
+				credentialRequest.Data = make(map[string]any)
+			}
+			credentialRequest.Data[k] = v
+		}
+
+		if credentialOverride.Expiry != nil {
+			credentialRequest.Expiry = credentialOverride.Expiry.Format(time.RFC3339)
+		}
+		credentialRequest.Revocable = credentialOverride.Revocable
+	}
+	return credentialRequest
+}
+
+func getCredentialJSON(applicationJSON map[string]any, ct issuing.CredentialTemplate,
 	credManifest manifest.CredentialManifest, submission exchange.PresentationSubmission) (any, error) {
 	if ct.CredentialInputDescriptor == "" {
-		return nil, nil
+		return nil, errors.New("cannot provide input descriptor when credential template does not have input descriptor")
 	}
 
-	if credManifest.PresentationDefinition == nil {
+	if credManifest.PresentationDefinition.IsEmpty() {
 		return nil, errors.New("cannot provide input descriptor when manifest does not have presentation definition")
 	}
 
@@ -276,31 +215,13 @@ func getCredential(applicationJSON map[string]any, ct issuing.CredentialTemplate
 			if err != nil {
 				return nil, errors.Wrapf(err, "looking up json path \"%s\" for submission=\"%s\"", descriptor.Path, descriptor.ID)
 			}
-			return fromFormat(exchange.CredentialFormat(descriptor.Format), c)
+			return credsdk.ToCredentialJSONMap(c)
 		}
 	}
 	return nil, errors.Errorf("could not find credential for input_descriptor=\"%s\"", ct.CredentialInputDescriptor)
 }
 
-func fromFormat(format exchange.CredentialFormat, claim any) (any, error) {
-	switch format {
-	case exchange.JWTVC.CredentialFormat():
-		_, token, err := util.ParseJWT(keyaccess.JWT(claim.(string)))
-		if err != nil {
-			return nil, errors.Wrapf(err, "parsing jwt as %s", exchange.JWTVC)
-		}
-
-		claims, ok := token.PrivateClaims()["vc"]
-		if !ok {
-			return nil, errors.New("\"vc\" field not found in claim")
-		}
-
-		return claims, nil
-	default:
-		return nil, errors.Errorf("unsupported format %s", format)
-	}
-}
-
+// TODO(gabe) add applicant to response id once https://github.com/TBD54566975/ssi-sdk/issues/372 is in
 func buildDenialCredentialResponse(manifestID, applicationID, reason string, failedOutputDescriptorIDs ...string) (*manifest.CredentialResponse, error) {
 	builder := manifest.NewCredentialResponseBuilder(manifestID)
 	if err := builder.SetApplicationID(applicationID); err != nil {
