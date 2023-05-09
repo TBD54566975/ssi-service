@@ -51,7 +51,7 @@ func TestCreateParticipants(t *testing.T) {
 
 	verifierDID, err := getJSONElement(verifierOutput, "$.did.id")
 	assert.NoError(t, err)
-	assert.Contains(t, holderDID, "did:key")
+	assert.Contains(t, verifierDID, "did:key")
 	SetValue(presentationExchangeContext, "verifierDID", verifierDID)
 
 	verifierKID, err := getJSONElement(verifierOutput, "$.did.verificationMethod[0].id")
