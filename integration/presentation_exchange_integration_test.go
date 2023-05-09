@@ -121,7 +121,7 @@ func TestSubmissionFlow(t *testing.T) {
 		DefinitionID:  definitionID.(string),
 		CredentialJWT: credentialJWT,
 		SubmissionID:  uuid.NewString(),
-	}, holderPrivateKey.(string))
+	}, holderPrivateKey)
 	assert.NoError(t, err)
 
 	cancelOpID, err := getJSONElement(toBeCancelledOp, "$.id")
@@ -138,7 +138,7 @@ func TestSubmissionFlow(t *testing.T) {
 		DefinitionID:  definitionID.(string),
 		CredentialJWT: credentialJWT,
 		SubmissionID:  uuid.NewString(),
-	}, holderPrivateKey.(string))
+	}, holderPrivateKey)
 	assert.NoError(t, err)
 
 	opID, err := getJSONElement(submissionOpOutput, "$.id")
