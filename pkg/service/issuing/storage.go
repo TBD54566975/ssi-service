@@ -23,7 +23,7 @@ func NewIssuingStorage(s storage.ServiceStorage) (*Storage, error) {
 }
 
 type StoredIssuanceTemplate struct {
-	IssuanceTemplate IssuanceTemplate
+	IssuanceTemplate IssuanceTemplate `json:"issuanceTemplate"`
 }
 
 func (s Storage) StoreIssuanceTemplate(ctx context.Context, template StoredIssuanceTemplate) error {

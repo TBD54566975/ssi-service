@@ -95,8 +95,10 @@ type DeleteApplicationRequest struct {
 type ReviewApplicationRequest struct {
 	// ID of the application.
 	ID       string `json:"id" validate:"required"`
-	Approved bool   `json:"approved"`
-	Reason   string `json:"reason"`
+	Approved bool   `json:"approved" validate:"required"`
+	// Reason is only used upon denial
+	Reason string `json:"reason"`
+	// TODO(gabe) add a way to specify which input descriptors resulted in the failure
 
 	CredentialOverrides map[string]CredentialOverride `json:"credential_overrides,omitempty"`
 }
