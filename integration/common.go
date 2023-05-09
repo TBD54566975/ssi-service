@@ -2,6 +2,7 @@ package integration
 
 import (
 	"bytes"
+	gocrypto "crypto"
 	"embed"
 	"fmt"
 	"io"
@@ -10,10 +11,8 @@ import (
 	"time"
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
-	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/goccy/go-json"
-	"github.com/mr-tron/base58"
 	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -196,24 +195,14 @@ type credApplicationParams struct {
 	ManifestID   string
 }
 
-func CreateCredentialApplicationJWT(credApplication credApplicationParams, credentialJWT, aliceDID, aliceKID, aliceDIDPrivateKey string) (string, error) {
+func CreateCredentialApplicationJWT(credApplication credApplicationParams, credentialJWT, aliceDID, aliceKID string, aliceDIDPrivateKey gocrypto.PrivateKey) (string, error) {
 	logrus.Println("\n\nCreate an Application JWT:")
 	applicationJSON, err := resolveTemplate(credApplication, "application-input.json")
 	if err != nil {
 		return "", err
 	}
 
-	alicePrivKeyBytes, err := base58.Decode(aliceDIDPrivateKey)
-	if err != nil {
-		return "", errors.Wrap(err, "base58 decoding")
-	}
-
-	alicePrivKey, err := crypto.BytesToPrivKey(alicePrivKeyBytes, crypto.Ed25519)
-	if err != nil {
-		return "", errors.Wrap(err, "bytes to priv key")
-	}
-
-	signer, err := keyaccess.NewJWKKeyAccess(aliceDID, aliceKID, alicePrivKey)
+	signer, err := keyaccess.NewJWKKeyAccess(aliceDID, aliceKID, aliceDIDPrivateKey)
 	if err != nil {
 		return "", errors.Wrap(err, "creating signer")
 	}
@@ -270,30 +259,20 @@ type submissionJWTParams struct {
 	SubmissionJWT string
 }
 
-func CreateSubmission(params submissionParams, holderPrivateKey string) (string, error) {
+func CreateSubmission(params submissionParams, holderPrivateKey gocrypto.PrivateKey) (string, error) {
 	logrus.Println("\n\nCreate our Submission:")
 	submissionJSON, err := resolveTemplate(params, "presentation-submission-input.json")
 	if err != nil {
 		return "", err
 	}
 
-	pkBytes, err := base58.Decode(holderPrivateKey)
-	if err != nil {
-		return "", errors.Wrap(err, "base58 decoding")
-	}
-
-	pkCrypto, err := crypto.BytesToPrivKey(pkBytes, crypto.Ed25519)
-	if err != nil {
-		return "", errors.Wrap(err, "bytes to priv key")
-	}
-
-	signer, err := keyaccess.NewJWKKeyAccess(params.HolderID, params.HolderKID, pkCrypto)
+	signer, err := keyaccess.NewJWKKeyAccess(params.HolderID, params.HolderKID, holderPrivateKey)
 	if err != nil {
 		return "", errors.Wrap(err, "creating signer")
 	}
 
 	var submission any
-	if err := json.Unmarshal([]byte(submissionJSON), &submission); err != nil {
+	if err = json.Unmarshal([]byte(submissionJSON), &submission); err != nil {
 		return "", err
 	}
 
@@ -303,8 +282,7 @@ func CreateSubmission(params submissionParams, holderPrivateKey string) (string,
 		return "", errors.Wrap(err, "signing json")
 	}
 
-	submissionJSONWrapper, err := resolveTemplate(
-		submissionJWTParams{SubmissionJWT: signed.String()},
+	submissionJSONWrapper, err := resolveTemplate(submissionJWTParams{SubmissionJWT: signed.String()},
 		"presentation-submission-input-jwt.json")
 	if err != nil {
 		return "", err
