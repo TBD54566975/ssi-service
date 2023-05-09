@@ -200,10 +200,8 @@ func (s *Service) GetDIDsByMethod(ctx context.Context, request GetDIDsRequest) (
 	}
 	if request.Deleted {
 		return handler.GetDeletedDIDs(ctx)
-	} else {
-		return handler.GetDIDs(ctx)
 	}
-
+	return handler.GetDIDs(ctx)
 }
 
 func (s *Service) SoftDeleteDIDByMethod(ctx context.Context, request DeleteDIDRequest) error {
