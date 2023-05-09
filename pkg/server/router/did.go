@@ -124,12 +124,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := CreateDIDByMethodResponse{
-		DID:              createDIDResponse.DID,
-		PrivateKeyBase58: createDIDResponse.PrivateKeyBase58,
-		KeyType:          createDIDResponse.KeyType,
-	}
-
+	resp := CreateDIDByMethodResponse{DID: createDIDResponse.DID}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 

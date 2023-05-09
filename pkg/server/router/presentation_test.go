@@ -2,7 +2,6 @@ package router
 
 import (
 	"context"
-	gocrypto "crypto"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
@@ -35,14 +34,9 @@ func TestPresentationDefinitionRouter(t *testing.T) {
 	})
 }
 
-type Public interface {
-	Public() gocrypto.PublicKey
-}
-
 func TestPresentationDefinitionService(t *testing.T) {
-
 	s := setupTestDB(t)
-	assert.NotNil(t, s)
+	assert.NotEmpty(t, s)
 
 	keyStoreService := testKeyStoreService(t, s)
 	didService := testDIDService(t, s, keyStoreService)
@@ -52,11 +46,11 @@ func TestPresentationDefinitionService(t *testing.T) {
 		KeyType: crypto.Ed25519,
 	})
 	require.NoError(t, err)
-	privKeyBytes, err := base58.Decode(authorDID.PrivateKeyBase58)
+	pubKeyBytes, err := base58.Decode(authorDID.DID.VerificationMethod[0].PublicKeyBase58)
 	require.NoError(t, err)
-	privKey, err := crypto.BytesToPrivKey(privKeyBytes, authorDID.KeyType)
+	pubKey, err := crypto.BytesToPubKey(pubKeyBytes, crypto.Ed25519)
 	require.NoError(t, err)
-	ka, err := keyaccess.NewJWKKeyAccessVerifier(authorDID.DID.ID, authorDID.DID.ID, privKey.(Public).Public())
+	ka, err := keyaccess.NewJWKKeyAccessVerifier(authorDID.DID.ID, authorDID.DID.ID, pubKey)
 	require.NoError(t, err)
 
 	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s, didService.GetResolver(), schemaService, keyStoreService)

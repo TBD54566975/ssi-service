@@ -71,7 +71,6 @@ func TestIONHandler(t *testing.T) {
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, created)
-		assert.Equal(tt, crypto.Ed25519, created.KeyType)
 	})
 
 	t.Run("Test Create DID", func(tt *testing.T) {
@@ -91,7 +90,6 @@ func TestIONHandler(t *testing.T) {
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, created)
-		assert.Equal(tt, crypto.Ed25519, created.KeyType)
 
 		// get the did
 		gotDID, err := handler.GetDID(context.Background(), GetDIDRequest{
@@ -124,7 +122,6 @@ func TestIONHandler(t *testing.T) {
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, created)
-		assert.Equal(tt, crypto.Ed25519, created.KeyType)
 
 		gock.New("https://test-ion-resolver.com").
 			Get("/identifiers/" + created.DID.ID).

@@ -15,7 +15,6 @@ import (
 	"github.com/benbjohnson/clock"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
-	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -350,12 +349,14 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create an applicant
-		applicantDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
-			Method:  didsdk.KeyMethod,
-			KeyType: crypto.Ed25519,
-		})
+		applicantPrivKey, applicantDIDKey, err := didsdk.GenerateDIDKey(crypto.Ed25519)
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, issuerDID)
+		assert.NotEmpty(tt, applicantPrivKey)
+		assert.NotEmpty(tt, applicantDIDKey)
+
+		applicantDID, err := applicantDIDKey.Expand()
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, applicantDID)
 
 		// create a schema for the creds to be issued against
 		licenseSchema := map[string]any{
@@ -380,7 +381,7 @@ func TestManifestAPI(t *testing.T) {
 			credential.CreateCredentialRequest{
 				Issuer:    issuerDID.DID.ID,
 				IssuerKID: kid,
-				Subject:   applicantDID.DID.ID,
+				Subject:   applicantDID.ID,
 				SchemaID:  createdSchema.ID,
 				Data: map[string]any{
 					"licenseType": "WA-DL-CLASS-A",
@@ -413,11 +414,7 @@ func TestManifestAPI(t *testing.T) {
 		applicationRequest := getValidApplicationRequest(m.ID, m.PresentationDefinition.ID, m.PresentationDefinition.InputDescriptors[0].ID, container)
 
 		// sign application
-		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
-		assert.NoError(tt, err)
-		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
-		assert.NoError(tt, err)
-		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantDID.DID.VerificationMethod[0].ID, applicantPrivKey)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.ID, applicantDID.VerificationMethod[0].ID, applicantPrivKey)
 		assert.NoError(tt, err)
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)
@@ -452,7 +449,7 @@ func TestManifestAPI(t *testing.T) {
 		_, _, vc, err := credsdk.ToCredential(appResp.Credentials[0])
 		assert.NoError(tt, err)
 		expectedSubject := credsdk.CredentialSubject{
-			"id":        applicantDID.DID.ID,
+			"id":        applicantDID.ID,
 			"state":     "CA",
 			"firstName": "Tester",
 			"lastName":  "McTest",
@@ -465,7 +462,7 @@ func TestManifestAPI(t *testing.T) {
 		_, _, vc2, err := credsdk.ToCredential(appResp.Credentials[1])
 		assert.NoError(tt, err)
 		expectedSubject = credsdk.CredentialSubject{
-			"id": applicantDID.DID.ID,
+			"id": applicantDID.ID,
 			"someCrazyObject": map[string]any{
 				"foo": 123.,
 				"bar": false,
@@ -515,12 +512,14 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create an applicant
-		applicantDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
-			Method:  didsdk.KeyMethod,
-			KeyType: crypto.Ed25519,
-		})
+		applicantPrivKey, applicantDIDKey, err := didsdk.GenerateDIDKey(crypto.Ed25519)
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, issuerDID)
+		assert.NotEmpty(tt, applicantPrivKey)
+		assert.NotEmpty(tt, applicantDIDKey)
+
+		applicantDID, err := applicantDIDKey.Expand()
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, applicantDID)
 
 		// create a schema for the creds to be issued against
 		licenseSchema := map[string]any{
@@ -542,7 +541,7 @@ func TestManifestAPI(t *testing.T) {
 		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:    issuerDID.DID.ID,
 			IssuerKID: kid,
-			Subject:   applicantDID.DID.ID,
+			Subject:   applicantDID.ID,
 			SchemaID:  createdSchema.ID,
 			Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
 		})
@@ -572,11 +571,7 @@ func TestManifestAPI(t *testing.T) {
 		applicationRequest := getValidApplicationRequest(m.ID, m.PresentationDefinition.ID, m.PresentationDefinition.InputDescriptors[0].ID, container)
 
 		// sign application
-		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
-		assert.NoError(tt, err)
-		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
-		assert.NoError(tt, err)
-		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantDID.DID.VerificationMethod[0].ID, applicantPrivKey)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.ID, applicantDID.VerificationMethod[0].ID, applicantPrivKey)
 		assert.NoError(tt, err)
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)
@@ -629,7 +624,7 @@ func TestManifestAPI(t *testing.T) {
 		_, _, vc, err := credsdk.ToCredential(appResp.Credentials[0])
 		assert.NoError(tt, err)
 		assert.Equal(tt, credsdk.CredentialSubject{
-			"id":    applicantDID.DID.ID,
+			"id":    applicantDID.ID,
 			"looks": "pretty darn handsome",
 		}, vc.CredentialSubject)
 		assert.Equal(tt, expireAt.Format(time.RFC3339), vc.ExpirationDate)
@@ -672,12 +667,14 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create an applicant
-		applicantDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
-			Method:  didsdk.KeyMethod,
-			KeyType: crypto.Ed25519,
-		})
+		applicantPrivKey, applicantDIDKey, err := didsdk.GenerateDIDKey(crypto.Ed25519)
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, issuerDID)
+		assert.NotEmpty(tt, applicantPrivKey)
+		assert.NotEmpty(tt, applicantDIDKey)
+
+		applicantDID, err := applicantDIDKey.Expand()
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, applicantDID)
 
 		// create a schema for the creds to be issued against
 		licenseSchema := map[string]any{
@@ -699,7 +696,7 @@ func TestManifestAPI(t *testing.T) {
 		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:    issuerDID.DID.ID,
 			IssuerKID: kid,
-			Subject:   applicantDID.DID.ID,
+			Subject:   applicantDID.ID,
 			SchemaID:  createdSchema.ID,
 			Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
 		})
@@ -733,11 +730,7 @@ func TestManifestAPI(t *testing.T) {
 		applicationRequest.CredentialApplication.PresentationSubmission = nil
 
 		// sign application
-		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
-		assert.NoError(tt, err)
-		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
-		assert.NoError(tt, err)
-		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantDID.DID.VerificationMethod[0].ID, applicantPrivKey)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.ID, applicantDID.VerificationMethod[0].ID, applicantPrivKey)
 		assert.NoError(tt, err)
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)
@@ -825,10 +818,12 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create an applicant
-		applicantDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
-			Method:  didsdk.KeyMethod,
-			KeyType: crypto.Ed25519,
-		})
+		applicantPrivKey, applicantDIDKey, err := didsdk.GenerateDIDKey(crypto.Ed25519)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, applicantPrivKey)
+		assert.NotEmpty(tt, applicantDIDKey)
+
+		applicantDID, err := applicantDIDKey.Expand()
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, applicantDID)
 
@@ -852,7 +847,7 @@ func TestManifestAPI(t *testing.T) {
 		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:    issuerDID.DID.ID,
 			IssuerKID: kid,
-			Subject:   applicantDID.DID.ID,
+			Subject:   applicantDID.ID,
 			SchemaID:  createdSchema.ID,
 			Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
 		})
@@ -880,11 +875,7 @@ func TestManifestAPI(t *testing.T) {
 		applicationRequest := getValidApplicationRequest(m.ID, m.PresentationDefinition.ID, m.PresentationDefinition.InputDescriptors[0].ID, container)
 
 		// sign application
-		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
-		assert.NoError(tt, err)
-		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
-		assert.NoError(tt, err)
-		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantDID.DID.VerificationMethod[0].ID, applicantPrivKey)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.ID, applicantDID.VerificationMethod[0].ID, applicantPrivKey)
 		assert.NoError(tt, err)
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)
@@ -980,12 +971,14 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create an applicant
-		applicantDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
-			Method:  didsdk.KeyMethod,
-			KeyType: crypto.Ed25519,
-		})
+		applicantPrivKey, applicantDIDKey, err := didsdk.GenerateDIDKey(crypto.Ed25519)
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, issuerDID)
+		assert.NotEmpty(tt, applicantPrivKey)
+		assert.NotEmpty(tt, applicantDIDKey)
+
+		applicantDID, err := applicantDIDKey.Expand()
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, applicantDID)
 
 		// create a schema for the creds to be issued against
 		licenseSchema := map[string]any{
@@ -1007,7 +1000,7 @@ func TestManifestAPI(t *testing.T) {
 		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:    issuerDID.DID.ID,
 			IssuerKID: kid,
-			Subject:   applicantDID.DID.ID,
+			Subject:   applicantDID.ID,
 			SchemaID:  createdSchema.ID,
 			Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
 		})
@@ -1035,11 +1028,7 @@ func TestManifestAPI(t *testing.T) {
 		applicationRequest := getValidApplicationRequest(m.ID, m.PresentationDefinition.ID, m.PresentationDefinition.InputDescriptors[0].ID, container)
 
 		// sign application
-		applicantPrivKeyBytes, err := base58.Decode(applicantDID.PrivateKeyBase58)
-		assert.NoError(tt, err)
-		applicantPrivKey, err := crypto.BytesToPrivKey(applicantPrivKeyBytes, applicantDID.KeyType)
-		assert.NoError(tt, err)
-		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.DID.ID, applicantDID.DID.VerificationMethod[0].ID, applicantPrivKey)
+		signer, err := keyaccess.NewJWKKeyAccess(applicantDID.ID, applicantDID.VerificationMethod[0].ID, applicantPrivKey)
 		assert.NoError(tt, err)
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)
