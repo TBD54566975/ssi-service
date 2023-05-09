@@ -8,8 +8,8 @@
       "schema": "{{.SchemaID}}",
       "credentialInputDescriptor": "kyc1",
       "data": {
-        "givenName": "$.credentialSubject.givenName",
-        "familyName": "$.credentialSubject.familyName",
+        "givenName": "$.vc.credentialSubject.givenName",
+        "familyName": "$.vc.credentialSubject.familyName",
         "postalAddress": {
           "addressRegion": "CA"
         }
