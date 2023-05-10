@@ -46,7 +46,7 @@ func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, r
 		return nil
 	}
 
-	// If the Credential IssuerDID metadata contains an authorization_server parameter, the authorization detail's
+	// If the credential issuer metadata contains an authorization_server parameter, the authorization detail's
 	// locations common data field MUST be set to the Credential IssuerDID Identifier value
 	if s.issuerMetadata.AuthorizationServer != nil {
 		for i, d := range authorizationDetails {
