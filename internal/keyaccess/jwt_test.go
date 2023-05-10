@@ -6,7 +6,8 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto"
-	"github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/key"
+	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -222,7 +223,7 @@ func TestJWKKeyAccessSignVerifyCredentials(t *testing.T) {
 
 func TestJWKKeyAccessSignVerifyPresentations(t *testing.T) {
 	t.Run("Sign and Verify Presentations - Happy Path", func(tt *testing.T) {
-		privKey, didKey, err := did.GenerateDIDKey(crypto.Ed25519)
+		privKey, didKey, err := key.GenerateDIDKey(crypto.Ed25519)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, privKey)
 		expanded, err := didKey.Expand()
@@ -239,7 +240,7 @@ func TestJWKKeyAccessSignVerifyPresentations(t *testing.T) {
 		assert.NotEmpty(tt, signedPres)
 
 		// verify
-		resolver, err := did.NewResolver([]did.Resolver{did.KeyResolver{}}...)
+		resolver, err := resolution.NewResolver([]resolution.Resolver{key.Resolver{}}...)
 		assert.NoError(tt, err)
 		verifiedPres, err := ka.VerifyVerifiablePresentation(context.Background(), resolver, *signedPres)
 		assert.NoError(tt, err)
@@ -278,7 +279,7 @@ func TestJWKKeyAccessSignVerifyPresentations(t *testing.T) {
 		assert.NotEmpty(tt, ka)
 
 		// verify
-		resolver, err := did.NewResolver([]did.Resolver{did.KeyResolver{}}...)
+		resolver, err := resolution.NewResolver([]resolution.Resolver{key.Resolver{}}...)
 		assert.NoError(tt, err)
 		_, err = ka.VerifyVerifiablePresentation(context.Background(), resolver, "bad")
 		assert.Error(tt, err)
@@ -312,7 +313,7 @@ func getDataIntegrityTestPresentation(ka DataIntegrityKeyAccess) credential.Veri
 	knownID := uuid.NewString()
 	knownType := []string{"VerifiablePresentation", "HappyPresentation"}
 	knownHolder := "did:example:ebfeb1f712ebc6f1c276e12ec21"
-	testCredential := getTestCredential(ka.JWTSigner.ID)
+	testCredential := getTestCredential(ka.Signer.ID)
 	signedCred, _ := ka.Sign(&testCredential)
 	return credential.VerifiablePresentation{
 		Context:              knownContext,
@@ -328,7 +329,7 @@ func getJWTTestPresentation(ka JWKKeyAccess) credential.VerifiablePresentation {
 	knownID := uuid.NewString()
 	knownType := []string{"VerifiablePresentation", "HappyPresentation"}
 	knownHolder := "did:example:ebfeb1f712ebc6f1c276e12ec21"
-	testCredential := getTestCredential(ka.JWTSigner.ID)
+	testCredential := getTestCredential(ka.Signer.ID)
 	signedJWT, _ := ka.SignVerifiableCredential(testCredential)
 	return credential.VerifiablePresentation{
 		Context:              knownContext,

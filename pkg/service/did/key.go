@@ -6,6 +6,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -37,7 +38,7 @@ func (h *keyHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	logrus.Debugf("creating DID: %+v", request)
 
 	// create the DID
-	privKey, doc, err := did.GenerateDIDKey(request.KeyType)
+	privKey, doc, err := key.GenerateDIDKey(request.KeyType)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create did:key")
 	}
@@ -104,6 +105,23 @@ func (h *keyHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
 		if !gotDID.IsSoftDeleted() {
+			dids = append(dids, gotDID.GetDocument())
+		}
+	}
+	return &GetDIDsResponse{DIDs: dids}, nil
+}
+
+// GetDeletedDIDs returns only DIDs we have in storage for Key with SoftDeleted flag set to true
+func (h *keyHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error) {
+	logrus.Debug("getting did:key DIDs")
+
+	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.KeyMethod.String())
+	if err != nil {
+		return nil, fmt.Errorf("error getting did:key DIDs")
+	}
+	dids := make([]did.Document, 0, len(gotDIDs))
+	for _, gotDID := range gotDIDs {
+		if gotDID.IsSoftDeleted() {
 			dids = append(dids, gotDID.GetDocument())
 		}
 	}

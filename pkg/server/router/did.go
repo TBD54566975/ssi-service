@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -18,8 +20,9 @@ import (
 )
 
 const (
-	MethodParam = "method"
-	IDParam     = "id"
+	MethodParam  = "method"
+	IDParam      = "id"
+	DeletedParam = "deleted"
 )
 
 // DIDRouter represents the dependencies required to instantiate a DID-HTTP service
@@ -235,26 +238,39 @@ type GetDIDsRequest struct {
 // GetDIDsByMethod godoc
 //
 // @Summary     Get DIDs
-// @Description Get DIDs by method
+// @Description Get DIDs by method. Checks for an optional "deleted=true" query parameter, which exclusively returns DIDs that have been "Soft Deleted".
 // @Tags        DecentralizedIdentityAPI
 // @Accept      json
 // @Produce     json
+// @Param       deleted  query    boolean false "When true, returns soft-deleted DIDs. Otherwise, returns DIDs that have not been soft-deleted. Default is false."
 // @Param       request body     GetDIDsRequest true "request body"
 // @Success     200     {object} GetDIDsByMethodResponse
 // @Failure     400     {string} string "Bad request"
 // @Failure     500     {string} string "Internal server error"
-// @Router      /v1/dids [get]
-func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+// @Router      /v1/dids/{method} [get]
+func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
+	deleted := framework.GetQueryValue(r, DeletedParam)
 	if method == nil {
 		errMsg := "get DIDs by method request missing method parameter"
 		logrus.Error(errMsg)
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
+	getIsDeleted := false
+	if deleted != nil {
+		checkDeleted, err := strconv.ParseBool(*deleted)
+		getIsDeleted = checkDeleted
+
+		if err != nil {
+			errMsg := "get DIDs by method request encountered a problem with the `deleted` query param"
+			logrus.Error(errMsg)
+			return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
+		}
+	}
 
 	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
 	// TODO(gabe) differentiate between internal errors and not found DIDs
-	getDIDsRequest := did.GetDIDsRequest{Method: didsdk.Method(*method)}
+	getDIDsRequest := did.GetDIDsRequest{Method: didsdk.Method(*method), Deleted: getIsDeleted}
 	gotDIDs, err := dr.service.GetDIDsByMethod(ctx, getDIDsRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get DIDs for method: %s", *method)
@@ -267,9 +283,9 @@ func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, 
 }
 
 type ResolveDIDResponse struct {
-	ResolutionMetadata  *didsdk.ResolutionMetadata `json:"didResolutionMetadata,omitempty"`
-	DIDDocument         *didsdk.Document           `json:"didDocument"`
-	DIDDocumentMetadata *didsdk.DocumentMetadata   `json:"didDocumentMetadata,omitempty"`
+	ResolutionMetadata  *resolution.ResolutionMetadata `json:"didResolutionMetadata,omitempty"`
+	DIDDocument         *didsdk.Document               `json:"didDocument"`
+	DIDDocumentMetadata *resolution.DocumentMetadata   `json:"didDocumentMetadata,omitempty"`
 }
 
 // SoftDeleteDIDByMethod godoc

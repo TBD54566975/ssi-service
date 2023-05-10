@@ -6,6 +6,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/web"
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
@@ -58,7 +59,7 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "processing options")
 	}
 
-	didWeb := did.DIDWeb(opts.DIDWebID)
+	didWeb := web.DIDWeb(opts.DIDWebID)
 
 	if !didWeb.IsValid() {
 		return nil, fmt.Errorf("could not resolve did:web DID: %s", didWeb)
@@ -135,6 +136,21 @@ func (h *webHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
 		if !gotDID.IsSoftDeleted() {
+			dids = append(dids, gotDID.GetDocument())
+		}
+	}
+	return &GetDIDsResponse{DIDs: dids}, nil
+}
+func (h *webHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error) {
+	logrus.Debug("getting did:web DID")
+
+	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.WebMethod.String())
+	if err != nil {
+		return nil, errors.Wrap(err, "getting did:web DIDs")
+	}
+	dids := make([]did.Document, 0, len(gotDIDs))
+	for _, gotDID := range gotDIDs {
+		if gotDID.IsSoftDeleted() {
 			dids = append(dids, gotDID.GetDocument())
 		}
 	}

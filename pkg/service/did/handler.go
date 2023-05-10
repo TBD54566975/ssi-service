@@ -4,6 +4,7 @@ import (
 	"context"
 
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 )
@@ -17,23 +18,24 @@ type MethodHandler interface {
 	// TODO(gabe): support query parameters to get soft deleted and other DIDs https://github.com/TBD54566975/ssi-service/issues/364
 	GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error)
 	GetDIDs(ctx context.Context) (*GetDIDsResponse, error)
+	GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error)
 	SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error
 }
 
 // NewHandlerResolver creates a new HandlerResolver from a map of MethodHandlers which are used to resolve DIDs
 // stored in our database
-func NewHandlerResolver(handlers map[didsdk.Method]MethodHandler) (*didsdk.MultiMethodResolver, error) {
+func NewHandlerResolver(handlers map[didsdk.Method]MethodHandler) (*resolution.MultiMethodResolver, error) {
 	if len(handlers) == 0 {
 		return nil, util.LoggingNewError("no handlers provided")
 	}
 
-	methodResolvers := make([]didsdk.Resolver, 0, len(handlers))
+	methodResolvers := make([]resolution.Resolver, 0, len(handlers))
 	for method, handler := range handlers {
 		methodResolver := resolverFromHandler(method, handler)
 		methodResolvers = append(methodResolvers, methodResolver)
 	}
 
-	multiMethodResolver, err := didsdk.NewResolver(methodResolvers...)
+	multiMethodResolver, err := resolution.NewResolver(methodResolvers...)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating multi-method resolver")
 	}
@@ -47,8 +49,8 @@ type handlerResolver struct {
 	method  didsdk.Method
 }
 
-func (h handlerResolver) Resolve(ctx context.Context, did string, _ ...didsdk.ResolutionOption) (*didsdk.ResolutionResult, error) {
-	method, err := didsdk.GetMethodForDID(did)
+func (h handlerResolver) Resolve(ctx context.Context, did string, _ ...resolution.ResolutionOption) (*resolution.ResolutionResult, error) {
+	method, err := resolution.GetMethodForDID(did)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting method from DID")
 	}
@@ -64,13 +66,13 @@ func (h handlerResolver) Resolve(ctx context.Context, did string, _ ...didsdk.Re
 	if err != nil {
 		return nil, errors.Wrap(err, "getting DID from handler")
 	}
-	return &didsdk.ResolutionResult{Document: gotDIDResponse.DID}, nil
+	return &resolution.ResolutionResult{Document: gotDIDResponse.DID}, nil
 }
 
 func (h handlerResolver) Methods() []didsdk.Method {
 	return []didsdk.Method{h.method}
 }
 
-func resolverFromHandler(method didsdk.Method, handler MethodHandler) didsdk.Resolver {
+func resolverFromHandler(method didsdk.Method, handler MethodHandler) resolution.Resolver {
 	return &handlerResolver{handler: handler, method: method}
 }

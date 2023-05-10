@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -15,17 +16,17 @@ import (
 // ServiceResolver is a resolver that can resolve DIDs using a combination of local and universal resolvers.
 type ServiceResolver struct {
 	resolutionMethods []string
-	hr                didsdk.Resolver
-	lr                didsdk.Resolver
+	hr                resolution.Resolver
+	lr                resolution.Resolver
 	ur                *universalResolver
 }
 
-var _ didsdk.Resolver = (*ServiceResolver)(nil)
+var _ resolution.Resolver = (*ServiceResolver)(nil)
 
 // NewServiceResolver creates a new ServiceResolver instance which can resolve DIDs using a combination of local and
 // universal resolvers.
-func NewServiceResolver(handlerResolver didsdk.Resolver, localResolutionMethods []string, universalResolverURL string) (*ServiceResolver, error) {
-	var lr didsdk.Resolver
+func NewServiceResolver(handlerResolver resolution.Resolver, localResolutionMethods []string, universalResolverURL string) (*ServiceResolver, error) {
+	var lr resolution.Resolver
 	var err error
 	if len(localResolutionMethods) > 0 {
 		// instantiate sdk resolver
@@ -57,7 +58,7 @@ func NewServiceResolver(handlerResolver didsdk.Resolver, localResolutionMethods 
 // 2. Try to resolve with the local resolver
 // 3. Try to resolve with the universal resolver
 // TODO(gabe) avoid caching DIDs that should be externally resolved https://github.com/TBD54566975/ssi-service/issues/361
-func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOption) (*didsdk.ResolutionResult, error) {
+func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...resolution.ResolutionOption) (*resolution.ResolutionResult, error) {
 	// check the did is valid
 	if _, err := utilint.GetMethodForDID(did); err != nil {
 		return nil, errors.Wrap(err, "getting method DID")
