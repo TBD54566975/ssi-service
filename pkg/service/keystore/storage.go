@@ -62,13 +62,13 @@ type Storage struct {
 }
 
 func NewKeyStoreStorage(db storage.ServiceStorage, e Encryptor, d Decryptor) (*Storage, error) {
-	bolt := &Storage{
+	storage := &Storage{
 		db:        db,
 		encryptor: e,
 		decryptor: d,
 	}
 
-	return bolt, nil
+	return storage, nil
 }
 
 type wrappedEncryptor struct {
