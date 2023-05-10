@@ -101,7 +101,7 @@ func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) 
 	}
 
 	// First, generate a service key
-	serviceKey, serviceKeySalt, err := GenerateServiceKey(cfg.ServiceKeyPassword)
+	serviceKey, serviceKeySalt, err := GenerateServiceKey(cfg.MasterKeyPassword)
 	if err != nil {
 		return nil, nil, sdkutil.LoggingErrorMsg(err, "generating service key")
 	}
