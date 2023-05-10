@@ -62,13 +62,13 @@ type Storage struct {
 }
 
 func NewKeyStoreStorage(db storage.ServiceStorage, e Encryptor, d Decryptor) (*Storage, error) {
-	storage := &Storage{
+	s := &Storage{
 		db:        db,
 		encryptor: e,
 		decryptor: d,
 	}
 
-	return storage, nil
+	return s, nil
 }
 
 type wrappedEncryptor struct {
@@ -96,7 +96,7 @@ func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if strings.HasPrefix(cfg.MasterKeyURI, gcpKMSScheme) || strings.HasPrefix(cfg.MasterKeyURI, awsKMSScheme) {
+	if len(cfg.MasterKeyURI) != 0 {
 		return NewExternalEncryptor(ctx, cfg)
 	}
 
@@ -129,6 +129,8 @@ func NewExternalEncryptor(ctx context.Context, cfg config.KeyStoreServiceConfig)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "creating aws kms client")
 		}
+	} else {
+		return nil, nil, errors.Errorf("master_key_uri value %q is not supported", cfg.MasterKeyURI)
 	}
 	registry.RegisterKMSClient(client)
 	dek := aead.XChaCha20Poly1305KeyTemplate()
