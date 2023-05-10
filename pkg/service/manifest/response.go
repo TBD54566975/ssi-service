@@ -65,27 +65,38 @@ func (s Service) buildFulfillmentCredentialResponseFromTemplate(ctx context.Cont
 		templateCred := templateCred
 		templateMap[templateCred.ID] = templateCred
 	}
-	return s.fulfillmentCredentialResponse(ctx, application.ID, applicantDID, manifestID, issuingKID, credManifest, &application, templateMap, applicationJSON, nil)
+
+	responseBuilder := manifest.NewCredentialResponseBuilder(manifestID)
+	if err := responseBuilder.SetApplicationID(application.ID); err != nil {
+		return nil, nil, sdkutil.LoggingErrorMsgf(err, "could not fulfill credential application<%s> from template", application.ID)
+	}
+	if err := responseBuilder.SetApplicantID(applicantDID); err != nil {
+		return nil, nil, sdkutil.LoggingErrorMsgf(err, "could not fulfill credential application<%s> from template", application.ID)
+	}
+
+	return s.fulfillmentCredentialResponse(ctx, responseBuilder, applicantDID, issuingKID, credManifest, &application, templateMap, applicationJSON, nil)
 }
 
 // buildFulfillmentCredentialResponseFromOverrides builds a credential response from overrides
 func (s Service) buildFulfillmentCredentialResponse(ctx context.Context, applicantDID, applicationID, manifestID, issuerKID string,
 	credManifest manifest.CredentialManifest, overrides map[string]model.CredentialOverride) (*manifest.CredentialResponse, []cred.Container, error) {
-	return s.fulfillmentCredentialResponse(ctx, applicationID, applicantDID, manifestID, issuerKID, credManifest, nil, nil, nil, overrides)
-}
 
-// TODO(gabe) add applicant id to response once https://github.com/TBD54566975/ssi-sdk/issues/372 is in
-// unifies both templated and override paths for building a credential response
-func (s Service) fulfillmentCredentialResponse(ctx context.Context,
-	applicationID, applicantDID, manifestID, issuerKID string, credManifest manifest.CredentialManifest,
-	application *manifest.CredentialApplication,
-	templateMap map[string]issuing.CredentialTemplate,
-	applicationJSON map[string]any,
-	credentialOverrides map[string]model.CredentialOverride) (*manifest.CredentialResponse, []cred.Container, error) {
 	responseBuilder := manifest.NewCredentialResponseBuilder(manifestID)
 	if err := responseBuilder.SetApplicationID(applicationID); err != nil {
-		return nil, nil, sdkutil.LoggingErrorMsgf(err, "could not fulfill credential credentials: could not set credentials id: %s", applicationID)
+		return nil, nil, sdkutil.LoggingErrorMsgf(err, "could not fulfill credential application<%s>", applicationID)
 	}
+	if err := responseBuilder.SetApplicantID(applicantDID); err != nil {
+		return nil, nil, sdkutil.LoggingErrorMsgf(err, "could not fulfill credential application<%s>", applicationID)
+	}
+
+	return s.fulfillmentCredentialResponse(ctx, responseBuilder, applicantDID, issuerKID, credManifest, nil, nil, nil, overrides)
+}
+
+// unifies both templated and override paths for building a credential response
+func (s Service) fulfillmentCredentialResponse(ctx context.Context, responseBuilder manifest.CredentialResponseBuilder,
+	applicantDID, issuerKID string, credManifest manifest.CredentialManifest, application *manifest.CredentialApplication,
+	templateMap map[string]issuing.CredentialTemplate, applicationJSON map[string]any,
+	credentialOverrides map[string]model.CredentialOverride) (*manifest.CredentialResponse, []cred.Container, error) {
 
 	creds := make([]cred.Container, 0, len(credManifest.OutputDescriptors))
 	for _, od := range credManifest.OutputDescriptors {
@@ -224,11 +235,11 @@ func getCredentialJSON(applicationJSON map[string]any, ct issuing.CredentialTemp
 }
 
 func toCredentialJSON(c any) (map[string]any, error) {
-	_, _, cred, err := credsdk.ToCredential(c)
+	_, _, genericCredential, err := credsdk.ToCredential(c)
 	if err != nil {
 		return nil, errors.Wrapf(err, "converting credential to json")
 	}
-	credBytes, err := json.Marshal(cred)
+	credBytes, err := json.Marshal(genericCredential)
 	if err != nil {
 		return nil, errors.Wrapf(err, "marshalling credential to json")
 	}
@@ -240,9 +251,12 @@ func toCredentialJSON(c any) (map[string]any, error) {
 }
 
 // TODO(gabe) add applicant to response id once https://github.com/TBD54566975/ssi-sdk/issues/372 is in
-func buildDenialCredentialResponse(manifestID, applicationID, reason string, failedOutputDescriptorIDs ...string) (*manifest.CredentialResponse, error) {
+func buildDenialCredentialResponse(manifestID, applicantDID, applicationID, reason string, failedOutputDescriptorIDs ...string) (*manifest.CredentialResponse, error) {
 	builder := manifest.NewCredentialResponseBuilder(manifestID)
 	if err := builder.SetApplicationID(applicationID); err != nil {
+		return nil, err
+	}
+	if err := builder.SetApplicantID(applicantDID); err != nil {
 		return nil, err
 	}
 	if err := builder.SetDenial(reason, failedOutputDescriptorIDs...); err != nil {

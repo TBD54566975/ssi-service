@@ -5,6 +5,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/resolution"
 )
 
 type GetSupportedMethodsResponse struct {
@@ -16,9 +17,9 @@ type ResolveDIDRequest struct {
 }
 
 type ResolveDIDResponse struct {
-	ResolutionMetadata  *didsdk.ResolutionMetadata `json:"didResolutionMetadata,omitempty"`
-	DIDDocument         *didsdk.Document           `json:"didDocument"`
-	DIDDocumentMetadata *didsdk.DocumentMetadata   `json:"didDocumentMetadata,omitempty"`
+	ResolutionMetadata  *resolution.ResolutionMetadata `json:"didResolutionMetadata,omitempty"`
+	DIDDocument         *didsdk.Document               `json:"didDocument"`
+	DIDDocumentMetadata *resolution.DocumentMetadata   `json:"didDocumentMetadata,omitempty"`
 }
 
 type CreateDIDRequestOptions interface {

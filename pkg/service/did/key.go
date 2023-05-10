@@ -6,6 +6,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -37,7 +38,7 @@ func (h *keyHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	logrus.Debugf("creating DID: %+v", request)
 
 	// create the DID
-	privKey, doc, err := did.GenerateDIDKey(request.KeyType)
+	privKey, doc, err := key.GenerateDIDKey(request.KeyType)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not create did:key")
 	}

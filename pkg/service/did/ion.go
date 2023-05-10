@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/ion"
 	"github.com/TBD54566975/ssi-sdk/util"
@@ -102,7 +103,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	if err != nil {
 		return nil, errors.Wrap(err, "could not generate key for ion DID")
 	}
-	pubKeyJWK, privKeyJWK, err := crypto.PrivateKeyToPrivateKeyJWK(privKey)
+	pubKeyJWK, privKeyJWK, err := jwx.PrivateKeyToPrivateKeyJWK(uuid.NewString(), privKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not convert key to JWK")
 	}
@@ -200,7 +201,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	return &CreateDIDResponse{DID: didDoc}, nil
 }
 
-func keyToStoreRequest(kid string, privateKeyJWK crypto.PrivateKeyJWK, controller string) (*keystore.StoreKeyRequest, error) {
+func keyToStoreRequest(kid string, privateKeyJWK jwx.PrivateKeyJWK, controller string) (*keystore.StoreKeyRequest, error) {
 	privateKey, err := privateKeyJWK.ToPrivateKey()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting private private key from JWK")

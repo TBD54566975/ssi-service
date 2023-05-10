@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
-	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
@@ -31,7 +31,7 @@ func TestCreateParticipants(t *testing.T) {
 	assert.NotEmpty(t, issuerKID)
 	SetValue(presentationExchangeContext, "issuerKID", issuerKID)
 
-	holderPrivateKey, holderDIDKey, err := didsdk.GenerateDIDKey(crypto.Ed25519)
+	holderPrivateKey, holderDIDKey, err := key.GenerateDIDKey(crypto.Ed25519)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, holderPrivateKey)
 	assert.NotEmpty(t, holderDIDKey)

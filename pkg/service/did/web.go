@@ -6,6 +6,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/web"
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
@@ -58,7 +59,7 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "processing options")
 	}
 
-	didWeb := did.DIDWeb(opts.DIDWebID)
+	didWeb := web.DIDWeb(opts.DIDWebID)
 
 	if !didWeb.IsValid() {
 		return nil, fmt.Errorf("could not resolve did:web DID: %s", didWeb)

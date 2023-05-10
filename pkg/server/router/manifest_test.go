@@ -8,6 +8,7 @@ import (
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
@@ -62,7 +63,7 @@ func TestManifestRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuerDID)
 
-		applicantPrivKey, applicantDIDKey, err := didsdk.GenerateDIDKey(crypto.Ed25519)
+		applicantPrivKey, applicantDIDKey, err := key.GenerateDIDKey(crypto.Ed25519)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, applicantPrivKey)
 		assert.NotEmpty(tt, applicantDIDKey)

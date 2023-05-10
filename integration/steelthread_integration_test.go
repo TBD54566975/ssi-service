@@ -5,7 +5,7 @@ import (
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto"
-	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -51,7 +51,7 @@ func TestCreateAliceDIDKeyIntegration(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	applicantPrivKey, applicantDIDKey, err := didsdk.GenerateDIDKey(crypto.Ed25519)
+	applicantPrivKey, applicantDIDKey, err := key.GenerateDIDKey(crypto.Ed25519)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, applicantPrivKey)
 	assert.NotEmpty(t, applicantDIDKey)

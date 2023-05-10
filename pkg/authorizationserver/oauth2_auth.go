@@ -10,6 +10,7 @@ import (
 	"github.com/ory/fosite"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/pkg/authorizationserver/request"
 )
 
@@ -45,8 +46,8 @@ func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, r
 		return nil
 	}
 
-	// If the Credential Issuer metadata contains an authorization_server parameter, the authorization detail's
-	// locations common data field MUST be set to the Credential Issuer Identifier value
+	// If the Credential IssuerDID metadata contains an authorization_server parameter, the authorization detail's
+	// locations common data field MUST be set to the Credential IssuerDID Identifier value
 	if s.issuerMetadata.AuthorizationServer != nil {
 		for i, d := range authorizationDetails {
 			switch d.Type {
