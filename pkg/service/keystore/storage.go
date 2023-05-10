@@ -75,7 +75,9 @@ func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) 
 		Base58Key:  serviceKey,
 		Base58Salt: serviceKeySalt,
 	}
-	if err := storeServiceKey(context.Background(), db, key); err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := storeServiceKey(ctx, db, key); err != nil {
 		return nil, nil, err
 	}
 	return &encryptor{db}, &decryptor{db}, nil
@@ -117,28 +119,28 @@ func getServiceKey(ctx context.Context, db storage.ServiceStorage) ([]byte, erro
 
 // Encryptor the interface for any encryptor implementation.
 type Encryptor interface {
-	Encrypt(plaintext, contextData []byte) ([]byte, error)
+	Encrypt(ctx context.Context, plaintext, contextData []byte) ([]byte, error)
 }
 
 // Decryptor is the interface for any decryptor. May be AEAD or Hybrid.
 type Decryptor interface {
 	// Decrypt decrypts ciphertext. The second parameter may be treated as associated data for AEAD (as abstracted in
 	// https://datatracker.ietf.org/doc/html/rfc5116), or as contextInfofor HPKE (https://www.rfc-editor.org/rfc/rfc9180.html)
-	Decrypt(ciphertext, contextInfo []byte) ([]byte, error)
+	Decrypt(ctx context.Context, ciphertext, contextInfo []byte) ([]byte, error)
 }
 
 type encryptor struct {
 	db storage.ServiceStorage
 }
 
-func (e encryptor) Encrypt(keyBytes, _ []byte) ([]byte, error) {
+func (e encryptor) Encrypt(ctx context.Context, plaintext, _ []byte) ([]byte, error) {
 	// get service key
-	serviceKey, err := getServiceKey(context.Background(), e.db)
+	serviceKey, err := getServiceKey(ctx, e.db)
 	if err != nil {
 		return nil, err
 	}
 	// encrypt key before storing
-	encryptedKey, err := util.XChaCha20Poly1305Encrypt(serviceKey, keyBytes)
+	encryptedKey, err := util.XChaCha20Poly1305Encrypt(serviceKey, plaintext)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not encrypt key")
 	}
@@ -149,15 +151,15 @@ type decryptor struct {
 	db storage.ServiceStorage
 }
 
-func (d decryptor) Decrypt(storedKeyBytes, _ []byte) ([]byte, error) {
+func (d decryptor) Decrypt(ctx context.Context, ciphertext, _ []byte) ([]byte, error) {
 	// get service key
-	serviceKey, err := getServiceKey(context.Background(), d.db)
+	serviceKey, err := getServiceKey(ctx, d.db)
 	if err != nil {
 		return nil, err
 	}
 
 	// decrypt key before unmarshaling
-	decryptedKey, err := util.XChaCha20Poly1305Decrypt(serviceKey, storedKeyBytes)
+	decryptedKey, err := util.XChaCha20Poly1305Decrypt(serviceKey, ciphertext)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not decrypt key")
 	}
@@ -178,7 +180,7 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 	}
 
 	// encrypt key before storing
-	encryptedKey, err := kss.encryptor.Encrypt(keyBytes, nil)
+	encryptedKey, err := kss.encryptor.Encrypt(ctx, keyBytes, nil)
 	if err != nil {
 		return sdkutil.LoggingErrorMsgf(err, "could not encrypt key: %s", key.ID)
 	}
@@ -210,7 +212,7 @@ func (kss *Storage) GetKey(ctx context.Context, id string) (*StoredKey, error) {
 	}
 
 	// decrypt key before unmarshaling
-	decryptedKey, err := kss.decryptor.Decrypt(storedKeyBytes, nil)
+	decryptedKey, err := kss.decryptor.Decrypt(ctx, storedKeyBytes, nil)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not decrypt key: %s", id)
 	}
