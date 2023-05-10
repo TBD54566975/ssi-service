@@ -98,7 +98,15 @@ type KeyStoreServiceConfig struct {
 	*BaseServiceConfig
 	// Service key password. Used by a KDF whose key is used by a symmetric cypher for key encryption.
 	// The password is salted before usage.
+	// Note that this field is only used when MasterKeyURI is empty.
 	ServiceKeyPassword string `toml:"password"`
+
+	// The URI for the master key. We use tink for envelope encryption as described in https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#key-management-with-tink
+	// When left empty, then ServiceKeyPassword is used.
+	MasterKeyURI string `toml:"master_key_uri"`
+
+	// Path for credentials. Required when using an external KMS. More info at https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#credentials
+	KMSCredentialsPath string `toml:"kms_credentials_path"`
 }
 
 func (k *KeyStoreServiceConfig) IsEmpty() bool {

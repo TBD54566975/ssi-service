@@ -2,15 +2,22 @@ package keystore
 
 import (
 	"context"
+	"strings"
 	"time"
 
+	"github.com/TBD54566975/ssi-sdk/crypto"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
+	"github.com/google/tink/go/aead"
+	"github.com/google/tink/go/core/registry"
+	"github.com/google/tink/go/integration/awskms"
+	"github.com/google/tink/go/integration/gcpkms"
+	"github.com/google/tink/go/keyset"
+	"github.com/google/tink/go/tink"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/config"
-
-	"github.com/TBD54566975/ssi-sdk/crypto"
+	"google.golang.org/api/option"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -64,7 +71,53 @@ func NewKeyStoreStorage(db storage.ServiceStorage, e Encryptor, d Decryptor) (*S
 	return bolt, nil
 }
 
+type wrappedEncryptor struct {
+	tink.AEAD
+}
+
+func (w wrappedEncryptor) Encrypt(_ context.Context, plaintext, contextData []byte) ([]byte, error) {
+	return w.AEAD.Encrypt(plaintext, contextData)
+}
+
+type wrappedDecryptor struct {
+	tink.AEAD
+}
+
+func (w wrappedDecryptor) Decrypt(_ context.Context, ciphertext, contextInfo []byte) ([]byte, error) {
+	return w.AEAD.Decrypt(ciphertext, contextInfo)
+}
+
 func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) (Encryptor, Decryptor, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if strings.HasPrefix(cfg.MasterKeyURI, "gcp-kms") || strings.HasPrefix(cfg.MasterKeyURI, "aws") {
+		var client registry.KMSClient
+		var err error
+		if strings.HasPrefix(cfg.MasterKeyURI, "gcp-kms") {
+			client, err = gcpkms.NewClientWithOptions(ctx, cfg.MasterKeyURI, option.WithCredentialsFile(cfg.KMSCredentialsPath))
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "creating gcp kms client")
+			}
+		} else if strings.HasPrefix(cfg.MasterKeyURI, "aws") {
+			client, err = awskms.NewClientWithCredentials(cfg.MasterKeyURI, cfg.KMSCredentialsPath)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "creating aws kms client")
+			}
+		}
+		registry.RegisterKMSClient(client)
+		dek := aead.XChaCha20Poly1305KeyTemplate()
+		kh, err := keyset.NewHandle(aead.KMSEnvelopeAEADKeyTemplate(cfg.MasterKeyURI, dek))
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "creating keyset handle")
+		}
+		a, err := aead.New(kh)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "creating aead from key handl")
+		}
+		return wrappedEncryptor{a}, wrappedDecryptor{a}, nil
+	}
+
 	// First, generate a service key
 	serviceKey, serviceKeySalt, err := GenerateServiceKey(cfg.ServiceKeyPassword)
 	if err != nil {
@@ -75,8 +128,6 @@ func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) 
 		Base58Key:  serviceKey,
 		Base58Salt: serviceKeySalt,
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 	if err := storeServiceKey(ctx, db, key); err != nil {
 		return nil, nil, err
 	}
