@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
-	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/benbjohnson/clock"
@@ -35,7 +35,7 @@ type Service struct {
 
 	// external dependencies
 	keyStore    *keystore.Service
-	didResolver didsdk.Resolver
+	didResolver resolution.Resolver
 	credential  *credential.Service
 
 	Clock clock.Clock
@@ -72,7 +72,8 @@ func (s Service) Config() config.ManifestServiceConfig {
 	return s.config
 }
 
-func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver didsdk.Resolver, credential *credential.Service) (*Service, error) {
+func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service,
+	didResolver resolution.Resolver, credential *credential.Service) (*Service, error) {
 	manifestStorage, err := manifeststg.NewManifestStorage(s)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the manifest service")
@@ -173,7 +174,7 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 	// store the manifest
 	storageRequest := manifeststg.StoredManifest{
 		ID:          m.ID,
-		Issuer:      m.Issuer.ID,
+		IssuerDID:   m.Issuer.ID,
 		IssuerKID:   request.IssuerKID,
 		Manifest:    *m,
 		ManifestJWT: *manifestJWT,
@@ -276,7 +277,7 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 	if validationErr != nil {
 		resp := errresp.GetErrorResponse(validationErr)
 		if resp.ErrorType == DenialResponse {
-			denialResp, err := buildDenialCredentialResponse(manifestID, applicationID, resp.Err.Error(), unfulfilledInputDescriptorIDs...)
+			denialResp, err := buildDenialCredentialResponse(manifestID, request.ApplicantDID, applicationID, resp.Err.Error(), unfulfilledInputDescriptorIDs...)
 			if err != nil {
 				return nil, sdkutil.LoggingErrorMsg(err, "could not build denial credential response")
 			}
@@ -414,7 +415,7 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 			Credentials: genericCredentials,
 		}
 	} else {
-		denialResponse, err := buildDenialCredentialResponse(manifestID, applicationID, request.Reason)
+		denialResponse, err := buildDenialCredentialResponse(manifestID, applicantDID, applicationID, request.Reason)
 		if err != nil {
 			return nil, sdkutil.LoggingErrorMsg(err, "building denial credential response")
 		}

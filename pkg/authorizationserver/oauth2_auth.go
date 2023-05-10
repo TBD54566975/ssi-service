@@ -10,6 +10,7 @@ import (
 	"github.com/ory/fosite"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/pkg/authorizationserver/request"
 )
 

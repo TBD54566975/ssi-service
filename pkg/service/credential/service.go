@@ -9,7 +9,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 	schemalib "github.com/TBD54566975/ssi-sdk/credential/schema"
 	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
-	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -66,7 +66,7 @@ func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
 
-func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver didsdk.Resolver, schema *schema.Service) (*Service, error) {
+func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver resolution.Resolver, schema *schema.Service) (*Service, error) {
 	credentialStorage, err := NewCredentialStorage(s)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the credential service")
