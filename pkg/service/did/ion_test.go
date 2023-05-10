@@ -40,7 +40,7 @@ func TestIONHandler(t *testing.T) {
 		handler, err = NewIONHandler("bad", didStorage, keystoreService)
 		assert.Error(tt, err)
 		assert.Empty(tt, handler)
-		assert.Contains(tt, err.Error(), "invalid resolver URL: parse \"bad\": invalid URI for request")
+		assert.Contains(tt, err.Error(), "invalid resolution URL")
 
 		handler, err = NewIONHandler("https://example.com", didStorage, keystoreService)
 		assert.NoError(tt, err)
