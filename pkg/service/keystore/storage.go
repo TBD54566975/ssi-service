@@ -119,17 +119,18 @@ func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) 
 func NewExternalEncrypter(ctx context.Context, cfg config.KeyStoreServiceConfig) (Encrypter, Decrypter, error) {
 	var client registry.KMSClient
 	var err error
-	if strings.HasPrefix(cfg.MasterKeyURI, gcpKMSScheme) {
+	switch {
+	case strings.HasPrefix(cfg.MasterKeyURI, gcpKMSScheme):
 		client, err = gcpkms.NewClientWithOptions(ctx, cfg.MasterKeyURI, option.WithCredentialsFile(cfg.KMSCredentialsPath))
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "creating gcp kms client")
 		}
-	} else if strings.HasPrefix(cfg.MasterKeyURI, awsKMSScheme) {
+	case strings.HasPrefix(cfg.MasterKeyURI, awsKMSScheme):
 		client, err = awskms.NewClientWithCredentials(cfg.MasterKeyURI, cfg.KMSCredentialsPath)
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "creating aws kms client")
 		}
-	} else {
+	default:
 		return nil, nil, errors.Errorf("master_key_uri value %q is not supported", cfg.MasterKeyURI)
 	}
 	registry.RegisterKMSClient(client)
