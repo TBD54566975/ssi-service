@@ -48,17 +48,13 @@ func (s Service) Config() config.KeyStoreServiceConfig {
 }
 
 func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	// First, generate a service key
-	serviceKey, serviceKeySalt, err := GenerateServiceKey(config.ServiceKeyPassword)
+	encryptor, decryptor, err := NewEncryption(s, config)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "generating service key")
+		return nil, errors.Wrap(err, "creating new encryption")
 	}
 
 	// Next, instantiate the key storage
-	keyStoreStorage, err := NewKeyStoreStorage(s, ServiceKey{
-		Base58Key:  serviceKey,
-		Base58Salt: serviceKeySalt,
-	})
+	keyStoreStorage, err := NewKeyStoreStorage(s, encryptor, decryptor)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "instantiating storage for the keystore service")
 	}
