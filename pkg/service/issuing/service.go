@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
@@ -48,8 +49,7 @@ func (s *Service) GetIssuanceTemplate(ctx context.Context, request *GetIssuanceT
 	if storedIssuanceTemplate == nil {
 		return nil, errors.Errorf("issuance template with id<%s> not be found", request.ID)
 	}
-	return &GetIssuanceTemplateResponse{
-		IssuanceTemplate: serviceModel(*storedIssuanceTemplate)}, nil
+	return &GetIssuanceTemplateResponse{IssuanceTemplate: serviceModel(*storedIssuanceTemplate)}, nil
 }
 
 func (s *Service) CreateIssuanceTemplate(ctx context.Context, request *CreateIssuanceTemplateRequest) (*IssuanceTemplate, error) {
@@ -108,9 +108,7 @@ func (s *Service) ListIssuanceTemplates(ctx context.Context, request *ListIssuan
 		return nil, errors.Wrap(err, "fetching ops from storage")
 	}
 
-	resp := &ListIssuanceTemplatesResponse{
-		IssuanceTemplates: ops,
-	}
+	resp := &ListIssuanceTemplatesResponse{IssuanceTemplates: ops}
 	return resp, nil
 }
 

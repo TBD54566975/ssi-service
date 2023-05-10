@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -49,24 +51,23 @@ func TestCreateAliceDIDKeyIntegration(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	didKeyOutput, err := CreateDIDKey()
+	applicantPrivKey, applicantDIDKey, err := key.GenerateDIDKey(crypto.Ed25519)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, didKeyOutput)
+	assert.NotEmpty(t, applicantPrivKey)
+	assert.NotEmpty(t, applicantDIDKey)
 
-	aliceDID, err := getJSONElement(didKeyOutput, "$.did.id")
+	applicantDID, err := applicantDIDKey.Expand()
 	assert.NoError(t, err)
+	assert.NotEmpty(t, applicantDID)
+
+	aliceDID := applicantDID.ID
 	assert.Contains(t, aliceDID, "did:key")
 	SetValue(steelThreadContext, "aliceDID", aliceDID)
 
-	aliceKID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
-	assert.NoError(t, err)
+	aliceKID := applicantDID.VerificationMethod[0].ID
 	assert.NotEmpty(t, aliceKID)
 	SetValue(steelThreadContext, "aliceKID", aliceKID)
-
-	aliceDIDPrivateKey, err := getJSONElement(didKeyOutput, "$.privateKeyBase58")
-	assert.NoError(t, err)
-	assert.NotEmpty(t, aliceDID)
-	SetValue(steelThreadContext, "aliceDIDPrivateKey", aliceDIDPrivateKey)
+	SetValue(steelThreadContext, "aliceDIDPrivateKey", applicantPrivKey)
 }
 
 func TestCreateSchemaIntegration(t *testing.T) {
@@ -230,7 +231,7 @@ func TestSubmitApplicationWithIssuanceTemplateIntegration(t *testing.T) {
 	credAppJWT, err := CreateCredentialApplicationJWT(credApplicationParams{
 		DefinitionID: presentationDefinitionID.(string),
 		ManifestID:   manifestID.(string),
-	}, credentialJWT.(string), aliceDID.(string), aliceKID.(string), aliceDIDPrivateKey.(string))
+	}, credentialJWT.(string), aliceDID.(string), aliceKID.(string), aliceDIDPrivateKey)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credAppJWT)
 
@@ -287,7 +288,7 @@ func TestSubmitAndReviewApplicationIntegration(t *testing.T) {
 	credAppJWT, err := CreateCredentialApplicationJWT(credApplicationParams{
 		DefinitionID: presentationDefinitionID.(string),
 		ManifestID:   manifestID.(string),
-	}, credentialJWT.(string), aliceDID.(string), aliceKID.(string), aliceDIDPrivateKey.(string))
+	}, credentialJWT.(string), aliceDID.(string), aliceKID.(string), aliceDIDPrivateKey)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credAppJWT)
 

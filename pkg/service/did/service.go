@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	didresolution "github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 
@@ -61,7 +62,7 @@ func (s *Service) Config() config.DIDServiceConfig {
 	return s.config
 }
 
-func (s *Service) GetResolver() didsdk.Resolver {
+func (s *Service) GetResolver() didresolution.Resolver {
 	return s.resolver
 }
 
@@ -147,7 +148,7 @@ func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, er
 	}, nil
 }
 
-func (s *Service) Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOption) (*didsdk.ResolutionResult, error) {
+func (s *Service) Resolve(ctx context.Context, did string, opts ...didresolution.ResolutionOption) (*didresolution.ResolutionResult, error) {
 	return s.resolver.Resolve(ctx, did, opts)
 }
 
@@ -194,10 +195,12 @@ func (s *Service) GetKeyFromDID(ctx context.Context, request GetKeyFromDIDReques
 }
 
 func (s *Service) GetDIDsByMethod(ctx context.Context, request GetDIDsRequest) (*GetDIDsResponse, error) {
-	method := request.Method
-	handler, err := s.getHandler(method)
+	handler, err := s.getHandler(request.Method)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", method)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
+	}
+	if request.Deleted {
+		return handler.GetDeletedDIDs(ctx)
 	}
 	return handler.GetDIDs(ctx)
 }

@@ -10,7 +10,9 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/goccy/go-json"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -545,7 +547,8 @@ func createDID(t *testing.T, didService *did.Service) *did.CreateDIDResponse {
 	return creatorDID
 }
 
-func createSubmission(t *testing.T, pRouter *router.PresentationRouter, definitionID string, requesterDID string, vc credential.VerifiableCredential, holderDID didsdk.DIDKey, holderSigner crypto.JWTSigner) router.Operation {
+func createSubmission(t *testing.T, pRouter *router.PresentationRouter, definitionID string, requesterDID string,
+	vc credential.VerifiableCredential, holderDID key.DIDKey, holderSigner jwx.Signer) router.Operation {
 	request := createSubmissionRequest(t, definitionID, requesterDID, vc, holderSigner, holderDID)
 
 	value := newRequestValue(t, request)
@@ -560,7 +563,8 @@ func createSubmission(t *testing.T, pRouter *router.PresentationRouter, definiti
 	return resp
 }
 
-func createSubmissionRequest(t *testing.T, definitionID, requesterDID string, vc credential.VerifiableCredential, holderSigner crypto.JWTSigner, holderDID didsdk.DIDKey) router.CreateSubmissionRequest {
+func createSubmissionRequest(t *testing.T, definitionID, requesterDID string, vc credential.VerifiableCredential,
+	holderSigner jwx.Signer, holderDID key.DIDKey) router.CreateSubmissionRequest {
 	issuerSigner, didKey := getSigner(t)
 	vc.Issuer = didKey.String()
 	vcData, err := credential.SignVerifiableCredentialJWT(issuerSigner, vc)
@@ -586,7 +590,7 @@ func createSubmissionRequest(t *testing.T, definitionID, requesterDID string, vc
 		VerifiableCredential:   []any{keyaccess.JWT(vcData)},
 	}
 
-	signed, err := credential.SignVerifiablePresentationJWT(holderSigner, credential.JWTVVPParameters{Audience: requesterDID}, vp)
+	signed, err := credential.SignVerifiablePresentationJWT(holderSigner, credential.JWTVVPParameters{Audience: []string{requesterDID}}, vp)
 	require.NoError(t, err)
 
 	request := router.CreateSubmissionRequest{SubmissionJWT: keyaccess.JWT(signed)}
@@ -672,14 +676,14 @@ func createPresentationDefinition(t *testing.T, pRouter *router.PresentationRout
 	return resp
 }
 
-func getSigner(t *testing.T) (crypto.JWTSigner, didsdk.DIDKey) {
-	private, didKey, err := didsdk.GenerateDIDKey(crypto.P256)
+func getSigner(t *testing.T) (jwx.Signer, key.DIDKey) {
+	private, didKey, err := key.GenerateDIDKey(crypto.P256)
 	require.NoError(t, err)
 
 	expanded, err := didKey.Expand()
 	require.NoError(t, err)
 
-	signer, err := crypto.NewJWTSigner(didKey.String(), expanded.VerificationMethod[0].ID, private)
+	signer, err := jwx.NewJWXSigner(didKey.String(), expanded.VerificationMethod[0].ID, private)
 	require.NoError(t, err)
 
 	return *signer, *didKey

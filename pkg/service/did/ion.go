@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/ion"
 	"github.com/TBD54566975/ssi-sdk/util"
@@ -102,7 +103,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	if err != nil {
 		return nil, errors.Wrap(err, "could not generate key for ion DID")
 	}
-	pubKeyJWK, privKeyJWK, err := crypto.PrivateKeyToPrivateKeyJWK(privKey)
+	pubKeyJWK, privKeyJWK, err := jwx.PrivateKeyToPrivateKeyJWK(uuid.NewString(), privKey)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not convert key to JWK")
 	}
@@ -197,18 +198,10 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "could not store did:ion private key")
 	}
 
-	privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "converting private key to bytes")
-	}
-	return &CreateDIDResponse{
-		DID:              didDoc,
-		PrivateKeyBase58: base58.Encode(privKeyBytes),
-		KeyType:          request.KeyType,
-	}, nil
+	return &CreateDIDResponse{DID: didDoc}, nil
 }
 
-func keyToStoreRequest(kid string, privateKeyJWK crypto.PrivateKeyJWK, controller string) (*keystore.StoreKeyRequest, error) {
+func keyToStoreRequest(kid string, privateKeyJWK jwx.PrivateKeyJWK, controller string) (*keystore.StoreKeyRequest, error) {
 	privateKey, err := privateKeyJWK.ToPrivateKey()
 	if err != nil {
 		return nil, errors.Wrap(err, "getting private private key from JWK")
@@ -264,6 +257,23 @@ func (h *ionHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
 		if !gotDID.IsSoftDeleted() {
+			dids = append(dids, gotDID.GetDocument())
+		}
+	}
+	return &GetDIDsResponse{DIDs: dids}, nil
+}
+
+// GetDeletedDIDs returns only DIDs we have in storage for ION with SoftDeleted flag set to true
+func (h *ionHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error) {
+	logrus.Debug("getting stored did:ion DIDs")
+
+	gotDIDs, err := h.storage.GetDIDs(ctx, did.IONMethod.String(), new(ionStoredDID))
+	if err != nil {
+		return nil, fmt.Errorf("error getting did:ion DIDs")
+	}
+	dids := make([]did.Document, 0, len(gotDIDs))
+	for _, gotDID := range gotDIDs {
+		if gotDID.IsSoftDeleted() {
 			dids = append(dids, gotDID.GetDocument())
 		}
 	}

@@ -26,7 +26,7 @@ const (
 
 type StoredManifest struct {
 	ID          string                      `json:"id"`
-	Issuer      string                      `json:"issuer"`
+	IssuerDID   string                      `json:"issuerDid"`
 	IssuerKID   string                      `json:"issuerKid"`
 	Manifest    manifest.CredentialManifest `json:"manifest"`
 	ManifestJWT keyaccess.JWT               `json:"manifestJwt"`
@@ -46,7 +46,7 @@ type StoredApplication struct {
 type StoredResponse struct {
 	ID           string                      `json:"id"`
 	ManifestID   string                      `json:"manifestId"`
-	ApplicantDID string                      `json:"applicantId"`
+	ApplicantDID string                      `json:"applicantDid"`
 	Response     manifest.CredentialResponse `json:"response"`
 	Credentials  []cred.Container            `json:"credentials"`
 	ResponseJWT  keyaccess.JWT               `json:"responseJwt"`
@@ -231,14 +231,14 @@ func (ms *Storage) DeleteResponse(ctx context.Context, id string) error {
 	return nil
 }
 
-// ReviewApplication does the following:
+// StoreReviewApplication does the following:
 //  1. Updates the application status according to the approved parameter.
 //  2. Creates a Credential Response corresponding to the approved parameter and with the given reason.
 //  3. Marks the operation with id == opID as done, and sets operation.Response to the StoredResponse from the object
 //     creates in step 2.
 //
 // The operation and it's response (from 3) are returned.
-func (ms *Storage) ReviewApplication(ctx context.Context, applicationID string, approved bool, reason string, opID string, response StoredResponse) (*StoredResponse, *opstorage.StoredOperation, error) {
+func (ms *Storage) StoreReviewApplication(ctx context.Context, applicationID string, approved bool, reason string, opID string, response StoredResponse) (*StoredResponse, *opstorage.StoredOperation, error) {
 	// TODO: everything should be in a single Tx.
 	m := map[string]any{
 		"status": opsubmission.StatusDenied,

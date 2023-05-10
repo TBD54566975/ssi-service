@@ -133,7 +133,7 @@ func createWellKnownDIDConfiguration(tt *testing.T, didResponse *did.CreateDIDRe
 
 	// TODO: Remove typ header
 	// option := jwt.WithJwsHeaders()
-	signedTokenBytes, err := jwt.Sign(jwtToken, jwa.SignatureAlgorithm(keyAccess.JWTSigner.GetSigningAlgorithm()), keyAccess.JWTSigner.Key)
+	signedTokenBytes, err := jwt.Sign(jwtToken, jwa.SignatureAlgorithm(keyAccess.Signer.ALG), keyAccess.Signer.PrivateKey)
 	assert.NoError(tt, err)
 
 	credToken := keyaccess.JWT(signedTokenBytes).Ptr()
@@ -147,9 +147,6 @@ func createWellKnownDIDConfiguration(tt *testing.T, didResponse *did.CreateDIDRe
 
 	fmt.Println("Created Well Known Output for DID:")
 	fmt.Println(didResponse.DID.ID)
-
-	fmt.Println("DID Private Key:")
-	fmt.Println(didResponse.PrivateKeyBase58)
 
 	fmt.Println("Well Known Config:")
 	fmt.Println(string(jsonStr))
