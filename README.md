@@ -162,6 +162,14 @@ The project follows a proposal-based improvement format called [SIPs, outlined h
 Please [join Discord](https://discord.com/invite/tbd),
 or open an [issue](https://github.com/TBD54566975/ssi-service/issues) if you are interested in helping shape the future of the project.
 
+## Project Components References
+
+| Resource                                                                        | Description                                                                   |
+|---------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| [Webhooks](https://github.com/TBD54566975/ssi-service/blob/main/doc/WEBHOOK.md) | Describes how to use webhooks in the SSI Service                              |
+
+
+
 ## Project Resources
 
 | Resource                                                                                   | Description                                                                   |
