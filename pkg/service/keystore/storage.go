@@ -48,19 +48,14 @@ const (
 )
 
 type Storage struct {
-	db         storage.ServiceStorage
-	serviceKey []byte
+	db storage.ServiceStorage
 }
 
 func NewKeyStoreStorage(db storage.ServiceStorage, key ServiceKey) (*Storage, error) {
-	keyBytes, err := base58.Decode(key.Base58Key)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not decode service key")
-	}
-	bolt := &Storage{db: db, serviceKey: keyBytes}
+	bolt := &Storage{db: db}
 
 	// first, store the service key
-	if err = bolt.storeServiceKey(context.Background(), key); err != nil {
+	if err := bolt.storeServiceKey(context.Background(), key); err != nil {
 		return nil, errors.Wrap(err, "could not store service key")
 	}
 	return bolt, nil
@@ -98,7 +93,6 @@ func (kss *Storage) getAndSetServiceKey(ctx context.Context) ([]byte, error) {
 		return nil, errors.Wrap(err, "could not decode service key")
 	}
 
-	kss.serviceKey = keyBytes
 	return keyBytes, nil
 }
 
