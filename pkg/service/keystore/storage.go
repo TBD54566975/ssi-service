@@ -87,35 +87,17 @@ func (w wrappedDecryptor) Decrypt(_ context.Context, ciphertext, contextInfo []b
 	return w.AEAD.Decrypt(ciphertext, contextInfo)
 }
 
+const (
+	gcpKMSScheme = "gcp-kms"
+	awsKMSScheme = "aws-kms"
+)
+
 func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) (Encryptor, Decryptor, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if strings.HasPrefix(cfg.MasterKeyURI, "gcp-kms") || strings.HasPrefix(cfg.MasterKeyURI, "aws") {
-		var client registry.KMSClient
-		var err error
-		if strings.HasPrefix(cfg.MasterKeyURI, "gcp-kms") {
-			client, err = gcpkms.NewClientWithOptions(ctx, cfg.MasterKeyURI, option.WithCredentialsFile(cfg.KMSCredentialsPath))
-			if err != nil {
-				return nil, nil, errors.Wrap(err, "creating gcp kms client")
-			}
-		} else if strings.HasPrefix(cfg.MasterKeyURI, "aws") {
-			client, err = awskms.NewClientWithCredentials(cfg.MasterKeyURI, cfg.KMSCredentialsPath)
-			if err != nil {
-				return nil, nil, errors.Wrap(err, "creating aws kms client")
-			}
-		}
-		registry.RegisterKMSClient(client)
-		dek := aead.XChaCha20Poly1305KeyTemplate()
-		kh, err := keyset.NewHandle(aead.KMSEnvelopeAEADKeyTemplate(cfg.MasterKeyURI, dek))
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "creating keyset handle")
-		}
-		a, err := aead.New(kh)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "creating aead from key handl")
-		}
-		return wrappedEncryptor{a}, wrappedDecryptor{a}, nil
+	if strings.HasPrefix(cfg.MasterKeyURI, gcpKMSScheme) || strings.HasPrefix(cfg.MasterKeyURI, awsKMSScheme) {
+		return NewExternalEncryptor(ctx, cfg)
 	}
 
 	// First, generate a service key
@@ -132,6 +114,33 @@ func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) 
 		return nil, nil, err
 	}
 	return &encryptor{db}, &decryptor{db}, nil
+}
+
+func NewExternalEncryptor(ctx context.Context, cfg config.KeyStoreServiceConfig) (Encryptor, Decryptor, error) {
+	var client registry.KMSClient
+	var err error
+	if strings.HasPrefix(cfg.MasterKeyURI, gcpKMSScheme) {
+		client, err = gcpkms.NewClientWithOptions(ctx, cfg.MasterKeyURI, option.WithCredentialsFile(cfg.KMSCredentialsPath))
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "creating gcp kms client")
+		}
+	} else if strings.HasPrefix(cfg.MasterKeyURI, awsKMSScheme) {
+		client, err = awskms.NewClientWithCredentials(cfg.MasterKeyURI, cfg.KMSCredentialsPath)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "creating aws kms client")
+		}
+	}
+	registry.RegisterKMSClient(client)
+	dek := aead.XChaCha20Poly1305KeyTemplate()
+	kh, err := keyset.NewHandle(aead.KMSEnvelopeAEADKeyTemplate(cfg.MasterKeyURI, dek))
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating keyset handle")
+	}
+	a, err := aead.New(kh)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "creating aead from key handl")
+	}
+	return wrappedEncryptor{a}, wrappedDecryptor{a}, nil
 }
 
 // TODO(gabe): support more robust service key operations, including rotation, and caching
