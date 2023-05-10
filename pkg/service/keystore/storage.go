@@ -80,10 +80,6 @@ func (kss *Storage) storeServiceKey(ctx context.Context, key ServiceKey) error {
 
 // getAndSetServiceKey attempts to get the service key from memory, and if not available rehydrates it from the DB
 func (kss *Storage) getAndSetServiceKey(ctx context.Context) ([]byte, error) {
-	if len(kss.serviceKey) != 0 {
-		return kss.serviceKey, nil
-	}
-
 	storedKeyBytes, err := kss.db.Read(ctx, namespace, skKey)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not get service key")
