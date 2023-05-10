@@ -57,33 +57,33 @@ const (
 
 type Storage struct {
 	db        storage.ServiceStorage
-	encryptor Encryptor
-	decryptor Decryptor
+	encrypter Encrypter
+	decrypter Decrypter
 }
 
-func NewKeyStoreStorage(db storage.ServiceStorage, e Encryptor, d Decryptor) (*Storage, error) {
+func NewKeyStoreStorage(db storage.ServiceStorage, e Encrypter, d Decrypter) (*Storage, error) {
 	s := &Storage{
 		db:        db,
-		encryptor: e,
-		decryptor: d,
+		encrypter: e,
+		decrypter: d,
 	}
 
 	return s, nil
 }
 
-type wrappedEncryptor struct {
+type wrappedEncrypter struct {
 	tink.AEAD
 }
 
-func (w wrappedEncryptor) Encrypt(_ context.Context, plaintext, contextData []byte) ([]byte, error) {
+func (w wrappedEncrypter) Encrypt(_ context.Context, plaintext, contextData []byte) ([]byte, error) {
 	return w.AEAD.Encrypt(plaintext, contextData)
 }
 
-type wrappedDecryptor struct {
+type wrappedDecrypter struct {
 	tink.AEAD
 }
 
-func (w wrappedDecryptor) Decrypt(_ context.Context, ciphertext, contextInfo []byte) ([]byte, error) {
+func (w wrappedDecrypter) Decrypt(_ context.Context, ciphertext, contextInfo []byte) ([]byte, error) {
 	return w.AEAD.Decrypt(ciphertext, contextInfo)
 }
 
@@ -92,12 +92,12 @@ const (
 	awsKMSScheme = "aws-kms"
 )
 
-func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) (Encryptor, Decryptor, error) {
+func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) (Encrypter, Decrypter, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if len(cfg.MasterKeyURI) != 0 {
-		return NewExternalEncryptor(ctx, cfg)
+		return NewExternalEncrypter(ctx, cfg)
 	}
 
 	// First, generate a service key
@@ -113,10 +113,10 @@ func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) 
 	if err := storeServiceKey(ctx, db, key); err != nil {
 		return nil, nil, err
 	}
-	return &encryptor{db}, &decryptor{db}, nil
+	return &encrypter{db}, &decrypter{db}, nil
 }
 
-func NewExternalEncryptor(ctx context.Context, cfg config.KeyStoreServiceConfig) (Encryptor, Decryptor, error) {
+func NewExternalEncrypter(ctx context.Context, cfg config.KeyStoreServiceConfig) (Encrypter, Decrypter, error) {
 	var client registry.KMSClient
 	var err error
 	if strings.HasPrefix(cfg.MasterKeyURI, gcpKMSScheme) {
@@ -142,7 +142,7 @@ func NewExternalEncryptor(ctx context.Context, cfg config.KeyStoreServiceConfig)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating aead from key handl")
 	}
-	return wrappedEncryptor{a}, wrappedDecryptor{a}, nil
+	return wrappedEncrypter{a}, wrappedDecrypter{a}, nil
 }
 
 // TODO(gabe): support more robust service key operations, including rotation, and caching
@@ -179,23 +179,23 @@ func getServiceKey(ctx context.Context, db storage.ServiceStorage) ([]byte, erro
 	return keyBytes, nil
 }
 
-// Encryptor the interface for any encryptor implementation.
-type Encryptor interface {
+// Encrypter the interface for any encrypter implementation.
+type Encrypter interface {
 	Encrypt(ctx context.Context, plaintext, contextData []byte) ([]byte, error)
 }
 
-// Decryptor is the interface for any decryptor. May be AEAD or Hybrid.
-type Decryptor interface {
+// Decrypter is the interface for any decrypter. May be AEAD or Hybrid.
+type Decrypter interface {
 	// Decrypt decrypts ciphertext. The second parameter may be treated as associated data for AEAD (as abstracted in
 	// https://datatracker.ietf.org/doc/html/rfc5116), or as contextInfofor HPKE (https://www.rfc-editor.org/rfc/rfc9180.html)
 	Decrypt(ctx context.Context, ciphertext, contextInfo []byte) ([]byte, error)
 }
 
-type encryptor struct {
+type encrypter struct {
 	db storage.ServiceStorage
 }
 
-func (e encryptor) Encrypt(ctx context.Context, plaintext, _ []byte) ([]byte, error) {
+func (e encrypter) Encrypt(ctx context.Context, plaintext, _ []byte) ([]byte, error) {
 	// get service key
 	serviceKey, err := getServiceKey(ctx, e.db)
 	if err != nil {
@@ -209,11 +209,11 @@ func (e encryptor) Encrypt(ctx context.Context, plaintext, _ []byte) ([]byte, er
 	return encryptedKey, nil
 }
 
-type decryptor struct {
+type decrypter struct {
 	db storage.ServiceStorage
 }
 
-func (d decryptor) Decrypt(ctx context.Context, ciphertext, _ []byte) ([]byte, error) {
+func (d decrypter) Decrypt(ctx context.Context, ciphertext, _ []byte) ([]byte, error) {
 	// get service key
 	serviceKey, err := getServiceKey(ctx, d.db)
 	if err != nil {
@@ -242,7 +242,7 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 	}
 
 	// encrypt key before storing
-	encryptedKey, err := kss.encryptor.Encrypt(ctx, keyBytes, nil)
+	encryptedKey, err := kss.encrypter.Encrypt(ctx, keyBytes, nil)
 	if err != nil {
 		return sdkutil.LoggingErrorMsgf(err, "could not encrypt key: %s", key.ID)
 	}
@@ -274,7 +274,7 @@ func (kss *Storage) GetKey(ctx context.Context, id string) (*StoredKey, error) {
 	}
 
 	// decrypt key before unmarshaling
-	decryptedKey, err := kss.decryptor.Decrypt(ctx, storedKeyBytes, nil)
+	decryptedKey, err := kss.decrypter.Decrypt(ctx, storedKeyBytes, nil)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not decrypt key: %s", id)
 	}
