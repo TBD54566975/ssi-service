@@ -26,7 +26,7 @@ const (
 
 type StoredManifest struct {
 	ID          string                      `json:"id"`
-	Issuer      string                      `json:"issuer"`
+	IssuerDID   string                      `json:"issuerDid"`
 	IssuerKID   string                      `json:"issuerKid"`
 	Manifest    manifest.CredentialManifest `json:"manifest"`
 	ManifestJWT keyaccess.JWT               `json:"manifestJwt"`
@@ -46,7 +46,7 @@ type StoredApplication struct {
 type StoredResponse struct {
 	ID           string                      `json:"id"`
 	ManifestID   string                      `json:"manifestId"`
-	ApplicantDID string                      `json:"applicantId"`
+	ApplicantDID string                      `json:"applicantDid"`
 	Response     manifest.CredentialResponse `json:"response"`
 	Credentials  []cred.Container            `json:"credentials"`
 	ResponseJWT  keyaccess.JWT               `json:"responseJwt"`

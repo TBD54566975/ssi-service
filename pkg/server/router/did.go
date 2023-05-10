@@ -8,6 +8,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -282,9 +283,9 @@ func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, 
 }
 
 type ResolveDIDResponse struct {
-	ResolutionMetadata  *didsdk.ResolutionMetadata `json:"didResolutionMetadata,omitempty"`
-	DIDDocument         *didsdk.Document           `json:"didDocument"`
-	DIDDocumentMetadata *didsdk.DocumentMetadata   `json:"didDocumentMetadata,omitempty"`
+	ResolutionMetadata  *resolution.ResolutionMetadata `json:"didResolutionMetadata,omitempty"`
+	DIDDocument         *didsdk.Document               `json:"didDocument"`
+	DIDDocumentMetadata *resolution.DocumentMetadata   `json:"didDocumentMetadata,omitempty"`
 }
 
 // SoftDeleteDIDByMethod godoc

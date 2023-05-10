@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	didresolution "github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
 
@@ -61,7 +62,7 @@ func (s *Service) Config() config.DIDServiceConfig {
 	return s.config
 }
 
-func (s *Service) GetResolver() didsdk.Resolver {
+func (s *Service) GetResolver() didresolution.Resolver {
 	return s.resolver
 }
 
@@ -147,7 +148,7 @@ func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, er
 	}, nil
 }
 
-func (s *Service) Resolve(ctx context.Context, did string, opts ...didsdk.ResolutionOption) (*didsdk.ResolutionResult, error) {
+func (s *Service) Resolve(ctx context.Context, did string, opts ...didresolution.ResolutionOption) (*didresolution.ResolutionResult, error) {
 	return s.resolver.Resolve(ctx, did, opts)
 }
 
