@@ -116,7 +116,7 @@ func TestStoreAndGetKey(t *testing.T) {
 			BaseServiceConfig: &config.BaseServiceConfig{
 				Name: "test-keyStore",
 			},
-			ServiceKeyPassword: "test-password",
+			MasterKeyPassword: "test-password",
 		},
 		s)
 	assert.NoError(t, err)

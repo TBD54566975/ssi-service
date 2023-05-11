@@ -23,7 +23,7 @@ func TestMain(t *testing.M) {
 }
 
 func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Service {
-	serviceConfig := config.KeyStoreServiceConfig{ServiceKeyPassword: "test-password"}
+	serviceConfig := config.KeyStoreServiceConfig{MasterKeyPassword: "test-password"}
 	// create a keystore service
 	keystoreService, err := keystore.NewKeyStoreService(serviceConfig, db)
 	require.NoError(t, err)
