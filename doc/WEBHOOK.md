@@ -57,7 +57,7 @@ POST - http://localhost:8080/v1/webhooks
 }
 ````
 
-This command creates a webhook inside of the SSI-Service. It basically tells the SSI-Service that when a did is created post a notification to the specified URL (http://my-service-that-recieves-webhooks.com/webhook)
+This command creates a webhook inside of the SSI-Service. It tells the SSI-Service to make a POST request to the specified URL (http://my-service-that-recieves-webhooks.com/webhook) after a DID is created (i.e. after the [Create DID Document](https://developer.tbd.website/docs/apis/ssi-service#tag/WebhookAPI) endpoint is called).
 
 When a new did is created the service that is listening to the webhook will recieve this data:
 
