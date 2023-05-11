@@ -130,7 +130,7 @@ POST - http://localhost:8080/v1/presentations/submissions
 }
 ````
 
-A new submission is created the service that is listening to the webhook will recieve this data:
+Upon receiving a new submission the service that is registered to listen for the webhook will receive this data:
 ````json
  {
   "noun": "Submission",
