@@ -134,7 +134,7 @@ func NewExternalEncrypter(ctx context.Context, cfg config.KeyStoreServiceConfig)
 		return nil, nil, errors.Errorf("master_key_uri value %q is not supported", cfg.MasterKeyURI)
 	}
 	registry.RegisterKMSClient(client)
-	dek := aead.XChaCha20Poly1305KeyTemplate()
+	dek := aead.AES256GCMKeyTemplate()
 	kh, err := keyset.NewHandle(aead.KMSEnvelopeAEADKeyTemplate(cfg.MasterKeyURI, dek))
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "creating keyset handle")
