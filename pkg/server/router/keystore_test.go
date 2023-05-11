@@ -34,8 +34,8 @@ func TestKeyStoreRouter(t *testing.T) {
 		assert.NotNil(tt, bolt)
 
 		serviceConfig := config.KeyStoreServiceConfig{
-			BaseServiceConfig:  &config.BaseServiceConfig{Name: "keystore"},
-			ServiceKeyPassword: "test-password",
+			BaseServiceConfig: &config.BaseServiceConfig{Name: "keystore"},
+			MasterKeyPassword: "test-password",
 		}
 		keyStoreService, err := keystore.NewKeyStoreService(serviceConfig, bolt)
 		assert.NoError(tt, err)

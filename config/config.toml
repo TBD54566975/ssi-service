@@ -48,6 +48,8 @@ option = "bolt.db"
 [services.keystore]
 name = "keystore"
 password = "default-password"
+# master_key_uri = "gcp-kms://projects/*/locations/*/keyRings/*/cryptoKeys/*"
+# kms_credentials_path = "credentials.json"
 
 [services.did]
 name = "did"
