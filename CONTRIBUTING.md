@@ -114,7 +114,7 @@ your experience and help our leads respond quickly to your valuable work:
 ### Process
 We suggest the following process when picking up an issue:
  * Check to see if anyone is already working on the issue by looking to see if the issue has any comments saying so.
- * Fork the repo and create a branch containing the issue number you're working on
+ * Fork the repo and create a branch containing the issue number you're working on.
  * Push that branch and create a PR, mentioning the issue it relates to in the description.
  * You may also choose to paste a link to the PR in the original issue.
 
