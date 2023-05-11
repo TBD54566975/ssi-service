@@ -107,7 +107,7 @@ This response object has the Noun and Verb that happened that fired it, and the 
 
 
 # Presentation Exchange Webhook Example
-Here is an example of how to setup a webhook to fire when a new presentation submission is created:
+Here is an example of how to setup a webhook to fire when a new presentation submission is received by the service:
 
 
 First setup a webhook object in the SSI-Service that will POST to the given URL when a Submission is received by the service:
