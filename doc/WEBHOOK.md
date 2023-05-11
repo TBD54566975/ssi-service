@@ -103,7 +103,7 @@ When a new did is created the service that is listening to the webhook will reci
 }
 ````
 
-This response object has the Noun and Verb that happened that fired it, and the data attached to the response of the initial call
+This response object has the Noun and Verb that happened that fired it, and the data attached to the response of the initial call.
 
 
 # Presentation Exchange Webhook Example
