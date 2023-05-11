@@ -15,7 +15,7 @@ var presentationExchangeContext = NewTestContext("PresentationExchange")
 
 func TestCreateParticipants(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping integration test")
+		t.Skip("skipping integration testz")
 	}
 
 	didKeyOutput, err := CreateDIDKey()

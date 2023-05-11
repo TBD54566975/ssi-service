@@ -46,10 +46,10 @@ The SSI service supports the following verbs:
 # Simple Webhook Example
 Here is an example of how to setup a webhook to fire when a new DID is created:
 
-First create a webhook by doing a POST to:
+First create a webhook by doing a PUT to:
 
 ````json
-POST - http://localhost:8080/v1/webhooks
+PUT - http://localhost:8080/v1/webhooks
 {
     "noun": "DID",
     "verb": "Create",
@@ -112,7 +112,7 @@ Here is an example of how to setup a webhook to fire when a new presentation sub
 
 First setup a webhook object in the SSI-Service that will POST to the given URL when a Submission is received by the service:
 ````json
-POST - http://localhost:8080/v1/webhooks
+PUT - http://localhost:8080/v1/webhooks
 {
     "noun": "Submission",
     "verb": "Create",
@@ -120,11 +120,11 @@ POST - http://localhost:8080/v1/webhooks
 }
 ````
 
-Use the SSI Service to set up a Presentation Definition and corresponding Presentation Request to accept a KYC credential. We have the prerequisites for this in our steelthread integration test
+Use the SSI Service to set up a Presentation Definition and corresponding Presentation Request to accept a KYC credential. We have the prerequisites for this in our [steelthread integration test](https://github.com/TBD54566975/ssi-service/blob/main/integration/steelthread_integration_test.go)
 
 When someone uses the SSI-Service to Create a submission:
 ````json
-POST - http://localhost:8080/v1/presentations/submissions
+PUT - http://localhost:8080/v1/presentations/submissions
 {
   "submissionJwt": "..."
 }
@@ -145,3 +145,52 @@ Upon receiving a new submission the service that is registered to listen for the
 ````
 
 The external webhook service that received this notification can then get the required objects, do validation, and make a call to the SSI-Service to approve or to not approve.
+
+The service that is examing this can find more information about this submission by doing:
+
+````json
+GET - http://localhost:8080/v1/presentations/submissions/e875b34e-35fd-4ad9-8805-4f16bf98df71
+````
+
+Example Presentation Submission Response:
+````json
+{
+    "status": "pending",
+    "verifiablePresentation": {
+        "@context": [
+            "https://www.w3.org/2018/credentials/v1"
+        ],
+        "holder": "did:key:z6MkiVxsSpuuZRw34mxBfZ8jzi18BagQoXJnLuNWNfM1YgYL",
+        "type": [
+            "VerifiablePresentation"
+        ],
+        "presentation_submission": {
+            "definition_id": "dd561f5c-568b-422a-b2cc-3abf0cc494f7",
+            "descriptor_map": [
+                {
+                    "format": "jwt_vp",
+                    "id": "wa_driver_license",
+                    "path": "$.verifiableCredential[0]"
+                }
+            ],
+            "id": "291b766b-bbf6-4260-ae8f-7339e7ac6dcc"
+        },
+        "verifiableCredential": [
+            "eyJhbGciOiJFZERTQSIsImtpZCI6IiN6Nk1rczg4QmROWEV3QVdYRjFIc2VhTG5rZTE4S0RLZFVoeW9YQ1lOREI5NlJuSmUiLCJ0eXAiOiJKV1QifQ.eyJleHAiOjI1ODAxMzAwODAsImlhdCI6MTY4MzgyNDM5NCwiaXNzIjoiZGlkOmtleTp6Nk1rczg4QmROWEV3QVdYRjFIc2VhTG5rZTE4S0RLZFVoeW9YQ1lOREI5NlJuSmUiLCJqdGkiOiI0ZmM3YWFjNS00MTQ1LTQ1MWItYWM3My1mNDFmZTg1MWFhODkiLCJuYmYiOjE2ODM4MjQzOTQsIm5vbmNlIjoiZGQ3MjI2MzQtOTRlMC00MDJkLWEzMmMtYTU1ZTIyODE1Y2VjIiwic3ViIjoiZGlkOmtleTp6Nk1raVZ4c1NwdXVaUnczNG14QmZaOGp6aTE4QmFnUW9YSm5MdU5XTmZNMVlnWUwiLCJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSJdLCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIl0sImlzc3VlciI6IiIsImlzc3VhbmNlRGF0ZSI6IiIsImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImFkZGl0aW9uYWxOYW1lIjoiTWNsb3ZpbiIsImRhdGVPZkJpcnRoIjoiMTk4Ny0wMS0wMiIsImZhbWlseU5hbWUiOiJBbmRyZXMiLCJnaXZlbk5hbWUiOiJVcmliZSJ9fX0.yN1OXIOGki0HTWyDtWqR1KWDHoqorIUEPuyYEA7l0dOud1ENf8nsdOTzAB3c2XMxk70KPwEalekDeiagr6A4DQ"
+        ]
+    }
+}
+````
+
+
+If the presentation submission satisfies all requirements, it can be approved with the following:
+
+````json
+PUT- http://localhost:8080/v1/presentations/submissions/e875b34e-35fd-4ad9-8805-4f16bf98df71/review
+{
+    "approved": true,
+    "reason": "my reason"
+}
+````
+
+This will complete the flow for the presentation submission.
