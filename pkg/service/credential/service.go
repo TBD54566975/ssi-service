@@ -542,6 +542,10 @@ func (s Service) UpdateCredentialStatus(ctx context.Context, request UpdateCrede
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not get credential: %s", request.ID)
 	}
 
+	if gotCred.Credential.CredentialStatus == nil {
+		return nil, sdkutil.LoggingNewErrorf("credential %q has no credentialStatus field", gotCred.CredentialID)
+	}
+
 	statusPurpose := gotCred.Credential.CredentialStatus.(map[string]any)["statusPurpose"].(string)
 	if len(statusPurpose) == 0 {
 		return nil, sdkutil.LoggingNewErrorf("status purpose could not be derived from credential status")
