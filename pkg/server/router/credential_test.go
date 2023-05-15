@@ -475,6 +475,21 @@ func TestCredentialRouter(t *testing.T) {
 		issuer := issuerDID.DID.ID
 		subject := "did:test:345"
 
+		nonRevokableCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+			Issuer:    issuer,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   subject,
+			SchemaID:  createdSchema.ID,
+			Data: map[string]any{
+				"email": "cant@revoke.me",
+			},
+			Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+		})
+		assert.NoError(tt, err)
+
+		_, err = credService.UpdateCredentialStatus(context.Background(), credential.UpdateCredentialStatusRequest{ID: nonRevokableCred.ID, Revoked: true})
+		assert.ErrorContains(tt, err, "has no credentialStatus field")
+
 		createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:    issuer,
 			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
