@@ -32,7 +32,7 @@ require (
 	github.com/stretchr/testify v1.8.2
 	go.einride.tech/aip v0.60.0
 	go.etcd.io/bbolt v1.3.7
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.40.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.41.1
 	go.opentelemetry.io/otel v1.15.1
 	go.opentelemetry.io/otel/exporters/jaeger v1.15.1
 	go.opentelemetry.io/otel/sdk v1.15.1
@@ -129,7 +129,7 @@ require (
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/yuin/gopher-lua v1.1.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
-	go.opentelemetry.io/otel/metric v0.37.0 // indirect
+	go.opentelemetry.io/otel/metric v0.38.1 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/mod v0.8.0 // indirect
 	golang.org/x/net v0.9.0 // indirect
