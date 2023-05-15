@@ -20,12 +20,12 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/lestrrat-go/jwx v1.2.25
 	github.com/lestrrat-go/jwx/v2 v2.0.9
-	github.com/magefile/mage v1.14.0
+	github.com/magefile/mage v1.15.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/ory/fosite v0.44.0
 	github.com/pkg/errors v0.9.1
-	github.com/redis/go-redis/extra/redisotel/v9 v9.0.2
+	github.com/redis/go-redis/extra/redisotel/v9 v9.0.4
 	github.com/redis/go-redis/v9 v9.0.4
 	github.com/rs/cors v1.9.0
 	github.com/sirupsen/logrus v1.9.0
@@ -37,7 +37,7 @@ require (
 	go.opentelemetry.io/otel/exporters/jaeger v1.15.1
 	go.opentelemetry.io/otel/sdk v1.15.1
 	go.opentelemetry.io/otel/trace v1.15.1
-	golang.org/x/crypto v0.8.0
+	golang.org/x/crypto v0.9.0
 	google.golang.org/api v0.122.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/h2non/gock.v1 v1.1.2
@@ -118,7 +118,7 @@ require (
 	github.com/piprate/json-gold v0.5.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pquerna/cachecontrol v0.1.0 // indirect
-	github.com/redis/go-redis/extra/rediscmd/v9 v9.0.2 // indirect
+	github.com/redis/go-redis/extra/rediscmd/v9 v9.0.4 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/afero v1.3.2 // indirect
@@ -133,7 +133,7 @@ require (
 	go.opentelemetry.io/otel/metric v0.38.1 // indirect
 	golang.org/x/exp v0.0.0-20220722155223-a9213eeb770e // indirect
 	golang.org/x/mod v0.8.0 // indirect
-	golang.org/x/net v0.9.0 // indirect
+	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/oauth2 v0.7.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/term v0.8.0 // indirect
