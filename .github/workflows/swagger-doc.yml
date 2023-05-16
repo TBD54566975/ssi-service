@@ -30,10 +30,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - run: |
-          export PATH=$PATH:$(go env GOPATH)/bin
           mage spec
-          git config user.name github-actions
-          git config user.email github-actions@github.com
           if (git diff --shortstat | grep '[0-9]'); then \
             echo "detected diff; please run 'mage spec' and commit the changes"
             exit 1
