@@ -30,6 +30,8 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - run: |
+          export PATH=$PATH:$(go env GOPATH)/bin
+          go get github.com/swaggo/swag/cmd/swag@v2.0.0-rc3
           mage spec
           if (git diff --shortstat | grep '[0-9]'); then \
             echo "detected diff; please run 'mage spec' and commit the changes"
