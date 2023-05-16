@@ -13,10 +13,10 @@ func WrapMiddleware(mw []Middleware, handler Handler) Handler {
 	// wrap the provided middlewares around the provided handler from
 	// back to front so that the order provided is the order of execution
 	for i := len(mw) - 1; i >= 0; i-- {
-		h := mw[i]
+		currentMiddleware := mw[i]
 
-		if h != nil {
-			handler = h(handler)
+		if currentMiddleware != nil {
+			handler = currentMiddleware(handler)
 		}
 	}
 

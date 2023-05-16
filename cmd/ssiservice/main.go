@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"expvar"
-	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -57,26 +56,13 @@ func run() error {
 		logrus.Fatalf("could not instantiate config: %s", err.Error())
 	}
 
-	if cfg.Server.LogLevel != "" {
-		level, err := logrus.ParseLevel(cfg.Server.LogLevel)
-		if err != nil {
-			logrus.WithError(err).Errorf("could not parse log level<%s>, setting to info", cfg.Server.LogLevel)
-			logrus.SetLevel(logrus.InfoLevel)
-		} else {
-			logrus.SetLevel(level)
-		}
-	}
-	// set log config from config file
-	if cfg.Server.LogLocation != "" {
-		file, err := os.OpenFile(createLogFile(cfg.Server.LogLocation), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
-		if err == nil {
-			logrus.SetOutput(file)
-		} else {
-			logrus.Info("Failed to log to file, using default stdout")
-		}
-		defer func() {
-			_ = file.Close()
-		}()
+	// set up logger
+	if logFile := configureLogger(cfg.Server.LogLevel, cfg.Server.LogLocation); logFile != nil {
+		defer func(logFile *os.File) {
+			if err = logFile.Close(); err != nil {
+				logrus.WithError(err).Error("failed to close log file")
+			}
+		}(logFile)
 	}
 
 	// set up schema caching based on config
@@ -115,12 +101,6 @@ func run() error {
 	if err != nil {
 		logrus.Fatalf("could not start http services: %s", err.Error())
 	}
-	api := http.Server{
-		Addr:         cfg.Server.APIHost,
-		Handler:      ssiServer,
-		ReadTimeout:  cfg.Server.ReadTimeout,
-		WriteTimeout: cfg.Server.WriteTimeout,
-	}
 
 	serverErrors := make(chan error, 1)
 
@@ -133,8 +113,8 @@ func run() error {
 	}
 
 	go func() {
-		logrus.Infof("main: server started and listening on -> %s", api.Addr)
-		serverErrors <- api.ListenAndServe()
+		logrus.Infof("main: server started and listening on -> %s", ssiServer.Server.Addr)
+		serverErrors <- ssiServer.ListenAndServe()
 	}()
 
 	select {
@@ -151,8 +131,8 @@ func run() error {
 			logrus.Errorf("main: failed to shutdown tracer: %s", err)
 		}
 
-		if err = api.Shutdown(ctx); err != nil {
-			if err = api.Close(); err != nil {
+		if err = ssiServer.Shutdown(ctx); err != nil {
+			if err = ssiServer.Close(); err != nil {
 				return err
 			}
 			return errors.Wrap(err, "main: failed to stop server gracefully")
@@ -189,6 +169,42 @@ func newTracerProvider(cfg config.SSIServiceConfig) (*sdktrace.TracerProvider, e
 	return tp, nil
 }
 
-func createLogFile(location string) string {
-	return location + "/" + config.ServiceName + "-" + time.Now().Format(time.RFC3339) + ".log"
+// configureLogger configures the logger to logs to the given location and returns a file pointer to a logs
+// file that should be closed upon server shutdown
+func configureLogger(level, location string) *os.File {
+	if level != "" {
+		logLevel, err := logrus.ParseLevel(level)
+		if err != nil {
+			logrus.WithError(err).Errorf("could not parse log level<%s>, setting to info", level)
+			logrus.SetLevel(logrus.InfoLevel)
+		} else {
+			logrus.SetLevel(logLevel)
+		}
+	}
+
+	logrus.SetFormatter(&logrus.TextFormatter{
+		DisableColors: true,
+		FullTimestamp: true,
+	})
+	logrus.SetReportCaller(true)
+	logLevel, err := logrus.ParseLevel(level)
+	if err != nil {
+		logrus.WithError(err).Errorf("could not parse logs level<%s>, setting to info", level)
+		logrus.SetLevel(logrus.InfoLevel)
+	} else {
+		logrus.SetLevel(logLevel)
+	}
+
+	// set logs config from config file
+	if location != "" {
+		logFile := location + "/" + config.ServiceName + "-" + time.Now().Format(time.RFC3339) + ".log"
+		file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
+		if err != nil {
+			logrus.WithError(err).Warn("failed to create logs file, using default stdout")
+		} else {
+			logrus.SetOutput(file)
+		}
+		return file
+	}
+	return nil
 }

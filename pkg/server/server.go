@@ -9,6 +9,7 @@ import (
 	"path"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -52,16 +53,16 @@ type SSIServer struct {
 // NewSSIServer does two things: instantiates all service and registers their HTTP bindings
 func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSIServer, error) {
 	// creates an HTTP server from the framework, and wrap it to extend it for the SSIS
-	middlewares := []framework.Middleware{
-		middleware.Logger(),
+	middlewares := gin.HandlersChain{
+		middleware.Logger(logrus.StandardLogger()),
 		middleware.Errors(),
 		middleware.Metrics(),
 		middleware.Panics(),
 	}
 	if config.Server.EnableAllowAllCORS {
-		middlewares = append(middlewares, middleware.Cors())
+		middlewares = append(middlewares, middleware.CORS())
 	}
-	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares...)
+	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares)
 	ssi, err := service.InstantiateSSIService(config.Services)
 	if err != nil {
 		return nil, err
