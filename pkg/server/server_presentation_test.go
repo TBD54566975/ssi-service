@@ -49,7 +49,7 @@ func TestPresentationAPI(t *testing.T) {
 	pd, err := builder.Build()
 	assert.NoError(t, err)
 
-	t.Run("Create, Get, and Delete PresentationDefinition", func(tt *testing.T) {
+	t.Run("Create, Get, and Delete PresentationRequest", func(tt *testing.T) {
 		s := setupTestDB(tt)
 		pRouter, didService := setupPresentationRouter(tt, s)
 		authorDID := createDID(tt, didService)
@@ -57,24 +57,24 @@ func TestPresentationAPI(t *testing.T) {
 		var createdID string
 		{
 			kid := authorDID.DID.VerificationMethod[0].ID
-			resp := createPresentationDefinition(tt, pRouter, authorDID.DID.ID, kid, WithInputDescriptors(inputDescriptors))
-			if diff := cmp.Diff(*pd, resp.PresentationDefinition, cmpopts.IgnoreFields(exchange.PresentationDefinition{}, "ID")); diff != "" {
-				t.Errorf("PresentationDefinition mismatch (-want +got):\n%s", diff)
+			resp := createPresentationRequest(tt, pRouter, authorDID.DID.ID, kid, WithInputDescriptors(inputDescriptors))
+			if diff := cmp.Diff(*pd, resp.PresentationRequest.PresentationDefinition, cmpopts.IgnoreFields(exchange.PresentationDefinition{}, "ID")); diff != "" {
+				t.Errorf("PresentationRequest mismatch (-want +got):\n%s", diff)
 			}
 
-			createdID = resp.PresentationDefinition.ID
+			createdID = resp.PresentationRequest.ID
 		}
 		{
 			// We can get the PD after it's created.
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", createdID), nil)
 			w := httptest.NewRecorder()
-			assert.NoError(tt, pRouter.GetDefinition(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
+			assert.NoError(tt, pRouter.GetPresentationRequest(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
 
-			var resp router.GetPresentationDefinitionResponse
+			var resp router.GetPresentationRequestResponse
 			assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Equal(tt, createdID, resp.PresentationDefinition.ID)
-			if diff := cmp.Diff(*pd, resp.PresentationDefinition, cmpopts.IgnoreFields(exchange.PresentationDefinition{}, "ID")); diff != "" {
-				t.Errorf("PresentationDefinition mismatch (-want +got):\n%s", diff)
+			assert.Equal(tt, createdID, resp.PresentationRequest.ID)
+			if diff := cmp.Diff(*pd, resp.PresentationRequest.PresentationDefinition, cmpopts.IgnoreFields(exchange.PresentationDefinition{}, "ID")); diff != "" {
+				t.Errorf("PresentationRequest mismatch (-want +got):\n%s", diff)
 			}
 		}
 		{
@@ -82,27 +82,27 @@ func TestPresentationAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/definitions", nil)
 			w := httptest.NewRecorder()
 
-			assert.NoError(tt, pRouter.ListDefinitions(newRequestContext(), w, req))
+			assert.NoError(tt, pRouter.ListPresentationRequests(newRequestContext(), w, req))
 
-			var resp router.ListDefinitionsResponse
+			var resp router.ListPresentationRequestsResponse
 			assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Len(tt, resp.Definitions, 1)
-			assert.Equal(tt, createdID, resp.Definitions[0].ID)
-			if diff := cmp.Diff(pd, resp.Definitions[0], cmpopts.IgnoreFields(exchange.PresentationDefinition{}, "ID")); diff != "" {
-				t.Errorf("PresentationDefinition mismatch (-want +got):\n%s", diff)
+			assert.Len(tt, resp.PresentationRequests, 1)
+			assert.Equal(tt, createdID, resp.PresentationRequests[0].ID)
+			if diff := cmp.Diff(pd, &resp.PresentationRequests[0].PresentationDefinition, cmpopts.IgnoreFields(exchange.PresentationDefinition{}, "ID")); diff != "" {
+				t.Errorf("PresentationRequest mismatch (-want +got):\n%s", diff)
 			}
 		}
 		{
 			// The PD can be deleted.
 			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", createdID), nil)
 			w := httptest.NewRecorder()
-			assert.NoError(t, pRouter.DeleteDefinition(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
+			assert.NoError(t, pRouter.DeletePresentationRequest(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
 		}
 		{
 			// And we cannot get the PD after it's been deleted.
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", createdID), nil)
 			w := httptest.NewRecorder()
-			assert.Error(tt, pRouter.GetDefinition(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
+			assert.Error(tt, pRouter.GetPresentationRequest(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
 		}
 	})
 
@@ -113,11 +113,11 @@ func TestPresentationAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/definitions", nil)
 		w := httptest.NewRecorder()
 
-		assert.NoError(tt, pRouter.ListDefinitions(newRequestContext(), w, req))
+		assert.NoError(tt, pRouter.ListPresentationRequests(newRequestContext(), w, req))
 
-		var resp router.ListDefinitionsResponse
+		var resp router.ListPresentationRequestsResponse
 		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
-		assert.Empty(tt, resp.Definitions)
+		assert.Empty(tt, resp.PresentationRequests)
 	})
 
 	t.Run("List returns many definitions", func(tt *testing.T) {
@@ -125,32 +125,32 @@ func TestPresentationAPI(t *testing.T) {
 		pRouter, didService := setupPresentationRouter(tt, s)
 		authorDID := createDID(tt, didService)
 		kid := authorDID.DID.VerificationMethod[0].ID
-		def1 := createPresentationDefinition(tt, pRouter, authorDID.DID.ID, kid)
-		def2 := createPresentationDefinition(tt, pRouter, authorDID.DID.ID, kid)
+		def1 := createPresentationRequest(tt, pRouter, authorDID.DID.ID, kid)
+		def2 := createPresentationRequest(tt, pRouter, authorDID.DID.ID, kid)
 
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/definitions", nil)
 		w := httptest.NewRecorder()
 
-		assert.NoError(tt, pRouter.ListDefinitions(newRequestContext(), w, req))
+		assert.NoError(tt, pRouter.ListPresentationRequests(newRequestContext(), w, req))
 
-		var resp router.ListDefinitionsResponse
+		var resp router.ListPresentationRequestsResponse
 		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
-		assert.Len(tt, resp.Definitions, 2)
-		assert.ElementsMatch(tt, resp.Definitions, []*exchange.PresentationDefinition{
-			&def1.PresentationDefinition,
-			&def2.PresentationDefinition,
+		assert.Len(tt, resp.PresentationRequests, 2)
+		assert.ElementsMatch(tt, resp.PresentationRequests, []*exchange.PresentationDefinitionEnvelope{
+			&def1.PresentationRequest,
+			&def2.PresentationRequest,
 		})
 	})
 
 	t.Run("Create returns error without input descriptors", func(tt *testing.T) {
 		s := setupTestDB(tt)
 		pRouter, _ := setupPresentationRouter(tt, s)
-		request := router.CreatePresentationDefinitionRequest{}
+		request := router.CreatePresentationRequestRequest{}
 		value := newRequestValue(tt, request)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/definitions", value)
 		w := httptest.NewRecorder()
 
-		err = pRouter.CreateDefinition(newRequestContext(), w, req)
+		err = pRouter.CreatePresentationRequest(newRequestContext(), w, req)
 
 		assert.Error(t, err)
 	})
@@ -161,7 +161,7 @@ func TestPresentationAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
 
-		assert.Error(tt, pRouter.GetDefinition(newRequestContext(), w, req))
+		assert.Error(tt, pRouter.GetPresentationRequest(newRequestContext(), w, req))
 	})
 
 	t.Run("Delete without an ID returns error", func(tt *testing.T) {
@@ -170,7 +170,7 @@ func TestPresentationAPI(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
-		assert.Error(tt, pRouter.DeleteDefinition(newRequestContext(), w, req))
+		assert.Error(tt, pRouter.DeletePresentationRequest(newRequestContext(), w, req))
 		w.Flush()
 	})
 
@@ -192,8 +192,8 @@ func TestPresentationAPI(t *testing.T) {
 
 			holderSigner, holderDID := getSigner(ttt)
 			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
-			op := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
+			definition := createPresentationRequest(ttt, pRouter, authorDID.DID.ID, kid)
+			op := createSubmission(ttt, pRouter, definition.PresentationRequest.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
 					"additionalName": "Mclovin",
 					"dateOfBirth":    "1987-01-02",
@@ -210,7 +210,7 @@ func TestPresentationAPI(t *testing.T) {
 			var resp router.GetSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Equal(ttt, opstorage.StatusObjectID(op.ID), resp.GetSubmission().ID)
-			assert.Equal(ttt, definition.PresentationDefinition.ID, resp.GetSubmission().DefinitionID)
+			assert.Equal(ttt, definition.PresentationRequest.ID, resp.GetSubmission().DefinitionID)
 			assert.Equal(ttt, "pending", resp.Submission.Status)
 		})
 
@@ -221,8 +221,8 @@ func TestPresentationAPI(t *testing.T) {
 
 			holderSigner, holderDID := getSigner(ttt)
 			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
-			request := createSubmissionRequest(ttt, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
+			definition := createPresentationRequest(ttt, pRouter, authorDID.DID.ID, kid)
+			request := createSubmissionRequest(ttt, definition.PresentationRequest.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
 					"additionalName": "Mclovin",
 					"dateOfBirth":    "1987-01-02",
@@ -252,8 +252,8 @@ func TestPresentationAPI(t *testing.T) {
 
 			holderSigner, holderDID := getSigner(ttt)
 			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
-			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+			definition := createPresentationRequest(ttt, pRouter, authorDID.DID.ID, kid)
+			submissionOp := createSubmission(t, pRouter, definition.PresentationRequest.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			request := router.ReviewSubmissionRequest{
 				Approved: true,
@@ -276,7 +276,7 @@ func TestPresentationAPI(t *testing.T) {
 			assert.Equal(ttt, "because I want to", resp.Reason)
 			assert.NotEmpty(ttt, resp.GetSubmission().ID)
 			assert.Equal(ttt, "approved", resp.Status)
-			assert.Equal(ttt, definition.PresentationDefinition.ID, resp.GetSubmission().DefinitionID)
+			assert.Equal(ttt, definition.PresentationRequest.ID, resp.GetSubmission().DefinitionID)
 		})
 
 		tt.Run("Review submission twice fails", func(ttt *testing.T) {
@@ -286,8 +286,8 @@ func TestPresentationAPI(t *testing.T) {
 
 			holderSigner, holderDID := getSigner(ttt)
 			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
-			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+			definition := createPresentationRequest(ttt, pRouter, authorDID.DID.ID, kid)
+			submissionOp := createSubmission(t, pRouter, definition.PresentationRequest.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 			createdID := opstorage.StatusObjectID(submissionOp.ID)
 			_ = reviewSubmission(ttt, pRouter, createdID)
 
@@ -334,8 +334,8 @@ func TestPresentationAPI(t *testing.T) {
 
 			holderSigner, holderDID := getSigner(ttt)
 			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
-			op := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
+			definition := createPresentationRequest(ttt, pRouter, authorDID.DID.ID, kid)
+			op := createSubmission(t, pRouter, definition.PresentationRequest.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
 					"additionalName": "Mclovin",
 					"dateOfBirth":    "1987-01-02",
@@ -345,7 +345,7 @@ func TestPresentationAPI(t *testing.T) {
 				})), holderDID, holderSigner)
 
 			mrTeeSigner, mrTeeDID := getSigner(ttt)
-			op2 := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
+			op2 := createSubmission(ttt, pRouter, definition.PresentationRequest.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
 					"additionalName": "Mr. T",
 					"dateOfBirth":    "1999-01-02",
@@ -406,8 +406,8 @@ func TestPresentationAPI(t *testing.T) {
 				})
 			assert.Equal(ttt,
 				[]string{
-					definition.PresentationDefinition.ID,
-					definition.PresentationDefinition.ID,
+					definition.PresentationRequest.ID,
+					definition.PresentationRequest.ID,
 				},
 				[]string{
 					resp.Submissions[0].GetSubmission().DefinitionID,
@@ -438,8 +438,8 @@ func TestPresentationAPI(t *testing.T) {
 
 			holderSigner, holderDID := getSigner(ttt)
 			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
-			op := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
+			definition := createPresentationRequest(ttt, pRouter, authorDID.DID.ID, kid)
+			op := createSubmission(ttt, pRouter, definition.PresentationRequest.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
 					"additionalName": "Mclovin",
 					"dateOfBirth":    "1987-01-02",
@@ -485,7 +485,7 @@ func TestPresentationAPI(t *testing.T) {
 			assert.Len(ttt, resp.Submissions, 1)
 			assert.Len(ttt, resp.Submissions[0].VerifiablePresentation.VerifiableCredential, 1)
 			assert.Equal(ttt, opstorage.StatusObjectID(op.ID), resp.Submissions[0].GetSubmission().ID)
-			assert.Equal(ttt, definition.PresentationDefinition.ID, resp.Submissions[0].GetSubmission().DefinitionID)
+			assert.Equal(ttt, definition.PresentationRequest.ID, resp.Submissions[0].GetSubmission().DefinitionID)
 		})
 
 		tt.Run("List submissions filter returns empty when status does not match", func(ttt *testing.T) {
@@ -495,8 +495,8 @@ func TestPresentationAPI(t *testing.T) {
 
 			holderSigner, holderDID := getSigner(ttt)
 			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
-			_ = createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
+			definition := createPresentationRequest(ttt, pRouter, authorDID.DID.ID, kid)
+			_ = createSubmission(t, pRouter, definition.PresentationRequest.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
 					"additionalName": "Mclovin",
 					"dateOfBirth":    "1987-01-02",
@@ -627,16 +627,16 @@ func WithCredentialSubject(subject credential.CredentialSubject) VCOption {
 
 type VCOption func(verifiableCredential *credential.VerifiableCredential)
 
-type DefinitionOption func(*router.CreatePresentationDefinitionRequest)
+type DefinitionOption func(*router.CreatePresentationRequestRequest)
 
 func WithInputDescriptors(inputDescriptors []exchange.InputDescriptor) DefinitionOption {
-	return func(r *router.CreatePresentationDefinitionRequest) {
+	return func(r *router.CreatePresentationRequestRequest) {
 		r.InputDescriptors = inputDescriptors
 	}
 }
 
-func createPresentationDefinition(t *testing.T, pRouter *router.PresentationRouter, author, authorKID string, opts ...DefinitionOption) router.CreatePresentationDefinitionResponse {
-	request := router.CreatePresentationDefinitionRequest{
+func createPresentationRequest(t *testing.T, pRouter *router.PresentationRouter, author, authorKID string, opts ...DefinitionOption) router.CreatePresentationRequestResponse {
+	request := router.CreatePresentationRequestRequest{
 		Name:    "name",
 		Purpose: "purpose",
 		InputDescriptors: []exchange.InputDescriptor{
@@ -670,8 +670,8 @@ func createPresentationDefinition(t *testing.T, pRouter *router.PresentationRout
 	req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/definitions", value)
 	w := httptest.NewRecorder()
 
-	require.NoError(t, pRouter.CreateDefinition(newRequestContext(), w, req))
-	var resp router.CreatePresentationDefinitionResponse
+	require.NoError(t, pRouter.CreatePresentationRequest(newRequestContext(), w, req))
+	var resp router.CreatePresentationRequestResponse
 	require.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 	return resp
 }

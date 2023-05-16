@@ -60,7 +60,7 @@ func TestCreateParticipants(t *testing.T) {
 	SetValue(presentationExchangeContext, "verifierKID", verifierKID)
 }
 
-func TestCreatePresentationDefinition(t *testing.T) {
+func TestCreatePresentationRequest(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
@@ -71,13 +71,13 @@ func TestCreatePresentationDefinition(t *testing.T) {
 	verifierKID, err := GetValue(presentationExchangeContext, "verifierKID")
 	assert.NoError(t, err)
 
-	definition, err := CreatePresentationDefinition(definitionParams{
+	presentationRequest, err := CreatePresentationRequest(presentationRequestParams{
 		Author:    verifierDID.(string),
 		AuthorKID: verifierKID.(string),
 	})
 	assert.NoError(t, err)
 
-	definitionID, err := getJSONElement(definition, "$.presentation_definition.id")
+	definitionID, err := getJSONElement(presentationRequest, "$.presentation_request.presentation_definition.id")
 	assert.NoError(t, err)
 	SetValue(presentationExchangeContext, "definitionID", definitionID)
 }

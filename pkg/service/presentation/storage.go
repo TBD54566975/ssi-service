@@ -19,10 +19,10 @@ import (
 )
 
 const (
-	presentationDefinitionNamespace = "presentation_definition"
+	presentationRequestNamespace = "presentation_request"
 )
 
-type StoredPresentation struct {
+type StoredPresentationRequest struct {
 	ID                     string                          `json:"id"`
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
 	Author                 string                          `json:"issuerID"`
@@ -104,10 +104,10 @@ func NewPresentationStorage(db storage.ServiceStorage) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (ps *Storage) StorePresentation(ctx context.Context, presentation StoredPresentation) error {
+func (ps *Storage) StorePresentationRequest(ctx context.Context, presentation StoredPresentationRequest) error {
 	id := presentation.ID
 	if id == "" {
-		err := errors.New("could not store presentation definition without an ID")
+		err := errors.New("could not store presentation request without an ID")
 		logrus.WithError(err).Error()
 		return err
 	}
@@ -117,27 +117,27 @@ func (ps *Storage) StorePresentation(ctx context.Context, presentation StoredPre
 		logrus.WithError(err).Error(errMsg)
 		return errors.Wrapf(err, errMsg)
 	}
-	return ps.db.Write(ctx, presentationDefinitionNamespace, id, jsonBytes)
+	return ps.db.Write(ctx, presentationRequestNamespace, id, jsonBytes)
 }
 
-func (ps *Storage) GetPresentation(ctx context.Context, id string) (*StoredPresentation, error) {
-	jsonBytes, err := ps.db.Read(ctx, presentationDefinitionNamespace, id)
+func (ps *Storage) GetPresentationRequest(ctx context.Context, id string) (*StoredPresentationRequest, error) {
+	jsonBytes, err := ps.db.Read(ctx, presentationRequestNamespace, id)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not get presentation definition: %s", id)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not get presentation request: %s", id)
 	}
 	if len(jsonBytes) == 0 {
-		return nil, sdkutil.LoggingNewErrorf("presentation definition not found with id: %s", id)
+		return nil, sdkutil.LoggingNewErrorf("presentation request not found with id: %s", id)
 	}
-	var stored StoredPresentation
+	var stored StoredPresentationRequest
 	if err := json.Unmarshal(jsonBytes, &stored); err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not unmarshal stored presentation definition: %s", id)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not unmarshal stored presentation request: %s", id)
 	}
 	return &stored, nil
 }
 
-func (ps *Storage) DeletePresentation(ctx context.Context, id string) error {
-	if err := ps.db.Delete(ctx, presentationDefinitionNamespace, id); err != nil {
-		return sdkutil.LoggingNewErrorf("could not delete presentation definition: %s", id)
+func (ps *Storage) DeletePresentationRequest(ctx context.Context, id string) error {
+	if err := ps.db.Delete(ctx, presentationRequestNamespace, id); err != nil {
+		return sdkutil.LoggingNewErrorf("could not delete presentation request: %s", id)
 	}
 	return nil
 }
@@ -175,12 +175,12 @@ func (ps *Storage) GetSubmission(ctx context.Context, id string) (*prestorage.St
 	return &stored, nil
 }
 
-func (ps *Storage) ListDefinitions(ctx context.Context) ([]prestorage.StoredDefinition, error) {
-	m, err := ps.db.ReadAll(ctx, presentationDefinitionNamespace)
+func (ps *Storage) ListPresentationRequests(ctx context.Context) ([]StoredPresentationRequest, error) {
+	m, err := ps.db.ReadAll(ctx, presentationRequestNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all")
 	}
-	ts := make([]prestorage.StoredDefinition, len(m))
+	ts := make([]StoredPresentationRequest, len(m))
 	i := 0
 	for k, v := range m {
 		if err = json.Unmarshal(v, &ts[i]); err != nil {

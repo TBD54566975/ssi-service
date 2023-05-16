@@ -12,32 +12,32 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/storage"
 )
 
-type CreatePresentationDefinitionRequest struct {
+type CreatePresentationRequestRequest struct {
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition" validate:"required"`
 	Author                 string                          `json:"author" validate:"required"`
 	AuthorKID              string                          `json:"authorKid" validate:"required"`
 }
 
-func (cpr CreatePresentationDefinitionRequest) IsValid() error {
+func (cpr CreatePresentationRequestRequest) IsValid() error {
 	return util.IsValidStruct(cpr)
 }
 
-type CreatePresentationDefinitionResponse struct {
-	PresentationDefinition    exchange.PresentationDefinition `json:"presentationDefinition"`
-	PresentationDefinitionJWT keyaccess.JWT                   `json:"presentationDefinitionJWT"`
+type CreatePresentationRequestResponse struct {
+	PresentationRequest    exchange.PresentationDefinitionEnvelope `json:"presentationRequest"`
+	PresentationRequestJWT keyaccess.JWT                           `json:"presentationRequestJWT"`
 }
 
-type GetPresentationDefinitionRequest struct {
+type GetPresentationRequestRequest struct {
 	ID string `json:"id" validate:"required"`
 }
 
-type GetPresentationDefinitionResponse struct {
-	ID                        string                          `json:"id"`
-	PresentationDefinition    exchange.PresentationDefinition `json:"presentationDefinition"`
-	PresentationDefinitionJWT keyaccess.JWT                   `json:"presentationDefinitionJWT"`
+type GetPresentationRequestResponse struct {
+	ID                     string                                  `json:"id"`
+	PresentationRequest    exchange.PresentationDefinitionEnvelope `json:"presentationRequest"`
+	PresentationRequestJWT keyaccess.JWT                           `json:"presentationRequestJWT"`
 }
 
-type DeletePresentationDefinitionRequest struct {
+type DeletePresentationRequestRequest struct {
 	ID string `json:"id" validate:"required"`
 }
 
@@ -101,8 +101,8 @@ type ListSubmissionResponse struct {
 	Submissions []Submission `json:"submissions"`
 }
 
-type ListDefinitionsResponse struct {
-	Definitions []*exchange.PresentationDefinition `json:"definitions"`
+type ListRequestsResponse struct {
+	Requests []*exchange.PresentationDefinitionEnvelope `json:"requests"`
 }
 
 type ReviewSubmissionRequest struct {

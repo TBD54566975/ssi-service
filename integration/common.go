@@ -217,18 +217,18 @@ func CreateCredentialApplicationJWT(credApplication credApplicationParams, crede
 	return signed.String(), nil
 }
 
-type definitionParams struct {
+type presentationRequestParams struct {
 	Author    string
 	AuthorKID string
 }
 
-func CreatePresentationDefinition(params definitionParams) (string, error) {
-	logrus.Println("\n\nCreate our Presentation Definition:")
-	definitionJSON, err := resolveTemplate(params, "presentation-definition-input.json")
+func CreatePresentationRequest(params presentationRequestParams) (string, error) {
+	logrus.Println("\n\nCreate our Presentation Request:")
+	definitionJSON, err := resolveTemplate(params, "presentation-request-input.json")
 	if err != nil {
 		return "", err
 	}
-	output, err := put(endpoint+version+"presentations/definitions", definitionJSON)
+	output, err := put(endpoint+version+"presentations/requests", definitionJSON)
 	if err != nil {
 		return "", errors.Wrapf(err, "presentation definition endpoint with output: %s", output)
 	}

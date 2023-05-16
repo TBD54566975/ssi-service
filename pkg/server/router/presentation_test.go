@@ -18,7 +18,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 )
 
-func TestPresentationDefinitionRouter(t *testing.T) {
+func TestPresentationRouter(t *testing.T) {
 	t.Run("Nil Service", func(tt *testing.T) {
 		pdRouter, err := NewPresentationRouter(nil)
 		assert.Error(tt, err)
@@ -34,7 +34,7 @@ func TestPresentationDefinitionRouter(t *testing.T) {
 	})
 }
 
-func TestPresentationDefinitionService(t *testing.T) {
+func TestPresentationService(t *testing.T) {
 	s := setupTestDB(t)
 	assert.NotEmpty(t, s)
 
@@ -58,51 +58,51 @@ func TestPresentationDefinitionService(t *testing.T) {
 
 	t.Run("Create returns the created definition", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
-		created, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{
+		created, err := service.CreatePresentationRequest(context.Background(), model.CreatePresentationRequestRequest{
 			PresentationDefinition: *pd,
 			Author:                 authorDID.DID.ID,
 			AuthorKID:              authorDID.DID.VerificationMethod[0].ID,
 		})
 
 		assert.NoError(t, err)
-		assert.Equal(t, pd, &created.PresentationDefinition)
-		assert.NoError(t, ka.Verify(created.PresentationDefinitionJWT))
+		assert.Equal(t, pd, &created.PresentationRequest.PresentationDefinition)
+		assert.NoError(t, ka.Verify(created.PresentationRequestJWT))
 	})
 
 	t.Run("Get returns the created definition", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
-		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{
+		_, err := service.CreatePresentationRequest(context.Background(), model.CreatePresentationRequestRequest{
 			PresentationDefinition: *pd,
 			Author:                 authorDID.DID.ID,
 			AuthorKID:              authorDID.DID.VerificationMethod[0].ID,
 		})
 		assert.NoError(t, err)
 
-		getPd, err := service.GetPresentationDefinition(context.Background(), model.GetPresentationDefinitionRequest{ID: pd.ID})
+		getPd, err := service.GetPresentationRequest(context.Background(), model.GetPresentationRequestRequest{ID: pd.ID})
 
 		assert.NoError(t, err)
 		assert.Equal(t, pd.ID, getPd.ID)
-		assert.Equal(t, pd, &getPd.PresentationDefinition)
-		assert.NoError(t, ka.Verify(getPd.PresentationDefinitionJWT))
+		assert.Equal(t, pd, &getPd.PresentationRequest.PresentationDefinition)
+		assert.NoError(t, ka.Verify(getPd.PresentationRequestJWT))
 	})
 
 	t.Run("Get does not return after deletion", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
-		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{
+		_, err := service.CreatePresentationRequest(context.Background(), model.CreatePresentationRequestRequest{
 			PresentationDefinition: *pd,
 			Author:                 authorDID.DID.ID,
 			AuthorKID:              authorDID.DID.VerificationMethod[0].ID,
 		})
 		assert.NoError(t, err)
 
-		assert.NoError(t, service.DeletePresentationDefinition(context.Background(), model.DeletePresentationDefinitionRequest{ID: pd.ID}))
+		assert.NoError(t, service.DeletePresentationRequest(context.Background(), model.DeletePresentationRequestRequest{ID: pd.ID}))
 
-		_, err = service.GetPresentationDefinition(context.Background(), model.GetPresentationDefinitionRequest{ID: pd.ID})
+		_, err = service.GetPresentationRequest(context.Background(), model.GetPresentationRequestRequest{ID: pd.ID})
 		assert.Error(t, err)
 	})
 
 	t.Run("Delete can be called with any ID", func(t *testing.T) {
-		err := service.DeletePresentationDefinition(context.Background(), model.DeletePresentationDefinitionRequest{ID: "some crazy ID"})
+		err := service.DeletePresentationRequest(context.Background(), model.DeletePresentationRequestRequest{ID: "some crazy ID"})
 		assert.NoError(t, err)
 	})
 }

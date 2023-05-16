@@ -36,43 +36,43 @@ func NewPresentationRouter(s svcframework.Service) (*PresentationRouter, error) 
 	return &PresentationRouter{service: service}, nil
 }
 
-type CreatePresentationDefinitionRequest struct {
+type CreatePresentationRequestRequest struct {
 	Name                   string                           `json:"name,omitempty"`
 	Purpose                string                           `json:"purpose,omitempty"`
 	Format                 *exchange.ClaimFormat            `json:"format,omitempty" validate:"omitempty,dive"`
 	InputDescriptors       []exchange.InputDescriptor       `json:"inputDescriptors" validate:"required,dive"`
 	SubmissionRequirements []exchange.SubmissionRequirement `json:"submissionRequirements,omitempty" validate:"omitempty,dive"`
 
-	// DID of the author of this presentation definition. The DID must have been previously created with the DID API,
+	// DID of the author of this presentation request. The DID must have been previously created with the DID API,
 	// or the PrivateKey must have been added independently.
 	Author string `json:"author" validate:"required"`
-	// The privateKey associated with the KID will be used to sign an envelope that contains
-	// the created presentation definition.
+	// The privateKey associated with the KID will be used to sign the presentation request.
 	AuthorKID string `json:"authorKid" validate:"required"`
 }
 
-type CreatePresentationDefinitionResponse struct {
-	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition"`
+type CreatePresentationRequestResponse struct {
+	PresentationRequest exchange.PresentationDefinitionEnvelope `json:"presentation_request"`
 
-	// Signed envelope that contains the PresentationDefinition created using the privateKey of the author of the
+	// Signed request that contains the PresentationRequest created using the privateKey of the author of the
 	// definition.
-	PresentationDefinitionJWT keyaccess.JWT `json:"presentationDefinitionJWT"`
+	PresentationRequestJWT keyaccess.JWT `json:"presentationRequestJWT"`
 }
 
-// CreateDefinition godoc
+// CreatePresentationRequest godoc
 //
-// @Summary     Create PresentationDefinition
-// @Description Create presentation definition
-// @Tags        PresentationDefinitionAPI
+// @Summary     Create PresentationRequest
+// @Description Creates a presentation request object as described in https://identity.foundation/presentation-exchange/#presentation-request.
+// @Description We define this object as an envelope which contains a single json field `presentation_definition`.
+// @Tags        PresentationRequestAPI
 // @Accept      json
 // @Produce     json
-// @Param       request body     CreatePresentationDefinitionRequest true "request body"
-// @Success     201     {object} CreatePresentationDefinitionResponse
+// @Param       request body     CreatePresentationRequestRequest true "request body"
+// @Success     201     {object} CreatePresentationRequestResponse
 // @Failure     400     {string} string "Bad request"
 // @Failure     500     {string} string "Internal server error"
-// @Router      /v1/presentation/definition [put]
-func (pr PresentationRouter) CreateDefinition(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	var request CreatePresentationDefinitionRequest
+// @Router      /v1/presentation/requests [put]
+func (pr PresentationRouter) CreatePresentationRequest(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	var request CreatePresentationRequestRequest
 	errMsg := "Invalid Presentation Definition Request"
 	if err := framework.Decode(r, &request); err != nil {
 		logrus.WithError(err).Error(errMsg)
@@ -89,7 +89,7 @@ func (pr PresentationRouter) CreateDefinition(ctx context.Context, w http.Respon
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
-	serviceResp, err := pr.service.CreatePresentationDefinition(ctx, model.CreatePresentationDefinitionRequest{
+	serviceResp, err := pr.service.CreatePresentationRequest(ctx, model.CreatePresentationRequestRequest{
 		PresentationDefinition: *def,
 		Author:                 request.Author,
 		AuthorKID:              request.AuthorKID,
@@ -99,14 +99,14 @@ func (pr PresentationRouter) CreateDefinition(ctx context.Context, w http.Respon
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := CreatePresentationDefinitionResponse{
-		PresentationDefinition:    serviceResp.PresentationDefinition,
-		PresentationDefinitionJWT: serviceResp.PresentationDefinitionJWT,
+	resp := CreatePresentationRequestResponse{
+		PresentationRequest:    serviceResp.PresentationRequest,
+		PresentationRequestJWT: serviceResp.PresentationRequestJWT,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
-func definitionFromRequest(request CreatePresentationDefinitionRequest) (*exchange.PresentationDefinition, error) {
+func definitionFromRequest(request CreatePresentationRequestRequest) (*exchange.PresentationDefinition, error) {
 	b := exchange.NewPresentationDefinitionBuilder()
 	if err := b.SetName(request.Name); err != nil {
 		return nil, err
@@ -137,26 +137,26 @@ func definitionFromRequest(request CreatePresentationDefinitionRequest) (*exchan
 	return req, nil
 }
 
-type GetPresentationDefinitionResponse struct {
-	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition"`
+type GetPresentationRequestResponse struct {
+	PresentationRequest exchange.PresentationDefinitionEnvelope `json:"presentationRequest"`
 
 	// Signed envelope that contains the PresentationDefinition created using the privateKey of the author of the
 	// definition.
-	PresentationDefinitionJWT keyaccess.JWT `json:"presentationDefinitionJWT"`
+	PresentationRequestJWT keyaccess.JWT `json:"presentationRequestJWT"`
 }
 
-// GetDefinition godoc
+// GetPresentationRequest godoc
 //
-// @Summary     Get PresentationDefinition
-// @Description Get a presentation definition by its ID
-// @Tags        PresentationDefinitionAPI
+// @Summary     Get PresentationRequest
+// @Description Get a presentation request by its ID
+// @Tags        PresentationRequestAPI
 // @Accept      json
 // @Produce     json
 // @Param       id  path     string true "ID"
-// @Success     200 {object} GetPresentationDefinitionResponse
+// @Success     200 {object} GetPresentationRequestResponse
 // @Failure     400 {string} string "Bad request"
-// @Router      /v1/presentation/definition/{id} [get]
-func (pr PresentationRouter) GetDefinition(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+// @Router      /v1/presentation/requests/{id} [get]
+func (pr PresentationRouter) GetPresentationRequest(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get presentation without ID parameter"
@@ -164,57 +164,57 @@ func (pr PresentationRouter) GetDefinition(ctx context.Context, w http.ResponseW
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	def, err := pr.service.GetPresentationDefinition(ctx, model.GetPresentationDefinitionRequest{ID: *id})
+	def, err := pr.service.GetPresentationRequest(ctx, model.GetPresentationRequestRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get presentation with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
-	resp := GetPresentationDefinitionResponse{
-		PresentationDefinition:    def.PresentationDefinition,
-		PresentationDefinitionJWT: def.PresentationDefinitionJWT,
+	resp := GetPresentationRequestResponse{
+		PresentationRequest:    def.PresentationRequest,
+		PresentationRequestJWT: def.PresentationRequestJWT,
 	}
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
-type ListDefinitionsRequest struct {
+type ListPresentationRequestsRequest struct {
 }
 
-type ListDefinitionsResponse struct {
-	Definitions []*exchange.PresentationDefinition `json:"definitions"`
+type ListPresentationRequestsResponse struct {
+	PresentationRequests []*exchange.PresentationDefinitionEnvelope `json:"requests"`
 }
 
-// ListDefinitions godoc
+// ListPresentationRequests godoc
 //
-// @Summary     List Presentation Definitions
-// @Description Lists all the existing presentation definitions
+// @Summary     List Presentation Requests
+// @Description Lists all the existing presentation requests
 // @Tags        PresentationDefinitionAPI
 // @Accept      json
 // @Produce     json
-// @Param       request body     ListDefinitionsRequest true "request body"
-// @Success     200     {object} ListDefinitionsResponse
+// @Param       request body     ListPresentationRequestsRequest true "request body"
+// @Success     200     {object} ListPresentationRequestsResponse
 // @Failure     400     {string} string "Bad request"
 // @Failure     500     {string} string "Internal server error"
-// @Router      /v1/presentations/definitions [get]
-func (pr PresentationRouter) ListDefinitions(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	svcResponse, err := pr.service.ListDefinitions(ctx)
+// @Router      /v1/presentations/requests [get]
+func (pr PresentationRouter) ListPresentationRequests(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	svcResponse, err := pr.service.ListRequests(ctx)
 	if err != nil {
 		errMsg := "could not get definitions"
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	resp := ListDefinitionsResponse{
-		Definitions: svcResponse.Definitions,
+	resp := ListPresentationRequestsResponse{
+		PresentationRequests: svcResponse.Requests,
 	}
 
 	return framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
-// DeleteDefinition godoc
+// DeletePresentationRequest godoc
 //
-// @Summary     Delete PresentationDefinition
+// @Summary     Delete PresentationRequest
 // @Description Delete a presentation definition by its ID
 // @Tags        PresentationDefinitionAPI
 // @Accept      json
@@ -223,8 +223,8 @@ func (pr PresentationRouter) ListDefinitions(ctx context.Context, w http.Respons
 // @Success     204 {string} string "No Content"
 // @Failure     400 {string} string "Bad request"
 // @Failure     500 {string} string "Internal server error"
-// @Router      /v1/presentation/definition/{id} [delete]
-func (pr PresentationRouter) DeleteDefinition(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+// @Router      /v1/presentation/requests/{id} [delete]
+func (pr PresentationRouter) DeletePresentationRequest(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot delete a presentation without an ID parameter"
@@ -232,7 +232,7 @@ func (pr PresentationRouter) DeleteDefinition(ctx context.Context, w http.Respon
 		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
-	if err := pr.service.DeletePresentationDefinition(ctx, model.DeletePresentationDefinitionRequest{ID: *id}); err != nil {
+	if err := pr.service.DeletePresentationRequest(ctx, model.DeletePresentationRequestRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete presentation with id: %s", *id)
 		logrus.WithError(err).Error(errMsg)
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)

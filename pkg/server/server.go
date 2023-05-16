@@ -21,25 +21,25 @@ import (
 )
 
 const (
-	HealthPrefix           = "/health"
-	ReadinessPrefix        = "/readiness"
-	V1Prefix               = "/v1"
-	OperationPrefix        = "/operations"
-	DIDsPrefix             = "/dids"
-	ResolverPrefix         = "/resolver"
-	SchemasPrefix          = "/schemas"
-	CredentialsPrefix      = "/credentials"
-	StatusPrefix           = "/status"
-	PresentationsPrefix    = "/presentations"
-	DefinitionsPrefix      = "/definitions"
-	SubmissionsPrefix      = "/submissions"
-	IssuanceTemplatePrefix = "/issuancetemplates"
-	ManifestsPrefix        = "/manifests"
-	ApplicationsPrefix     = "/applications"
-	ResponsesPrefix        = "/responses"
-	KeyStorePrefix         = "/keys"
-	VerificationPath       = "/verification"
-	WebhookPrefix          = "/webhooks"
+	HealthPrefix               = "/health"
+	ReadinessPrefix            = "/readiness"
+	V1Prefix                   = "/v1"
+	OperationPrefix            = "/operations"
+	DIDsPrefix                 = "/dids"
+	ResolverPrefix             = "/resolver"
+	SchemasPrefix              = "/schemas"
+	CredentialsPrefix          = "/credentials"
+	StatusPrefix               = "/status"
+	PresentationsPrefix        = "/presentations"
+	PresentationRequestsPrefix = "/requests"
+	SubmissionsPrefix          = "/submissions"
+	IssuanceTemplatePrefix     = "/issuancetemplates"
+	ManifestsPrefix            = "/manifests"
+	ApplicationsPrefix         = "/applications"
+	ResponsesPrefix            = "/responses"
+	KeyStorePrefix             = "/keys"
+	VerificationPath           = "/verification"
+	WebhookPrefix              = "/webhooks"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -189,12 +189,12 @@ func (s *SSIServer) PresentationAPI(service svcframework.Service, webhookService
 		return sdkutil.LoggingErrorMsg(err, "creating credential router")
 	}
 
-	handlerPath := V1Prefix + PresentationsPrefix + DefinitionsPrefix
+	handlerPath := V1Prefix + PresentationsPrefix + PresentationRequestsPrefix
 
-	s.Handle(http.MethodPut, handlerPath, pRouter.CreateDefinition)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), pRouter.GetDefinition)
-	s.Handle(http.MethodGet, handlerPath, pRouter.ListDefinitions)
-	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), pRouter.DeleteDefinition)
+	s.Handle(http.MethodPut, handlerPath, pRouter.CreatePresentationRequest)
+	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), pRouter.GetPresentationRequest)
+	s.Handle(http.MethodGet, handlerPath, pRouter.ListPresentationRequests)
+	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), pRouter.DeletePresentationRequest)
 
 	submissionHandlerPath := V1Prefix + PresentationsPrefix + SubmissionsPrefix
 

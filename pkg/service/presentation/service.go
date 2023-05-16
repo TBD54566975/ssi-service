@@ -87,71 +87,70 @@ func NewPresentationService(config config.PresentationServiceConfig, s storage.S
 	return &service, nil
 }
 
-// CreatePresentationDefinition houses the main service logic for presentation definition creation. It validates the input, and
-// produces a presentation definition value that conforms with the PresentationDefinition specification.
-func (s Service) CreatePresentationDefinition(ctx context.Context,
-	request model.CreatePresentationDefinitionRequest) (*model.CreatePresentationDefinitionResponse, error) {
+// CreatePresentationRequest houses the main service logic for presentation request creation. It validates the input, and
+// produces a presentation request value that contains a PresentationDefinition object.
+func (s Service) CreatePresentationRequest(ctx context.Context,
+	request model.CreatePresentationRequestRequest) (*model.CreatePresentationRequestResponse, error) {
 	logrus.Debugf("creating presentation definition: %+v", request)
 
 	if err := request.IsValid(); err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "invalid create presentation definition request: %+v", request)
+		return nil, sdkutil.LoggingErrorMsgf(err, "invalid create presentation request: %+v", request)
 	}
 
 	if err := exchange.IsValidPresentationDefinition(request.PresentationDefinition); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "provided value is not a valid presentation definition")
 	}
 
-	storedPresentation := StoredPresentation{
+	storedPresentation := StoredPresentationRequest{
 		ID:                     request.PresentationDefinition.ID,
 		PresentationDefinition: request.PresentationDefinition,
 		Author:                 request.Author,
 		AuthorKID:              request.AuthorKID,
 	}
 
-	if err := s.storage.StorePresentation(ctx, storedPresentation); err != nil {
+	if err := s.storage.StorePresentationRequest(ctx, storedPresentation); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not store presentation")
 	}
 	defJWT, err := s.keystore.Sign(context.Background(), storedPresentation.AuthorKID,
 		exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "signing presentation definition enveloper with author<%s>", storedPresentation.Author)
+		return nil, sdkutil.LoggingErrorMsgf(err, "signing presentation request with author<%s>", storedPresentation.Author)
 	}
 
-	var m model.CreatePresentationDefinitionResponse
-	m.PresentationDefinition = storedPresentation.PresentationDefinition
-	m.PresentationDefinitionJWT = *defJWT
+	var m model.CreatePresentationRequestResponse
+	m.PresentationRequest = exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition}
+	m.PresentationRequestJWT = *defJWT
 	return &m, nil
 }
 
-func (s Service) GetPresentationDefinition(ctx context.Context,
-	request model.GetPresentationDefinitionRequest) (*model.GetPresentationDefinitionResponse, error) {
-	logrus.Debugf("getting presentation definition: %s", request.ID)
+func (s Service) GetPresentationRequest(ctx context.Context,
+	request model.GetPresentationRequestRequest) (*model.GetPresentationRequestResponse, error) {
+	logrus.Debugf("getting presentation request: %s", request.ID)
 
-	storedPresentation, err := s.storage.GetPresentation(ctx, request.ID)
+	storedPresentation, err := s.storage.GetPresentationRequest(ctx, request.ID)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "error getting presentation definition: %s", request.ID)
+		return nil, sdkutil.LoggingErrorMsgf(err, "error getting presentation request: %s", request.ID)
 	}
 	if storedPresentation == nil {
-		return nil, sdkutil.LoggingNewErrorf("presentation definition with id<%s> could not be found", request.ID)
+		return nil, sdkutil.LoggingNewErrorf("presentation request with id<%s> could not be found", request.ID)
 	}
-	// TODO(gabe) decouple this to a separate endpoint for presentation requests https://github.com/TBD54566975/ssi-service/issues/375
-	defJWT, err := s.keystore.Sign(ctx, storedPresentation.AuthorKID,
-		exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition})
+	presentationRequest := exchange.PresentationDefinitionEnvelope{PresentationDefinition: storedPresentation.PresentationDefinition}
+	defJWT, err := s.keystore.Sign(ctx, storedPresentation.AuthorKID, presentationRequest)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "signing presentation definition envelope by issuer<%s>", storedPresentation.Author)
+		return nil, sdkutil.LoggingErrorMsgf(err, "signing presentation request by issuer<%s>", storedPresentation.Author)
 	}
-	return &model.GetPresentationDefinitionResponse{
-		ID:                        storedPresentation.ID,
-		PresentationDefinition:    storedPresentation.PresentationDefinition,
-		PresentationDefinitionJWT: *defJWT,
+	return &model.GetPresentationRequestResponse{
+		ID:                     storedPresentation.ID,
+		PresentationRequest:    presentationRequest,
+		PresentationRequestJWT: *defJWT,
 	}, nil
 }
 
-func (s Service) DeletePresentationDefinition(ctx context.Context, request model.DeletePresentationDefinitionRequest) error {
+func (s Service) DeletePresentationRequest(ctx context.Context, request model.DeletePresentationRequestRequest) error {
 	logrus.Debugf("deleting presentation definition: %s", request.ID)
 
-	if err := s.storage.DeletePresentation(ctx, request.ID); err != nil {
-		return sdkutil.LoggingNewErrorf("could not delete presentation definition with id: %s", request.ID)
+	if err := s.storage.DeletePresentationRequest(ctx, request.ID); err != nil {
+		return sdkutil.LoggingNewErrorf("could not delete presentation request with id: %s", request.ID)
 	}
 
 	return nil
@@ -191,9 +190,9 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 		return nil, errors.Errorf("submission with id %s already present", request.Submission.ID)
 	}
 
-	definition, err := s.storage.GetPresentation(ctx, request.Submission.DefinitionID)
+	definition, err := s.storage.GetPresentationRequest(ctx, request.Submission.DefinitionID)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting presentation definition")
+		return nil, errors.Wrap(err, "getting presentation request")
 	}
 
 	for _, cred := range request.Credentials {
@@ -291,19 +290,19 @@ func (s Service) ReviewSubmission(ctx context.Context, request model.ReviewSubmi
 	return &m, nil
 }
 
-func (s Service) ListDefinitions(ctx context.Context) (*model.ListDefinitionsResponse, error) {
-	logrus.Debug("listing presentation definitions")
+func (s Service) ListRequests(ctx context.Context) (*model.ListRequestsResponse, error) {
+	logrus.Debug("listing presentation requests")
 
-	defs, err := s.storage.ListDefinitions(ctx)
+	defs, err := s.storage.ListPresentationRequests(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching definitions from storage")
 	}
 
-	resp := &model.ListDefinitionsResponse{Definitions: make([]*exchange.PresentationDefinition, 0, len(defs))}
+	resp := &model.ListRequestsResponse{Requests: make([]*exchange.PresentationDefinitionEnvelope, 0, len(defs))}
 	for _, def := range defs {
 		// What's this?? see https://github.com/golang/go/wiki/CommonMistakes#using-reference-to-loop-iterator-variable
 		def := def
-		resp.Definitions = append(resp.Definitions, &def.PresentationDefinition)
+		resp.Requests = append(resp.Requests, &exchange.PresentationDefinitionEnvelope{PresentationDefinition: def.PresentationDefinition})
 	}
 
 	return resp, nil
