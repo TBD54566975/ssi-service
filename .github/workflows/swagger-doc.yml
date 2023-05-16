@@ -33,7 +33,7 @@ jobs:
           export PATH=$PATH:$(go env GOPATH)/bin
           mage spec
           if (git diff --shortstat | grep '[0-9]'); then \
-            echo "detected diff, exiting"
+            echo "detected diff; please run 'mage spec' and commit the changes"
             exit 1
           fi
 
