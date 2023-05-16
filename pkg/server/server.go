@@ -54,10 +54,10 @@ type SSIServer struct {
 func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSIServer, error) {
 	// creates an HTTP server from the framework, and wrap it to extend it for the SSIS
 	middlewares := gin.HandlersChain{
-		middleware.Logger(logrus.StandardLogger()),
+		gin.Recovery(),
 		middleware.Errors(),
+		middleware.Logger(logrus.StandardLogger()),
 		middleware.Metrics(),
-		middleware.Panics(),
 	}
 	if config.Server.EnableAllowAllCORS {
 		middlewares = append(middlewares, middleware.CORS())
@@ -88,7 +88,7 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 	// start all services and their routers
 	logrus.Infof("Starting [%d] service routers...\n", len(services))
 	for _, s := range services {
-		if err := server.instantiateRouter(s, webhookService); err != nil {
+		if err = server.instantiateRouter(s, webhookService); err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(err, "unable to instantiate service router<%s>", s.Type())
 		}
 		logrus.Infof("Service router<%s> started successfully", s.Type())

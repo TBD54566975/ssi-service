@@ -260,7 +260,7 @@ func (cr CredentialRouter) GetCredentialStatusList(ctx context.Context, w http.R
 		CredentialJWT: gotCredential.CredentialJWT,
 	}
 
-	return framework.Respond(ctx, w, resp, http.StatusOK)
+	framework.Respond(ctx, w, resp, http.StatusOK)
 }
 
 type UpdateCredentialStatusRequest struct {

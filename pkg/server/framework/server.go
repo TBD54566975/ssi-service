@@ -19,13 +19,10 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 )
 
-type (
-	ctxKey int
-)
-
 const (
-	KeyRequestState ctxKey = 1
-	serviceName            = "ssi-service"
+	KeyRequestState    string = "keyRequestState"
+	ShutdownErrorState string = "shutdownError"
+	serviceName        string = "ssi-service"
 )
 
 type RequestState struct {
@@ -105,13 +102,14 @@ func (s *Server) Handle(method string, path string, handler Handler, mws ...gin.
 			defer span.End()
 		}
 
-		// onion the r through all the registered middleware
-		if err := handler(ctx, c.Writer, r); err != nil {
+		// handle the request itself
+		handler(ctx, c.Writer, r)
+		if err := c.Value(ShutdownErrorState); err != nil {
+			logrus.Error("request failed: %v", err)
 			s.SignalShutdown()
 			return
 		}
 	}
-
 	s.router.Handle(method, path, h)
 }
 

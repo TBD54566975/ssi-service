@@ -1,9 +1,7 @@
 package middleware
 
 import (
-	"context"
-	"net/http"
-
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -15,37 +13,33 @@ import (
 // Errors handles errors coming out of the call stack. It detects safe application
 // errors (aka SafeError) that are used to respond to the requester in a
 // normalized way. Unexpected errors (status >= 500) are logged.
-func Errors() framework.Middleware {
-	mw := func(handler framework.Handler) framework.Handler {
-		wrapped := func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			tracer := trace.SpanFromContext(ctx).TracerProvider().Tracer(config.ServiceName)
-			ctx, span := tracer.Start(ctx, "service.middleware.errors")
-			defer span.End()
+func Errors() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+		ctx := c.Request.Context()
+		tracer := trace.SpanFromContext(ctx).TracerProvider().Tracer(config.ServiceName)
+		ctx, span := tracer.Start(ctx, "service.middleware.errors")
+		defer span.End()
 
-			v, ok := ctx.Value(framework.KeyRequestState).(*framework.RequestState)
-			if !ok {
-				return framework.NewShutdownError("request state missing from context.")
-			}
-
-			if err := handler(ctx, w, r); err != nil {
-				// log the error
-				logrus.Printf("%s : ERROR : %v", v.TraceID, err)
-
-				// send an error response back to the requester.
-				if err := framework.RespondError(ctx, w, err); err != nil {
-					return err
-				}
-
-				if ok := framework.IsShutdown(err); ok {
-					return err
-				}
-			}
-
-			return nil
+		v, ok := c.Value(framework.KeyRequestState).(*framework.RequestState)
+		if !ok {
+			c.Set(framework.ShutdownErrorState, framework.NewShutdownError("request state missing from context."))
+			return
 		}
 
-		return wrapped
-	}
+		errors := c.Errors.ByType(gin.ErrorTypeAny)
+		if len(errors) > 0 {
+			// check if there's a shutdown-worthy error
+			for _, e := range errors {
+				if framework.IsShutdown(e.Err) {
+					c.Set(framework.ShutdownErrorState, e.Err)
+					return
+				}
+			}
 
-	return mw
+			// otherwise just log the errors and return
+			logrus.Printf("%s : ERROR : %v", v.TraceID, errors)
+			c.JSON(-1, errors)
+		}
+	}
 }

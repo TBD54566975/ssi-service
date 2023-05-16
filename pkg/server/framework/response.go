@@ -1,46 +1,38 @@
 package framework
 
 import (
-	"context"
 	"net/http"
 
-	"github.com/goccy/go-json"
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
 
 // Respond convert a Go value to JSON and sends it to the client.
-func Respond(ctx context.Context, w http.ResponseWriter, data any, statusCode int) error {
+func Respond(c *gin.Context, data any, statusCode int) {
 	// set the status code within the context's request state. Gracefully shutdown if
 	// the request state doesn't exist in the context
-	v, ok := ctx.Value(KeyRequestState).(*RequestState)
+	v, ok := c.Value(KeyRequestState).(*RequestState)
 	if !ok {
-		return NewShutdownError("Request state missing from context")
+		c.Set(ShutdownErrorState, NewShutdownError("request state missing from context."))
+		return
 	}
 
 	v.StatusCode = statusCode
 
 	// if there's no payload to marshal, set the status code of the response and return
 	if statusCode == http.StatusNoContent {
-		w.WriteHeader(statusCode)
-		return nil
+		c.Status(statusCode)
+		return
 	}
 
-	// convert response payload to json
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		return err
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-
-	// send response payload to client
-	_, err = w.Write(jsonData)
-	return err
+	// respond with pretty JSON
+	c.IndentedJSON(statusCode, data)
 }
 
-// TODO: add documentation
-func RespondError(ctx context.Context, w http.ResponseWriter, err error) error {
+// RespondError sends an error response back to the client. If the error is a `SafeError`,
+// the error message and fields are sent back to the client. If the error is not a
+// `SafeError`, a generic error message is sent back to the client.
+func RespondError(c *gin.Context, err error) {
 	// if the cause of the error provided is a `SafeError`, construct an ErrorResponse
 	// using the contents of SafeError and send it back to the client
 	var webErr *SafeError
@@ -49,8 +41,7 @@ func RespondError(ctx context.Context, w http.ResponseWriter, err error) error {
 			Error:  webErr.Err.Error(),
 			Fields: webErr.Fields,
 		}
-
-		return Respond(ctx, w, er, webErr.StatusCode)
+		Respond(c, er, webErr.StatusCode)
 	}
 
 	// if the error isn't a `SafeError`, it's not safe to send back the error
@@ -60,5 +51,5 @@ func RespondError(ctx context.Context, w http.ResponseWriter, err error) error {
 		Error: http.StatusText(http.StatusInternalServerError),
 	}
 
-	return Respond(ctx, w, er, http.StatusInternalServerError)
+	Respond(c, er, http.StatusInternalServerError)
 }

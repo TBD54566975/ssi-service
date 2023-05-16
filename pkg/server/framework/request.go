@@ -9,7 +9,6 @@ import (
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 
-	"github.com/dimfeld/httptreemux/v5"
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
 	"gopkg.in/go-playground/validator.v9"
@@ -46,13 +45,6 @@ func init() {
 
 		return name
 	})
-}
-
-// RouteParams returns a map of route params and their respective values.
-// e.g. route: /users/:id  request: /users/1 map: :id -> 1
-func RouteParams(r *http.Request) map[string]string {
-	// ! TODO: why am i passing context into here?
-	return httptreemux.ContextParams(r.Context())
 }
 
 // Decode reads an HTTP request body looking for a JSON document.

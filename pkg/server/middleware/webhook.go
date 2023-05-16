@@ -23,8 +23,7 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 		return n, err
 	}
 
-	_, err = rw.buf.Write(b)
-	if err != nil {
+	if _, err = rw.buf.Write(b); err != nil {
 		return n, err
 	}
 
