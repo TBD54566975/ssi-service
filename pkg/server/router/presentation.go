@@ -198,7 +198,7 @@ type ListPresentationRequestsResponse struct {
 // @Failure     500     {string} string "Internal server error"
 // @Router      /v1/presentations/requests [get]
 func (pr PresentationRouter) ListPresentationRequests(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
-	svcResponse, err := pr.service.ListRequests(ctx)
+	svcResponse, err := pr.service.ListPresentationRequests(ctx)
 	if err != nil {
 		errMsg := "could not get definitions"
 		logrus.WithError(err).Error(errMsg)

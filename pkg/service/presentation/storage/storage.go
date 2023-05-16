@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"context"
+
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/pkg/errors"
@@ -9,20 +11,23 @@ import (
 	"go.einride.tech/aip/filtering"
 )
 
-type StoredDefinition struct {
+type StoredPresentationRequest struct {
 	ID                     string                          `json:"id"`
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
+	Author                 string                          `json:"issuerID"`
+	AuthorKID              string                          `json:"issuerKid"`
 }
 
 type Storage interface {
-	DefinitionStorage
+	RequestStorage
 	SubmissionStorage
 }
 
-type DefinitionStorage interface {
-	StoreDefinition(schema StoredDefinition) error
-	GetDefinition(id string) (*StoredDefinition, error)
-	DeleteDefinition(id string) error
+type RequestStorage interface {
+	StorePresentationRequest(ctx context.Context, schema StoredPresentationRequest) error
+	GetPresentationRequest(ctx context.Context, id string) (*StoredPresentationRequest, error)
+	DeletePresentationRequest(ctx context.Context, id string) error
+	ListPresentationRequests(ctx context.Context) ([]StoredPresentationRequest, error)
 }
 
 type StoredSubmission struct {
@@ -38,10 +43,10 @@ func (s StoredSubmission) FilterVariablesMap() map[string]any {
 }
 
 type SubmissionStorage interface {
-	StoreSubmission(schema StoredSubmission) error
-	GetSubmission(id string) (*StoredSubmission, error)
-	ListSubmissions(filtering.Filter) ([]StoredSubmission, error)
-	UpdateSubmission(id string, approved bool, reason string, submissionID string) (StoredSubmission, opstorage.StoredOperation, error)
+	StoreSubmission(ctx context.Context, schema StoredSubmission) error
+	GetSubmission(ctx context.Context, id string) (*StoredSubmission, error)
+	ListSubmissions(context.Context, filtering.Filter) ([]StoredSubmission, error)
+	UpdateSubmission(ctx context.Context, id string, approved bool, reason string, submissionID string) (StoredSubmission, opstorage.StoredOperation, error)
 }
 
 var ErrSubmissionNotFound = errors.New("submission not found")

@@ -101,7 +101,7 @@ type ListSubmissionResponse struct {
 	Submissions []Submission `json:"submissions"`
 }
 
-type ListRequestsResponse struct {
+type ListPresentationRequestsResponse struct {
 	Requests []*exchange.PresentationDefinitionEnvelope `json:"requests"`
 }
 

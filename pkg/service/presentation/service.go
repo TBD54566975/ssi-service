@@ -27,7 +27,7 @@ import (
 )
 
 type Service struct {
-	storage    *Storage
+	storage    presentationstorage.Storage
 	keystore   *keystore.Service
 	opsStorage *operation.Storage
 	config     config.PresentationServiceConfig
@@ -101,7 +101,7 @@ func (s Service) CreatePresentationRequest(ctx context.Context,
 		return nil, sdkutil.LoggingErrorMsg(err, "provided value is not a valid presentation definition")
 	}
 
-	storedPresentation := StoredPresentationRequest{
+	storedPresentation := presentationstorage.StoredPresentationRequest{
 		ID:                     request.PresentationDefinition.ID,
 		PresentationDefinition: request.PresentationDefinition,
 		Author:                 request.Author,
@@ -290,7 +290,7 @@ func (s Service) ReviewSubmission(ctx context.Context, request model.ReviewSubmi
 	return &m, nil
 }
 
-func (s Service) ListRequests(ctx context.Context) (*model.ListRequestsResponse, error) {
+func (s Service) ListPresentationRequests(ctx context.Context) (*model.ListPresentationRequestsResponse, error) {
 	logrus.Debug("listing presentation requests")
 
 	defs, err := s.storage.ListPresentationRequests(ctx)
@@ -298,7 +298,7 @@ func (s Service) ListRequests(ctx context.Context) (*model.ListRequestsResponse,
 		return nil, errors.Wrap(err, "fetching definitions from storage")
 	}
 
-	resp := &model.ListRequestsResponse{Requests: make([]*exchange.PresentationDefinitionEnvelope, 0, len(defs))}
+	resp := &model.ListPresentationRequestsResponse{Requests: make([]*exchange.PresentationDefinitionEnvelope, 0, len(defs))}
 	for _, def := range defs {
 		// What's this?? see https://github.com/golang/go/wiki/CommonMistakes#using-reference-to-loop-iterator-variable
 		def := def

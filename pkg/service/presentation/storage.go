@@ -22,13 +22,6 @@ const (
 	presentationRequestNamespace = "presentation_request"
 )
 
-type StoredPresentationRequest struct {
-	ID                     string                          `json:"id"`
-	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
-	Author                 string                          `json:"issuerID"`
-	AuthorKID              string                          `json:"issuerKid"`
-}
-
 type Storage struct {
 	db storage.ServiceStorage
 }
@@ -104,7 +97,7 @@ func NewPresentationStorage(db storage.ServiceStorage) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (ps *Storage) StorePresentationRequest(ctx context.Context, presentation StoredPresentationRequest) error {
+func (ps *Storage) StorePresentationRequest(ctx context.Context, presentation prestorage.StoredPresentationRequest) error {
 	id := presentation.ID
 	if id == "" {
 		err := errors.New("could not store presentation request without an ID")
@@ -120,7 +113,7 @@ func (ps *Storage) StorePresentationRequest(ctx context.Context, presentation St
 	return ps.db.Write(ctx, presentationRequestNamespace, id, jsonBytes)
 }
 
-func (ps *Storage) GetPresentationRequest(ctx context.Context, id string) (*StoredPresentationRequest, error) {
+func (ps *Storage) GetPresentationRequest(ctx context.Context, id string) (*prestorage.StoredPresentationRequest, error) {
 	jsonBytes, err := ps.db.Read(ctx, presentationRequestNamespace, id)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not get presentation request: %s", id)
@@ -128,7 +121,7 @@ func (ps *Storage) GetPresentationRequest(ctx context.Context, id string) (*Stor
 	if len(jsonBytes) == 0 {
 		return nil, sdkutil.LoggingNewErrorf("presentation request not found with id: %s", id)
 	}
-	var stored StoredPresentationRequest
+	var stored prestorage.StoredPresentationRequest
 	if err := json.Unmarshal(jsonBytes, &stored); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not unmarshal stored presentation request: %s", id)
 	}
@@ -175,12 +168,12 @@ func (ps *Storage) GetSubmission(ctx context.Context, id string) (*prestorage.St
 	return &stored, nil
 }
 
-func (ps *Storage) ListPresentationRequests(ctx context.Context) ([]StoredPresentationRequest, error) {
+func (ps *Storage) ListPresentationRequests(ctx context.Context) ([]prestorage.StoredPresentationRequest, error) {
 	m, err := ps.db.ReadAll(ctx, presentationRequestNamespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all")
 	}
-	ts := make([]StoredPresentationRequest, len(m))
+	ts := make([]prestorage.StoredPresentationRequest, len(m))
 	i := 0
 	for k, v := range m {
 		if err = json.Unmarshal(v, &ts[i]); err != nil {
