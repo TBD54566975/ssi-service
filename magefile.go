@@ -108,12 +108,12 @@ func Integration() error {
 // Spec generates an OpenAPI spec yaml based on code annotations.
 func Spec() error {
 	swagCommand := "swag"
-	if err := installIfNotPresent(swagCommand, "github.com/swaggo/swag/v2@v2.0.0-rc3"); err != nil {
-		logrus.Fatal(err)
+	if err := installIfNotPresent(swagCommand, "github.com/swaggo/swag/cmd/swag@latest"); err != nil {
+		logrus.Error(err)
 		return err
 	}
 	if err := sh.Run(swagCommand, "fmt", "-d", "pkg/server/router"); err != nil {
-		logrus.Fatal(err)
+		logrus.Error(err)
 		return err
 	}
 	// One of the dependencies we have (antlr4) does not play nicely with swaggo, but we need to enable dependencies
@@ -229,11 +229,11 @@ func installIfNotPresent(execName, goPackage string) error {
 	pathOfExec := findOnPathOrGoPath(execName)
 	if len(pathOfExec) == 0 {
 		cmd := exec.Command(Go, "get", "-u", goPackage)
-		if err := runGoCommand(usr, *cmd); err != nil {
+		if err = runGoCommand(usr, *cmd); err != nil {
 			logrus.WithError(err).Warnf("Error running command: %s", cmd.String())
 			cmd = exec.Command(Go, "install", goPackage)
-			if err := runGoCommand(usr, *cmd); err != nil {
-				logrus.WithError(err).Fatalf("Error running command: %s", cmd.String())
+			if err = runGoCommand(usr, *cmd); err != nil {
+				logrus.WithError(err).Errorf("Error running command: %s", cmd.String())
 				return err
 			}
 		}
