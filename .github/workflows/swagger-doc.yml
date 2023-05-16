@@ -32,32 +32,36 @@ jobs:
       - run: |
           export PATH=$PATH:$(go env GOPATH)/bin
           mage spec
+          git config user.name github-actions
+          git config user.email github-actions@github.com
           if (git diff --shortstat | grep '[0-9]'); then \
             echo "detected diff; please run 'mage spec' and commit the changes"
             exit 1
           fi
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # publish swagger if a PR is merged
   publish-swagger:
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Go
-      uses: actions/setup-go@v3
-      with:
-        go-version: 1.20.4
-        cache: true
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.20.4
+          cache: true
 
-    - name: Trigger deploy webhook
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-        ref: ${{ github.event.pull_request.head.ref }}
-        repository: ${{ github.event.pull_request.head.repo.full_name }}
-    - run: |
-        curl -X POST -H "Content-Type: application/json" -d '{}' $NETLIFY_DEPLOY_WEBHOOK
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        NETLIFY_DEPLOY_WEBHOOK: ${{ secrets.NETLIFY_DEPLOY_WEBHOOK }}
+      - name: Trigger deploy webhook
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      - run: |
+          curl -X POST -H "Content-Type: application/json" -d '{}' $NETLIFY_DEPLOY_WEBHOOK
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NETLIFY_DEPLOY_WEBHOOK: ${{ secrets.NETLIFY_DEPLOY_WEBHOOK }}
