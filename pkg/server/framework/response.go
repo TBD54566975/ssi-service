@@ -34,6 +34,7 @@ func Respond(c *gin.Context, data any, statusCode int) error {
 // RespondError sends an error response back to the client. If the error is a `SafeError`,
 // the error message and fields are sent back to the client. If the error is not a
 // `SafeError`, a generic error message is sent back to the client.
+// TODO(gabe) use this instead of creating new errors
 func RespondError(c *gin.Context, err error) error {
 	// if the cause of the error provided is a `SafeError`, construct an ErrorResponse
 	// using the contents of SafeError and send it back to the client

@@ -1,7 +1,6 @@
 package router
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -128,7 +127,7 @@ func (dr DIDRouter) CreateDIDByMethod(ctx *gin.Context, w http.ResponseWriter, r
 	}
 
 	resp := CreateDIDByMethodResponse{DID: createDIDResponse.DID}
-	return framework.Respond(ctx, w, resp, http.StatusCreated)
+	return framework.Respond(ctx, resp, http.StatusCreated)
 }
 
 // toCreateDIDRequest converts CreateDIDByMethodRequest to did.CreateDIDRequest, parsing options according to method
@@ -198,7 +197,7 @@ type GetDIDByMethodResponse struct {
 // @Success     200     {object} GetDIDByMethodResponse
 // @Failure     400     {string} string "Bad request"
 // @Router      /v1/dids/{method}/{id} [get]
-func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (dr DIDRouter) GetDIDByMethod(ctx *gin.Context, _ http.ResponseWriter, _ *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
 		errMsg := "get DID by method request missing method parameter"
@@ -223,7 +222,7 @@ func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _
 	}
 
 	resp := GetDIDByMethodResponse{DID: gotDID.DID}
-	return framework.Respond(ctx, w, resp, http.StatusOK)
+	return framework.Respond(ctx, resp, http.StatusOK)
 }
 
 type GetDIDsByMethodResponse struct {
@@ -249,9 +248,9 @@ type GetDIDsRequest struct {
 // @Failure     400     {string} string "Bad request"
 // @Failure     500     {string} string "Internal server error"
 // @Router      /v1/dids/{method} [get]
-func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (dr DIDRouter) GetDIDsByMethod(ctx *gin.Context, w http.ResponseWriter, r *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
-	deleted := framework.GetQueryValue(r, DeletedParam)
+	deleted := framework.GetQueryValue(ctx, DeletedParam)
 	if method == nil {
 		errMsg := "get DIDs by method request missing method parameter"
 		logrus.Error(errMsg)
@@ -280,7 +279,7 @@ func (dr DIDRouter) GetDIDsByMethod(ctx context.Context, w http.ResponseWriter, 
 	}
 
 	resp := GetDIDsByMethodResponse{DIDs: gotDIDs.DIDs}
-	return framework.Respond(ctx, w, resp, http.StatusOK)
+	return framework.Respond(ctx, resp, http.StatusOK)
 }
 
 type ResolveDIDResponse struct {
@@ -304,7 +303,7 @@ type ResolveDIDResponse struct {
 // @Failure     400     {string} string "Bad request"
 // @Failure     500     {string} string "Internal server error"
 // @Router      /v1/dids/{method}/{id} [delete]
-func (dr DIDRouter) SoftDeleteDIDByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (dr DIDRouter) SoftDeleteDIDByMethod(ctx *gin.Context, w http.ResponseWriter, _ *http.Request) error {
 	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
 		errMsg := "soft delete DID by method request missing method parameter"
@@ -325,7 +324,7 @@ func (dr DIDRouter) SoftDeleteDIDByMethod(ctx context.Context, w http.ResponseWr
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	return framework.Respond(ctx, w, nil, http.StatusNoContent)
+	return framework.Respond(ctx, nil, http.StatusNoContent)
 }
 
 // ResolveDID godoc
@@ -339,7 +338,7 @@ func (dr DIDRouter) SoftDeleteDIDByMethod(ctx context.Context, w http.ResponseWr
 // @Success     200 {object} ResolveDIDResponse
 // @Failure     400 {string} string "Bad request"
 // @Router      /v1/dids/resolver/{id} [get]
-func (dr DIDRouter) ResolveDID(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (dr DIDRouter) ResolveDID(ctx *gin.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "get DID request missing id parameter"
@@ -356,5 +355,5 @@ func (dr DIDRouter) ResolveDID(ctx context.Context, w http.ResponseWriter, _ *ht
 	}
 
 	resp := ResolveDIDResponse{ResolutionMetadata: resolvedDID.ResolutionMetadata, DIDDocument: resolvedDID.DIDDocument, DIDDocumentMetadata: resolvedDID.DIDDocumentMetadata}
-	return framework.Respond(ctx, w, resp, http.StatusOK)
+	return framework.Respond(ctx, resp, http.StatusOK)
 }

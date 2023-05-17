@@ -1,11 +1,11 @@
 package router
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/gin-gonic/gin"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -76,7 +76,7 @@ func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) 
 // @Failure     400 {string} string "Bad request"
 // @Failure     500 {string} string "Internal server error"
 // @Router      /v1/keys [put]
-func (ksr *KeyStoreRouter) StoreKey(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (ksr *KeyStoreRouter) StoreKey(ctx *gin.Context, w http.ResponseWriter, r *http.Request) error {
 	var request StoreKeyRequest
 	if err := framework.Decode(r, &request); err != nil {
 		errMsg := "invalid store key request"
@@ -97,7 +97,7 @@ func (ksr *KeyStoreRouter) StoreKey(ctx context.Context, w http.ResponseWriter, 
 		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
-	return framework.Respond(ctx, w, nil, http.StatusCreated)
+	return framework.Respond(ctx, nil, http.StatusCreated)
 }
 
 type GetKeyDetailsResponse struct {
@@ -118,7 +118,7 @@ type GetKeyDetailsResponse struct {
 // @Success     200 {object} GetKeyDetailsResponse
 // @Failure     400 {string} string "Bad request"
 // @Router      /v1/keys/{id} [get]
-func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (ksr *KeyStoreRouter) GetKeyDetails(ctx *gin.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot get key details without ID parameter"
@@ -139,7 +139,7 @@ func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWri
 		Controller: gotKeyDetails.Controller,
 		CreatedAt:  gotKeyDetails.CreatedAt,
 	}
-	return framework.Respond(ctx, w, resp, http.StatusOK)
+	return framework.Respond(ctx, resp, http.StatusOK)
 }
 
 // RevokeKey godoc
@@ -154,7 +154,7 @@ func (ksr *KeyStoreRouter) GetKeyDetails(ctx context.Context, w http.ResponseWri
 // @Failure     400 {string} string "Bad request"
 // @Failure     500 {string} string "Internal server error"
 // @Router      /v1/keys/{id} [delete]
-func (ksr *KeyStoreRouter) RevokeKey(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (ksr *KeyStoreRouter) RevokeKey(ctx *gin.Context, w http.ResponseWriter, _ *http.Request) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := "cannot delete key without ID parameter"
@@ -170,5 +170,5 @@ func (ksr *KeyStoreRouter) RevokeKey(ctx context.Context, w http.ResponseWriter,
 	}
 
 	var resp GetKeyDetailsResponse
-	return framework.Respond(ctx, w, resp, http.StatusOK)
+	return framework.Respond(ctx, resp, http.StatusOK)
 }
