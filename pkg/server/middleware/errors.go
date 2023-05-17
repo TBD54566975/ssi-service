@@ -37,7 +37,7 @@ func Errors() gin.HandlerFunc {
 				}
 			}
 
-			// otherwise just log the errors and return
+			// otherwise just log the errors and return to the caller
 			logrus.Printf("%s : ERROR : %v", v.TraceID, errors)
 			c.JSON(-1, errors)
 		}

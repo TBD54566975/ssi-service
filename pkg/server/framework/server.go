@@ -94,7 +94,7 @@ func (s *Server) Handle(method string, path string, handler Handler, middleware 
 			body, err := PeekRequestBody(r)
 			if err != nil {
 				// log the error and continue the trace with an empty body value
-				logrus.Errorf("failed to read request body during tracing: %v", err)
+				logrus.WithError(err).Error("failed to read request body during tracing")
 			}
 			span.SetAttributes(
 				attribute.String("method", method),
@@ -108,6 +108,8 @@ func (s *Server) Handle(method string, path string, handler Handler, middleware 
 
 		// handle the request
 		if err := handler(c); err != nil {
+			// if there's still an error at this point (not extracted by our errors middleware)
+			// we know it's an unsafe error and worth shutting down over
 			logrus.Errorf("request failed: %q", err)
 			s.SignalShutdown()
 			return
@@ -118,8 +120,7 @@ func (s *Server) Handle(method string, path string, handler Handler, middleware 
 	s.router.Handle(method, path, h)
 }
 
-// SignalShutdown is used to gracefully shut down the server when an integrity
-// issue is identified.
+// SignalShutdown is used to gracefully shut down the server when an integrity issue is identified.
 func (s *Server) SignalShutdown() {
 	s.shutdown <- syscall.SIGTERM
 }

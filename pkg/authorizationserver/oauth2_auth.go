@@ -1,11 +1,10 @@
 package authorizationserver
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/TBD54566975/ssi-sdk/oidc/issuance"
+	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/ory/fosite"
 	"github.com/pkg/errors"
@@ -24,25 +23,25 @@ func NewAuthService(issuerMetadata *issuance.IssuerMetadata, provider fosite.OAu
 }
 
 // AuthEndpoint is a Handler that implements https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-authorization-endpoint
-func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
-	ar, err := s.provider.NewAuthorizeRequest(ctx, req)
+func (s AuthService) AuthEndpoint(c *gin.Context) error {
+	ar, err := s.provider.NewAuthorizeRequest(c, c.Request)
 	if err != nil {
 		logrus.WithError(err).Error("failed NewAuthorizeRequest")
-		s.provider.WriteAuthorizeError(ctx, rw, ar, err)
+		s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
 		return nil
 	}
 
 	authorizationDetailsJSON := ar.GetRequestForm().Get("authorization_details")
 	var authorizationDetails request.AuthorizationDetails
-	if err := json.Unmarshal([]byte(authorizationDetailsJSON), &authorizationDetails); err != nil {
+	if err = json.Unmarshal([]byte(authorizationDetailsJSON), &authorizationDetails); err != nil {
 		logrus.WithError(err).Error("failed Unmarshal")
-		s.provider.WriteAuthorizeError(ctx, rw, ar, err)
+		s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
 		return nil
 	}
 
-	if err := authorizationDetails.IsValid(); err != nil {
+	if err = authorizationDetails.IsValid(); err != nil {
 		logrus.WithError(err).Error("failed Unmarshal")
-		s.provider.WriteAuthorizeError(ctx, rw, ar, err)
+		s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
 		return nil
 	}
 
@@ -54,7 +53,7 @@ func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, r
 			case "openid_credential":
 				if err := s.processOpenIDCredential(d); err != nil {
 					logrus.WithError(err).Error("failed processing openid_credential")
-					s.provider.WriteAuthorizeError(ctx, rw, ar, err)
+					s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
 					return nil
 				}
 				// TODO(https://github.com/TBD54566975/ssi-service/issues/368): support dynamic auth request
@@ -62,7 +61,7 @@ func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, r
 			default:
 				err := errors.Errorf("the value of authorization_details[%d].type found was %q, which is not recognized", i, d.Type)
 				logrus.WithError(err).Error("unrecognized type")
-				s.provider.WriteAuthorizeError(ctx, rw, ar, err)
+				s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
 				return nil
 			}
 		}
@@ -76,15 +75,15 @@ func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, r
 
 	// Normally, this would be the place where you would check if the user is logged in and gives his consent.
 	// We're simplifying things and just checking if the request includes a valid username and password
-	if err := req.ParseForm(); err != nil {
+	if err := c.Request.ParseForm(); err != nil {
 		logrus.WithError(err).Error("failed parsing request form")
-		s.provider.WriteAuthorizeError(ctx, rw, ar, err)
+		s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
 		return nil
 	}
-	if req.PostForm.Get("username") != "peter" {
-		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = rw.Write([]byte(`<h1>Login page</h1>`))
-		_, _ = rw.Write([]byte(fmt.Sprintf(`
+	if c.Request.PostForm.Get("username") != "peter" {
+		c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = c.Writer.Write([]byte(`<h1>Login page</h1>`))
+		_, _ = c.Writer.Write([]byte(fmt.Sprintf(`
 			<p>Howdy! This is the log in page. For this example, it is enough to supply the username.</p>
 			<form method="post">
 				<p>
@@ -99,7 +98,7 @@ func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, r
 	}
 
 	// let's see what scopes the user gave consent to
-	for _, scope := range req.PostForm["scopes"] {
+	for _, scope := range c.Request.PostForm["scopes"] {
 		ar.GrantScope(scope)
 	}
 
@@ -130,7 +129,7 @@ func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, r
 	// Now we need to get a response. This is the place where the AuthorizeEndpointHandlers kick in and start processing the request.
 	// NewAuthorizeResponse is capable of running multiple response type handlers which in turn enables this library
 	// to support open id connect.
-	response, err := s.provider.NewAuthorizeResponse(ctx, ar, mySessionData)
+	response, err := s.provider.NewAuthorizeResponse(c, ar, mySessionData)
 
 	// Catch any errors, e.g.:
 	// * unknown client
@@ -138,12 +137,12 @@ func (s AuthService) AuthEndpoint(ctx context.Context, rw http.ResponseWriter, r
 	// * ...
 	if err != nil {
 		logrus.WithError(err).Error("failed NewAuthorizeResponse")
-		s.provider.WriteAuthorizeError(ctx, rw, ar, err)
+		s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
 		return nil
 	}
 
 	// Last but not least, send the response!
-	s.provider.WriteAuthorizeResponse(ctx, rw, ar, response)
+	s.provider.WriteAuthorizeResponse(c, c.Writer, ar, response)
 	return nil
 }
 
