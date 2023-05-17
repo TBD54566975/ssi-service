@@ -97,11 +97,12 @@ func Logger(logger logrus.FieldLogger, notLogged ...string) gin.HandlerFunc {
 			msg := fmt.Sprintf("%s : completed : %s - %s [%s] \"%s %s\" %d %d \"%s\" \"%s\" (%dms)",
 				v.TraceID, clientIP, hostname, time.Now().Format(time.RFC3339), c.Request.Method,
 				path, statusCode, dataLength, referer, clientUserAgent, latency)
-			if statusCode >= http.StatusInternalServerError {
+			switch {
+			case statusCode >= http.StatusInternalServerError:
 				afterEntry.Error(msg)
-			} else if statusCode >= http.StatusBadRequest {
+			case statusCode >= http.StatusBadRequest:
 				afterEntry.Warn(msg)
-			} else {
+			default:
 				afterEntry.Info(msg)
 			}
 		}

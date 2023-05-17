@@ -31,7 +31,7 @@ func TestMain(m *testing.M) {
 		logrus.WithError(err).Fatal("cannot create authserver")
 		os.Exit(1)
 	}
-	server = httptest.NewServer(authServer)
+	server = httptest.NewServer(authServer.Handler)
 
 	code := m.Run()
 
