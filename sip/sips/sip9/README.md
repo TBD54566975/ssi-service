@@ -6,10 +6,9 @@
 SIP: 9
 Title: External Signing
 Author(s): Andres Uribe
-Comments URI: TBD
 Status: Draft
 Created: May 10, 2022
-Updated: May 15, 2022
+Updated: May 17, 2022
 ```
 
 # Abstract
