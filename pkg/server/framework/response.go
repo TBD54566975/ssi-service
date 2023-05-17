@@ -13,7 +13,7 @@ func Respond(c *gin.Context, data any, statusCode int) {
 	// the request state doesn't exist in the context
 	v, ok := c.Value(KeyRequestState).(*RequestState)
 	if !ok {
-		c.Set(ShutdownErrorState, NewShutdownError("request state missing from context."))
+		c.Set(ShutdownErrorState.String(), NewShutdownError("request state missing from context."))
 		return
 	}
 

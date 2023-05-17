@@ -45,9 +45,9 @@ const (
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
 type SSIServer struct {
-	*framework.Server
 	*config.ServerConfig
 	*service.SSIService
+	*framework.Server
 }
 
 // NewSSIServer does two things: instantiates all service and registers their HTTP bindings

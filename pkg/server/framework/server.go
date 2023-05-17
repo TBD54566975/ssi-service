@@ -19,20 +19,24 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 )
 
+type contextKey string
+
 const (
-	KeyRequestState    string = "keyRequestState"
-	ShutdownErrorState string = "shutdownError"
-	serviceName        string = "ssi-service"
+	KeyRequestState    contextKey = "keyRequestState"
+	ShutdownErrorState contextKey = "shutdownError"
+
+	serviceName string = "ssi-service"
 )
+
+func (c contextKey) String() string {
+	return string(c)
+}
 
 type RequestState struct {
 	TraceID    string
 	Now        time.Time
 	StatusCode int
 }
-
-// A Handler is a type that handles a http request within our own little mini framework.
-type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
 
 // Server is the entrypoint into our application and what configures our context object for each of our http router.
 // Feel free to add any configuration data/logic on this Server struct.
@@ -68,9 +72,9 @@ func NewHTTPServer(config config.ServerConfig, shutdown chan os.Signal, mws gin.
 
 // Handle sets a handler function for a given HTTP method and path pair
 // to the server mux.
-func (s *Server) Handle(method string, path string, handler Handler, mws ...gin.HandlerFunc) {
-	// add the middleware(s) to the router
-	s.router.Use(mws...)
+func (s *Server) Handle(method string, path string, handler gin.HandlerFunc, middleware ...gin.HandlerFunc) {
+	// add the middleware to the router
+	s.router.Use(middleware...)
 
 	// request handler function
 	h := func(c *gin.Context) {
@@ -83,12 +87,12 @@ func (s *Server) Handle(method string, path string, handler Handler, mws ...gin.
 
 		// init a span, but only if the tracer is initialized
 		if s.tracer != nil {
-			var span trace.Span
-			ctx, span = s.tracer.Start(ctx, path)
+			_, span := s.tracer.Start(ctx, path)
+			defer span.End()
 			body, err := PeekRequestBody(r)
 			if err != nil {
 				// log the error and continue the trace with an empty body value
-				logrus.Errorf("failed to read r body during tracing: %v", err)
+				logrus.Errorf("failed to read request body during tracing: %v", err)
 			}
 			span.SetAttributes(
 				attribute.String("method", method),
@@ -98,18 +102,20 @@ func (s *Server) Handle(method string, path string, handler Handler, mws ...gin.
 				attribute.String("proto", r.Proto),
 				attribute.String("body", body),
 			)
-
-			defer span.End()
 		}
 
 		// handle the request itself
-		handler(ctx, c.Writer, r)
+		handler(c)
+
+		// check if the request failed via the context
 		if err := c.Value(ShutdownErrorState); err != nil {
-			logrus.Error("request failed: %v", err)
+			logrus.Errorf("request failed: %q", err)
 			s.SignalShutdown()
 			return
 		}
 	}
+
+	// add the handler to the router
 	s.router.Handle(method, path, h)
 }
 
