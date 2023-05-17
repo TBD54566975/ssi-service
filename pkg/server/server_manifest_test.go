@@ -33,7 +33,7 @@ import (
 func TestManifestAPI(t *testing.T) {
 	t.Run("Test Create Manifest", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -53,7 +53,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "invalid create manifest request")
 
 		// reset the http recorder
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// create an issuer
 		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
@@ -105,7 +105,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Get Manifest By ID", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -123,7 +123,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "cannot get manifest without ID parameter")
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// get a manifest with an invalid id parameter
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/bad", nil)
@@ -133,7 +133,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not get manifest with id: bad")
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// create an issuer
 		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
@@ -186,7 +186,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Get Manifests", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -256,7 +256,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Delete Manifest", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -301,7 +301,7 @@ func TestManifestAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// get credential by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
@@ -315,7 +315,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, getManifestResp)
 		assert.Equal(tt, resp.Manifest.ID, getManifestResp.ID)
 
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// delete it
 		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
@@ -323,7 +323,7 @@ func TestManifestAPI(t *testing.T) {
 		err = manifestRouter.DeleteManifest(c)
 		assert.NoError(tt, err)
 
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
@@ -335,7 +335,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Submit Application With Issuance Template", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		issuanceService := testIssuanceService(tt, bolt)
@@ -488,7 +488,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Submit Application", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -506,9 +506,6 @@ func TestManifestAPI(t *testing.T) {
 		err := manifestRouter.SubmitApplication(c)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid submit application request")
-
-		// reset the http recorder
-		w.Flush()
 
 		// create an issuer
 		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
@@ -558,7 +555,7 @@ func TestManifestAPI(t *testing.T) {
 		// good request
 		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -584,7 +581,7 @@ func TestManifestAPI(t *testing.T) {
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)
 
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
@@ -642,7 +639,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Denied Application", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -663,9 +660,6 @@ func TestManifestAPI(t *testing.T) {
 		err := manifestRouter.SubmitApplication(c)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid submit application request")
-
-		// reset the http recorder
-		w.Flush()
 
 		// create an issuer
 		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
@@ -712,7 +706,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)
 
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// good request
 		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
@@ -745,7 +739,7 @@ func TestManifestAPI(t *testing.T) {
 		signed, err := signer.SignJSON(applicationRequest)
 		assert.NoError(tt, err)
 
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
@@ -774,7 +768,7 @@ func TestManifestAPI(t *testing.T) {
 		savedSubmission.DescriptorMap[0].ID = "bad"
 		applicationRequest.CredentialApplication.PresentationSubmission = savedSubmission
 
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// sign application
 		signed, err = signer.SignJSON(applicationRequest)
@@ -804,7 +798,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Get Application By ID and Get Applications", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -821,7 +815,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "cannot get application without ID parameter")
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// create an issuer
 		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
@@ -973,7 +967,7 @@ func TestManifestAPI(t *testing.T) {
 
 	t.Run("Test Delete Application", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -1096,7 +1090,7 @@ func TestManifestAPI(t *testing.T) {
 		err = manifestRouter.DeleteApplication(c)
 		assert.NoError(tt, err)
 
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/applications/%s", appResp.Response.ID), nil)

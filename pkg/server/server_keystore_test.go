@@ -38,9 +38,6 @@ func TestKeyStoreAPI(t *testing.T) {
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "unsupported key type: bad")
 
-		// reset the http recorder
-		w.Flush()
-
 		// store a valid key
 		_, privKey, err := crypto.GenerateKeyByKeyType(crypto.Ed25519)
 		assert.NoError(tt, err)
@@ -58,6 +55,7 @@ func TestKeyStoreAPI(t *testing.T) {
 		}
 		requestValue := newRequestValue(tt, storeKeyRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
+		w = httptest.NewRecorder()
 		c = newRequestContext(w, req)
 		err = keyStoreRouter.StoreKey(c)
 		assert.NoError(tt, err)
@@ -65,7 +63,7 @@ func TestKeyStoreAPI(t *testing.T) {
 
 	t.Run("Test Get Key Details", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService, _ := testKeyStore(tt, bolt)
 		w := httptest.NewRecorder()
@@ -94,14 +92,14 @@ func TestKeyStoreAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// get it back
-		getRecorder := httptest.NewRecorder()
+		w = httptest.NewRecorder()
 		getReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/keys/%s", keyID), nil)
 		c = newRequestContextWithParams(w, getReq, map[string]string{"id": keyID})
 		err = keyStoreService.GetKeyDetails(c)
 		assert.NoError(tt, err)
 
 		var resp router.GetKeyDetailsResponse
-		err = json.NewDecoder(getRecorder.Body).Decode(&resp)
+		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 		assert.Equal(tt, keyID, resp.ID)
 		assert.Equal(tt, controller, resp.Controller)

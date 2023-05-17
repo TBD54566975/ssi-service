@@ -155,7 +155,7 @@ type VerifySchemaRequest struct {
 }
 
 type VerifySchemaResponse struct {
-	Verified bool   `json:"verified,omitempty"`
+	Verified bool   `json:"verified" validate:"required"`
 	Reason   string `json:"reason,omitempty"`
 }
 

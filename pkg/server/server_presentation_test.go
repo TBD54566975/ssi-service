@@ -178,7 +178,6 @@ func TestPresentationAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 		c := newRequestContext(w, req)
 		assert.Error(tt, pRouter.DeleteDefinition(c))
-		w.Flush()
 	})
 
 	t.Run("Submission endpoints", func(tt *testing.T) {

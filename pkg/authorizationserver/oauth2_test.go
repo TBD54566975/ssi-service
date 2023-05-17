@@ -17,8 +17,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var server *httptest.Server
-var store *storage.MemoryStore
+var (
+	server *httptest.Server
+	store  *storage.MemoryStore
+)
 
 func TestMain(m *testing.M) {
 	store = storage.NewMemoryStore()

@@ -50,7 +50,9 @@ func Logger(logger logrus.FieldLogger, notLogged ...string) gin.HandlerFunc {
 
 		v, ok := c.Value(framework.KeyRequestState.String()).(*framework.RequestState)
 		if !ok {
-			logrus.Fatal("Request state missing from context")
+			err = framework.NewShutdownError("request state missing from context.")
+			c.Set(framework.ShutdownErrorState.String(), err)
+			return
 		}
 
 		beforeEntry := logger.WithFields(logrus.Fields{

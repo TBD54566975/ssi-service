@@ -950,7 +950,7 @@ func TestCredentialRouter(t *testing.T) {
 
 func createCredServicePrereqs(tt *testing.T) (issuer, issuerKID, schemaID string, credSvc credential.Service) {
 	bolt := setupTestDB(tt)
-	require.NotNil(tt, bolt)
+	require.NotEmpty(tt, bolt)
 
 	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234"}}
 	keyStoreService := testKeyStoreService(tt, bolt)
