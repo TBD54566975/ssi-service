@@ -18,7 +18,7 @@ import (
 func TestKeyStoreAPI(t *testing.T) {
 	t.Run("Test Store Key", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreRouter, _ := testKeyStore(tt, bolt)
 		w := httptest.NewRecorder()
@@ -32,7 +32,9 @@ func TestKeyStoreAPI(t *testing.T) {
 		}
 		badRequestValue := newRequestValue(tt, badKeyStoreRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", badRequestValue)
-		err := keyStoreRouter.StoreKey(newRequestContext(), w, req)
+
+		c := newRequestContext(w, req)
+		err := keyStoreRouter.StoreKey(c)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "unsupported key type: bad")
 
@@ -56,7 +58,8 @@ func TestKeyStoreAPI(t *testing.T) {
 		}
 		requestValue := newRequestValue(tt, storeKeyRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
-		err = keyStoreRouter.StoreKey(newRequestContext(), w, req)
+		c = newRequestContext(w, req)
+		err = keyStoreRouter.StoreKey(c)
 		assert.NoError(tt, err)
 	})
 
@@ -86,13 +89,15 @@ func TestKeyStoreAPI(t *testing.T) {
 		}
 		requestValue := newRequestValue(tt, storeKeyRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
-		err = keyStoreService.StoreKey(newRequestContext(), w, req)
+		c := newRequestContext(w, req)
+		err = keyStoreService.StoreKey(c)
 		assert.NoError(tt, err)
 
 		// get it back
 		getRecorder := httptest.NewRecorder()
 		getReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/keys/%s", keyID), nil)
-		err = keyStoreService.GetKeyDetails(newRequestContextWithParams(map[string]string{"id": keyID}), getRecorder, getReq)
+		c = newRequestContextWithParams(w, getReq, map[string]string{"id": keyID})
+		err = keyStoreService.GetKeyDetails(c)
 		assert.NoError(tt, err)
 
 		var resp router.GetKeyDetailsResponse
