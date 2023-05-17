@@ -1,10 +1,10 @@
 package router
 
 import (
-	"context"
 	"net/http"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -35,7 +35,7 @@ func NewIssuanceRouter(svc svcframework.Service) (*IssuanceRouter, error) {
 // @Success     200 {object} issuing.IssuanceTemplate
 // @Failure     400 {string} string "Bad request"
 // @Router      /v1/issuancetemplates/{id} [get]
-func (ir IssuanceRouter) GetIssuanceTemplate(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (ir IssuanceRouter) GetIssuanceTemplate(ctx *gin.Context) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
@@ -47,7 +47,7 @@ func (ir IssuanceRouter) GetIssuanceTemplate(ctx context.Context, w http.Respons
 		return framework.NewRequestError(
 			sdkutil.LoggingErrorMsg(err, "getting issuance template"), http.StatusInternalServerError)
 	}
-	return framework.Respond(ctx, w, issuanceTemplate.IssuanceTemplate, http.StatusOK)
+	return framework.Respond(ctx, issuanceTemplate.IssuanceTemplate, http.StatusOK)
 }
 
 type CreateIssuanceTemplateRequest struct {
@@ -72,10 +72,10 @@ func (r CreateIssuanceTemplateRequest) ToServiceRequest() *issuing.CreateIssuanc
 // @Failure     400     {string} string "Bad request"
 // @Failure     500     {string} string "Internal server error"
 // @Router      /v1/issuancetemplates [put]
-func (ir IssuanceRouter) CreateIssuanceTemplate(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (ir IssuanceRouter) CreateIssuanceTemplate(ctx *gin.Context) error {
 	var request CreateIssuanceTemplateRequest
 	errMsg := "Invalid Issuance Template Request"
-	if err := framework.Decode(r, &request); err != nil {
+	if err := framework.Decode(ctx.Request, &request); err != nil {
 		return framework.NewRequestError(
 			sdkutil.LoggingErrorMsg(err, errMsg), http.StatusBadRequest)
 	}
@@ -86,7 +86,7 @@ func (ir IssuanceRouter) CreateIssuanceTemplate(ctx context.Context, w http.Resp
 			sdkutil.LoggingErrorMsg(err, "creating issuance template"), http.StatusInternalServerError)
 	}
 
-	return framework.Respond(ctx, w, template, http.StatusCreated)
+	return framework.Respond(ctx, template, http.StatusCreated)
 }
 
 // DeleteIssuanceTemplate godoc
@@ -101,7 +101,7 @@ func (ir IssuanceRouter) CreateIssuanceTemplate(ctx context.Context, w http.Resp
 // @Failure     400 {string} string "Bad request"
 // @Failure     500 {string} string "Internal server error"
 // @Router      /v1/issuancetemplates/{id} [delete]
-func (ir IssuanceRouter) DeleteIssuanceTemplate(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (ir IssuanceRouter) DeleteIssuanceTemplate(ctx *gin.Context) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
@@ -113,7 +113,7 @@ func (ir IssuanceRouter) DeleteIssuanceTemplate(ctx context.Context, w http.Resp
 			sdkutil.LoggingErrorMsgf(err, "could not delete issuance template with id: %s", *id), http.StatusInternalServerError)
 	}
 
-	return framework.Respond(ctx, w, nil, http.StatusNoContent)
+	return framework.Respond(ctx, nil, http.StatusNoContent)
 }
 
 type ListIssuanceTemplatesResponse struct {
@@ -131,7 +131,7 @@ type ListIssuanceTemplatesResponse struct {
 // @Failure     400 {string} string "Bad request"
 // @Failure     500 {string} string "Internal server error"
 // @Router      /v1/manifests [get]
-func (ir IssuanceRouter) ListIssuanceTemplates(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (ir IssuanceRouter) ListIssuanceTemplates(ctx *gin.Context) error {
 	gotManifests, err := ir.service.ListIssuanceTemplates(ctx, &issuing.ListIssuanceTemplatesRequest{})
 
 	if err != nil {
@@ -140,5 +140,5 @@ func (ir IssuanceRouter) ListIssuanceTemplates(ctx context.Context, w http.Respo
 	}
 
 	resp := ListIssuanceTemplatesResponse{IssuanceTemplates: gotManifests.IssuanceTemplates}
-	return framework.Respond(ctx, w, resp, http.StatusOK)
+	return framework.Respond(ctx, resp, http.StatusOK)
 }

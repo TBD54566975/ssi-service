@@ -42,12 +42,6 @@ func NewRequestError(err error, statusCode int) error {
 	return &SafeError{err, statusCode, nil}
 }
 
-// NewRequestErrorWithMsg wraps a provided error and message with an HTTP status code. This function should be used
-// when router encounter expected errors.
-func NewRequestErrorWithMsg(err error, errMsg string, statusCode int) error {
-	return &SafeError{errors.Wrap(err, errMsg), statusCode, nil}
-}
-
 // shutdown is a type used to help with graceful shutdown of a server.
 type shutdown struct {
 	Message string

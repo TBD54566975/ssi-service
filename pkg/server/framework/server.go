@@ -47,7 +47,7 @@ type Server struct {
 	shutdown chan os.Signal
 }
 
-type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
+type Handler func(ctx *gin.Context) error
 
 // NewHTTPServer creates a Server that handles a set of routes for the application.
 func NewHTTPServer(config config.ServerConfig, shutdown chan os.Signal, mws gin.HandlersChain) *Server {
@@ -106,8 +106,8 @@ func (s *Server) Handle(method string, path string, handler Handler, middleware 
 			)
 		}
 
-		// handle the request itself
-		if err := handler(c.Request.Context(), c.Writer, c.Request); err != nil {
+		// handle the request
+		if err := handler(c); err != nil {
 			logrus.Errorf("request failed: %q", err)
 			s.SignalShutdown()
 			return

@@ -1,11 +1,11 @@
 package router
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.einride.tech/aip/filtering"
@@ -43,7 +43,7 @@ func NewOperationRouter(s svcframework.Service) (*OperationRouter, error) {
 // @Failure     400 {string} string    "Bad request"
 // @Failure     500 {string} string    "Internal server error"
 // @Router      /v1/operations/{id} [get]
-func (o OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (o OperationRouter) GetOperation(ctx *gin.Context) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
@@ -55,7 +55,7 @@ func (o OperationRouter) GetOperation(ctx context.Context, w http.ResponseWriter
 		return framework.NewRequestError(
 			sdkutil.LoggingErrorMsg(err, "failed getting operation"), http.StatusInternalServerError)
 	}
-	return framework.Respond(ctx, w, routerModel(*op), http.StatusOK)
+	return framework.Respond(ctx, routerModel(*op), http.StatusOK)
 }
 
 type GetOperationsRequest struct {
@@ -124,9 +124,9 @@ type GetOperationsResponse struct {
 // @Failure     400     {string} string                "Bad request"
 // @Failure     500     {string} string                "Internal server error"
 // @Router      /v1/operations [get]
-func (o OperationRouter) GetOperations(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func (o OperationRouter) GetOperations(ctx *gin.Context) error {
 	var request GetOperationsRequest
-	if err := framework.Decode(r, &request); err != nil {
+	if err := framework.Decode(ctx.Request, &request); err != nil {
 		return framework.NewRequestError(
 			sdkutil.LoggingErrorMsg(err, "invalid get operations request"), http.StatusBadRequest)
 	}
@@ -151,7 +151,7 @@ func (o OperationRouter) GetOperations(ctx context.Context, w http.ResponseWrite
 	for _, op := range ops.Operations {
 		resp.Operations = append(resp.Operations, routerModel(op))
 	}
-	return framework.Respond(ctx, w, resp, http.StatusOK)
+	return framework.Respond(ctx, resp, http.StatusOK)
 }
 
 func routerModel(op operation.Operation) Operation {
@@ -189,7 +189,7 @@ func routerModel(op operation.Operation) Operation {
 // @Failure     400 {string} string    "Bad request"
 // @Failure     500 {string} string    "Internal server error"
 // @Router      /v1/operations/cancel/{id} [get]
-func (o OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (o OperationRouter) CancelOperation(ctx *gin.Context) error {
 	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		return framework.NewRequestError(
@@ -201,7 +201,7 @@ func (o OperationRouter) CancelOperation(ctx context.Context, w http.ResponseWri
 		return framework.NewRequestError(
 			sdkutil.LoggingErrorMsg(err, "failed cancelling operation"), http.StatusInternalServerError)
 	}
-	return framework.Respond(ctx, w, routerModel(*op), http.StatusOK)
+	return framework.Respond(ctx, routerModel(*op), http.StatusOK)
 }
 
 type Operation struct {
