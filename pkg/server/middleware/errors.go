@@ -21,7 +21,7 @@ func Errors() gin.HandlerFunc {
 		_, span := tracer.Start(ctx, "service.middleware.errors")
 		defer span.End()
 
-		v, ok := c.Value(framework.KeyRequestState).(*framework.RequestState)
+		v, ok := c.Value(framework.KeyRequestState.String()).(*framework.RequestState)
 		if !ok {
 			c.Set(framework.ShutdownErrorState.String(), framework.NewShutdownError("request state missing from context."))
 			return

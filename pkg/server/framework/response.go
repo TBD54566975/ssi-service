@@ -12,7 +12,7 @@ import (
 func Respond(c *gin.Context, data any, statusCode int) error {
 	// set the status code within the context's request state. Gracefully shutdown if
 	// the request state doesn't exist in the context
-	v, ok := c.Value(KeyRequestState).(*RequestState)
+	v, ok := c.Value(KeyRequestState.String()).(*RequestState)
 	if !ok {
 		err := NewShutdownError("request state missing from context.")
 		c.Set(ShutdownErrorState.String(), err)
@@ -20,7 +20,8 @@ func Respond(c *gin.Context, data any, statusCode int) error {
 	}
 
 	// check if the data is an error
-	if err := data.(error); err != nil {
+	var err error
+	if err, ok = data.(error); ok && err != nil {
 		// if the error isn't a `SafeError`, it's not safe to send back the error
 		// message as is because it may contain sensitive data. Send back a generic
 		// 500.
@@ -30,6 +31,8 @@ func Respond(c *gin.Context, data any, statusCode int) error {
 			data = ErrorResponse{
 				Error: http.StatusText(http.StatusInternalServerError),
 			}
+			logrus.WithError(err).Error("unsafe error")
+			err = errors.New("error processing request")
 		}
 	}
 
@@ -43,7 +46,7 @@ func Respond(c *gin.Context, data any, statusCode int) error {
 
 	// respond with pretty JSON
 	c.IndentedJSON(statusCode, data)
-	return nil
+	return err
 }
 
 // LoggingRespondError sends an error response back to the client as a safe error

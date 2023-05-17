@@ -2,7 +2,6 @@
 package framework
 
 import (
-	"context"
 	"net/http"
 	"os"
 	"syscall"
@@ -85,11 +84,11 @@ func (s *Server) Handle(method string, path string, handler Handler, middleware 
 			Now:     time.Now(),
 		}
 		r := c.Request
-		ctx := context.WithValue(r.Context(), KeyRequestState, &requestState)
+		c.Set(KeyRequestState.String(), &requestState)
 
 		// init a span, but only if the tracer is initialized
 		if s.tracer != nil {
-			_, span := s.tracer.Start(ctx, path)
+			_, span := s.tracer.Start(c.Request.Context(), path)
 			defer span.End()
 			body, err := PeekRequestBody(r)
 			if err != nil {
@@ -110,8 +109,11 @@ func (s *Server) Handle(method string, path string, handler Handler, middleware 
 		if err := handler(c); err != nil {
 			// if there's still an error at this point (not extracted by our errors middleware)
 			// we know it's an unsafe error and worth shutting down over
-			logrus.Errorf("request failed: %q", err)
-			s.SignalShutdown()
+			logrus.WithError(err).Errorf("request failed")
+			if IsShutdown(err) {
+				logrus.WithError(err).Errorf("unsafe error, shutting down")
+				s.SignalShutdown()
+			}
 			return
 		}
 	}

@@ -105,8 +105,8 @@ type CreateCredentialResponse struct {
 // @Failure     500     {string} string "Internal server error"
 // @Router      /v1/credentials [put]
 func (cr CredentialRouter) CreateCredential(c *gin.Context) error {
-	var request CreateCredentialRequest
 	invalidCreateCredentialRequest := "invalid create credential request"
+	var request CreateCredentialRequest
 	if err := framework.Decode(c.Request, &request); err != nil {
 		return framework.LoggingRespondErrWithMsg(c, err, invalidCreateCredentialRequest, http.StatusBadRequest)
 	}
@@ -403,11 +403,10 @@ func (cr CredentialRouter) GetCredentials(c *gin.Context) error {
 	subject := framework.GetQueryValue(c, SubjectParam)
 
 	errMsg := "must use one of the following query parameters: issuer, subject, schema"
-	err := framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 
 	// check if there are multiple parameters set, which is not allowed
 	if (issuer != nil && subject != nil) || (issuer != nil && schema != nil) || (subject != nil && schema != nil) {
-		return err
+		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 	}
 
 	if issuer != nil {
@@ -419,7 +418,7 @@ func (cr CredentialRouter) GetCredentials(c *gin.Context) error {
 	if schema != nil {
 		return cr.getCredentialsBySchema(c, *schema)
 	}
-	return err
+	return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 }
 
 func (cr CredentialRouter) getCredentialsByIssuer(c *gin.Context, issuer string) error {

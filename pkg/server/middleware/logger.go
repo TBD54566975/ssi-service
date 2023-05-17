@@ -48,7 +48,7 @@ func Logger(logger logrus.FieldLogger, notLogged ...string) gin.HandlerFunc {
 		clientUserAgent := c.Request.UserAgent()
 		r := c.Request
 
-		v, ok := c.Value(framework.KeyRequestState).(*framework.RequestState)
+		v, ok := c.Value(framework.KeyRequestState.String()).(*framework.RequestState)
 		if !ok {
 			logrus.Fatal("Request state missing from context")
 		}

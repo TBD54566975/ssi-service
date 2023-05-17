@@ -26,7 +26,7 @@ import (
 func TestCredentialAPI(t *testing.T) {
 	t.Run("Test Create Credential", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -57,7 +57,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "invalid create credential request")
 
 		// reset the http recorder
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// missing known issuer request
 		missingIssuerRequest := router.CreateCredentialRequest{
@@ -78,7 +78,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "getting key for signing credential<did:abc:123#key-1>")
 
 		// reset the http recorder
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// good request
 		createCredRequest := router.CreateCredentialRequest{
@@ -108,14 +108,12 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Create Credential with SchemaID", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
 		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
-
-		w := httptest.NewRecorder()
 
 		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
@@ -142,6 +140,8 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
+		w := httptest.NewRecorder()
+
 		createCredRequest := router.CreateCredentialRequest{
 			Issuer:    issuerDID.DID.ID,
 			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
@@ -164,11 +164,12 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, resp.CredentialJWT)
 
-		w.Flush()
+		// reset the http recorder
+		w = httptest.NewRecorder()
 
 		// get credential by schema
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?schema=%s", createdSchema.ID), nil)
-		c = newRequestContext(w, req)
+		c = newRequestContextWithParams(w, req, map[string]string{"schema": createdSchema.ID})
 		err = credRouter.GetCredentials(c)
 		assert.NoError(tt, err)
 
@@ -181,7 +182,8 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].ID)
 		assert.Equal(tt, resp.Credential.CredentialSchema.ID, getCredsResp.Credentials[0].Credential.CredentialSchema.ID)
 
-		w.Flush()
+		// reset the http recorder
+		w = httptest.NewRecorder()
 
 		// create cred with unknown schema
 		missingSchemaCred := router.CreateCredentialRequest{
@@ -205,7 +207,7 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Get Credential By ID", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -221,8 +223,8 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "cannot get credential without ID parameter")
 
-		// reset recorder between calls
-		w.Flush()
+		// reset the http recorder
+		w = httptest.NewRecorder()
 
 		// get a cred with an invalid id parameter
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/credentials/bad", nil)
@@ -231,8 +233,8 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "could not get credential with id: bad")
 
-		// reset recorder between calls
-		w.Flush()
+		// reset the http recorder
+		w = httptest.NewRecorder()
 
 		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
 			Method:  didsdk.KeyMethod,
@@ -264,6 +266,9 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, resp.Credential)
 		assert.NotEmpty(tt, resp.CredentialJWT)
 
+		// reset the http recorder
+		w = httptest.NewRecorder()
+
 		// get credential by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", resp.Credential.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.Credential.ID})
@@ -280,7 +285,7 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Get Credential By SchemaID", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -336,7 +341,8 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, resp.CredentialJWT)
 
-		w.Flush()
+		// reset the http recorder
+		w = httptest.NewRecorder()
 
 		// get credential by schema
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?schema=%s", createdSchema.ID), nil)
@@ -356,7 +362,7 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Get Credential By Issuer", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -393,7 +399,8 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, resp.CredentialJWT)
 
-		w.Flush()
+		// reset the http recorder
+		w = httptest.NewRecorder()
 
 		// get credential by issuer id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?issuer=%s", issuerDID.DID.ID), nil)
@@ -412,7 +419,7 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Get Credential By Subject", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -450,7 +457,8 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, resp.CredentialJWT)
 
-		w.Flush()
+		// reset the http recorder
+		w = httptest.NewRecorder()
 
 		// get credential by subject id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?subject=%s", subjectID), nil)
@@ -470,7 +478,7 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Delete Credential", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -505,7 +513,8 @@ func TestCredentialAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 
-		w.Flush()
+		// reset the http recorder
+		w = httptest.NewRecorder()
 
 		// get credential by id
 		credID := resp.Credential.ID
@@ -520,7 +529,8 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, getCredResp)
 		assert.Equal(tt, credID, getCredResp.Credential.ID)
 
-		w.Flush()
+		// reset the http recorder
+		w = httptest.NewRecorder()
 
 		// delete it
 		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", credID), nil)
@@ -528,7 +538,8 @@ func TestCredentialAPI(t *testing.T) {
 		err = credRouter.DeleteCredential(c)
 		assert.NoError(tt, err)
 
-		w.Flush()
+		// reset the http recorder
+		w = httptest.NewRecorder()
 
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", credID), nil)
@@ -540,7 +551,7 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Verifying a Credential", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -580,7 +591,8 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
 
-		w.Flush()
+		// reset the http recorder
+		w = httptest.NewRecorder()
 
 		// verify the credential
 		requestValue = newRequestValue(tt, router.VerifyCredentialRequest{CredentialJWT: resp.CredentialJWT})
@@ -611,7 +623,7 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Create Revocable Credential", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -791,7 +803,7 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Get Revoked Status Of Credential", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
@@ -867,7 +879,7 @@ func TestCredentialAPI(t *testing.T) {
 
 	t.Run("Test Get Status List Credential", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
