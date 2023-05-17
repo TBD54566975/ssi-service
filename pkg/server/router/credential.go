@@ -107,32 +107,26 @@ type CreateCredentialResponse struct {
 // @Failure     400     {string} string "Bad request"
 // @Failure     500     {string} string "Internal server error"
 // @Router      /v1/credentials [put]
-func (cr CredentialRouter) CreateCredential(ctx *gin.Context) error {
+func (cr CredentialRouter) CreateCredential(c *gin.Context) error {
 	var request CreateCredentialRequest
 	invalidCreateCredentialRequest := "invalid create credential request"
-	if err := framework.Decode(ctx.Request, &request); err != nil {
-		errMsg := invalidCreateCredentialRequest
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+	if err := framework.Decode(c.Request, &request); err != nil {
+		return framework.LoggingRespondErrWithMsg(c, err, invalidCreateCredentialRequest, http.StatusBadRequest)
 	}
 
 	if err := framework.ValidateRequest(request); err != nil {
-		errMsg := invalidCreateCredentialRequest
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.LoggingRespondErrWithMsg(c, err, invalidCreateCredentialRequest, http.StatusBadRequest)
 	}
 
 	req := request.ToServiceRequest()
-	createCredentialResponse, err := cr.service.CreateCredential(ctx, req)
+	createCredentialResponse, err := cr.service.CreateCredential(c, req)
 	if err != nil {
 		errMsg := "could not create credential"
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
+		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 	}
 
 	resp := CreateCredentialResponse{Credential: createCredentialResponse.Credential, CredentialJWT: createCredentialResponse.CredentialJWT}
-
-	return framework.Respond(ctx, resp, http.StatusCreated)
+	return framework.Respond(c, resp, http.StatusCreated)
 }
 
 type GetCredentialResponse struct {
@@ -362,37 +356,34 @@ type VerifyCredentialResponse struct {
 // @Failure     400     {string} string "Bad request"
 // @Failure     500     {string} string "Internal server error"
 // @Router      /v1/credentials/verification [put]
-func (cr CredentialRouter) VerifyCredential(ctx *gin.Context) error {
+func (cr CredentialRouter) VerifyCredential(c *gin.Context) error {
 	var request VerifyCredentialRequest
-	if err := framework.Decode(ctx.Request, &request); err != nil {
+	if err := framework.Decode(c.Request, &request); err != nil {
 		errMsg := "invalid verify credential request"
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
+		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
 	}
 
 	if !request.IsValid() {
-		err := errors.New("request must contain either a Data Integrity Credential or a JWT Credential")
-		logrus.WithError(err).Error()
-		return framework.NewRequestError(err, http.StatusBadRequest)
+		errMsg := "request must contain either a Data Integrity Credential or a JWT Credential"
+		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 	}
 
-	verificationResult, err := cr.service.VerifyCredential(ctx, credential.VerifyCredentialRequest{
+	verificationResult, err := cr.service.VerifyCredential(c, credential.VerifyCredentialRequest{
 		DataIntegrityCredential: request.DataIntegrityCredential,
 		CredentialJWT:           request.CredentialJWT,
 	})
 	if err != nil {
 		errMsg := "could not verify credential"
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
+		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 	}
 
 	resp := VerifyCredentialResponse{Verified: verificationResult.Verified, Reason: verificationResult.Reason}
-	return framework.Respond(ctx, resp, http.StatusOK)
+	return framework.Respond(c, resp, http.StatusOK)
 }
 
 type GetCredentialsResponse struct {
 	// Array of credential containers.
-	Credentials []credmodel.Container `json:"credentials"`
+	Credentials []credmodel.Container `json:"credentials,omitempty"`
 }
 
 // GetCredentials godoc
@@ -434,8 +425,8 @@ func (cr CredentialRouter) GetCredentials(c *gin.Context) error {
 	return err
 }
 
-func (cr CredentialRouter) getCredentialsByIssuer(ctx *gin.Context, issuer string) error {
-	gotCredentials, err := cr.service.GetCredentialsByIssuer(ctx, credential.GetCredentialByIssuerRequest{Issuer: issuer})
+func (cr CredentialRouter) getCredentialsByIssuer(c *gin.Context, issuer string) error {
+	gotCredentials, err := cr.service.GetCredentialsByIssuer(c, credential.GetCredentialByIssuerRequest{Issuer: issuer})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for issuer: %s", util.SanitizeLog(issuer))
 		logrus.WithError(err).Error(errMsg)
@@ -443,11 +434,11 @@ func (cr CredentialRouter) getCredentialsByIssuer(ctx *gin.Context, issuer strin
 	}
 
 	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
-	return framework.Respond(ctx, resp, http.StatusOK)
+	return framework.Respond(c, resp, http.StatusOK)
 }
 
-func (cr CredentialRouter) getCredentialsBySubject(ctx *gin.Context, subject string) error {
-	gotCredentials, err := cr.service.GetCredentialsBySubject(ctx, credential.GetCredentialBySubjectRequest{Subject: subject})
+func (cr CredentialRouter) getCredentialsBySubject(c *gin.Context, subject string) error {
+	gotCredentials, err := cr.service.GetCredentialsBySubject(c, credential.GetCredentialBySubjectRequest{Subject: subject})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for subject: %s", util.SanitizeLog(subject))
 		logrus.WithError(err).Error(errMsg)
@@ -455,11 +446,11 @@ func (cr CredentialRouter) getCredentialsBySubject(ctx *gin.Context, subject str
 	}
 
 	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
-	return framework.Respond(ctx, resp, http.StatusOK)
+	return framework.Respond(c, resp, http.StatusOK)
 }
 
-func (cr CredentialRouter) getCredentialsBySchema(ctx *gin.Context, schema string) error {
-	gotCredentials, err := cr.service.GetCredentialsBySchema(ctx, credential.GetCredentialBySchemaRequest{Schema: schema})
+func (cr CredentialRouter) getCredentialsBySchema(c *gin.Context, schema string) error {
+	gotCredentials, err := cr.service.GetCredentialsBySchema(c, credential.GetCredentialBySchemaRequest{Schema: schema})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for schema: %s", util.SanitizeLog(schema))
 		logrus.WithError(err).Error(errMsg)
@@ -467,7 +458,7 @@ func (cr CredentialRouter) getCredentialsBySchema(ctx *gin.Context, schema strin
 	}
 
 	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
-	return framework.Respond(ctx, resp, http.StatusOK)
+	return framework.Respond(c, resp, http.StatusOK)
 }
 
 // DeleteCredential godoc

@@ -47,7 +47,7 @@ type Server struct {
 	shutdown chan os.Signal
 }
 
-type Handler func(ctx *gin.Context) error
+type Handler func(c *gin.Context) error
 
 // NewHTTPServer creates a Server that handles a set of routes for the application.
 func NewHTTPServer(config config.ServerConfig, shutdown chan os.Signal, mws gin.HandlersChain) *Server {
