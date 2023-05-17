@@ -56,10 +56,10 @@ type GetDIDMethodsResponse struct {
 // @Produce     json
 // @Success     200 {object} GetDIDMethodsResponse
 // @Router      /v1/dids [get]
-func (dr DIDRouter) GetDIDMethods(c *gin.Context) {
+func (dr DIDRouter) GetDIDMethods(ctx *gin.Context, _ http.ResponseWriter, _ *http.Request) error {
 	methods := dr.service.GetSupportedMethods()
 	response := GetDIDMethodsResponse{DIDMethods: methods.Methods}
-	framework.Respond(c, response, http.StatusOK)
+	return framework.Respond(ctx, response, http.StatusOK)
 }
 
 type CreateDIDByMethodRequest struct {
@@ -91,42 +91,44 @@ type CreateDIDByMethodResponse struct {
 // @Failure     400     {string} string "Bad request"
 // @Failure     500     {string} string "Internal server error"
 // @Router      /v1/dids/{method} [put]
-func (dr DIDRouter) CreateDIDByMethod(c *gin.Context) {
-	method := framework.GetParam(c, MethodParam)
+func (dr DIDRouter) CreateDIDByMethod(ctx *gin.Context, w http.ResponseWriter, r *http.Request) error {
+	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
 		errMsg := "create DID request missing method parameter"
-		framework.RespondLoggingError(c, framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest))
-		return
+		logrus.Error(errMsg)
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
 
 	var request CreateDIDByMethodRequest
 	invalidCreateDIDRequest := "invalid create DID request"
-	if err := framework.Decode(c.Request, &request); err != nil {
-		framework.RespondLoggingError(c, framework.NewRequestErrorWithMsg(err, invalidCreateDIDRequest, http.StatusBadRequest))
-		return
+	if err := framework.Decode(r, &request); err != nil {
+		errMsg := invalidCreateDIDRequest
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
 	if err := framework.ValidateRequest(request); err != nil {
-		framework.RespondLoggingError(c, framework.NewRequestErrorWithMsg(err, invalidCreateDIDRequest, http.StatusBadRequest))
-		return
+		errMsg := invalidCreateDIDRequest
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusBadRequest)
 	}
 
 	// TODO(gabe) check if the key type is supported for the method, to tell whether this is a bad req or internal error
 	createDIDRequest, err := toCreateDIDRequest(didsdk.Method(*method), request)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)
-		framework.RespondLoggingError(c, framework.NewRequestErrorWithMsg(err, invalidCreateDIDRequest+": "+errMsg, http.StatusBadRequest))
-		return
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, invalidCreateDIDRequest), http.StatusBadRequest)
 	}
-	createDIDResponse, err := dr.service.CreateDIDByMethod(c, *createDIDRequest)
+	createDIDResponse, err := dr.service.CreateDIDByMethod(ctx, *createDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create DID for method<%s> with key type: %s", *method, request.KeyType)
-		framework.RespondLoggingError(c, framework.NewRequestErrorWithMsg(err, errMsg, http.StatusInternalServerError))
-		return
+		logrus.WithError(err).Error(errMsg)
+		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
 	}
 
 	resp := CreateDIDByMethodResponse{DID: createDIDResponse.DID}
-	framework.Respond(c, resp, http.StatusCreated)
+	return framework.Respond(ctx, w, resp, http.StatusCreated)
 }
 
 // toCreateDIDRequest converts CreateDIDByMethodRequest to did.CreateDIDRequest, parsing options according to method
@@ -196,14 +198,14 @@ type GetDIDByMethodResponse struct {
 // @Success     200     {object} GetDIDByMethodResponse
 // @Failure     400     {string} string "Bad request"
 // @Router      /v1/dids/{method}/{id} [get]
-func (dr DIDRouter) GetDIDByMethod(c *gin.Context) {
-	method := framework.GetParam(c, MethodParam)
+func (dr DIDRouter) GetDIDByMethod(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	method := framework.GetParam(ctx, MethodParam)
 	if method == nil {
 		errMsg := "get DID by method request missing method parameter"
 		logrus.Error(errMsg)
-		framework.RespondError(c, framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest))
+		return framework.NewRequestErrorMsg(errMsg, http.StatusBadRequest)
 	}
-	id := framework.GetParam(c, IDParam)
+	id := framework.GetParam(ctx, IDParam)
 	if id == nil {
 		errMsg := fmt.Sprintf("get DID request missing id parameter for method: %s", *method)
 		logrus.Error(errMsg)

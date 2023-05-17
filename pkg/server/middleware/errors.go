@@ -18,12 +18,12 @@ func Errors() gin.HandlerFunc {
 		c.Next()
 		ctx := c.Request.Context()
 		tracer := trace.SpanFromContext(ctx).TracerProvider().Tracer(config.ServiceName)
-		ctx, span := tracer.Start(ctx, "service.middleware.errors")
+		_, span := tracer.Start(ctx, "service.middleware.errors")
 		defer span.End()
 
 		v, ok := c.Value(framework.KeyRequestState).(*framework.RequestState)
 		if !ok {
-			c.Set(framework.ShutdownErrorState, framework.NewShutdownError("request state missing from context."))
+			c.Set(framework.ShutdownErrorState.String(), framework.NewShutdownError("request state missing from context."))
 			return
 		}
 
@@ -32,7 +32,7 @@ func Errors() gin.HandlerFunc {
 			// check if there's a shutdown-worthy error
 			for _, e := range errors {
 				if framework.IsShutdown(e.Err) {
-					c.Set(framework.ShutdownErrorState, e.Err)
+					c.Set(framework.ShutdownErrorState.String(), e.Err)
 					return
 				}
 			}
