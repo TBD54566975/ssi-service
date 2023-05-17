@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 // Respond convert a Go value to JSON and sends it to the client.
@@ -52,4 +53,10 @@ func RespondError(c *gin.Context, err error) {
 	}
 
 	Respond(c, er, http.StatusInternalServerError)
+}
+
+// RespondLoggingError logs the error and then calls RespondError
+func RespondLoggingError(c *gin.Context, err error) {
+	logrus.WithError(err).Error()
+	RespondError(c, err)
 }
