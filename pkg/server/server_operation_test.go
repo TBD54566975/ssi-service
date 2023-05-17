@@ -34,13 +34,11 @@ func TestOperationsAPI(t *testing.T) {
 		sub := reviewSubmission(t, pRouter, opstorage.StatusObjectID(submissionOp.ID))
 
 		createdID := submissionOp.ID
-		req := httptest.NewRequest(
-			http.MethodPut,
-			fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID),
-			nil)
+		req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID), nil)
 		w := httptest.NewRecorder()
 
-		err := opRouter.GetOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
+		c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
+		err := opRouter.GetOperation(c)
 
 		assert.NoError(t, err)
 		var resp router.Operation
@@ -73,9 +71,10 @@ func TestOperationsAPI(t *testing.T) {
 				nil)
 			w := httptest.NewRecorder()
 
-			err := opRouter.GetOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
-
+			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
+			err := opRouter.GetOperation(c)
 			assert.NoError(t, err)
+
 			var resp router.Operation
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 			assert.False(t, resp.Done)
@@ -92,8 +91,8 @@ func TestOperationsAPI(t *testing.T) {
 				nil)
 			w := httptest.NewRecorder()
 
-			err := opRouter.GetOperation(newRequestContextWithParams(map[string]string{"id": "some_fake_id"}), w, req)
-
+			c := newRequestContextWithParams(w, req, map[string]string{"id": "some_fake_id"})
+			err := opRouter.GetOperation(c)
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "operation not found with id")
 		})
@@ -111,7 +110,8 @@ func TestOperationsAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
 			w := httptest.NewRecorder()
 
-			assert.NoError(t, opRouter.GetOperations(newRequestContext(), w, req))
+			c := newRequestContext(w, req)
+			assert.NoError(t, opRouter.GetOperations(c))
 
 			var resp router.GetOperationsResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
@@ -139,7 +139,8 @@ func TestOperationsAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
 			w := httptest.NewRecorder()
 
-			assert.NoError(t, opRouter.GetOperations(newRequestContext(), w, req))
+			c := newRequestContext(w, req)
+			assert.NoError(t, opRouter.GetOperations(c))
 
 			var resp router.GetOperationsResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
@@ -174,7 +175,8 @@ func TestOperationsAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
 			w := httptest.NewRecorder()
 
-			assert.NoError(t, opRouter.GetOperations(newRequestContext(), w, req))
+			c := newRequestContext(w, req)
+			assert.NoError(t, opRouter.GetOperations(c))
 
 			var resp router.GetOperationsResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
@@ -201,7 +203,8 @@ func TestOperationsAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
 			w := httptest.NewRecorder()
 
-			assert.NoError(t, opRouter.GetOperations(newRequestContext(), w, req))
+			c := newRequestContext(w, req)
+			assert.NoError(t, opRouter.GetOperations(c))
 
 			var resp router.GetOperationsResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
@@ -226,7 +229,8 @@ func TestOperationsAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
 			w := httptest.NewRecorder()
 
-			assert.NoError(t, opRouter.GetOperations(newRequestContext(), w, req))
+			c := newRequestContext(w, req)
+			assert.NoError(t, opRouter.GetOperations(c))
 
 			var resp router.GetOperationsResponse
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
@@ -253,9 +257,10 @@ func TestOperationsAPI(t *testing.T) {
 				nil)
 			w := httptest.NewRecorder()
 
-			err := opRouter.CancelOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
-
+			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
+			err := opRouter.CancelOperation(c)
 			assert.NoError(t, err)
+
 			var resp router.Operation
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 			assert.True(t, resp.Done)
@@ -281,9 +286,8 @@ func TestOperationsAPI(t *testing.T) {
 				fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID),
 				nil)
 			w := httptest.NewRecorder()
-
-			err := opRouter.CancelOperation(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
-
+			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
+			err := opRouter.CancelOperation(c)
 			assert.Error(t, err)
 		})
 	})
@@ -319,10 +323,10 @@ func reviewSubmission(t *testing.T, pRouter *router.PresentationRouter, submissi
 		fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s/review", submissionID),
 		value)
 	w := httptest.NewRecorder()
-
-	err := pRouter.ReviewSubmission(newRequestContextWithParams(map[string]string{"id": submissionID}), w, req)
-
+	c := newRequestContextWithParams(w, req, map[string]string{"id": submissionID})
+	err := pRouter.ReviewSubmission(c)
 	assert.NoError(t, err)
+
 	var resp router.ReviewSubmissionResponse
 	assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 	return resp
