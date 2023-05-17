@@ -21,7 +21,7 @@ import (
 func TestDIDAPI(t *testing.T) {
 	t.Run("Test Get DID Methods", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		_, keyStoreService := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStoreService, []string{"key", "web", "ion"})
@@ -47,7 +47,7 @@ func TestDIDAPI(t *testing.T) {
 
 	t.Run("Test Create DID By Method: Key", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		_, keyStoreService := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStoreService, []string{"key"})
@@ -55,17 +55,14 @@ func TestDIDAPI(t *testing.T) {
 		// create DID by method - key - missing body
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", nil)
 		w := httptest.NewRecorder()
-		params := map[string]string{
-			"method": "key",
-		}
-
+		params := map[string]string{"method": "key"}
 		c := newRequestContextWithParams(w, req, params)
 		err := didService.CreateDIDByMethod(c)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid create DID request")
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// with body, bad key type
 		createDIDRequest := router.CreateDIDByMethodRequest{KeyType: "bad"}
@@ -78,7 +75,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create DID for method<key> with key type: bad")
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// with body, good key type
 		createDIDRequest = router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
@@ -98,7 +95,7 @@ func TestDIDAPI(t *testing.T) {
 
 	t.Run("Test Create DID By Method: Web", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		_, keyStoreService := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStoreService, []string{"web"})
@@ -116,7 +113,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "invalid create DID request")
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// with body, good key type, missing options
 		createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
@@ -129,7 +126,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create DID for method<web> with key type: Ed25519: options cannot be empty")
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// good options
 		options := did.CreateWebDIDOptions{DIDWebID: "did:web:example.com"}
@@ -145,7 +142,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create DID for method<web> with key type: bad")
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// with body, good key type with options
 		createDIDRequest = router.CreateDIDByMethodRequest{
@@ -175,7 +172,7 @@ func TestDIDAPI(t *testing.T) {
 
 	t.Run("Test Create DID By Method: ION", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		_, keyStoreService := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStoreService, []string{"ion"})
@@ -193,7 +190,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "invalid create DID request")
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		gock.New(testIONResolverURL).
 			Post("/operations").
@@ -210,7 +207,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// good options
 		options := did.CreateIONDIDOptions{ServiceEndpoints: []ion.Service{{ID: "test", Type: "test", ServiceEndpoint: "test"}}}
@@ -226,7 +223,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create DID for method<ion> with key type: bad")
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// with body, good key type with options
 		createDIDRequest = router.CreateDIDByMethodRequest{
@@ -254,7 +251,7 @@ func TestDIDAPI(t *testing.T) {
 
 	t.Run("Test Get DID By Method", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		_, keyStore := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStore, []string{"key"})
@@ -274,7 +271,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not get DID for method<bad>")
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// good method, bad id
 		badParams1 := map[string]string{
@@ -287,7 +284,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not get DID for method<key> with id: worse")
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// store a DID
 		createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
@@ -304,7 +301,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// get it back
 		createdID := createdDID.DID.ID
@@ -328,7 +325,7 @@ func TestDIDAPI(t *testing.T) {
 
 	t.Run("Test Soft Delete DID By Method", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		_, keyStore := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStore, []string{"key"})
@@ -353,6 +350,7 @@ func TestDIDAPI(t *testing.T) {
 			"method": "key",
 			"id":     "worse",
 		}
+		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, badParams1)
 		err = didService.SoftDeleteDIDByMethod(c)
 		assert.Error(tt, err)
@@ -364,6 +362,7 @@ func TestDIDAPI(t *testing.T) {
 		params := map[string]string{"method": "key"}
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", requestReader)
 
+		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, params)
 		err = didService.CreateDIDByMethod(c)
 		assert.NoError(tt, err)
@@ -374,6 +373,7 @@ func TestDIDAPI(t *testing.T) {
 
 		// get all dids for method
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key", requestReader)
+		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, params)
 		err = didService.GetDIDsByMethod(c)
 		assert.NoError(tt, err)
@@ -393,6 +393,7 @@ func TestDIDAPI(t *testing.T) {
 			"method": "key",
 			"id":     createdID,
 		}
+		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, goodParams)
 		err = didService.GetDIDByMethod(c)
 		assert.NoError(tt, err)
@@ -406,6 +407,7 @@ func TestDIDAPI(t *testing.T) {
 		deleteDIDPath := fmt.Sprintf("https://ssi-service.com/v1/dids/key/%s", createdID)
 		req = httptest.NewRequest(http.MethodDelete, deleteDIDPath, nil)
 
+		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, goodParams)
 		err = didService.SoftDeleteDIDByMethod(c)
 		assert.NoError(tt, err)
@@ -413,7 +415,8 @@ func TestDIDAPI(t *testing.T) {
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, getDIDPath, nil)
 
-		c = newRequestContextWithParams(w, req, params)
+		w = httptest.NewRecorder()
+		c = newRequestContextWithParams(w, req, goodParams)
 		err = didService.GetDIDByMethod(c)
 		assert.NoError(tt, err)
 
@@ -424,6 +427,7 @@ func TestDIDAPI(t *testing.T) {
 
 		// get all dids for method
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key", requestReader)
+		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, params)
 		err = didService.GetDIDsByMethod(c)
 		assert.NoError(tt, err)
@@ -435,6 +439,7 @@ func TestDIDAPI(t *testing.T) {
 
 		// get all deleted dids for method
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key?deleted=true", requestReader)
+		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, params)
 		err = didService.GetDIDsByMethod(c)
 		assert.NoError(tt, err)
@@ -447,7 +452,7 @@ func TestDIDAPI(t *testing.T) {
 
 	t.Run("Test Get DIDs By Method", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 		_, keyStore := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStore, []string{"key", "web"})
 
@@ -477,7 +482,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Empty(tt, gotDIDs)
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// store two DIDs
 		createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
@@ -494,7 +499,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		requestReader = newRequestValue(tt, createDIDRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", requestReader)
@@ -508,7 +513,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// reset recorder between calls
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// get all dids for method
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key", requestReader)
@@ -533,7 +538,7 @@ func TestDIDAPI(t *testing.T) {
 
 	t.Run("Test Resolve DIDs", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		require.NotNil(tt, bolt)
+		require.NotEmpty(tt, bolt)
 
 		_, keyStore := testKeyStore(tt, bolt)
 		didService := testDIDRouter(tt, bolt, keyStore, []string{"key", "web"})
@@ -550,7 +555,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "malformed did")
 
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// known method, bad did
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/resolver/did:key:abcd", nil)
@@ -562,7 +567,7 @@ func TestDIDAPI(t *testing.T) {
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "unable to resolve DID did:key:abcd")
 
-		w.Flush()
+		w = httptest.NewRecorder()
 
 		// known method, good did
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/resolver/did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp", nil)
