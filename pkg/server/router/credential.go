@@ -34,9 +34,7 @@ func NewCredentialRouter(s svcframework.Service) (*CredentialRouter, error) {
 	if !ok {
 		return nil, fmt.Errorf("could not create credential router with service type: %s", s.Type())
 	}
-	return &CredentialRouter{
-		service: credService,
-	}, nil
+	return &CredentialRouter{service: credService}, nil
 }
 
 type CreateCredentialRequest struct {
@@ -59,15 +57,15 @@ type CreateCredentialRequest struct {
 	Data map[string]any `json:"data" validate:"required" swaggertype:"object,string" example:"alumniOf:did_for_uni"`
 
 	// Optional. Corresponds to `expirationDate` in https://www.w3.org/TR/vc-data-model/#expiration.
-	Expiry string `json:"expiry" example:"2020-01-01T19:23:24Z"`
+	Expiry string `json:"expiry,omitempty" example:"2020-01-01T19:23:24Z"`
 
 	// Whether this credential can be revoked. When true, the created VC will have the "credentialStatus"
 	// property set.
-	Revocable bool `json:"revocable"`
+	Revocable bool `json:"revocable,omitempty"`
 
 	// Whether this credential can be suspended. When true, the created VC will have the "credentialStatus"
 	// property set.
-	Suspendable bool `json:"suspendable"`
+	Suspendable bool `json:"suspendable,omitempty"`
 	// TODO(gabe) support more capabilities like signature type, format, and more.
 }
 
