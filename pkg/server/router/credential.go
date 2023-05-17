@@ -7,7 +7,6 @@ import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -429,8 +428,7 @@ func (cr CredentialRouter) getCredentialsByIssuer(c *gin.Context, issuer string)
 	gotCredentials, err := cr.service.GetCredentialsByIssuer(c, credential.GetCredentialByIssuerRequest{Issuer: issuer})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for issuer: %s", util.SanitizeLog(issuer))
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
+		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 	}
 
 	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
@@ -441,8 +439,7 @@ func (cr CredentialRouter) getCredentialsBySubject(c *gin.Context, subject strin
 	gotCredentials, err := cr.service.GetCredentialsBySubject(c, credential.GetCredentialBySubjectRequest{Subject: subject})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for subject: %s", util.SanitizeLog(subject))
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
+		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 	}
 
 	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
@@ -453,8 +450,7 @@ func (cr CredentialRouter) getCredentialsBySchema(c *gin.Context, schema string)
 	gotCredentials, err := cr.service.GetCredentialsBySchema(c, credential.GetCredentialBySchemaRequest{Schema: schema})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for schema: %s", util.SanitizeLog(schema))
-		logrus.WithError(err).Error(errMsg)
-		return framework.NewRequestError(errors.Wrap(err, errMsg), http.StatusInternalServerError)
+		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 	}
 
 	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}

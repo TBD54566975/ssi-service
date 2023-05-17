@@ -56,7 +56,7 @@ func Decode(r *http.Request, val any) error {
 	decoder.DisallowUnknownFields()
 
 	if err := decoder.Decode(val); err != nil {
-		return NewRequestError(err, http.StatusBadRequest)
+		return newRequestError(err, http.StatusBadRequest)
 	}
 
 	if err := validate.Struct(val); err != nil {

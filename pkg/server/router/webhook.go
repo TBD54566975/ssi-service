@@ -67,7 +67,8 @@ func (wr WebhookRouter) CreateWebhook(c *gin.Context) error {
 
 	req := webhook.CreateWebhookRequest{Noun: request.Noun, Verb: request.Verb, URL: request.URL}
 	if !req.IsValid() {
-		return framework.NewRequestError(errors.New("invalid create webhook request. wrong noun, verb, or url format (needs http / https)"), http.StatusBadRequest)
+		errMsg := "invalid create webhook request. wrong noun, verb, or url format (needs http / https)"
+		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 	}
 
 	createWebhookResponse, err := wr.service.CreateWebhook(c, req)

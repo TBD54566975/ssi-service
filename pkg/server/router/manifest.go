@@ -6,7 +6,6 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
-	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 
@@ -534,7 +533,8 @@ func (r ReviewApplicationRequest) toServiceRequest(id string) model.ReviewApplic
 func (mr ManifestRouter) ReviewApplication(c *gin.Context) error {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
-		return framework.NewRequestError(sdkutil.LoggingNewError("review application request requires id"), http.StatusBadRequest)
+		errMsg := "review application request requires id"
+		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 	}
 
 	var request ReviewApplicationRequest

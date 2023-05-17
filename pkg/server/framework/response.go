@@ -48,7 +48,7 @@ func Respond(c *gin.Context, data any, statusCode int) error {
 
 // LoggingRespondError sends an error response back to the client as a safe error
 func LoggingRespondError(c *gin.Context, err error, statusCode int) error {
-	requestErr := NewRequestError(err, statusCode)
+	requestErr := newRequestError(err, statusCode)
 	logrus.WithError(err).Error(requestErr.Error())
 	return Respond(c, requestErr, statusCode)
 }
