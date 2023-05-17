@@ -4,7 +4,7 @@
 SIP: 6
 Title: SIP 6 - Presentation Exchange with long running Operations
 Author(s): Andres Uribe
-Status: Draft
+Status: Accepted
 Created: Nov 2, 2022
 Updated: Nov 8, 2022
 Discussion: https://forums.tbd.website/t/sip-6-presentation-exchange-with-long-running-operations

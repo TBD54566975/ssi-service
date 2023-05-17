@@ -36,4 +36,5 @@ the [template](sips/sip_template.md), add it to the table below, and open up a p
 | [SIP-5](sips/sip5/README.md) | Credential Application Processing                 | [Gabe Cohen](https://github.com/decentralgabe)   | Accepted | November 3, 2022   |
 | [SIP-6](sips/sip6/README.md) | Presentation Exchange And Long Running Operations | [Andres Uribe](https://github.com/andresuribe87) | Accepted | November 8, 2022   |
 | [SIP-7](sips/sip7/README.md) | Credential Revocation                             | [Neal Roessler](https://github.com/nitro-neal)   | Accepted | November 7, 2022   |
-| [SIP-8](sips/sip8/README.md) | Webhooks for External Services                    | [Neal Roessler](https://github.com/nitro-neal)   | Draft    | December 8, 2022   |
+| [SIP-8](sips/sip8/README.md) | Webhooks for External Services                    | [Neal Roessler](https://github.com/nitro-neal)   | Accepted | December 8, 2022   |
+| [SIP-9](sips/sip9/README.md) | External Signing                                  | [Andres Uribe](https://github.com/andresuribe87) | Draft    | May 17, 2023       |

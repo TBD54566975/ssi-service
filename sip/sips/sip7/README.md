@@ -9,7 +9,7 @@ Status: Draft
 SIP: 7
 Title: Credential Revocation
 Author(s): Neal Roessler
-Status: Draft
+Status: Accepted
 Created: November 4, 2022
 Updated: November 4, 2022
 Discussion: Link to a forum post e.g. https://forums.tbd.website/c/self-sovereign-identity-developers/7
