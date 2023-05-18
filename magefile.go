@@ -107,12 +107,12 @@ func Integration() error {
 // Spec generates an OpenAPI spec yaml based on code annotations.
 func Spec() error {
 	swagCommand := "swag"
-	if err := installIfNotPresent(swagCommand, "github.com/swaggo/swag/cmd/swag@v2.0.0-rc3"); err != nil {
-		logrus.Fatal(err)
+	if err := installIfNotPresent(swagCommand, "github.com/swaggo/swag@v2.0.0-rc3"); err != nil {
+		logrus.WithError(err).Error("failed to install swag")
 		return err
 	}
 	if err := sh.Run(swagCommand, "fmt", "-d", "pkg/server/router"); err != nil {
-		logrus.Fatal(err)
+		logrus.WithError(err).Error("failed to format swagger docs")
 		return err
 	}
 	// One of the dependencies we have (antlr4) does not play nicely with swaggo, but we need to enable dependencies
