@@ -47,13 +47,13 @@ type GetDIDMethodsResponse struct {
 
 // GetDIDMethods godoc
 //
-// @Summary     Get DID Methods
-// @Description Get supported DID method
-// @Tags        DecentralizedIdentityAPI
-// @Accept      json
-// @Produce     json
-// @Success     200 {object} GetDIDMethodsResponse
-// @Router      /v1/dids [get]
+//	@Summary		Get DID Methods
+//	@Description	Get supported DID method
+//	@Tags			DecentralizedIdentityAPI
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	GetDIDMethodsResponse
+//	@Router			/v1/dids [get]
 func (dr DIDRouter) GetDIDMethods(c *gin.Context) error {
 	methods := dr.service.GetSupportedMethods()
 	response := GetDIDMethodsResponse{DIDMethods: methods.Methods}
@@ -75,20 +75,20 @@ type CreateDIDByMethodResponse struct {
 
 // CreateDIDByMethod godoc
 //
-// @Summary     Create DID Document
-// @Description Creates a fully custodial DID document with the given method. The document created is stored internally
-// @Description and can be retrieved using the GetOperation. Method dependent registration (for example, DID web
-// @Description registration) is left up to the clients of this API. The private key(s) created by the method are stored
-// @Description internally never leave the service boundary.
-// @Tags        DecentralizedIdentityAPI
-// @Accept      json
-// @Produce     json
-// @Param       request body     CreateDIDByMethodRequest true "request body"
-// @Param       method  path     string                   true "Method"
-// @Success     201     {object} CreateDIDByMethodResponse
-// @Failure     400     {string} string "Bad request"
-// @Failure     500     {string} string "Internal server error"
-// @Router      /v1/dids/{method} [put]
+//	@Summary		Create DID Document
+//	@Description	Creates a fully custodial DID document with the given method. The document created is stored internally
+//	@Description	and can be retrieved using the GetOperation. Method dependent registration (for example, DID web
+//	@Description	registration) is left up to the clients of this API. The private key(s) created by the method are stored
+//	@Description	internally never leave the service boundary.
+//	@Tags			DecentralizedIdentityAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		CreateDIDByMethodRequest	true	"request body"
+//	@Param			method	path		string						true	"Method"
+//	@Success		201		{object}	CreateDIDByMethodResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/dids/{method} [put]
 func (dr DIDRouter) CreateDIDByMethod(c *gin.Context) error {
 	method := framework.GetParam(c, MethodParam)
 	if method == nil {
@@ -178,17 +178,17 @@ type GetDIDByMethodResponse struct {
 
 // GetDIDByMethod godoc
 //
-// @Summary     Get DID
-// @Description Get DID by method
-// @Tags        DecentralizedIdentityAPI
-// @Accept      json
-// @Produce     json
-// @Param       request body     CreateDIDByMethodRequest true "request body"
-// @Param       method  path     string                   true "Method"
-// @Param       id      path     string                   true "ID"
-// @Success     200     {object} GetDIDByMethodResponse
-// @Failure     400     {string} string "Bad request"
-// @Router      /v1/dids/{method}/{id} [get]
+//	@Summary		Get DID
+//	@Description	Get DID by method
+//	@Tags			DecentralizedIdentityAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		CreateDIDByMethodRequest	true	"request body"
+//	@Param			method	path		string						true	"Method"
+//	@Param			id		path		string						true	"ID"
+//	@Success		200		{object}	GetDIDByMethodResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Router			/v1/dids/{method}/{id} [get]
 func (dr DIDRouter) GetDIDByMethod(c *gin.Context) error {
 	method := framework.GetParam(c, MethodParam)
 	if method == nil {
@@ -226,17 +226,17 @@ type GetDIDsRequest struct {
 
 // GetDIDsByMethod godoc
 //
-// @Summary     Get DIDs
-// @Description Get DIDs by method. Checks for an optional "deleted=true" query parameter, which exclusively returns DIDs that have been "Soft Deleted".
-// @Tags        DecentralizedIdentityAPI
-// @Accept      json
-// @Produce     json
-// @Param       deleted query    boolean        false "When true, returns soft-deleted DIDs. Otherwise, returns DIDs that have not been soft-deleted. Default is false."
-// @Param       request body     GetDIDsRequest true  "request body"
-// @Success     200     {object} GetDIDsByMethodResponse
-// @Failure     400     {string} string "Bad request"
-// @Failure     500     {string} string "Internal server error"
-// @Router      /v1/dids/{method} [get]
+//	@Summary		Get DIDs
+//	@Description	Get DIDs by method. Checks for an optional "deleted=true" query parameter, which exclusively returns DIDs that have been "Soft Deleted".
+//	@Tags			DecentralizedIdentityAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			deleted	query		boolean			false	"When true, returns soft-deleted DIDs. Otherwise, returns DIDs that have not been soft-deleted. Default is false."
+//	@Param			request	body		GetDIDsRequest	true	"request body"
+//	@Success		200		{object}	GetDIDsByMethodResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/dids/{method} [get]
 func (dr DIDRouter) GetDIDsByMethod(c *gin.Context) error {
 	method := framework.GetParam(c, MethodParam)
 	deleted := framework.GetQueryValue(c, DeletedParam)
@@ -275,20 +275,20 @@ type ResolveDIDResponse struct {
 }
 
 // SoftDeleteDIDByMethod godoc
-// @Description When this is called with the correct did method and id it will flip the softDelete flag to true for the db entry.
-// @Description A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the GetDIDsByMethod call
-// @Description This facilitates a clean SSI-Service Admin UI but not leave any hanging VCs with inaccessible hanging DIDs.
-// @Summary     Soft Delete DID
-// @Description Soft Deletes DID by method
-// @Tags        DecentralizedIdentityAPI
-// @Accept      json
-// @Produce     json
-// @Param       method path     string true "Method"
-// @Param       id     path     string true "ID"
-// @Success     204    {string} string "No Content"
-// @Failure     400    {string} string "Bad request"
-// @Failure     500    {string} string "Internal server error"
-// @Router      /v1/dids/{method}/{id} [delete]
+//	@Description	When this is called with the correct did method and id it will flip the softDelete flag to true for the db entry.
+//	@Description	A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the GetDIDsByMethod call
+//	@Description	This facilitates a clean SSI-Service Admin UI but not leave any hanging VCs with inaccessible hanging DIDs.
+//	@Summary		Soft Delete DID
+//	@Description	Soft Deletes DID by method
+//	@Tags			DecentralizedIdentityAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			method	path		string	true	"Method"
+//	@Param			id		path		string	true	"ID"
+//	@Success		204		{string}	string	"No Content"
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/dids/{method}/{id} [delete]
 func (dr DIDRouter) SoftDeleteDIDByMethod(c *gin.Context) error {
 	method := framework.GetParam(c, MethodParam)
 	if method == nil {
@@ -312,15 +312,15 @@ func (dr DIDRouter) SoftDeleteDIDByMethod(c *gin.Context) error {
 
 // ResolveDID godoc
 //
-// @Summary     Resolve a DID
-// @Description Resolve a DID that may not be stored in this service
-// @Tags        DecentralizedIdentityAPI
-// @Accept      json
-// @Produce     json
-// @Param       id  path     string true "ID"
-// @Success     200 {object} ResolveDIDResponse
-// @Failure     400 {string} string "Bad request"
-// @Router      /v1/dids/resolver/{id} [get]
+//	@Summary		Resolve a DID
+//	@Description	Resolve a DID that may not be stored in this service
+//	@Tags			DecentralizedIdentityAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		200	{object}	ResolveDIDResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Router			/v1/dids/resolver/{id} [get]
 func (dr DIDRouter) ResolveDID(c *gin.Context) error {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {

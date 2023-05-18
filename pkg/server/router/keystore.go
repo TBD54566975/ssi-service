@@ -65,16 +65,16 @@ func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) 
 
 // StoreKey godoc
 //
-// @Summary     Store Key
-// @Description Stores a key to be used by the service
-// @Tags        KeyStoreAPI
-// @Accept      json
-// @Produce     json
-// @Param       request body StoreKeyRequest true "request body"
-// @Success     201
-// @Failure     400 {string} string "Bad request"
-// @Failure     500 {string} string "Internal server error"
-// @Router      /v1/keys [put]
+//	@Summary		Store Key
+//	@Description	Stores a key to be used by the service
+//	@Tags			KeyStoreAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body	StoreKeyRequest	true	"request body"
+//	@Success		201
+//	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
+//	@Router			/v1/keys [put]
 func (ksr *KeyStoreRouter) StoreKey(c *gin.Context) error {
 	var request StoreKeyRequest
 	if err := framework.Decode(c.Request, &request); err != nil {
@@ -105,15 +105,15 @@ type GetKeyDetailsResponse struct {
 
 // GetKeyDetails godoc
 //
-// @Summary     Get Details For Key
-// @Description Get details about a stored key
-// @Tags        KeyStoreAPI
-// @Accept      json
-// @Produce     json
-// @Param       id  path     string true "ID of the key to get"
-// @Success     200 {object} GetKeyDetailsResponse
-// @Failure     400 {string} string "Bad request"
-// @Router      /v1/keys/{id} [get]
+//	@Summary		Get Details For Key
+//	@Description	Get details about a stored key
+//	@Tags			KeyStoreAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID of the key to get"
+//	@Success		200	{object}	GetKeyDetailsResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Router			/v1/keys/{id} [get]
 func (ksr *KeyStoreRouter) GetKeyDetails(c *gin.Context) error {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
@@ -138,16 +138,16 @@ func (ksr *KeyStoreRouter) GetKeyDetails(c *gin.Context) error {
 
 // RevokeKey godoc
 //
-// @Summary     Revoke Key
-// @Description Marks the stored key as being revoked, along with the timestamps of when it was revoked. NB: the key can still be used for signing. This will likely be addressed before v1 is released.
-// @Tags        KeyStoreAPI
-// @Accept      json
-// @Produce     json
-// @Param       id path string true "ID of the key to revoke"
-// @Success     200
-// @Failure     400 {string} string "Bad request"
-// @Failure     500 {string} string "Internal server error"
-// @Router      /v1/keys/{id} [delete]
+//	@Summary		Revoke Key
+//	@Description	Marks the stored key as being revoked, along with the timestamps of when it was revoked. NB: the key can still be used for signing. This will likely be addressed before v1 is released.
+//	@Tags			KeyStoreAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path	string	true	"ID of the key to revoke"
+//	@Success		200
+//	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
+//	@Router			/v1/keys/{id} [delete]
 func (ksr *KeyStoreRouter) RevokeKey(c *gin.Context) error {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
