@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	endpoint       = "http://localhost:3000/"
+	endpoint       = "http://localhost:8080/"
 	version        = "v1/"
 	MaxElapsedTime = 120 * time.Second
 )
@@ -166,8 +166,8 @@ func resolveTemplate(input any, fileName string) (string, error) {
 	if err = t.Execute(&b, input); err != nil {
 		return "", err
 	}
-	credentialJSON := b.String()
-	return credentialJSON, nil
+	templateJSON := b.String()
+	return templateJSON, nil
 }
 
 type credManifestParams struct {
