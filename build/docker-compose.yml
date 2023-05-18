@@ -9,12 +9,13 @@ services:
     ports:
       - "8080:3000"
     environment:
+      - CONFIG_PATH=/app/config/test.toml
       - JAEGER_HTTP_URL=http://jaeger:14268/api/traces
     depends_on:
       - jaeger
       - redis
     volumes:
-      - ../config/config.toml:/app/config/config.toml
+      - ../config:/app/config
     networks:
       - ssi_network
       - universal-resolver

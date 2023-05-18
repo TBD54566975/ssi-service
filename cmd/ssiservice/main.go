@@ -23,15 +23,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 )
 
-func init() {
-	// Log as JSON instead of the default ASCII formatter.
-	logrus.SetFormatter(&logrus.JSONFormatter{})
-
-	// Output to stdout instead of the default stderr
-	// Can be any io.Writer, see below for File example
-	logrus.SetOutput(os.Stdout)
-}
-
 // @title          SSI Service API
 // @version        0.1
 // @description    https://github.com/TBD54566975/ssi-service
@@ -54,7 +45,7 @@ func run() error {
 	configPath := config.DefaultConfigPath
 	envConfigPath, present := os.LookupEnv(config.ConfigPath.String())
 	if present {
-		logrus.Infof("loading config from env var path: %s", config.ConfigPath.String())
+		logrus.Infof("loading config from env var path: %s", envConfigPath)
 		configPath = envConfigPath
 	}
 	cfg, err := config.LoadConfig(configPath)
@@ -188,9 +179,9 @@ func configureLogger(level, location string) *os.File {
 		}
 	}
 
-	logrus.SetFormatter(&logrus.TextFormatter{
-		DisableColors: true,
-		FullTimestamp: true,
+	logrus.SetFormatter(&logrus.JSONFormatter{
+		DisableTimestamp: false,
+		PrettyPrint:      true,
 	})
 	logrus.SetReportCaller(true)
 	logLevel, err := logrus.ParseLevel(level)
@@ -200,6 +191,8 @@ func configureLogger(level, location string) *os.File {
 	} else {
 		logrus.SetLevel(logLevel)
 	}
+
+	logrus.SetOutput(os.Stdout)
 
 	// set logs config from config file
 	if location != "" {

@@ -95,7 +95,7 @@ func (s *Server) Handle(method string, path string, handler Handler, middleware 
 
 		// init a span, but only if the tracer is initialized
 		if s.tracer != nil {
-			_, span := s.tracer.Start(c.Request.Context(), path)
+			_, span := s.tracer.Start(c, path)
 			defer span.End()
 			body, err := PeekRequestBody(r)
 			if err != nil {

@@ -16,9 +16,8 @@ import (
 func Errors() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
-		ctx := c.Request.Context()
-		tracer := trace.SpanFromContext(ctx).TracerProvider().Tracer(config.ServiceName)
-		_, span := tracer.Start(ctx, "service.middleware.errors")
+		tracer := trace.SpanFromContext(c).TracerProvider().Tracer(config.ServiceName)
+		_, span := tracer.Start(c, "service.middleware.errors")
 		defer span.End()
 
 		v, ok := c.Value(framework.KeyRequestState.String()).(*framework.RequestState)

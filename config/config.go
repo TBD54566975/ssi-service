@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	DefaultConfigPath = "config/dev/config.toml"
+	DefaultConfigPath = "config/dev.toml"
 	DefaultEnvPath    = "config/.env"
-	Filename          = "config.toml"
+	Filename          = "dev.toml"
 	ServiceName       = "ssi-service"
 	Extension         = ".toml"
 
