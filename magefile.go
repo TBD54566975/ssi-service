@@ -107,7 +107,7 @@ func Integration() error {
 // Spec generates an OpenAPI spec yaml based on code annotations.
 func Spec() error {
 	swagCommand := "swag"
-	if err := installIfNotPresent(swagCommand, "github.com/swaggo/swag/cmd/swag@v1.8.7"); err != nil {
+	if err := installIfNotPresent(swagCommand, "github.com/swaggo/swag/cmd/swag@v2.0.0-rc3"); err != nil {
 		logrus.Fatal(err)
 		return err
 	}
@@ -120,7 +120,7 @@ func Spec() error {
 	// see a discussion of this topic in https://github.com/swaggo/swag/issues/948.
 	// We also set parseGoList because it's the only way parseDepth works until the following is fixed:
 	// https://github.com/swaggo/swag/issues/1269
-	return sh.Run(swagCommand, "init", "-g", "cmd/ssiservice/main.go", "--pd", "-o", "doc", "-ot", "yaml", "--parseDepth=3", "--parseGoList=false")
+	return sh.Run(swagCommand, "init", "-g", "cmd/ssiservice/main.go", "--pd", "-o", "doc", "-ot", "go,yaml", "--parseInternal", "--parseDepth=5", "--parseGoList=false")
 }
 
 func runCITests(extraTestArgs ...string) error {
