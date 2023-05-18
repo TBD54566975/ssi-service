@@ -127,7 +127,7 @@ func newRequestContext(w http.ResponseWriter, req *http.Request) *gin.Context {
 	return c
 }
 
-// as required by https://github.com/dimfeld/httptreemux's context handler
+// construct a context value with query params as expected by our handler
 func newRequestContextWithParams(w http.ResponseWriter, req *http.Request, params map[string]string) *gin.Context {
 	c := newRequestContext(w, req)
 	c.Params = make([]gin.Param, 0, len(params))

@@ -228,7 +228,6 @@ func (s *SSIServer) OperationAPI(service svcframework.Service) (err error) {
 	handlerPath := V1Prefix + OperationPrefix
 
 	s.Handle(http.MethodGet, handlerPath, operationRouter.GetOperations)
-	// See https://github.com/dimfeld/httptreemux#routing-rules for details on how the `*` works.
 	// In this case, it's used so that the operation id matches `presentations/submissions/{submission_id}` for the DIDWebID
 	// path	`/v1/operations/cancel/presentations/submissions/{id}`
 	s.Handle(http.MethodPut, path.Join(handlerPath, "/cancel/*id"), operationRouter.CancelOperation)

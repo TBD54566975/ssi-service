@@ -11,7 +11,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 )
 
-var steelThreadContext = NewTestContext("SteelThread")
+var credentialManifest = NewTestContext("CredentialManifest")
 
 func TestCreateIssuerDIDKeyIntegration(t *testing.T) {
 	if testing.Short() {
@@ -24,12 +24,12 @@ func TestCreateIssuerDIDKeyIntegration(t *testing.T) {
 	issuerDID, err := getJSONElement(didKeyOutput, "$.did.id")
 	assert.NoError(t, err)
 	assert.Contains(t, issuerDID, "did:key")
-	SetValue(steelThreadContext, "issuerDID", issuerDID)
+	SetValue(credentialManifest, "issuerDID", issuerDID)
 
 	issuerKID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerKID)
-	SetValue(steelThreadContext, "issuerKID", issuerKID)
+	SetValue(credentialManifest, "issuerKID", issuerKID)
 }
 
 func TestResolveIONDIDIntegration(t *testing.T) {
@@ -62,12 +62,12 @@ func TestCreateAliceDIDKeyIntegration(t *testing.T) {
 
 	aliceDID := applicantDID.ID
 	assert.Contains(t, aliceDID, "did:key")
-	SetValue(steelThreadContext, "aliceDID", aliceDID)
+	SetValue(credentialManifest, "aliceDID", aliceDID)
 
 	aliceKID := applicantDID.VerificationMethod[0].ID
 	assert.NotEmpty(t, aliceKID)
-	SetValue(steelThreadContext, "aliceKID", aliceKID)
-	SetValue(steelThreadContext, "aliceDIDPrivateKey", applicantPrivKey)
+	SetValue(credentialManifest, "aliceKID", aliceKID)
+	SetValue(credentialManifest, "aliceDIDPrivateKey", applicantPrivKey)
 }
 
 func TestCreateSchemaIntegration(t *testing.T) {
@@ -81,7 +81,7 @@ func TestCreateSchemaIntegration(t *testing.T) {
 	schemaID, err := getJSONElement(output, "$.id")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
-	SetValue(steelThreadContext, "schemaID", schemaID)
+	SetValue(credentialManifest, "schemaID", schemaID)
 }
 
 func TestCreateVerifiableCredentialIntegration(t *testing.T) {
@@ -89,15 +89,15 @@ func TestCreateVerifiableCredentialIntegration(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	issuerDID, err := GetValue(steelThreadContext, "issuerDID")
+	issuerDID, err := GetValue(credentialManifest, "issuerDID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKID, err := GetValue(steelThreadContext, "issuerKID")
+	issuerKID, err := GetValue(credentialManifest, "issuerKID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerKID)
 
-	schemaID, err := GetValue(steelThreadContext, "schemaID")
+	schemaID, err := GetValue(credentialManifest, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
@@ -113,7 +113,7 @@ func TestCreateVerifiableCredentialIntegration(t *testing.T) {
 	credentialJWT, err := getJSONElement(vcOutput, "$.credentialJwt")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credentialJWT)
-	SetValue(steelThreadContext, "credentialJWT", credentialJWT)
+	SetValue(credentialManifest, "credentialJWT", credentialJWT)
 }
 
 func TestCreateCredentialManifestIntegration(t *testing.T) {
@@ -121,15 +121,15 @@ func TestCreateCredentialManifestIntegration(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	issuerDID, err := GetValue(steelThreadContext, "issuerDID")
+	issuerDID, err := GetValue(credentialManifest, "issuerDID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKID, err := GetValue(steelThreadContext, "issuerKID")
+	issuerKID, err := GetValue(credentialManifest, "issuerKID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerKID)
 
-	schemaID, err := GetValue(steelThreadContext, "schemaID")
+	schemaID, err := GetValue(credentialManifest, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
@@ -143,12 +143,12 @@ func TestCreateCredentialManifestIntegration(t *testing.T) {
 	presentationDefinitionID, err := getJSONElement(cmOutput, "$.credential_manifest.presentation_definition.id")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, presentationDefinitionID)
-	SetValue(steelThreadContext, "presentationDefinitionID", presentationDefinitionID)
+	SetValue(credentialManifest, "presentationDefinitionID", presentationDefinitionID)
 
 	manifestID, err := getJSONElement(cmOutput, "$.credential_manifest.id")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, manifestID)
-	SetValue(steelThreadContext, "manifestID", manifestID)
+	SetValue(credentialManifest, "manifestID", manifestID)
 }
 
 func TestCreateIssuanceTemplateIntegration(t *testing.T) {
@@ -156,15 +156,15 @@ func TestCreateIssuanceTemplateIntegration(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	issuerDID, err := GetValue(steelThreadContext, "issuerDID")
+	issuerDID, err := GetValue(credentialManifest, "issuerDID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKID, err := GetValue(steelThreadContext, "issuerKID")
+	issuerKID, err := GetValue(credentialManifest, "issuerKID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerKID)
 
-	schemaID, err := GetValue(steelThreadContext, "schemaID")
+	schemaID, err := GetValue(credentialManifest, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
@@ -178,12 +178,12 @@ func TestCreateIssuanceTemplateIntegration(t *testing.T) {
 	manifestID, err := getJSONElement(cmOutput, "$.credential_manifest.id")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, manifestID)
-	SetValue(steelThreadContext, "manifestWithIssuanceTemplateID", manifestID)
+	SetValue(credentialManifest, "manifestWithIssuanceTemplateID", manifestID)
 
 	presentationDefinitionID, err := getJSONElement(cmOutput, "$.credential_manifest.presentation_definition.id")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, presentationDefinitionID)
-	SetValue(steelThreadContext, "presentationDefinitionWithIssuanceTemplateID", presentationDefinitionID)
+	SetValue(credentialManifest, "presentationDefinitionWithIssuanceTemplateID", presentationDefinitionID)
 
 	itOutput, err := CreateIssuanceTemplate(issuanceTemplateParams{
 		SchemaID:   schemaID.(string),
@@ -196,7 +196,7 @@ func TestCreateIssuanceTemplateIntegration(t *testing.T) {
 	issuanceTemplateID, err := getJSONElement(itOutput, "$.id")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuanceTemplateID)
-	SetValue(steelThreadContext, "issuanceTemplateID", issuanceTemplateID)
+	SetValue(credentialManifest, "issuanceTemplateID", issuanceTemplateID)
 }
 
 func TestSubmitApplicationWithIssuanceTemplateIntegration(t *testing.T) {
@@ -204,27 +204,27 @@ func TestSubmitApplicationWithIssuanceTemplateIntegration(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	credentialJWT, err := GetValue(steelThreadContext, "credentialJWT")
+	credentialJWT, err := GetValue(credentialManifest, "credentialJWT")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credentialJWT)
 
-	presentationDefinitionID, err := GetValue(steelThreadContext, "presentationDefinitionWithIssuanceTemplateID")
+	presentationDefinitionID, err := GetValue(credentialManifest, "presentationDefinitionWithIssuanceTemplateID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, presentationDefinitionID)
 
-	manifestID, err := GetValue(steelThreadContext, "manifestWithIssuanceTemplateID")
+	manifestID, err := GetValue(credentialManifest, "manifestWithIssuanceTemplateID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, manifestID)
 
-	aliceDID, err := GetValue(steelThreadContext, "aliceDID")
+	aliceDID, err := GetValue(credentialManifest, "aliceDID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
 
-	aliceKID, err := GetValue(steelThreadContext, "aliceKID")
+	aliceKID, err := GetValue(credentialManifest, "aliceKID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceKID)
 
-	aliceDIDPrivateKey, err := GetValue(steelThreadContext, "aliceDIDPrivateKey")
+	aliceDIDPrivateKey, err := GetValue(credentialManifest, "aliceDIDPrivateKey")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDIDPrivateKey)
 
@@ -261,27 +261,27 @@ func TestSubmitAndReviewApplicationIntegration(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
-	credentialJWT, err := GetValue(steelThreadContext, "credentialJWT")
+	credentialJWT, err := GetValue(credentialManifest, "credentialJWT")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credentialJWT)
 
-	presentationDefinitionID, err := GetValue(steelThreadContext, "presentationDefinitionID")
+	presentationDefinitionID, err := GetValue(credentialManifest, "presentationDefinitionID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, presentationDefinitionID)
 
-	manifestID, err := GetValue(steelThreadContext, "manifestID")
+	manifestID, err := GetValue(credentialManifest, "manifestID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, manifestID)
 
-	aliceDID, err := GetValue(steelThreadContext, "aliceDID")
+	aliceDID, err := GetValue(credentialManifest, "aliceDID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDID)
 
-	aliceKID, err := GetValue(steelThreadContext, "aliceKID")
+	aliceKID, err := GetValue(credentialManifest, "aliceKID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceKID)
 
-	aliceDIDPrivateKey, err := GetValue(steelThreadContext, "aliceDIDPrivateKey")
+	aliceDIDPrivateKey, err := GetValue(credentialManifest, "aliceDIDPrivateKey")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, aliceDIDPrivateKey)
 
