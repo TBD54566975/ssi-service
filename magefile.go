@@ -107,7 +107,7 @@ func Integration() error {
 // Spec generates an OpenAPI spec yaml based on code annotations.
 func Spec() error {
 	swagCommand := "swag"
-	if err := installIfNotPresent(swagCommand, "github.com/swaggo/swag@v2.0.0-rc3"); err != nil {
+	if err := installIfNotPresent(swagCommand, "github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc3"); err != nil {
 		logrus.WithError(err).Error("failed to install swag")
 		return err
 	}

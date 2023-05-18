@@ -50,6 +50,7 @@ jobs:
       run: mage CITest
 
     - name: Update spec and push generated spec file
+      if: github.event_name == 'pull_request' && github.event.action != 'closed' && github.event.pull_request.merged != true
       run: |
         mage spec
         git config user.name github-actions
