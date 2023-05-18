@@ -23,6 +23,7 @@ import (
 )
 
 const (
+	// Note: for local testing change this to port 3000
 	endpoint       = "http://localhost:8080/"
 	version        = "v1/"
 	MaxElapsedTime = 120 * time.Second

@@ -184,11 +184,12 @@ func TestDIDWebSubmitAndReviewApplicationIntegration(t *testing.T) {
 	opID, err := getJSONElement(submitApplicationOutput, "$.id")
 	assert.NoError(t, err)
 
-	reviewApplicationOutput, err := ReviewApplication(reviewApplicationParams{
+	params := reviewApplicationParams{
 		ID:       storage.StatusObjectID(opID),
 		Approved: true,
 		Reason:   "oh yeah im testing",
-	})
+	}
+	reviewApplicationOutput, err := ReviewApplication(params)
 	assert.NoError(t, err)
 	crManifestID, err := getJSONElement(reviewApplicationOutput, "$.credential_response.manifest_id")
 	assert.NoError(t, err)

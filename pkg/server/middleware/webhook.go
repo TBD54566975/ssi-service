@@ -25,6 +25,8 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 	return rw.ResponseWriter.Write(b)
 }
 
+// Webhook is a middleware that publishes a webhook after the request handler has finished writing the response
+// TODO(https://github.com/TBD54566975/ssi-service/issues/435): currently this runs on each request even if no webhooks are registered. It should be updated to only run if webhooks are registered.
 func Webhook(webhookService svcframework.Service, noun webhook.Noun, verb webhook.Verb) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Wrap the original response writer with a new response writer that writes to the buffer
