@@ -275,6 +275,7 @@ type ResolveDIDResponse struct {
 }
 
 // SoftDeleteDIDByMethod godoc
+//
 //	@Description	When this is called with the correct did method and id it will flip the softDelete flag to true for the db entry.
 //	@Description	A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the GetDIDsByMethod call
 //	@Description	This facilitates a clean SSI-Service Admin UI but not leave any hanging VCs with inaccessible hanging DIDs.
