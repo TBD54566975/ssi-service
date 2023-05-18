@@ -12,7 +12,6 @@ RUN go mod download
 COPY . ./
 
 # Build the binary and call it "docker-ssi-service"
-RUN ls -alt
 RUN go build -tags jwx_es256k -o /docker-ssi-service ./cmd/ssiservice
 
 EXPOSE 3000

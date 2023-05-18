@@ -1,39 +1,49 @@
 title = "SSI Service Config"
 
 svn = "0.0.1"
-desc = "Configuration to be used while running the service with docker compose."
+desc = "Default configuration to be used while running the service for testing as a single go process."
 
 # http service configuration
 [server]
+env = "dev" # either 'dev', 'test', or 'prod'
 api_host = "0.0.0.0:3000"
 debug_host = "0.0.0.0:4000"
-jager_host = "http://jaeger:14268/api/traces"
-jager_enabled = true
+jager_host = "http://localhost:14268/api/traces"
+jager_enabled = false
 
 # 5 seconds, time is in nanoseconds
 read_timeout = 5000000000
 write_timeout = 5000000000
 shutdown_timeout = 5000000000
 
-log_location = "logs"
-# options: trace, debug, info, warning, error, fatal, panic
-log_level = "info"
+log_location = "log"
+# options: trace, debug, info, warn, error, fatal, panic
+log_level = "debug"
 
 enable_schema_caching = true
 enable_allow_all_cors = true
 
 # Storage Configuration
 [services]
-service_endpoint = "http://localhost:8080"
-storage = "redis"
+service_endpoint = "http://localhost:3000"
+
+# example bolt config with filepath option
+storage = "bolt"
 
 [[services.storage_option]]
-id = "redis-address-option"
-option = "redis:6379"
+id = "boltdb-filepath-option"
+option = "bolt.db"
 
-[[services.storage_option]]
-id = "storage-password-option"
-option = "password"
+# example redis config with two options
+# storage = "redis"
+#
+# [[services.storage_option]]
+# id = "redis-address-option"
+# option = "localhost:6379"
+#
+# [[services.storage_option]]
+# id = "storage-password-option"
+# option = "password"
 
 # per-service configuration
 [services.keystore]
@@ -44,14 +54,16 @@ password = "default-password"
 
 [services.did]
 name = "did"
-methods = ["key", "web", "ion"]
+methods = ["key", "web"]
 local_resolution_methods = ["key", "web", "pkh", "peer"]
-universal_resolver_url = "http://uni-resolver-web:8080"
+universal_resolver_url = "http://localhost:8088"
 universal_resolver_methods = ["ion"]
-ion_resolver_url = "https://tbdwebsiteonline.com"
 
 [services.schema]
 name = "schema"
+
+[services.issuing]
+name = "issuing"
 
 [services.credential]
 name = "credential"

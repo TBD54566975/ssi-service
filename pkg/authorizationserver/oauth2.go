@@ -131,5 +131,5 @@ func loadIssuerMetadata(config *AuthConfig) (*issuance.IssuerMetadata, error) {
 type AuthConfig struct {
 	conf.Version
 	Server               config.ServerConfig
-	CredentialIssuerFile string `toml:"credential_issuer_file" conf:"default:config/credential_issuer_metadata.json"`
+	CredentialIssuerFile string `toml:"credential_issuer_file" conf:"default:config/credential_issuer_metadata.example.json"`
 }

@@ -49,21 +49,28 @@ type Server struct {
 type Handler func(c *gin.Context) error
 
 // NewHTTPServer creates a Server that handles a set of routes for the application.
-func NewHTTPServer(config config.ServerConfig, shutdown chan os.Signal, mws gin.HandlersChain) *Server {
+func NewHTTPServer(cfg config.ServerConfig, shutdown chan os.Signal, mws gin.HandlersChain) *Server {
 	var tracer trace.Tracer
-	if config.JagerEnabled {
+	if cfg.JagerEnabled {
 		tracer = otel.Tracer(serviceName)
 	}
 	router := gin.Default()
 	router.Use(mws...)
 
+	switch cfg.Environment {
+	case config.EnvironmentDev:
+		gin.SetMode(gin.DebugMode)
+	case config.EnvironmentProd:
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	return &Server{
 		Server: &http.Server{
-			Addr:              config.APIHost,
+			Addr:              cfg.APIHost,
 			Handler:           router,
-			ReadTimeout:       config.ReadTimeout,
-			ReadHeaderTimeout: config.ReadTimeout,
-			WriteTimeout:      config.WriteTimeout,
+			ReadTimeout:       cfg.ReadTimeout,
+			ReadHeaderTimeout: cfg.ReadTimeout,
+			WriteTimeout:      cfg.WriteTimeout,
 		},
 		router:   router,
 		tracer:   tracer,

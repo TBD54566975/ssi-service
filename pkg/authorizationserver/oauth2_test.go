@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 
 	// Create an httptest server with the metadataHandler
 	authServer, err := NewServer(make(chan os.Signal, 1), &AuthConfig{
-		CredentialIssuerFile: "../../config/credential_issuer_metadata.json",
+		CredentialIssuerFile: "../../config/credential_issuer_metadata.example.json",
 	}, store)
 	if err != nil {
 		logrus.WithError(err).Fatal("cannot create authserver")

@@ -51,7 +51,13 @@ func main() {
 
 // startup and shutdown logic
 func run() error {
-	cfg, err := config.LoadConfig(config.DefaultConfigPath)
+	configPath := config.DefaultConfigPath
+	envConfigPath, present := os.LookupEnv(config.ConfigPath.String())
+	if present {
+		logrus.Infof("loading config from env var path: %s", config.ConfigPath.String())
+		configPath = envConfigPath
+	}
+	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
 		logrus.Fatalf("could not instantiate config: %s", err.Error())
 	}
@@ -81,7 +87,7 @@ func run() error {
 
 	expvar.NewString("build").Set(cfg.Version.SVN)
 
-	logrus.Infof("main: Started : Service initializing : version %q", cfg.Version.SVN)
+	logrus.Infof("main: Started : Service initializing : env [%s] : version %q", cfg.Server.Environment, cfg.Version.SVN)
 	defer logrus.Info("main: Completed")
 
 	out, err := conf.String(cfg)

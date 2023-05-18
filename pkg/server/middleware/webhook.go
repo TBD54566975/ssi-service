@@ -2,10 +2,9 @@ package middleware
 
 import (
 	"bytes"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
@@ -39,8 +38,7 @@ func Webhook(webhookService svcframework.Service, noun webhook.Noun, verb webhoo
 
 		// make sure the response was already written
 		if !c.Writer.Written() {
-			_ = c.AbortWithError(http.StatusInternalServerError, errors.New("error sending webhook: response was not written"))
-			return
+			logrus.Warnf("webhook middleware ran but response was not written, %s:%s", noun, verb)
 		}
 
 		// publish the webhook

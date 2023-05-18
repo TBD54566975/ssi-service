@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+
+	"github.com/sirupsen/logrus"
 )
 
 type Type string
@@ -24,6 +26,7 @@ const (
 	Redis Type = "redis"
 
 	// Common options
+
 	PasswordOption OptionKey = "storage-password-option"
 )
 
@@ -70,6 +73,7 @@ func NewStorage(storageProvider Type, opts ...Option) (ServiceStorage, error) {
 	if impl == nil {
 		return impl, fmt.Errorf("unsupported storage provider: %s", storageProvider)
 	}
+	logrus.Infof("STORAGE OPTS: %+v", opts)
 	err := impl.Init(opts...)
 	return impl, err
 }
