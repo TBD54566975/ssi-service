@@ -68,7 +68,8 @@ func TestPresentationAPI(t *testing.T) {
 			// We can get the PD after it's created.
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", createdID), nil)
 			w := httptest.NewRecorder()
-			assert.NoError(tt, pRouter.GetDefinition(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
+			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
+			assert.NoError(tt, pRouter.GetDefinition(c))
 
 			var resp router.GetPresentationDefinitionResponse
 			assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
@@ -82,7 +83,8 @@ func TestPresentationAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/definitions", nil)
 			w := httptest.NewRecorder()
 
-			assert.NoError(tt, pRouter.ListDefinitions(newRequestContext(), w, req))
+			c := newRequestContext(w, req)
+			assert.NoError(tt, pRouter.ListDefinitions(c))
 
 			var resp router.ListDefinitionsResponse
 			assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
@@ -96,13 +98,15 @@ func TestPresentationAPI(t *testing.T) {
 			// The PD can be deleted.
 			req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", createdID), nil)
 			w := httptest.NewRecorder()
-			assert.NoError(t, pRouter.DeleteDefinition(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
+			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
+			assert.NoError(t, pRouter.DeleteDefinition(c))
 		}
 		{
 			// And we cannot get the PD after it's been deleted.
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", createdID), nil)
 			w := httptest.NewRecorder()
-			assert.Error(tt, pRouter.GetDefinition(newRequestContextWithParams(map[string]string{"id": createdID}), w, req))
+			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
+			assert.Error(tt, pRouter.GetDefinition(c))
 		}
 	})
 
@@ -112,8 +116,8 @@ func TestPresentationAPI(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/definitions", nil)
 		w := httptest.NewRecorder()
-
-		assert.NoError(tt, pRouter.ListDefinitions(newRequestContext(), w, req))
+		c := newRequestContext(w, req)
+		assert.NoError(tt, pRouter.ListDefinitions(c))
 
 		var resp router.ListDefinitionsResponse
 		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
@@ -130,8 +134,8 @@ func TestPresentationAPI(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/definitions", nil)
 		w := httptest.NewRecorder()
-
-		assert.NoError(tt, pRouter.ListDefinitions(newRequestContext(), w, req))
+		c := newRequestContext(w, req)
+		assert.NoError(tt, pRouter.ListDefinitions(c))
 
 		var resp router.ListDefinitionsResponse
 		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
@@ -150,7 +154,8 @@ func TestPresentationAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/definitions", value)
 		w := httptest.NewRecorder()
 
-		err = pRouter.CreateDefinition(newRequestContext(), w, req)
+		c := newRequestContext(w, req)
+		err = pRouter.CreateDefinition(c)
 
 		assert.Error(t, err)
 	})
@@ -161,7 +166,8 @@ func TestPresentationAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
 
-		assert.Error(tt, pRouter.GetDefinition(newRequestContext(), w, req))
+		c := newRequestContext(w, req)
+		assert.Error(tt, pRouter.GetDefinition(c))
 	})
 
 	t.Run("Delete without an ID returns error", func(tt *testing.T) {
@@ -170,8 +176,8 @@ func TestPresentationAPI(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
-		assert.Error(tt, pRouter.DeleteDefinition(newRequestContext(), w, req))
-		w.Flush()
+		c := newRequestContext(w, req)
+		assert.Error(tt, pRouter.DeleteDefinition(c))
 	})
 
 	t.Run("Submission endpoints", func(tt *testing.T) {
@@ -182,7 +188,8 @@ func TestPresentationAPI(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions/myrandomid", nil)
 			w := httptest.NewRecorder()
-			assert.Error(ttt, pRouter.GetSubmission(newRequestContext(), w, req))
+			c := newRequestContext(w, req)
+			assert.Error(ttt, pRouter.GetSubmission(c))
 		})
 
 		tt.Run("Get returns submission after creation", func(ttt *testing.T) {
@@ -205,7 +212,8 @@ func TestPresentationAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s", opstorage.StatusObjectID(op.ID)), nil)
 			w := httptest.NewRecorder()
 
-			assert.NoError(ttt, pRouter.GetSubmission(newRequestContextWithParams(map[string]string{"id": opstorage.StatusObjectID(op.ID)}), w, req))
+			c := newRequestContextWithParams(w, req, map[string]string{"id": opstorage.StatusObjectID(op.ID)})
+			assert.NoError(ttt, pRouter.GetSubmission(c))
 
 			var resp router.GetSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -235,9 +243,10 @@ func TestPresentationAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/submissions", value)
 			w := httptest.NewRecorder()
 
-			err = pRouter.CreateSubmission(newRequestContext(), w, req)
-
+			c := newRequestContext(w, req)
+			err = pRouter.CreateSubmission(c)
 			require.NoError(ttt, err)
+
 			var resp router.Operation
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Contains(ttt, resp.ID, "presentations/submissions/")
@@ -268,9 +277,10 @@ func TestPresentationAPI(t *testing.T) {
 				value)
 			w := httptest.NewRecorder()
 
-			err = pRouter.ReviewSubmission(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
-
+			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
+			err = pRouter.ReviewSubmission(c)
 			assert.NoError(ttt, err)
+
 			var resp router.ReviewSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Equal(ttt, "because I want to", resp.Reason)
@@ -302,9 +312,8 @@ func TestPresentationAPI(t *testing.T) {
 				fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s/review", createdID),
 				value)
 			w := httptest.NewRecorder()
-
-			err = pRouter.ReviewSubmission(newRequestContextWithParams(map[string]string{"id": createdID}), w, req)
-
+			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
+			err = pRouter.ReviewSubmission(c)
 			assert.Error(ttt, err)
 			assert.Contains(ttt, err.Error(), "operation already marked as done")
 		})
@@ -319,8 +328,8 @@ func TestPresentationAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
 			w := httptest.NewRecorder()
 
-			err = pRouter.ListSubmissions(newRequestContext(), w, req)
-
+			c := newRequestContext(w, req)
+			err = pRouter.ListSubmissions(c)
 			require.NoError(ttt, err)
 			var resp router.ListSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -359,8 +368,8 @@ func TestPresentationAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
 			w := httptest.NewRecorder()
 
-			err = pRouter.ListSubmissions(newRequestContext(), w, req)
-
+			c := newRequestContext(w, req)
+			err = pRouter.ListSubmissions(c)
 			require.NoError(ttt, err)
 			var resp router.ListSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -426,8 +435,8 @@ func TestPresentationAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
 			w := httptest.NewRecorder()
 
-			err = pRouter.ListSubmissions(newRequestContext(), w, req)
-
+			c := newRequestContext(w, req)
+			err = pRouter.ListSubmissions(c)
 			require.Error(ttt, err)
 		})
 
@@ -456,8 +465,8 @@ func TestPresentationAPI(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
 			w := httptest.NewRecorder()
 
-			err = pRouter.ListSubmissions(newRequestContext(), w, req)
-
+			c := newRequestContext(w, req)
+			err = pRouter.ListSubmissions(c)
 			require.NoError(ttt, err)
 			var resp router.ListSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -512,13 +521,12 @@ func TestPresentationAPI(t *testing.T) {
 			value := newRequestValue(ttt, request)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
 			w := httptest.NewRecorder()
-
-			err = pRouter.ListSubmissions(newRequestContext(), w, req)
-
+			c := newRequestContext(w, req)
+			err = pRouter.ListSubmissions(c)
 			require.NoError(ttt, err)
+
 			var resp router.ListSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-
 			assert.Empty(ttt, resp.Submissions)
 		})
 	})
@@ -554,10 +562,10 @@ func createSubmission(t *testing.T, pRouter *router.PresentationRouter, definiti
 	value := newRequestValue(t, request)
 	req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/submissions", value)
 	w := httptest.NewRecorder()
-
-	err := pRouter.CreateSubmission(newRequestContext(), w, req)
-
+	c := newRequestContext(w, req)
+	err := pRouter.CreateSubmission(c)
 	require.NoError(t, err)
+
 	var resp router.Operation
 	require.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 	return resp
@@ -669,8 +677,9 @@ func createPresentationDefinition(t *testing.T, pRouter *router.PresentationRout
 	value := newRequestValue(t, request)
 	req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/definitions", value)
 	w := httptest.NewRecorder()
+	c := newRequestContext(w, req)
+	require.NoError(t, pRouter.CreateDefinition(c))
 
-	require.NoError(t, pRouter.CreateDefinition(newRequestContext(), w, req))
 	var resp router.CreatePresentationDefinitionResponse
 	require.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 	return resp

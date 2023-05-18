@@ -1,34 +1,26 @@
 version: "3.98"
 
 services:
-  web:
-    container_name: web
+  ssi:
+    container_name: ssi
     build:
       context: ../
       dockerfile: build/Dockerfile
     ports:
       - "8080:3000"
     environment:
+      - CONFIG_PATH=/app/config/test.toml
       - JAEGER_HTTP_URL=http://jaeger:14268/api/traces
     depends_on:
       - jaeger
       - redis
     volumes:
-      - ../config/compose.toml:/app/config/config.toml
+      - ../config:/app/config
     networks:
       - ssi_network
       - universal-resolver
     links:
-      - uni-resolver-web
-  swagger-ui:
-    build:
-      context: ../
-      dockerfile: build/Dockerfile-swagger
-    ports:
-      - "8002:8080"
-    volumes:
-      - ../doc/swagger.yaml:/app/swagger.yaml
-    command: ["serve", "/app/swagger.yaml", "--no-open", "--port", "8080"]
+      - uni-resolver
   gui:
     build:
       context: ../
@@ -36,7 +28,7 @@ services:
     ports:
       - "8003:8501"
     depends_on:
-      - web
+      - ssi
     networks:
       - ssi_network
   jaeger:
@@ -68,7 +60,7 @@ services:
       - "9001:8081"
     networks:
       - ssi_network
-  uni-resolver-web:
+  uni-resolver:
     image: universalresolver/uni-resolver-web:latest
     ports:
       - "8088:8080"

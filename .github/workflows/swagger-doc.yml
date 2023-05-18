@@ -6,7 +6,6 @@ on:
       - main
 
 jobs:
-
   generate-swagger:
     runs-on: ubuntu-latest
     steps:

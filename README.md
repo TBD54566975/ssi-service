@@ -39,7 +39,7 @@ Steps to issue an Employment Status Credential:
 ## Configuration
 
 Managed via:
-[TOML](https://toml.io/en/) [file](./config/config.toml)
+[TOML](https://toml.io/en/) [file](config/dev.toml)
 
 There are sets of configuration values for the server (e.g. which port to listen on), the services (e.g. which database to use),
 and each service. Each service may define specific configuration, such as which DID methods are enabled for the DID

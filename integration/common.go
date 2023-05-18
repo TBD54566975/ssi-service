@@ -23,6 +23,7 @@ import (
 )
 
 const (
+	// Note: for local testing change this to port 3000
 	endpoint       = "http://localhost:8080/"
 	version        = "v1/"
 	MaxElapsedTime = 120 * time.Second
@@ -127,7 +128,7 @@ func CreateVerifiableCredential(credentialInput credInputParams, revocable bool)
 	err = backoff.Retry(func() error {
 		output, err = put(endpoint+version+"credentials", credentialJSON)
 		if err != nil {
-			logrus.WithError(err).Warn("retryable error caught, retrying..")
+			logrus.WithError(err).Debug("retryable error caught, retrying..")
 			return err
 		}
 		return nil
@@ -166,8 +167,8 @@ func resolveTemplate(input any, fileName string) (string, error) {
 	if err = t.Execute(&b, input); err != nil {
 		return "", err
 	}
-	credentialJSON := b.String()
-	return credentialJSON, nil
+	templateJSON := b.String()
+	return templateJSON, nil
 }
 
 type credManifestParams struct {
@@ -397,14 +398,15 @@ func put(url string, json string) (string, error) {
 		return "", errors.Wrap(err, "parsing body")
 	}
 
+	bodyStr := string(body)
 	if !is2xxResponse(resp.StatusCode) {
-		return "", fmt.Errorf("status code %v not in the 200s. body: %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("status code %v not in the 200s. body: %s", resp.StatusCode, bodyStr)
 	}
 
 	logrus.Println("\nOutput:")
-	logrus.Println(string(body))
+	logrus.Println(bodyStr)
 
-	return string(body), err
+	return bodyStr, err
 }
 
 func getJSONFromFile(fileName string) string {

@@ -177,35 +177,36 @@ func (s Service) PublishWebhook(noun Noun, verb Verb, payloadReader io.Reader) {
 	ctx, cancel := context.WithTimeout(context.Background(), s.timeoutDuration)
 	defer cancel()
 
-	webhook, err := s.storage.GetWebhook(ctx, string(noun), string(verb))
+	nounString := string(noun)
+	verbString := string(verb)
+	webhook, err := s.storage.GetWebhook(ctx, nounString, verbString)
 	if err != nil {
-		logrus.WithError(err).Warn("get webhook")
+		logrus.WithError(err).Debugf("getting webhook: %s:%s", nounString, verbString)
 		return
 	}
 
 	if webhook == nil {
+		logrus.Debugf("webhook does not exist: %s:%s", nounString, verbString)
 		return
 	}
 
 	payloadBytes, err := io.ReadAll(payloadReader)
 	if err != nil {
-		logrus.WithError(err).Warn("converting payload to bytes")
+		logrus.WithError(err).Error("converting payload to bytes")
 		return
 	}
 
 	postPayload := Payload{Noun: noun, Verb: verb, Data: payloadBytes}
-
 	for _, url := range webhook.URLS {
 		postPayload.URL = url
 		postJSONData, err := json.Marshal(postPayload)
 		if err != nil {
-			logrus.Warn("marshal payload")
+			logrus.WithError(err).Error("marshalling payload")
 			continue
 		}
 
-		err = s.post(ctx, url, string(postJSONData))
-		if err != nil {
-			logrus.WithError(err).Warnf("posting payload to %s", url)
+		if err = s.post(ctx, url, string(postJSONData)); err != nil {
+			logrus.WithError(err).Errorf("posting payload to %s", url)
 		}
 	}
 }
@@ -215,11 +216,9 @@ func (s Service) post(ctx context.Context, url string, json string) error {
 	if err != nil {
 		return errors.Wrap(err, "building http req")
 	}
-
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := s.httpClient.Do(req)
-
 	if err != nil {
 		return errors.Wrap(err, "client http client")
 	}

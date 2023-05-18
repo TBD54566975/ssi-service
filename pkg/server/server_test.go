@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +10,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/gin-gonic/gin"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
@@ -19,7 +19,6 @@ import (
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
-	"github.com/dimfeld/httptreemux/v5"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -59,7 +58,8 @@ func TestHealthCheckAPI(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/health", nil)
 	w := httptest.NewRecorder()
 
-	err = router.Health(context.Background(), w, req)
+	c := newRequestContext(w, req)
+	err = router.Health(c)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
@@ -95,7 +95,8 @@ func TestReadinessAPI(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	handler := router.Readiness(nil)
-	err = handler(newRequestContext(), w, req)
+	c := newRequestContext(w, req)
+	err = handler(c)
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
 
@@ -115,22 +116,25 @@ func newRequestValue(t *testing.T, data any) io.Reader {
 }
 
 // construct a context value as expected by our handler
-func newRequestContext() context.Context {
-	return context.WithValue(context.Background(), framework.KeyRequestState, &framework.RequestState{
+func newRequestContext(w http.ResponseWriter, req *http.Request) *gin.Context {
+	c, _ := gin.CreateTestContext(w)
+	c.Request = req
+	c.Set(framework.KeyRequestState.String(), &framework.RequestState{
 		TraceID:    uuid.New().String(),
 		Now:        time.Now(),
 		StatusCode: 1,
 	})
+	return c
 }
 
-// as required by https://github.com/dimfeld/httptreemux's context handler
-func newRequestContextWithParams(params map[string]string) context.Context {
-	ctx := context.WithValue(context.Background(), framework.KeyRequestState, &framework.RequestState{
-		TraceID:    uuid.New().String(),
-		Now:        time.Now(),
-		StatusCode: 1,
-	})
-	return httptreemux.AddParamsToContext(ctx, params)
+// construct a context value with query params as expected by our handler
+func newRequestContextWithParams(w http.ResponseWriter, req *http.Request, params map[string]string) *gin.Context {
+	c := newRequestContext(w, req)
+	c.Params = make([]gin.Param, 0, len(params))
+	for k, v := range params {
+		c.Params = append(c.Params, gin.Param{Key: k, Value: v})
+	}
+	return c
 }
 
 func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.CreateManifestRequest {

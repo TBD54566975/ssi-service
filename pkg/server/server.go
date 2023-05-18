@@ -9,6 +9,7 @@ import (
 	"path"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -44,24 +45,24 @@ const (
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
 type SSIServer struct {
-	*framework.Server
 	*config.ServerConfig
 	*service.SSIService
+	*framework.Server
 }
 
 // NewSSIServer does two things: instantiates all service and registers their HTTP bindings
 func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSIServer, error) {
 	// creates an HTTP server from the framework, and wrap it to extend it for the SSIS
-	middlewares := []framework.Middleware{
-		middleware.Logger(),
+	middlewares := gin.HandlersChain{
+		gin.Recovery(),
 		middleware.Errors(),
+		middleware.Logger(logrus.StandardLogger()),
 		middleware.Metrics(),
-		middleware.Panics(),
 	}
 	if config.Server.EnableAllowAllCORS {
-		middlewares = append(middlewares, middleware.Cors())
+		middlewares = append(middlewares, middleware.CORS())
 	}
-	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares...)
+	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares)
 	ssi, err := service.InstantiateSSIService(config.Services)
 	if err != nil {
 		return nil, err
@@ -87,7 +88,7 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 	// start all services and their routers
 	logrus.Infof("Starting [%d] service routers...\n", len(services))
 	for _, s := range services {
-		if err := server.instantiateRouter(s, webhookService); err != nil {
+		if err = server.instantiateRouter(s, webhookService); err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(err, "unable to instantiate service router<%s>", s.Type())
 		}
 		logrus.Infof("Service router<%s> started successfully", s.Type())
@@ -227,7 +228,6 @@ func (s *SSIServer) OperationAPI(service svcframework.Service) (err error) {
 	handlerPath := V1Prefix + OperationPrefix
 
 	s.Handle(http.MethodGet, handlerPath, operationRouter.GetOperations)
-	// See https://github.com/dimfeld/httptreemux#routing-rules for details on how the `*` works.
 	// In this case, it's used so that the operation id matches `presentations/submissions/{submission_id}` for the DIDWebID
 	// path	`/v1/operations/cancel/presentations/submissions/{id}`
 	s.Handle(http.MethodPut, path.Join(handlerPath, "/cancel/*id"), operationRouter.CancelOperation)

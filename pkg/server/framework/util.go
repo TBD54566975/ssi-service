@@ -2,31 +2,33 @@ package framework
 
 import (
 	"bytes"
-	"context"
 	"io"
 	"net/http"
 
-	"github.com/dimfeld/httptreemux/v5"
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
 
 // GetParam is a utility to get a path parameter from context, nil if not found
-func GetParam(ctx context.Context, param string) *string {
-	params := httptreemux.ContextParams(ctx)
-	method, ok := params[param]
-	if !ok {
+func GetParam(c *gin.Context, param string) *string {
+	got := c.Param(param)
+	if got == "" {
 		return nil
 	}
-	return &method
+	// remove leading slash, which is a quirk of gin
+	if got[0] == '/' {
+		got = got[1:]
+	}
+	return &got
 }
 
 // GetQueryValue is a utility to get a parameter value from the query string, nil if not found
-func GetQueryValue(r *http.Request, param string) *string {
-	v := r.URL.Query().Get(param)
-	if v == "" {
+func GetQueryValue(c *gin.Context, param string) *string {
+	got, ok := c.GetQuery(param)
+	if got == "" || !ok {
 		return nil
 	}
-	return &v
+	return &got
 }
 
 // PeekRequestBody reads a request's body without emptying the buffer

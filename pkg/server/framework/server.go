@@ -2,13 +2,12 @@
 package framework
 
 import (
-	"context"
 	"net/http"
 	"os"
 	"syscall"
 	"time"
 
-	"github.com/dimfeld/httptreemux/v5"
+	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -19,14 +18,18 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 )
 
-type (
-	ctxKey int
-)
+type contextKey string
 
 const (
-	KeyRequestState ctxKey = 1
-	serviceName            = "ssi-service"
+	KeyRequestState    contextKey = "keyRequestState"
+	ShutdownErrorState contextKey = "shutdownError"
+
+	serviceName string = "ssi-service"
 )
+
+func (c contextKey) String() string {
+	return string(c)
+}
 
 type RequestState struct {
 	TraceID    string
@@ -34,63 +37,70 @@ type RequestState struct {
 	StatusCode int
 }
 
-// A Handler is a type that handles a http request within our own little mini
-// framework.
-type Handler func(ctx context.Context, w http.ResponseWriter, r *http.Request) error
-
-// Server is the entrypoint into our application and what configures our context
-// object for each of our http router. Feel free to add any configuration
-// data/logic on this Server struct.
+// Server is the entrypoint into our application and what configures our context object for each of our http router.
+// Feel free to add any configuration data/logic on this Server struct.
 type Server struct {
-	*httptreemux.ContextMux
+	*http.Server
+	router   *gin.Engine
 	tracer   trace.Tracer
 	shutdown chan os.Signal
-	mw       []Middleware
 }
+
+type Handler func(c *gin.Context) error
 
 // NewHTTPServer creates a Server that handles a set of routes for the application.
-func NewHTTPServer(config config.ServerConfig, shutdown chan os.Signal, mw ...Middleware) *Server {
+func NewHTTPServer(cfg config.ServerConfig, shutdown chan os.Signal, mws gin.HandlersChain) *Server {
 	var tracer trace.Tracer
-	if config.JagerEnabled {
+	if cfg.JagerEnabled {
 		tracer = otel.Tracer(serviceName)
 	}
-	return &Server{
-		ContextMux: httptreemux.NewContextMux(),
-		tracer:     tracer,
-		shutdown:   shutdown,
-		mw:         mw,
-	}
-}
+	router := gin.Default()
+	router.Use(mws...)
 
-func (s *Server) AddMiddleware(mw Middleware) {
-	s.mw = append(s.mw, mw)
+	switch cfg.Environment {
+	case config.EnvironmentDev:
+		gin.SetMode(gin.DebugMode)
+	case config.EnvironmentProd:
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	return &Server{
+		Server: &http.Server{
+			Addr:              cfg.APIHost,
+			Handler:           router,
+			ReadTimeout:       cfg.ReadTimeout,
+			ReadHeaderTimeout: cfg.ReadTimeout,
+			WriteTimeout:      cfg.WriteTimeout,
+		},
+		router:   router,
+		tracer:   tracer,
+		shutdown: shutdown,
+	}
 }
 
 // Handle sets a handler function for a given HTTP method and path pair
 // to the server mux.
-func (s *Server) Handle(method string, path string, handler Handler, mw ...Middleware) {
-	// first wrap route specific middleware
-	handler = WrapMiddleware(mw, handler)
-
-	// then wrap app specific middleware
-	handler = WrapMiddleware(s.mw, handler)
+func (s *Server) Handle(method string, path string, handler Handler, middleware ...gin.HandlerFunc) {
+	// add the middleware to the router
+	s.router.Use(middleware...)
 
 	// request handler function
-	h := func(w http.ResponseWriter, r *http.Request) {
+	h := func(c *gin.Context) {
 		requestState := RequestState{
 			TraceID: uuid.New().String(),
 			Now:     time.Now(),
 		}
-		ctx := context.WithValue(r.Context(), KeyRequestState, &requestState)
+		r := c.Request
+		c.Set(KeyRequestState.String(), &requestState)
 
 		// init a span, but only if the tracer is initialized
 		if s.tracer != nil {
-			var span trace.Span
-			ctx, span = s.tracer.Start(ctx, path)
+			_, span := s.tracer.Start(c, path)
+			defer span.End()
 			body, err := PeekRequestBody(r)
 			if err != nil {
 				// log the error and continue the trace with an empty body value
-				logrus.Errorf("failed to read request body during tracing: %v", err)
+				logrus.WithError(err).Error("failed to read request body during tracing")
 			}
 			span.SetAttributes(
 				attribute.String("method", method),
@@ -100,22 +110,26 @@ func (s *Server) Handle(method string, path string, handler Handler, mw ...Middl
 				attribute.String("proto", r.Proto),
 				attribute.String("body", body),
 			)
-
-			defer span.End()
 		}
 
-		// onion the request through all the registered middleware
-		if err := handler(ctx, w, r); err != nil {
-			s.SignalShutdown()
+		// handle the request
+		if err := handler(c); err != nil {
+			// if there's still an error at this point (not extracted by our errors middleware)
+			// we know it's an unsafe error and worth shutting down over
+			logrus.WithError(err).Errorf("request failed")
+			if IsShutdown(err) {
+				logrus.WithError(err).Errorf("unsafe error, shutting down")
+				s.SignalShutdown()
+			}
 			return
 		}
 	}
 
-	s.ContextMux.Handle(method, path, h)
+	// add the handler to the router
+	s.router.Handle(method, path, h)
 }
 
-// SignalShutdown is used to gracefully shut down the server when an integrity
-// issue is identified.
+// SignalShutdown is used to gracefully shut down the server when an integrity issue is identified.
 func (s *Server) SignalShutdown() {
 	s.shutdown <- syscall.SIGTERM
 }

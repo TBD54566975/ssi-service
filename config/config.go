@@ -17,19 +17,27 @@ import (
 )
 
 const (
-	DefaultConfigPath = "config/config.toml"
+	DefaultConfigPath = "config/dev.toml"
 	DefaultEnvPath    = "config/.env"
-	Filename          = "config.toml"
+	Filename          = "dev.toml"
 	ServiceName       = "ssi-service"
 	Extension         = ".toml"
 
 	DefaultServiceEndpoint = "http://localhost:8080"
 
+	EnvironmentDev  Environment = "dev"
+	EnvironmentTest Environment = "test"
+	EnvironmentProd Environment = "prod"
+
+	ConfigPath       EnvironmentVariable = "CONFIG_PATH"
 	KeystorePassword EnvironmentVariable = "KEYSTORE_PASSWORD"
 	DBPassword       EnvironmentVariable = "DB_PASSWORD"
 )
 
-type EnvironmentVariable string
+type (
+	Environment         string
+	EnvironmentVariable string
+)
 
 func (e EnvironmentVariable) String() string {
 	return string(e)
@@ -43,6 +51,7 @@ type SSIServiceConfig struct {
 
 // ServerConfig represents configurable properties for the HTTP server
 type ServerConfig struct {
+	Environment         Environment   `toml:"env" conf:"default:dev"`
 	APIHost             string        `toml:"api_host" conf:"default:0.0.0.0:3000"`
 	DebugHost           string        `toml:"debug_host" conf:"default:0.0.0.0:4000"`
 	JagerHost           string        `toml:"jager_host" conf:"http://jaeger:14268/api/traces"`
@@ -200,20 +209,17 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 
 	// create the config object
 	var config SSIServiceConfig
-
-	if err := parseAndApplyDefaults(config); err != nil {
+	if err = parseAndApplyDefaults(config); err != nil {
 		return nil, errors.Wrap(err, "parse and apply defaults")
 	}
 
 	if loadDefaultConfig {
 		loadDefaultServicesConfig(&config)
-	} else {
-		if err := loadTOMLConfig(path, &config); err != nil {
-			return nil, errors.Wrap(err, "load toml config")
-		}
+	} else if err = loadTOMLConfig(path, &config); err != nil {
+		return nil, errors.Wrap(err, "load toml config")
 	}
 
-	if err := applyEnvVariables(&config); err != nil {
+	if err = applyEnvVariables(&config); err != nil {
 		return nil, errors.Wrap(err, "apply env variables")
 	}
 
@@ -315,13 +321,11 @@ func loadTOMLConfig(path string, config *SSIServiceConfig) error {
 
 func applyEnvVariables(config *SSIServiceConfig) error {
 	if err := godotenv.Load(DefaultEnvPath); err != nil {
-
 		// The error indicates that the file or directory does not exist.
 		if os.IsNotExist(err) {
 			logrus.Info("no .env file found, skipping apply env variables...")
 			return nil
 		}
-
 		return errors.Wrap(err, "dotenv parsing")
 	}
 

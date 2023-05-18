@@ -1,18 +1,17 @@
 package router
 
 import (
-	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 )
 
 func Readiness(services []svcframework.Service) framework.Handler {
-	return readiness{
-		getter: servicesToGet{services},
-	}.ready
+	return readiness{getter: servicesToGet{services: services}}.ready
 }
 
 type readiness struct {
@@ -37,7 +36,7 @@ type GetReadinessResponse struct {
 // @Produce     json
 // @Success     200 {object} GetReadinessResponse
 // @Router      /readiness [get]
-func (r readiness) ready(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+func (r readiness) ready(c *gin.Context) error {
 	services := r.getter.getServices()
 	numServices := len(services)
 	readyServices := 0
@@ -67,7 +66,7 @@ func (r readiness) ready(ctx context.Context, w http.ResponseWriter, _ *http.Req
 		ServiceStatuses: statuses,
 	}
 
-	return framework.Respond(ctx, w, response, http.StatusOK)
+	return framework.Respond(c, response, http.StatusOK)
 }
 
 // serviceGetter is a dependency of this readiness handler to know which service are available in the server

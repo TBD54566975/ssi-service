@@ -50,11 +50,11 @@ func (b *RedisDB) Init(opts ...Option) error {
 		Password: password,
 	})
 
-	if err := redisotel.InstrumentTracing(client); err != nil {
+	if err = redisotel.InstrumentTracing(client); err != nil {
 		return errors.Wrap(err, "instrumenting tracing")
 	}
 
-	if err := redisotel.InstrumentMetrics(client); err != nil {
+	if err = redisotel.InstrumentMetrics(client); err != nil {
 		return errors.Wrap(err, "instrumenting metrics")
 	}
 

@@ -9,6 +9,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 )
@@ -16,7 +17,7 @@ import (
 func TestWebhookAPI(t *testing.T) {
 	t.Run("CreateWebhook returns error when missing request", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookRouter := testWebhookRouter(tt, db)
 
@@ -28,14 +29,15 @@ func TestWebhookAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/webhooks", badRequestValue)
 		w := httptest.NewRecorder()
 
-		err := webhookRouter.CreateWebhook(newRequestContext(), w, req)
+		c := newRequestContext(w, req)
+		err := webhookRouter.CreateWebhook(c)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid create webhook request")
 	})
 
 	t.Run("CreateWebhook returns error when verb is not supported", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookRouter := testWebhookRouter(tt, db)
 
@@ -49,14 +51,15 @@ func TestWebhookAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/webhooks", badRequestValue)
 		w := httptest.NewRecorder()
 
-		err := webhookRouter.CreateWebhook(newRequestContext(), w, req)
+		c := newRequestContext(w, req)
+		err := webhookRouter.CreateWebhook(c)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid create webhook request")
 	})
 
 	t.Run("CreateWebhook returns error when url is not supported", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookRouter := testWebhookRouter(tt, db)
 
@@ -70,7 +73,8 @@ func TestWebhookAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/webhooks", badRequestValue)
 		w := httptest.NewRecorder()
 
-		err := webhookRouter.CreateWebhook(newRequestContext(), w, req)
+		c := newRequestContext(w, req)
+		err := webhookRouter.CreateWebhook(c)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid create webhook request")
 	})
@@ -91,7 +95,8 @@ func TestWebhookAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/webhooks", badRequestValue)
 		w := httptest.NewRecorder()
 
-		err := webhookRouter.CreateWebhook(newRequestContext(), w, req)
+		c := newRequestContext(w, req)
+		err := webhookRouter.CreateWebhook(c)
 		assert.Error(tt, err)
 		assert.Contains(tt, err.Error(), "invalid create webhook request")
 	})
@@ -112,7 +117,8 @@ func TestWebhookAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/webhooks", requestValue)
 		w := httptest.NewRecorder()
 
-		err := webhookRouter.CreateWebhook(newRequestContext(), w, req)
+		c := newRequestContext(w, req)
+		err := webhookRouter.CreateWebhook(c)
 		assert.NoError(tt, err)
 	})
 
@@ -132,13 +138,15 @@ func TestWebhookAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/webhooks", requestValue)
 		w := httptest.NewRecorder()
 
-		err := webhookRouter.CreateWebhook(newRequestContext(), w, req)
+		c := newRequestContext(w, req)
+		err := webhookRouter.CreateWebhook(c)
 		assert.NoError(tt, err)
 
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/webhooks", nil)
 		w = httptest.NewRecorder()
 
-		err = webhookRouter.GetWebhooks(newRequestContext(), w, req)
+		c = newRequestContext(w, req)
+		err = webhookRouter.GetWebhooks(c)
 		assert.NoError(tt, err)
 
 		var resp router.GetWebhooksResponse
@@ -146,7 +154,8 @@ func TestWebhookAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.Len(tt, resp.Webhooks, 1)
 
-		err = webhookRouter.GetWebhooks(newRequestContext(), w, req)
+		c = newRequestContext(w, req)
+		err = webhookRouter.GetWebhooks(c)
 		assert.NoError(tt, err)
 
 		deleteWebhookRequest := router.DeleteWebhookRequest{
@@ -159,13 +168,15 @@ func TestWebhookAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodDelete, "https://ssi-service.com/v1/webhooks", requestValue)
 		w = httptest.NewRecorder()
 
-		err = webhookRouter.DeleteWebhook(newRequestContext(), w, req)
+		c = newRequestContext(w, req)
+		err = webhookRouter.DeleteWebhook(c)
 		assert.NoError(tt, err)
 
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/webhooks", nil)
 		w = httptest.NewRecorder()
 
-		err = webhookRouter.GetWebhooks(newRequestContext(), w, req)
+		c = newRequestContext(w, req)
+		err = webhookRouter.GetWebhooks(c)
 		assert.NoError(tt, err)
 
 		var respAfter router.GetWebhooksResponse

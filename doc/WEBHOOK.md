@@ -120,7 +120,7 @@ PUT - http://localhost:8080/v1/webhooks
 }
 ````
 
-Use the SSI Service to set up a Presentation Definition and corresponding Presentation Request to accept a KYC credential. We have the prerequisites for this in our [steelthread integration test](https://github.com/TBD54566975/ssi-service/blob/main/integration/steelthread_integration_test.go)
+Use the SSI Service to set up a Presentation Definition and corresponding Presentation Request to accept a KYC credential. We have the prerequisites for this in our [credential_manifest integration test](https://github.com/TBD54566975/ssi-service/blob/main/integration/credential_manifest_integration_test.go)
 
 When someone uses the SSI-Service to Create a submission:
 ````json

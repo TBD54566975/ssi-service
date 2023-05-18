@@ -1,4 +1,4 @@
-name: End to End Test
+name: Integration Tests
 
 on:
   push:
@@ -27,21 +27,21 @@ jobs:
       run: go install github.com/magefile/mage
 
     - name: Start containers
-      run: docker-compose -f "build/docker-compose.yml" up -d --build web redis uni-resolver-web driver-did-ion
+      run: docker-compose -f "build/docker-compose.yml" up -d --build ssi redis uni-resolver driver-did-ion
 
     - name: End To End Test
       run: mage integration
 
     - name: Save Container Logs to File
       if: failure()
-      run: docker logs web > web_logs.txt
+      run: docker logs ssi > ssi_logs.txt
 
     - name: Upload Logs as Artifact
       if: failure()
       uses: actions/upload-artifact@v3
       with:
         name: logs
-        path: web_logs.txt
+        path: ssi_logs.txt
 
     - name: Stop containers
       if: always()

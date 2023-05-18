@@ -9,6 +9,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/oidc/issuance"
 	"github.com/ardanlabs/conf"
+	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/ory/fosite"
 	"github.com/ory/fosite/compose"
@@ -61,7 +62,7 @@ const (
 func NewServer(shutdown chan os.Signal, config *AuthConfig, store *storage.MemoryStore) (*Server, error) {
 	// This secret is used to sign authorize codes, access and refresh tokens.
 	// It has to be 32-bytes long for HMAC signing. This requirement can be configured via `compose.Config`
-	var secret = make([]byte, 32)
+	secret := make([]byte, 32)
 
 	if _, err := rand.Read(secret); err != nil {
 		return nil, err
@@ -90,11 +91,11 @@ func NewServer(shutdown chan os.Signal, config *AuthConfig, store *storage.Memor
 		oauth2 = compose.ComposeAllEnabled(fositeConfig, store, privateKey)
 	)
 
-	middlewares := []framework.Middleware{
-		middleware.Logger(),
+	middlewares := gin.HandlersChain{
+		middleware.Logger(logrus.StandardLogger()),
 		middleware.Errors(),
 	}
-	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares...)
+	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares)
 
 	im, err := loadIssuerMetadata(config)
 	if err != nil {
@@ -130,5 +131,5 @@ func loadIssuerMetadata(config *AuthConfig) (*issuance.IssuerMetadata, error) {
 type AuthConfig struct {
 	conf.Version
 	Server               config.ServerConfig
-	CredentialIssuerFile string `toml:"credential_issuer_file" conf:"default:config/credential_issuer_metadata.json"`
+	CredentialIssuerFile string `toml:"credential_issuer_file" conf:"default:config/credential_issuer_metadata.example.json"`
 }

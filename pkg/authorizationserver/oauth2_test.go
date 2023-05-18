@@ -17,21 +17,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var server *httptest.Server
-var store *storage.MemoryStore
+var (
+	server *httptest.Server
+	store  *storage.MemoryStore
+)
 
 func TestMain(m *testing.M) {
 	store = storage.NewMemoryStore()
 
 	// Create an httptest server with the metadataHandler
 	authServer, err := NewServer(make(chan os.Signal, 1), &AuthConfig{
-		CredentialIssuerFile: "../../config/credential_issuer_metadata.json",
+		CredentialIssuerFile: "../../config/credential_issuer_metadata.example.json",
 	}, store)
 	if err != nil {
 		logrus.WithError(err).Fatal("cannot create authserver")
 		os.Exit(1)
 	}
-	server = httptest.NewServer(authServer)
+	server = httptest.NewServer(authServer.Handler)
 
 	code := m.Run()
 
