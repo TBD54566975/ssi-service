@@ -1,5 +1,3 @@
-//go:build mage
-
 package main
 
 import (
@@ -53,7 +51,7 @@ func installGoVulnIfNotPresent() error {
 // Clean deletes any build artifacts.
 func Clean() {
 	fmt.Println("Cleaning...")
-	os.RemoveAll("bin")
+	_ = os.RemoveAll("bin")
 }
 
 // CleanRun removes Docker container, network, and image artifacts.
@@ -99,8 +97,7 @@ func CITest() error {
 	return runCITests()
 }
 
-// Test runs unit tests without coverage.
-// The mage `-v` option will trigger a verbose output of the test
+// Integration runs integration tests.
 func Integration() error {
 	return runIntegrationTests()
 }
