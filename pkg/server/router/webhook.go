@@ -82,7 +82,7 @@ func (wr WebhookRouter) CreateWebhook(c *gin.Context) error {
 }
 
 type GetWebhookResponse struct {
-	Webhook webhook.Webhook `json:"webhook,omitempty"`
+	Webhook webhook.Webhook `json:"webhook"`
 }
 
 // GetWebhook godoc

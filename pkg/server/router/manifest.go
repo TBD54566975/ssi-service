@@ -105,9 +105,9 @@ func (mr ManifestRouter) CreateManifest(c *gin.Context) error {
 }
 
 type GetManifestResponse struct {
-	ID          string                         `json:"id,omitempty"`
-	Manifest    manifestsdk.CredentialManifest `json:"credential_manifest,omitempty"`
-	ManifestJWT keyaccess.JWT                  `json:"manifestJwt,omitempty"`
+	ID          string                         `json:"id"`
+	Manifest    manifestsdk.CredentialManifest `json:"credential_manifest"`
+	ManifestJWT keyaccess.JWT                  `json:"manifestJwt"`
 }
 
 // GetManifest godoc
@@ -273,9 +273,9 @@ func (sar SubmitApplicationRequest) toServiceRequest() (*model.SubmitApplication
 }
 
 type SubmitApplicationResponse struct {
-	Response manifestsdk.CredentialResponse `json:"credential_response,omitempty"`
+	Response manifestsdk.CredentialResponse `json:"credential_response"`
 	// this is an any type to union Data Integrity and JWT style VCs
-	Credentials []any         `json:"verifiableCredentials,omitempty"`
+	Credentials []any         `json:"verifiableCredentials"`
 	ResponseJWT keyaccess.JWT `json:"responseJwt,omitempty"`
 }
 
@@ -317,8 +317,8 @@ func (mr ManifestRouter) SubmitApplication(c *gin.Context) error {
 }
 
 type GetApplicationResponse struct {
-	ID          string                            `json:"id,omitempty"`
-	Application manifestsdk.CredentialApplication `json:"application,omitempty"`
+	ID          string                            `json:"id"`
+	Application manifestsdk.CredentialApplication `json:"application"`
 }
 
 // GetApplication godoc
@@ -353,7 +353,7 @@ func (mr ManifestRouter) GetApplication(c *gin.Context) error {
 }
 
 type GetApplicationsResponse struct {
-	Applications []manifestsdk.CredentialApplication `json:"applications,omitempty"`
+	Applications []manifestsdk.CredentialApplication `json:"applications"`
 }
 
 // GetApplications godoc

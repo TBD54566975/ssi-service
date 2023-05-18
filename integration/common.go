@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	endpoint       = "http://localhost:8080/"
+	endpoint       = "http://localhost:3000/"
 	version        = "v1/"
 	MaxElapsedTime = 120 * time.Second
 )
@@ -397,14 +397,15 @@ func put(url string, json string) (string, error) {
 		return "", errors.Wrap(err, "parsing body")
 	}
 
+	bodyStr := string(body)
 	if !is2xxResponse(resp.StatusCode) {
-		return "", fmt.Errorf("status code %v not in the 200s. body: %s", resp.StatusCode, string(body))
+		return "", fmt.Errorf("status code %v not in the 200s. body: %s", resp.StatusCode, bodyStr)
 	}
 
 	logrus.Println("\nOutput:")
-	logrus.Println(string(body))
+	logrus.Println(bodyStr)
 
-	return string(body), err
+	return bodyStr, err
 }
 
 func getJSONFromFile(fileName string) string {

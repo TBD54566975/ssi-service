@@ -58,11 +58,11 @@ func (o OperationRouter) GetOperation(c *gin.Context) error {
 
 type GetOperationsRequest struct {
 	// The name of the parent's resource. For example: "/presentation/submissions".
-	Parent string `json:"parent,omitempty"`
+	Parent string `json:"parent"`
 
 	// A standard filter expression conforming to https://google.aip.dev/160.
 	// For example: `done = true`.
-	Filter string `json:"filter,omitempty"`
+	Filter string `json:"filter"`
 }
 
 func (r GetOperationsRequest) GetFilter() string {
@@ -107,7 +107,7 @@ func (r GetOperationsRequest) toServiceRequest() (operation.GetOperationsRequest
 }
 
 type GetOperationsResponse struct {
-	Operations []Operation `json:"operations,omitempty"`
+	Operations []Operation `json:"operations"`
 }
 
 // GetOperations godoc
@@ -202,10 +202,10 @@ func (o OperationRouter) CancelOperation(c *gin.Context) error {
 
 type Operation struct {
 	// The name of the resource related to this operation. E.g. "presentations/submissions/<uuid>"
-	ID string `json:"id,omitempty"`
+	ID string `json:"id" validate:"required"`
 
 	// Whether this operation has finished.
-	Done bool `json:"done,omitempty"`
+	Done bool `json:"done" validate:"required"`
 
 	// Populated if Done == true.
 	Result OperationResult `json:"result,omitempty"`
