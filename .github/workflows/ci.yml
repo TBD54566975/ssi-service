@@ -49,8 +49,14 @@ jobs:
     - name: Test
       run: mage CITest
 
-    - name: Generate Swagger
-      run: mage spec
+    - name: Update spec and push generated spec file
+      run: |
+        mage spec
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git add .; \
+        git commit -m "gen OpenAPI Spec by github-actions"; \
+        git push
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3

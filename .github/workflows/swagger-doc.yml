@@ -27,17 +27,10 @@ jobs:
         ref: ${{ github.event.pull_request.head.ref }}
         repository: ${{ github.event.pull_request.head.repo.full_name }}
     - run: |
-        export PATH=$PATH:$(go env GOPATH)/bin
-        mage spec
         git config user.name github-actions
         git config user.email github-actions@github.com
-        if (git diff --shortstat | grep '[0-9]'); then \
-          git checkout main
-          git add .; \
-          git commit -m "gen OpenAPI Spec by github-actions"; \
-          git push --force --set-upstream origin main
-          curl -X POST -H "Content-Type: application/json" -d '{}' $NETLIFY_DEPLOY_WEBHOOK
-        fi
+        git checkout main
+        curl -X POST -H "Content-Type: application/json" -d '{}' $NETLIFY_DEPLOY_WEBHOOK
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NETLIFY_DEPLOY_WEBHOOK: ${{ secrets.NETLIFY_DEPLOY_WEBHOOK }}
