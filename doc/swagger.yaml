@@ -160,26 +160,58 @@ definitions:
     - Dilithium5Sig
   cryptosuite.LDKeyType:
     enum:
+<<<<<<< HEAD
+||||||| parent of ec2e84b (turn off fmt for ci)
+    - Bls12381G2Key2020
+    - Bls12381G2Key2020
+    - JsonWebKey2020
+    - JsonWebKey2020
+=======
+    - Bls12381G2Key2020
+    - Bls12381G2Key2020
+>>>>>>> ec2e84b (turn off fmt for ci)
     - X25519KeyAgreementKey2020
     - Ed25519VerificationKey2020
     - X25519KeyAgreementKey2019
     - Ed25519VerificationKey2018
     - EcdsaSecp256k1VerificationKey2019
+<<<<<<< HEAD
     - JsonWebKey2020
     - JsonWebKey2020
     - Bls12381G2Key2020
     - Bls12381G2Key2020
+||||||| parent of ec2e84b (turn off fmt for ci)
+=======
+    - JsonWebKey2020
+    - JsonWebKey2020
+>>>>>>> ec2e84b (turn off fmt for ci)
     type: string
     x-enum-varnames:
+<<<<<<< HEAD
+||||||| parent of ec2e84b (turn off fmt for ci)
+    - BLS12381G2Key2020
+    - BBSPlusSignatureSuiteType
+    - JSONWebKey2020Type
+    - JWSSignatureSuiteType
+=======
+    - BLS12381G2Key2020
+    - BBSPlusSignatureSuiteType
+>>>>>>> ec2e84b (turn off fmt for ci)
     - X25519KeyAgreementKey2020
     - Ed25519VerificationKey2020
     - X25519KeyAgreementKey2019
     - Ed25519VerificationKey2018
     - ECDSASECP256k1VerificationKey2019
+<<<<<<< HEAD
     - JWSSignatureSuiteType
     - JSONWebKey2020Type
     - BBSPlusSignatureSuiteType
     - BLS12381G2Key2020
+||||||| parent of ec2e84b (turn off fmt for ci)
+=======
+    - JWSSignatureSuiteType
+    - JSONWebKey2020Type
+>>>>>>> ec2e84b (turn off fmt for ci)
   cryptosuite.SignatureType:
     enum:
     - JsonWebSignature2020
