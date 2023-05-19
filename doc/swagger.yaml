@@ -160,15 +160,15 @@ definitions:
     - Dilithium5Sig
   cryptosuite.SignatureType:
     enum:
+    - JsonWebSignature2020
+    - JsonWebSignature2020
     - BbsBlsSignatureProof2020
-    - JsonWebSignature2020
-    - JsonWebSignature2020
     - BbsBlsSignature2020
     type: string
     x-enum-varnames:
-    - BBSPlusSignatureProof2020
     - JSONWebSignature2020
     - JWSSignatureSuiteProofAlgorithm
+    - BBSPlusSignatureProof2020
     - BBSPlusSignature2020
   did.Document:
     properties:
