@@ -28,14 +28,14 @@ type GetReadinessResponse struct {
 
 // Readiness godoc
 //
-// @Summary     Readiness
-// @Description Readiness runs a number of application specific checks to see if all the relied upon services are
-// @Description healthy.
-// @Tags        Readiness
-// @Accept      json
-// @Produce     json
-// @Success     200 {object} GetReadinessResponse
-// @Router      /readiness [get]
+//	@Summary		Readiness
+//	@Description	Readiness runs a number of application specific checks to see if all the relied upon services are
+//	@Description	healthy.
+//	@Tags			Readiness
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	GetReadinessResponse
+//	@Router			/readiness [get]
 func (r readiness) ready(c *gin.Context) error {
 	services := r.getter.getServices()
 	numServices := len(services)

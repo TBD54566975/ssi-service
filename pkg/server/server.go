@@ -24,6 +24,7 @@ import (
 const (
 	HealthPrefix           = "/health"
 	ReadinessPrefix        = "/readiness"
+	SwaggerPrefix          = "/swagger/*any"
 	V1Prefix               = "/v1"
 	OperationPrefix        = "/operations"
 	DIDsPrefix             = "/dids"
@@ -78,6 +79,7 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 	// service-level routers
 	httpServer.Handle(http.MethodGet, HealthPrefix, router.Health)
 	httpServer.Handle(http.MethodGet, ReadinessPrefix, router.Readiness(services))
+	httpServer.Handle(http.MethodGet, SwaggerPrefix, router.Swagger)
 
 	// create the server instance to be returned
 	server := SSIServer{

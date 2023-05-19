@@ -54,6 +54,7 @@ func NewHTTPServer(cfg config.ServerConfig, shutdown chan os.Signal, mws gin.Han
 	if cfg.JagerEnabled {
 		tracer = otel.Tracer(serviceName)
 	}
+
 	router := gin.Default()
 	router.Use(mws...)
 

@@ -65,9 +65,8 @@ usage. They are not suffixed (e.g. `v0.5.2`).
 1. **Who creates releases?**
 
 The project maintainers are responsible for creates and managing releases. If you are interested in a release but there
-isn’t one, consider referencing a specific commit hash (
-e.g. `go get github.com/[TBD54566975/ssi-s](https://github.com/TBD54566975/ssi-service@<commit-hash>`) or reaching
-out to the team via Discord, the forums, or an issue.
+isn’t one, consider referencing a specific commit hash (e.g. `go get github.com/TBD54566975/ssi-service@<commit-hash>`) 
+or reaching out to the team via Discord, the forums, or an issue.
 
 2. **When do we cut a new release?**
 

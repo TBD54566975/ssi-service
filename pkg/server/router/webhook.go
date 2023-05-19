@@ -44,16 +44,16 @@ type CreateWebhookResponse struct {
 
 // CreateWebhook godoc
 //
-// @Summary     Create Webhook
-// @Description Create webhook
-// @Tags        WebhookAPI
-// @Accept      json
-// @Produce     json
-// @Param       request body     CreateWebhookRequest true "request body"
-// @Success     201     {object} CreateWebhookResponse
-// @Failure     400     {string} string "Bad request"
-// @Failure     500     {string} string "Internal server error"
-// @Router      /v1/webhooks [put]
+//	@Summary		Create Webhook
+//	@Description	Create webhook
+//	@Tags			WebhookAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		CreateWebhookRequest	true	"request body"
+//	@Success		201		{object}	CreateWebhookResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/webhooks [put]
 func (wr WebhookRouter) CreateWebhook(c *gin.Context) error {
 	var request CreateWebhookRequest
 	invalidCreateWebhookRequest := "invalid create webhook request"
@@ -87,15 +87,15 @@ type GetWebhookResponse struct {
 
 // GetWebhook godoc
 //
-// @Summary     Get Webhook
-// @Description Get a webhook by its ID
-// @Tags        WebhookAPI
-// @Accept      json
-// @Produce     json
-// @Param       id  path     string true "ID"
-// @Success     200 {object} GetWebhookResponse
-// @Failure     400 {string} string "Bad request"
-// @Router      /v1/webhooks/{noun}/{verb} [get]
+//	@Summary		Get Webhook
+//	@Description	Get a webhook by its ID
+//	@Tags			WebhookAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		200	{object}	GetWebhookResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Router			/v1/webhooks/{noun}/{verb} [get]
 func (wr WebhookRouter) GetWebhook(c *gin.Context) error {
 	noun := framework.GetParam(c, "noun")
 	if noun == nil {
@@ -125,14 +125,14 @@ type GetWebhooksResponse struct {
 
 // GetWebhooks godoc
 //
-// @Summary     Get Webhooks
-// @Description Get webhooks
-// @Tags        WebhookAPI
-// @Accept      json
-// @Produce     json
-// @Success     200 {object} GetWebhooksResponse
-// @Failure     500 {string} string "Internal server error"
-// @Router      /v1/webhooks [get]
+//	@Summary		Get Webhooks
+//	@Description	Get webhooks
+//	@Tags			WebhookAPI
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	GetWebhooksResponse
+//	@Failure		500	{string}	string	"Internal server error"
+//	@Router			/v1/webhooks [get]
 func (wr WebhookRouter) GetWebhooks(c *gin.Context) error {
 	gotWebhooks, err := wr.service.GetWebhooks(c)
 	if err != nil {
@@ -157,16 +157,16 @@ type DeleteWebhookRequest struct {
 
 // DeleteWebhook godoc
 //
-// @Summary     Delete Webhook
-// @Description Delete a webhook by its ID
-// @Tags        WebhookAPI
-// @Accept      json
-// @Produce     json
-// @Param       id  path     string true "ID"
-// @Success     204 {string} string "No Content"
-// @Failure     400 {string} string "Bad request"
-// @Failure     500 {string} string "Internal server error"
-// @Router      /v1/webhooks/{noun}/{verb}/{url} [delete]
+//	@Summary		Delete Webhook
+//	@Description	Delete a webhook by its ID
+//	@Tags			WebhookAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		204	{string}	string	"No Content"
+//	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
+//	@Router			/v1/webhooks/{noun}/{verb}/{url} [delete]
 func (wr WebhookRouter) DeleteWebhook(c *gin.Context) error {
 	var request DeleteWebhookRequest
 	invalidCreateWebhookRequest := "invalid delete webhook request"
@@ -193,13 +193,13 @@ type GetSupportedNounsResponse struct {
 
 // GetSupportedNouns godoc
 //
-// @Summary     Get Supported Nouns
-// @Description Get supported nouns for webhook generation
-// @Tags        WebhookAPI
-// @Accept      json
-// @Produce     json
-// @Success     200 {object} webhook.GetSupportedNounsResponse
-// @Router      /v1/webhooks/nouns [get]
+//	@Summary		Get Supported Nouns
+//	@Description	Get supported nouns for webhook generation
+//	@Tags			WebhookAPI
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	webhook.GetSupportedNounsResponse
+//	@Router			/v1/webhooks/nouns [get]
 func (wr WebhookRouter) GetSupportedNouns(c *gin.Context) error {
 	nouns := wr.service.GetSupportedNouns()
 	return framework.Respond(c, GetSupportedNounsResponse{nouns.Nouns}, http.StatusOK)
@@ -211,13 +211,13 @@ type GetSupportedVerbsResponse struct {
 
 // GetSupportedVerbs godoc
 //
-// @Summary     Get Supported Verbs
-// @Description Get supported verbs for webhook generation
-// @Tags        WebhookAPI
-// @Accept      json
-// @Produce     json
-// @Success     200 {object} webhook.GetSupportedVerbsResponse
-// @Router      /v1/webhooks/verbs [get]
+//	@Summary		Get Supported Verbs
+//	@Description	Get supported verbs for webhook generation
+//	@Tags			WebhookAPI
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	webhook.GetSupportedVerbsResponse
+//	@Router			/v1/webhooks/verbs [get]
 func (wr WebhookRouter) GetSupportedVerbs(c *gin.Context) error {
 	verbs := wr.service.GetSupportedVerbs()
 	return framework.Respond(c, GetSupportedVerbsResponse{verbs.Verbs}, http.StatusOK)
