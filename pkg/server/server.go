@@ -35,6 +35,7 @@ const (
 	DefinitionsPrefix      = "/definitions"
 	SubmissionsPrefix      = "/submissions"
 	IssuanceTemplatePrefix = "/issuancetemplates"
+	RequestsPrefix         = "/requests"
 	ManifestsPrefix        = "/manifests"
 	ApplicationsPrefix     = "/applications"
 	ResponsesPrefix        = "/responses"
@@ -196,6 +197,12 @@ func (s *SSIServer) PresentationAPI(service svcframework.Service, webhookService
 	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), pRouter.GetDefinition)
 	s.Handle(http.MethodGet, handlerPath, pRouter.ListDefinitions)
 	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), pRouter.DeleteDefinition)
+
+	requestHandlerPath := V1Prefix + PresentationsPrefix + RequestsPrefix
+
+	s.Handle(http.MethodPut, requestHandlerPath, pRouter.CreateRequest)
+	s.Handle(http.MethodGet, path.Join(requestHandlerPath, "/:id"), pRouter.GetRequest)
+	s.Handle(http.MethodPut, path.Join(requestHandlerPath, "/:id"), pRouter.DeleteRequest)
 
 	submissionHandlerPath := V1Prefix + PresentationsPrefix + SubmissionsPrefix
 

@@ -51,13 +51,11 @@ func TestPresentationAPI(t *testing.T) {
 
 	t.Run("Create, Get, and Delete PresentationDefinition", func(tt *testing.T) {
 		s := setupTestDB(tt)
-		pRouter, didService := setupPresentationRouter(tt, s)
-		authorDID := createDID(tt, didService)
+		pRouter, _ := setupPresentationRouter(tt, s)
 
 		var createdID string
 		{
-			kid := authorDID.DID.VerificationMethod[0].ID
-			resp := createPresentationDefinition(tt, pRouter, authorDID.DID.ID, kid, WithInputDescriptors(inputDescriptors))
+			resp := createPresentationDefinition(tt, pRouter, WithInputDescriptors(inputDescriptors))
 			if diff := cmp.Diff(*pd, resp.PresentationDefinition, cmpopts.IgnoreFields(exchange.PresentationDefinition{}, "ID")); diff != "" {
 				t.Errorf("PresentationDefinition mismatch (-want +got):\n%s", diff)
 			}
@@ -126,11 +124,9 @@ func TestPresentationAPI(t *testing.T) {
 
 	t.Run("List returns many definitions", func(tt *testing.T) {
 		s := setupTestDB(tt)
-		pRouter, didService := setupPresentationRouter(tt, s)
-		authorDID := createDID(tt, didService)
-		kid := authorDID.DID.VerificationMethod[0].ID
-		def1 := createPresentationDefinition(tt, pRouter, authorDID.DID.ID, kid)
-		def2 := createPresentationDefinition(tt, pRouter, authorDID.DID.ID, kid)
+		pRouter, _ := setupPresentationRouter(tt, s)
+		def1 := createPresentationDefinition(tt, pRouter)
+		def2 := createPresentationDefinition(tt, pRouter)
 
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/definitions", nil)
 		w := httptest.NewRecorder()
@@ -198,8 +194,7 @@ func TestPresentationAPI(t *testing.T) {
 			authorDID := createDID(ttt, didService)
 
 			holderSigner, holderDID := getSigner(ttt)
-			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			definition := createPresentationDefinition(ttt, pRouter)
 			op := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
 					"additionalName": "Mclovin",
@@ -228,8 +223,7 @@ func TestPresentationAPI(t *testing.T) {
 			authorDID := createDID(ttt, didService)
 
 			holderSigner, holderDID := getSigner(ttt)
-			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			definition := createPresentationDefinition(ttt, pRouter)
 			request := createSubmissionRequest(ttt, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
 					"additionalName": "Mclovin",
@@ -260,8 +254,7 @@ func TestPresentationAPI(t *testing.T) {
 			authorDID := createDID(ttt, didService)
 
 			holderSigner, holderDID := getSigner(ttt)
-			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			definition := createPresentationDefinition(ttt, pRouter)
 			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			request := router.ReviewSubmissionRequest{
@@ -295,8 +288,7 @@ func TestPresentationAPI(t *testing.T) {
 			authorDID := createDID(ttt, didService)
 
 			holderSigner, holderDID := getSigner(ttt)
-			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			definition := createPresentationDefinition(ttt, pRouter)
 			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 			createdID := opstorage.StatusObjectID(submissionOp.ID)
 			_ = reviewSubmission(ttt, pRouter, createdID)
@@ -342,8 +334,7 @@ func TestPresentationAPI(t *testing.T) {
 			authorDID := createDID(ttt, didService)
 
 			holderSigner, holderDID := getSigner(ttt)
-			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			definition := createPresentationDefinition(ttt, pRouter)
 			op := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
 					"additionalName": "Mclovin",
@@ -446,8 +437,7 @@ func TestPresentationAPI(t *testing.T) {
 			authorDID := createDID(ttt, didService)
 
 			holderSigner, holderDID := getSigner(ttt)
-			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			definition := createPresentationDefinition(ttt, pRouter)
 			op := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
 					"additionalName": "Mclovin",
@@ -503,8 +493,7 @@ func TestPresentationAPI(t *testing.T) {
 			authorDID := createDID(ttt, didService)
 
 			holderSigner, holderDID := getSigner(ttt)
-			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			definition := createPresentationDefinition(ttt, pRouter)
 			_ = createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
 					"additionalName": "Mclovin",
@@ -643,7 +632,7 @@ func WithInputDescriptors(inputDescriptors []exchange.InputDescriptor) Definitio
 	}
 }
 
-func createPresentationDefinition(t *testing.T, pRouter *router.PresentationRouter, author, authorKID string, opts ...DefinitionOption) router.CreatePresentationDefinitionResponse {
+func createPresentationDefinition(t *testing.T, pRouter *router.PresentationRouter, opts ...DefinitionOption) router.CreatePresentationDefinitionResponse {
 	request := router.CreatePresentationDefinitionRequest{
 		Name:    "name",
 		Purpose: "purpose",
@@ -668,8 +657,6 @@ func createPresentationDefinition(t *testing.T, pRouter *router.PresentationRout
 				},
 			},
 		},
-		Author:    author,
-		AuthorKID: authorKID,
 	}
 	for _, o := range opts {
 		o(&request)
