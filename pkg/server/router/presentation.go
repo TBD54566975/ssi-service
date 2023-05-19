@@ -452,7 +452,7 @@ type CreateRequestRequest struct {
 
 	// The privateKey associated with the KID will be used to sign an envelope that contains
 	// the created presentation definition.
-	KID string `json:"kid" validate:"required"`
+	IssuerKID string `json:"issuerKid" validate:"required"`
 
 	// ID of the presentation definition to use for this request.
 	PresentationDefinitionID string `json:"presentationDefinitionId" validate:"required"`
