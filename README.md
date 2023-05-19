@@ -86,10 +86,10 @@ mage build
 mage test
 ```
 
-A utility is provided to run _clean, build, and test_ in sequence with:
+A utility is provided to run _clean, build, lint, and test_ in sequence with:
 
 ```
-mage cbt
+mage cblt
 ```
 
 ## Deployment
