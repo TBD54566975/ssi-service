@@ -302,8 +302,8 @@ func goPath() string {
 	return goPath
 }
 
-// CBT runs clean; build; test.
-func CBT() error {
+// CBLT runs clean; build; lint; test.
+func CBLT() error {
 	Clean()
 	if err := Build(); err != nil {
 		return err
