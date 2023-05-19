@@ -3,7 +3,6 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"path"
@@ -17,6 +16,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/middleware"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service"
+	didsvc "github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 )
@@ -82,81 +82,37 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate ssi service")
 	}
 
-	// get all instantiated services
-	services := ssi.GetServices()
-
-	// get webhook service
-	webhookService := ssi.GetService(svcframework.Webhook).(*webhook.Service)
-
 	// service-level routers
-	httpServer.Handle(http.MethodGet, HealthPrefix, router.Health)
-	httpServer.Handle(http.MethodGet, ReadinessPrefix, router.Readiness(services))
+	engine.GET(HealthPrefix, router.Health)
+	engine.GET(ReadinessPrefix, router.Readiness(ssi.GetServices()))
 
-	// v1 := engine.Group(V1Prefix)
+	// register all v1 routers
+	v1 := engine.Group(V1Prefix)
+	if err = DecentralizedIdentityAPI(v1, ssi.DID, ssi.Webhook); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate DID API")
+	}
 
-	// create the server instance to be returned
-	server := SSIServer{
+	return &SSIServer{
 		Server:       httpServer,
 		SSIService:   ssi,
 		ServerConfig: &cfg.Server,
-	}
-
-	// start all services and their routers
-	logrus.Infof("Starting [%d] service routers...\n", len(services))
-	for _, s := range services {
-		if err = server.instantiateRouter(s, webhookService); err != nil {
-			return nil, sdkutil.LoggingErrorMsgf(err, "unable to instantiate service engine<%s>", s.Type())
-		}
-		logrus.Infof("Service engine<%s> started successfully", s.Type())
-	}
-
-	return &server, nil
-}
-
-// instantiateRouter registers the HTTP router for a service with the HTTP server
-// NOTE: all service API router must be registered here
-func (s *SSIServer) instantiateRouter(service svcframework.Service, webhookService *webhook.Service) error {
-	serviceType := service.Type()
-	switch serviceType {
-	case svcframework.DID:
-		return s.DecentralizedIdentityAPI(service, webhookService)
-	case svcframework.Schema:
-		return s.SchemaAPI(service, webhookService)
-	case svcframework.Credential:
-		return s.CredentialAPI(service, webhookService)
-	case svcframework.KeyStore:
-		return s.KeyStoreAPI(service)
-	case svcframework.Manifest:
-		return s.ManifestAPI(service, webhookService)
-	case svcframework.Presentation:
-		return s.PresentationAPI(service, webhookService)
-	case svcframework.Operation:
-		return s.OperationAPI(service)
-	case svcframework.Issuing:
-		return s.IssuanceAPI(service)
-	case svcframework.Webhook:
-		return s.WebhookAPI(service)
-	default:
-		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
-	}
+	}, nil
 }
 
 // DecentralizedIdentityAPI registers all HTTP router for the DID Service
-func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
+func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, webhookService *webhook.Service) (err error) {
 	didRouter, err := router.NewDIDRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating DID router")
 	}
 
-	handlerPath := V1Prefix + DIDsPrefix
-
-	s.Handle(http.MethodGet, handlerPath, didRouter.GetDIDMethods)
-	s.Handle(http.MethodPut, path.Join(handlerPath, "/:method"), didRouter.CreateDIDByMethod, middleware.Webhook(webhookService, webhook.DID, webhook.Create))
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method"), didRouter.GetDIDsByMethod)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method/:id"), didRouter.GetDIDByMethod)
-	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:method/:id"), didRouter.SoftDeleteDIDByMethod)
-
-	s.Handle(http.MethodGet, path.Join(path.Join(handlerPath, ResolverPrefix), "/:id"), didRouter.ResolveDID)
+	didAPI := rg.Group(DIDsPrefix)
+	didAPI.GET("", didRouter.GetDIDMethods)
+	didAPI.PUT("/:method", didRouter.CreateDIDByMethod, middleware.Webhook(webhookService, webhook.DID, webhook.Create))
+	didAPI.GET("/:method", didRouter.GetDIDsByMethod)
+	didAPI.GET("/:method/:id", didRouter.GetDIDByMethod)
+	didAPI.DELETE("/:method/:id", didRouter.SoftDeleteDIDByMethod)
+	didAPI.GET(ResolverPrefix+"/:id", didRouter.ResolveDID)
 	return
 }
 
