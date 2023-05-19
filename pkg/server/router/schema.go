@@ -59,31 +59,35 @@ type CreateSchemaResponse struct {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/schemas [put]
-func (sr SchemaRouter) CreateSchema(c *gin.Context) error {
+func (sr SchemaRouter) CreateSchema(c *gin.Context) {
 	var request CreateSchemaRequest
 	invalidCreateSchemaRequest := "invalid create schema request"
 	if err := framework.Decode(c.Request, &request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, invalidCreateSchemaRequest, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, invalidCreateSchemaRequest, http.StatusBadRequest)
+		return
 	}
 
 	if err := framework.ValidateRequest(request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, invalidCreateSchemaRequest, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, invalidCreateSchemaRequest, http.StatusBadRequest)
+		return
 	}
 
 	if request.Sign && request.AuthorKID == "" {
 		errMsg := "cannot sign schema without authorKID"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	req := schema.CreateSchemaRequest{Author: request.Author, AuthorKID: request.AuthorKID, Name: request.Name, Schema: request.Schema, Sign: request.Sign}
 	createSchemaResponse, err := sr.service.CreateSchema(c, req)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create schema with authoring DID<%s> and KID<%s>", request.Author, request.AuthorKID)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := CreateSchemaResponse{ID: createSchemaResponse.ID, Schema: createSchemaResponse.Schema, SchemaJWT: createSchemaResponse.SchemaJWT}
-	return framework.Respond(c, resp, http.StatusCreated)
+	framework.Respond(c, resp, http.StatusCreated)
 }
 
 // GetSchema godoc
@@ -97,22 +101,25 @@ func (sr SchemaRouter) CreateSchema(c *gin.Context) error {
 //	@Success		200	{object}	GetSchemaResponse
 //	@Failure		400	{string}	string	"Bad request"
 //	@Router			/v1/schemas/{id} [get]
-func (sr SchemaRouter) GetSchema(c *gin.Context) error {
+func (sr SchemaRouter) GetSchema(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "cannot get schema without ID parameter"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	// TODO(gabe) differentiate between internal errors and not found schemas
 	gotSchema, err := sr.service.GetSchema(c, schema.GetSchemaRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get schema with id: %s", *id)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := GetSchemaResponse{Schema: gotSchema.Schema, SchemaJWT: gotSchema.SchemaJWT}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
+	return
 }
 
 type GetSchemasResponse struct {
@@ -129,11 +136,12 @@ type GetSchemasResponse struct {
 //	@Success		200	{object}	GetSchemasResponse
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/schemas [get]
-func (sr SchemaRouter) GetSchemas(c *gin.Context) error {
+func (sr SchemaRouter) GetSchemas(c *gin.Context) {
 	gotSchemas, err := sr.service.GetSchemas(c)
 	if err != nil {
 		errMsg := "could not get schemas"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	schemas := make([]GetSchemaResponse, 0, len(gotSchemas.Schemas))
@@ -142,7 +150,7 @@ func (sr SchemaRouter) GetSchemas(c *gin.Context) error {
 	}
 
 	resp := GetSchemasResponse{Schemas: schemas}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 type GetSchemaResponse struct {
@@ -170,21 +178,23 @@ type VerifySchemaResponse struct {
 //	@Success		200		{object}	VerifySchemaResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Router			/v1/schemas/verification [put]
-func (sr SchemaRouter) VerifySchema(c *gin.Context) error {
+func (sr SchemaRouter) VerifySchema(c *gin.Context) {
 	var request VerifySchemaRequest
 	if err := framework.Decode(c.Request, &request); err != nil {
 		errMsg := "invalid verify schema request"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	verificationResult, err := sr.service.VerifySchema(c, schema.VerifySchemaRequest{SchemaJWT: request.SchemaJWT})
 	if err != nil {
 		errMsg := "could not verify schema"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := VerifySchemaResponse{Verified: verificationResult.Verified, Reason: verificationResult.Reason}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 // DeleteSchema godoc
@@ -199,17 +209,19 @@ func (sr SchemaRouter) VerifySchema(c *gin.Context) error {
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/schemas/{id} [delete]
-func (sr SchemaRouter) DeleteSchema(c *gin.Context) error {
+func (sr SchemaRouter) DeleteSchema(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "cannot delete a schema without an ID parameter"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	if err := sr.service.DeleteSchema(c, schema.DeleteSchemaRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete schema with id: %s", *id)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
-	return framework.Respond(c, nil, http.StatusNoContent)
+	framework.Respond(c, nil, http.StatusNoContent)
 }

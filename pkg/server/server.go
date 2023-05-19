@@ -54,30 +54,8 @@ type SSIServer struct {
 // NewSSIServer does two things: instantiates all service and registers their HTTP bindings
 func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSIServer, error) {
 	// creates an HTTP server from the framework, and wrap it to extend it for the SSIS
-	middlewares := gin.HandlersChain{
-		gin.Recovery(),
-		middleware.Errors(),
-		middleware.Logger(logrus.StandardLogger()),
-		middleware.Metrics(),
-	}
-	if cfg.Server.EnableAllowAllCORS {
-		middlewares = append(middlewares, middleware.CORS())
-	}
-
-	// set up engine and middleware
-	engine := gin.New()
-	engine.Use(middlewares...)
-
-	switch cfg.Server.Environment {
-	case config.EnvironmentDev:
-		gin.SetMode(gin.DebugMode)
-	case config.EnvironmentTest:
-		gin.SetMode(gin.TestMode)
-	case config.EnvironmentProd:
-		gin.SetMode(gin.ReleaseMode)
-	}
-
-	httpServer := framework.NewHTTPServer(cfg.Server, engine, shutdown)
+	engine := setUpEngine(cfg.Server, shutdown)
+	httpServer := framework.NewServer(cfg.Server, engine, shutdown)
 	ssi, err := service.InstantiateSSIService(cfg.Services)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate ssi service")
@@ -86,12 +64,15 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	// service-level routers
 	engine.GET(HealthPrefix, router.Health)
 	engine.GET(ReadinessPrefix, router.Readiness(ssi.GetServices()))
-	httpServer.Handle(http.MethodGet, SwaggerPrefix, router.Swagger)
+	engine.GET(SwaggerPrefix, router.Swagger)
 
 	// register all v1 routers
 	v1 := engine.Group(V1Prefix)
 	if err = DecentralizedIdentityAPI(v1, ssi.DID, ssi.Webhook); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate DID API")
+	}
+	if err = SchemaAPI(v1, ssi.Schema, ssi.Webhook); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Schema API")
 	}
 
 	return &SSIServer{
@@ -99,6 +80,33 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 		SSIService:   ssi,
 		ServerConfig: &cfg.Server,
 	}, nil
+}
+
+// setUpEngine creates the gin engine and sets up the middleware based on config
+func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
+	middlewares := gin.HandlersChain{
+		gin.Recovery(),
+		middleware.Errors(shutdown),
+		middleware.Logger(logrus.StandardLogger()),
+		middleware.Metrics(),
+	}
+	if cfg.EnableAllowAllCORS {
+		middlewares = append(middlewares, middleware.CORS())
+	}
+
+	// set up engine and middleware
+	engine := gin.New()
+	engine.Use(middlewares...)
+
+	switch cfg.Environment {
+	case config.EnvironmentDev:
+		gin.SetMode(gin.DebugMode)
+	case config.EnvironmentTest:
+		gin.SetMode(gin.TestMode)
+	case config.EnvironmentProd:
+		gin.SetMode(gin.ReleaseMode)
+	}
+	return engine
 }
 
 // DecentralizedIdentityAPI registers all HTTP router for the DID Service
@@ -119,19 +127,18 @@ func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, webh
 }
 
 // SchemaAPI registers all HTTP router for the SchemaID Service
-func (s *SSIServer) SchemaAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
+func SchemaAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service) (err error) {
 	schemaRouter, err := router.NewSchemaRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating schema router")
 	}
 
-	handlerPath := V1Prefix + SchemasPrefix
-
-	s.Handle(http.MethodPut, handlerPath, schemaRouter.CreateSchema, middleware.Webhook(webhookService, webhook.Schema, webhook.Create))
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), schemaRouter.GetSchema)
-	s.Handle(http.MethodGet, handlerPath, schemaRouter.GetSchemas)
-	s.Handle(http.MethodPut, path.Join(handlerPath, VerificationPath), schemaRouter.VerifySchema)
-	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), schemaRouter.DeleteSchema, middleware.Webhook(webhookService, webhook.Schema, webhook.Delete))
+	schemaAPI := rg.Group(SchemasPrefix)
+	schemaAPI.PUT("", schemaRouter.CreateSchema, middleware.Webhook(webhookService, webhook.Schema, webhook.Create))
+	schemaAPI.GET("/:id", schemaRouter.GetSchema)
+	schemaAPI.GET("", schemaRouter.GetSchemas)
+	schemaAPI.PUT(VerificationPath, schemaRouter.VerifySchema)
+	schemaAPI.DELETE("/:id", schemaRouter.DeleteSchema, middleware.Webhook(webhookService, webhook.Schema, webhook.Delete))
 	return
 }
 

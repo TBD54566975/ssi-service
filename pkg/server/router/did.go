@@ -54,7 +54,7 @@ type GetDIDMethodsResponse struct {
 //	@Produce		json
 //	@Success		200	{object}	GetDIDMethodsResponse
 //	@Router			/v1/dids [get]
-func (dr DIDRouter) GetDIDMethods(c *gin.Context) error {
+func (dr DIDRouter) GetDIDMethods(c *gin.Context) {
 	methods := dr.service.GetSupportedMethods()
 	response := GetDIDMethodsResponse{DIDMethods: methods.Methods}
 	framework.Respond(c, response, http.StatusOK)

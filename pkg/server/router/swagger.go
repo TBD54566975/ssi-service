@@ -7,7 +7,6 @@ import (
 )
 
 // Swagger wraps the gin swagger handler in our framework handler for usage in a router.
-func Swagger(c *gin.Context) error {
+func Swagger(c *gin.Context) {
 	ginSwagger.WrapHandler(swaggerFiles.Handler)(c)
-	return nil
 }

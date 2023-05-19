@@ -1,6 +1,9 @@
 package middleware
 
 import (
+	"os"
+	"syscall"
+
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
@@ -13,7 +16,7 @@ import (
 // Errors handles errors coming out of the call stack. It detects safe application
 // errors (aka SafeError) that are used to respond to the requester in a
 // normalized way. Unexpected errors (status >= 500) are logged.
-func Errors() gin.HandlerFunc {
+func Errors(shutdown chan os.Signal) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 		tracer := trace.SpanFromContext(c).TracerProvider().Tracer(config.ServiceName)
@@ -25,13 +28,14 @@ func Errors() gin.HandlerFunc {
 			// check if there's a shutdown-worthy error
 			for _, e := range errors {
 				if framework.IsShutdown(e.Err) {
-					c.Set(framework.ShutdownErrorKey.String(), e.Err)
+					logrus.Errorf("%s : SHUTDOWN ERROR : %v", span.SpanContext().TraceID().String(), e)
+					shutdown <- syscall.SIGTERM
 					return
 				}
 			}
 
 			// otherwise just log the errors and return to the caller
-			logrus.Printf("%s : ERROR : %v", span.SpanContext().TraceID().String(), errors)
+			logrus.Errorf("%s : ERROR : %v", span.SpanContext().TraceID().String(), errors)
 			c.JSON(-1, errors)
 		}
 	}

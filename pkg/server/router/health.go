@@ -26,7 +26,7 @@ const (
 //	@Produce		json
 //	@Success		200	{object}	GetHealthCheckResponse
 //	@Router			/health [get]
-func Health(c *gin.Context) error {
+func Health(c *gin.Context) {
 	status := GetHealthCheckResponse{Status: HealthOK}
-	return framework.Respond(c, status, http.StatusOK)
+	framework.Respond(c, status, http.StatusOK)
 }

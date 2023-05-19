@@ -57,9 +57,8 @@ func TestDIDAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 		params := map[string]string{"method": "key"}
 		c := newRequestContextWithParams(w, req, params)
-		err := didService.CreateDIDByMethod(c)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create DID request")
+		didService.CreateDIDByMethod(c)
+		assert.Contains(tt, w.Body.String(), "invalid create DID request")
 
 		// reset recorder between calls
 		w = httptest.NewRecorder()
@@ -70,9 +69,8 @@ func TestDIDAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", requestReader)
 
 		c = newRequestContextWithParams(w, req, params)
-		err = didService.CreateDIDByMethod(c)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not create DID for method<key> with key type: bad")
+		didService.CreateDIDByMethod(c)
+		assert.Contains(tt, w.Body.String(), "could not create DID for method<key> with key type: bad")
 
 		// reset recorder between calls
 		w = httptest.NewRecorder()

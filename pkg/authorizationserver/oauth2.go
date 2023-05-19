@@ -98,7 +98,7 @@ func NewServer(shutdown chan os.Signal, config *AuthConfig, store *storage.Memor
 
 	engine := gin.New()
 	engine.Use(middlewares...)
-	httpServer := framework.NewHTTPServer(config.Server, engine, shutdown)
+	httpServer := framework.NewServer(config.Server, engine, shutdown)
 
 	im, err := loadIssuerMetadata(config)
 	if err != nil {
