@@ -33,6 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.head_ref }}
 
     - name: Set up Go
       uses: actions/setup-go@v3
@@ -56,7 +58,7 @@ jobs:
         git config user.name github-actions
         git config user.email github-actions@github.com
         git commit -am "gen OpenAPI Spec by github-actions"; \
-        git push --set-upstream origin ${GITHUB_REF##*/}
+        git push
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
