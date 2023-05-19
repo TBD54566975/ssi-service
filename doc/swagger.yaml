@@ -158,18 +158,6 @@ definitions:
     - Dilithium2Sig
     - Dilithium3Sig
     - Dilithium5Sig
-  cryptosuite.SignatureType:
-    enum:
-    - JsonWebSignature2020
-    - JsonWebSignature2020
-    - BbsBlsSignatureProof2020
-    - BbsBlsSignature2020
-    type: string
-    x-enum-varnames:
-    - JSONWebSignature2020
-    - JWSSignatureSuiteProofAlgorithm
-    - BBSPlusSignatureProof2020
-    - BBSPlusSignature2020
   did.Document:
     properties:
       '@context': {}
@@ -401,7 +389,7 @@ definitions:
     properties:
       proof_type:
         items:
-          $ref: '#/definitions/cryptosuite.SignatureType'
+          type: string
         type: array
     required:
     - proof_type
