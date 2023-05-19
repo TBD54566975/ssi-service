@@ -9,6 +9,7 @@ import (
 	"time"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -173,13 +174,14 @@ func (s Service) GetSupportedVerbs() GetSupportedVerbsResponse {
 	return GetSupportedVerbsResponse{Verbs: []Verb{Create, Delete}}
 }
 
-func (s Service) PublishWebhook(noun Noun, verb Verb, payloadReader io.Reader) {
-	ctx, cancel := context.WithTimeout(context.Background(), s.timeoutDuration)
+// TODO: consider returning an error to be handled by the gin middleware
+func (s Service) PublishWebhook(c *gin.Context, noun Noun, verb Verb, payloadReader io.Reader) {
+	timeoutCtx, cancel := context.WithTimeout(c, s.timeoutDuration)
 	defer cancel()
 
 	nounString := string(noun)
 	verbString := string(verb)
-	webhook, err := s.storage.GetWebhook(ctx, nounString, verbString)
+	webhook, err := s.storage.GetWebhook(timeoutCtx, nounString, verbString)
 	if err != nil {
 		logrus.WithError(err).Debugf("getting webhook: %s:%s", nounString, verbString)
 		return
@@ -205,7 +207,7 @@ func (s Service) PublishWebhook(noun Noun, verb Verb, payloadReader io.Reader) {
 			continue
 		}
 
-		if err = s.post(ctx, url, string(postJSONData)); err != nil {
+		if err = s.post(timeoutCtx, url, string(postJSONData)); err != nil {
 			logrus.WithError(err).Errorf("posting payload to %s", url)
 		}
 	}

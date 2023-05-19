@@ -51,7 +51,7 @@ type SSIServer struct {
 }
 
 // NewSSIServer does two things: instantiates all service and registers their HTTP bindings
-func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSIServer, error) {
+func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSIServer, error) {
 	// creates an HTTP server from the framework, and wrap it to extend it for the SSIS
 	middlewares := gin.HandlersChain{
 		gin.Recovery(),
@@ -59,13 +59,27 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 		middleware.Logger(logrus.StandardLogger()),
 		middleware.Metrics(),
 	}
-	if config.Server.EnableAllowAllCORS {
+	if cfg.Server.EnableAllowAllCORS {
 		middlewares = append(middlewares, middleware.CORS())
 	}
-	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares)
-	ssi, err := service.InstantiateSSIService(config.Services)
+
+	// set up engine and middleware
+	engine := gin.New()
+	engine.Use(middlewares...)
+
+	switch cfg.Server.Environment {
+	case config.EnvironmentDev:
+		gin.SetMode(gin.DebugMode)
+	case config.EnvironmentTest:
+		gin.SetMode(gin.TestMode)
+	case config.EnvironmentProd:
+		gin.SetMode(gin.ReleaseMode)
+	}
+
+	httpServer := framework.NewHTTPServer(cfg.Server, engine, shutdown)
+	ssi, err := service.InstantiateSSIService(cfg.Services)
 	if err != nil {
-		return nil, err
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate ssi service")
 	}
 
 	// get all instantiated services
@@ -78,20 +92,22 @@ func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSI
 	httpServer.Handle(http.MethodGet, HealthPrefix, router.Health)
 	httpServer.Handle(http.MethodGet, ReadinessPrefix, router.Readiness(services))
 
+	// v1 := engine.Group(V1Prefix)
+
 	// create the server instance to be returned
 	server := SSIServer{
 		Server:       httpServer,
 		SSIService:   ssi,
-		ServerConfig: &config.Server,
+		ServerConfig: &cfg.Server,
 	}
 
 	// start all services and their routers
 	logrus.Infof("Starting [%d] service routers...\n", len(services))
 	for _, s := range services {
 		if err = server.instantiateRouter(s, webhookService); err != nil {
-			return nil, sdkutil.LoggingErrorMsgf(err, "unable to instantiate service router<%s>", s.Type())
+			return nil, sdkutil.LoggingErrorMsgf(err, "unable to instantiate service engine<%s>", s.Type())
 		}
-		logrus.Infof("Service router<%s> started successfully", s.Type())
+		logrus.Infof("Service engine<%s> started successfully", s.Type())
 	}
 
 	return &server, nil

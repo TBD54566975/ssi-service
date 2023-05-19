@@ -95,7 +95,10 @@ func NewServer(shutdown chan os.Signal, config *AuthConfig, store *storage.Memor
 		middleware.Logger(logrus.StandardLogger()),
 		middleware.Errors(),
 	}
-	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares)
+
+	engine := gin.New()
+	engine.Use(middlewares...)
+	httpServer := framework.NewHTTPServer(config.Server, engine, shutdown)
 
 	im, err := loadIssuerMetadata(config)
 	if err != nil {

@@ -13,16 +13,14 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/google/uuid"
-
 	"github.com/tbd54566975/ssi-service/config"
 )
 
 type contextKey string
 
 const (
-	KeyRequestState    contextKey = "keyRequestState"
-	ShutdownErrorState contextKey = "shutdownError"
+	TraceIDKey       contextKey = "traceID"
+	ShutdownErrorKey contextKey = "shutdownError"
 
 	serviceName string = "ssi-service"
 )
@@ -49,30 +47,21 @@ type Server struct {
 type Handler func(c *gin.Context) error
 
 // NewHTTPServer creates a Server that handles a set of routes for the application.
-func NewHTTPServer(cfg config.ServerConfig, shutdown chan os.Signal, mws gin.HandlersChain) *Server {
+func NewHTTPServer(cfg config.ServerConfig, handler *gin.Engine, shutdown chan os.Signal) *Server {
 	var tracer trace.Tracer
 	if cfg.JagerEnabled {
 		tracer = otel.Tracer(serviceName)
-	}
-	router := gin.Default()
-	router.Use(mws...)
-
-	switch cfg.Environment {
-	case config.EnvironmentDev:
-		gin.SetMode(gin.DebugMode)
-	case config.EnvironmentProd:
-		gin.SetMode(gin.ReleaseMode)
 	}
 
 	return &Server{
 		Server: &http.Server{
 			Addr:              cfg.APIHost,
-			Handler:           router,
+			Handler:           handler,
 			ReadTimeout:       cfg.ReadTimeout,
 			ReadHeaderTimeout: cfg.ReadTimeout,
 			WriteTimeout:      cfg.WriteTimeout,
 		},
-		router:   router,
+		router:   handler,
 		tracer:   tracer,
 		shutdown: shutdown,
 	}
@@ -86,16 +75,14 @@ func (s *Server) Handle(method string, path string, handler Handler, middleware 
 
 	// request handler function
 	h := func(c *gin.Context) {
-		requestState := RequestState{
-			TraceID: uuid.New().String(),
-			Now:     time.Now(),
-		}
 		r := c.Request
-		c.Set(KeyRequestState.String(), &requestState)
 
 		// init a span, but only if the tracer is initialized
 		if s.tracer != nil {
 			_, span := s.tracer.Start(c, path)
+			traceID := span.SpanContext().TraceID().String()
+			c.Set(TraceIDKey.String(), traceID)
+
 			defer span.End()
 			body, err := PeekRequestBody(r)
 			if err != nil {

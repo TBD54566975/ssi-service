@@ -10,17 +10,9 @@ import (
 
 // Respond convert a Go value to JSON and sends it to the client.
 func Respond(c *gin.Context, data any, statusCode int) error {
-	// set the status code within the context's request state. Gracefully shutdown if
-	// the request state doesn't exist in the context
-	v, ok := c.Value(KeyRequestState.String()).(*RequestState)
-	if !ok {
-		err := NewShutdownError("request state missing from context.")
-		c.Set(ShutdownErrorState.String(), err)
-		return err
-	}
-
 	// check if the data is an error
 	var err error
+	var ok bool
 	if err, ok = data.(error); ok && err != nil {
 		// if the error isn't a `SafeError`, it's not safe to send back the error
 		// message as is because it may contain sensitive data. Send back a generic
@@ -35,8 +27,6 @@ func Respond(c *gin.Context, data any, statusCode int) error {
 			err = errors.New("error processing request")
 		}
 	}
-
-	v.StatusCode = statusCode
 
 	// if there's no payload to marshal, set the status code of the response and return
 	if statusCode == http.StatusNoContent {
