@@ -105,19 +105,18 @@ func Integration() error {
 }
 
 // Spec generates an OpenAPI spec yaml based on code annotations.
-func Spec(fmt bool) error {
+func Spec() error {
 	swagCommand := "swag"
 	if err := installIfNotPresent(swagCommand, "github.com/swaggo/swag/v2/cmd/swag@v2.0.0-rc3"); err != nil {
 		logrus.WithError(err).Error("failed to install swag")
 		return err
 	}
 
-	if fmt {
-		if err := sh.Run(swagCommand, "fmt", "-d", "pkg/server/router"); err != nil {
-			logrus.WithError(err).Error("failed to format swagger docs")
-			return err
-		}
+	if err := sh.Run(swagCommand, "fmt", "-d", "pkg/server/router"); err != nil {
+		logrus.WithError(err).Error("failed to format swagger docs")
+		return err
 	}
+
 	// One of the dependencies we have (antlr4) does not play nicely with swaggo, but we need to enable dependencies
 	// because many of our external API objects have ssi-sdk objects. We can work around this by setting depth. You can
 	// see a discussion of this topic in https://github.com/swaggo/swag/issues/948.
