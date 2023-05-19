@@ -177,21 +177,21 @@ definitions:
     - X25519KeyAgreementKey2019
     - Ed25519VerificationKey2018
     - ECDSASECP256k1VerificationKey2019
-    - JSONWebKey2020Type
     - JWSSignatureSuiteType
+    - JSONWebKey2020Type
     - BLS12381G2Key2020
   cryptosuite.SignatureType:
     enum:
     - BbsBlsSignature2020
+    - JsonWebSignature2020
+    - JsonWebSignature2020
     - BbsBlsSignatureProof2020
-    - JsonWebSignature2020
-    - JsonWebSignature2020
     type: string
     x-enum-varnames:
     - BBSPlusSignature2020
-    - BBSPlusSignatureProof2020
     - JSONWebSignature2020
     - JWSSignatureSuiteProofAlgorithm
+    - BBSPlusSignatureProof2020
   did.Document:
     properties:
       '@context': {}
