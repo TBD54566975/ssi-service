@@ -167,31 +167,31 @@ definitions:
     - Ed25519VerificationKey2018
     - EcdsaSecp256k1VerificationKey2019
     - JsonWebKey2020
-    - Bls12381G2Key2020
     - JsonWebKey2020
+    - Bls12381G2Key2020
     type: string
     x-enum-varnames:
-    - BLS12381G2Key2020
+    - BBSPlusSignatureSuiteType
     - X25519KeyAgreementKey2020
     - Ed25519VerificationKey2020
     - X25519KeyAgreementKey2019
     - Ed25519VerificationKey2018
     - ECDSASECP256k1VerificationKey2019
-    - JWSSignatureSuiteType
-    - BBSPlusSignatureSuiteType
     - JSONWebKey2020Type
+    - JWSSignatureSuiteType
+    - BLS12381G2Key2020
   cryptosuite.SignatureType:
     enum:
-    - JsonWebSignature2020
-    - JsonWebSignature2020
     - BbsBlsSignature2020
     - BbsBlsSignatureProof2020
+    - JsonWebSignature2020
+    - JsonWebSignature2020
     type: string
     x-enum-varnames:
-    - JSONWebSignature2020
-    - JWSSignatureSuiteProofAlgorithm
     - BBSPlusSignature2020
     - BBSPlusSignatureProof2020
+    - JSONWebSignature2020
+    - JWSSignatureSuiteProofAlgorithm
   did.Document:
     properties:
       '@context': {}
@@ -1749,24 +1749,8 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
-    - -9223372036854775808
-    - 9223372036854775807
-    - 1
-    - 1000
-    - 1000000
-    - 1000000000
-    - 60000000000
-    - 3600000000000
     type: integer
     x-enum-varnames:
-    - minDuration
-    - maxDuration
-    - Nanosecond
-    - Microsecond
-    - Millisecond
-    - Second
-    - Minute
-    - Hour
     - minDuration
     - maxDuration
     - Nanosecond

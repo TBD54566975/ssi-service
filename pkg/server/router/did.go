@@ -85,7 +85,7 @@ type CreateDIDByMethodResponse struct {
 //	@Produce		json
 //	@Param			request	body		CreateDIDByMethodRequest	true	"request body"
 //	@Param			method	path		string						true	"Method"
-//	@Success		201		{object}	CreateDIDByMethodResponse{DID=didsdk.Document}
+//	@Success		201		{object}	CreateDIDByMethodResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/dids/{method} [put]
