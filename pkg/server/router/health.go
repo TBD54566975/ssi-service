@@ -19,14 +19,14 @@ const (
 
 // Health godoc
 //
-// @Summary     Health Check
-// @Description Health is a simple handler that always responds with a 200 OK
-// @Tags        HealthCheck
-// @Accept      json
-// @Produce     json
-// @Success     200 {object} GetHealthCheckResponse
-// @Router      /health [get]
-func Health(c *gin.Context) {
+//	@Summary		Health Check
+//	@Description	Health is a simple handler that always responds with a 200 OK
+//	@Tags			HealthCheck
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	GetHealthCheckResponse
+//	@Router			/health [get]
+func Health(c *gin.Context) error {
 	status := GetHealthCheckResponse{Status: HealthOK}
 	return framework.Respond(c, status, http.StatusOK)
 }

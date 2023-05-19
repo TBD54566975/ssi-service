@@ -24,6 +24,7 @@ import (
 const (
 	HealthPrefix           = "/health"
 	ReadinessPrefix        = "/readiness"
+	SwaggerPrefix          = "/swagger/*any"
 	V1Prefix               = "/v1"
 	OperationPrefix        = "/operations"
 	DIDsPrefix             = "/dids"
@@ -85,6 +86,7 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	// service-level routers
 	engine.GET(HealthPrefix, router.Health)
 	engine.GET(ReadinessPrefix, router.Readiness(ssi.GetServices()))
+	httpServer.Handle(http.MethodGet, SwaggerPrefix, router.Swagger)
 
 	// register all v1 routers
 	v1 := engine.Group(V1Prefix)

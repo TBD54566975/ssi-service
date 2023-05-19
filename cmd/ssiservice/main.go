@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/otel"
 
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/doc"
 	"github.com/tbd54566975/ssi-service/pkg/server"
 
 	"go.opentelemetry.io/otel/exporters/jaeger"
@@ -24,14 +25,12 @@ import (
 )
 
 // @title          SSI Service API
-// @version        0.1
 // @description    https://github.com/TBD54566975/ssi-service
 // @contact.name   TBD
 // @contact.url    https://github.com/TBD54566975/ssi-service/issues
 // @contact.email  tbd-developer@squareup.com
 // @license.name   Apache 2.0
 // @license.url    http://www.apache.org/licenses/LICENSE-2.0.html
-// @host           localhost:8080
 func main() {
 	logrus.Info("Starting up...")
 
@@ -52,6 +51,12 @@ func run() error {
 	if err != nil {
 		logrus.Fatalf("could not instantiate config: %s", err.Error())
 	}
+
+	// set up some additional swagger config
+	doc.SwaggerInfo.Version = cfg.SVN
+	doc.SwaggerInfo.Description = cfg.Desc
+	doc.SwaggerInfo.Host = cfg.Server.APIHost
+	doc.SwaggerInfo.Schemes = []string{"http"}
 
 	// set up logger
 	if logFile := configureLogger(cfg.Server.LogLevel, cfg.Server.LogLocation); logFile != nil {
