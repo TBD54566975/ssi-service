@@ -386,7 +386,7 @@ func get(url string) (string, error) {
 }
 
 func put(url string, json string) (string, error) {
-	logrus.Println(fmt.Sprintf("\nPerforming PUT request to:  %s \n\nwith data: \n%s\n", url, json))
+	logrus.Printf("\nPerforming PUT request to:  %s \n\nwith data: \n%s\n", url, json)
 
 	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer([]byte(json)))
 	if err != nil {
