@@ -448,7 +448,7 @@ type CreateRequestRequest struct {
 
 	// DID of the issuer of this presentation definition. The DID must have been previously created with the DID API,
 	// or the PrivateKey must have been added independently.
-	IssuerDID string `json:"issuerID" validate:"required"`
+	IssuerDID string `json:"issuerId" validate:"required"`
 
 	// The privateKey associated with the KID will be used to sign an envelope that contains
 	// the created presentation definition.
