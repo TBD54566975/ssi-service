@@ -1,7 +1,11 @@
 package integration
 
 import (
+	"net/http"
+	"net/http/httptest"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did/key"
@@ -17,6 +21,18 @@ func TestCreateIssuerDIDWebIntegration(t *testing.T) {
 		t.Skip("skipping integration test")
 	}
 
+	var received int64
+	receivedOne := func() bool {
+		return received == 1
+	}
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt64(&received, 1)
+	}))
+	defer testServer.Close()
+
+	_, err := CreateWebhook(testServer.URL)
+	assert.NoError(t, err)
+
 	didWebOutput, err := CreateDIDWeb()
 	assert.NoError(t, err)
 
@@ -29,6 +45,9 @@ func TestCreateIssuerDIDWebIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerKID)
 	SetValue(didWebContext, "issuerKID", issuerKID)
+
+	<-time.After(500 * time.Millisecond)
+	assert.Eventually(t, receivedOne, 5*time.Second, 10*time.Millisecond)
 }
 
 func TestCreateAliceDIDKeyForDIDWebIntegration(t *testing.T) {
