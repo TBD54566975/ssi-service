@@ -31,16 +31,16 @@ func NewOperationRouter(s svcframework.Service) (*OperationRouter, error) {
 
 // GetOperation godoc
 //
-// @Summary     Get an operation
-// @Description Get operation by its ID
-// @Tags        OperationAPI
-// @Accept      json
-// @Produce     json
-// @Param       id  path     string    true "ID"
-// @Success     200 {object} Operation "OK"
-// @Failure     400 {string} string    "Bad request"
-// @Failure     500 {string} string    "Internal server error"
-// @Router      /v1/operations/{id} [get]
+//	@Summary		Get an operation
+//	@Description	Get operation by its ID
+//	@Tags			OperationAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string		true	"ID"
+//	@Success		200	{object}	Operation	"OK"
+//	@Failure		400	{string}	string		"Bad request"
+//	@Failure		500	{string}	string		"Internal server error"
+//	@Router			/v1/operations/{id} [get]
 func (o OperationRouter) GetOperation(c *gin.Context) error {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
@@ -112,16 +112,16 @@ type GetOperationsResponse struct {
 
 // GetOperations godoc
 //
-// @Summary     List operations
-// @Description List operations according to the request
-// @Tags        OperationAPI
-// @Accept      json
-// @Produce     json
-// @Param       request body     GetOperationsRequest  true "request body"
-// @Success     200     {object} GetOperationsResponse "OK"
-// @Failure     400     {string} string                "Bad request"
-// @Failure     500     {string} string                "Internal server error"
-// @Router      /v1/operations [get]
+//	@Summary		List operations
+//	@Description	List operations according to the request
+//	@Tags			OperationAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		GetOperationsRequest	true	"request body"
+//	@Success		200		{object}	GetOperationsResponse	"OK"
+//	@Failure		400		{string}	string					"Bad request"
+//	@Failure		500		{string}	string					"Internal server error"
+//	@Router			/v1/operations [get]
 func (o OperationRouter) GetOperations(c *gin.Context) error {
 	var request GetOperationsRequest
 	invalidGetOperationsErr := "invalid get operations request"
@@ -175,16 +175,16 @@ func routerModel(op operation.Operation) Operation {
 
 // CancelOperation godoc
 //
-// @Summary     Cancel an ongoing operation
-// @Description Cancels an ongoing operation, if possible.
-// @Tags        OperationAPI
-// @Accept      json
-// @Produce     json
-// @Param       id  path     string    true "ID"
-// @Success     200 {object} Operation "OK"
-// @Failure     400 {string} string    "Bad request"
-// @Failure     500 {string} string    "Internal server error"
-// @Router      /v1/operations/cancel/{id} [get]
+//	@Summary		Cancel an ongoing operation
+//	@Description	Cancels an ongoing operation, if possible.
+//	@Tags			OperationAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string		true	"ID"
+//	@Success		200	{object}	Operation	"OK"
+//	@Failure		400	{string}	string		"Bad request"
+//	@Failure		500	{string}	string		"Internal server error"
+//	@Router			/v1/operations/cancel/{id} [get]
 func (o OperationRouter) CancelOperation(c *gin.Context) error {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {

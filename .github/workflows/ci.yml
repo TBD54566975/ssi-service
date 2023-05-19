@@ -33,6 +33,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
+      with:
+        ref: ${{ github.head_ref }}
 
     - name: Set up Go
       uses: actions/setup-go@v3
@@ -49,8 +51,14 @@ jobs:
     - name: Test
       run: mage CITest
 
-    - name: Generate Swagger
-      run: mage spec
+    - name: Update spec and push generated spec file
+      if: github.event_name == 'pull_request' && github.event.action != 'closed' && github.event.pull_request.merged != true
+      run: |
+        mage spec false
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git commit -am "gen OpenAPI Spec by github-actions"; \
+        git push
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
