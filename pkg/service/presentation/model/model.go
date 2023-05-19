@@ -146,16 +146,16 @@ type DeleteRequestRequest struct {
 type Request struct {
 	// ID for this request. It matches the "jti" claim in the JWT.
 	// This is an output only field.
-	ID string `json:"id"`
+	ID string `json:"id,omitempty"`
 
 	// Audience as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.3.
-	Audience []string `json:"audience"`
+	Audience []string `json:"audience,omitempty"`
 
 	// Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
 	Expiration time.Time `json:"expiration" validate:"required"`
 
 	// DID of the issuer of this presentation definition.
-	IssuerDID string `json:"issuerID" validate:"required"`
+	IssuerDID string `json:"issuerId" validate:"required"`
 
 	// The privateKey associated with the KID used to sign the JWT.
 	KID string `json:"kid" validate:"required"`
