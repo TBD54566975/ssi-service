@@ -158,40 +158,18 @@ definitions:
     - Dilithium2Sig
     - Dilithium3Sig
     - Dilithium5Sig
-  cryptosuite.LDKeyType:
-    enum:
-    - Bls12381G2Key2020
-    - X25519KeyAgreementKey2020
-    - Ed25519VerificationKey2020
-    - X25519KeyAgreementKey2019
-    - Ed25519VerificationKey2018
-    - EcdsaSecp256k1VerificationKey2019
-    - JsonWebKey2020
-    - JsonWebKey2020
-    - Bls12381G2Key2020
-    type: string
-    x-enum-varnames:
-    - BBSPlusSignatureSuiteType
-    - X25519KeyAgreementKey2020
-    - Ed25519VerificationKey2020
-    - X25519KeyAgreementKey2019
-    - Ed25519VerificationKey2018
-    - ECDSASECP256k1VerificationKey2019
-    - JWSSignatureSuiteType
-    - JSONWebKey2020Type
-    - BLS12381G2Key2020
   cryptosuite.SignatureType:
     enum:
-    - BbsBlsSignature2020
-    - JsonWebSignature2020
-    - JsonWebSignature2020
     - BbsBlsSignatureProof2020
+    - JsonWebSignature2020
+    - JsonWebSignature2020
+    - BbsBlsSignature2020
     type: string
     x-enum-varnames:
-    - BBSPlusSignature2020
+    - BBSPlusSignatureProof2020
     - JSONWebSignature2020
     - JWSSignatureSuiteProofAlgorithm
-    - BBSPlusSignatureProof2020
+    - BBSPlusSignature2020
   did.Document:
     properties:
       '@context': {}
@@ -263,7 +241,7 @@ definitions:
         description: https://datatracker.ietf.org/doc/html/draft-multiformats-multibase-03
         type: string
       type:
-        $ref: '#/definitions/cryptosuite.LDKeyType'
+        type: string
     required:
     - controller
     - id

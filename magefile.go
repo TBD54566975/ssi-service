@@ -123,7 +123,7 @@ func Spec(fmt bool) error {
 	// see a discussion of this topic in https://github.com/swaggo/swag/issues/948.
 	// We also set parseGoList because it's the only way parseDepth works until the following is fixed:
 	// https://github.com/swaggo/swag/issues/1269
-	return sh.Run(swagCommand, "init", "-g", "cmd/ssiservice/main.go", "--pd", "--parseInternal", "-o", "doc", "-ot", "go,yaml")
+	return sh.Run(swagCommand, "init", "-g", "cmd/ssiservice/main.go", "--overridesFile", "doc/overrides.swaggo", "--pd", "--parseInternal", "-o", "doc", "-ot", "go,yaml")
 }
 
 func runCITests(extraTestArgs ...string) error {
