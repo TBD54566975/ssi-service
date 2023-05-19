@@ -30,15 +30,11 @@ type Storage struct {
 func (ps *Storage) StoreRequest(ctx context.Context, request prestorage.StoredRequest) error {
 	id := request.ID
 	if id == "" {
-		err := errors.New("could not store presentation request without an ID")
-		logrus.WithError(err).Error()
-		return err
+		return sdkutil.LoggingNewError("could not store presentation request without an ID")
 	}
 	jsonBytes, err := json.Marshal(request)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not store presentation request: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return errors.Wrapf(err, errMsg)
+		return sdkutil.LoggingErrorMsgf(err, "could not store presentation request: %s", id)
 	}
 	return ps.db.Write(ctx, presentationRequestNamespace, id, jsonBytes)
 }

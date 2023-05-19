@@ -110,7 +110,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 		expectedReq := model.Request{
 			Audience:                 []string{"did:web:heman"},
 			IssuerDID:                authorDID.DID.ID,
-			KID:                      authorDID.DID.VerificationMethod[0].ID,
+			IssuerKID:                authorDID.DID.VerificationMethod[0].ID,
 			PresentationDefinitionID: pd.ID,
 			Expiration:               time.Date(2023, 10, 10, 10, 10, 10, 0, time.UTC),
 		}
@@ -129,7 +129,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 		assert.Equal(t, *pd, got.PresentationDefinition)
 		assert.Equal(t, expectedReq.Audience, req.Audience)
 		assert.Equal(t, expectedReq.IssuerDID, req.IssuerDID)
-		assert.Equal(t, expectedReq.KID, req.KID)
+		assert.Equal(t, expectedReq.IssuerKID, req.IssuerKID)
 		assert.Equal(t, expectedReq.PresentationDefinitionID, req.PresentationDefinitionID)
 		assert.Equal(t, expectedReq.Expiration, req.Expiration)
 	})
@@ -144,7 +144,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 			PresentationRequest: model.Request{
 				Audience:                 []string{"did:web:heman"},
 				IssuerDID:                authorDID.DID.ID,
-				KID:                      authorDID.DID.VerificationMethod[0].ID,
+				IssuerKID:                authorDID.DID.VerificationMethod[0].ID,
 				Expiration:               time.Now().Add(30 * time.Second),
 				PresentationDefinitionID: pd.ID,
 			},
@@ -165,7 +165,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 		req, err := service.CreateRequest(context.Background(), model.CreateRequestRequest{
 			PresentationRequest: model.Request{
 				IssuerDID:                authorDID.DID.ID,
-				KID:                      authorDID.DID.VerificationMethod[0].ID,
+				IssuerKID:                authorDID.DID.VerificationMethod[0].ID,
 				PresentationDefinitionID: pd.ID,
 				Expiration:               time.Now().Add(30 * time.Second),
 			},
@@ -184,7 +184,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 		_, err := service.CreateRequest(context.Background(), model.CreateRequestRequest{
 			PresentationRequest: model.Request{
 				IssuerDID: "issuer id",
-				KID:       "kid",
+				IssuerKID: "kid",
 			},
 		})
 		assert.Error(t, err)
@@ -201,7 +201,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 
 		_, err = service.CreateRequest(context.Background(), model.CreateRequestRequest{
 			PresentationRequest: model.Request{
-				KID:                      "kid",
+				IssuerKID:                "kid",
 				PresentationDefinitionID: "something",
 			},
 		})

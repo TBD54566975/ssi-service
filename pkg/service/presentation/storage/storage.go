@@ -28,6 +28,7 @@ type DefinitionStorage interface {
 	StoreDefinition(ctx context.Context, presentation StoredDefinition) error
 	GetDefinition(ctx context.Context, id string) (*StoredDefinition, error)
 	DeleteDefinition(ctx context.Context, id string) error
+	// TODO: Make this consistent across API boundaries https://github.com/TBD54566975/ssi-service/issues/449
 	ListDefinitions(ctx context.Context) ([]StoredDefinition, error)
 }
 
@@ -56,8 +57,8 @@ type StoredRequest struct {
 	ID                        string   `json:"id"`
 	Audience                  []string `json:"audience"`
 	Expiration                string   `json:"expiration"`
-	IssuerDID                 string   `json:"issuerID"`
-	KID                       string   `json:"kid"`
+	IssuerDID                 string   `json:"issuerId"`
+	IssuerKID                 string   `json:"issuerKid"`
 	PresentationDefinitionID  string   `json:"presentationDefinitionId"`
 	PresentationDefinitionJWT string   `json:"presentationRequestJwt"`
 }

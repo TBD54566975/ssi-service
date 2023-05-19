@@ -158,7 +158,7 @@ type Request struct {
 	IssuerDID string `json:"issuerId" validate:"required"`
 
 	// The privateKey associated with the KID used to sign the JWT.
-	KID string `json:"kid" validate:"required"`
+	IssuerKID string `json:"issuerKid" validate:"required"`
 
 	// ID of the presentation definition used for this request.
 	PresentationDefinitionID string `json:"presentationDefinitionId" validate:"required"`

@@ -321,9 +321,9 @@ func (s Service) CreateRequest(ctx context.Context, req model.CreateRequestReque
 	if err != nil {
 		return nil, errors.Wrap(err, "building jwt")
 	}
-	signedToken, err := s.keystore.Sign(ctx, request.KID, token)
+	signedToken, err := s.keystore.Sign(ctx, request.IssuerKID, token)
 	if err != nil {
-		return nil, errors.Wrapf(err, "signing payload with KID %q", request.KID)
+		return nil, errors.Wrapf(err, "signing payload with KID %q", request.IssuerKID)
 	}
 
 	stored := presentationstorage.StoredRequest{
@@ -331,7 +331,7 @@ func (s Service) CreateRequest(ctx context.Context, req model.CreateRequestReque
 		Audience:                  request.Audience,
 		Expiration:                request.Expiration.Format(time.RFC3339),
 		IssuerDID:                 request.IssuerDID,
-		KID:                       request.KID,
+		IssuerKID:                 request.IssuerKID,
 		PresentationDefinitionID:  request.PresentationDefinitionID,
 		PresentationDefinitionJWT: signedToken.String(),
 	}
@@ -375,7 +375,7 @@ func serviceModel(storedRequest *presentationstorage.StoredRequest) (*model.Requ
 		Audience:                  storedRequest.Audience,
 		Expiration:                expiration,
 		IssuerDID:                 storedRequest.IssuerDID,
-		KID:                       storedRequest.KID,
+		IssuerKID:                 storedRequest.IssuerKID,
 		PresentationDefinitionID:  storedRequest.PresentationDefinitionID,
 		PresentationDefinitionJWT: keyaccess.JWT(storedRequest.PresentationDefinitionJWT),
 	}, nil

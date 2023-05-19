@@ -517,7 +517,7 @@ func serviceRequestFromRequest(request CreateRequestRequest) (*model.Request, er
 		Audience:                 request.Audience,
 		Expiration:               expiration,
 		IssuerDID:                request.IssuerDID,
-		KID:                      request.KID,
+		IssuerKID:                request.IssuerKID,
 		PresentationDefinitionID: request.PresentationDefinitionID,
 	}, nil
 }
