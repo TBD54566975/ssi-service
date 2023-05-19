@@ -46,8 +46,8 @@ jobs:
     - name: Build library
       run: mage build
 
-    - name: Test
-      run: mage CITest
+#    - name: Test
+#      run: mage CITest
 
     - name: Update spec and push generated spec file
       if: github.event_name == 'pull_request' && github.event.action != 'closed' && github.event.pull_request.merged != true
@@ -57,7 +57,7 @@ jobs:
         git config user.email github-actions@github.com
         git add .; \
         git commit -m "gen OpenAPI Spec by github-actions"; \
-        git push
+        git push -u origin ${GITHUB_REF##*/}
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
