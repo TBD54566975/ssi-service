@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
-	_ "github.com/TBD54566975/ssi-sdk/cryptosuite"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/gin-gonic/gin"

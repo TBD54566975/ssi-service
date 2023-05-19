@@ -160,10 +160,10 @@ definitions:
     - Dilithium5Sig
   cryptosuite.LDKeyType:
     enum:
-    - JsonWebKey2020
-    - Bls12381G2Key2020
     - Bls12381G2Key2020
     - JsonWebKey2020
+    - JsonWebKey2020
+    - Bls12381G2Key2020
     - X25519KeyAgreementKey2020
     - Ed25519VerificationKey2020
     - X25519KeyAgreementKey2019
@@ -171,10 +171,10 @@ definitions:
     - EcdsaSecp256k1VerificationKey2019
     type: string
     x-enum-varnames:
-    - JWSSignatureSuiteType
-    - BBSPlusSignatureSuiteType
     - BLS12381G2Key2020
+    - JWSSignatureSuiteType
     - JSONWebKey2020Type
+    - BBSPlusSignatureSuiteType
     - X25519KeyAgreementKey2020
     - Ed25519VerificationKey2020
     - X25519KeyAgreementKey2019
@@ -184,14 +184,14 @@ definitions:
     enum:
     - JsonWebSignature2020
     - JsonWebSignature2020
-    - BbsBlsSignatureProof2020
     - BbsBlsSignature2020
+    - BbsBlsSignatureProof2020
     type: string
     x-enum-varnames:
     - JSONWebSignature2020
     - JWSSignatureSuiteProofAlgorithm
-    - BBSPlusSignatureProof2020
     - BBSPlusSignature2020
+    - BBSPlusSignatureProof2020
   did.Document:
     properties:
       '@context': {}
