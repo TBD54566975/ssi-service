@@ -14,10 +14,10 @@ import (
 	"syscall"
 
 	"github.com/sirupsen/logrus"
+	"golang.org/x/term"
 
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 var (
@@ -123,7 +123,7 @@ func Spec(fmt bool) error {
 	// see a discussion of this topic in https://github.com/swaggo/swag/issues/948.
 	// We also set parseGoList because it's the only way parseDepth works until the following is fixed:
 	// https://github.com/swaggo/swag/issues/1269
-	return sh.Run(swagCommand, "init", "-g", "cmd/ssiservice/main.go", "--pd", "-o", "doc", "-ot", "go,yaml", "--parseInternal")
+	return sh.Run(swagCommand, "init", "-g", "cmd/ssiservice/main.go", "--pd", "-o", "doc", "-ot", "go,yaml")
 }
 
 func runCITests(extraTestArgs ...string) error {
@@ -192,7 +192,7 @@ func ColorizeTestOutput(w io.Writer) io.Writer {
 
 func ColorizeTestStdout() io.Writer {
 	stdout := syscall.Stdout
-	if terminal.IsTerminal(stdout) {
+	if term.IsTerminal(stdout) {
 		return ColorizeTestOutput(os.Stdout)
 	}
 	return os.Stdout

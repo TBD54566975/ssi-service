@@ -160,38 +160,38 @@ definitions:
     - Dilithium5Sig
   cryptosuite.LDKeyType:
     enum:
+    - JsonWebKey2020
+    - Bls12381G2Key2020
+    - Bls12381G2Key2020
+    - JsonWebKey2020
     - X25519KeyAgreementKey2020
     - Ed25519VerificationKey2020
     - X25519KeyAgreementKey2019
     - Ed25519VerificationKey2018
     - EcdsaSecp256k1VerificationKey2019
-    - Bls12381G2Key2020
-    - JsonWebKey2020
-    - Bls12381G2Key2020
-    - JsonWebKey2020
     type: string
     x-enum-varnames:
+    - JWSSignatureSuiteType
+    - BBSPlusSignatureSuiteType
+    - BLS12381G2Key2020
+    - JSONWebKey2020Type
     - X25519KeyAgreementKey2020
     - Ed25519VerificationKey2020
     - X25519KeyAgreementKey2019
     - Ed25519VerificationKey2018
     - ECDSASECP256k1VerificationKey2019
-    - BLS12381G2Key2020
-    - JSONWebKey2020Type
-    - BBSPlusSignatureSuiteType
-    - JWSSignatureSuiteType
   cryptosuite.SignatureType:
     enum:
-    - BbsBlsSignature2020
+    - JsonWebSignature2020
+    - JsonWebSignature2020
     - BbsBlsSignatureProof2020
-    - JsonWebSignature2020
-    - JsonWebSignature2020
+    - BbsBlsSignature2020
     type: string
     x-enum-varnames:
-    - BBSPlusSignature2020
-    - BBSPlusSignatureProof2020
     - JSONWebSignature2020
     - JWSSignatureSuiteProofAlgorithm
+    - BBSPlusSignatureProof2020
+    - BBSPlusSignature2020
   did.Document:
     properties:
       '@context': {}
@@ -1749,8 +1749,24 @@ definitions:
     - 1000000000
     - 60000000000
     - 3600000000000
+    - -9223372036854775808
+    - 9223372036854775807
+    - 1
+    - 1000
+    - 1000000
+    - 1000000000
+    - 60000000000
+    - 3600000000000
     type: integer
     x-enum-varnames:
+    - minDuration
+    - maxDuration
+    - Nanosecond
+    - Microsecond
+    - Millisecond
+    - Second
+    - Minute
+    - Hour
     - minDuration
     - maxDuration
     - Nanosecond
