@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"expvar"
+	"io"
 	"os"
 	"os/signal"
 	"syscall"
@@ -59,8 +60,7 @@ func run() error {
 	doc.SwaggerInfo.Schemes = []string{"http"}
 
 	// set up logger
-	logFile := configureLogger(cfg.Server.LogLevel, cfg.Server.LogLocation)
-	if logFile != nil {
+	if logFile := configureLogger(cfg.Server.LogLevel, cfg.Server.LogLocation); logFile != nil {
 		defer func(logFile *os.File) {
 			if err = logFile.Close(); err != nil {
 				logrus.WithError(err).Error("failed to close log file")
@@ -100,7 +100,7 @@ func run() error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	ssiServer, err := server.NewSSIServer(shutdown, logFile, *cfg)
+	ssiServer, err := server.NewSSIServer(shutdown, *cfg)
 	if err != nil {
 		logrus.Fatalf("could not start http services: %s", err.Error())
 	}
@@ -199,7 +199,8 @@ func configureLogger(level, location string) *os.File {
 		if err != nil {
 			logrus.WithError(err).Warn("failed to create logs file, using default stdout")
 		} else {
-			logrus.SetOutput(file)
+			mw := io.MultiWriter(os.Stdout, file)
+			logrus.SetOutput(mw)
 		}
 		return file
 	}

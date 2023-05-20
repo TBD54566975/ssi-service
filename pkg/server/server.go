@@ -3,11 +3,11 @@
 package server
 
 import (
-	"io"
 	"os"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -50,9 +50,9 @@ type SSIServer struct {
 }
 
 // NewSSIServer does two things: instantiates all service and registers their HTTP bindings
-func NewSSIServer(shutdown chan os.Signal, logFile *os.File, cfg config.SSIServiceConfig) (*SSIServer, error) {
+func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSIServer, error) {
 	// creates an HTTP server from the framework, and wrap it to extend it for the SSIS
-	engine := setUpEngine(cfg.Server, logFile, shutdown)
+	engine := setUpEngine(cfg.Server, shutdown)
 	httpServer := framework.NewServer(cfg.Server, engine, shutdown)
 	ssi, err := service.InstantiateSSIService(cfg.Services)
 	if err != nil {
@@ -102,13 +102,12 @@ func NewSSIServer(shutdown chan os.Signal, logFile *os.File, cfg config.SSIServi
 }
 
 // setUpEngine creates the gin engine and sets up the middleware based on config
-func setUpEngine(cfg config.ServerConfig, logFile *os.File, shutdown chan os.Signal) *gin.Engine {
+func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
 	gin.ForceConsoleColor()
-	gin.DefaultWriter = io.MultiWriter(os.Stdout, logFile)
 	middlewares := gin.HandlersChain{
 		gin.Recovery(),
 		middleware.Errors(shutdown),
-		// middleware.Logger(logrus.StandardLogger()),
+		middleware.Logger(logrus.StandardLogger()),
 		middleware.Metrics(),
 	}
 	if cfg.EnableAllowAllCORS {
