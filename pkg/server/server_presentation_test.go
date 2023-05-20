@@ -162,7 +162,7 @@ func TestPresentationAPI(t *testing.T) {
 
 		c := newRequestContext(w, req)
 		pRouter.CreateDefinition(c)
-		assert.Contains(t, w.Body.String(), "input_descriptors is required")
+		assert.Contains(t, w.Body.String(), "inputDescriptors is a required field")
 	})
 
 	t.Run("Get without an ID returns error", func(tt *testing.T) {
@@ -184,7 +184,7 @@ func TestPresentationAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 		c := newRequestContextWithParams(w, req, map[string]string{"id": pd.ID})
 		pRouter.DeleteDefinition(c)
-		assert.Contains(t, w.Body.String(), "not found")
+		assert.Contains(t, w.Body.String(), fmt.Sprintf("could not delete presentation definition with id: %s", pd.ID))
 	})
 
 	t.Run("Submission endpoints", func(tt *testing.T) {
