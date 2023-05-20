@@ -160,38 +160,84 @@ definitions:
     - Dilithium5Sig
   cryptosuite.LDKeyType:
     enum:
+    - JsonWebKey2020
+    - Bls12381G2Key2020
+    - JsonWebKey2020
+    - Bls12381G2Key2020
     - X25519KeyAgreementKey2020
     - Ed25519VerificationKey2020
     - X25519KeyAgreementKey2019
     - Ed25519VerificationKey2018
     - EcdsaSecp256k1VerificationKey2019
+<<<<<<< Updated upstream
     - Bls12381G2Key2020
     - JsonWebKey2020
     - Bls12381G2Key2020
     - JsonWebKey2020
+||||||| Stash base
+    - JsonWebKey2020
+    - JsonWebKey2020
+    - Bls12381G2Key2020
+    - Bls12381G2Key2020
+=======
+>>>>>>> Stashed changes
     type: string
     x-enum-varnames:
+    - JWSSignatureSuiteType
+    - BBSPlusSignatureSuiteType
+    - JSONWebKey2020Type
+    - BLS12381G2Key2020
     - X25519KeyAgreementKey2020
     - Ed25519VerificationKey2020
     - X25519KeyAgreementKey2019
     - Ed25519VerificationKey2018
     - ECDSASECP256k1VerificationKey2019
+<<<<<<< Updated upstream
     - BLS12381G2Key2020
     - JSONWebKey2020Type
     - BBSPlusSignatureSuiteType
     - JWSSignatureSuiteType
+||||||| Stash base
+    - JWSSignatureSuiteType
+    - JSONWebKey2020Type
+    - BBSPlusSignatureSuiteType
+    - BLS12381G2Key2020
+=======
+>>>>>>> Stashed changes
   cryptosuite.SignatureType:
     enum:
+<<<<<<< Updated upstream
+||||||| Stash base
+    - JsonWebSignature2020
+    - JsonWebSignature2020
+    - BbsBlsSignatureProof2020
+=======
+    - JsonWebSignature2020
+    - JsonWebSignature2020
+>>>>>>> Stashed changes
     - BbsBlsSignature2020
+<<<<<<< Updated upstream
     - BbsBlsSignatureProof2020
     - JsonWebSignature2020
     - JsonWebSignature2020
+||||||| Stash base
+=======
+    - BbsBlsSignatureProof2020
+>>>>>>> Stashed changes
     type: string
     x-enum-varnames:
     - BBSPlusSignature2020
     - BBSPlusSignatureProof2020
     - JSONWebSignature2020
     - JWSSignatureSuiteProofAlgorithm
+<<<<<<< Updated upstream
+||||||| Stash base
+    - BBSPlusSignatureProof2020
+    - BBSPlusSignature2020
+=======
+    - BBSPlusSignature2020
+    - BBSPlusSignatureProof2020
+>>>>>>> Stashed changes
   did.Document:
     properties:
       '@context': {}
@@ -597,10 +643,10 @@ definitions:
     x-enum-varnames:
     - StatusReady
     - StatusNotReady
-  github_com_tbd54566975_ssi-service_pkg_service_issuing.ClaimTemplates:
+  github_com_tbd54566975_ssi-service_pkg_service_issuance.ClaimTemplates:
     additionalProperties: {}
     type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplate:
+  github_com_tbd54566975_ssi-service_pkg_service_issuance.CredentialTemplate:
     properties:
       credentialInputDescriptor:
         description: |-
@@ -613,14 +659,14 @@ definitions:
         type: string
       data:
         allOf:
-        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.ClaimTemplates'
+        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.ClaimTemplates'
         description: |-
           Data that will be used to determine credential claims.
           Values may be json path like strings, or any other JSON primitive. Each entry will be used to come up with a
           claim about the credentialSubject in the credential that will be issued.
       expiry:
         allOf:
-        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.TimeLike'
+        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.TimeLike'
         description: Parameter to determine the expiry of the credential.
       id:
         description: ID corresponding to an OutputDescriptor.ID from the manifest.
@@ -632,7 +678,7 @@ definitions:
         description: ID of the CredentialSchema to be used for the issued credential.
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate:
+  github_com_tbd54566975_ssi-service_pkg_service_issuance.Template:
     properties:
       credentialManifest:
         description: ID of the credential manifest that this template corresponds
@@ -641,7 +687,7 @@ definitions:
       credentials:
         description: Info required to create a credential from a credential application.
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplate'
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.CredentialTemplate'
         type: array
       id:
         description: ID of this template.
@@ -657,7 +703,7 @@ definitions:
     - issuer
     - issuerKid
     type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuing.TimeLike:
+  github_com_tbd54566975_ssi-service_pkg_service_issuance.TimeLike:
     properties:
       duration:
         allOf:
@@ -988,7 +1034,7 @@ definitions:
       credentials:
         description: Info required to create a credential from a credential application.
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplate'
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.CredentialTemplate'
         type: array
       id:
         description: ID of this template.
@@ -1326,8 +1372,19 @@ definitions:
     type: object
   pkg_server_router.GetSubmissionResponse:
     properties:
-      submission:
-        $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Submission'
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
+      status:
+        description: One of {`pending`, `approved`, `denied`, `cancelled`}.
+        type: string
+      verifiablePresentation:
+        allOf:
+        - $ref: '#/definitions/credential.VerifiablePresentation'
+        description: The verifiable presentation containing the presentation_submission
+          along with the credentials presented.
+    required:
+    - status
     type: object
   pkg_server_router.GetWebhookResponse:
     properties:
@@ -1354,7 +1411,7 @@ definitions:
     properties:
       issuanceTemplates:
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate'
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.Template'
         type: array
     type: object
   pkg_server_router.ListSubmissionRequest:
@@ -1410,7 +1467,7 @@ definitions:
     properties:
       approved:
         type: boolean
-      credential_overrides:
+      credentialOverrides:
         additionalProperties:
           $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_manifest_model.CredentialOverride'
         description: |-
@@ -1444,6 +1501,11 @@ definitions:
           along with the credentials presented.
     required:
     - status
+    type: object
+  pkg_server_router.RevokeKeyResponse:
+    properties:
+      id:
+        type: string
     type: object
   pkg_server_router.StoreKeyRequest:
     properties:
@@ -2253,7 +2315,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate'
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.Template'
         "400":
           description: Bad request
           schema:
@@ -2310,7 +2372,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate'
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.Template'
         "400":
           description: Bad request
           schema:
@@ -2364,6 +2426,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.RevokeKeyResponse'
         "400":
           description: Bad request
           schema:

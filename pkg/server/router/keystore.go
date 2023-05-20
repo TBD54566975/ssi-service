@@ -152,7 +152,7 @@ type RevokeKeyResponse struct {
 //	@Tags			KeyStoreAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path	string	true	"ID of the key to revoke"
+//	@Param			id	path		string	true	"ID of the key to revoke"
 //	@Success		200	{object}	RevokeKeyResponse
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
