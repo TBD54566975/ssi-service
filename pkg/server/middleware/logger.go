@@ -47,8 +47,9 @@ func Logger(logger logrus.FieldLogger, notLogged ...string) gin.HandlerFunc {
 			"path":      path,
 			"referer":   referer,
 			"userAgent": clientUserAgent,
+			"remote":    r.RemoteAddr,
 		})
-		beforeEntry.Infof("%s : started : %s %s -> %s", traceID, r.Method, r.URL.Path, r.RemoteAddr)
+		beforeEntry.Infof("%s : started", traceID)
 
 		// run the request
 		c.Next()
@@ -68,7 +69,6 @@ func Logger(logger logrus.FieldLogger, notLogged ...string) gin.HandlerFunc {
 		afterEntry := logger.WithFields(logrus.Fields{
 			"hostname":   hostname,
 			"statusCode": statusCode,
-			// time to process
 			"latency":    latency,
 			"clientIP":   clientIP,
 			"method":     c.Request.Method,
@@ -76,14 +76,13 @@ func Logger(logger logrus.FieldLogger, notLogged ...string) gin.HandlerFunc {
 			"referer":    referer,
 			"dataLength": dataLength,
 			"userAgent":  clientUserAgent,
+			"remote":     r.RemoteAddr,
 		})
 
 		if len(c.Errors) > 0 {
 			afterEntry.Error(c.Errors.ByType(gin.ErrorTypePrivate).String())
 		} else {
-			msg := fmt.Sprintf("%s : completed : %s - %s [%s] \"%s %s\" %d %d \"%s\" \"%s\" (%dms)",
-				traceID, clientIP, hostname, time.Now().Format(time.RFC3339), c.Request.Method,
-				path, statusCode, dataLength, referer, clientUserAgent, latency)
+			msg := fmt.Sprintf("%s : completed", traceID)
 			switch {
 			case statusCode >= http.StatusInternalServerError:
 				afterEntry.Error(msg)

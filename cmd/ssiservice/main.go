@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"expvar"
-	"io"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,7 +10,6 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/schema"
 	"github.com/ardanlabs/conf"
-	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
@@ -61,13 +59,13 @@ func run() error {
 	doc.SwaggerInfo.Schemes = []string{"http"}
 
 	// set up logger
-	if logFile := configureLogger(cfg.Server.LogLevel, cfg.Server.LogLocation); logFile != nil {
+	logFile := configureLogger(cfg.Server.LogLevel, cfg.Server.LogLocation)
+	if logFile != nil {
 		defer func(logFile *os.File) {
 			if err = logFile.Close(); err != nil {
 				logrus.WithError(err).Error("failed to close log file")
 			}
 		}(logFile)
-		gin.DefaultWriter = io.MultiWriter(logFile, os.Stdout)
 	}
 
 	// set up schema caching based on config
@@ -102,7 +100,7 @@ func run() error {
 	shutdown := make(chan os.Signal, 1)
 	signal.Notify(shutdown, os.Interrupt, syscall.SIGTERM)
 
-	ssiServer, err := server.NewSSIServer(shutdown, *cfg)
+	ssiServer, err := server.NewSSIServer(shutdown, logFile, *cfg)
 	if err != nil {
 		logrus.Fatalf("could not start http services: %s", err.Error())
 	}
@@ -194,6 +192,7 @@ func configureLogger(level, location string) *os.File {
 	logrus.SetReportCaller(true)
 
 	// set logs config from config file
+	logrus.SetOutput(os.Stdout)
 	if location != "" {
 		logFile := location + "/" + config.ServiceName + "-" + time.Now().Format(time.RFC3339) + ".log"
 		file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
