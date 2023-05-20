@@ -10,10 +10,11 @@ When you're ready you may:
 
 ## Development Prerequisites
 
-| Requirement | Tested Version | Installation Instructions                              |
-|-------------|----------------|--------------------------------------------------------|
-| Go          | 1.20.4         | [go.dev](https://go.dev/doc/tutorial/compile-install)  |
-| Mage        | 1.13.0-6       | [magefile.org](https://magefile.org/)                  |
+| Requirement    | Tested Version | Installation Instructions                                                                         |
+|----------------|----------------|---------------------------------------------------------------------------------------------------|
+| Go             | 1.20.4         | [go.dev](https://go.dev/doc/tutorial/compile-install)                                             |
+| Mage           | 1.13.0-6       | [magefile.org](https://magefile.org/)                                                             |
+| golangci-lint  | 1.52.2         | [golangci-lint.run](https://golangci-lint.run/usage/install/#local-installation)                  |
 
 ### Go
 
@@ -58,6 +59,16 @@ built with: go1.17.6
 $> brew install mage
 ```
 
+### golangci-lint
+
+Used to verify code style. If you are on MacOS and have `brew` installed, `mage` will likely install `golangci-lint` for you automatically. If you encounter this error:
+
+```
+Error: failed to run "golangci-lint run: exec: "golangci-lint": executable file not found in $PATH"
+```
+
+follow the installation instructions for your OS to install manually, and make sure that `golangci-lint` is in PATH.
+
 ---
 
 ## Build (Mage)
@@ -72,10 +83,10 @@ $> mage build
 $> mage test
 ```
 
-### Clean / Build / Test (Mage)
+### Clean / Build / Lint / Test (Mage)
 
 ```
-$> mage cbt
+$> mage cblt
 ```
 
 ---
