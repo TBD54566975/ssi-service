@@ -1,6 +1,10 @@
 package framework
 
-import "github.com/pkg/errors"
+import (
+	"strings"
+
+	"github.com/pkg/errors"
+)
 
 // FieldError is used to indicate an error with a field in a request payload.
 type FieldError struct {
@@ -28,6 +32,20 @@ type SafeError struct {
 // wrapped error. This is what will be shown in a server's logs
 func (err *SafeError) Error() string {
 	return err.Err.Error()
+}
+
+// Errors returns the error message and all field errors as a single error
+func (err *SafeError) Errors() string {
+	if len(err.Fields) == 0 {
+		if safe, ok := err.Err.(*SafeError); ok {
+			return safe.Err.Error()
+		}
+	}
+	errs := make([]string, 0, len(err.Fields)+1)
+	for _, field := range err.Fields {
+		errs = append(errs, field.Field)
+	}
+	return errors.WithStack(err.Err).Error() + ": " + strings.Join(errs, ", ")
 }
 
 // newRequestError wraps a provided error with an HTTP status code. This function should be used

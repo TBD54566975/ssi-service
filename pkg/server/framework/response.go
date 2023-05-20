@@ -23,7 +23,7 @@ func Respond(c *gin.Context, data any, statusCode int) {
 			logrus.WithError(err).Error("unsafe error")
 			webErr.Err = errors.New("error processing request")
 		}
-		c.PureJSON(statusCode, webErr.Error())
+		c.PureJSON(statusCode, webErr.Errors())
 		return
 	}
 

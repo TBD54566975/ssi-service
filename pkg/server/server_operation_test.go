@@ -293,7 +293,7 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
 			opRouter.CancelOperation(c)
-			assert.Contains(ttt, w.Body.String(), "operation is done already")
+			assert.Contains(ttt, w.Body.String(), "operation already marked as done")
 		})
 	})
 

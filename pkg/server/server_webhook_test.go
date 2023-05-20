@@ -188,7 +188,7 @@ func TestWebhookAPI(t *testing.T) {
 		webhookService := testWebhookService(tt, db)
 
 		wh, err := webhookService.GetWebhook(context.Background(), webhook.GetWebhookRequest{Noun: "Credential", Verb: "Create"})
-		assert.ErrorContains(tt, err, "wh does not exist")
+		assert.ErrorContains(tt, err, "webhook does not exist")
 		assert.Nil(tt, wh)
 	})
 

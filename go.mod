@@ -22,6 +22,7 @@ require (
 	github.com/lestrrat-go/jwx v1.2.25
 	github.com/lestrrat-go/jwx/v2 v2.0.9
 	github.com/magefile/mage v1.15.0
+	github.com/markbates/errx v1.1.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/ory/fosite v0.44.0

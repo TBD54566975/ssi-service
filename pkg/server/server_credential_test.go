@@ -540,7 +540,6 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", credID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": credID})
 		credRouter.GetCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
 		assert.Contains(tt, w.Body.String(), fmt.Sprintf("could not get credential with id: %s", credID))
 	})
 

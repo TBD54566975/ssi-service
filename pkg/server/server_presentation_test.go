@@ -171,7 +171,7 @@ func TestPresentationAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
 
-		c := newRequestContext(w, req)
+		c := newRequestContextWithParams(w, req, map[string]string{"id": pd.ID})
 		pRouter.GetDefinition(c)
 		assert.Contains(t, w.Body.String(), "not found")
 	})
@@ -182,7 +182,7 @@ func TestPresentationAPI(t *testing.T) {
 
 		req := httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/presentations/definitions/%s", pd.ID), nil)
 		w := httptest.NewRecorder()
-		c := newRequestContext(w, req)
+		c := newRequestContextWithParams(w, req, map[string]string{"id": pd.ID})
 		pRouter.DeleteDefinition(c)
 		assert.Contains(t, w.Body.String(), "not found")
 	})
@@ -194,7 +194,7 @@ func TestPresentationAPI(t *testing.T) {
 
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions/myrandomid", nil)
 			w := httptest.NewRecorder()
-			c := newRequestContext(w, req)
+			c := newRequestContextWithParams(w, req, map[string]string{"id": "myrandomid"})
 			pRouter.GetSubmission(c)
 			assert.Contains(ttt, w.Body.String(), "not found")
 		})

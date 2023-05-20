@@ -311,7 +311,7 @@ func (pr PresentationRouter) CreateSubmission(c *gin.Context) {
 }
 
 type GetSubmissionResponse struct {
-	*model.Submission `json:"submission,omitempty"`
+	*model.Submission
 }
 
 // GetSubmission godoc
@@ -428,7 +428,7 @@ func (r ReviewSubmissionRequest) toServiceRequest(id string) model.ReviewSubmiss
 }
 
 type ReviewSubmissionResponse struct {
-	*model.Submission `json:"submission,omitempty"`
+	*model.Submission
 }
 
 // ReviewSubmission godoc

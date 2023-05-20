@@ -178,7 +178,7 @@ func optionsToType(options any, out any) error {
 }
 
 type GetDIDByMethodResponse struct {
-	DID didsdk.Document `json:"did,omitempty"`
+	DID didsdk.Document `json:"did"`
 }
 
 // GetDIDByMethod godoc

@@ -76,7 +76,7 @@ type Submission struct {
 	// One of {`pending`, `approved`, `denied`, `cancelled`}.
 	Status string `json:"status" validate:"required"`
 	// The reason why the submission was approved or denied.
-	Reason string `json:"reason"`
+	Reason string `json:"reason,omitempty"`
 	// The verifiable presentation containing the presentation_submission along with the credentials presented.
 	VerifiablePresentation *credsdk.VerifiablePresentation `json:"verifiablePresentation,omitempty"`
 }

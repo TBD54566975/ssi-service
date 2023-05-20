@@ -210,7 +210,6 @@ func TestDIDAPI(t *testing.T) {
 
 		c = newRequestContextWithParams(w, req, params)
 		didService.CreateDIDByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
 		assert.Contains(tt, w.Body.String(), "could not create DID for method<ion> with key type: bad")
 
 		// reset recorder between calls
@@ -454,14 +453,13 @@ func TestDIDAPI(t *testing.T) {
 		didService.GetDIDsByMethod(c)
 		assert.Contains(tt, w.Body.String(), "could not get DIDs for method: bad")
 
+		w = httptest.NewRecorder()
+
 		// good method
-		goodParams := map[string]string{
-			"method": "key",
-		}
+		goodParams := map[string]string{"method": "key"}
 		c = newRequestContextWithParams(w, req, goodParams)
 		didService.GetDIDsByMethod(c)
 		assert.True(tt, is2xxResponse(w.Code))
-
 		var gotDIDs router.GetDIDByMethodResponse
 		err := json.NewDecoder(w.Body).Decode(&gotDIDs)
 		assert.NoError(tt, err)
