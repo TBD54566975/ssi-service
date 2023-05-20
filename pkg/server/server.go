@@ -80,6 +80,15 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	if err = PresentationAPI(v1, ssi.Presentation, ssi.Webhook); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Presentation API")
 	}
+	if err = KeyStoreAPI(v1, ssi.KeyStore); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate KeyStore API")
+	}
+	if err = OperationAPI(v1, ssi.Operation); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Operation API")
+	}
+	if err = ManifestAPI(v1, ssi.Manifest, ssi.Webhook); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Manifest API")
+	}
 
 	return &SSIServer{
 		Server:       httpServer,
@@ -190,7 +199,7 @@ func PresentationAPI(rg *gin.RouterGroup, service svcframework.Service, webhookS
 	return
 }
 
-func (s *SSIServer) KeyStoreAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
+func KeyStoreAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 	keyStoreRouter, err := router.NewKeyStoreRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating key store router")
@@ -202,48 +211,44 @@ func (s *SSIServer) KeyStoreAPI(rg *gin.RouterGroup, service svcframework.Servic
 	return
 }
 
-func (s *SSIServer) OperationAPI(service svcframework.Service) (err error) {
+func OperationAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 	operationRouter, err := router.NewOperationRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating operation router")
 	}
 
-	handlerPath := V1Prefix + OperationPrefix
-
-	s.Handle(http.MethodGet, handlerPath, operationRouter.GetOperations)
+	operationAPI := rg.Group(OperationPrefix)
+	operationAPI.GET("", operationRouter.GetOperations)
 	// In this case, it's used so that the operation id matches `presentations/submissions/{submission_id}` for the DIDWebID
 	// path	`/v1/operations/cancel/presentations/submissions/{id}`
-	s.Handle(http.MethodPut, path.Join(handlerPath, "/cancel/*id"), operationRouter.CancelOperation)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/*id"), operationRouter.GetOperation)
-
+	operationAPI.PUT("/cancel/*id", operationRouter.CancelOperation)
+	operationAPI.GET("/:id", operationRouter.GetOperation)
 	return
 }
 
-func (s *SSIServer) ManifestAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
+func ManifestAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service) (err error) {
 	manifestRouter, err := router.NewManifestRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating manifest router")
 	}
 
-	manifestHandlerPath := V1Prefix + ManifestsPrefix
-	applicationsHandlerPath := V1Prefix + ManifestsPrefix + ApplicationsPrefix
-	responsesHandlerPath := V1Prefix + ManifestsPrefix + ResponsesPrefix
+	manifestAPI := rg.Group(ManifestsPrefix)
+	manifestAPI.PUT("", manifestRouter.CreateManifest, middleware.Webhook(webhookService, webhook.Manifest, webhook.Create))
+	manifestAPI.GET("", manifestRouter.GetManifests)
+	manifestAPI.GET("/:id", manifestRouter.GetManifest)
+	manifestAPI.DELETE("/:id", manifestRouter.DeleteManifest, middleware.Webhook(webhookService, webhook.Manifest, webhook.Delete))
 
-	s.Handle(http.MethodPut, manifestHandlerPath, manifestRouter.CreateManifest, middleware.Webhook(webhookService, webhook.Manifest, webhook.Create))
+	applicationAPI := manifestAPI.Group(ApplicationsPrefix)
+	applicationAPI.PUT("", manifestRouter.SubmitApplication, middleware.Webhook(webhookService, webhook.Application, webhook.Create))
+	applicationAPI.GET("", manifestRouter.GetApplications)
+	applicationAPI.GET("/:id", manifestRouter.GetApplication)
+	applicationAPI.DELETE("/:id", manifestRouter.DeleteApplication, middleware.Webhook(webhookService, webhook.Application, webhook.Delete))
+	applicationAPI.PUT("/:id/review", manifestRouter.ReviewApplication)
 
-	s.Handle(http.MethodGet, manifestHandlerPath, manifestRouter.GetManifests)
-	s.Handle(http.MethodGet, path.Join(manifestHandlerPath, "/:id"), manifestRouter.GetManifest)
-	s.Handle(http.MethodDelete, path.Join(manifestHandlerPath, "/:id"), manifestRouter.DeleteManifest, middleware.Webhook(webhookService, webhook.Manifest, webhook.Delete))
-
-	s.Handle(http.MethodPut, applicationsHandlerPath, manifestRouter.SubmitApplication, middleware.Webhook(webhookService, webhook.Application, webhook.Create))
-	s.Handle(http.MethodGet, applicationsHandlerPath, manifestRouter.GetApplications)
-	s.Handle(http.MethodGet, path.Join(applicationsHandlerPath, "/:id"), manifestRouter.GetApplication)
-	s.Handle(http.MethodDelete, path.Join(applicationsHandlerPath, "/:id"), manifestRouter.DeleteApplication, middleware.Webhook(webhookService, webhook.Application, webhook.Delete))
-	s.Handle(http.MethodPut, path.Join(applicationsHandlerPath, "/:id", "/review"), manifestRouter.ReviewApplication)
-
-	s.Handle(http.MethodGet, responsesHandlerPath, manifestRouter.GetResponses)
-	s.Handle(http.MethodGet, path.Join(responsesHandlerPath, "/:id"), manifestRouter.GetResponse)
-	s.Handle(http.MethodDelete, path.Join(responsesHandlerPath, "/:id"), manifestRouter.DeleteResponse)
+	responseAPI := manifestAPI.Group(ResponsesPrefix)
+	responseAPI.GET("", manifestRouter.GetResponses)
+	responseAPI.GET("/:id", manifestRouter.GetResponse)
+	responseAPI.DELETE("/:id", manifestRouter.DeleteResponse, middleware.Webhook(webhookService, webhook.Response, webhook.Delete))
 	return
 }
 

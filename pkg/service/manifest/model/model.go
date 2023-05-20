@@ -100,7 +100,7 @@ type ReviewApplicationRequest struct {
 	Reason string `json:"reason"`
 	// TODO(gabe) add a way to specify which input descriptors resulted in the failure
 
-	CredentialOverrides map[string]CredentialOverride `json:"credential_overrides,omitempty"`
+	CredentialOverrides map[string]CredentialOverride `json:"credentialOverrides,omitempty"`
 }
 
 // Response

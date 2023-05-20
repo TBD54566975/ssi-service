@@ -21,7 +21,7 @@ import (
 
 // SSIService represents all services and their dependencies independent of transport
 type SSIService struct {
-	Keystore     *keystore.Service
+	KeyStore     *keystore.Service
 	DID          *did.Service
 	Schema       *schema.Service
 	Issuing      *issuing.Service
@@ -90,7 +90,7 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 
 	keyStoreService, err := keystore.NewKeyStoreService(config.KeyStoreConfig, storageProvider)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate Keystore service")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate KeyStore service")
 	}
 
 	didService, err := did.NewDIDService(config.DIDConfig, storageProvider, keyStoreService)
@@ -130,7 +130,7 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 	}
 
 	return &SSIService{
-		Keystore:     keyStoreService,
+		KeyStore:     keyStoreService,
 		DID:          didService,
 		Schema:       schemaService,
 		Issuing:      issuingService,
@@ -145,7 +145,7 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 // GetServices returns all services
 func (s *SSIService) GetServices() []framework.Service {
 	return []framework.Service{
-		s.Keystore,
+		s.KeyStore,
 		s.DID,
 		s.Schema,
 		s.Issuing,

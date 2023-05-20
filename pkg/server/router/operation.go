@@ -29,6 +29,25 @@ func NewOperationRouter(s svcframework.Service) (*OperationRouter, error) {
 	return &OperationRouter{service: service}, nil
 }
 
+type Operation struct {
+	// The name of the resource related to this operation. E.g. "presentations/submissions/<uuid>"
+	ID string `json:"id" validate:"required"`
+
+	// Whether this operation has finished.
+	Done bool `json:"done" validate:"required"`
+
+	// Populated if Done == true.
+	Result OperationResult `json:"result,omitempty"`
+}
+
+type OperationResult struct {
+	// Populated when there was an error with the operation.
+	Error string `json:"error,omitempty"`
+
+	// Populated iff Error == "". The type should be specified in the calling APIs documentation.
+	Response any `json:"response,omitempty"`
+}
+
 // GetOperation godoc
 //
 //	@Summary		Get an operation
@@ -41,19 +60,21 @@ func NewOperationRouter(s svcframework.Service) (*OperationRouter, error) {
 //	@Failure		400	{string}	string		"Bad request"
 //	@Failure		500	{string}	string		"Internal server error"
 //	@Router			/v1/operations/{id} [get]
-func (o OperationRouter) GetOperation(c *gin.Context) error {
+func (o OperationRouter) GetOperation(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "get operation request requires id"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	op, err := o.service.GetOperation(c, operation.GetOperationRequest{ID: *id})
 	if err != nil {
 		errMsg := "failed getting operation"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
-	return framework.Respond(c, routerModel(*op), http.StatusOK)
+	framework.Respond(c, routerModel(*op), http.StatusOK)
 }
 
 type GetOperationsRequest struct {
@@ -122,32 +143,36 @@ type GetOperationsResponse struct {
 //	@Failure		400		{string}	string					"Bad request"
 //	@Failure		500		{string}	string					"Internal server error"
 //	@Router			/v1/operations [get]
-func (o OperationRouter) GetOperations(c *gin.Context) error {
+func (o OperationRouter) GetOperations(c *gin.Context) {
 	var request GetOperationsRequest
 	invalidGetOperationsErr := "invalid get operations request"
 	if err := framework.Decode(c.Request, &request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, invalidGetOperationsErr, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, invalidGetOperationsErr, http.StatusBadRequest)
+		return
 	}
 
 	if err := framework.ValidateRequest(request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, invalidGetOperationsErr, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, invalidGetOperationsErr, http.StatusBadRequest)
+		return
 	}
 
 	req, err := request.toServiceRequest()
 	if err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, invalidGetOperationsErr, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, invalidGetOperationsErr, http.StatusBadRequest)
+		return
 	}
 
 	ops, err := o.service.GetOperations(c, req)
 	if err != nil {
 		errMsg := "getting operations from service"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 	resp := GetOperationsResponse{Operations: make([]Operation, 0, len(ops.Operations))}
 	for _, op := range ops.Operations {
 		resp.Operations = append(resp.Operations, routerModel(op))
 	}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 func routerModel(op operation.Operation) Operation {
@@ -185,36 +210,19 @@ func routerModel(op operation.Operation) Operation {
 //	@Failure		400	{string}	string		"Bad request"
 //	@Failure		500	{string}	string		"Internal server error"
 //	@Router			/v1/operations/cancel/{id} [get]
-func (o OperationRouter) CancelOperation(c *gin.Context) error {
+func (o OperationRouter) CancelOperation(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "get operation request requires id"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	op, err := o.service.CancelOperation(c, operation.CancelOperationRequest{ID: *id})
 	if err != nil {
 		errMsg := "failed cancelling operation"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
-	return framework.Respond(c, routerModel(*op), http.StatusOK)
-}
-
-type Operation struct {
-	// The name of the resource related to this operation. E.g. "presentations/submissions/<uuid>"
-	ID string `json:"id" validate:"required"`
-
-	// Whether this operation has finished.
-	Done bool `json:"done" validate:"required"`
-
-	// Populated if Done == true.
-	Result OperationResult `json:"result,omitempty"`
-}
-
-type OperationResult struct {
-	// Populated when there was an error with the operation.
-	Error string `json:"error,omitempty"`
-
-	// Populated iff Error == "". The type should be specified in the calling APIs documentation.
-	Response any `json:"response,omitempty"`
+	framework.Respond(c, routerModel(*op), http.StatusOK)
 }
