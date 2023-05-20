@@ -160,84 +160,38 @@ definitions:
     - Dilithium5Sig
   cryptosuite.LDKeyType:
     enum:
-    - JsonWebKey2020
     - Bls12381G2Key2020
     - JsonWebKey2020
-    - Bls12381G2Key2020
     - X25519KeyAgreementKey2020
     - Ed25519VerificationKey2020
     - X25519KeyAgreementKey2019
     - Ed25519VerificationKey2018
     - EcdsaSecp256k1VerificationKey2019
-<<<<<<< Updated upstream
     - Bls12381G2Key2020
     - JsonWebKey2020
-    - Bls12381G2Key2020
-    - JsonWebKey2020
-||||||| Stash base
-    - JsonWebKey2020
-    - JsonWebKey2020
-    - Bls12381G2Key2020
-    - Bls12381G2Key2020
-=======
->>>>>>> Stashed changes
     type: string
     x-enum-varnames:
-    - JWSSignatureSuiteType
     - BBSPlusSignatureSuiteType
-    - JSONWebKey2020Type
-    - BLS12381G2Key2020
+    - JWSSignatureSuiteType
     - X25519KeyAgreementKey2020
     - Ed25519VerificationKey2020
     - X25519KeyAgreementKey2019
     - Ed25519VerificationKey2018
     - ECDSASECP256k1VerificationKey2019
-<<<<<<< Updated upstream
     - BLS12381G2Key2020
     - JSONWebKey2020Type
-    - BBSPlusSignatureSuiteType
-    - JWSSignatureSuiteType
-||||||| Stash base
-    - JWSSignatureSuiteType
-    - JSONWebKey2020Type
-    - BBSPlusSignatureSuiteType
-    - BLS12381G2Key2020
-=======
->>>>>>> Stashed changes
   cryptosuite.SignatureType:
     enum:
-<<<<<<< Updated upstream
-||||||| Stash base
-    - JsonWebSignature2020
-    - JsonWebSignature2020
-    - BbsBlsSignatureProof2020
-=======
-    - JsonWebSignature2020
-    - JsonWebSignature2020
->>>>>>> Stashed changes
     - BbsBlsSignature2020
-<<<<<<< Updated upstream
-    - BbsBlsSignatureProof2020
     - JsonWebSignature2020
     - JsonWebSignature2020
-||||||| Stash base
-=======
     - BbsBlsSignatureProof2020
->>>>>>> Stashed changes
     type: string
     x-enum-varnames:
     - BBSPlusSignature2020
-    - BBSPlusSignatureProof2020
     - JSONWebSignature2020
     - JWSSignatureSuiteProofAlgorithm
-<<<<<<< Updated upstream
-||||||| Stash base
     - BBSPlusSignatureProof2020
-    - BBSPlusSignature2020
-=======
-    - BBSPlusSignature2020
-    - BBSPlusSignatureProof2020
->>>>>>> Stashed changes
   did.Document:
     properties:
       '@context': {}
