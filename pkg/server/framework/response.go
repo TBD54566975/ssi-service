@@ -29,7 +29,7 @@ func Respond(c *gin.Context, data any, statusCode int) {
 			Error:  safeErr.Err.Error(),
 			Fields: safeErr.FieldErrors(),
 		}
-		c.IndentedJSON(statusCode, errResp)
+		c.PureJSON(statusCode, errResp)
 		return
 	}
 
@@ -40,7 +40,7 @@ func Respond(c *gin.Context, data any, statusCode int) {
 	}
 
 	// respond with pretty JSON
-	c.IndentedJSON(statusCode, data)
+	c.PureJSON(statusCode, data)
 }
 
 // LoggingRespondError sends an error response back to the client as a safe error
