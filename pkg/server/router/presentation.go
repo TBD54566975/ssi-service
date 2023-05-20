@@ -69,20 +69,23 @@ type CreatePresentationDefinitionResponse struct {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/presentation/definition [put]
-func (pr PresentationRouter) CreateDefinition(c *gin.Context) error {
+func (pr PresentationRouter) CreateDefinition(c *gin.Context) {
 	var request CreatePresentationDefinitionRequest
 	errMsg := "Invalid Presentation Definition Request"
 	if err := framework.Decode(c.Request, &request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	if err := framework.ValidateRequest(request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	def, err := definitionFromRequest(request)
 	if err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 	serviceResp, err := pr.service.CreatePresentationDefinition(c, model.CreatePresentationDefinitionRequest{
 		PresentationDefinition: *def,
@@ -90,14 +93,15 @@ func (pr PresentationRouter) CreateDefinition(c *gin.Context) error {
 		AuthorKID:              request.AuthorKID,
 	})
 	if err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := CreatePresentationDefinitionResponse{
 		PresentationDefinition:    serviceResp.PresentationDefinition,
 		PresentationDefinitionJWT: serviceResp.PresentationDefinitionJWT,
 	}
-	return framework.Respond(c, resp, http.StatusCreated)
+	framework.Respond(c, resp, http.StatusCreated)
 }
 
 func definitionFromRequest(request CreatePresentationDefinitionRequest) (*exchange.PresentationDefinition, error) {
@@ -150,24 +154,26 @@ type GetPresentationDefinitionResponse struct {
 //	@Success		200	{object}	GetPresentationDefinitionResponse
 //	@Failure		400	{string}	string	"Bad request"
 //	@Router			/v1/presentation/definition/{id} [get]
-func (pr PresentationRouter) GetDefinition(c *gin.Context) error {
+func (pr PresentationRouter) GetDefinition(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "cannot get presentation without ID parameter"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	def, err := pr.service.GetPresentationDefinition(c, model.GetPresentationDefinitionRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get presentation with id: %s", *id)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	resp := GetPresentationDefinitionResponse{
 		PresentationDefinition:    def.PresentationDefinition,
 		PresentationDefinitionJWT: def.PresentationDefinitionJWT,
 	}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 type ListDefinitionsRequest struct{}
@@ -188,15 +194,16 @@ type ListDefinitionsResponse struct {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/presentations/definitions [get]
-func (pr PresentationRouter) ListDefinitions(c *gin.Context) error {
+func (pr PresentationRouter) ListDefinitions(c *gin.Context) {
 	svcResponse, err := pr.service.ListDefinitions(c)
 	if err != nil {
 		errMsg := "could not get definitions"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := ListDefinitionsResponse{Definitions: svcResponse.Definitions}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 // DeleteDefinition godoc
@@ -211,19 +218,21 @@ func (pr PresentationRouter) ListDefinitions(c *gin.Context) error {
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/presentation/definition/{id} [delete]
-func (pr PresentationRouter) DeleteDefinition(c *gin.Context) error {
+func (pr PresentationRouter) DeleteDefinition(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "cannot delete a presentation without an ID parameter"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	if err := pr.service.DeletePresentationDefinition(c, model.DeletePresentationDefinitionRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete presentation with id: %s", *id)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
-	return framework.Respond(c, nil, http.StatusNoContent)
+	framework.Respond(c, nil, http.StatusNoContent)
 }
 
 type CreateSubmissionRequest struct {
@@ -276,26 +285,29 @@ func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequ
 //	@Failure		400		{string}	string					"Bad request"
 //	@Failure		500		{string}	string					"Internal server error"
 //	@Router			/v1/presentations/submissions [put]
-func (pr PresentationRouter) CreateSubmission(c *gin.Context) error {
+func (pr PresentationRouter) CreateSubmission(c *gin.Context) {
 	var request CreateSubmissionRequest
 	invalidCreateSubmissionRequestErr := "invalid create submission request"
 	if err := framework.Decode(c.Request, &request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, invalidCreateSubmissionRequestErr, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, invalidCreateSubmissionRequestErr, http.StatusBadRequest)
+		return
 	}
 
 	req, err := request.toServiceRequest()
 	if err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, invalidCreateSubmissionRequestErr, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, invalidCreateSubmissionRequestErr, http.StatusBadRequest)
+		return
 	}
 
 	operation, err := pr.service.CreateSubmission(c, *req)
 	if err != nil {
 		errMsg := "cannot create submission"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := Operation{ID: operation.ID}
-	return framework.Respond(c, resp, http.StatusCreated)
+	framework.Respond(c, resp, http.StatusCreated)
 }
 
 type GetSubmissionResponse struct {
@@ -313,20 +325,22 @@ type GetSubmissionResponse struct {
 //	@Success		200	{object}	GetSubmissionResponse
 //	@Failure		400	{string}	string	"Bad request"
 //	@Router			/v1/presentations/submissions/{id} [get]
-func (pr PresentationRouter) GetSubmission(c *gin.Context) error {
+func (pr PresentationRouter) GetSubmission(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "get submission request requires id"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	submission, err := pr.service.GetSubmission(c, model.GetSubmissionRequest{ID: *id})
 	if err != nil {
 		errMsg := "failed getting submission"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 	resp := GetSubmissionResponse{Submission: &submission.Submission}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 type ListSubmissionRequest struct {
@@ -355,11 +369,12 @@ type ListSubmissionResponse struct {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/presentations/submissions [get]
-func (pr PresentationRouter) ListSubmissions(c *gin.Context) error {
+func (pr PresentationRouter) ListSubmissions(c *gin.Context) {
 	var request ListSubmissionRequest
 	if err := framework.Decode(c.Request, &request); err != nil {
 		errMsg := "invalid list submissions request"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	const StatusIdentifier = "status"
@@ -371,7 +386,8 @@ func (pr PresentationRouter) ListSubmissions(c *gin.Context) error {
 	)
 	if err != nil {
 		errMsg := "creating filter declarations"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	// Because parsing filters can be expensive, we limit is to a fixed len of chars. That should be more than enough
@@ -379,19 +395,23 @@ func (pr PresentationRouter) ListSubmissions(c *gin.Context) error {
 	invalidFilterErr := "invalid filter"
 	if len(request.GetFilter()) > FilterCharacterLimit {
 		err = errors.Errorf("filter longer than %d character size limit", FilterCharacterLimit)
-		return framework.LoggingRespondErrWithMsg(c, err, invalidFilterErr, http.StatusBadRequest)
-
+		framework.LoggingRespondErrWithMsg(c, err, invalidFilterErr, http.StatusBadRequest)
+		return
 	}
+
 	filter, err := filtering.ParseFilter(request, declarations)
 	if err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, invalidFilterErr, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, invalidFilterErr, http.StatusBadRequest)
+		return
 	}
+
 	resp, err := pr.service.ListSubmissions(c, model.ListSubmissionRequest{Filter: filter})
 	if err != nil {
 		errMsg := "failed listing submissions"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
-	return framework.Respond(c, ListSubmissionResponse{Submissions: resp.Submissions}, http.StatusOK)
+	framework.Respond(c, ListSubmissionResponse{Submissions: resp.Submissions}, http.StatusOK)
 }
 
 type ReviewSubmissionRequest struct {
@@ -408,7 +428,7 @@ func (r ReviewSubmissionRequest) toServiceRequest(id string) model.ReviewSubmiss
 }
 
 type ReviewSubmissionResponse struct {
-	*model.Submission
+	*model.Submission `json:"submission,omitempty"`
 }
 
 // ReviewSubmission godoc
@@ -423,24 +443,27 @@ type ReviewSubmissionResponse struct {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/presentations/submissions/{id}/review [put]
-func (pr PresentationRouter) ReviewSubmission(c *gin.Context) error {
+func (pr PresentationRouter) ReviewSubmission(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "review submission request requires id"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	var request ReviewSubmissionRequest
 	if err := framework.Decode(c.Request, &request); err != nil {
 		errMsg := "invalid review submissions request"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	req := request.toServiceRequest(*id)
 	submission, err := pr.service.ReviewSubmission(c, req)
 	if err != nil {
 		errMsg := "failed reviewing submission"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
-	return framework.Respond(c, ReviewSubmissionResponse{Submission: submission}, http.StatusOK)
+	framework.Respond(c, ReviewSubmissionResponse{Submission: submission}, http.StatusOK)
 }

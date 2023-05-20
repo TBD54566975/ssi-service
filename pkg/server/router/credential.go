@@ -104,26 +104,29 @@ type CreateCredentialResponse struct {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/credentials [put]
-func (cr CredentialRouter) CreateCredential(c *gin.Context) error {
+func (cr CredentialRouter) CreateCredential(c *gin.Context) {
 	invalidCreateCredentialRequest := "invalid create credential request"
 	var request CreateCredentialRequest
 	if err := framework.Decode(c.Request, &request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, invalidCreateCredentialRequest, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, invalidCreateCredentialRequest, http.StatusBadRequest)
+		return
 	}
 
 	if err := framework.ValidateRequest(request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, invalidCreateCredentialRequest, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, invalidCreateCredentialRequest, http.StatusBadRequest)
+		return
 	}
 
 	req := request.ToServiceRequest()
 	createCredentialResponse, err := cr.service.CreateCredential(c, req)
 	if err != nil {
 		errMsg := "could not create credential"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := CreateCredentialResponse{Credential: createCredentialResponse.Credential, CredentialJWT: createCredentialResponse.CredentialJWT}
-	return framework.Respond(c, resp, http.StatusCreated)
+	framework.Respond(c, resp, http.StatusCreated)
 }
 
 type GetCredentialResponse struct {
@@ -144,17 +147,18 @@ type GetCredentialResponse struct {
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/credentials/{id} [get]
-func (cr CredentialRouter) GetCredential(c *gin.Context) error {
+func (cr CredentialRouter) GetCredential(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "cannot get credential without ID parameter"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 	}
 
 	gotCredential, err := cr.service.GetCredential(c, credential.GetCredentialRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential with id: %s", *id)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := GetCredentialResponse{
@@ -162,7 +166,7 @@ func (cr CredentialRouter) GetCredential(c *gin.Context) error {
 		Credential:    gotCredential.Credential,
 		CredentialJWT: gotCredential.CredentialJWT,
 	}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 type GetCredentialStatusResponse struct {
@@ -184,17 +188,19 @@ type GetCredentialStatusResponse struct {
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/credentials/{id}/status [get]
-func (cr CredentialRouter) GetCredentialStatus(c *gin.Context) error {
+func (cr CredentialRouter) GetCredentialStatus(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "cannot get credential without ID parameter"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	getCredentialStatusResponse, err := cr.service.GetCredentialStatus(c, credential.GetCredentialStatusRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential with id: %s", *id)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := GetCredentialStatusResponse{
@@ -202,7 +208,7 @@ func (cr CredentialRouter) GetCredentialStatus(c *gin.Context) error {
 		Suspended: getCredentialStatusResponse.Suspended,
 	}
 
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 type GetCredentialStatusListResponse struct {
@@ -226,17 +232,19 @@ type GetCredentialStatusListResponse struct {
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/credentials/status/{id} [get]
-func (cr CredentialRouter) GetCredentialStatusList(c *gin.Context) error {
+func (cr CredentialRouter) GetCredentialStatusList(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "cannot get credential without ID parameter"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	gotCredential, err := cr.service.GetCredentialStatusList(c, credential.GetCredentialStatusListRequest{ID: *id})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credential status list with id: %s", *id)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := GetCredentialStatusListResponse{
@@ -245,7 +253,7 @@ func (cr CredentialRouter) GetCredentialStatusList(c *gin.Context) error {
 		CredentialJWT: gotCredential.CredentialJWT,
 	}
 
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 type UpdateCredentialStatusRequest struct {
@@ -255,7 +263,7 @@ type UpdateCredentialStatusRequest struct {
 	Suspended bool `json:"suspended,omitempty"`
 }
 
-func (c UpdateCredentialStatusRequest) ToServiceRequest(id string) credential.UpdateCredentialStatusRequest {
+func (c UpdateCredentialStatusRequest) toServiceRequest(id string) credential.UpdateCredentialStatusRequest {
 	return credential.UpdateCredentialStatusRequest{
 		ID:        id,
 		Revoked:   c.Revoked,
@@ -281,31 +289,35 @@ type UpdateCredentialStatusResponse struct {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/credentials/{id}/status [put]
-func (cr CredentialRouter) UpdateCredentialStatus(c *gin.Context) error {
+func (cr CredentialRouter) UpdateCredentialStatus(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "cannot get credential without ID parameter"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	var request UpdateCredentialStatusRequest
 	invalidCreateCredentialRequest := "invalid update credential request"
 	if err := framework.Decode(c.Request, &request); err != nil {
 		errMsg := invalidCreateCredentialRequest
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	if err := framework.ValidateRequest(request); err != nil {
 		errMsg := invalidCreateCredentialRequest
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 
-	req := request.ToServiceRequest(*id)
+	req := request.toServiceRequest(*id)
 	gotCredential, err := cr.service.UpdateCredentialStatus(c, req)
 
 	if err != nil {
 		errMsg := fmt.Sprintf("could not update credential with id: %s", req.ID)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := UpdateCredentialStatusResponse{
@@ -313,7 +325,7 @@ func (cr CredentialRouter) UpdateCredentialStatus(c *gin.Context) error {
 		Suspended: gotCredential.Suspended,
 	}
 
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 type VerifyCredentialRequest struct {
@@ -353,16 +365,18 @@ type VerifyCredentialResponse struct {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/credentials/verification [put]
-func (cr CredentialRouter) VerifyCredential(c *gin.Context) error {
+func (cr CredentialRouter) VerifyCredential(c *gin.Context) {
 	var request VerifyCredentialRequest
 	if err := framework.Decode(c.Request, &request); err != nil {
 		errMsg := "invalid verify credential request"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	if !request.IsValid() {
 		errMsg := "request must contain either a Data Integrity Credential or a JWT Credential"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	verificationResult, err := cr.service.VerifyCredential(c, credential.VerifyCredentialRequest{
@@ -371,11 +385,12 @@ func (cr CredentialRouter) VerifyCredential(c *gin.Context) error {
 	})
 	if err != nil {
 		errMsg := "could not verify credential"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := VerifyCredentialResponse{Verified: verificationResult.Verified, Reason: verificationResult.Reason}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 type GetCredentialsResponse struct {
@@ -397,7 +412,7 @@ type GetCredentialsResponse struct {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/credentials [get]
-func (cr CredentialRouter) GetCredentials(c *gin.Context) error {
+func (cr CredentialRouter) GetCredentials(c *gin.Context) {
 	issuer := framework.GetQueryValue(c, IssuerParam)
 	schema := framework.GetQueryValue(c, SchemaParam)
 	subject := framework.GetQueryValue(c, SubjectParam)
@@ -406,52 +421,60 @@ func (cr CredentialRouter) GetCredentials(c *gin.Context) error {
 
 	// check if there are multiple parameters set, which is not allowed
 	if (issuer != nil && subject != nil) || (issuer != nil && schema != nil) || (subject != nil && schema != nil) {
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	if issuer != nil {
-		return cr.getCredentialsByIssuer(c, *issuer)
+		cr.getCredentialsByIssuer(c, *issuer)
+		return
 	}
 	if subject != nil {
-		return cr.getCredentialsBySubject(c, *subject)
+		cr.getCredentialsBySubject(c, *subject)
+		return
 	}
 	if schema != nil {
-		return cr.getCredentialsBySchema(c, *schema)
+		cr.getCredentialsBySchema(c, *schema)
+		return
 	}
-	return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+	framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 }
 
-func (cr CredentialRouter) getCredentialsByIssuer(c *gin.Context, issuer string) error {
+func (cr CredentialRouter) getCredentialsByIssuer(c *gin.Context, issuer string) {
 	gotCredentials, err := cr.service.GetCredentialsByIssuer(c, credential.GetCredentialByIssuerRequest{Issuer: issuer})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for issuer: %s", util.SanitizeLog(issuer))
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
+	return
 }
 
-func (cr CredentialRouter) getCredentialsBySubject(c *gin.Context, subject string) error {
+func (cr CredentialRouter) getCredentialsBySubject(c *gin.Context, subject string) {
 	gotCredentials, err := cr.service.GetCredentialsBySubject(c, credential.GetCredentialBySubjectRequest{Subject: subject})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for subject: %s", util.SanitizeLog(subject))
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
-func (cr CredentialRouter) getCredentialsBySchema(c *gin.Context, schema string) error {
+func (cr CredentialRouter) getCredentialsBySchema(c *gin.Context, schema string) {
 	gotCredentials, err := cr.service.GetCredentialsBySchema(c, credential.GetCredentialBySchemaRequest{Schema: schema})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for schema: %s", util.SanitizeLog(schema))
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := GetCredentialsResponse{Credentials: gotCredentials.Credentials}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 // DeleteCredential godoc
@@ -466,17 +489,19 @@ func (cr CredentialRouter) getCredentialsBySchema(c *gin.Context, schema string)
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/credentials/{id} [delete]
-func (cr CredentialRouter) DeleteCredential(c *gin.Context) error {
+func (cr CredentialRouter) DeleteCredential(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "cannot delete credential without ID parameter"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	if err := cr.service.DeleteCredential(c, credential.DeleteCredentialRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete credential with id: %s", *id)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
-	return framework.Respond(c, nil, http.StatusNoContent)
+	framework.Respond(c, nil, http.StatusNoContent)
 }

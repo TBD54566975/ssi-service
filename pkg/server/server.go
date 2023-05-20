@@ -74,6 +74,12 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	if err = SchemaAPI(v1, ssi.Schema, ssi.Webhook); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Schema API")
 	}
+	if err = CredentialAPI(v1, ssi.Credential, ssi.Webhook); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Credential API")
+	}
+	if err = PresentationAPI(v1, ssi.Presentation, ssi.Webhook); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Presentation API")
+	}
 
 	return &SSIServer{
 		Server:       httpServer,
@@ -142,61 +148,57 @@ func SchemaAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService
 	return
 }
 
-func (s *SSIServer) CredentialAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
+func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service) (err error) {
 	credRouter, err := router.NewCredentialRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating credential router")
 	}
 
-	credentialHandlerPath := V1Prefix + CredentialsPrefix
-	statusHandlerPath := V1Prefix + CredentialsPrefix + StatusPrefix
-
 	// Credentials
-	s.Handle(http.MethodPut, credentialHandlerPath, credRouter.CreateCredential, middleware.Webhook(webhookService, webhook.Credential, webhook.Create))
-	s.Handle(http.MethodGet, credentialHandlerPath, credRouter.GetCredentials)
-	s.Handle(http.MethodGet, path.Join(credentialHandlerPath, "/:id"), credRouter.GetCredential)
-	s.Handle(http.MethodPut, path.Join(credentialHandlerPath, VerificationPath), credRouter.VerifyCredential)
-	s.Handle(http.MethodDelete, path.Join(credentialHandlerPath, "/:id"), credRouter.DeleteCredential, middleware.Webhook(webhookService, webhook.Credential, webhook.Delete))
+	credentialAPI := rg.Group(CredentialsPrefix)
+	credentialAPI.PUT("", credRouter.CreateCredential, middleware.Webhook(webhookService, webhook.Credential, webhook.Create))
+	credentialAPI.GET("", credRouter.GetCredentials)
+	credentialAPI.GET("/:id", credRouter.GetCredential)
+	credentialAPI.PUT(VerificationPath, credRouter.VerifyCredential)
+	credentialAPI.DELETE("/:id", credRouter.DeleteCredential, middleware.Webhook(webhookService, webhook.Credential, webhook.Delete))
 
 	// Credential Status
-	s.Handle(http.MethodGet, path.Join(credentialHandlerPath, "/:id", StatusPrefix), credRouter.GetCredentialStatus)
-	s.Handle(http.MethodPut, path.Join(credentialHandlerPath, "/:id", StatusPrefix), credRouter.UpdateCredentialStatus)
-	s.Handle(http.MethodGet, path.Join(statusHandlerPath, "/:id"), credRouter.GetCredentialStatusList)
+	credentialStatusAPI := credentialAPI.Group(StatusPrefix)
+	credentialStatusAPI.GET("/:id", credRouter.GetCredentialStatus)
+	credentialStatusAPI.PUT("/:id", credRouter.UpdateCredentialStatus)
+	credentialStatusAPI.GET("", credRouter.GetCredentialStatusList)
 	return
 }
 
-func (s *SSIServer) PresentationAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
-	pRouter, err := router.NewPresentationRouter(service)
+func PresentationAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service) (err error) {
+	presRouter, err := router.NewPresentationRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating credential router")
 	}
 
-	handlerPath := V1Prefix + PresentationsPrefix + DefinitionsPrefix
+	presDefAPI := rg.Group(PresentationsPrefix + DefinitionsPrefix)
+	presDefAPI.PUT("", presRouter.CreateDefinition)
+	presDefAPI.GET("/:id", presRouter.GetDefinition)
+	presDefAPI.GET("", presRouter.ListDefinitions)
+	presDefAPI.DELETE("/:id", presRouter.DeleteDefinition)
 
-	s.Handle(http.MethodPut, handlerPath, pRouter.CreateDefinition)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), pRouter.GetDefinition)
-	s.Handle(http.MethodGet, handlerPath, pRouter.ListDefinitions)
-	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), pRouter.DeleteDefinition)
-
-	submissionHandlerPath := V1Prefix + PresentationsPrefix + SubmissionsPrefix
-
-	s.Handle(http.MethodPut, submissionHandlerPath, pRouter.CreateSubmission, middleware.Webhook(webhookService, webhook.Submission, webhook.Create))
-	s.Handle(http.MethodGet, path.Join(submissionHandlerPath, "/:id"), pRouter.GetSubmission)
-	s.Handle(http.MethodGet, submissionHandlerPath, pRouter.ListSubmissions)
-	s.Handle(http.MethodPut, path.Join(submissionHandlerPath, "/:id", "/review"), pRouter.ReviewSubmission)
+	presSubAPI := rg.Group(PresentationsPrefix + SubmissionsPrefix)
+	presSubAPI.PUT("", presRouter.CreateSubmission, middleware.Webhook(webhookService, webhook.Submission, webhook.Create))
+	presSubAPI.GET("/:id", presRouter.GetSubmission)
+	presSubAPI.GET("", presRouter.ListSubmissions)
+	presSubAPI.PUT("/:id/review", presRouter.ReviewSubmission)
 	return
 }
 
-func (s *SSIServer) KeyStoreAPI(service svcframework.Service) (err error) {
+func (s *SSIServer) KeyStoreAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 	keyStoreRouter, err := router.NewKeyStoreRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating key store router")
 	}
 
-	handlerPath := V1Prefix + KeyStorePrefix
-
-	s.Handle(http.MethodPut, handlerPath, keyStoreRouter.StoreKey)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), keyStoreRouter.GetKeyDetails)
+	keyStoreAPI := rg.Group(KeyStorePrefix)
+	keyStoreAPI.PUT("", keyStoreRouter.StoreKey)
+	keyStoreAPI.GET("/:id", keyStoreRouter.GetKeyDetails)
 	return
 }
 
