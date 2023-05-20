@@ -91,7 +91,8 @@ func NewServer(shutdown chan os.Signal, config *AuthConfig, store *storage.Memor
 	)
 
 	middlewares := gin.HandlersChain{
-		middleware.Logger(logrus.StandardLogger()),
+		gin.Logger(),
+		gin.Recovery(),
 		middleware.Errors(shutdown),
 	}
 

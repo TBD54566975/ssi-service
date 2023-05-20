@@ -7,7 +7,6 @@ import (
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -103,10 +102,11 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 
 // setUpEngine creates the gin engine and sets up the middleware based on config
 func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
+	gin.ForceConsoleColor()
 	middlewares := gin.HandlersChain{
 		gin.Recovery(),
+		gin.Logger(),
 		middleware.Errors(shutdown),
-		middleware.Logger(logrus.StandardLogger()),
 		middleware.Metrics(),
 	}
 	if cfg.EnableAllowAllCORS {
