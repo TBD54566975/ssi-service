@@ -103,7 +103,6 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 
 // setUpEngine creates the gin engine and sets up the middleware based on config
 func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
-	gin.ForceConsoleColor()
 	middlewares := gin.HandlersChain{
 		gin.Recovery(),
 		middleware.Errors(shutdown),
@@ -229,7 +228,7 @@ func OperationAPI(rg *gin.RouterGroup, service svcframework.Service) (err error)
 	// In this case, it's used so that the operation id matches `presentations/submissions/{submission_id}` for the DIDWebID
 	// path	`/v1/operations/cancel/presentations/submissions/{id}`
 	operationAPI.PUT("/cancel/*id", operationRouter.CancelOperation)
-	operationAPI.GET("/:id", operationRouter.GetOperation)
+	operationAPI.GET("/*id", operationRouter.GetOperation)
 	return
 }
 

@@ -18,7 +18,7 @@ shutdown_timeout = 5000000000
 
 log_location = ""
 # options: trace, debug, info, warn, error, fatal, panic
-log_level = "debug"
+log_level = "info"
 
 enable_schema_caching = true
 enable_allow_all_cors = true
