@@ -189,14 +189,6 @@ func configureLogger(level, location string) *os.File {
 		PrettyPrint:      true,
 	})
 	logrus.SetReportCaller(true)
-	logLevel, err := logrus.ParseLevel(level)
-	if err != nil {
-		logrus.WithError(err).Errorf("could not parse logs level<%s>, setting to info", level)
-		logrus.SetLevel(logrus.InfoLevel)
-	} else {
-		logrus.SetLevel(logLevel)
-	}
-
 	logrus.SetOutput(os.Stdout)
 
 	// set logs config from config file

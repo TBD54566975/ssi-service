@@ -24,7 +24,7 @@ import (
 
 const (
 	// Note: for local testing change this to port 3000
-	endpoint       = "http://localhost:8080/"
+	endpoint       = "http://localhost:3000/"
 	version        = "v1/"
 	MaxElapsedTime = 120 * time.Second
 )
@@ -39,6 +39,7 @@ func init() {
 	// Treats "\n" as new lines, see https://github.com/sirupsen/logrus/issues/608
 	logrus.SetFormatter(&logrus.TextFormatter{
 		DisableQuote: true,
+		ForceColors:  true,
 	})
 }
 

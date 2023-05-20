@@ -24,7 +24,6 @@ func Respond(c *gin.Context, data any, statusCode int) {
 		}
 		// if the error is a `SafeError`, we can retrieve the status code and any field errors from it and use them
 		// to build the response.
-		logrus.WithError(err).Error("encountered processing error")
 		errResp := ErrorResponse{
 			Error:  safeErr.Err.Error(),
 			Fields: safeErr.FieldErrors(),
