@@ -57,9 +57,8 @@ func TestHealthCheckAPI(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	c := newRequestContext(w, req)
-	err = router.Health(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+	router.Health(c)
+	assert.True(t, is2xxResponse(w.Code))
 
 	var resp router.GetHealthCheckResponse
 	err = json.NewDecoder(w.Body).Decode(&resp)
@@ -94,9 +93,8 @@ func TestReadinessAPI(t *testing.T) {
 
 	handler := router.Readiness(nil)
 	c := newRequestContext(w, req)
-	err = handler(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+	handler(c)
+	assert.True(t, is2xxResponse(w.Code))
 
 	var resp router.GetReadinessResponse
 	err = json.NewDecoder(w.Body).Decode(&resp)

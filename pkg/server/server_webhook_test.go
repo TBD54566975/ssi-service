@@ -30,8 +30,7 @@ func TestWebhookAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := webhookRouter.CreateWebhook(c)
-		assert.Error(tt, err)
+		webhookRouter.CreateWebhook(c)
 		assert.Contains(tt, w.Body.String(), "invalid create webhook request")
 	})
 
@@ -52,8 +51,7 @@ func TestWebhookAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := webhookRouter.CreateWebhook(c)
-		assert.Error(tt, err)
+		webhookRouter.CreateWebhook(c)
 		assert.Contains(tt, w.Body.String(), "invalid create webhook request")
 	})
 
@@ -74,14 +72,13 @@ func TestWebhookAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := webhookRouter.CreateWebhook(c)
-		assert.Error(tt, err)
+		webhookRouter.CreateWebhook(c)
 		assert.Contains(tt, w.Body.String(), "invalid create webhook request")
 	})
 
 	t.Run("CreateWebhook returns error when url is is missing scheme", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookRouter := testWebhookRouter(tt, db)
 
@@ -96,14 +93,13 @@ func TestWebhookAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := webhookRouter.CreateWebhook(c)
-		assert.Error(tt, err)
+		webhookRouter.CreateWebhook(c)
 		assert.Contains(tt, w.Body.String(), "invalid create webhook request")
 	})
 
 	t.Run("CreateWebhook returns valid response", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookRouter := testWebhookRouter(tt, db)
 
@@ -118,13 +114,13 @@ func TestWebhookAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := webhookRouter.CreateWebhook(c)
-		assert.NoError(tt, err)
+		webhookRouter.CreateWebhook(c)
+		assert.True(tt, is2xxResponse(w.Code))
 	})
 
 	t.Run("Test Happy Path Delete Webhook", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookRouter := testWebhookRouter(tt, db)
 
@@ -139,24 +135,24 @@ func TestWebhookAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := webhookRouter.CreateWebhook(c)
-		assert.NoError(tt, err)
+		webhookRouter.CreateWebhook(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/webhooks", nil)
 		w = httptest.NewRecorder()
 
 		c = newRequestContext(w, req)
-		err = webhookRouter.GetWebhooks(c)
-		assert.NoError(tt, err)
+		webhookRouter.GetWebhooks(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var resp router.GetWebhooksResponse
-		err = json.NewDecoder(w.Body).Decode(&resp)
+		err := json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 		assert.Len(tt, resp.Webhooks, 1)
 
 		c = newRequestContext(w, req)
-		err = webhookRouter.GetWebhooks(c)
-		assert.NoError(tt, err)
+		webhookRouter.GetWebhooks(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		deleteWebhookRequest := router.DeleteWebhookRequest{
 			Noun: "Manifest",
@@ -169,15 +165,15 @@ func TestWebhookAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 
 		c = newRequestContext(w, req)
-		err = webhookRouter.DeleteWebhook(c)
-		assert.NoError(tt, err)
+		webhookRouter.DeleteWebhook(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/webhooks", nil)
 		w = httptest.NewRecorder()
 
 		c = newRequestContext(w, req)
-		err = webhookRouter.GetWebhooks(c)
-		assert.NoError(tt, err)
+		webhookRouter.GetWebhooks(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var respAfter router.GetWebhooksResponse
 		err = json.NewDecoder(w.Body).Decode(&respAfter)
@@ -187,18 +183,18 @@ func TestWebhookAPI(t *testing.T) {
 
 	t.Run("GetWebhook Throws Error When Webhook None Exist", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookService := testWebhookService(tt, db)
 
-		webhook, err := webhookService.GetWebhook(context.Background(), webhook.GetWebhookRequest{Noun: "Credential", Verb: "Create"})
-		assert.ErrorContains(tt, err, "webhook does not exist")
-		assert.Nil(tt, webhook)
+		wh, err := webhookService.GetWebhook(context.Background(), webhook.GetWebhookRequest{Noun: "Credential", Verb: "Create"})
+		assert.ErrorContains(tt, err, "wh does not exist")
+		assert.Nil(tt, wh)
 	})
 
 	t.Run("GetWebhook Returns Webhook That Does Exist", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookService := testWebhookService(tt, db)
 
@@ -225,7 +221,7 @@ func TestWebhookAPI(t *testing.T) {
 
 	t.Run("Test Get Webhooks", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookService := testWebhookService(tt, db)
 
@@ -261,7 +257,7 @@ func TestWebhookAPI(t *testing.T) {
 
 	t.Run("Test Delete Webhook", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookService := testWebhookService(tt, db)
 
@@ -286,6 +282,6 @@ func TestWebhookAPI(t *testing.T) {
 
 		gotWebhook, err = webhookService.GetWebhook(context.Background(), webhook.GetWebhookRequest{Noun: "Manifest", Verb: "Create"})
 		assert.ErrorContains(tt, err, "webhook does not exist")
-		assert.Nil(tt, gotWebhook)
+		assert.Empty(tt, gotWebhook)
 	})
 }
