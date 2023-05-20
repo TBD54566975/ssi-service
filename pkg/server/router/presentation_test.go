@@ -23,14 +23,14 @@ func TestPresentationDefinitionRouter(t *testing.T) {
 		pdRouter, err := NewPresentationRouter(nil)
 		assert.Error(tt, err)
 		assert.Empty(tt, pdRouter)
-		assert.Contains(tt, err.Error(), "service cannot be nil")
+		assert.Contains(tt, w.Body.String(), "service cannot be nil")
 	})
 
 	t.Run("Bad Service", func(tt *testing.T) {
 		pdRouter, err := NewPresentationRouter(&testService{})
 		assert.Error(tt, err)
 		assert.Empty(tt, pdRouter)
-		assert.Contains(tt, err.Error(), "could not create presentation router with service type: test")
+		assert.Contains(tt, w.Body.String(), "could not create presentation router with service type: test")
 	})
 }
 

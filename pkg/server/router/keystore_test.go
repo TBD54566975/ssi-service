@@ -19,14 +19,14 @@ func TestKeyStoreRouter(t *testing.T) {
 		keyStoreRouter, err := NewKeyStoreRouter(nil)
 		assert.Error(tt, err)
 		assert.Empty(tt, keyStoreRouter)
-		assert.Contains(tt, err.Error(), "service cannot be nil")
+		assert.Contains(tt, w.Body.String(), "service cannot be nil")
 	})
 
 	t.Run("Bad Service", func(tt *testing.T) {
 		keyStoreRouter, err := NewKeyStoreRouter(&testService{})
 		assert.Error(tt, err)
 		assert.Empty(tt, keyStoreRouter)
-		assert.Contains(tt, err.Error(), "could not create key store router with service type: test")
+		assert.Contains(tt, w.Body.String(), "could not create key store router with service type: test")
 	})
 
 	t.Run("Key Store Service Test", func(tt *testing.T) {
@@ -53,7 +53,7 @@ func TestKeyStoreRouter(t *testing.T) {
 			PrivateKeyBase58: base58.Encode([]byte("bad")),
 		})
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "unsupported key type: bad")
+		assert.Contains(tt, w.Body.String(), "unsupported key type: bad")
 
 		// store a valid key
 		_, privKey, err := crypto.GenerateKeyByKeyType(crypto.Ed25519)
@@ -75,7 +75,7 @@ func TestKeyStoreRouter(t *testing.T) {
 		gotDetails, err := keyStoreService.GetKeyDetails(context.Background(), keystore.GetKeyDetailsRequest{ID: "bad"})
 		assert.Error(tt, err)
 		assert.Empty(tt, gotDetails)
-		assert.Contains(tt, err.Error(), "could not get key details for key: bad")
+		assert.Contains(tt, w.Body.String(), "could not get key details for key: bad")
 
 		// get a key that exists
 		gotDetails, err = keyStoreService.GetKeyDetails(context.Background(), keystore.GetKeyDetailsRequest{ID: keyID})

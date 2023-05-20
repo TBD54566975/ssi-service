@@ -32,7 +32,7 @@ func TestWebhookAPI(t *testing.T) {
 		c := newRequestContext(w, req)
 		err := webhookRouter.CreateWebhook(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create webhook request")
+		assert.Contains(tt, w.Body.String(), "invalid create webhook request")
 	})
 
 	t.Run("CreateWebhook returns error when verb is not supported", func(tt *testing.T) {
@@ -54,7 +54,7 @@ func TestWebhookAPI(t *testing.T) {
 		c := newRequestContext(w, req)
 		err := webhookRouter.CreateWebhook(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create webhook request")
+		assert.Contains(tt, w.Body.String(), "invalid create webhook request")
 	})
 
 	t.Run("CreateWebhook returns error when url is not supported", func(tt *testing.T) {
@@ -76,7 +76,7 @@ func TestWebhookAPI(t *testing.T) {
 		c := newRequestContext(w, req)
 		err := webhookRouter.CreateWebhook(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create webhook request")
+		assert.Contains(tt, w.Body.String(), "invalid create webhook request")
 	})
 
 	t.Run("CreateWebhook returns error when url is is missing scheme", func(tt *testing.T) {
@@ -98,7 +98,7 @@ func TestWebhookAPI(t *testing.T) {
 		c := newRequestContext(w, req)
 		err := webhookRouter.CreateWebhook(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create webhook request")
+		assert.Contains(tt, w.Body.String(), "invalid create webhook request")
 	})
 
 	t.Run("CreateWebhook returns valid response", func(tt *testing.T) {

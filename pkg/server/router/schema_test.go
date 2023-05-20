@@ -20,14 +20,14 @@ func TestSchemaRouter(t *testing.T) {
 		schemaRouter, err := NewSchemaRouter(nil)
 		assert.Error(tt, err)
 		assert.Empty(tt, schemaRouter)
-		assert.Contains(tt, err.Error(), "service cannot be nil")
+		assert.Contains(tt, w.Body.String(), "service cannot be nil")
 	})
 
 	t.Run("Bad Service", func(tt *testing.T) {
 		schemaRouter, err := NewSchemaRouter(&testService{})
 		assert.Error(tt, err)
 		assert.Empty(tt, schemaRouter)
-		assert.Contains(tt, err.Error(), "could not create schema router with service type: test")
+		assert.Contains(tt, w.Body.String(), "could not create schema router with service type: test")
 	})
 
 	t.Run("SchemaID Service Test", func(tt *testing.T) {
@@ -53,7 +53,7 @@ func TestSchemaRouter(t *testing.T) {
 		// get schema that doesn't exist
 		_, err = schemaService.GetSchema(context.Background(), schema.GetSchemaRequest{ID: "bad"})
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "error getting schema")
+		assert.Contains(tt, w.Body.String(), "error getting schema")
 
 		// create a schema
 		simpleSchema := map[string]any{
@@ -154,7 +154,7 @@ func TestSchemaSigning(t *testing.T) {
 		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema, Sign: true})
 		assert.Error(tt, err)
 		assert.Empty(tt, createdSchema)
-		assert.Contains(tt, err.Error(), "could not get key for signing schema for authorKID<>: getting key with id:")
+		assert.Contains(tt, w.Body.String(), "could not get key for signing schema for authorKID<>: getting key with id:")
 
 		// create an author DID
 		authorDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{

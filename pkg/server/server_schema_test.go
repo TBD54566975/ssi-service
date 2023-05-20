@@ -36,7 +36,7 @@ func TestSchemaAPI(t *testing.T) {
 		c := newRequestContext(w, req)
 		err := schemaService.CreateSchema(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create schema request")
+		assert.Contains(tt, w.Body.String(), "invalid create schema request")
 
 		// reset the http recorder
 		w = httptest.NewRecorder()
@@ -74,7 +74,7 @@ func TestSchemaAPI(t *testing.T) {
 		c := newRequestContext(w, req)
 		err := schemaService.CreateSchema(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "cannot sign schema without authorKID")
+		assert.Contains(tt, w.Body.String(), "cannot sign schema without authorKID")
 
 		// create a DID
 		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
@@ -145,7 +145,7 @@ func TestSchemaAPI(t *testing.T) {
 		c := newRequestContext(w, req)
 		err := schemaService.GetSchema(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "cannot get schema without ID parameter")
+		assert.Contains(tt, w.Body.String(), "cannot get schema without ID parameter")
 
 		// reset recorder between calls
 		w = httptest.NewRecorder()
@@ -155,7 +155,7 @@ func TestSchemaAPI(t *testing.T) {
 		c = newRequestContextWithParams(w, req, map[string]string{"id": "bad"})
 		err = schemaService.GetSchema(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not get schema with id: bad")
+		assert.Contains(tt, w.Body.String(), "could not get schema with id: bad")
 
 		// reset recorder between calls
 		w = httptest.NewRecorder()
@@ -235,7 +235,7 @@ func TestSchemaAPI(t *testing.T) {
 		c := newRequestContextWithParams(w, req, map[string]string{"id": "bad"})
 		err := schemaService.DeleteSchema(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not delete schema with id: bad")
+		assert.Contains(tt, w.Body.String(), "could not delete schema with id: bad")
 
 		// create a schema
 		simpleSchema := getTestSchema()
@@ -274,7 +274,7 @@ func TestSchemaAPI(t *testing.T) {
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.ID})
 		err = schemaService.GetSchema(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "schema not found")
+		assert.Contains(tt, w.Body.String(), "schema not found")
 	})
 }
 

@@ -50,7 +50,7 @@ func TestManifestAPI(t *testing.T) {
 		c := newRequestContext(w, req)
 		err := manifestRouter.CreateManifest(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create manifest request")
+		assert.Contains(tt, w.Body.String(), "invalid create manifest request")
 
 		// reset the http recorder
 		w = httptest.NewRecorder()
@@ -120,7 +120,7 @@ func TestManifestAPI(t *testing.T) {
 		c := newRequestContext(w, req)
 		err := manifestRouter.GetManifest(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "cannot get manifest without ID parameter")
+		assert.Contains(tt, w.Body.String(), "cannot get manifest without ID parameter")
 
 		// reset recorder between calls
 		w = httptest.NewRecorder()
@@ -130,7 +130,7 @@ func TestManifestAPI(t *testing.T) {
 		c = newRequestContextWithParams(w, req, map[string]string{"id": "bad"})
 		err = manifestRouter.GetManifest(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not get manifest with id: bad")
+		assert.Contains(tt, w.Body.String(), "could not get manifest with id: bad")
 
 		// reset recorder between calls
 		w = httptest.NewRecorder()
@@ -330,7 +330,7 @@ func TestManifestAPI(t *testing.T) {
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.Manifest.ID})
 		err = manifestRouter.GetManifest(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), fmt.Sprintf("could not get manifest with id: %s", resp.Manifest.ID))
+		assert.Contains(tt, w.Body.String(), fmt.Sprintf("could not get manifest with id: %s", resp.Manifest.ID))
 	})
 
 	t.Run("Submit Application With Issuance Template", func(tt *testing.T) {
@@ -505,7 +505,7 @@ func TestManifestAPI(t *testing.T) {
 		c := newRequestContext(w, req)
 		err := manifestRouter.SubmitApplication(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid submit application request")
+		assert.Contains(tt, w.Body.String(), "invalid submit application request")
 
 		// create an issuer
 		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
@@ -659,7 +659,7 @@ func TestManifestAPI(t *testing.T) {
 		c := newRequestContext(w, req)
 		err := manifestRouter.SubmitApplication(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid submit application request")
+		assert.Contains(tt, w.Body.String(), "invalid submit application request")
 
 		// create an issuer
 		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
@@ -812,7 +812,7 @@ func TestManifestAPI(t *testing.T) {
 		c := newRequestContext(w, req)
 		err := manifestRouter.GetApplication(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "cannot get application without ID parameter")
+		assert.Contains(tt, w.Body.String(), "cannot get application without ID parameter")
 
 		// reset recorder between calls
 		w = httptest.NewRecorder()
@@ -1097,7 +1097,7 @@ func TestManifestAPI(t *testing.T) {
 		c = newRequestContextWithParams(w, req, map[string]string{"id": getApplicationsResp.Applications[0].ID})
 		err = manifestRouter.GetApplication(c)
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), fmt.Sprintf("could not get application with id: %s", appResp.Response.ID))
+		assert.Contains(tt, w.Body.String(), fmt.Sprintf("could not get application with id: %s", appResp.Response.ID))
 	})
 }
 

@@ -18,14 +18,14 @@ func TestDIDRouter(t *testing.T) {
 		didRouter, err := NewDIDRouter(nil)
 		assert.Error(tt, err)
 		assert.Empty(tt, didRouter)
-		assert.Contains(tt, err.Error(), "service cannot be nil")
+		assert.Contains(tt, w.Body.String(), "service cannot be nil")
 	})
 
 	t.Run("Bad Service", func(tt *testing.T) {
 		didRouter, err := NewDIDRouter(&testService{})
 		assert.Error(tt, err)
 		assert.Empty(tt, didRouter)
-		assert.Contains(tt, err.Error(), "could not create DID router with service type: test")
+		assert.Contains(tt, w.Body.String(), "could not create DID router with service type: test")
 	})
 
 	t.Run("DID Service Test", func(tt *testing.T) {
@@ -47,7 +47,7 @@ func TestDIDRouter(t *testing.T) {
 		// get unknown handler
 		_, err = didService.GetDIDByMethod(context.Background(), did.GetDIDRequest{Method: "bad"})
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not get handler for method<bad>")
+		assert.Contains(tt, w.Body.String(), "could not get handler for method<bad>")
 
 		supported := didService.GetSupportedMethods()
 		assert.NotEmpty(tt, supported)
@@ -57,7 +57,7 @@ func TestDIDRouter(t *testing.T) {
 		// bad key type
 		_, err = didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: "bad"})
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not create did:key")
+		assert.Contains(tt, w.Body.String(), "could not create did:key")
 
 		// good key type
 		createDIDResponse, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
@@ -135,7 +135,7 @@ func TestDIDRouter(t *testing.T) {
 		// get unknown handler
 		_, err = didService.GetDIDByMethod(context.Background(), did.GetDIDRequest{Method: "bad"})
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not get handler for method<bad>")
+		assert.Contains(tt, w.Body.String(), "could not get handler for method<bad>")
 
 		supported := didService.GetSupportedMethods()
 		assert.NotEmpty(tt, supported)
@@ -147,7 +147,7 @@ func TestDIDRouter(t *testing.T) {
 		createOpts := did.CreateWebDIDOptions{DIDWebID: "did:web:example.com"}
 		_, err = didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.WebMethod, KeyType: "bad", Options: createOpts})
 		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not generate key for did:web")
+		assert.Contains(tt, w.Body.String(), "could not generate key for did:web")
 
 		// good key type
 		createDIDResponse, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.WebMethod, KeyType: crypto.Ed25519, Options: createOpts})

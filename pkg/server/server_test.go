@@ -336,3 +336,7 @@ func testWebhookRouter(t *testing.T, bolt storage.ServiceStorage) *router.Webhoo
 
 	return webhookRouter
 }
+
+func is2xxResponse(statusCode int) bool {
+	return statusCode/100 == 2
+}
