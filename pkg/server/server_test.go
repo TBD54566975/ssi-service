@@ -11,7 +11,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/gin-gonic/gin"
 
-	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
@@ -221,12 +221,12 @@ func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Serv
 	return keystoreService
 }
 
-func testIssuanceService(t *testing.T, db storage.ServiceStorage) *issuing.Service {
-	cfg := config.IssuingServiceConfig{
+func testIssuanceService(t *testing.T, db storage.ServiceStorage) *issuance.Service {
+	cfg := config.IssuanceServiceConfig{
 		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-issuance"},
 	}
 
-	s, err := issuing.NewIssuingService(cfg, db)
+	s, err := issuance.NewIssuanceService(cfg, db)
 	require.NoError(t, err)
 	require.NotEmpty(t, s)
 	return s

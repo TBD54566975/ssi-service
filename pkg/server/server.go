@@ -3,9 +3,7 @@
 package server
 
 import (
-	"net/http"
 	"os"
-	"path"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
@@ -89,6 +87,12 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	if err = ManifestAPI(v1, ssi.Manifest, ssi.Webhook); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Manifest API")
 	}
+	if err = IssuanceAPI(v1, ssi.Issuance); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Issuance API")
+	}
+	if err = WebhookAPI(v1, ssi.Webhook); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Webhook API")
+	}
 
 	return &SSIServer{
 		Server:       httpServer,
@@ -124,7 +128,7 @@ func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
 	return engine
 }
 
-// DecentralizedIdentityAPI registers all HTTP router for the DID Service
+// DecentralizedIdentityAPI registers all HTTP handlers for the DID Service
 func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, webhookService *webhook.Service) (err error) {
 	didRouter, err := router.NewDIDRouter(service)
 	if err != nil {
@@ -141,7 +145,7 @@ func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, webh
 	return
 }
 
-// SchemaAPI registers all HTTP router for the SchemaID Service
+// SchemaAPI registers all HTTP handlers for the Schema Service
 func SchemaAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service) (err error) {
 	schemaRouter, err := router.NewSchemaRouter(service)
 	if err != nil {
@@ -157,6 +161,7 @@ func SchemaAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService
 	return
 }
 
+// CredentialAPI registers all HTTP handlers for the Credentials Service
 func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service) (err error) {
 	credRouter, err := router.NewCredentialRouter(service)
 	if err != nil {
@@ -179,6 +184,7 @@ func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookSer
 	return
 }
 
+// PresentationAPI registers all HTTP handlers for the Presentation Service
 func PresentationAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service) (err error) {
 	presRouter, err := router.NewPresentationRouter(service)
 	if err != nil {
@@ -199,6 +205,7 @@ func PresentationAPI(rg *gin.RouterGroup, service svcframework.Service, webhookS
 	return
 }
 
+// KeyStoreAPI registers all HTTP handlers for the Key Store Service
 func KeyStoreAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 	keyStoreRouter, err := router.NewKeyStoreRouter(service)
 	if err != nil {
@@ -211,6 +218,7 @@ func KeyStoreAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) 
 	return
 }
 
+// OperationAPI registers all HTTP handlers for the Operations Service
 func OperationAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 	operationRouter, err := router.NewOperationRouter(service)
 	if err != nil {
@@ -226,6 +234,7 @@ func OperationAPI(rg *gin.RouterGroup, service svcframework.Service) (err error)
 	return
 }
 
+// ManifestAPI registers all HTTP handlers for the Manifest Service
 func ManifestAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service) (err error) {
 	manifestRouter, err := router.NewManifestRouter(service)
 	if err != nil {
@@ -248,37 +257,40 @@ func ManifestAPI(rg *gin.RouterGroup, service svcframework.Service, webhookServi
 	responseAPI := manifestAPI.Group(ResponsesPrefix)
 	responseAPI.GET("", manifestRouter.GetResponses)
 	responseAPI.GET("/:id", manifestRouter.GetResponse)
-	responseAPI.DELETE("/:id", manifestRouter.DeleteResponse, middleware.Webhook(webhookService, webhook.Response, webhook.Delete))
+	responseAPI.DELETE("/:id", manifestRouter.DeleteResponse)
 	return
 }
 
-func (s *SSIServer) IssuanceAPI(service svcframework.Service) error {
+// IssuanceAPI registers all HTTP handlers for the Issuance Service
+func IssuanceAPI(rg *gin.RouterGroup, service svcframework.Service) error {
 	issuanceRouter, err := router.NewIssuanceRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating issuance router")
 	}
 
-	issuanceHandlerPath := V1Prefix + IssuanceTemplatePrefix
-	s.Handle(http.MethodPut, issuanceHandlerPath, issuanceRouter.CreateIssuanceTemplate)
-	s.Handle(http.MethodGet, issuanceHandlerPath, issuanceRouter.ListIssuanceTemplates)
-	s.Handle(http.MethodGet, path.Join(issuanceHandlerPath, "/:id"), issuanceRouter.GetIssuanceTemplate)
-	s.Handle(http.MethodDelete, path.Join(issuanceHandlerPath, "/:id"), issuanceRouter.DeleteIssuanceTemplate)
+	issuanceAPI := rg.Group(IssuanceTemplatePrefix)
+	issuanceAPI.PUT("", issuanceRouter.CreateIssuanceTemplate)
+	issuanceAPI.GET("", issuanceRouter.ListIssuanceTemplates)
+	issuanceAPI.GET("/:id", issuanceRouter.GetIssuanceTemplate)
+	issuanceAPI.DELETE("/:id", issuanceRouter.DeleteIssuanceTemplate)
 	return nil
 }
 
-func (s *SSIServer) WebhookAPI(service svcframework.Service) (err error) {
+// WebhookAPI registers all HTTP handlers for the Webhook Service
+func WebhookAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 	webhookRouter, err := router.NewWebhookRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating webhook router")
 	}
 
-	handlerPath := V1Prefix + WebhookPrefix
-	s.Handle(http.MethodPut, handlerPath, webhookRouter.CreateWebhook)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:noun/:verb"), webhookRouter.GetWebhook)
-	s.Handle(http.MethodGet, handlerPath, webhookRouter.GetWebhooks)
-	s.Handle(http.MethodDelete, handlerPath, webhookRouter.DeleteWebhook)
+	webhookAPI := rg.Group(WebhookPrefix)
+	webhookAPI.PUT("", webhookRouter.CreateWebhook)
+	webhookAPI.GET("", webhookRouter.GetWebhooks)
+	webhookAPI.GET("/:noun/:verb", webhookRouter.GetWebhook)
+	webhookAPI.DELETE("/:noun/:verb", webhookRouter.DeleteWebhook)
 
-	s.Handle(http.MethodGet, path.Join(handlerPath, "nouns"), webhookRouter.GetSupportedNouns)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "verbs"), webhookRouter.GetSupportedVerbs)
+	// TODO(gabe): consider refactoring this to a single get on /webhooks/info or similar
+	webhookAPI.GET("nouns", webhookRouter.GetSupportedNouns)
+	webhookAPI.GET("verbs", webhookRouter.GetSupportedVerbs)
 	return
 }

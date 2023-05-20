@@ -9,7 +9,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
@@ -24,7 +24,7 @@ type SSIService struct {
 	KeyStore     *keystore.Service
 	DID          *did.Service
 	Schema       *schema.Service
-	Issuing      *issuing.Service
+	Issuance     *issuance.Service
 	Credential   *credential.Service
 	Manifest     *manifest.Service
 	Presentation *presentation.Service
@@ -56,7 +56,7 @@ func validateServiceConfig(config config.ServicesConfig) error {
 		return fmt.Errorf("%s no config provided", framework.DID)
 	}
 	if config.IssuingServiceConfig.IsEmpty() {
-		return fmt.Errorf("%s no config provided", framework.Issuing)
+		return fmt.Errorf("%s no config provided", framework.Issuance)
 	}
 	if config.SchemaConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.Schema)
@@ -104,9 +104,9 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the schema service")
 	}
 
-	issuingService, err := issuing.NewIssuingService(config.IssuingServiceConfig, storageProvider)
+	issuingService, err := issuance.NewIssuanceService(config.IssuingServiceConfig, storageProvider)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the issuing service")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the issuance service")
 	}
 
 	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider, keyStoreService, didResolver, schemaService)
@@ -133,7 +133,7 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		KeyStore:     keyStoreService,
 		DID:          didService,
 		Schema:       schemaService,
-		Issuing:      issuingService,
+		Issuance:     issuingService,
 		Credential:   credentialService,
 		Manifest:     manifestService,
 		Presentation: presentationService,
@@ -148,7 +148,7 @@ func (s *SSIService) GetServices() []framework.Service {
 		s.KeyStore,
 		s.DID,
 		s.Schema,
-		s.Issuing,
+		s.Issuance,
 		s.Credential,
 		s.Manifest,
 		s.Presentation,

@@ -1,4 +1,4 @@
-package issuing
+package issuance
 
 import (
 	"reflect"
@@ -56,7 +56,7 @@ type IssuanceTemplate struct {
 	// ID of the credential manifest that this template corresponds to.
 	CredentialManifest string `json:"credentialManifest" validate:"required"`
 
-	// ID of the issuer that will be issuing the credentials.
+	// ID of the issuer that will be issuance the credentials.
 	Issuer string `json:"issuer" validate:"required"`
 
 	// ID of the key that will be used to sign the credentials.
