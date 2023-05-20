@@ -24,24 +24,23 @@ import (
 )
 
 func TestCredentialRouter(t *testing.T) {
-
 	t.Run("Nil Service", func(tt *testing.T) {
 		credRouter, err := NewCredentialRouter(nil)
 		assert.Error(tt, err)
 		assert.Empty(tt, credRouter)
-		assert.Contains(tt, w.Body.String(), "service cannot be nil")
+		assert.Contains(tt, err.Error(), "service cannot be nil")
 	})
 
 	t.Run("Bad Service", func(tt *testing.T) {
 		credRouter, err := NewCredentialRouter(&testService{})
 		assert.Error(tt, err)
 		assert.Empty(tt, credRouter)
-		assert.Contains(tt, w.Body.String(), "could not create credential router with service type: test")
+		assert.Contains(tt, err.Error(), "could not create credential router with service type: test")
 	})
 
 	t.Run("Credential Service Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
+		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -101,7 +100,7 @@ func TestCredentialRouter(t *testing.T) {
 		// get a cred that doesn't exist
 		_, err = credService.GetCredential(context.Background(), credential.GetCredentialRequest{ID: "bad"})
 		assert.Error(tt, err)
-		assert.Contains(tt, w.Body.String(), "credential not found with id: bad")
+		assert.Contains(tt, err.Error(), "credential not found with id: bad")
 
 		// get by schema - no schema
 		bySchema, err := credService.GetCredentialsBySchema(context.Background(), credential.GetCredentialBySchemaRequest{Schema: ""})
@@ -137,7 +136,7 @@ func TestCredentialRouter(t *testing.T) {
 			Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
 		})
 		assert.Error(tt, err)
-		assert.Contains(tt, w.Body.String(), "schema not found with id: https://test-schema.com")
+		assert.Contains(tt, err.Error(), "schema not found with id: https://test-schema.com")
 
 		// create schema
 		emailSchema := map[string]any{
@@ -199,12 +198,12 @@ func TestCredentialRouter(t *testing.T) {
 		// get it back
 		_, err = credService.GetCredential(context.Background(), credential.GetCredentialRequest{ID: cred.ID})
 		assert.Error(tt, err)
-		assert.Contains(tt, w.Body.String(), fmt.Sprintf("credential not found with id: %s", cred.ID))
+		assert.Contains(tt, err.Error(), fmt.Sprintf("credential not found with id: %s", cred.ID))
 	})
 
 	t.Run("Credential Status List Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
+		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -324,7 +323,7 @@ func TestCredentialRouter(t *testing.T) {
 
 	t.Run("Credential Status List Test No Schemas", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
+		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -438,7 +437,7 @@ func TestCredentialRouter(t *testing.T) {
 
 	t.Run("Credential Status List Test Update Revoked Status", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
+		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -565,7 +564,7 @@ func TestCredentialRouter(t *testing.T) {
 
 	t.Run("Create Multiple Suspendable Credential Different IssuerDID SchemaID StatusPurpose Triples", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
+		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234"}}
 		keyStoreService := testKeyStoreService(tt, bolt)

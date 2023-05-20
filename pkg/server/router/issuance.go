@@ -32,7 +32,7 @@ func NewIssuanceRouter(svc svcframework.Service) (*IssuanceRouter, error) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
-//	@Success		200	{object}	issuance.IssuanceTemplate
+//	@Success		200	{object}	issuance.Template
 //	@Failure		400	{string}	string	"Bad request"
 //	@Router			/v1/issuancetemplates/{id} [get]
 func (ir IssuanceRouter) GetIssuanceTemplate(c *gin.Context) {
@@ -53,11 +53,11 @@ func (ir IssuanceRouter) GetIssuanceTemplate(c *gin.Context) {
 }
 
 type CreateIssuanceTemplateRequest struct {
-	issuance.IssuanceTemplate
+	issuance.Template
 }
 
 func (r CreateIssuanceTemplateRequest) toServiceRequest() *issuance.CreateIssuanceTemplateRequest {
-	return &issuance.CreateIssuanceTemplateRequest{IssuanceTemplate: r.IssuanceTemplate}
+	return &issuance.CreateIssuanceTemplateRequest{IssuanceTemplate: r.Template}
 }
 
 // CreateIssuanceTemplate godoc
@@ -68,7 +68,7 @@ func (r CreateIssuanceTemplateRequest) toServiceRequest() *issuance.CreateIssuan
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateIssuanceTemplateRequest	true	"request body"
-//	@Success		201		{object}	issuance.IssuanceTemplate
+//	@Success		201		{object}	issuance.Template
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/issuancetemplates [put]
@@ -120,7 +120,7 @@ func (ir IssuanceRouter) DeleteIssuanceTemplate(c *gin.Context) {
 }
 
 type ListIssuanceTemplatesResponse struct {
-	IssuanceTemplates []issuance.IssuanceTemplate `json:"issuanceTemplates,omitempty"`
+	IssuanceTemplates []issuance.Template `json:"issuanceTemplates,omitempty"`
 }
 
 // ListIssuanceTemplates godoc

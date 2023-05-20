@@ -37,7 +37,7 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "returns a template with ID",
 				request: router.CreateIssuanceTemplateRequest{
-					IssuanceTemplate: issuance.IssuanceTemplate{
+					Template: issuance.Template{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
 						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
@@ -60,7 +60,7 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "returns a template with ID when schema is empty",
 				request: router.CreateIssuanceTemplateRequest{
-					IssuanceTemplate: issuance.IssuanceTemplate{
+					Template: issuance.Template{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
 						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
@@ -90,7 +90,7 @@ func TestIssuanceRouter(t *testing.T) {
 				r.CreateIssuanceTemplate(c)
 				assert.True(t, is2xxResponse(w.Code))
 
-				var resp issuance.IssuanceTemplate
+				var resp issuance.Template
 				assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 				assert.NotEmpty(t, resp.ID)
 			})
@@ -108,7 +108,7 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "when missing output_descriptor_id",
 				request: router.CreateIssuanceTemplateRequest{
-					IssuanceTemplate: issuance.IssuanceTemplate{
+					Template: issuance.Template{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
 						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
@@ -132,7 +132,7 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "when both times are set",
 				request: router.CreateIssuanceTemplateRequest{
-					IssuanceTemplate: issuance.IssuanceTemplate{
+					Template: issuance.Template{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
 						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
@@ -157,7 +157,7 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "when credential schema does not exist",
 				request: router.CreateIssuanceTemplateRequest{
-					IssuanceTemplate: issuance.IssuanceTemplate{
+					Template: issuance.Template{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
 						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
@@ -181,7 +181,7 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "when credential manifest ID is does not exist",
 				request: router.CreateIssuanceTemplateRequest{
-					IssuanceTemplate: issuance.IssuanceTemplate{
+					Template: issuance.Template{
 						CredentialManifest: "fake manifest id",
 						Issuer:             issuerResp.DID.ID,
 						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
@@ -205,7 +205,7 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "when issuer is empty",
 				request: router.CreateIssuanceTemplateRequest{
-					IssuanceTemplate: issuance.IssuanceTemplate{
+					Template: issuance.Template{
 						CredentialManifest: manifest.Manifest.ID,
 						Credentials: []issuance.CredentialTemplate{
 							{
@@ -241,7 +241,7 @@ func TestIssuanceRouter(t *testing.T) {
 	t.Run("Create, Get, Delete work as expected", func(tt *testing.T) {
 		issuerResp, createdSchema, manifest, r := setupAllThings(tt)
 
-		inputTemplate := issuance.IssuanceTemplate{
+		inputTemplate := issuance.Template{
 			CredentialManifest: manifest.Manifest.ID,
 			Issuer:             issuerResp.DID.ID,
 			IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
@@ -259,11 +259,11 @@ func TestIssuanceRouter(t *testing.T) {
 				},
 			},
 		}
-		var issuanceTemplate issuance.IssuanceTemplate
+		var issuanceTemplate issuance.Template
 
 		{
 			request := router.CreateIssuanceTemplateRequest{
-				IssuanceTemplate: inputTemplate,
+				Template: inputTemplate,
 			}
 			value := newRequestValue(tt, request)
 			req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/issuancetemplates", value)
@@ -274,8 +274,8 @@ func TestIssuanceRouter(t *testing.T) {
 			assert.True(tt, is2xxResponse(w.Code))
 
 			assert.NoError(tt, json.NewDecoder(w.Body).Decode(&issuanceTemplate))
-			if diff := cmp.Diff(inputTemplate, issuanceTemplate, cmpopts.IgnoreFields(issuance.IssuanceTemplate{}, "ID")); diff != "" {
-				tt.Errorf("IssuanceTemplate mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(inputTemplate, issuanceTemplate, cmpopts.IgnoreFields(issuance.Template{}, "ID")); diff != "" {
+				tt.Errorf("Template mismatch (-want +got):\n%s", diff)
 			}
 		}
 
@@ -288,10 +288,10 @@ func TestIssuanceRouter(t *testing.T) {
 			r.GetIssuanceTemplate(c)
 			assert.True(tt, is2xxResponse(w.Code))
 
-			var getIssuanceTemplate issuance.IssuanceTemplate
+			var getIssuanceTemplate issuance.Template
 			assert.NoError(tt, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
 			if diff := cmp.Diff(issuanceTemplate, getIssuanceTemplate); diff != "" {
-				tt.Errorf("IssuanceTemplate mismatch (-want +got):\n%s", diff)
+				tt.Errorf("Template mismatch (-want +got):\n%s", diff)
 			}
 		}
 
@@ -365,7 +365,7 @@ func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, 
 	createdSchema *schema.CreateSchemaResponse, now time.Time, r *router.IssuanceRouter) {
 	{
 		request := router.CreateIssuanceTemplateRequest{
-			IssuanceTemplate: issuance.IssuanceTemplate{
+			Template: issuance.Template{
 				CredentialManifest: manifest.Manifest.ID,
 				Issuer:             issuerResp.DID.ID,
 				IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,

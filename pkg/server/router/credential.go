@@ -152,6 +152,7 @@ func (cr CredentialRouter) GetCredential(c *gin.Context) {
 	if id == nil {
 		errMsg := "cannot get credential without ID parameter"
 		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	gotCredential, err := cr.service.GetCredential(c, credential.GetCredentialRequest{ID: *id})

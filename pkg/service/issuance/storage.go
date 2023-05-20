@@ -23,7 +23,7 @@ func NewIssuanceStorage(s storage.ServiceStorage) (*Storage, error) {
 }
 
 type StoredIssuanceTemplate struct {
-	IssuanceTemplate IssuanceTemplate `json:"issuanceTemplate"`
+	IssuanceTemplate Template `json:"issuanceTemplate"`
 }
 
 func (s Storage) StoreIssuanceTemplate(ctx context.Context, template StoredIssuanceTemplate) error {
@@ -65,12 +65,12 @@ func (s Storage) DeleteIssuanceTemplate(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s Storage) ListIssuanceTemplates(ctx context.Context) ([]IssuanceTemplate, error) {
+func (s Storage) ListIssuanceTemplates(ctx context.Context) ([]Template, error) {
 	m, err := s.db.ReadAll(ctx, namespace)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all")
 	}
-	ts := make([]IssuanceTemplate, len(m))
+	ts := make([]Template, len(m))
 	i := 0
 	for k, v := range m {
 		if err = json.Unmarshal(v, &ts[i]); err != nil {

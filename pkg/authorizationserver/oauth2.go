@@ -109,8 +109,8 @@ func NewServer(shutdown chan os.Signal, config *AuthConfig, store *storage.Memor
 
 	// Set up oauth2 endpoints.
 	authService := NewAuthService(im, oauth2)
-	engine.GET("/oauth2/token", authService.AuthEndpoint)
-	engine.POST("/oauth2/token", authService.AuthEndpoint)
+	engine.GET("/oauth2/auth", authService.AuthEndpoint)
+	engine.POST("/oauth2/auth", authService.AuthEndpoint)
 
 	return &Server{
 		Server: httpServer,

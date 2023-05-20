@@ -286,9 +286,6 @@ func (kss *Storage) GetKey(ctx context.Context, id string) (*StoredKey, error) {
 	if err = json.Unmarshal(decryptedKey, &stored); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "unmarshalling stored key: %s", id)
 	}
-	if stored.Revoked {
-		return nil, sdkutil.LoggingNewErrorf("key is revoked: %s", id)
-	}
 	return &stored, nil
 }
 

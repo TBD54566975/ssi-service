@@ -18,7 +18,7 @@ type WebhookRouter struct {
 
 func NewWebhookRouter(s svcframework.Service) (*WebhookRouter, error) {
 	if s == nil {
-		return nil, errors.New("service cannot be empty")
+		return nil, errors.New("service cannot be nil")
 	}
 	webhookService, ok := s.(*webhook.Service)
 	if !ok {

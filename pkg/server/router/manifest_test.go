@@ -29,19 +29,19 @@ func TestManifestRouter(t *testing.T) {
 		manifestRouter, err := NewManifestRouter(nil)
 		assert.Error(tt, err)
 		assert.Empty(tt, manifestRouter)
-		assert.Contains(tt, w.Body.String(), "service cannot be nil")
+		assert.Contains(tt, err.Error(), "service cannot be nil")
 	})
 
 	t.Run("Bad Service", func(tt *testing.T) {
 		manifestRouter, err := NewManifestRouter(&testService{})
 		assert.Error(tt, err)
 		assert.Empty(tt, manifestRouter)
-		assert.Contains(tt, w.Body.String(), "could not create manifest router with service type: test")
+		assert.Contains(tt, err.Error(), "could not create manifest router with service type: test")
 	})
 
 	t.Run("Manifest Service Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
+		assert.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)

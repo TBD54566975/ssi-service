@@ -20,13 +20,10 @@ func Respond(c *gin.Context, data any, statusCode int) {
 		var webErr *SafeError
 		if ok = errors.As(errors.Cause(err), &webErr); !ok {
 			statusCode = http.StatusInternalServerError
-			data = ErrorResponse{
-				Error: http.StatusText(http.StatusInternalServerError),
-			}
 			logrus.WithError(err).Error("unsafe error")
-			err = errors.New("error processing request")
+			webErr.Err = errors.New("error processing request")
 		}
-		_ = c.AbortWithError(statusCode, err)
+		c.PureJSON(statusCode, webErr.Error())
 		return
 	}
 

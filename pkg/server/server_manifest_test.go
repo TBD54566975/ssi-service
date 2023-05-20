@@ -1092,7 +1092,7 @@ func TestManifestAPI(t *testing.T) {
 func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *did.CreateDIDResponse,
 	createdSchema *schema.CreateSchemaResponse, expiry1 time.Time, expiry2 time.Duration) *issuance.CreateIssuanceTemplateRequest {
 	return &issuance.CreateIssuanceTemplateRequest{
-		IssuanceTemplate: issuance.IssuanceTemplate{
+		IssuanceTemplate: issuance.Template{
 			ID:                 uuid.NewString(),
 			CredentialManifest: m.ID,
 			Issuer:             issuerDID.DID.ID,

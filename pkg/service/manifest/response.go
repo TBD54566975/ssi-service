@@ -50,7 +50,7 @@ func (s Service) signCredentialResponse(ctx context.Context, issuerKID string, r
 // buildFulfillmentCredentialResponseFromTemplate builds a credential response from a template
 func (s Service) buildFulfillmentCredentialResponseFromTemplate(ctx context.Context,
 	applicantDID, manifestID, issuerKID string, credManifest manifest.CredentialManifest,
-	template issuance.IssuanceTemplate, application manifest.CredentialApplication,
+	template issuance.Template, application manifest.CredentialApplication,
 	applicationJSON map[string]any) (*manifest.CredentialResponse, []cred.Container, error) {
 	if template.IsValid() {
 		return nil, nil, errors.New("issuance template is not valid")

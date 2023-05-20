@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -15,20 +16,19 @@ func TestWebhookRouter(t *testing.T) {
 		webhookRouter, err := NewWebhookRouter(nil)
 		assert.Error(tt, err)
 		assert.Empty(tt, webhookRouter)
-		assert.Contains(tt, w.Body.String(), "service cannot be nil")
+		assert.Contains(tt, err.Error(), "service cannot be nil")
 	})
 
 	t.Run("Bad Service", func(tt *testing.T) {
 		webhookRouter, err := NewWebhookRouter(&testService{})
 		assert.Error(tt, err)
 		assert.Empty(tt, webhookRouter)
-		assert.Contains(tt, w.Body.String(), "could not create webhook router with service type: test")
+		assert.Contains(tt, err.Error(), "could not create webhook router with service type: test")
 	})
 
 	t.Run("Webhook Service Test", func(tt *testing.T) {
-
 		db := setupTestDB(tt)
-		assert.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		serviceConfig := config.WebhookServiceConfig{WebhookTimeout: "10s"}
 		webhookService, err := webhook.NewWebhookService(serviceConfig, db)
@@ -39,5 +39,4 @@ func TestWebhookRouter(t *testing.T) {
 		assert.Equal(tt, framework.Webhook, webhookService.Type())
 		assert.Equal(tt, framework.StatusReady, webhookService.Status().Status)
 	})
-
 }

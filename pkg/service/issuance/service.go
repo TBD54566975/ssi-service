@@ -52,7 +52,7 @@ func (s *Service) GetIssuanceTemplate(ctx context.Context, request *GetIssuanceT
 	return &GetIssuanceTemplateResponse{IssuanceTemplate: serviceModel(*storedIssuanceTemplate)}, nil
 }
 
-func (s *Service) CreateIssuanceTemplate(ctx context.Context, request *CreateIssuanceTemplateRequest) (*IssuanceTemplate, error) {
+func (s *Service) CreateIssuanceTemplate(ctx context.Context, request *CreateIssuanceTemplateRequest) (*Template, error) {
 	if !request.IsValid() {
 		return nil, errors.New("invalid create issuance template request")
 	}
@@ -87,7 +87,7 @@ func (s *Service) CreateIssuanceTemplate(ctx context.Context, request *CreateIss
 	return serviceModel(storedTemplate), nil
 }
 
-func serviceModel(template StoredIssuanceTemplate) *IssuanceTemplate {
+func serviceModel(template StoredIssuanceTemplate) *Template {
 	return &template.IssuanceTemplate
 }
 
