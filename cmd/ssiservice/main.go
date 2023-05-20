@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"expvar"
+	"io"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/schema"
 	"github.com/ardanlabs/conf"
+	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
@@ -65,6 +67,7 @@ func run() error {
 				logrus.WithError(err).Error("failed to close log file")
 			}
 		}(logFile)
+		gin.DefaultWriter = io.MultiWriter(logFile, os.Stdout)
 	}
 
 	// set up schema caching based on config
@@ -189,7 +192,6 @@ func configureLogger(level, location string) *os.File {
 		PrettyPrint:      true,
 	})
 	logrus.SetReportCaller(true)
-	logrus.SetOutput(os.Stdout)
 
 	// set logs config from config file
 	if location != "" {

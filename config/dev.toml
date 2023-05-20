@@ -56,7 +56,7 @@ password = "default-password"
 name = "did"
 methods = ["key", "web"]
 local_resolution_methods = ["key", "web", "pkh", "peer"]
-universal_resolver_url = "http://localhost:8088"
+universal_resolver_url = "https://dev.uniresolver.io/"
 universal_resolver_methods = ["ion"]
 
 [services.schema]

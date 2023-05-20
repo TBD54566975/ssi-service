@@ -177,7 +177,7 @@ func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookSer
 	credentialAPI.DELETE("/:id", credRouter.DeleteCredential, middleware.Webhook(webhookService, webhook.Credential, webhook.Delete))
 
 	// Credential Status
-	credentialStatusAPI := credentialAPI.Group(StatusPrefix)
+	credentialStatusAPI := rg.Group("/:id" + CredentialsPrefix + StatusPrefix)
 	credentialStatusAPI.GET("/:id", credRouter.GetCredentialStatus)
 	credentialStatusAPI.PUT("/:id", credRouter.UpdateCredentialStatus)
 	credentialStatusAPI.GET("", credRouter.GetCredentialStatusList)
