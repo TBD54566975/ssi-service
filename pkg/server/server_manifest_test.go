@@ -48,8 +48,7 @@ func TestManifestAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := manifestRouter.CreateManifest(c)
-		assert.Error(tt, err)
+		manifestRouter.CreateManifest(c)
 		assert.Contains(tt, w.Body.String(), "invalid create manifest request")
 
 		// reset the http recorder
@@ -84,17 +83,14 @@ func TestManifestAPI(t *testing.T) {
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		c = newRequestContext(w, req)
-		err = manifestRouter.CreateManifest(c)
-		assert.NoError(tt, err)
+		manifestRouter.CreateManifest(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var resp router.CreateManifestResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
-
 		assert.NotEmpty(tt, resp.Manifest)
 		assert.Equal(tt, resp.Manifest.Issuer.ID, issuerDID.DID.ID)
-
-		println(string(resp.ManifestJWT))
 
 		// verify the manifest
 		verificationResponse, err := manifestService.VerifyManifest(context.Background(), manifestsvc.VerifyManifestRequest{ManifestJWT: resp.ManifestJWT})
@@ -118,8 +114,7 @@ func TestManifestAPI(t *testing.T) {
 		// get a manifest that doesn't exit
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/bad", nil)
 		c := newRequestContext(w, req)
-		err := manifestRouter.GetManifest(c)
-		assert.Error(tt, err)
+		manifestRouter.GetManifest(c)
 		assert.Contains(tt, w.Body.String(), "cannot get manifest without ID parameter")
 
 		// reset recorder between calls
@@ -128,8 +123,7 @@ func TestManifestAPI(t *testing.T) {
 		// get a manifest with an invalid id parameter
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/bad", nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": "bad"})
-		err = manifestRouter.GetManifest(c)
-		assert.Error(tt, err)
+		manifestRouter.GetManifest(c)
 		assert.Contains(tt, w.Body.String(), "could not get manifest with id: bad")
 
 		// reset recorder between calls
@@ -164,8 +158,8 @@ func TestManifestAPI(t *testing.T) {
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		c = newRequestContext(w, req)
-		err = manifestRouter.CreateManifest(c)
-		assert.NoError(tt, err)
+		manifestRouter.CreateManifest(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var resp router.CreateManifestResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -174,8 +168,8 @@ func TestManifestAPI(t *testing.T) {
 		// get manifest by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.Manifest.ID})
-		err = manifestRouter.GetManifest(c)
-		assert.NoError(tt, err)
+		manifestRouter.GetManifest(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var getManifestResp router.GetManifestResponse
 		err = json.NewDecoder(w.Body).Decode(&getManifestResp)
@@ -225,8 +219,8 @@ func TestManifestAPI(t *testing.T) {
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		c := newRequestContext(w, req)
-		err = manifestRouter.CreateManifest(c)
-		assert.NoError(tt, err)
+		manifestRouter.CreateManifest(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var resp router.CreateManifestResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -235,8 +229,8 @@ func TestManifestAPI(t *testing.T) {
 		// get manifest by id
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests", nil)
 		c = newRequestContext(w, req)
-		err = manifestRouter.GetManifests(c)
-		assert.NoError(tt, err)
+		manifestRouter.GetManifests(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var getManifestsResp router.GetManifestsResponse
 		err = json.NewDecoder(w.Body).Decode(&getManifestsResp)
@@ -294,8 +288,8 @@ func TestManifestAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		w := httptest.NewRecorder()
 		c := newRequestContext(w, req)
-		err = manifestRouter.CreateManifest(c)
-		assert.NoError(tt, err)
+		manifestRouter.CreateManifest(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var resp router.CreateManifestResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -306,8 +300,8 @@ func TestManifestAPI(t *testing.T) {
 		// get credential by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.Manifest.ID})
-		err = manifestRouter.GetManifest(c)
-		assert.NoError(tt, err)
+		manifestRouter.GetManifest(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var getManifestResp router.GetCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&getManifestResp)
@@ -320,16 +314,15 @@ func TestManifestAPI(t *testing.T) {
 		// delete it
 		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.Manifest.ID})
-		err = manifestRouter.DeleteManifest(c)
-		assert.NoError(tt, err)
+		manifestRouter.DeleteManifest(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		w = httptest.NewRecorder()
 
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/%s", resp.Manifest.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.Manifest.ID})
-		err = manifestRouter.GetManifest(c)
-		assert.Error(tt, err)
+		manifestRouter.GetManifest(c)
 		assert.Contains(tt, w.Body.String(), fmt.Sprintf("could not get manifest with id: %s", resp.Manifest.ID))
 	})
 
@@ -403,8 +396,8 @@ func TestManifestAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		w := httptest.NewRecorder()
 		c := newRequestContext(w, req)
-		err = manifestRouter.CreateManifest(c)
-		assert.NoError(tt, err)
+		manifestRouter.CreateManifest(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var resp router.CreateManifestResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -437,8 +430,8 @@ func TestManifestAPI(t *testing.T) {
 		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		c = newRequestContext(w, req)
-		err = manifestRouter.SubmitApplication(c)
-		assert.NoError(tt, err)
+		manifestRouter.SubmitApplication(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var op router.Operation
 		err = json.NewDecoder(w.Body).Decode(&op)
@@ -503,8 +496,7 @@ func TestManifestAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := manifestRouter.SubmitApplication(c)
-		assert.Error(tt, err)
+		manifestRouter.SubmitApplication(c)
 		assert.Contains(tt, w.Body.String(), "invalid submit application request")
 
 		// create an issuer
@@ -560,8 +552,8 @@ func TestManifestAPI(t *testing.T) {
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		c = newRequestContext(w, req)
-		err = manifestRouter.CreateManifest(c)
-		assert.NoError(tt, err)
+		manifestRouter.CreateManifest(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var resp router.CreateManifestResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -586,7 +578,7 @@ func TestManifestAPI(t *testing.T) {
 		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		c = newRequestContext(w, req)
-		err = manifestRouter.SubmitApplication(c)
+		manifestRouter.SubmitApplication(c)
 		assert.NoError(tt, err)
 
 		var op router.Operation
@@ -612,8 +604,8 @@ func TestManifestAPI(t *testing.T) {
 		applicationID := storage.StatusObjectID(op.ID)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications/"+applicationID+"/review", reviewApplicationRequestValue)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": applicationID})
-		err = manifestRouter.ReviewApplication(c)
-		assert.NoError(tt, err)
+		manifestRouter.ReviewApplication(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var appResp router.SubmitApplicationResponse
 		err = json.NewDecoder(w.Body).Decode(&appResp)
@@ -657,8 +649,7 @@ func TestManifestAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := manifestRouter.SubmitApplication(c)
-		assert.Error(tt, err)
+		manifestRouter.SubmitApplication(c)
 		assert.Contains(tt, w.Body.String(), "invalid submit application request")
 
 		// create an issuer
@@ -714,8 +705,8 @@ func TestManifestAPI(t *testing.T) {
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		c = newRequestContext(w, req)
-		err = manifestRouter.CreateManifest(c)
-		assert.NoError(tt, err)
+		manifestRouter.CreateManifest(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var resp router.CreateManifestResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -745,8 +736,8 @@ func TestManifestAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 
 		c = newRequestContext(w, req)
-		err = manifestRouter.SubmitApplication(c)
-		assert.NoError(tt, err)
+		manifestRouter.SubmitApplication(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var op router.Operation
 		err = json.NewDecoder(w.Body).Decode(&op)
@@ -777,8 +768,8 @@ func TestManifestAPI(t *testing.T) {
 		applicationRequestValue = newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		c = newRequestContext(w, req)
-		err = manifestRouter.SubmitApplication(c)
-		assert.NoError(tt, err)
+		manifestRouter.SubmitApplication(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		err = json.NewDecoder(w.Body).Decode(&op)
 		assert.NoError(tt, err)
@@ -810,8 +801,7 @@ func TestManifestAPI(t *testing.T) {
 		// get a application that doesn't exit
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications/bad", nil)
 		c := newRequestContext(w, req)
-		err := manifestRouter.GetApplication(c)
-		assert.Error(tt, err)
+		manifestRouter.GetApplication(c)
 		assert.Contains(tt, w.Body.String(), "cannot get application without ID parameter")
 
 		// reset recorder between calls
@@ -868,8 +858,8 @@ func TestManifestAPI(t *testing.T) {
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		c = newRequestContext(w, req)
-		err = manifestRouter.CreateManifest(c)
-		assert.NoError(tt, err)
+		manifestRouter.CreateManifest(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var resp router.CreateManifestResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -892,8 +882,8 @@ func TestManifestAPI(t *testing.T) {
 		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		c = newRequestContext(w, req)
-		err = manifestRouter.SubmitApplication(c)
-		assert.NoError(tt, err)
+		manifestRouter.SubmitApplication(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var op router.Operation
 		err = json.NewDecoder(w.Body).Decode(&op)
@@ -904,8 +894,8 @@ func TestManifestAPI(t *testing.T) {
 		applicationID := storage.StatusObjectID(op.ID)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications/"+applicationID+"/review", reviewApplicationRequestValue)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": applicationID})
-		err = manifestRouter.ReviewApplication(c)
-		assert.NoError(tt, err)
+		manifestRouter.ReviewApplication(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var appResp router.SubmitApplicationResponse
 		err = json.NewDecoder(w.Body).Decode(&appResp)
@@ -917,8 +907,8 @@ func TestManifestAPI(t *testing.T) {
 		// get response by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/responses/%s", appResp.Response.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": appResp.Response.ID})
-		err = manifestRouter.GetResponse(c)
-		assert.NoError(tt, err)
+		manifestRouter.GetResponse(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var getResponseResponse router.GetResponseResponse
 		err = json.NewDecoder(w.Body).Decode(&getResponseResponse)
@@ -929,8 +919,8 @@ func TestManifestAPI(t *testing.T) {
 		// get all responses
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/responses", nil)
 		c = newRequestContext(w, req)
-		err = manifestRouter.GetResponses(c)
-		assert.NoError(tt, err)
+		manifestRouter.GetResponses(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var getResponsesResp router.GetResponsesResponse
 		err = json.NewDecoder(w.Body).Decode(&getResponsesResp)
@@ -942,8 +932,8 @@ func TestManifestAPI(t *testing.T) {
 		// get all applications
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		c = newRequestContext(w, req)
-		err = manifestRouter.GetApplications(c)
-		assert.NoError(tt, err)
+		manifestRouter.GetApplications(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var getApplicationsResp router.GetApplicationsResponse
 		err = json.NewDecoder(w.Body).Decode(&getApplicationsResp)
@@ -955,8 +945,8 @@ func TestManifestAPI(t *testing.T) {
 		// get application by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/applications/%s", getApplicationsResp.Applications[0].ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": getApplicationsResp.Applications[0].ID})
-		err = manifestRouter.GetApplication(c)
-		assert.NoError(tt, err)
+		manifestRouter.GetApplication(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var getApplicationResponse router.GetApplicationResponse
 		err = json.NewDecoder(w.Body).Decode(&getApplicationResponse)
@@ -1028,8 +1018,8 @@ func TestManifestAPI(t *testing.T) {
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		c := newRequestContext(w, req)
-		err = manifestRouter.CreateManifest(c)
-		assert.NoError(tt, err)
+		manifestRouter.CreateManifest(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var resp router.CreateManifestResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -1052,8 +1042,8 @@ func TestManifestAPI(t *testing.T) {
 		applicationRequestValue := newRequestValue(tt, router.SubmitApplicationRequest{ApplicationJWT: *signed})
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		c = newRequestContext(w, req)
-		err = manifestRouter.SubmitApplication(c)
-		assert.NoError(tt, err)
+		manifestRouter.SubmitApplication(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var appResp router.SubmitApplicationResponse
 		err = json.NewDecoder(w.Body).Decode(&appResp)
@@ -1062,21 +1052,20 @@ func TestManifestAPI(t *testing.T) {
 		// get all applications
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		c = newRequestContext(w, req)
-		err = manifestRouter.GetApplications(c)
-		assert.NoError(tt, err)
+		manifestRouter.GetApplications(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var getApplicationsResp router.GetApplicationsResponse
 		err = json.NewDecoder(w.Body).Decode(&getApplicationsResp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getApplicationsResp)
-
 		assert.Len(tt, getApplicationsResp.Applications, 1)
 
 		// get the application
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/applications/%s", getApplicationsResp.Applications[0].ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": getApplicationsResp.Applications[0].ID})
-		err = manifestRouter.GetApplication(c)
-		assert.NoError(tt, err)
+		manifestRouter.GetApplication(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var getApplicationResp router.GetApplicationResponse
 		err = json.NewDecoder(w.Body).Decode(&getApplicationResp)
@@ -1087,16 +1076,15 @@ func TestManifestAPI(t *testing.T) {
 		// delete the application
 		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/manifests/applications/%s", getApplicationResp.Application.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": getApplicationsResp.Applications[0].ID})
-		err = manifestRouter.DeleteApplication(c)
-		assert.NoError(tt, err)
+		manifestRouter.DeleteApplication(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		w = httptest.NewRecorder()
 
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/manifests/applications/%s", appResp.Response.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": getApplicationsResp.Applications[0].ID})
-		err = manifestRouter.GetApplication(c)
-		assert.Error(tt, err)
+		manifestRouter.GetApplication(c)
 		assert.Contains(tt, w.Body.String(), fmt.Sprintf("could not get application with id: %s", appResp.Response.ID))
 	})
 }

@@ -34,8 +34,7 @@ func TestKeyStoreAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", badRequestValue)
 
 		c := newRequestContext(w, req)
-		err := keyStoreRouter.StoreKey(c)
-		assert.Error(tt, err)
+		keyStoreRouter.StoreKey(c)
 		assert.Contains(tt, w.Body.String(), "unsupported key type: bad")
 
 		// store a valid key
@@ -57,8 +56,8 @@ func TestKeyStoreAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
 		w = httptest.NewRecorder()
 		c = newRequestContext(w, req)
-		err = keyStoreRouter.StoreKey(c)
-		assert.NoError(tt, err)
+		keyStoreRouter.StoreKey(c)
+		assert.True(tt, is2xxResponse(w.Code))
 	})
 
 	t.Run("Test Get Key Details", func(tt *testing.T) {
@@ -88,15 +87,15 @@ func TestKeyStoreAPI(t *testing.T) {
 		requestValue := newRequestValue(tt, storeKeyRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
 		c := newRequestContext(w, req)
-		err = keyStoreService.StoreKey(c)
-		assert.NoError(tt, err)
+		keyStoreService.StoreKey(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		// get it back
 		w = httptest.NewRecorder()
 		getReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/keys/%s", keyID), nil)
 		c = newRequestContextWithParams(w, getReq, map[string]string{"id": keyID})
-		err = keyStoreService.GetKeyDetails(c)
-		assert.NoError(tt, err)
+		keyStoreService.GetKeyDetails(c)
+		assert.True(tt, is2xxResponse(w.Code))
 
 		var resp router.GetKeyDetailsResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
