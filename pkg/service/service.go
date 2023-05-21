@@ -55,7 +55,7 @@ func validateServiceConfig(config config.ServicesConfig) error {
 	if config.DIDConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.DID)
 	}
-	if config.IssuingServiceConfig.IsEmpty() {
+	if config.IssuanceServiceConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.Issuance)
 	}
 	if config.SchemaConfig.IsEmpty() {
@@ -104,7 +104,7 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the schema service")
 	}
 
-	issuingService, err := issuance.NewIssuanceService(config.IssuingServiceConfig, storageProvider)
+	issuingService, err := issuance.NewIssuanceService(config.IssuanceServiceConfig, storageProvider)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the issuance service")
 	}

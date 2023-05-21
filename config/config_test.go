@@ -15,7 +15,6 @@ func TestConfig(t *testing.T) {
 	assert.False(t, config.Server.WriteTimeout.String() == "")
 	assert.False(t, config.Server.ShutdownTimeout.String() == "")
 	assert.False(t, config.Server.APIHost == "")
-	assert.False(t, config.Server.DebugHost == "")
 
 	assert.NotEmpty(t, config.Services.StorageProvider)
 }

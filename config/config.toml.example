@@ -7,7 +7,6 @@ desc = "Default configuration to be used while running the service as a single g
 [server]
 env = "dev" # either 'dev' or 'prod'
 api_host = "0.0.0.0:3000"
-debug_host = "0.0.0.0:4000"
 
 # 5 seconds, time is in nanoseconds
 read_timeout = 5000000000

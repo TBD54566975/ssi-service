@@ -7,6 +7,7 @@ import (
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -107,7 +108,9 @@ func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
 		gin.Recovery(),
 		gin.Logger(),
 		middleware.Errors(shutdown),
-		middleware.Metrics(),
+	}
+	if cfg.JagerEnabled {
+		middlewares = append(middlewares, otelgin.Middleware(config.ServiceName))
 	}
 	if cfg.EnableAllowAllCORS {
 		middlewares = append(middlewares, middleware.CORS())

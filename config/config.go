@@ -53,7 +53,6 @@ type SSIServiceConfig struct {
 type ServerConfig struct {
 	Environment         Environment   `toml:"env" conf:"default:dev"`
 	APIHost             string        `toml:"api_host" conf:"default:0.0.0.0:3000"`
-	DebugHost           string        `toml:"debug_host" conf:"default:0.0.0.0:4000"`
 	JagerHost           string        `toml:"jager_host" conf:"http://jaeger:14268/api/traces"`
 	JagerEnabled        bool          `toml:"jager_enabled" conf:"default:false"`
 	ReadTimeout         time.Duration `toml:"read_timeout" conf:"default:5s"`
@@ -86,14 +85,14 @@ type ServicesConfig struct {
 	ServiceEndpoint string           `toml:"service_endpoint"`
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
-	KeyStoreConfig       KeyStoreServiceConfig     `toml:"keystore,omitempty"`
-	DIDConfig            DIDServiceConfig          `toml:"did,omitempty"`
-	IssuingServiceConfig IssuanceServiceConfig     `toml:"issuance,omitempty"`
-	SchemaConfig         SchemaServiceConfig       `toml:"schema,omitempty"`
-	CredentialConfig     CredentialServiceConfig   `toml:"credential,omitempty"`
-	ManifestConfig       ManifestServiceConfig     `toml:"manifest,omitempty"`
-	PresentationConfig   PresentationServiceConfig `toml:"presentation,omitempty"`
-	WebhookConfig        WebhookServiceConfig      `toml:"webhook,omitempty"`
+	KeyStoreConfig        KeyStoreServiceConfig     `toml:"keystore,omitempty"`
+	DIDConfig             DIDServiceConfig          `toml:"did,omitempty"`
+	IssuanceServiceConfig IssuanceServiceConfig     `toml:"issuance,omitempty"`
+	SchemaConfig          SchemaServiceConfig       `toml:"schema,omitempty"`
+	CredentialConfig      CredentialServiceConfig   `toml:"credential,omitempty"`
+	ManifestConfig        ManifestServiceConfig     `toml:"manifest,omitempty"`
+	PresentationConfig    PresentationServiceConfig `toml:"presentation,omitempty"`
+	WebhookConfig         WebhookServiceConfig      `toml:"webhook,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
@@ -293,7 +292,7 @@ func loadDefaultServicesConfig(config *SSIServiceConfig) {
 		PresentationConfig: PresentationServiceConfig{
 			BaseServiceConfig: &BaseServiceConfig{Name: "presentation"},
 		},
-		IssuingServiceConfig: IssuanceServiceConfig{
+		IssuanceServiceConfig: IssuanceServiceConfig{
 			BaseServiceConfig: &BaseServiceConfig{Name: "issuance"},
 		},
 		WebhookConfig: WebhookServiceConfig{
