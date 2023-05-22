@@ -87,7 +87,7 @@ type ServicesConfig struct {
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
 	KeyStoreConfig       KeyStoreServiceConfig     `toml:"keystore,omitempty"`
 	DIDConfig            DIDServiceConfig          `toml:"did,omitempty"`
-	IssuingServiceConfig IssuingServiceConfig      `toml:"issuance,omitempty"`
+	IssuingServiceConfig IssuingServiceConfig      `toml:"issuing,omitempty"`
 	SchemaConfig         SchemaServiceConfig       `toml:"schema,omitempty"`
 	CredentialConfig     CredentialServiceConfig   `toml:"credential,omitempty"`
 	ManifestConfig       ManifestServiceConfig     `toml:"manifest,omitempty"`
@@ -293,7 +293,7 @@ func loadDefaultServicesConfig(config *SSIServiceConfig) {
 			BaseServiceConfig: &BaseServiceConfig{Name: "presentation"},
 		},
 		IssuingServiceConfig: IssuingServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "issuance"},
+			BaseServiceConfig: &BaseServiceConfig{Name: "issuing"},
 		},
 		WebhookConfig: WebhookServiceConfig{
 			BaseServiceConfig: &BaseServiceConfig{Name: "webhook"},

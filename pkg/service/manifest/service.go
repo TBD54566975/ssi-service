@@ -17,7 +17,7 @@ import (
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
@@ -30,7 +30,7 @@ import (
 type Service struct {
 	storage                 *manifeststg.Storage
 	opsStorage              *operation.Storage
-	issuanceTemplateStorage *issuance.Storage
+	issuanceTemplateStorage *issuing.Storage
 	config                  config.ManifestServiceConfig
 
 	// external dependencies
@@ -82,9 +82,9 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the operations")
 	}
-	issuingStorage, err := issuance.NewIssuingStorage(s)
+	issuingStorage, err := issuing.NewIssuingStorage(s)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for issuance templates")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for issuing templates")
 	}
 	return &Service{
 		storage:                 manifestStorage,
@@ -251,7 +251,7 @@ type CredentialResponseContainer struct {
 }
 
 // ProcessApplicationSubmission stores the application in a pending state, along with an operation.
-// When there is an issuance template related to this manifest, the operation is done immediately.
+// When there is an issuing template related to this manifest, the operation is done immediately.
 // Once the operation is done, the Operation.Response field will be of type model.SubmitApplicationResponse.
 // Invalid applications return an operation marked as done, with Response that represents denial.
 // The state of the application can be updated by calling CancelOperation, or by calling ReviewApplicationSubmission.
@@ -330,22 +330,22 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 	return operation.ServiceModel(*storedOp)
 }
 
-// attemptAutomaticIssuance checks if there is an issuance template for the manifest, and if so,
+// attemptAutomaticIssuance checks if there is an issuing template for the manifest, and if so,
 // attempts to issue a credential against it
 func (s Service) attemptAutomaticIssuance(ctx context.Context, request model.SubmitApplicationRequest, manifestID,
 	applicantDID, applicationID string, gotManifest manifeststg.StoredManifest) (*opstorage.StoredOperation, error) {
 	issuanceTemplates, err := s.issuanceTemplateStorage.GetIssuanceTemplatesByManifestID(ctx, manifestID)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching issuance templates by manifest ID")
+		return nil, errors.Wrap(err, "fetching issuing templates by manifest ID")
 	}
 	if len(issuanceTemplates) == 0 {
-		logrus.Warnf("no issuance templates found for manifest<%s>, processing application<%s>", manifestID, applicationID)
+		logrus.Warnf("no issuing templates found for manifest<%s>, processing application<%s>", manifestID, applicationID)
 		return nil, nil
 	}
 
 	issuanceTemplate := issuanceTemplates[0].IssuanceTemplate
 	if len(issuanceTemplates) > 1 {
-		logrus.Warnf("found multiple issuance templates for manifest<%s>, using first entry only", manifestID)
+		logrus.Warnf("found multiple issuing templates for manifest<%s>, using first entry only", manifestID)
 	}
 
 	credResp, creds, err := s.buildFulfillmentCredentialResponseFromTemplate(ctx, applicantDID, manifestID, gotManifest.IssuerKID,
@@ -371,7 +371,7 @@ func (s Service) attemptAutomaticIssuance(ctx context.Context, request model.Sub
 		ResponseJWT:  *responseJWT,
 	}
 	_, storedOp, err := s.storage.StoreReviewApplication(ctx, applicationID, true,
-		"automatic from issuance template", opcredential.IDFromResponseID(applicationID), storedResponse)
+		"automatic from issuing template", opcredential.IDFromResponseID(applicationID), storedResponse)
 	if err != nil {
 		return nil, errors.Wrap(err, "reviewing application")
 	}

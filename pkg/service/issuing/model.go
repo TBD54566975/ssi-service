@@ -1,4 +1,4 @@
-package issuance
+package issuing
 
 import (
 	"reflect"
@@ -56,7 +56,7 @@ type Template struct {
 	// ID of the credential manifest that this template corresponds to.
 	CredentialManifest string `json:"credentialManifest" validate:"required"`
 
-	// ID of the issuer that will be issuance the credentials.
+	// ID of the issuer that will be issuing the credentials.
 	Issuer string `json:"issuer" validate:"required"`
 
 	// ID of the key that will be used to sign the credentials.
@@ -107,6 +107,6 @@ func (r ListIssuanceTemplatesRequest) Validate() error {
 }
 
 type ListIssuanceTemplatesResponse struct {
-	// The issuance templates that satisfy the query conditions.
+	// The issuing templates that satisfy the query conditions.
 	IssuanceTemplates []Template `json:"issuanceTemplates"`
 }
