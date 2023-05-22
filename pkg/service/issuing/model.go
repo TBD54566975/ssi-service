@@ -1,4 +1,4 @@
-package issuance
+package issuing
 
 import (
 	"reflect"
@@ -49,14 +49,14 @@ type CredentialTemplate struct {
 	Revocable bool `json:"revocable"`
 }
 
-type Template struct {
+type IssuanceTemplate struct {
 	// ID of this template.
 	ID string `json:"id"`
 
 	// ID of the credential manifest that this template corresponds to.
 	CredentialManifest string `json:"credentialManifest" validate:"required"`
 
-	// ID of the issuer that will be issuance the credentials.
+	// ID of the issuer that will be issuing the credentials.
 	Issuer string `json:"issuer" validate:"required"`
 
 	// ID of the key that will be used to sign the credentials.
@@ -66,25 +66,25 @@ type Template struct {
 	Credentials []CredentialTemplate `json:"credentials"`
 }
 
-func (it *Template) IsEmpty() bool {
+func (it *IssuanceTemplate) IsEmpty() bool {
 	if it == nil {
 		return true
 	}
-	return reflect.DeepEqual(*it, Template{})
+	return reflect.DeepEqual(*it, IssuanceTemplate{})
 }
 
-func (it *Template) IsValid() bool {
+func (it *IssuanceTemplate) IsValid() bool {
 	return util.IsValidStruct(it) == nil
 }
 
 type GetIssuanceTemplateResponse struct {
 	// The template that was requested.
-	IssuanceTemplate *Template `json:"issuanceTemplate"`
+	IssuanceTemplate *IssuanceTemplate `json:"issuanceTemplate"`
 }
 
 type CreateIssuanceTemplateRequest struct {
 	// The template to create.
-	IssuanceTemplate Template `json:"issuanceTemplate"`
+	IssuanceTemplate IssuanceTemplate `json:"issuanceTemplate"`
 }
 
 func (r CreateIssuanceTemplateRequest) IsValid() bool {
@@ -107,6 +107,6 @@ func (r ListIssuanceTemplatesRequest) Validate() error {
 }
 
 type ListIssuanceTemplatesResponse struct {
-	// The issuance templates that satisfy the query conditions.
-	IssuanceTemplates []Template `json:"issuanceTemplates"`
+	// The issuing templates that satisfy the query conditions.
+	IssuanceTemplates []IssuanceTemplate `json:"issuanceTemplates"`
 }

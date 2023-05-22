@@ -257,7 +257,7 @@ Assuming we have a Credential Manifest that looks like this, which has a single 
 ```json
 {
 	"credential_manifest": {
-		"id": "drivers-license-kyc-issuance",
+		"id": "drivers-license-kyc-issuing",
 		"spec_version": "https://identity.foundation/credential-manifest/spec/v1.0.0/",
 		"issuer": {
 			"id": "did:key:z6MkgMFBk7uEtrYiMZFfPFfxga9S8ahttjsFwbFzNLG2F3rg"
@@ -340,7 +340,7 @@ We can imagine an **Issuance Template** that corresponds to it looking like this
 
 ```json
 {
- "credentialManifest": "drivers-license-kyc-issuance",
+ "credentialManifest": "drivers-license-kyc-issuing",
  "issuer": "did:key:z6MkgMFBk7uEtrYiMZFfPFfxga9S8ahttjsFwbFzNLG2F3r",
  "credentials": [
   {

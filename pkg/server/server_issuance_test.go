@@ -19,7 +19,7 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
-	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -37,19 +37,19 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "returns a template with ID",
 				request: router.CreateIssuanceTemplateRequest{
-					Template: issuance.Template{
+					IssuanceTemplate: issuing.IssuanceTemplate{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
 						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
-						Credentials: []issuance.CredentialTemplate{
+						Credentials: []issuing.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
 								Schema: createdSchema.Schema.ID,
-								Data: issuance.ClaimTemplates{
+								Data: issuing.ClaimTemplates{
 									"foo":   "bar",
 									"hello": "$.vcsomething.something",
 								},
-								Expiry: issuance.TimeLike{
+								Expiry: issuing.TimeLike{
 									Time: &now,
 								},
 							},
@@ -60,19 +60,19 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "returns a template with ID when schema is empty",
 				request: router.CreateIssuanceTemplateRequest{
-					Template: issuance.Template{
+					IssuanceTemplate: issuing.IssuanceTemplate{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
 						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
-						Credentials: []issuance.CredentialTemplate{
+						Credentials: []issuing.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
 								Schema: "",
-								Data: issuance.ClaimTemplates{
+								Data: issuing.ClaimTemplates{
 									"foo":   "bar",
 									"hello": "$.vcsomething.something",
 								},
-								Expiry: issuance.TimeLike{
+								Expiry: issuing.TimeLike{
 									Time: &now,
 								},
 							},
@@ -90,7 +90,7 @@ func TestIssuanceRouter(t *testing.T) {
 				r.CreateIssuanceTemplate(c)
 				assert.True(t, is2xxResponse(w.Code))
 
-				var resp issuance.Template
+				var resp issuing.IssuanceTemplate
 				assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 				assert.NotEmpty(t, resp.ID)
 			})
@@ -108,19 +108,19 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "when missing output_descriptor_id",
 				request: router.CreateIssuanceTemplateRequest{
-					Template: issuance.Template{
+					IssuanceTemplate: issuing.IssuanceTemplate{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
 						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
-						Credentials: []issuance.CredentialTemplate{
+						Credentials: []issuing.CredentialTemplate{
 							{
 								ID:     "",
 								Schema: createdSchema.Schema.ID,
-								Data: issuance.ClaimTemplates{
+								Data: issuing.ClaimTemplates{
 									"foo":   "bar",
 									"hello": "$.vcsomething.something",
 								},
-								Expiry: issuance.TimeLike{
+								Expiry: issuing.TimeLike{
 									Time: &now,
 								},
 							},
@@ -132,19 +132,19 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "when both times are set",
 				request: router.CreateIssuanceTemplateRequest{
-					Template: issuance.Template{
+					IssuanceTemplate: issuing.IssuanceTemplate{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
 						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
-						Credentials: []issuance.CredentialTemplate{
+						Credentials: []issuing.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
 								Schema: createdSchema.Schema.ID,
-								Data: issuance.ClaimTemplates{
+								Data: issuing.ClaimTemplates{
 									"foo":   "bar",
 									"hello": "$.vcsomething.something",
 								},
-								Expiry: issuance.TimeLike{
+								Expiry: issuing.TimeLike{
 									Time:     &now,
 									Duration: &duration,
 								},
@@ -157,19 +157,19 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "when credential schema does not exist",
 				request: router.CreateIssuanceTemplateRequest{
-					Template: issuance.Template{
+					IssuanceTemplate: issuing.IssuanceTemplate{
 						CredentialManifest: manifest.Manifest.ID,
 						Issuer:             issuerResp.DID.ID,
 						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
-						Credentials: []issuance.CredentialTemplate{
+						Credentials: []issuing.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
 								Schema: "fake schema",
-								Data: issuance.ClaimTemplates{
+								Data: issuing.ClaimTemplates{
 									"foo":   "bar",
 									"hello": "$.vcsomething.something",
 								},
-								Expiry: issuance.TimeLike{
+								Expiry: issuing.TimeLike{
 									Time: &now,
 								},
 							},
@@ -181,19 +181,19 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "when credential manifest ID is does not exist",
 				request: router.CreateIssuanceTemplateRequest{
-					Template: issuance.Template{
+					IssuanceTemplate: issuing.IssuanceTemplate{
 						CredentialManifest: "fake manifest id",
 						Issuer:             issuerResp.DID.ID,
 						IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
-						Credentials: []issuance.CredentialTemplate{
+						Credentials: []issuing.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
 								Schema: createdSchema.ID,
-								Data: issuance.ClaimTemplates{
+								Data: issuing.ClaimTemplates{
 									"foo":   "bar",
 									"hello": "$.vcsomething.something",
 								},
-								Expiry: issuance.TimeLike{
+								Expiry: issuing.TimeLike{
 									Time: &now,
 								},
 							},
@@ -205,17 +205,17 @@ func TestIssuanceRouter(t *testing.T) {
 			{
 				name: "when issuer is empty",
 				request: router.CreateIssuanceTemplateRequest{
-					Template: issuance.Template{
+					IssuanceTemplate: issuing.IssuanceTemplate{
 						CredentialManifest: manifest.Manifest.ID,
-						Credentials: []issuance.CredentialTemplate{
+						Credentials: []issuing.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
 								Schema: createdSchema.ID,
-								Data: issuance.ClaimTemplates{
+								Data: issuing.ClaimTemplates{
 									"foo":   "bar",
 									"hello": "$.vcsomething.something",
 								},
-								Expiry: issuance.TimeLike{
+								Expiry: issuing.TimeLike{
 									Time: &now,
 								},
 							},
@@ -241,29 +241,29 @@ func TestIssuanceRouter(t *testing.T) {
 	t.Run("Create, Get, Delete work as expected", func(tt *testing.T) {
 		issuerResp, createdSchema, manifest, r := setupAllThings(tt)
 
-		inputTemplate := issuance.Template{
+		inputTemplate := issuing.IssuanceTemplate{
 			CredentialManifest: manifest.Manifest.ID,
 			Issuer:             issuerResp.DID.ID,
 			IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
-			Credentials: []issuance.CredentialTemplate{
+			Credentials: []issuing.CredentialTemplate{
 				{
 					ID:     "output_descriptor_1",
 					Schema: createdSchema.Schema.ID,
-					Data: issuance.ClaimTemplates{
+					Data: issuing.ClaimTemplates{
 						"foo":   "bar",
 						"hello": "$.vcsomething.something",
 					},
-					Expiry: issuance.TimeLike{
+					Expiry: issuing.TimeLike{
 						Time: &now,
 					},
 				},
 			},
 		}
-		var issuanceTemplate issuance.Template
+		var issuanceTemplate issuing.IssuanceTemplate
 
 		{
 			request := router.CreateIssuanceTemplateRequest{
-				Template: inputTemplate,
+				IssuanceTemplate: inputTemplate,
 			}
 			value := newRequestValue(tt, request)
 			req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/issuancetemplates", value)
@@ -274,8 +274,8 @@ func TestIssuanceRouter(t *testing.T) {
 			assert.True(tt, is2xxResponse(w.Code))
 
 			assert.NoError(tt, json.NewDecoder(w.Body).Decode(&issuanceTemplate))
-			if diff := cmp.Diff(inputTemplate, issuanceTemplate, cmpopts.IgnoreFields(issuance.Template{}, "ID")); diff != "" {
-				tt.Errorf("Template mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(inputTemplate, issuanceTemplate, cmpopts.IgnoreFields(issuing.IssuanceTemplate{}, "ID")); diff != "" {
+				tt.Errorf("IssuanceTemplate mismatch (-want +got):\n%s", diff)
 			}
 		}
 
@@ -288,10 +288,10 @@ func TestIssuanceRouter(t *testing.T) {
 			r.GetIssuanceTemplate(c)
 			assert.True(tt, is2xxResponse(w.Code))
 
-			var getIssuanceTemplate issuance.Template
+			var getIssuanceTemplate issuing.IssuanceTemplate
 			assert.NoError(tt, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
 			if diff := cmp.Diff(issuanceTemplate, getIssuanceTemplate); diff != "" {
-				tt.Errorf("Template mismatch (-want +got):\n%s", diff)
+				tt.Errorf("IssuanceTemplate mismatch (-want +got):\n%s", diff)
 			}
 		}
 
@@ -310,7 +310,7 @@ func TestIssuanceRouter(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := newRequestContextWithParams(w, req, map[string]string{"id": issuanceTemplate.ID})
 			r.GetIssuanceTemplate(c)
-			assert.Contains(tt, w.Body.String(), "issuance template not found")
+			assert.Contains(tt, w.Body.String(), "issuing template not found")
 		}
 	})
 
@@ -323,7 +323,7 @@ func TestIssuanceRouter(t *testing.T) {
 		w := httptest.NewRecorder()
 		c := newRequestContextWithParams(w, req, map[string]string{"id": "where-is-it"})
 		r.GetIssuanceTemplate(c)
-		assert.Contains(tt, w.Body.String(), "issuance template not found")
+		assert.Contains(tt, w.Body.String(), "issuing template not found")
 	})
 
 	t.Run("ListIssuanceTemplates returns empty when there aren't templates", func(tt *testing.T) {
@@ -365,19 +365,19 @@ func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, 
 	createdSchema *schema.CreateSchemaResponse, now time.Time, r *router.IssuanceRouter) {
 	{
 		request := router.CreateIssuanceTemplateRequest{
-			Template: issuance.Template{
+			IssuanceTemplate: issuing.IssuanceTemplate{
 				CredentialManifest: manifest.Manifest.ID,
 				Issuer:             issuerResp.DID.ID,
 				IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
-				Credentials: []issuance.CredentialTemplate{
+				Credentials: []issuing.CredentialTemplate{
 					{
 						ID:     "output_descriptor_1",
 						Schema: createdSchema.Schema.ID,
-						Data: issuance.ClaimTemplates{
+						Data: issuing.ClaimTemplates{
 							"foo":   "bar",
 							"hello": "$.vcsomething.something",
 						},
-						Expiry: issuance.TimeLike{
+						Expiry: issuing.TimeLike{
 							Time: &now,
 						},
 					},
@@ -444,8 +444,8 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 }
 
 func testIssuanceRouter(t *testing.T, s storage.ServiceStorage) *router.IssuanceRouter {
-	serviceConfig := config.IssuingServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-issuance"}}
-	svc, err := issuance.NewIssuingService(serviceConfig, s)
+	serviceConfig := config.IssuingServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-issuing"}}
+	svc, err := issuing.NewIssuingService(serviceConfig, s)
 	require.NoError(t, err)
 
 	r, err := router.NewIssuanceRouter(svc)

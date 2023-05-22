@@ -1,4 +1,4 @@
-package issuance
+package issuing
 
 import (
 	"context"
@@ -21,9 +21,9 @@ type Service struct {
 }
 
 func NewIssuingService(config config.IssuingServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	issuanceStorage, err := NewIssuanceStorage(s)
+	issuanceStorage, err := NewIssuingStorage(s)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating issuance storage")
+		return nil, errors.Wrap(err, "creating issuing storage")
 	}
 	manifestStorage, err := manifeststg.NewManifestStorage(s)
 	if err != nil {
@@ -44,17 +44,17 @@ func NewIssuingService(config config.IssuingServiceConfig, s storage.ServiceStor
 func (s *Service) GetIssuanceTemplate(ctx context.Context, request *GetIssuanceTemplateRequest) (*GetIssuanceTemplateResponse, error) {
 	storedIssuanceTemplate, err := s.storage.GetIssuanceTemplate(ctx, request.ID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting issuance template with id: %s", request.ID)
+		return nil, errors.Wrapf(err, "getting issuing template with id: %s", request.ID)
 	}
 	if storedIssuanceTemplate == nil {
-		return nil, errors.Errorf("issuance template with id<%s> not be found", request.ID)
+		return nil, errors.Errorf("issuing template with id<%s> not be found", request.ID)
 	}
 	return &GetIssuanceTemplateResponse{IssuanceTemplate: serviceModel(*storedIssuanceTemplate)}, nil
 }
 
-func (s *Service) CreateIssuanceTemplate(ctx context.Context, request *CreateIssuanceTemplateRequest) (*Template, error) {
+func (s *Service) CreateIssuanceTemplate(ctx context.Context, request *CreateIssuanceTemplateRequest) (*IssuanceTemplate, error) {
 	if !request.IsValid() {
-		return nil, errors.New("invalid create issuance template request")
+		return nil, errors.New("invalid create issuing template request")
 	}
 
 	for i, c := range request.IssuanceTemplate.Credentials {
@@ -81,13 +81,13 @@ func (s *Service) CreateIssuanceTemplate(ctx context.Context, request *CreateIss
 	storedTemplate.IssuanceTemplate.ID = uuid.NewString()
 
 	if err := s.storage.StoreIssuanceTemplate(ctx, storedTemplate); err != nil {
-		return nil, errors.Wrap(err, "storing issuance template")
+		return nil, errors.Wrap(err, "storing issuing template")
 	}
 
 	return serviceModel(storedTemplate), nil
 }
 
-func serviceModel(template StoredIssuanceTemplate) *Template {
+func serviceModel(template StoredIssuanceTemplate) *IssuanceTemplate {
 	return &template.IssuanceTemplate
 }
 

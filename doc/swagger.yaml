@@ -647,7 +647,7 @@ definitions:
         description: ID of this template.
         type: string
       issuer:
-        description: ID of the issuer that will be issuance the credentials.
+        description: ID of the issuer that will be issuing the credentials.
         type: string
       issuerKid:
         description: ID of the key that will be used to sign the credentials.
@@ -994,7 +994,7 @@ definitions:
         description: ID of this template.
         type: string
       issuer:
-        description: ID of the issuer that will be issuance the credentials.
+        description: ID of the issuer that will be issuing the credentials.
         type: string
       issuerKid:
         description: ID of the key that will be used to sign the credentials.
@@ -2255,7 +2255,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Create issuance template
+      description: Create issuing template
       parameters:
       - description: request body
         in: body
@@ -2278,14 +2278,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create issuance template
+      summary: Create issuing template
       tags:
       - IssuingAPI
   /v1/issuancetemplates/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete issuance template by ID
+      description: Delete issuing template by ID
       parameters:
       - description: ID
         in: path
@@ -2307,13 +2307,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Delete issuance template
+      summary: Delete issuing template
       tags:
       - IssuingAPI
     get:
       consumes:
       - application/json
-      description: Get an issuance template by its id
+      description: Get an issuing template by its id
       parameters:
       - description: ID
         in: path
@@ -2331,7 +2331,7 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get issuance template
+      summary: Get issuing template
       tags:
       - IssuingAPI
   /v1/keys:

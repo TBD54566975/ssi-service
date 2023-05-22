@@ -19,7 +19,7 @@ import (
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
-	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 )
@@ -50,13 +50,13 @@ func (s Service) signCredentialResponse(ctx context.Context, issuerKID string, r
 // buildFulfillmentCredentialResponseFromTemplate builds a credential response from a template
 func (s Service) buildFulfillmentCredentialResponseFromTemplate(ctx context.Context,
 	applicantDID, manifestID, issuerKID string, credManifest manifest.CredentialManifest,
-	template issuance.Template, application manifest.CredentialApplication,
+	template issuing.IssuanceTemplate, application manifest.CredentialApplication,
 	applicationJSON map[string]any) (*manifest.CredentialResponse, []cred.Container, error) {
 	if template.IsValid() {
-		return nil, nil, errors.New("issuance template is not valid")
+		return nil, nil, errors.New("issuing template is not valid")
 	}
 
-	templateMap := make(map[string]issuance.CredentialTemplate)
+	templateMap := make(map[string]issuing.CredentialTemplate)
 	issuingKID := issuerKID
 	if template.IssuerKID != "" {
 		issuingKID = template.IssuerKID
@@ -95,7 +95,7 @@ func (s Service) buildFulfillmentCredentialResponse(ctx context.Context, applica
 // unifies both templated and override paths for building a credential response
 func (s Service) fulfillmentCredentialResponse(ctx context.Context, responseBuilder manifest.CredentialResponseBuilder,
 	applicantDID, issuerKID string, credManifest manifest.CredentialManifest, application *manifest.CredentialApplication,
-	templateMap map[string]issuance.CredentialTemplate, applicationJSON map[string]any,
+	templateMap map[string]issuing.CredentialTemplate, applicationJSON map[string]any,
 	credentialOverrides map[string]model.CredentialOverride) (*manifest.CredentialResponse, []cred.Container, error) {
 
 	creds := make([]cred.Container, 0, len(credManifest.OutputDescriptors))
@@ -109,7 +109,7 @@ func (s Service) fulfillmentCredentialResponse(ctx context.Context, responseBuil
 			Data: make(map[string]any),
 		}
 
-		// apply issuance template and then overrides
+		// apply issuing template and then overrides
 		if len(templateMap) != 0 {
 			templatedCredentialRequest, err := s.applyIssuanceTemplate(createCredentialRequest, templateMap, od, applicationJSON, credManifest, *application.PresentationSubmission)
 			if err != nil {
@@ -157,7 +157,7 @@ func (s Service) fulfillmentCredentialResponse(ctx context.Context, responseBuil
 }
 
 func (s Service) applyIssuanceTemplate(credentialRequest credential.CreateCredentialRequest,
-	templateMap map[string]issuance.CredentialTemplate, od manifest.OutputDescriptor,
+	templateMap map[string]issuing.CredentialTemplate, od manifest.OutputDescriptor,
 	applicationJSON map[string]any, credManifest manifest.CredentialManifest, submission exchange.PresentationSubmission) (*credential.CreateCredentialRequest, error) {
 	ct, ok := templateMap[od.ID]
 	if !ok {
@@ -210,7 +210,7 @@ func (s Service) applyCredentialOverrides(credentialRequest credential.CreateCre
 	return credentialRequest
 }
 
-func getCredentialJSON(applicationJSON map[string]any, ct issuance.CredentialTemplate,
+func getCredentialJSON(applicationJSON map[string]any, ct issuing.CredentialTemplate,
 	credManifest manifest.CredentialManifest, submission exchange.PresentationSubmission) (any, error) {
 	if ct.CredentialInputDescriptor == "" {
 		return nil, errors.New("cannot provide input descriptor when credential template does not have input descriptor")

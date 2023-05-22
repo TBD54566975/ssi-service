@@ -293,7 +293,7 @@ func loadDefaultServicesConfig(config *SSIServiceConfig) {
 			BaseServiceConfig: &BaseServiceConfig{Name: "presentation"},
 		},
 		IssuingServiceConfig: IssuingServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "issuance"},
+			BaseServiceConfig: &BaseServiceConfig{Name: "issuing"},
 		},
 		WebhookConfig: WebhookServiceConfig{
 			BaseServiceConfig: &BaseServiceConfig{Name: "webhook"},
