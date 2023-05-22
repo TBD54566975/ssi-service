@@ -55,8 +55,8 @@ ion_resolver_url = "https://tbdwebsiteonline.com"
 [services.schema]
 name = "schema"
 
-[services.issuance]
-name = "issuance"
+[services.issuing]
+name = "issuing"
 
 [services.credential]
 name = "credential"

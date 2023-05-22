@@ -48,8 +48,8 @@ universal_resolver_methods = ["ion"]
 [services.schema]
 name = "schema"
 
-[services.issuance]
-name = "issuance"
+[services.issuing]
+name = "issuing"
 
 [services.credential]
 name = "credential"
