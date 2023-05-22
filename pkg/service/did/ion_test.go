@@ -79,7 +79,7 @@ func TestIONHandler(t *testing.T) {
 		keystoreService := testKeyStoreService(tt, s)
 		didStorage, err := NewDIDStorage(s)
 		assert.NoError(tt, err)
-		handler, err := NewIONHandler("https://tbdwebsiteonline.com", didStorage, keystoreService)
+		handler, err := NewIONHandler("https://ion.tbddev.org", didStorage, keystoreService)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, handler)
 
