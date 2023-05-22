@@ -23,14 +23,11 @@ jobs:
         go-version: 1.20.4
         cache: true
 
-    - name: Install Mage
-      run: go install github.com/magefile/mage
-
     - name: Start containers
       run: docker-compose -f "build/docker-compose.yml" up -d --build ssi redis uni-resolver driver-did-ion
 
     - name: End To End Test
-      run: mage integration
+      run: docker exec ssi go test -v -tags=jwx_es256k ./integration
 
     - name: Save Container Logs to Directory
       if: failure()
