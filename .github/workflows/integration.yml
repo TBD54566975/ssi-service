@@ -32,9 +32,12 @@ jobs:
     - name: End To End Test
       run: mage integration
 
-    - name: Save Container Logs to File
+    - name: Save Container Logs to Directory
       if: failure()
-      run: docker logs ssi > ssi_logs.txt
+      run: |
+        mkdir log
+        docker logs ssi > log/ssi_logs.txt
+        docker cp ssi:/app/log .
 
     - name: Upload Logs as Artifact
       if: failure()
