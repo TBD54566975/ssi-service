@@ -62,11 +62,11 @@ universal_resolver_methods = ["ion"]
 [services.schema]
 name = "schema"
 
-[services.issuing]
-name = "issuing"
-
 [services.credential]
 name = "credential"
+
+[services.issuance]
+name = "issuance"
 
 [services.manifest]
 name = "manifest"
