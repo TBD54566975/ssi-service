@@ -1,0 +1,2 @@
+replace    cryptosuite.LDKeyType string
+replace    cryptosuite.SignatureType string
