@@ -220,11 +220,11 @@ func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Serv
 }
 
 func testIssuanceService(t *testing.T, db storage.ServiceStorage) *issuance.Service {
-	cfg := config.IssuanceServiceConfig{
+	cfg := config.IssuingServiceConfig{
 		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-issuance"},
 	}
 
-	s, err := issuance.NewIssuanceService(cfg, db)
+	s, err := issuance.NewIssuingService(cfg, db)
 	require.NoError(t, err)
 	require.NotEmpty(t, s)
 	return s

@@ -444,8 +444,8 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 }
 
 func testIssuanceRouter(t *testing.T, s storage.ServiceStorage) *router.IssuanceRouter {
-	serviceConfig := config.IssuanceServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-issuance"}}
-	svc, err := issuance.NewIssuanceService(serviceConfig, s)
+	serviceConfig := config.IssuingServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-issuance"}}
+	svc, err := issuance.NewIssuingService(serviceConfig, s)
 	require.NoError(t, err)
 
 	r, err := router.NewIssuanceRouter(svc)

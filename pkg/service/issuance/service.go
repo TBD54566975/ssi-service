@@ -14,13 +14,13 @@ import (
 )
 
 type Service struct {
-	config          config.IssuanceServiceConfig
+	config          config.IssuingServiceConfig
 	storage         Storage
 	manifestStorage manifeststg.Storage
 	schemaStorage   schema.Storage
 }
 
-func NewIssuanceService(config config.IssuanceServiceConfig, s storage.ServiceStorage) (*Service, error) {
+func NewIssuingService(config config.IssuingServiceConfig, s storage.ServiceStorage) (*Service, error) {
 	issuanceStorage, err := NewIssuanceStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating issuance storage")

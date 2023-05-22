@@ -64,15 +64,15 @@ type ServerConfig struct {
 	EnableAllowAllCORS  bool          `toml:"enable_allow_all_cors" conf:"default:false"`
 }
 
-type IssuanceServiceConfig struct {
+type IssuingServiceConfig struct {
 	*BaseServiceConfig
 }
 
-func (s *IssuanceServiceConfig) IsEmpty() bool {
+func (s *IssuingServiceConfig) IsEmpty() bool {
 	if s == nil {
 		return true
 	}
-	return reflect.DeepEqual(s, &IssuanceServiceConfig{})
+	return reflect.DeepEqual(s, &IssuingServiceConfig{})
 }
 
 // ServicesConfig represents configurable properties for the components of the SSI Service
@@ -85,14 +85,14 @@ type ServicesConfig struct {
 	ServiceEndpoint string           `toml:"service_endpoint"`
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
-	KeyStoreConfig        KeyStoreServiceConfig     `toml:"keystore,omitempty"`
-	DIDConfig             DIDServiceConfig          `toml:"did,omitempty"`
-	IssuanceServiceConfig IssuanceServiceConfig     `toml:"issuance,omitempty"`
-	SchemaConfig          SchemaServiceConfig       `toml:"schema,omitempty"`
-	CredentialConfig      CredentialServiceConfig   `toml:"credential,omitempty"`
-	ManifestConfig        ManifestServiceConfig     `toml:"manifest,omitempty"`
-	PresentationConfig    PresentationServiceConfig `toml:"presentation,omitempty"`
-	WebhookConfig         WebhookServiceConfig      `toml:"webhook,omitempty"`
+	KeyStoreConfig       KeyStoreServiceConfig     `toml:"keystore,omitempty"`
+	DIDConfig            DIDServiceConfig          `toml:"did,omitempty"`
+	IssuingServiceConfig IssuingServiceConfig      `toml:"issuing,omitempty"`
+	SchemaConfig         SchemaServiceConfig       `toml:"schema,omitempty"`
+	CredentialConfig     CredentialServiceConfig   `toml:"credential,omitempty"`
+	ManifestConfig       ManifestServiceConfig     `toml:"manifest,omitempty"`
+	PresentationConfig   PresentationServiceConfig `toml:"presentation,omitempty"`
+	WebhookConfig        WebhookServiceConfig      `toml:"webhook,omitempty"`
 }
 
 // BaseServiceConfig represents configurable properties for a specific component of the SSI Service
@@ -292,7 +292,7 @@ func loadDefaultServicesConfig(config *SSIServiceConfig) {
 		PresentationConfig: PresentationServiceConfig{
 			BaseServiceConfig: &BaseServiceConfig{Name: "presentation"},
 		},
-		IssuanceServiceConfig: IssuanceServiceConfig{
+		IssuingServiceConfig: IssuingServiceConfig{
 			BaseServiceConfig: &BaseServiceConfig{Name: "issuance"},
 		},
 		WebhookConfig: WebhookServiceConfig{
