@@ -32,7 +32,7 @@ func NewIssuanceRouter(svc svcframework.Service) (*IssuanceRouter, error) {
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
-//	@Success		200	{object}	issuance.IssuanceTemplate
+//	@Success		200	{object}	issuance.Template
 //	@Failure		400	{string}	string	"Bad request"
 //	@Router			/v1/issuancetemplates/{id} [get]
 func (ir IssuanceRouter) GetIssuanceTemplate(c *gin.Context) error {
@@ -66,7 +66,7 @@ func (r CreateIssuanceTemplateRequest) toServiceRequest() *issuance.CreateIssuan
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateIssuanceTemplateRequest	true	"request body"
-//	@Success		201		{object}	issuance.IssuanceTemplate
+//	@Success		201		{object}	issuance.Template
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/issuancetemplates [put]

@@ -563,10 +563,10 @@ definitions:
     x-enum-varnames:
     - StatusReady
     - StatusNotReady
-  github_com_tbd54566975_ssi-service_pkg_service_issuing.ClaimTemplates:
+  github_com_tbd54566975_ssi-service_pkg_service_issuance.ClaimTemplates:
     additionalProperties: {}
     type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplate:
+  github_com_tbd54566975_ssi-service_pkg_service_issuance.CredentialTemplate:
     properties:
       credentialInputDescriptor:
         description: |-
@@ -579,14 +579,14 @@ definitions:
         type: string
       data:
         allOf:
-        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.ClaimTemplates'
+        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.ClaimTemplates'
         description: |-
           Data that will be used to determine credential claims.
           Values may be json path like strings, or any other JSON primitive. Each entry will be used to come up with a
           claim about the credentialSubject in the credential that will be issued.
       expiry:
         allOf:
-        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.TimeLike'
+        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.TimeLike'
         description: Parameter to determine the expiry of the credential.
       id:
         description: ID corresponding to an OutputDescriptor.ID from the manifest.
@@ -598,7 +598,7 @@ definitions:
         description: ID of the CredentialSchema to be used for the issued credential.
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate:
+  github_com_tbd54566975_ssi-service_pkg_service_issuance.Template:
     properties:
       credentialManifest:
         description: ID of the credential manifest that this template corresponds
@@ -607,7 +607,7 @@ definitions:
       credentials:
         description: Info required to create a credential from a credential application.
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplate'
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.CredentialTemplate'
         type: array
       id:
         description: ID of this template.
@@ -623,7 +623,7 @@ definitions:
     - issuer
     - issuerKid
     type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuing.TimeLike:
+  github_com_tbd54566975_ssi-service_pkg_service_issuance.TimeLike:
     properties:
       duration:
         allOf:
@@ -954,7 +954,7 @@ definitions:
       credentials:
         description: Info required to create a credential from a credential application.
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplate'
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.CredentialTemplate'
         type: array
       id:
         description: ID of this template.
@@ -1320,7 +1320,7 @@ definitions:
     properties:
       issuanceTemplates:
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate'
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.Template'
         type: array
     type: object
   pkg_server_router.ListSubmissionRequest:
@@ -2219,7 +2219,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate'
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.Template'
         "400":
           description: Bad request
           schema:
@@ -2230,7 +2230,7 @@ paths:
             type: string
       summary: Create issuance template
       tags:
-      - IssuingAPI
+      - IssuanceAPI
   /v1/issuancetemplates/{id}:
     delete:
       consumes:
@@ -2259,7 +2259,7 @@ paths:
             type: string
       summary: Delete issuance template
       tags:
-      - IssuingAPI
+      - IssuanceAPI
     get:
       consumes:
       - application/json
@@ -2276,14 +2276,14 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate'
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.Template'
         "400":
           description: Bad request
           schema:
             type: string
       summary: Get issuance template
       tags:
-      - IssuingAPI
+      - IssuanceAPI
   /v1/keys:
     put:
       consumes:
