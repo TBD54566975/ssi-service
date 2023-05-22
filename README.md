@@ -74,6 +74,12 @@ Note that at this time, we do not currently support rotating the master key.
 - If does not exist...it uses a default config defined in the code inline
 3. Finally, it loads the config/.env file and adds the env variables defined in this file to the final SSIServiceConfig
 
+## Pre-built images to use
+
+There are pre-build images built by github actions on each merge to the main branch, which you can access here:
+https://github.com/orgs/TBD54566975/packages?repo_name=ssi-service
+
+
 ## Build & Test
 
 This project uses [mage](https://magefile.org/), please
