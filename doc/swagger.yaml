@@ -613,7 +613,7 @@ definitions:
         description: ID of this template.
         type: string
       issuer:
-        description: ID of the issuer that will be issuing the credentials.
+        description: ID of the issuer that will be issuance the credentials.
         type: string
       issuerKid:
         description: ID of the key that will be used to sign the credentials.
@@ -960,7 +960,7 @@ definitions:
         description: ID of this template.
         type: string
       issuer:
-        description: ID of the issuer that will be issuing the credentials.
+        description: ID of the issuer that will be issuance the credentials.
         type: string
       issuerKid:
         description: ID of the key that will be used to sign the credentials.

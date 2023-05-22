@@ -59,8 +59,8 @@ local_resolution_methods = ["key", "web", "pkh", "peer"]
 [services.schema]
 name = "schema"
 
-[services.issuing]
-name = "issuing"
+[services.issuance]
+name = "issuance"
 
 [services.credential]
 name = "credential"

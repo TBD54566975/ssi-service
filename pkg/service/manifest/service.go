@@ -17,7 +17,7 @@ import (
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
@@ -30,7 +30,7 @@ import (
 type Service struct {
 	storage                 *manifeststg.Storage
 	opsStorage              *operation.Storage
-	issuanceTemplateStorage *issuing.Storage
+	issuanceTemplateStorage *issuance.Storage
 	config                  config.ManifestServiceConfig
 
 	// external dependencies
@@ -82,14 +82,14 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the operations")
 	}
-	issuingStorage, err := issuing.NewIssuingStorage(s)
+	issuanceStorage, err := issuance.NewIssuanceStorage(s)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for issuance templates")
 	}
 	return &Service{
 		storage:                 manifestStorage,
 		opsStorage:              opsStorage,
-		issuanceTemplateStorage: issuingStorage,
+		issuanceTemplateStorage: issuanceStorage,
 		config:                  config,
 		keyStore:                keyStore,
 		didResolver:             didResolver,
@@ -371,7 +371,7 @@ func (s Service) attemptAutomaticIssuance(ctx context.Context, request model.Sub
 		ResponseJWT:  *responseJWT,
 	}
 	_, storedOp, err := s.storage.StoreReviewApplication(ctx, applicationID, true,
-		"automatic from issuing template", opcredential.IDFromResponseID(applicationID), storedResponse)
+		"automatic from issuance template", opcredential.IDFromResponseID(applicationID), storedResponse)
 	if err != nil {
 		return nil, errors.Wrap(err, "reviewing application")
 	}
