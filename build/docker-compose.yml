@@ -3,8 +3,6 @@ version: "3.98"
 
 services:
   ssi:
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     container_name: ssi
     image: ghcr.io/tbd54566975/ssi-service:main
     build:

@@ -1,18 +1,101 @@
 package server
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strconv"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tbd54566975/ssi-service/config"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 )
+
+func freePort() string {
+	listener, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		fmt.Println("Failed to listen:", err)
+		return ""
+	}
+	defer listener.Close()
+	return strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
+}
+func TestSimpleWebhook(t *testing.T) {
+	var received int64
+	receivedOne := func() bool {
+		return received == 1
+	}
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		atomic.AddInt64(&received, 1)
+	}))
+	defer testServer.Close()
+
+	shutdown := make(chan os.Signal, 1)
+	serviceConfig, err := config.LoadConfig("")
+	assert.NoError(t, err)
+	serviceConfig.Server.APIHost = "0.0.0.0:" + freePort()
+	server, err := NewSSIServer(shutdown, *serviceConfig)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, server)
+
+	go func() {
+		require.ErrorIs(t, server.ListenAndServe(), http.ErrServerClosed)
+	}()
+
+	require.Eventually(t, func() bool {
+		resp, err := http.Get("http://" + server.Addr + "/health")
+		require.NoError(t, err)
+		return resp.StatusCode == 200
+	}, 30*time.Second, 100*time.Millisecond)
+
+	webhookRequest := router.CreateWebhookRequest{
+		Noun: "DID",
+		Verb: "Create",
+		URL:  testServer.URL,
+	}
+	requestData, err := json.Marshal(webhookRequest)
+	assert.NoError(t, err)
+
+	put(t, server, "/v1/webhooks", requestData)
+
+	createRequest := []byte(`{
+		"keyType":"Ed25519",
+		"options": {
+			"didWebId": "did:web:tbd.website"
+		}
+	}`)
+	put(t, server, "/v1/dids/web", createRequest)
+
+	<-time.After(500 * time.Millisecond)
+	assert.Eventually(t, receivedOne, 5*time.Second, 10*time.Millisecond)
+
+	assert.NoError(t, server.Close())
+}
+
+func put(t *testing.T, server *SSIServer, endpoint string, data []byte) {
+	request, err := http.NewRequest(http.MethodPut, "http://"+server.Addr+endpoint, bytes.NewReader(data))
+	assert.NoError(t, err)
+	request.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(request)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, res.StatusCode/100)
+	body, err := io.ReadAll(res.Body)
+	assert.NoError(t, err)
+
+	assert.NotEmpty(t, string(body))
+}
 
 func TestWebhookAPI(t *testing.T) {
 	t.Run("CreateWebhook returns error when missing request", func(tt *testing.T) {
