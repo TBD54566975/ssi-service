@@ -29,7 +29,7 @@ require (
 	github.com/redis/go-redis/extra/redisotel/v9 v9.0.4
 	github.com/redis/go-redis/v9 v9.0.4
 	github.com/sirupsen/logrus v1.9.2
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag/v2 v2.0.0-rc3
