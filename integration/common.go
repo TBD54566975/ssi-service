@@ -476,13 +476,13 @@ type issuanceTemplateParams struct {
 
 func CreateIssuanceTemplate(params issuanceTemplateParams) (string, error) {
 	logrus.Println("\n\nCreating Issuance Template:")
-	issuanceTemplateJSON, err := resolveTemplate(params, "issuing-template-input.json")
+	issuanceTemplateJSON, err := resolveTemplate(params, "issuance-template-input.json")
 	if err != nil {
 		return "", err
 	}
 	output, err := put(endpoint+version+"issuancetemplates", issuanceTemplateJSON)
 	if err != nil {
-		return "", errors.Wrapf(err, "creating issuing template yielded output: %s", output)
+		return "", errors.Wrapf(err, "creating issuance template yielded output: %s", output)
 	}
 
 	return output, nil
