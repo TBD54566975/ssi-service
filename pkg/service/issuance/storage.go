@@ -1,4 +1,4 @@
-package issuing
+package issuance
 
 import (
 	"context"
@@ -15,9 +15,9 @@ type Storage struct {
 
 const namespace = "issuance_template"
 
-func NewIssuingStorage(s storage.ServiceStorage) (*Storage, error) {
+func NewIssuanceStorage(s storage.ServiceStorage) (*Storage, error) {
 	if s == nil {
-		return nil, errors.New("s cannot be nil")
+		return nil, errors.New("storage cannot be nil")
 	}
 	return &Storage{db: s}, nil
 }

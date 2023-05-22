@@ -24,7 +24,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
-	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
 	manifestsvc "github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -1090,24 +1090,24 @@ func TestManifestAPI(t *testing.T) {
 }
 
 func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *did.CreateDIDResponse,
-	createdSchema *schema.CreateSchemaResponse, expiry1 time.Time, expiry2 time.Duration) *issuing.CreateIssuanceTemplateRequest {
-	return &issuing.CreateIssuanceTemplateRequest{
-		IssuanceTemplate: issuing.Template{
+	createdSchema *schema.CreateSchemaResponse, expiry1 time.Time, expiry2 time.Duration) *issuance.CreateIssuanceTemplateRequest {
+	return &issuance.CreateIssuanceTemplateRequest{
+		IssuanceTemplate: issuance.Template{
 			ID:                 uuid.NewString(),
 			CredentialManifest: m.ID,
 			Issuer:             issuerDID.DID.ID,
 			IssuerKID:          issuerDID.DID.VerificationMethod[0].ID,
-			Credentials: []issuing.CredentialTemplate{
+			Credentials: []issuance.CredentialTemplate{
 				{
 					ID:                        "id1",
 					Schema:                    createdSchema.ID,
 					CredentialInputDescriptor: "test-id",
-					Data: issuing.ClaimTemplates{
+					Data: issuance.ClaimTemplates{
 						"firstName": "$.credentialSubject.firstName",
 						"lastName":  "$.credentialSubject.lastName",
 						"state":     "CA",
 					},
-					Expiry: issuing.TimeLike{
+					Expiry: issuance.TimeLike{
 						Time: &expiry1,
 					},
 				},
@@ -1115,7 +1115,7 @@ func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *d
 					ID:                        "id2",
 					Schema:                    createdSchema.ID,
 					CredentialInputDescriptor: "test-id",
-					Data: issuing.ClaimTemplates{
+					Data: issuance.ClaimTemplates{
 						"someCrazyObject": map[string]any{
 							"foo": 123,
 							"bar": false,
@@ -1124,7 +1124,7 @@ func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *d
 							},
 						},
 					},
-					Expiry:    issuing.TimeLike{Duration: &expiry2},
+					Expiry:    issuance.TimeLike{Duration: &expiry2},
 					Revocable: true,
 				},
 			},

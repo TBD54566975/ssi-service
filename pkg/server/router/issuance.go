@@ -9,17 +9,17 @@ import (
 
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
 )
 
 type IssuanceRouter struct {
-	service issuing.Service
+	service issuance.Service
 }
 
 func NewIssuanceRouter(svc svcframework.Service) (*IssuanceRouter, error) {
-	service, ok := svc.(*issuing.Service)
+	service, ok := svc.(*issuance.Service)
 	if !ok {
-		return nil, errors.New("could not cast to issuing service type")
+		return nil, errors.New("could not cast to issuance service type")
 	}
 	return &IssuanceRouter{service: *service}, nil
 }
@@ -28,11 +28,11 @@ func NewIssuanceRouter(svc svcframework.Service) (*IssuanceRouter, error) {
 //
 //	@Summary		Get issuance template
 //	@Description	Get an issuance template by its id
-//	@Tags			IssuingAPI
+//	@Tags			IssuanceAPI
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
-//	@Success		200	{object}	issuing.Template
+//	@Success		200	{object}	issuance.Template
 //	@Failure		400	{string}	string	"Bad request"
 //	@Router			/v1/issuancetemplates/{id} [get]
 func (ir IssuanceRouter) GetIssuanceTemplate(c *gin.Context) {
@@ -43,7 +43,7 @@ func (ir IssuanceRouter) GetIssuanceTemplate(c *gin.Context) {
 		return
 	}
 
-	issuanceTemplate, err := ir.service.GetIssuanceTemplate(c, &issuing.GetIssuanceTemplateRequest{ID: *id})
+	issuanceTemplate, err := ir.service.GetIssuanceTemplate(c, &issuance.GetIssuanceTemplateRequest{ID: *id})
 	if err != nil {
 		errMsg := "getting issuance template"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
@@ -53,22 +53,22 @@ func (ir IssuanceRouter) GetIssuanceTemplate(c *gin.Context) {
 }
 
 type CreateIssuanceTemplateRequest struct {
-	issuing.Template
+	issuance.Template
 }
 
-func (r CreateIssuanceTemplateRequest) toServiceRequest() *issuing.CreateIssuanceTemplateRequest {
-	return &issuing.CreateIssuanceTemplateRequest{IssuanceTemplate: r.Template}
+func (r CreateIssuanceTemplateRequest) toServiceRequest() *issuance.CreateIssuanceTemplateRequest {
+	return &issuance.CreateIssuanceTemplateRequest{IssuanceTemplate: r.Template}
 }
 
 // CreateIssuanceTemplate godoc
 //
 //	@Summary		Create issuance template
 //	@Description	Create issuance template
-//	@Tags			IssuingAPI
+//	@Tags			IssuanceAPI
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateIssuanceTemplateRequest	true	"request body"
-//	@Success		201		{object}	issuing.Template
+//	@Success		201		{object}	issuance.Template
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/issuancetemplates [put]
@@ -94,7 +94,7 @@ func (ir IssuanceRouter) CreateIssuanceTemplate(c *gin.Context) {
 //
 //	@Summary		Delete issuance template
 //	@Description	Delete issuance template by ID
-//	@Tags			IssuingAPI
+//	@Tags			IssuanceAPI
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -110,7 +110,7 @@ func (ir IssuanceRouter) DeleteIssuanceTemplate(c *gin.Context) {
 		return
 	}
 
-	if err := ir.service.DeleteIssuanceTemplate(c, &issuing.DeleteIssuanceTemplateRequest{ID: *id}); err != nil {
+	if err := ir.service.DeleteIssuanceTemplate(c, &issuance.DeleteIssuanceTemplateRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete issuance template with id: %s", *id)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
@@ -120,14 +120,14 @@ func (ir IssuanceRouter) DeleteIssuanceTemplate(c *gin.Context) {
 }
 
 type ListIssuanceTemplatesResponse struct {
-	IssuanceTemplates []issuing.Template `json:"issuanceTemplates,omitempty"`
+	IssuanceTemplates []issuance.Template `json:"issuanceTemplates,omitempty"`
 }
 
 // ListIssuanceTemplates godoc
 //
 //	@Summary		Lists issuance templates
 //	@Description	Lists all issuance templates stored in this service.
-//	@Tags			IssuingAPI
+//	@Tags			IssuanceAPI
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	ListIssuanceTemplatesResponse
@@ -135,7 +135,7 @@ type ListIssuanceTemplatesResponse struct {
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/manifests [get]
 func (ir IssuanceRouter) ListIssuanceTemplates(c *gin.Context) {
-	gotManifests, err := ir.service.ListIssuanceTemplates(c, &issuing.ListIssuanceTemplatesRequest{})
+	gotManifests, err := ir.service.ListIssuanceTemplates(c, &issuance.ListIssuanceTemplatesRequest{})
 	if err != nil {
 		errMsg := "could not get templates"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
