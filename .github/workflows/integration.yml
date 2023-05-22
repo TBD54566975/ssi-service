@@ -41,7 +41,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: logs
-        path: ssi_logs.txt
+        path: log/*
 
     - name: Stop containers
       if: always()
