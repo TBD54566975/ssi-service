@@ -3,6 +3,7 @@ package integration
 import (
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -30,7 +31,12 @@ func TestCreateIssuerDIDWebIntegration(t *testing.T) {
 	}))
 	defer testServer.Close()
 
-	_, err := CreateWebhook(testServer.URL)
+	u, err := url.Parse(testServer.URL)
+	assert.NoError(t, err)
+
+	// We use `host.docker.internal` because we run integration tests on the host machine, while the service is running
+	// inside a docker container. See https://docs.docker.com/desktop/networking/#i-want-to-connect-from-a-container-to-a-service-on-the-host
+	_, err = CreateWebhook("http://host.docker.internal:" + u.Port())
 	assert.NoError(t, err)
 
 	didWebOutput, err := CreateDIDWeb()
