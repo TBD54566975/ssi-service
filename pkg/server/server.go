@@ -266,7 +266,7 @@ func ManifestAPI(rg *gin.RouterGroup, service svcframework.Service, webhookServi
 func IssuanceAPI(rg *gin.RouterGroup, service svcframework.Service) error {
 	issuanceRouter, err := router.NewIssuanceRouter(service)
 	if err != nil {
-		return sdkutil.LoggingErrorMsg(err, "creating issuing router")
+		return sdkutil.LoggingErrorMsg(err, "creating issuance router")
 	}
 
 	issuanceAPI := rg.Group(IssuanceTemplatePrefix)

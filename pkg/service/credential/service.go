@@ -193,7 +193,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 	}
 
 	if err := builder.SetIssuanceDate(time.Now().Format(time.RFC3339)); err != nil {
-		errMsg := fmt.Sprintf("could not set credential issuing date")
+		errMsg := fmt.Sprintf("could not set credential issuance date")
 		return nil, sdkutil.LoggingErrorMsg(err, errMsg)
 	}
 
