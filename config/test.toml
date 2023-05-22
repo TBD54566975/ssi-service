@@ -55,8 +55,8 @@ ion_resolver_url = "https://ion.tbddev.org"
 [services.schema]
 name = "schema"
 
-[services.issuing]
-name = "issuing"
+[services.issuance]
+name = "issuance"
 
 [services.credential]
 name = "credential"
