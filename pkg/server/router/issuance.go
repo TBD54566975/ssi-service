@@ -26,8 +26,8 @@ func NewIssuanceRouter(svc svcframework.Service) (*IssuanceRouter, error) {
 
 // GetIssuanceTemplate godoc
 //
-//	@Summary		Get issuing template
-//	@Description	Get an issuing template by its id
+//	@Summary		Get issuance template
+//	@Description	Get an issuance template by its id
 //	@Tags			IssuingAPI
 //	@Accept			json
 //	@Produce		json
@@ -38,14 +38,14 @@ func NewIssuanceRouter(svc svcframework.Service) (*IssuanceRouter, error) {
 func (ir IssuanceRouter) GetIssuanceTemplate(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
-		errMsg := "cannot get issuing template without an ID"
+		errMsg := "cannot get issuance template without an ID"
 		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 		return
 	}
 
 	issuanceTemplate, err := ir.service.GetIssuanceTemplate(c, &issuing.GetIssuanceTemplateRequest{ID: *id})
 	if err != nil {
-		errMsg := "getting issuing template"
+		errMsg := "getting issuance template"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
@@ -62,8 +62,8 @@ func (r CreateIssuanceTemplateRequest) toServiceRequest() *issuing.CreateIssuanc
 
 // CreateIssuanceTemplate godoc
 //
-//	@Summary		Create issuing template
-//	@Description	Create issuing template
+//	@Summary		Create issuance template
+//	@Description	Create issuance template
 //	@Tags			IssuingAPI
 //	@Accept			json
 //	@Produce		json
@@ -92,8 +92,8 @@ func (ir IssuanceRouter) CreateIssuanceTemplate(c *gin.Context) {
 
 // DeleteIssuanceTemplate godoc
 //
-//	@Summary		Delete issuing template
-//	@Description	Delete issuing template by ID
+//	@Summary		Delete issuance template
+//	@Description	Delete issuance template by ID
 //	@Tags			IssuingAPI
 //	@Accept			json
 //	@Produce		json
@@ -111,7 +111,7 @@ func (ir IssuanceRouter) DeleteIssuanceTemplate(c *gin.Context) {
 	}
 
 	if err := ir.service.DeleteIssuanceTemplate(c, &issuing.DeleteIssuanceTemplateRequest{ID: *id}); err != nil {
-		errMsg := fmt.Sprintf("could not delete issuing template with id: %s", *id)
+		errMsg := fmt.Sprintf("could not delete issuance template with id: %s", *id)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
@@ -125,8 +125,8 @@ type ListIssuanceTemplatesResponse struct {
 
 // ListIssuanceTemplates godoc
 //
-//	@Summary		Lists issuing templates
-//	@Description	Lists all issuing templates stored in this service.
+//	@Summary		Lists issuance templates
+//	@Description	Lists all issuance templates stored in this service.
 //	@Tags			IssuingAPI
 //	@Accept			json
 //	@Produce		json
