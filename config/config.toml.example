@@ -58,11 +58,11 @@ local_resolution_methods = ["key", "web", "pkh", "peer"]
 [services.schema]
 name = "schema"
 
-[services.issuance]
-name = "issuance"
-
 [services.credential]
 name = "credential"
+
+[services.issuance]
+name = "issuance"
 
 [services.manifest]
 name = "manifest"
