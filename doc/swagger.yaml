@@ -563,10 +563,10 @@ definitions:
     x-enum-varnames:
     - StatusReady
     - StatusNotReady
-  github_com_tbd54566975_ssi-service_pkg_service_issuance.ClaimTemplates:
+  github_com_tbd54566975_ssi-service_pkg_service_issuing.ClaimTemplates:
     additionalProperties: {}
     type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuance.CredentialTemplate:
+  github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplate:
     properties:
       credentialInputDescriptor:
         description: |-
@@ -579,14 +579,14 @@ definitions:
         type: string
       data:
         allOf:
-        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.ClaimTemplates'
+        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.ClaimTemplates'
         description: |-
           Data that will be used to determine credential claims.
           Values may be json path like strings, or any other JSON primitive. Each entry will be used to come up with a
           claim about the credentialSubject in the credential that will be issued.
       expiry:
         allOf:
-        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.TimeLike'
+        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.TimeLike'
         description: Parameter to determine the expiry of the credential.
       id:
         description: ID corresponding to an OutputDescriptor.ID from the manifest.
@@ -598,7 +598,7 @@ definitions:
         description: ID of the CredentialSchema to be used for the issued credential.
         type: string
     type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuance.Template:
+  github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate:
     properties:
       credentialManifest:
         description: ID of the credential manifest that this template corresponds
@@ -607,7 +607,7 @@ definitions:
       credentials:
         description: Info required to create a credential from a credential application.
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.CredentialTemplate'
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplate'
         type: array
       id:
         description: ID of this template.
@@ -623,7 +623,7 @@ definitions:
     - issuer
     - issuerKid
     type: object
-  github_com_tbd54566975_ssi-service_pkg_service_issuance.TimeLike:
+  github_com_tbd54566975_ssi-service_pkg_service_issuing.TimeLike:
     properties:
       duration:
         allOf:
@@ -954,7 +954,7 @@ definitions:
       credentials:
         description: Info required to create a credential from a credential application.
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.CredentialTemplate'
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.CredentialTemplate'
         type: array
       id:
         description: ID of this template.
@@ -1331,7 +1331,7 @@ definitions:
     properties:
       issuanceTemplates:
         items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.Template'
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate'
         type: array
     type: object
   pkg_server_router.ListSubmissionRequest:
@@ -2235,7 +2235,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.Template'
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate'
         "400":
           description: Bad request
           schema:
@@ -2292,7 +2292,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.Template'
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuing.IssuanceTemplate'
         "400":
           description: Bad request
           schema:
