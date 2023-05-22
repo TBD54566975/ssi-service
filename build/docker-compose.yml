@@ -3,6 +3,7 @@ version: "3.98"
 services:
   ssi:
     container_name: ssi
+    image: ghcr.io/tbd54566975/ssi-service:main
     build:
       context: ../
       dockerfile: build/Dockerfile
@@ -21,16 +22,6 @@ services:
       - universal-resolver
     links:
       - uni-resolver
-  gui:
-    build:
-      context: ../
-      dockerfile: build/Dockerfile-gui
-    ports:
-      - "8003:8501"
-    depends_on:
-      - ssi
-    networks:
-      - ssi_network
   jaeger:
     image: jaegertracing/all-in-one:latest
     ports:
