@@ -35,7 +35,6 @@ jobs:
     - name: Save Container Logs to Directory
       if: failure()
       run: |
-        mkdir log
         docker logs ssi > log/ssi_logs.txt
         docker cp ssi:/app/log .
 
