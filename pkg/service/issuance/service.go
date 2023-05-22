@@ -20,8 +20,8 @@ type Service struct {
 	schemaStorage   schema.Storage
 }
 
-func NewIssuingService(config config.IssuingServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	issuanceStorage, err := NewIssuingStorage(s)
+func NewIssuanceService(config config.IssuanceServiceConfig, s storage.ServiceStorage) (*Service, error) {
+	issuanceStorage, err := NewIssuanceStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating issuance storage")
 	}
@@ -52,7 +52,7 @@ func (s *Service) GetIssuanceTemplate(ctx context.Context, request *GetIssuanceT
 	return &GetIssuanceTemplateResponse{IssuanceTemplate: serviceModel(*storedIssuanceTemplate)}, nil
 }
 
-func (s *Service) CreateIssuanceTemplate(ctx context.Context, request *CreateIssuanceTemplateRequest) (*IssuanceTemplate, error) {
+func (s *Service) CreateIssuanceTemplate(ctx context.Context, request *CreateIssuanceTemplateRequest) (*Template, error) {
 	if !request.IsValid() {
 		return nil, errors.New("invalid create issuance template request")
 	}
@@ -87,7 +87,7 @@ func (s *Service) CreateIssuanceTemplate(ctx context.Context, request *CreateIss
 	return serviceModel(storedTemplate), nil
 }
 
-func serviceModel(template StoredIssuanceTemplate) *IssuanceTemplate {
+func serviceModel(template StoredIssuanceTemplate) *Template {
 	return &template.IssuanceTemplate
 }
 
@@ -113,7 +113,7 @@ func (s *Service) ListIssuanceTemplates(ctx context.Context, request *ListIssuan
 }
 
 func (s *Service) Type() framework.Type {
-	return framework.Issuing
+	return framework.Issuance
 }
 
 func (s *Service) Status() framework.Status {

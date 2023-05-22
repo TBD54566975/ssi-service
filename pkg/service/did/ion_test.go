@@ -74,6 +74,11 @@ func TestIONHandler(t *testing.T) {
 	})
 
 	t.Run("Test Create DID", func(tt *testing.T) {
+		gock.New("https://ion.tbddev.org").
+			Post("/operations").
+			Reply(200)
+		defer gock.Off()
+
 		// create a handler
 		s := setupTestDB(tt)
 		keystoreService := testKeyStoreService(tt, s)

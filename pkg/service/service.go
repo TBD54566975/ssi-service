@@ -24,7 +24,7 @@ type SSIService struct {
 	KeyStore     *keystore.Service
 	DID          *did.Service
 	Schema       *schema.Service
-	Issuance     *issuing.Service
+	Issuance     *issuance.Service
 	Credential   *credential.Service
 	Manifest     *manifest.Service
 	Presentation *presentation.Service
@@ -133,7 +133,7 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		KeyStore:     keyStoreService,
 		DID:          didService,
 		Schema:       schemaService,
-		Issuance:     issuingService,
+		Issuance:     issuanceService,
 		Credential:   credentialService,
 		Manifest:     manifestService,
 		Presentation: presentationService,
