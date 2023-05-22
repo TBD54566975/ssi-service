@@ -57,6 +57,9 @@ name = "schema"
 [services.credential]
 name = "credential"
 
+[services.issuance]
+name = "issuance"
+
 [services.manifest]
 name = "manifest"
 

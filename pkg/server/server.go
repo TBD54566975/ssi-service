@@ -118,7 +118,7 @@ func (s *SSIServer) instantiateRouter(service svcframework.Service, webhookServi
 		return s.PresentationAPI(service, webhookService)
 	case svcframework.Operation:
 		return s.OperationAPI(service)
-	case svcframework.Issuing:
+	case svcframework.Issuance:
 		return s.IssuanceAPI(service)
 	case svcframework.Webhook:
 		return s.WebhookAPI(service)

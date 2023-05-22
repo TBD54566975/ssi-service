@@ -9,7 +9,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
-	"github.com/tbd54566975/ssi-service/pkg/service/issuing"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
@@ -47,8 +47,8 @@ func validateServiceConfig(config config.ServicesConfig) error {
 	if config.DIDConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.DID)
 	}
-	if config.IssuingServiceConfig.IsEmpty() {
-		return fmt.Errorf("%s no config provided", framework.Issuing)
+	if config.IssuanceServiceConfig.IsEmpty() {
+		return fmt.Errorf("%s no config provided", framework.Issuance)
 	}
 	if config.SchemaConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.Schema)
@@ -111,9 +111,9 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the schema service")
 	}
 
-	issuingService, err := issuing.NewIssuingService(config.IssuingServiceConfig, storageProvider)
+	issuanceService, err := issuance.NewIssuanceService(config.IssuanceServiceConfig, storageProvider)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the issuing service")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the issuance service")
 	}
 
 	credentialService, err := credential.NewCredentialService(config.CredentialConfig, storageProvider, keyStoreService, didResolver, schemaService)
@@ -136,6 +136,6 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the operation service")
 	}
 
-	return []framework.Service{keyStoreService, didService, schemaService, issuingService, credentialService,
+	return []framework.Service{keyStoreService, didService, schemaService, issuanceService, credentialService,
 		manifestService, presentationService, operationService, webhookService}, nil
 }
