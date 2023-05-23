@@ -10,7 +10,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"strconv"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -34,13 +33,11 @@ func freePort() string {
 	}(listener)
 	return strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
 }
+
 func TestSimpleWebhook(t *testing.T) {
-	var received int64
-	receivedOne := func() bool {
-		return received == 1
-	}
+	ch := make(chan struct{}, 10)
 	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		atomic.AddInt64(&received, 1)
+		ch <- struct{}{}
 	}))
 	defer testServer.Close()
 
@@ -82,8 +79,14 @@ func TestSimpleWebhook(t *testing.T) {
 	}`)
 	put(t, server, "/v1/dids/web", createRequest)
 
-	<-time.After(500 * time.Millisecond)
-	assert.Eventually(t, receivedOne, 5*time.Second, 10*time.Millisecond)
+	// Check that exactly one call was received after 2 seconds.
+	<-time.After(2 * time.Second)
+	close(ch)
+	var webhookCalls int
+	for range ch {
+		webhookCalls++
+	}
+	assert.Equal(t, 1, webhookCalls)
 
 	assert.NoError(t, server.Close())
 }
