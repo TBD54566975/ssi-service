@@ -80,13 +80,16 @@ func TestSimpleWebhook(t *testing.T) {
 	put(t, server, "/v1/dids/web", createRequest)
 
 	// Check that exactly one call was received after 2 seconds.
-	<-time.After(2 * time.Second)
-	close(ch)
-	var webhookCalls int
-	for range ch {
-		webhookCalls++
+	select {
+	case <-ch:
+	case <-time.After(2 * time.Second):
+		assert.Fail(t, "should receive at least 1 message")
 	}
-	assert.Equal(t, 1, webhookCalls)
+	select {
+	case <-ch:
+		assert.Fail(t, "should not receive more than 1 message")
+	case <-time.After(2 * time.Second):
+	}
 
 	assert.NoError(t, server.Close())
 }
