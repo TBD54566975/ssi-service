@@ -3,9 +3,11 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
@@ -40,13 +42,6 @@ type CreatePresentationDefinitionRequest struct {
 	Format                 *exchange.ClaimFormat            `json:"format,omitempty" validate:"omitempty,dive"`
 	InputDescriptors       []exchange.InputDescriptor       `json:"inputDescriptors" validate:"required,dive"`
 	SubmissionRequirements []exchange.SubmissionRequirement `json:"submissionRequirements,omitempty" validate:"omitempty,dive"`
-
-	// DID of the author of this presentation definition. The DID must have been previously created with the DID API,
-	// or the PrivateKey must have been added independently.
-	Author string `json:"author" validate:"required"`
-	// The privateKey associated with the KID will be used to sign an envelope that contains
-	// the created presentation definition.
-	AuthorKID string `json:"authorKid" validate:"required"`
 }
 
 type CreatePresentationDefinitionResponse struct {
@@ -86,16 +81,13 @@ func (pr PresentationRouter) CreateDefinition(c *gin.Context) error {
 	}
 	serviceResp, err := pr.service.CreatePresentationDefinition(c, model.CreatePresentationDefinitionRequest{
 		PresentationDefinition: *def,
-		Author:                 request.Author,
-		AuthorKID:              request.AuthorKID,
 	})
 	if err != nil {
 		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 	}
 
 	resp := CreatePresentationDefinitionResponse{
-		PresentationDefinition:    serviceResp.PresentationDefinition,
-		PresentationDefinitionJWT: serviceResp.PresentationDefinitionJWT,
+		PresentationDefinition: serviceResp.PresentationDefinition,
 	}
 	return framework.Respond(c, resp, http.StatusCreated)
 }
@@ -133,10 +125,6 @@ func definitionFromRequest(request CreatePresentationDefinitionRequest) (*exchan
 
 type GetPresentationDefinitionResponse struct {
 	PresentationDefinition exchange.PresentationDefinition `json:"presentation_definition,omitempty"`
-
-	// Signed envelope that contains the PresentationDefinition created using the privateKey of the author of the
-	// definition.
-	PresentationDefinitionJWT keyaccess.JWT `json:"presentationDefinitionJWT,omitempty"`
 }
 
 // GetDefinition godoc
@@ -164,8 +152,7 @@ func (pr PresentationRouter) GetDefinition(c *gin.Context) error {
 	}
 
 	resp := GetPresentationDefinitionResponse{
-		PresentationDefinition:    def.PresentationDefinition,
-		PresentationDefinitionJWT: def.PresentationDefinitionJWT,
+		PresentationDefinition: def.PresentationDefinition,
 	}
 	return framework.Respond(c, resp, http.StatusOK)
 }
@@ -227,6 +214,9 @@ func (pr PresentationRouter) DeleteDefinition(c *gin.Context) error {
 }
 
 type CreateSubmissionRequest struct {
+	// A Verifiable Presentation that's encoded as a JWT.
+	// Verifiable Presentation are described in https://www.w3.org/TR/vc-data-model/#presentations-0
+	// JWT encoding of the Presentation as described in https://www.w3.org/TR/vc-data-model/#presentations-0
 	SubmissionJWT keyaccess.JWT `json:"submissionJwt" validate:"required"`
 }
 
@@ -443,4 +433,144 @@ func (pr PresentationRouter) ReviewSubmission(c *gin.Context) error {
 		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 	}
 	return framework.Respond(c, ReviewSubmissionResponse{Submission: submission}, http.StatusOK)
+}
+
+const DefaultExpirationDuration = 30 * time.Minute
+
+type CreateRequestRequest struct {
+	// Audience as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.3
+	// Optional
+	Audience []string `json:"audience"`
+
+	// Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
+	// Optional. When not specified, the request will be valid for a default duration.
+	Expiration string `json:"expiration"`
+
+	// DID of the issuer of this presentation definition. The DID must have been previously created with the DID API,
+	// or the PrivateKey must have been added independently.
+	IssuerDID string `json:"issuerId" validate:"required"`
+
+	// The privateKey associated with the KID will be used to sign an envelope that contains
+	// the created presentation definition.
+	IssuerKID string `json:"issuerKid" validate:"required"`
+
+	// ID of the presentation definition to use for this request.
+	PresentationDefinitionID string `json:"presentationDefinitionId" validate:"required"`
+}
+
+type CreateRequestResponse struct {
+	Request *model.Request `json:"presentationRequest"`
+}
+
+type GetRequestResponse struct {
+	Request *model.Request `json:"presentationRequest"`
+}
+
+// CreateRequest godoc
+//
+//	@Summary		Create Presentation Request
+//	@Description	Create presentation request from an existing presentation definition.
+//	@Tags			PresentationRequestAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		CreateRequestRequest	true	"request body"
+//	@Success		201		{object}	CreateRequestResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/presentation/request [put]
+func (pr PresentationRouter) CreateRequest(c *gin.Context) error {
+	var request CreateRequestRequest
+	errMsg := "Invalid Presentation Request Request"
+	if err := framework.Decode(c.Request, &request); err != nil {
+		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+	}
+	if err := framework.ValidateRequest(request); err != nil {
+		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+	}
+
+	req, err := pr.serviceRequestFromRequest(request)
+	if err != nil {
+		return framework.LoggingRespondError(c, err, http.StatusBadRequest)
+	}
+
+	doc, err := pr.service.CreateRequest(c, model.CreateRequestRequest{PresentationRequest: *req})
+	if err != nil {
+		return framework.LoggingRespondError(c, sdkutil.LoggingErrorMsg(err, "signing and storing"), http.StatusInternalServerError)
+	}
+	return framework.Respond(c, CreateRequestResponse{doc}, http.StatusCreated)
+}
+
+func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequest) (*model.Request, error) {
+	var expiration time.Time
+	var err error
+
+	if request.Expiration != "" {
+		expiration, err = time.Parse(time.RFC3339, request.Expiration)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		expiration = time.Now().Add(pr.service.Config().ExpirationDuration)
+	}
+
+	return &model.Request{
+		Audience:                 request.Audience,
+		Expiration:               expiration,
+		IssuerDID:                request.IssuerDID,
+		IssuerKID:                request.IssuerKID,
+		PresentationDefinitionID: request.PresentationDefinitionID,
+	}, nil
+}
+
+// GetRequest godoc
+//
+//	@Summary		Get Presentation Request
+//	@Description	Get a presentation request by its ID
+//	@Tags			PresentationRequestAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		200	{object}	GetRequestResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Router			/v1/presentation/request/{id} [get]
+func (pr PresentationRouter) GetRequest(c *gin.Context) error {
+	id := framework.GetParam(c, IDParam)
+	if id == nil {
+		return framework.LoggingRespondError(c,
+			sdkutil.LoggingNewError("cannot get issuance template without an ID"), http.StatusBadRequest)
+	}
+
+	request, err := pr.service.GetRequest(c, &model.GetRequestRequest{ID: *id})
+	if err != nil {
+		return framework.LoggingRespondError(c,
+			sdkutil.LoggingErrorMsg(err, "getting issuance template"), http.StatusInternalServerError)
+	}
+	return framework.Respond(c, GetRequestResponse{request}, http.StatusOK)
+}
+
+// DeleteRequest godoc
+//
+//	@Summary		Delete PresentationRequest
+//	@Description	Delete a presentation request by its ID
+//	@Tags			PresentationRequestAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		204	{string}	string	"No Content"
+//	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
+//	@Router			/v1/presentation/requests/{id} [delete]
+func (pr PresentationRouter) DeleteRequest(c *gin.Context) error {
+	id := framework.GetParam(c, IDParam)
+	if id == nil {
+		errMsg := "cannot delete a presentation request without an ID parameter"
+		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+	}
+
+	if err := pr.service.DeleteRequest(c, model.DeleteRequestRequest{ID: *id}); err != nil {
+		errMsg := fmt.Sprintf("could not delete presentation request with id: %s", *id)
+		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+	}
+
+	return framework.Respond(c, nil, http.StatusNoContent)
 }
