@@ -1,6 +1,5 @@
 version: "3.98"
 
-
 services:
   ssi:
     container_name: ssi

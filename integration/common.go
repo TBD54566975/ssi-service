@@ -74,22 +74,6 @@ func CreateDIDWeb() (string, error) {
 	return output, nil
 }
 
-func CreateWebhook(url string) (string, error) {
-	logrus.Println("\nCreate a webhook")
-	input, err := resolveTemplate(struct {
-		URL string
-	}{URL: url}, "webhook-input.json")
-	if err != nil {
-		return "", err
-	}
-	output, err := put(endpoint+version+"webhooks", input)
-	if err != nil {
-		return "", errors.Wrapf(err, "webhook endpoint with output: %s", output)
-	}
-
-	return output, nil
-}
-
 func CreateDIDION() (string, error) {
 	logrus.Println("\n\nCreate a did:ion")
 	output, err := put(endpoint+version+"dids/ion", getJSONFromFile("did-ion-input.json"))

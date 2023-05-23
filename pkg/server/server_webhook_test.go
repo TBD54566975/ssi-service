@@ -18,9 +18,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/config"
-
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
+	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 func freePort() string {
@@ -29,7 +29,9 @@ func freePort() string {
 		fmt.Println("Failed to listen:", err)
 		return ""
 	}
-	defer listener.Close()
+	defer func(listener net.Listener) {
+		_ = listener.Close()
+	}(listener)
 	return strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
 }
 func TestSimpleWebhook(t *testing.T) {
@@ -45,20 +47,22 @@ func TestSimpleWebhook(t *testing.T) {
 	shutdown := make(chan os.Signal, 1)
 	serviceConfig, err := config.LoadConfig("")
 	assert.NoError(t, err)
+
 	serviceConfig.Server.APIHost = "0.0.0.0:" + freePort()
+	name := tempBoltFileName(t)
+	serviceConfig.Services.StorageOptions = append(serviceConfig.Services.StorageOptions, storage.Option{
+		ID:     "boltdb-filepath-option",
+		Option: name,
+	})
+
 	server, err := NewSSIServer(shutdown, *serviceConfig)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, server)
 
 	go func() {
 		require.ErrorIs(t, server.ListenAndServe(), http.ErrServerClosed)
 	}()
 
-	require.Eventually(t, func() bool {
-		resp, err := http.Get("http://" + server.Addr + "/health")
-		require.NoError(t, err)
-		return resp.StatusCode == 200
-	}, 30*time.Second, 100*time.Millisecond)
+	require.Eventually(t, isHealthy(t, server), 30*time.Second, 100*time.Millisecond)
 
 	webhookRequest := router.CreateWebhookRequest{
 		Noun: "DID",
@@ -82,6 +86,25 @@ func TestSimpleWebhook(t *testing.T) {
 	assert.Eventually(t, receivedOne, 5*time.Second, 10*time.Millisecond)
 
 	assert.NoError(t, server.Close())
+}
+
+func tempBoltFileName(t *testing.T) string {
+	file, err := os.CreateTemp("", "bolt")
+	require.NoError(t, err)
+	name := file.Name()
+	t.Cleanup(func() {
+		_ = file.Close()
+		_ = os.Remove(name)
+	})
+	return name
+}
+
+func isHealthy(t *testing.T, server *SSIServer) func() bool {
+	return func() bool {
+		resp, err := http.Get("http://" + server.Addr + "/health")
+		require.NoError(t, err)
+		return resp.StatusCode == 200
+	}
 }
 
 func put(t *testing.T, server *SSIServer, endpoint string, data []byte) {
@@ -274,9 +297,9 @@ func TestWebhookAPI(t *testing.T) {
 
 		webhookService := testWebhookService(tt, db)
 
-		webhook, err := webhookService.GetWebhook(context.Background(), webhook.GetWebhookRequest{Noun: "Credential", Verb: "Create"})
+		wh, err := webhookService.GetWebhook(context.Background(), webhook.GetWebhookRequest{Noun: "Credential", Verb: "Create"})
 		assert.ErrorContains(tt, err, "webhook does not exist")
-		assert.Nil(tt, webhook)
+		assert.Nil(tt, wh)
 	})
 
 	t.Run("GetWebhook Returns Webhook That Does Exist", func(tt *testing.T) {
