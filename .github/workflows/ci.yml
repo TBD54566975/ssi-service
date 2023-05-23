@@ -43,19 +43,19 @@ jobs:
     - name: Install mage
       run: go install github.com/magefile/mage
 
+    - name: Check if swagger is up to date
+      run: |
+        mage -v spec
+        if (git diff --shortstat | grep '[0-9]'); then \
+          echo "Swagger spec is out of date. Please run mage spec"; \
+          exit 1;
+        fi
+
     - name: Build library
       run: mage build
 
     - name: Test
       run: mage CITest
-
-    - name: Check if swagger is up to date
-      run: |
-        mage spec
-        if (git diff --shortstat | grep '[0-9]'); then \
-          echo "Swagger spec is out of date. Please run mage spec"; \
-          exit 1;
-        fi
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
