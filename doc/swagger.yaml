@@ -1080,7 +1080,7 @@ definitions:
       expiration:
         description: |-
           Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
-          Optional. When not specified, the request will be valid for 30 minutes.
+          Optional. When not specified, the request will be valid for a default duration.
         type: string
       issuerId:
         description: |-

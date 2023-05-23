@@ -443,7 +443,7 @@ type CreateRequestRequest struct {
 	Audience []string `json:"audience"`
 
 	// Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
-	// Optional. When not specified, the request will be valid for 30 minutes.
+	// Optional. When not specified, the request will be valid for a default duration.
 	Expiration string `json:"expiration"`
 
 	// DID of the issuer of this presentation definition. The DID must have been previously created with the DID API,
@@ -488,7 +488,7 @@ func (pr PresentationRouter) CreateRequest(c *gin.Context) error {
 		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
 	}
 
-	req, err := serviceRequestFromRequest(request)
+	req, err := pr.serviceRequestFromRequest(request)
 	if err != nil {
 		return framework.LoggingRespondError(c, err, http.StatusBadRequest)
 	}
@@ -500,7 +500,7 @@ func (pr PresentationRouter) CreateRequest(c *gin.Context) error {
 	return framework.Respond(c, CreateRequestResponse{doc}, http.StatusCreated)
 }
 
-func serviceRequestFromRequest(request CreateRequestRequest) (*model.Request, error) {
+func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequest) (*model.Request, error) {
 	var expiration time.Time
 	var err error
 
@@ -510,7 +510,7 @@ func serviceRequestFromRequest(request CreateRequestRequest) (*model.Request, er
 			return nil, err
 		}
 	} else {
-		expiration = time.Now().Add(DefaultExpirationDuration)
+		expiration = time.Now().Add(pr.service.Config().ExpirationDuration)
 	}
 
 	return &model.Request{
