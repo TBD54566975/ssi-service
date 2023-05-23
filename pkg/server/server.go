@@ -199,7 +199,7 @@ func PresentationAPI(rg *gin.RouterGroup, service svcframework.Service, webhookS
 	presDefAPI.GET("", presRouter.ListDefinitions)
 	presDefAPI.DELETE("/:id", presRouter.DeleteDefinition)
 
-	presReqAPI := rg.Group(PresentationsPrefix+RequestsPrefix)
+	presReqAPI := rg.Group(PresentationsPrefix + RequestsPrefix)
 	presReqAPI.PUT("", presRouter.CreateRequest)
 	presReqAPI.GET("/:id", presRouter.GetRequest)
 	presReqAPI.PUT("/:id", presRouter.DeleteRequest)

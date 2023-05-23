@@ -7,7 +7,6 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
-	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
@@ -458,8 +457,6 @@ func (pr PresentationRouter) ReviewSubmission(c *gin.Context) {
 	framework.Respond(c, ReviewSubmissionResponse{Submission: submission}, http.StatusOK)
 }
 
-const DefaultExpirationDuration = 30 * time.Minute
-
 type CreateRequestRequest struct {
 	// Audience as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.3
 	// Optional
@@ -501,26 +498,30 @@ type GetRequestResponse struct {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/presentation/request [put]
-func (pr PresentationRouter) CreateRequest(c *gin.Context) error {
+func (pr PresentationRouter) CreateRequest(c *gin.Context) {
 	var request CreateRequestRequest
 	errMsg := "Invalid Presentation Request Request"
 	if err := framework.Decode(c.Request, &request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 	if err := framework.ValidateRequest(request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	req, err := pr.serviceRequestFromRequest(request)
 	if err != nil {
-		return framework.LoggingRespondError(c, err, http.StatusBadRequest)
+		framework.LoggingRespondError(c, err, http.StatusBadRequest)
+		return
 	}
 
 	doc, err := pr.service.CreateRequest(c, model.CreateRequestRequest{PresentationRequest: *req})
 	if err != nil {
-		return framework.LoggingRespondError(c, sdkutil.LoggingErrorMsg(err, "signing and storing"), http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, "signing and storing", http.StatusInternalServerError)
+		return
 	}
-	return framework.Respond(c, CreateRequestResponse{doc}, http.StatusCreated)
+	framework.Respond(c, CreateRequestResponse{Request: doc}, http.StatusCreated)
 }
 
 func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequest) (*model.Request, error) {
@@ -556,19 +557,19 @@ func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequ
 //	@Success		200	{object}	GetRequestResponse
 //	@Failure		400	{string}	string	"Bad request"
 //	@Router			/v1/presentation/request/{id} [get]
-func (pr PresentationRouter) GetRequest(c *gin.Context) error {
+func (pr PresentationRouter) GetRequest(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
-		return framework.LoggingRespondError(c,
-			sdkutil.LoggingNewError("cannot get issuance template without an ID"), http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, "cannot get issuance template without an ID", http.StatusBadRequest)
+		return
 	}
 
 	request, err := pr.service.GetRequest(c, &model.GetRequestRequest{ID: *id})
 	if err != nil {
-		return framework.LoggingRespondError(c,
-			sdkutil.LoggingErrorMsg(err, "getting issuance template"), http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, "getting issuance template", http.StatusInternalServerError)
+		return
 	}
-	return framework.Respond(c, GetRequestResponse{request}, http.StatusOK)
+	framework.Respond(c, GetRequestResponse{Request: request}, http.StatusOK)
 }
 
 // DeleteRequest godoc
@@ -583,17 +584,19 @@ func (pr PresentationRouter) GetRequest(c *gin.Context) error {
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/presentation/requests/{id} [delete]
-func (pr PresentationRouter) DeleteRequest(c *gin.Context) error {
+func (pr PresentationRouter) DeleteRequest(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "cannot delete a presentation request without an ID parameter"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	if err := pr.service.DeleteRequest(c, model.DeleteRequestRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete presentation request with id: %s", *id)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
-	return framework.Respond(c, nil, http.StatusNoContent)
+	framework.Respond(c, nil, http.StatusNoContent)
 }
