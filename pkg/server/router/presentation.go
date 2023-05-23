@@ -468,16 +468,16 @@ type GetRequestResponse struct {
 
 // CreateRequest godoc
 //
-// @Summary     Create Presentation Request
-// @Description Create presentation request from an existing presentation definition.
-// @Tags        PresentationRequestAPI
-// @Accept      json
-// @Produce     json
-// @Param       request body     CreateRequestRequest true "request body"
-// @Success     201     {object} CreateRequestResponse
-// @Failure     400     {string} string "Bad request"
-// @Failure     500     {string} string "Internal server error"
-// @Router      /v1/presentation/request [put]
+//	@Summary		Create Presentation Request
+//	@Description	Create presentation request from an existing presentation definition.
+//	@Tags			PresentationRequestAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		CreateRequestRequest	true	"request body"
+//	@Success		201		{object}	CreateRequestResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/presentation/request [put]
 func (pr PresentationRouter) CreateRequest(c *gin.Context) error {
 	var request CreateRequestRequest
 	errMsg := "Invalid Presentation Request Request"
@@ -524,15 +524,15 @@ func serviceRequestFromRequest(request CreateRequestRequest) (*model.Request, er
 
 // GetRequest godoc
 //
-// @Summary     Get Presentation Request
-// @Description Get a presentation request by its ID
-// @Tags        PresentationRequestAPI
-// @Accept      json
-// @Produce     json
-// @Param       id  path     string true "ID"
-// @Success     200 {object} GetRequestResponse
-// @Failure     400 {string} string "Bad request"
-// @Router      /v1/presentation/request/{id} [get]
+//	@Summary		Get Presentation Request
+//	@Description	Get a presentation request by its ID
+//	@Tags			PresentationRequestAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		200	{object}	GetRequestResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Router			/v1/presentation/request/{id} [get]
 func (pr PresentationRouter) GetRequest(c *gin.Context) error {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
@@ -550,16 +550,16 @@ func (pr PresentationRouter) GetRequest(c *gin.Context) error {
 
 // DeleteRequest godoc
 //
-// @Summary     Delete PresentationRequest
-// @Description Delete a presentation request by its ID
-// @Tags        PresentationRequestAPI
-// @Accept      json
-// @Produce     json
-// @Param       id  path     string true "ID"
-// @Success     204 {string} string "No Content"
-// @Failure     400 {string} string "Bad request"
-// @Failure     500 {string} string "Internal server error"
-// @Router      /v1/presentation/requests/{id} [delete]
+//	@Summary		Delete PresentationRequest
+//	@Description	Delete a presentation request by its ID
+//	@Tags			PresentationRequestAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		204	{string}	string	"No Content"
+//	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
+//	@Router			/v1/presentation/requests/{id} [delete]
 func (pr PresentationRouter) DeleteRequest(c *gin.Context) error {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
