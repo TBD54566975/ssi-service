@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"bytes"
-	"io"
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
@@ -23,8 +22,6 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 	}
 	return rw.ResponseWriter.Write(b)
 }
-
-type Publisher func(c *gin.Context, noun webhook.Noun, verb webhook.Verb, reader io.Reader)
 
 // Webhook is a middleware that publishes a webhook after the request handler has finished writing the response
 // TODO(https://github.com/TBD54566975/ssi-service/issues/435): currently this runs on each request even if no webhooks are registered. It should be updated to only run if webhooks are registered.

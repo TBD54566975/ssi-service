@@ -16,7 +16,9 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -227,7 +229,7 @@ func TestWebhookAPI(t *testing.T) {
 
 		c := newRequestContext(w, req)
 		webhookRouter.CreateWebhook(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 	})
 
 	t.Run("Test Happy Path Delete Webhook", func(tt *testing.T) {
@@ -248,14 +250,14 @@ func TestWebhookAPI(t *testing.T) {
 
 		c := newRequestContext(w, req)
 		webhookRouter.CreateWebhook(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/webhooks", nil)
 		w = httptest.NewRecorder()
 
 		c = newRequestContext(w, req)
 		webhookRouter.GetWebhooks(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.GetWebhooksResponse
 		err := json.NewDecoder(w.Body).Decode(&resp)
@@ -264,7 +266,7 @@ func TestWebhookAPI(t *testing.T) {
 
 		c = newRequestContext(w, req)
 		webhookRouter.GetWebhooks(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		deleteWebhookRequest := router.DeleteWebhookRequest{
 			Noun: "Manifest",
@@ -278,14 +280,14 @@ func TestWebhookAPI(t *testing.T) {
 
 		c = newRequestContext(w, req)
 		webhookRouter.DeleteWebhook(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/webhooks", nil)
 		w = httptest.NewRecorder()
 
 		c = newRequestContext(w, req)
 		webhookRouter.GetWebhooks(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var respAfter router.GetWebhooksResponse
 		err = json.NewDecoder(w.Body).Decode(&respAfter)

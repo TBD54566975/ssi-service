@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
@@ -88,7 +89,7 @@ func TestIssuanceRouter(t *testing.T) {
 
 				c := newRequestContext(w, req)
 				r.CreateIssuanceTemplate(c)
-				assert.True(t, is2xxResponse(w.Code))
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				var resp issuance.Template
 				assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
@@ -269,7 +270,7 @@ func TestIssuanceRouter(t *testing.T) {
 
 			c := newRequestContext(w, req)
 			r.CreateIssuanceTemplate(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&issuanceTemplate))
 			if diff := cmp.Diff(inputTemplate, issuanceTemplate, cmpopts.IgnoreFields(issuance.Template{}, "ID")); diff != "" {
@@ -284,7 +285,7 @@ func TestIssuanceRouter(t *testing.T) {
 
 			c := newRequestContextWithParams(w, req, map[string]string{"id": issuanceTemplate.ID})
 			r.GetIssuanceTemplate(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var getIssuanceTemplate issuance.Template
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
@@ -299,7 +300,7 @@ func TestIssuanceRouter(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := newRequestContextWithParams(w, req, map[string]string{"id": issuanceTemplate.ID})
 			r.DeleteIssuanceTemplate(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 		}
 
 		{
@@ -308,7 +309,7 @@ func TestIssuanceRouter(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := newRequestContextWithParams(w, req, map[string]string{"id": issuanceTemplate.ID})
 			r.GetIssuanceTemplate(c)
-			assert.Contains(tt, w.Body.String(), "issuing template not found")
+			assert.Contains(tt, w.Body.String(), "issuance template not found")
 		}
 	})
 
@@ -321,7 +322,7 @@ func TestIssuanceRouter(t *testing.T) {
 		w := httptest.NewRecorder()
 		c := newRequestContextWithParams(w, req, map[string]string{"id": "where-is-it"})
 		r.GetIssuanceTemplate(c)
-		assert.Contains(tt, w.Body.String(), "issuing template not found")
+		assert.Contains(tt, w.Body.String(), "issuance template not found")
 	})
 
 	t.Run("ListIssuanceTemplates returns empty when there aren't templates", func(tt *testing.T) {
@@ -333,7 +334,7 @@ func TestIssuanceRouter(t *testing.T) {
 		w := httptest.NewRecorder()
 		c := newRequestContext(w, req)
 		r.ListIssuanceTemplates(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var getIssuanceTemplate router.ListIssuanceTemplatesResponse
 		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
@@ -351,7 +352,7 @@ func TestIssuanceRouter(t *testing.T) {
 		w := httptest.NewRecorder()
 		c := newRequestContext(w, req)
 		r.ListIssuanceTemplates(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var getIssuanceTemplate router.ListIssuanceTemplatesResponse
 		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
@@ -388,7 +389,7 @@ func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, 
 
 		c := newRequestContext(w, req)
 		r.CreateIssuanceTemplate(c)
-		assert.True(t, is2xxResponse(w.Code))
+		assert.True(t, util.Is2xxResponse(w.Code))
 	}
 }
 

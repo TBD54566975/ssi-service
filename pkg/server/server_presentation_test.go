@@ -22,6 +22,7 @@ import (
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -70,7 +71,7 @@ func TestPresentationAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
 			pRouter.GetDefinition(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.GetPresentationDefinitionResponse
 			assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
@@ -86,7 +87,7 @@ func TestPresentationAPI(t *testing.T) {
 
 			c := newRequestContext(w, req)
 			pRouter.ListDefinitions(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.ListDefinitionsResponse
 			assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
@@ -102,7 +103,7 @@ func TestPresentationAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
 			pRouter.DeleteDefinition(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 		}
 		{
 			// And we cannot get the PD after it's been deleted.
@@ -122,7 +123,7 @@ func TestPresentationAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 		c := newRequestContext(w, req)
 		pRouter.ListDefinitions(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.ListDefinitionsResponse
 		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
@@ -141,7 +142,7 @@ func TestPresentationAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 		c := newRequestContext(w, req)
 		pRouter.ListDefinitions(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.ListDefinitionsResponse
 		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
@@ -221,7 +222,7 @@ func TestPresentationAPI(t *testing.T) {
 
 			c := newRequestContextWithParams(w, req, map[string]string{"id": opstorage.StatusObjectID(op.ID)})
 			pRouter.GetSubmission(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.GetSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -253,7 +254,7 @@ func TestPresentationAPI(t *testing.T) {
 
 			c := newRequestContext(w, req)
 			pRouter.CreateSubmission(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.Operation
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -287,7 +288,7 @@ func TestPresentationAPI(t *testing.T) {
 
 			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
 			pRouter.ReviewSubmission(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.ReviewSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -337,7 +338,7 @@ func TestPresentationAPI(t *testing.T) {
 
 			c := newRequestContext(w, req)
 			pRouter.ListSubmissions(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.ListSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -378,7 +379,7 @@ func TestPresentationAPI(t *testing.T) {
 
 			c := newRequestContext(w, req)
 			pRouter.ListSubmissions(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.ListSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -476,7 +477,7 @@ func TestPresentationAPI(t *testing.T) {
 
 			c := newRequestContext(w, req)
 			pRouter.ListSubmissions(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.ListSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -533,7 +534,7 @@ func TestPresentationAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 			c := newRequestContext(w, req)
 			pRouter.ListSubmissions(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.ListSubmissionResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -574,7 +575,7 @@ func createSubmission(t *testing.T, pRouter *router.PresentationRouter, definiti
 	w := httptest.NewRecorder()
 	c := newRequestContext(w, req)
 	pRouter.CreateSubmission(c)
-	require.True(t, is2xxResponse(w.Code))
+	require.True(t, util.Is2xxResponse(w.Code))
 
 	var resp router.Operation
 	require.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
@@ -689,7 +690,7 @@ func createPresentationDefinition(t *testing.T, pRouter *router.PresentationRout
 	w := httptest.NewRecorder()
 	c := newRequestContext(w, req)
 	pRouter.CreateDefinition(c)
-	require.True(t, is2xxResponse(w.Code))
+	require.True(t, util.Is2xxResponse(w.Code))
 
 	var resp router.CreatePresentationDefinitionResponse
 	require.NoError(t, json.NewDecoder(w.Body).Decode(&resp))

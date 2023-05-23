@@ -28,7 +28,7 @@ func Errors(shutdown chan os.Signal) gin.HandlerFunc {
 			// check if there's a shutdown-worthy error
 			for _, e := range errors {
 				if framework.IsShutdown(e.Err) {
-					logrus.Errorf("%s : SHUTDOWN ERROR : %v", span.SpanContext().TraceID().String(), e)
+					logrus.WithError(e).Errorf("%s : SHUTDOWN ERROR", span.SpanContext().TraceID().String())
 					shutdown <- syscall.SIGTERM
 					return
 				}

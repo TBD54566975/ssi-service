@@ -84,7 +84,7 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 	}
 	issuanceStorage, err := issuance.NewIssuanceStorage(s)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for issuing templates")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for issuance templates")
 	}
 	return &Service{
 		storage:                 manifestStorage,
@@ -336,16 +336,16 @@ func (s Service) attemptAutomaticIssuance(ctx context.Context, request model.Sub
 	applicantDID, applicationID string, gotManifest manifeststg.StoredManifest) (*opstorage.StoredOperation, error) {
 	issuanceTemplates, err := s.issuanceTemplateStorage.GetIssuanceTemplatesByManifestID(ctx, manifestID)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching issuing templates by manifest ID")
+		return nil, errors.Wrap(err, "fetching issuance templates by manifest ID")
 	}
 	if len(issuanceTemplates) == 0 {
-		logrus.Warnf("no issuing templates found for manifest<%s>, processing application<%s>", manifestID, applicationID)
+		logrus.Warnf("no issuance templates found for manifest<%s>, processing application<%s>", manifestID, applicationID)
 		return nil, nil
 	}
 
 	issuanceTemplate := issuanceTemplates[0].IssuanceTemplate
 	if len(issuanceTemplates) > 1 {
-		logrus.Warnf("found multiple issuing templates for manifest<%s>, using first entry only", manifestID)
+		logrus.Warnf("found issuance issuance templates for manifest<%s>, using first entry only", manifestID)
 	}
 
 	credResp, creds, err := s.buildFulfillmentCredentialResponseFromTemplate(ctx, applicantDID, manifestID, gotManifest.IssuerKID,

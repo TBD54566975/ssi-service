@@ -108,6 +108,6 @@ func (r ListIssuanceTemplatesRequest) Validate() error {
 }
 
 type ListIssuanceTemplatesResponse struct {
-	// The issuing templates that satisfy the query conditions.
+	// The issuance templates that satisfy the query conditions.
 	IssuanceTemplates []Template `json:"issuanceTemplates"`
 }

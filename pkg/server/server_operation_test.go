@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -39,7 +40,7 @@ func TestOperationsAPI(t *testing.T) {
 
 		c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
 		opRouter.GetOperation(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.Operation
 		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
@@ -74,7 +75,7 @@ func TestOperationsAPI(t *testing.T) {
 
 			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
 			opRouter.GetOperation(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.Operation
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -112,7 +113,7 @@ func TestOperationsAPI(t *testing.T) {
 
 			c := newRequestContext(w, req)
 			opRouter.GetOperations(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.GetOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -142,7 +143,7 @@ func TestOperationsAPI(t *testing.T) {
 
 			c := newRequestContext(w, req)
 			opRouter.GetOperations(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.GetOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -179,7 +180,7 @@ func TestOperationsAPI(t *testing.T) {
 
 			c := newRequestContext(w, req)
 			opRouter.GetOperations(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.GetOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -208,7 +209,7 @@ func TestOperationsAPI(t *testing.T) {
 
 			c := newRequestContext(w, req)
 			opRouter.GetOperations(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.GetOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -235,7 +236,7 @@ func TestOperationsAPI(t *testing.T) {
 
 			c := newRequestContext(w, req)
 			opRouter.GetOperations(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.GetOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -264,7 +265,7 @@ func TestOperationsAPI(t *testing.T) {
 
 			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
 			opRouter.CancelOperation(c)
-			assert.True(tt, is2xxResponse(w.Code))
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.Operation
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
@@ -330,7 +331,7 @@ func reviewSubmission(t *testing.T, pRouter *router.PresentationRouter, submissi
 	w := httptest.NewRecorder()
 	c := newRequestContextWithParams(w, req, map[string]string{"id": submissionID})
 	pRouter.ReviewSubmission(c)
-	assert.True(t, is2xxResponse(w.Code))
+	assert.True(t, util.Is2xxResponse(w.Code))
 
 	var resp router.ReviewSubmissionResponse
 	assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))

@@ -12,17 +12,9 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 )
 
-type contextKey string
-
 const (
-	TraceIDKey contextKey = "traceID"
-
 	serviceName string = "ssi-service"
 )
-
-func (c contextKey) String() string {
-	return string(c)
-}
 
 // Server is the entrypoint into our application and what configures our context object for each of our http router.
 // Feel free to add any configuration data/logic on this Server struct.

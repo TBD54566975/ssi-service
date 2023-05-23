@@ -11,6 +11,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/gin-gonic/gin"
 
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
@@ -58,7 +59,7 @@ func TestHealthCheckAPI(t *testing.T) {
 
 	c := newRequestContext(w, req)
 	router.Health(c)
-	assert.True(t, is2xxResponse(w.Code))
+	assert.True(t, util.Is2xxResponse(w.Code))
 
 	var resp router.GetHealthCheckResponse
 	err = json.NewDecoder(w.Body).Decode(&resp)
@@ -94,7 +95,7 @@ func TestReadinessAPI(t *testing.T) {
 	handler := router.Readiness(nil)
 	c := newRequestContext(w, req)
 	handler(c)
-	assert.True(t, is2xxResponse(w.Code))
+	assert.True(t, util.Is2xxResponse(w.Code))
 
 	var resp router.GetReadinessResponse
 	err = json.NewDecoder(w.Body).Decode(&resp)
@@ -333,8 +334,4 @@ func testWebhookRouter(t *testing.T, bolt storage.ServiceStorage) *router.Webhoo
 	require.NotEmpty(t, webhookRouter)
 
 	return webhookRouter
-}
-
-func is2xxResponse(statusCode int) bool {
-	return statusCode/100 == 2
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 )
 
@@ -57,7 +58,7 @@ func TestKeyStoreAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 		c = newRequestContext(w, req)
 		keyStoreRouter.StoreKey(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 	})
 
 	t.Run("Test Get Key Details", func(tt *testing.T) {
@@ -88,14 +89,14 @@ func TestKeyStoreAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
 		c := newRequestContext(w, req)
 		keyStoreService.StoreKey(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		// get it back
 		w = httptest.NewRecorder()
 		getReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/keys/%s", keyID), nil)
 		c = newRequestContextWithParams(w, getReq, map[string]string{"id": keyID})
 		keyStoreService.GetKeyDetails(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.GetKeyDetailsResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)

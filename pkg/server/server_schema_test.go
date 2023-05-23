@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 )
@@ -46,7 +47,7 @@ func TestSchemaAPI(t *testing.T) {
 
 		c = newRequestContext(w, req)
 		schemaService.CreateSchema(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateSchemaResponse
 		err := json.NewDecoder(w.Body).Decode(&resp)
@@ -90,7 +91,7 @@ func TestSchemaAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 		c = newRequestContext(w, req)
 		schemaService.CreateSchema(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateSchemaResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -105,7 +106,7 @@ func TestSchemaAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas/verification", verifySchemaRequestValue)
 		c = newRequestContext(w, req)
 		schemaService.VerifySchema(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var verifyResp router.VerifySchemaResponse
 		err = json.NewDecoder(w.Body).Decode(&verifyResp)
@@ -120,7 +121,7 @@ func TestSchemaAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 		c = newRequestContext(w, req)
 		schemaService.VerifySchema(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		err = json.NewDecoder(w.Body).Decode(&verifyResp)
 		assert.NoError(tt, err)
@@ -160,7 +161,7 @@ func TestSchemaAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas", nil)
 		c = newRequestContext(w, req)
 		schemaService.GetSchemas(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var getSchemasResp router.GetSchemasResponse
 		err := json.NewDecoder(w.Body).Decode(&getSchemasResp)
@@ -179,7 +180,7 @@ func TestSchemaAPI(t *testing.T) {
 
 		c = newRequestContext(w, createReq)
 		schemaService.CreateSchema(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var createResp router.CreateSchemaResponse
 		err = json.NewDecoder(w.Body).Decode(&createResp)
@@ -195,7 +196,7 @@ func TestSchemaAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", createResp.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": createResp.ID})
 		schemaService.GetSchema(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var gotSchemaResp router.GetSchemaResponse
 		err = json.NewDecoder(w.Body).Decode(&gotSchemaResp)
@@ -211,7 +212,7 @@ func TestSchemaAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas", nil)
 		c = newRequestContext(w, req)
 		schemaService.GetSchemas(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		err = json.NewDecoder(w.Body).Decode(&getSchemasResp)
 		assert.NoError(tt, err)
@@ -243,7 +244,7 @@ func TestSchemaAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 		c = newRequestContext(w, req)
 		schemaService.CreateSchema(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateSchemaResponse
 		err := json.NewDecoder(w.Body).Decode(&resp)
@@ -256,14 +257,14 @@ func TestSchemaAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.ID})
 		schemaService.GetSchema(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		// delete it
 		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.ID})
 		schemaService.DeleteSchema(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)

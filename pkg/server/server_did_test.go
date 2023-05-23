@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/h2non/gock.v1"
 
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 )
@@ -81,7 +82,7 @@ func TestDIDAPI(t *testing.T) {
 
 		c = newRequestContextWithParams(w, req, params)
 		didService.CreateDIDByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateDIDByMethodResponse
 		err := json.NewDecoder(w.Body).Decode(&resp)
@@ -154,7 +155,7 @@ func TestDIDAPI(t *testing.T) {
 
 		c = newRequestContextWithParams(w, req, params)
 		didService.CreateDIDByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateDIDByMethodResponse
 		err := json.NewDecoder(w.Body).Decode(&resp)
@@ -195,7 +196,7 @@ func TestDIDAPI(t *testing.T) {
 
 		c = newRequestContextWithParams(w, req, params)
 		didService.CreateDIDByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		// reset recorder between calls
 		w = httptest.NewRecorder()
@@ -230,7 +231,7 @@ func TestDIDAPI(t *testing.T) {
 
 		c = newRequestContextWithParams(w, req, params)
 		didService.CreateDIDByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateDIDByMethodResponse
 		err := json.NewDecoder(w.Body).Decode(&resp)
@@ -281,7 +282,7 @@ func TestDIDAPI(t *testing.T) {
 
 		c = newRequestContextWithParams(w, req, params)
 		didService.CreateDIDByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var createdDID router.CreateDIDByMethodResponse
 		err := json.NewDecoder(w.Body).Decode(&createdDID)
@@ -302,7 +303,7 @@ func TestDIDAPI(t *testing.T) {
 		}
 		c = newRequestContextWithParams(w, req, goodParams)
 		didService.GetDIDByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.GetDIDByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -350,7 +351,7 @@ func TestDIDAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, params)
 		didService.CreateDIDByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var createdDID router.CreateDIDByMethodResponse
 		err := json.NewDecoder(w.Body).Decode(&createdDID)
@@ -361,7 +362,7 @@ func TestDIDAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, params)
 		didService.GetDIDsByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var gotDIDsResponse router.GetDIDsByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&gotDIDsResponse)
@@ -395,7 +396,7 @@ func TestDIDAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, goodParams)
 		didService.SoftDeleteDIDByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, getDIDPath, nil)
@@ -403,7 +404,7 @@ func TestDIDAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, goodParams)
 		didService.GetDIDByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var deletedGetResp router.GetDIDByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&deletedGetResp)
@@ -415,7 +416,7 @@ func TestDIDAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, params)
 		didService.GetDIDsByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var gotDIDsResponseAfterDelete router.GetDIDsByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&gotDIDsResponseAfterDelete)
@@ -427,7 +428,7 @@ func TestDIDAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, params)
 		didService.GetDIDsByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var gotDeletedDIDsResponseAfterDelete router.GetDIDsByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&gotDeletedDIDsResponseAfterDelete)
@@ -459,7 +460,7 @@ func TestDIDAPI(t *testing.T) {
 		goodParams := map[string]string{"method": "key"}
 		c = newRequestContextWithParams(w, req, goodParams)
 		didService.GetDIDsByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 		var gotDIDs router.GetDIDByMethodResponse
 		err := json.NewDecoder(w.Body).Decode(&gotDIDs)
 		assert.NoError(tt, err)
@@ -476,7 +477,7 @@ func TestDIDAPI(t *testing.T) {
 
 		c = newRequestContextWithParams(w, req, params)
 		didService.CreateDIDByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var createdDID router.CreateDIDByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&createdDID)
@@ -490,7 +491,7 @@ func TestDIDAPI(t *testing.T) {
 
 		c = newRequestContextWithParams(w, req, params)
 		didService.CreateDIDByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var createdDID2 router.CreateDIDByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&createdDID2)
@@ -503,7 +504,7 @@ func TestDIDAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key", requestReader)
 		c = newRequestContextWithParams(w, req, params)
 		didService.GetDIDsByMethod(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var gotDIDsResponse router.GetDIDsByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&gotDIDsResponse)
@@ -556,7 +557,7 @@ func TestDIDAPI(t *testing.T) {
 		}
 		c = newRequestContextWithParams(w, req, goodParams)
 		didService.ResolveDID(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resolutionResponse router.ResolveDIDResponse
 		err := json.NewDecoder(w.Body).Decode(&resolutionResponse)

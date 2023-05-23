@@ -18,6 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -93,7 +94,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		c = newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -155,7 +156,7 @@ func TestCredentialAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		c := newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -169,7 +170,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?schema=%s", createdSchema.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"schema": createdSchema.ID})
 		credRouter.GetCredentials(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var getCredsResp router.GetCredentialsResponse
 		err = json.NewDecoder(w.Body).Decode(&getCredsResp)
@@ -252,7 +253,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		c = newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		// We expect a JWT credential
 		var resp router.CreateCredentialResponse
@@ -268,7 +269,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", resp.Credential.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.Credential.ID})
 		credRouter.GetCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var getCredResp router.GetCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&getCredResp)
@@ -329,7 +330,7 @@ func TestCredentialAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		c := newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -343,7 +344,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?schema=%s", createdSchema.ID), nil)
 		c = newRequestContext(w, req)
 		credRouter.GetCredentials(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var getCredsResp router.GetCredentialsResponse
 		err = json.NewDecoder(w.Body).Decode(&getCredsResp)
@@ -387,7 +388,7 @@ func TestCredentialAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		c := newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -401,7 +402,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?issuer=%s", issuerDID.DID.ID), nil)
 		c = newRequestContext(w, req)
 		credRouter.GetCredentials(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var getCredsResp router.GetCredentialsResponse
 		err = json.NewDecoder(w.Body).Decode(&getCredsResp)
@@ -445,7 +446,7 @@ func TestCredentialAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		c := newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -459,7 +460,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?subject=%s", subjectID), nil)
 		c = newRequestContext(w, req)
 		credRouter.GetCredentials(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var getCredsResp router.GetCredentialsResponse
 		err = json.NewDecoder(w.Body).Decode(&getCredsResp)
@@ -502,7 +503,7 @@ func TestCredentialAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 		c := newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -516,7 +517,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", credID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": credID})
 		credRouter.GetCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var getCredResp router.GetCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&getCredResp)
@@ -531,7 +532,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", credID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": credID})
 		credRouter.DeleteCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		// reset the http recorder
 		w = httptest.NewRecorder()
@@ -575,7 +576,7 @@ func TestCredentialAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 		c := newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -593,7 +594,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPost, "https://ssi-service.com/v1/credentials/verification", requestValue)
 		c = newRequestContext(w, req)
 		credRouter.VerifyCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var verifyResp router.VerifyCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&verifyResp)
@@ -606,7 +607,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPost, "https://ssi-service.com/v1/credentials/verification", requestValue)
 		c = newRequestContext(w, req)
 		credRouter.VerifyCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		err = json.NewDecoder(w.Body).Decode(&verifyResp)
 		assert.NoError(tt, err)
@@ -655,7 +656,7 @@ func TestCredentialAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		c := newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -683,7 +684,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		c = newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var revocableRespOne router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&revocableRespOne)
@@ -715,7 +716,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		c = newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var revocableRespTwo router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&revocableRespTwo)
@@ -747,7 +748,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		c = newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var revocableRespThree router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&revocableRespThree)
@@ -779,7 +780,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		c = newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var revocableRespFour router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&revocableRespFour)
@@ -830,7 +831,7 @@ func TestCredentialAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		c := newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -848,7 +849,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s/status", resp.Credential.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.Credential.ID})
 		credRouter.GetCredentialStatus(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var credStatusResponse = router.GetCredentialStatusResponse{}
 		err = json.NewDecoder(w.Body).Decode(&credStatusResponse)
@@ -862,7 +863,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s/status", resp.Credential.ID), requestValue)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.Credential.ID})
 		credRouter.UpdateCredentialStatus(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var credStatusUpdateResponse = router.UpdateCredentialStatusResponse{}
 		err = json.NewDecoder(w.Body).Decode(&credStatusUpdateResponse)
@@ -906,7 +907,7 @@ func TestCredentialAPI(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
 		c := newRequestContext(w, req)
 		credRouter.CreateCredential(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateCredentialResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -931,7 +932,7 @@ func TestCredentialAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://localhost:8080/%s", credStatusListID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": uuidStringUUID})
 		credRouter.GetCredentialStatusList(c)
-		assert.True(tt, is2xxResponse(w.Code))
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var credListResp router.GetCredentialStatusListResponse
 		err = json.NewDecoder(w.Body).Decode(&credListResp)

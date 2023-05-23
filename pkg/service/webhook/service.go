@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 
@@ -225,7 +226,7 @@ func (s Service) post(ctx context.Context, url string, json string) error {
 		return errors.Wrap(err, "client http client")
 	}
 
-	if !is2xxResponse(resp.StatusCode) {
+	if !util.Is2xxResponse(resp.StatusCode) {
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return errors.Wrap(err, "parsing body")
@@ -234,8 +235,4 @@ func (s Service) post(ctx context.Context, url string, json string) error {
 	}
 
 	return err
-}
-
-func is2xxResponse(statusCode int) bool {
-	return statusCode/100 == 2
 }
