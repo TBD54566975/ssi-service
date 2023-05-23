@@ -147,12 +147,13 @@ func (s Service) GetKeyDetails(ctx context.Context, request GetKeyDetailsRequest
 		return nil, sdkutil.LoggingErrorMsgf(err, "key with id<%s> could not be found", id)
 	}
 	return &GetKeyDetailsResponse{
-		ID:         gotKeyDetails.ID,
-		Type:       gotKeyDetails.KeyType,
-		Controller: gotKeyDetails.Controller,
-		CreatedAt:  gotKeyDetails.CreatedAt,
-		Revoked:    gotKeyDetails.Revoked,
-		RevokedAt:  gotKeyDetails.RevokedAt,
+		ID:           gotKeyDetails.ID,
+		Type:         gotKeyDetails.KeyType,
+		Controller:   gotKeyDetails.Controller,
+		CreatedAt:    gotKeyDetails.CreatedAt,
+		Revoked:      gotKeyDetails.Revoked,
+		RevokedAt:    gotKeyDetails.RevokedAt,
+		PublicKeyJWK: gotKeyDetails.PublicKeyJWK,
 	}, nil
 }
 
