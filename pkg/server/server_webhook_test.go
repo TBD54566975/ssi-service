@@ -37,9 +37,11 @@ func freePort() string {
 }
 
 func TestSimpleWebhook(t *testing.T) {
-	ch := make(chan struct{}, 10)
+	ch := make(chan []byte, 10)
 	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ch <- struct{}{}
+		received, err := io.ReadAll(r.Body)
+		assert.NoError(t, err)
+		ch <- received
 	}))
 	defer testServer.Close()
 
@@ -83,7 +85,17 @@ func TestSimpleWebhook(t *testing.T) {
 
 	// Check that exactly one call was received after 2 seconds.
 	select {
-	case <-ch:
+	case received := <-ch:
+		var parsed map[string]any
+		assert.NoError(t, json.Unmarshal(received, &parsed))
+		assert.NotEmpty(t, parsed["data"])
+
+		dataJSON, err := json.Marshal(parsed["data"])
+		assert.NoError(t, err)
+		var resp router.CreateDIDByMethodResponse
+		assert.NoError(t, json.Unmarshal(dataJSON, &resp))
+
+		assert.Equal(t, "did:web:tbd.website", resp.DID.ID)
 	case <-time.After(2 * time.Second):
 		assert.Fail(t, "should receive at least 1 message")
 	}
