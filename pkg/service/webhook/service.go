@@ -235,5 +235,5 @@ func (s Service) post(ctx context.Context, url string, json string) error {
 }
 
 func is2xxResponse(statusCode int) bool {
-	return statusCode/100 != 2
+	return statusCode/100 == 2
 }

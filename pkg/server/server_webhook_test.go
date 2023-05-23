@@ -1,18 +1,130 @@
 package server
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
+	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
+	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
+
+func freePort() string {
+	listener, err := net.Listen("tcp", "localhost:0")
+	if err != nil {
+		fmt.Println("Failed to listen:", err)
+		return ""
+	}
+	defer func(listener net.Listener) {
+		_ = listener.Close()
+	}(listener)
+	return strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
+}
+
+func TestSimpleWebhook(t *testing.T) {
+	ch := make(chan struct{}, 10)
+	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ch <- struct{}{}
+	}))
+	defer testServer.Close()
+
+	shutdown := make(chan os.Signal, 1)
+	serviceConfig, err := config.LoadConfig("")
+	assert.NoError(t, err)
+
+	serviceConfig.Server.APIHost = "0.0.0.0:" + freePort()
+	name := tempBoltFileName(t)
+	serviceConfig.Services.StorageOptions = append(serviceConfig.Services.StorageOptions, storage.Option{
+		ID:     "boltdb-filepath-option",
+		Option: name,
+	})
+
+	server, err := NewSSIServer(shutdown, *serviceConfig)
+	assert.NoError(t, err)
+
+	go func() {
+		require.ErrorIs(t, server.ListenAndServe(), http.ErrServerClosed)
+	}()
+
+	require.Eventually(t, isHealthy(t, server), 30*time.Second, 100*time.Millisecond)
+
+	webhookRequest := router.CreateWebhookRequest{
+		Noun: "DID",
+		Verb: "Create",
+		URL:  testServer.URL,
+	}
+	requestData, err := json.Marshal(webhookRequest)
+	assert.NoError(t, err)
+
+	put(t, server, "/v1/webhooks", requestData)
+
+	createRequest := []byte(`{
+		"keyType":"Ed25519",
+		"options": {
+			"didWebId": "did:web:tbd.website"
+		}
+	}`)
+	put(t, server, "/v1/dids/web", createRequest)
+
+	// Check that exactly one call was received after 2 seconds.
+	select {
+	case <-ch:
+	case <-time.After(2 * time.Second):
+		assert.Fail(t, "should receive at least 1 message")
+	}
+	select {
+	case <-ch:
+		assert.Fail(t, "should not receive more than 1 message")
+	case <-time.After(2 * time.Second):
+	}
+
+	assert.NoError(t, server.Close())
+}
+
+func tempBoltFileName(t *testing.T) string {
+	file, err := os.CreateTemp("", "bolt")
+	require.NoError(t, err)
+	name := file.Name()
+	t.Cleanup(func() {
+		_ = file.Close()
+		_ = os.Remove(name)
+	})
+	return name
+}
+
+func isHealthy(t *testing.T, server *SSIServer) func() bool {
+	return func() bool {
+		resp, err := http.Get("http://" + server.Addr + "/health")
+		require.NoError(t, err)
+		return resp.StatusCode == 200
+	}
+}
+
+func put(t *testing.T, server *SSIServer, endpoint string, data []byte) {
+	request, err := http.NewRequest(http.MethodPut, "http://"+server.Addr+endpoint, bytes.NewReader(data))
+	assert.NoError(t, err)
+	request.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(request)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, res.StatusCode/100)
+	body, err := io.ReadAll(res.Body)
+	assert.NoError(t, err)
+
+	assert.NotEmpty(t, string(body))
+}
 
 func TestWebhookAPI(t *testing.T) {
 	t.Run("CreateWebhook returns error when missing request", func(tt *testing.T) {
@@ -191,9 +303,9 @@ func TestWebhookAPI(t *testing.T) {
 
 		webhookService := testWebhookService(tt, db)
 
-		webhook, err := webhookService.GetWebhook(context.Background(), webhook.GetWebhookRequest{Noun: "Credential", Verb: "Create"})
+		wh, err := webhookService.GetWebhook(context.Background(), webhook.GetWebhookRequest{Noun: "Credential", Verb: "Create"})
 		assert.ErrorContains(tt, err, "webhook does not exist")
-		assert.Nil(tt, webhook)
+		assert.Nil(tt, wh)
 	})
 
 	t.Run("GetWebhook Returns Webhook That Does Exist", func(tt *testing.T) {
