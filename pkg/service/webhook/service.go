@@ -213,7 +213,7 @@ func (s Service) PublishWebhook(c *gin.Context, noun Noun, verb Verb, payloadRea
 		wg.Add(1)
 		go func(url, data string) {
 			defer wg.Done()
-			if err := s.post(ctx, url, data); err != nil {
+			if err = s.post(timeoutCtx, url, data); err != nil {
 				logrus.WithError(err).Errorf("posting payload to %s", url)
 			}
 		}(url, string(postJSONData))
