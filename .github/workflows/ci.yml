@@ -44,6 +44,7 @@ jobs:
       run: go install github.com/magefile/mage
 
     - name: Check if swagger is up to date
+      if: ${{ github.ref != 'refs/heads/main' }}
       run: |
         mage -v spec
         if (git diff --shortstat | grep '[0-9]'); then \
