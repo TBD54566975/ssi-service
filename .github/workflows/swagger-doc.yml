@@ -1,4 +1,4 @@
-name: swagger-docs
+name: swagger-doc
 
 on:
   push:
