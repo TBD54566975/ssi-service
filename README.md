@@ -161,15 +161,17 @@ for each Pull Request, and on merge to `main`. You can run CI locally using a to
 like [act](https://github.com/nektos/act).
 
 ## HTTP Endpoints
-You can find all HTTP endpoints by checking out the swagger docs at: `http://localhost:8002/docs`
+You can find all HTTP endpoints by checking out the swagger docs at: `http://localhost:8080/swagger`
 
-Note: Your port by differ, the range of the ports for swagger are between `8002` and `8080`.
+Note: Your port may differ; swagger docs are hosted on the same endpoint as the ssi service itself.
 
 ## What's Supported?
 - [x] [DID Management](https://www.w3.org/TR/did-core/)
   - [x] [did:key](https://w3c-ccg.github.io/did-method-key/)
   - [x] [did:web](https://w3c-ccg.github.io/did-method-web/)
   - [x] [did:ion](https://identity.foundation/ion/) _Note: updates not yet supported_
+  - [x] [did:pkh](https://w3c-ccg.github.io/did-method-pkh/) _Resolution only_
+  - [x] [did:peer](https://identity.foundation/peer-did-method-spec/) _Resolution only_
 - [x] [Verifiable Credential Schema](https://w3c-ccg.github.io/vc-json-schemas/v2/index.html) Management
 - [x] [Verifiable Credential](https://www.w3.org/TR/vc-data-model) Issuance & Verification
   - [x] Signing and verification with [JWTs](https://w3c.github.io/vc-jwt/)
