@@ -195,9 +195,10 @@ func configureLogger(level, location string) *os.File {
 	logrus.SetReportCaller(true)
 
 	// set logs config from config file
+	now := time.Now()
 	logrus.SetOutput(os.Stdout)
 	if location != "" {
-		logFile := location + "/" + config.ServiceName + "-" + time.Now().Format(time.RFC3339) + ".log"
+		logFile := location + "/" + config.ServiceName + "-" + now.Format(time.DateOnly) + "-" + strconv.FormatInt(now.Unix(), 10) + ".log"
 		file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {
 			logrus.WithError(err).Warn("failed to create logs file, using default stdout")
