@@ -32,16 +32,18 @@ jobs:
     - name: End To End Test
       run: mage integration
 
-    - name: Save Container Logs to File
+    - name: Save Container Logs to Directory
       if: failure()
-      run: docker logs ssi > ssi_logs.txt
+      run: |
+        docker logs ssi > log/ssi_logs.txt
+        docker cp ssi:/app/log .
 
     - name: Upload Logs as Artifact
       if: failure()
       uses: actions/upload-artifact@v3
       with:
         name: logs
-        path: ssi_logs.txt
+        path: log/*
 
     - name: Stop containers
       if: always()
