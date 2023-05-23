@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
@@ -196,6 +197,7 @@ func (s Service) PublishWebhook(noun Noun, verb Verb, payloadReader io.Reader) {
 		return
 	}
 
+	var wg sync.WaitGroup
 	postPayload := Payload{Noun: noun, Verb: verb, Data: payloadBytes}
 	for _, url := range webhook.URLS {
 		postPayload.URL = url
@@ -205,10 +207,15 @@ func (s Service) PublishWebhook(noun Noun, verb Verb, payloadReader io.Reader) {
 			continue
 		}
 
-		if err = s.post(ctx, url, string(postJSONData)); err != nil {
-			logrus.WithError(err).Errorf("posting payload to %s", url)
-		}
+		wg.Add(1)
+		go func(url, data string) {
+			defer wg.Done()
+			if err := s.post(ctx, url, data); err != nil {
+				logrus.WithError(err).Errorf("posting payload to %s", url)
+			}
+		}(url, string(postJSONData))
 	}
+	wg.Wait()
 }
 
 func (s Service) post(ctx context.Context, url string, json string) error {
