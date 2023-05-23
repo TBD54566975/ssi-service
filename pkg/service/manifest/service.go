@@ -330,7 +330,7 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 	return operation.ServiceModel(*storedOp)
 }
 
-// attemptAutomaticIssuance checks if there is an issuing template for the manifest, and if so,
+// attemptAutomaticIssuance checks if there is an issuance template for the manifest, and if so,
 // attempts to issue a credential against it
 func (s Service) attemptAutomaticIssuance(ctx context.Context, request model.SubmitApplicationRequest, manifestID,
 	applicantDID, applicationID string, gotManifest manifeststg.StoredManifest) (*opstorage.StoredOperation, error) {
