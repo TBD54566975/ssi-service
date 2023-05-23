@@ -178,7 +178,7 @@ func (s Service) GetSupportedVerbs() GetSupportedVerbsResponse {
 
 // TODO: consider returning an error to be handled by the gin middleware
 func (s Service) PublishWebhook(c *gin.Context, noun Noun, verb Verb, payloadReader io.Reader) {
-	timeoutCtx, cancel := context.WithTimeout(c, s.timeoutDuration)
+	timeoutCtx, cancel := context.WithTimeout(c.Copy(), s.timeoutDuration)
 	defer cancel()
 
 	nounString := string(noun)

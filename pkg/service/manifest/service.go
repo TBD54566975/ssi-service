@@ -251,7 +251,7 @@ type CredentialResponseContainer struct {
 }
 
 // ProcessApplicationSubmission stores the application in a pending state, along with an operation.
-// When there is an issuing template related to this manifest, the operation is done immediately.
+// When there is an issuance template related to this manifest, the operation is done immediately.
 // Once the operation is done, the Operation.Response field will be of type model.SubmitApplicationResponse.
 // Invalid applications return an operation marked as done, with Response that represents denial.
 // The state of the application can be updated by calling CancelOperation, or by calling ReviewApplicationSubmission.

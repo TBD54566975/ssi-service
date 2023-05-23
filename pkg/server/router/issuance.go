@@ -105,7 +105,7 @@ func (ir IssuanceRouter) CreateIssuanceTemplate(c *gin.Context) {
 func (ir IssuanceRouter) DeleteIssuanceTemplate(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
-		errMsg := "cannot delete an issuing template without an ID parameter"
+		errMsg := "cannot delete an issuance template without an ID parameter"
 		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 		return
 	}
