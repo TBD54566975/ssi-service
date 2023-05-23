@@ -3,20 +3,18 @@
 package server
 
 import (
-	"fmt"
-	"net/http"
 	"os"
-	"path"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/middleware"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service"
+	didsvc "github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 )
@@ -53,253 +51,253 @@ type SSIServer struct {
 }
 
 // NewSSIServer does two things: instantiates all service and registers their HTTP bindings
-func NewSSIServer(shutdown chan os.Signal, config config.SSIServiceConfig) (*SSIServer, error) {
+func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSIServer, error) {
 	// creates an HTTP server from the framework, and wrap it to extend it for the SSIS
-	middlewares := gin.HandlersChain{
-		gin.Recovery(),
-		middleware.Errors(),
-		middleware.Logger(logrus.StandardLogger()),
-		middleware.Metrics(),
-	}
-	if config.Server.EnableAllowAllCORS {
-		middlewares = append(middlewares, middleware.CORS())
-	}
-	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares)
-	ssi, err := service.InstantiateSSIService(config.Services)
+	engine := setUpEngine(cfg.Server, shutdown)
+	httpServer := framework.NewServer(cfg.Server, engine, shutdown)
+	ssi, err := service.InstantiateSSIService(cfg.Services)
 	if err != nil {
-		return nil, err
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate ssi service")
 	}
-
-	// get all instantiated services
-	services := ssi.GetServices()
-
-	// get webhook service
-	webhookService := ssi.GetService(svcframework.Webhook).(*webhook.Service)
 
 	// service-level routers
-	httpServer.Handle(http.MethodGet, HealthPrefix, router.Health)
-	httpServer.Handle(http.MethodGet, ReadinessPrefix, router.Readiness(services))
-	httpServer.Handle(http.MethodGet, SwaggerPrefix, router.Swagger)
+	engine.GET(HealthPrefix, router.Health)
+	engine.GET(ReadinessPrefix, router.Readiness(ssi.GetServices()))
+	engine.GET(SwaggerPrefix, router.Swagger)
 
-	// create the server instance to be returned
-	server := SSIServer{
+	// register all v1 routers
+	v1 := engine.Group(V1Prefix)
+	if err = DecentralizedIdentityAPI(v1, ssi.DID, ssi.Webhook); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate DID API")
+	}
+	if err = SchemaAPI(v1, ssi.Schema, ssi.Webhook); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Schema API")
+	}
+	if err = CredentialAPI(v1, ssi.Credential, ssi.Webhook); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Credential API")
+	}
+	if err = PresentationAPI(v1, ssi.Presentation, ssi.Webhook); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Presentation API")
+	}
+	if err = KeyStoreAPI(v1, ssi.KeyStore); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate KeyStore API")
+	}
+	if err = OperationAPI(v1, ssi.Operation); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Operation API")
+	}
+	if err = ManifestAPI(v1, ssi.Manifest, ssi.Webhook); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Manifest API")
+	}
+	if err = IssuanceAPI(v1, ssi.Issuance); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Issuance API")
+	}
+	if err = WebhookAPI(v1, ssi.Webhook); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Webhook API")
+	}
+
+	return &SSIServer{
 		Server:       httpServer,
 		SSIService:   ssi,
-		ServerConfig: &config.Server,
-	}
-
-	// start all services and their routers
-	logrus.Infof("Starting [%d] service routers...\n", len(services))
-	for _, s := range services {
-		if err = server.instantiateRouter(s, webhookService); err != nil {
-			return nil, sdkutil.LoggingErrorMsgf(err, "unable to instantiate service router<%s>", s.Type())
-		}
-		logrus.Infof("Service router<%s> started successfully", s.Type())
-	}
-
-	return &server, nil
+		ServerConfig: &cfg.Server,
+	}, nil
 }
 
-// instantiateRouter registers the HTTP router for a service with the HTTP server
-// NOTE: all service API router must be registered here
-func (s *SSIServer) instantiateRouter(service svcframework.Service, webhookService *webhook.Service) error {
-	serviceType := service.Type()
-	switch serviceType {
-	case svcframework.DID:
-		return s.DecentralizedIdentityAPI(service, webhookService)
-	case svcframework.Schema:
-		return s.SchemaAPI(service, webhookService)
-	case svcframework.Credential:
-		return s.CredentialAPI(service, webhookService)
-	case svcframework.KeyStore:
-		return s.KeyStoreAPI(service)
-	case svcframework.Manifest:
-		return s.ManifestAPI(service, webhookService)
-	case svcframework.Presentation:
-		return s.PresentationAPI(service, webhookService)
-	case svcframework.Operation:
-		return s.OperationAPI(service)
-	case svcframework.Issuance:
-		return s.IssuanceAPI(service)
-	case svcframework.Webhook:
-		return s.WebhookAPI(service)
-	default:
-		return fmt.Errorf("could not instantiate API for service: %s", serviceType)
+// setUpEngine creates the gin engine and sets up the middleware based on config
+func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
+	gin.ForceConsoleColor()
+	middlewares := gin.HandlersChain{
+		gin.Recovery(),
+		gin.Logger(),
+		middleware.Errors(shutdown),
 	}
+	if cfg.JagerEnabled {
+		middlewares = append(middlewares, otelgin.Middleware(config.ServiceName))
+	}
+	if cfg.EnableAllowAllCORS {
+		middlewares = append(middlewares, middleware.CORS())
+	}
+
+	// set up engine and middleware
+	engine := gin.New()
+	engine.Use(middlewares...)
+	switch cfg.Environment {
+	case config.EnvironmentDev:
+		gin.SetMode(gin.DebugMode)
+	case config.EnvironmentTest:
+		gin.SetMode(gin.TestMode)
+	case config.EnvironmentProd:
+		gin.SetMode(gin.ReleaseMode)
+	}
+	return engine
 }
 
-// DecentralizedIdentityAPI registers all HTTP router for the DID Service
-func (s *SSIServer) DecentralizedIdentityAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
+// DecentralizedIdentityAPI registers all HTTP handlers for the DID Service
+func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, webhookService *webhook.Service) (err error) {
 	didRouter, err := router.NewDIDRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating DID router")
 	}
 
-	handlerPath := V1Prefix + DIDsPrefix
-
-	s.Handle(http.MethodGet, handlerPath, didRouter.GetDIDMethods)
-	s.Handle(http.MethodPut, path.Join(handlerPath, "/:method"), didRouter.CreateDIDByMethod, middleware.Webhook(webhookService, webhook.DID, webhook.Create))
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method"), didRouter.GetDIDsByMethod)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:method/:id"), didRouter.GetDIDByMethod)
-	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:method/:id"), didRouter.SoftDeleteDIDByMethod)
-
-	s.Handle(http.MethodGet, path.Join(path.Join(handlerPath, ResolverPrefix), "/:id"), didRouter.ResolveDID)
+	didAPI := rg.Group(DIDsPrefix)
+	didAPI.GET("", didRouter.GetDIDMethods)
+	didAPI.PUT("/:method", middleware.Webhook(webhookService, webhook.DID, webhook.Create), didRouter.CreateDIDByMethod)
+	didAPI.GET("/:method", didRouter.GetDIDsByMethod)
+	didAPI.GET("/:method/:id", didRouter.GetDIDByMethod)
+	didAPI.DELETE("/:method/:id", didRouter.SoftDeleteDIDByMethod)
+	didAPI.GET(ResolverPrefix+"/:id", didRouter.ResolveDID)
 	return
 }
 
-// SchemaAPI registers all HTTP router for the SchemaID Service
-func (s *SSIServer) SchemaAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
+// SchemaAPI registers all HTTP handlers for the Schema Service
+func SchemaAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service) (err error) {
 	schemaRouter, err := router.NewSchemaRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating schema router")
 	}
 
-	handlerPath := V1Prefix + SchemasPrefix
-
-	s.Handle(http.MethodPut, handlerPath, schemaRouter.CreateSchema, middleware.Webhook(webhookService, webhook.Schema, webhook.Create))
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), schemaRouter.GetSchema)
-	s.Handle(http.MethodGet, handlerPath, schemaRouter.GetSchemas)
-	s.Handle(http.MethodPut, path.Join(handlerPath, VerificationPath), schemaRouter.VerifySchema)
-	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), schemaRouter.DeleteSchema, middleware.Webhook(webhookService, webhook.Schema, webhook.Delete))
+	schemaAPI := rg.Group(SchemasPrefix)
+	schemaAPI.PUT("", middleware.Webhook(webhookService, webhook.Schema, webhook.Create), schemaRouter.CreateSchema)
+	schemaAPI.GET("/:id", schemaRouter.GetSchema)
+	schemaAPI.GET("", schemaRouter.GetSchemas)
+	schemaAPI.PUT(VerificationPath, schemaRouter.VerifySchema)
+	schemaAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Schema, webhook.Delete), schemaRouter.DeleteSchema)
 	return
 }
 
-func (s *SSIServer) CredentialAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
+// CredentialAPI registers all HTTP handlers for the Credentials Service
+func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service) (err error) {
 	credRouter, err := router.NewCredentialRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating credential router")
 	}
 
-	credentialHandlerPath := V1Prefix + CredentialsPrefix
-	statusHandlerPath := V1Prefix + CredentialsPrefix + StatusPrefix
-
 	// Credentials
-	s.Handle(http.MethodPut, credentialHandlerPath, credRouter.CreateCredential, middleware.Webhook(webhookService, webhook.Credential, webhook.Create))
-	s.Handle(http.MethodGet, credentialHandlerPath, credRouter.GetCredentials)
-	s.Handle(http.MethodGet, path.Join(credentialHandlerPath, "/:id"), credRouter.GetCredential)
-	s.Handle(http.MethodPut, path.Join(credentialHandlerPath, VerificationPath), credRouter.VerifyCredential)
-	s.Handle(http.MethodDelete, path.Join(credentialHandlerPath, "/:id"), credRouter.DeleteCredential, middleware.Webhook(webhookService, webhook.Credential, webhook.Delete))
+	credentialAPI := rg.Group(CredentialsPrefix)
+	credentialAPI.PUT("", middleware.Webhook(webhookService, webhook.Credential, webhook.Create), credRouter.CreateCredential)
+	credentialAPI.GET("", credRouter.GetCredentials)
+	credentialAPI.GET("/:id", credRouter.GetCredential)
+	credentialAPI.PUT(VerificationPath, credRouter.VerifyCredential)
+	credentialAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Credential, webhook.Delete), credRouter.DeleteCredential)
 
 	// Credential Status
-	s.Handle(http.MethodGet, path.Join(credentialHandlerPath, "/:id", StatusPrefix), credRouter.GetCredentialStatus)
-	s.Handle(http.MethodPut, path.Join(credentialHandlerPath, "/:id", StatusPrefix), credRouter.UpdateCredentialStatus)
-	s.Handle(http.MethodGet, path.Join(statusHandlerPath, "/:id"), credRouter.GetCredentialStatusList)
+	credentialAPI.GET("/:id"+StatusPrefix, credRouter.GetCredentialStatus)
+	credentialAPI.PUT("/:id"+StatusPrefix, credRouter.UpdateCredentialStatus)
+	credentialAPI.GET(StatusPrefix+"/:id", credRouter.GetCredentialStatusList)
 	return
 }
 
-func (s *SSIServer) PresentationAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
-	pRouter, err := router.NewPresentationRouter(service)
+// PresentationAPI registers all HTTP handlers for the Presentation Service
+func PresentationAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service) (err error) {
+	presRouter, err := router.NewPresentationRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating credential router")
 	}
 
-	handlerPath := V1Prefix + PresentationsPrefix + DefinitionsPrefix
+	presDefAPI := rg.Group(PresentationsPrefix + DefinitionsPrefix)
+	presDefAPI.PUT("", presRouter.CreateDefinition)
+	presDefAPI.GET("/:id", presRouter.GetDefinition)
+	presDefAPI.GET("", presRouter.ListDefinitions)
+	presDefAPI.DELETE("/:id", presRouter.DeleteDefinition)
 
-	s.Handle(http.MethodPut, handlerPath, pRouter.CreateDefinition)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), pRouter.GetDefinition)
-	s.Handle(http.MethodGet, handlerPath, pRouter.ListDefinitions)
-	s.Handle(http.MethodDelete, path.Join(handlerPath, "/:id"), pRouter.DeleteDefinition)
+	presReqAPI := rg.Group(PresentationsPrefix + RequestsPrefix)
+	presReqAPI.PUT("", presRouter.CreateRequest)
+	presReqAPI.GET("/:id", presRouter.GetRequest)
+	presReqAPI.PUT("/:id", presRouter.DeleteRequest)
 
-	requestHandlerPath := V1Prefix + PresentationsPrefix + RequestsPrefix
-
-	s.Handle(http.MethodPut, requestHandlerPath, pRouter.CreateRequest)
-	s.Handle(http.MethodGet, path.Join(requestHandlerPath, "/:id"), pRouter.GetRequest)
-	s.Handle(http.MethodPut, path.Join(requestHandlerPath, "/:id"), pRouter.DeleteRequest)
-
-	submissionHandlerPath := V1Prefix + PresentationsPrefix + SubmissionsPrefix
-
-	s.Handle(http.MethodPut, submissionHandlerPath, pRouter.CreateSubmission, middleware.Webhook(webhookService, webhook.Submission, webhook.Create))
-	s.Handle(http.MethodGet, path.Join(submissionHandlerPath, "/:id"), pRouter.GetSubmission)
-	s.Handle(http.MethodGet, submissionHandlerPath, pRouter.ListSubmissions)
-	s.Handle(http.MethodPut, path.Join(submissionHandlerPath, "/:id", "/review"), pRouter.ReviewSubmission)
+	presSubAPI := rg.Group(PresentationsPrefix + SubmissionsPrefix)
+	presSubAPI.PUT("", middleware.Webhook(webhookService, webhook.Submission, webhook.Create), presRouter.CreateSubmission)
+	presSubAPI.GET("/:id", presRouter.GetSubmission)
+	presSubAPI.GET("", presRouter.ListSubmissions)
+	presSubAPI.PUT("/:id/review", presRouter.ReviewSubmission)
 	return
 }
 
-func (s *SSIServer) KeyStoreAPI(service svcframework.Service) (err error) {
+// KeyStoreAPI registers all HTTP handlers for the Key Store Service
+func KeyStoreAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 	keyStoreRouter, err := router.NewKeyStoreRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating key store router")
 	}
 
-	handlerPath := V1Prefix + KeyStorePrefix
-
-	s.Handle(http.MethodPut, handlerPath, keyStoreRouter.StoreKey)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:id"), keyStoreRouter.GetKeyDetails)
+	keyStoreAPI := rg.Group(KeyStorePrefix)
+	keyStoreAPI.PUT("", keyStoreRouter.StoreKey)
+	keyStoreAPI.GET("/:id", keyStoreRouter.GetKeyDetails)
 	return
 }
 
-func (s *SSIServer) OperationAPI(service svcframework.Service) (err error) {
+// OperationAPI registers all HTTP handlers for the Operations Service
+func OperationAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 	operationRouter, err := router.NewOperationRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating operation router")
 	}
 
-	handlerPath := V1Prefix + OperationPrefix
-
-	s.Handle(http.MethodGet, handlerPath, operationRouter.GetOperations)
+	operationAPI := rg.Group(OperationPrefix)
+	operationAPI.GET("", operationRouter.GetOperations)
 	// In this case, it's used so that the operation id matches `presentations/submissions/{submission_id}` for the DIDWebID
 	// path	`/v1/operations/cancel/presentations/submissions/{id}`
-	s.Handle(http.MethodPut, path.Join(handlerPath, "/cancel/*id"), operationRouter.CancelOperation)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/*id"), operationRouter.GetOperation)
-
+	operationAPI.PUT("/cancel/*id", operationRouter.CancelOperation)
+	operationAPI.GET("/*id", operationRouter.GetOperation)
 	return
 }
 
-func (s *SSIServer) ManifestAPI(service svcframework.Service, webhookService *webhook.Service) (err error) {
+// ManifestAPI registers all HTTP handlers for the Manifest Service
+func ManifestAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service) (err error) {
 	manifestRouter, err := router.NewManifestRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating manifest router")
 	}
 
-	manifestHandlerPath := V1Prefix + ManifestsPrefix
-	applicationsHandlerPath := V1Prefix + ManifestsPrefix + ApplicationsPrefix
-	responsesHandlerPath := V1Prefix + ManifestsPrefix + ResponsesPrefix
+	manifestAPI := rg.Group(ManifestsPrefix)
+	manifestAPI.PUT("", middleware.Webhook(webhookService, webhook.Manifest, webhook.Create), manifestRouter.CreateManifest)
+	manifestAPI.GET("", manifestRouter.GetManifests)
+	manifestAPI.GET("/:id", manifestRouter.GetManifest)
+	manifestAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Manifest, webhook.Delete), manifestRouter.DeleteManifest)
 
-	s.Handle(http.MethodPut, manifestHandlerPath, manifestRouter.CreateManifest, middleware.Webhook(webhookService, webhook.Manifest, webhook.Create))
+	applicationAPI := manifestAPI.Group(ApplicationsPrefix)
+	applicationAPI.PUT("", middleware.Webhook(webhookService, webhook.Application, webhook.Create), manifestRouter.SubmitApplication)
+	applicationAPI.GET("", manifestRouter.GetApplications)
+	applicationAPI.GET("/:id", manifestRouter.GetApplication)
+	applicationAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Application, webhook.Delete), manifestRouter.DeleteApplication)
+	applicationAPI.PUT("/:id/review", manifestRouter.ReviewApplication)
 
-	s.Handle(http.MethodGet, manifestHandlerPath, manifestRouter.GetManifests)
-	s.Handle(http.MethodGet, path.Join(manifestHandlerPath, "/:id"), manifestRouter.GetManifest)
-	s.Handle(http.MethodDelete, path.Join(manifestHandlerPath, "/:id"), manifestRouter.DeleteManifest, middleware.Webhook(webhookService, webhook.Manifest, webhook.Delete))
-
-	s.Handle(http.MethodPut, applicationsHandlerPath, manifestRouter.SubmitApplication, middleware.Webhook(webhookService, webhook.Application, webhook.Create))
-	s.Handle(http.MethodGet, applicationsHandlerPath, manifestRouter.GetApplications)
-	s.Handle(http.MethodGet, path.Join(applicationsHandlerPath, "/:id"), manifestRouter.GetApplication)
-	s.Handle(http.MethodDelete, path.Join(applicationsHandlerPath, "/:id"), manifestRouter.DeleteApplication, middleware.Webhook(webhookService, webhook.Application, webhook.Delete))
-	s.Handle(http.MethodPut, path.Join(applicationsHandlerPath, "/:id", "/review"), manifestRouter.ReviewApplication)
-
-	s.Handle(http.MethodGet, responsesHandlerPath, manifestRouter.GetResponses)
-	s.Handle(http.MethodGet, path.Join(responsesHandlerPath, "/:id"), manifestRouter.GetResponse)
-	s.Handle(http.MethodDelete, path.Join(responsesHandlerPath, "/:id"), manifestRouter.DeleteResponse)
+	responseAPI := manifestAPI.Group(ResponsesPrefix)
+	responseAPI.GET("", manifestRouter.GetResponses)
+	responseAPI.GET("/:id", manifestRouter.GetResponse)
+	responseAPI.DELETE("/:id", manifestRouter.DeleteResponse)
 	return
 }
 
-func (s *SSIServer) IssuanceAPI(service svcframework.Service) error {
+// IssuanceAPI registers all HTTP handlers for the Issuance Service
+func IssuanceAPI(rg *gin.RouterGroup, service svcframework.Service) error {
 	issuanceRouter, err := router.NewIssuanceRouter(service)
 	if err != nil {
-		return sdkutil.LoggingErrorMsg(err, "creating issuance router")
+		return sdkutil.LoggingErrorMsg(err, "creating issuing router")
 	}
 
-	issuanceHandlerPath := V1Prefix + IssuanceTemplatePrefix
-	s.Handle(http.MethodPut, issuanceHandlerPath, issuanceRouter.CreateIssuanceTemplate)
-	s.Handle(http.MethodGet, issuanceHandlerPath, issuanceRouter.ListIssuanceTemplates)
-	s.Handle(http.MethodGet, path.Join(issuanceHandlerPath, "/:id"), issuanceRouter.GetIssuanceTemplate)
-	s.Handle(http.MethodDelete, path.Join(issuanceHandlerPath, "/:id"), issuanceRouter.DeleteIssuanceTemplate)
+	issuanceAPI := rg.Group(IssuanceTemplatePrefix)
+	issuanceAPI.PUT("", issuanceRouter.CreateIssuanceTemplate)
+	issuanceAPI.GET("", issuanceRouter.ListIssuanceTemplates)
+	issuanceAPI.GET("/:id", issuanceRouter.GetIssuanceTemplate)
+	issuanceAPI.DELETE("/:id", issuanceRouter.DeleteIssuanceTemplate)
 	return nil
 }
 
-func (s *SSIServer) WebhookAPI(service svcframework.Service) (err error) {
+// WebhookAPI registers all HTTP handlers for the Webhook Service
+func WebhookAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 	webhookRouter, err := router.NewWebhookRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating webhook router")
 	}
 
-	handlerPath := V1Prefix + WebhookPrefix
-	s.Handle(http.MethodPut, handlerPath, webhookRouter.CreateWebhook)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "/:noun/:verb"), webhookRouter.GetWebhook)
-	s.Handle(http.MethodGet, handlerPath, webhookRouter.GetWebhooks)
-	s.Handle(http.MethodDelete, handlerPath, webhookRouter.DeleteWebhook)
+	webhookAPI := rg.Group(WebhookPrefix)
+	webhookAPI.PUT("", webhookRouter.CreateWebhook)
+	webhookAPI.GET("", webhookRouter.GetWebhooks)
+	webhookAPI.GET("/:noun/:verb", webhookRouter.GetWebhook)
+	webhookAPI.DELETE("/:noun/:verb", webhookRouter.DeleteWebhook)
 
-	s.Handle(http.MethodGet, path.Join(handlerPath, "nouns"), webhookRouter.GetSupportedNouns)
-	s.Handle(http.MethodGet, path.Join(handlerPath, "verbs"), webhookRouter.GetSupportedVerbs)
+	// TODO(gabe): consider refactoring this to a single get on /webhooks/info or similar
+	webhookAPI.GET("nouns", webhookRouter.GetSupportedNouns)
+	webhookAPI.GET("verbs", webhookRouter.GetSupportedVerbs)
 	return
 }

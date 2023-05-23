@@ -21,7 +21,15 @@ import (
 
 // SSIService represents all services and their dependencies independent of transport
 type SSIService struct {
-	services []framework.Service
+	KeyStore     *keystore.Service
+	DID          *did.Service
+	Schema       *schema.Service
+	Issuance     *issuance.Service
+	Credential   *credential.Service
+	Manifest     *manifest.Service
+	Presentation *presentation.Service
+	Operation    *operation.Service
+	Webhook      *webhook.Service
 }
 
 // InstantiateSSIService creates a new instance of the SSIS which instantiates all services and their
@@ -30,11 +38,11 @@ func InstantiateSSIService(config config.ServicesConfig) (*SSIService, error) {
 	if err := validateServiceConfig(config); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate SSI Service, invalid config")
 	}
-	services, err := instantiateServices(config)
+	service, err := instantiateServices(config)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not instantiate the ssi service")
 	}
-	return &SSIService{services: services}, nil
+	return service, nil
 }
 
 func validateServiceConfig(config config.ServicesConfig) error {
@@ -68,23 +76,8 @@ func validateServiceConfig(config config.ServicesConfig) error {
 	return nil
 }
 
-// GetServices returns the instantiated service providers
-func (ssi *SSIService) GetServices() []framework.Service {
-	return ssi.services
-}
-
-// GetService returns the specified instantiated service provider
-func (ssi *SSIService) GetService(serviceType framework.Type) framework.Service {
-	for _, s := range ssi.services {
-		if s.Type() == serviceType {
-			return s
-		}
-	}
-	return nil
-}
-
 // instantiateServices begins all instantiates and their dependencies
-func instantiateServices(config config.ServicesConfig) ([]framework.Service, error) {
+func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 	storageProvider, err := storage.NewStorage(storage.Type(config.StorageProvider), config.StorageOptions...)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not instantiate storage provider: %s", config.StorageProvider)
@@ -97,7 +90,7 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 
 	keyStoreService, err := keystore.NewKeyStoreService(config.KeyStoreConfig, storageProvider)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate keystore service")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate KeyStore service")
 	}
 
 	didService, err := did.NewDIDService(config.DIDConfig, storageProvider, keyStoreService)
@@ -136,6 +129,30 @@ func instantiateServices(config config.ServicesConfig) ([]framework.Service, err
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the operation service")
 	}
 
-	return []framework.Service{keyStoreService, didService, schemaService, issuanceService, credentialService,
-		manifestService, presentationService, operationService, webhookService}, nil
+	return &SSIService{
+		KeyStore:     keyStoreService,
+		DID:          didService,
+		Schema:       schemaService,
+		Issuance:     issuanceService,
+		Credential:   credentialService,
+		Manifest:     manifestService,
+		Presentation: presentationService,
+		Operation:    operationService,
+		Webhook:      webhookService,
+	}, nil
+}
+
+// GetServices returns all services
+func (s *SSIService) GetServices() []framework.Service {
+	return []framework.Service{
+		s.KeyStore,
+		s.DID,
+		s.Schema,
+		s.Issuance,
+		s.Credential,
+		s.Manifest,
+		s.Presentation,
+		s.Operation,
+		s.Webhook,
+	}
 }

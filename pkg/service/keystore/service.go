@@ -48,13 +48,13 @@ func (s Service) Config() config.KeyStoreServiceConfig {
 }
 
 func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	encryptor, decryptor, err := NewEncryption(s, config)
+	encrypter, decrypter, err := NewEncryption(s, config)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating new encryption")
 	}
 
 	// Next, instantiate the key storage
-	keyStoreStorage, err := NewKeyStoreStorage(s, encryptor, decryptor)
+	keyStoreStorage, err := NewKeyStoreStorage(s, encrypter, decrypter)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "instantiating storage for the keystore service")
 	}
@@ -124,18 +124,18 @@ func (s Service) GetKey(ctx context.Context, request GetKeyRequest) (*GetKeyResp
 	}, nil
 }
 
+// TODO(gabe): expose this endpoint https://github.com/TBD54566975/ssi-service/issues/451
 func (s Service) RevokeKey(ctx context.Context, request RevokeKeyRequest) error {
 	logrus.Debugf("revoking key: %+v", request)
+
 	id := request.ID
-	err := s.storage.RevokeKey(ctx, id)
-	if err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not delete key: %s", id)
+	if err := s.storage.RevokeKey(ctx, id); err != nil {
+		return sdkutil.LoggingErrorMsgf(err, "could not revoke key: %s", id)
 	}
 	return nil
 }
 
 func (s Service) GetKeyDetails(ctx context.Context, request GetKeyDetailsRequest) (*GetKeyDetailsResponse, error) {
-
 	logrus.Debugf("getting key: %+v", request)
 
 	id := request.ID

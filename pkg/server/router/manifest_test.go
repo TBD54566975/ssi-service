@@ -41,7 +41,7 @@ func TestManifestRouter(t *testing.T) {
 
 	t.Run("Manifest Service Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
+		assert.NotEmpty(tt, bolt)
 
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)

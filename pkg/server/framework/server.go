@@ -4,38 +4,17 @@ package framework
 import (
 	"net/http"
 	"os"
-	"syscall"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/google/uuid"
 
 	"github.com/tbd54566975/ssi-service/config"
 )
 
-type contextKey string
-
 const (
-	KeyRequestState    contextKey = "keyRequestState"
-	ShutdownErrorState contextKey = "shutdownError"
-
 	serviceName string = "ssi-service"
 )
-
-func (c contextKey) String() string {
-	return string(c)
-}
-
-type RequestState struct {
-	TraceID    string
-	Now        time.Time
-	StatusCode int
-}
 
 // Server is the entrypoint into our application and what configures our context object for each of our http router.
 // Feel free to add any configuration data/logic on this Server struct.
@@ -46,92 +25,23 @@ type Server struct {
 	shutdown chan os.Signal
 }
 
-type Handler func(c *gin.Context) error
-
-// NewHTTPServer creates a Server that handles a set of routes for the application.
-func NewHTTPServer(cfg config.ServerConfig, shutdown chan os.Signal, mws gin.HandlersChain) *Server {
+// NewServer creates a Server that handles a set of routes for the application.
+func NewServer(cfg config.ServerConfig, handler *gin.Engine, shutdown chan os.Signal) *Server {
 	var tracer trace.Tracer
 	if cfg.JagerEnabled {
 		tracer = otel.Tracer(serviceName)
 	}
 
-	router := gin.Default()
-	router.Use(mws...)
-
-	switch cfg.Environment {
-	case config.EnvironmentDev:
-		gin.SetMode(gin.DebugMode)
-	case config.EnvironmentProd:
-		gin.SetMode(gin.ReleaseMode)
-	}
-
 	return &Server{
 		Server: &http.Server{
 			Addr:              cfg.APIHost,
-			Handler:           router,
+			Handler:           handler,
 			ReadTimeout:       cfg.ReadTimeout,
 			ReadHeaderTimeout: cfg.ReadTimeout,
 			WriteTimeout:      cfg.WriteTimeout,
 		},
-		router:   router,
+		router:   handler,
 		tracer:   tracer,
 		shutdown: shutdown,
 	}
-}
-
-// Handle sets a handler function for a given HTTP method and path pair
-// to the server mux.
-func (s *Server) Handle(method string, path string, handler Handler, middleware ...gin.HandlerFunc) {
-	// request handler function
-	h := func(c *gin.Context) {
-		requestState := RequestState{
-			TraceID: uuid.New().String(),
-			Now:     time.Now(),
-		}
-		r := c.Request
-		c.Set(KeyRequestState.String(), &requestState)
-
-		// init a span, but only if the tracer is initialized
-		if s.tracer != nil {
-			_, span := s.tracer.Start(c, path)
-			defer span.End()
-			body, err := PeekRequestBody(r)
-			if err != nil {
-				// log the error and continue the trace with an empty body value
-				logrus.WithError(err).Error("failed to read request body during tracing")
-			}
-			span.SetAttributes(
-				attribute.String("method", method),
-				attribute.String("path", path),
-				attribute.String("host", r.Host),
-				attribute.String("user-agent", r.UserAgent()),
-				attribute.String("proto", r.Proto),
-				attribute.String("body", body),
-			)
-		}
-
-		// handle the request
-		if err := handler(c); err != nil {
-			// if there's still an error at this point (not extracted by our errors middleware)
-			// we know it's an unsafe error and worth shutting down over
-			logrus.WithError(err).Errorf("request failed")
-			if IsShutdown(err) {
-				logrus.WithError(err).Errorf("unsafe error, shutting down")
-				s.SignalShutdown()
-			}
-			return
-		}
-	}
-
-	hs := make(gin.HandlersChain, 0, len(middleware)+1)
-	hs = append(hs, middleware...)
-	hs = append(hs, h)
-
-	// add the handler to the router
-	s.router.Handle(method, path, hs...)
-}
-
-// SignalShutdown is used to gracefully shut down the server when an integrity issue is identified.
-func (s *Server) SignalShutdown() {
-	s.shutdown <- syscall.SIGTERM
 }

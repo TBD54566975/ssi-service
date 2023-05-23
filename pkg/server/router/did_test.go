@@ -31,7 +31,7 @@ func TestDIDRouter(t *testing.T) {
 	t.Run("DID Service Test", func(tt *testing.T) {
 
 		db := setupTestDB(tt)
-		assert.NotNil(tt, db)
+		assert.NotEmpty(tt, db)
 
 		keyStoreService := testKeyStoreService(tt, db)
 		methods := []string{didsdk.KeyMethod.String()}
@@ -119,7 +119,7 @@ func TestDIDRouter(t *testing.T) {
 	t.Run("DID Web Service Test", func(tt *testing.T) {
 
 		db := setupTestDB(tt)
-		assert.NotNil(tt, db)
+		assert.NotEmpty(tt, db)
 
 		keyStoreService := testKeyStoreService(tt, db)
 		methods := []string{didsdk.KeyMethod.String(), didsdk.WebMethod.String()}

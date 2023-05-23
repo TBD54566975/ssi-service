@@ -3,7 +3,6 @@ package authorizationserver
 import (
 	"crypto/rand"
 	"crypto/rsa"
-	"net/http"
 	"os"
 	"time"
 
@@ -92,10 +91,14 @@ func NewServer(shutdown chan os.Signal, config *AuthConfig, store *storage.Memor
 	)
 
 	middlewares := gin.HandlersChain{
-		middleware.Logger(logrus.StandardLogger()),
-		middleware.Errors(),
+		gin.Logger(),
+		gin.Recovery(),
+		middleware.Errors(shutdown),
 	}
-	httpServer := framework.NewHTTPServer(config.Server, shutdown, middlewares)
+
+	engine := gin.New()
+	engine.Use(middlewares...)
+	httpServer := framework.NewServer(config.Server, engine, shutdown)
 
 	im, err := loadIssuerMetadata(config)
 	if err != nil {
@@ -103,12 +106,12 @@ func NewServer(shutdown chan os.Signal, config *AuthConfig, store *storage.Memor
 		os.Exit(1)
 	}
 
-	httpServer.Handle(http.MethodGet, issuerMetadataPath, credentialIssuerMetadata(im))
+	engine.GET(issuerMetadataPath, credentialIssuerMetadata(im))
 
 	// Set up oauth2 endpoints.
 	authService := NewAuthService(im, oauth2)
-	httpServer.Handle(http.MethodGet, "/oauth2/auth", authService.AuthEndpoint)
-	httpServer.Handle(http.MethodPost, "/oauth2/auth", authService.AuthEndpoint)
+	engine.GET("/oauth2/auth", authService.AuthEndpoint)
+	engine.POST("/oauth2/auth", authService.AuthEndpoint)
 
 	return &Server{
 		Server: httpServer,

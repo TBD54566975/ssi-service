@@ -16,8 +16,9 @@ import (
 	"github.com/google/tink/go/tink"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/ssi-service/config"
 	"google.golang.org/api/option"
+
+	"github.com/tbd54566975/ssi-service/config"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -251,13 +252,14 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 	return kss.db.Write(ctx, namespace, id, encryptedKey)
 }
 
+// RevokeKey revokes a key by setting the revoked flag to true.
 func (kss *Storage) RevokeKey(ctx context.Context, id string) error {
 	key, err := kss.GetKey(ctx, id)
 	if err != nil {
 		return err
 	}
 	if key == nil {
-		return errors.New("key not found")
+		return sdkutil.LoggingNewErrorf("key not found: %s", id)
 	}
 
 	key.Revoked = true
@@ -274,7 +276,7 @@ func (kss *Storage) GetKey(ctx context.Context, id string) (*StoredKey, error) {
 		return nil, sdkutil.LoggingNewErrorf("could not find key details for key: %s", id)
 	}
 
-	// decrypt key before unmarshaling
+	// decrypt key before unmarshalling
 	decryptedKey, err := kss.decrypter.Decrypt(ctx, storedKeyBytes, nil)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not decrypt key: %s", id)

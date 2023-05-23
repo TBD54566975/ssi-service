@@ -72,8 +72,8 @@ func TestCredentialIssuerMetadata(t *testing.T) {
 
 func TestAuthorizationEndpoint(t *testing.T) {
 	callbackCalled := false
-	handler := &handler{}
-	clientServer := httptest.NewServer(http.HandlerFunc(handler.callbackHandler(t, &callbackCalled)))
+	h := new(handler)
+	clientServer := httptest.NewServer(http.HandlerFunc(h.callbackHandler(t, &callbackCalled)))
 
 	clientID := createClient(clientServer)
 
@@ -151,14 +151,13 @@ func TestAuthorizationEndpoint(t *testing.T) {
 		q := createQuery(u, clientID, clientServer.URL, tc.authorizationDetails)
 		form := createForm()
 
-		handler.errorWanted = tc.wantError
-		handler.assert = tc.callbackAssertion
+		h.errorWanted = tc.wantError
+		h.assert = tc.callbackAssertion
 
 		u.RawQuery = q.Encode()
 		require.False(t, callbackCalled)
 
 		resp, err := http.Post(u.String(), "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
-
 		require.True(t, callbackCalled)
 		require.NoError(t, err)
 		require.NotEmpty(t, resp)

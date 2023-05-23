@@ -1,7 +1,7 @@
 {
   "approved": {{.Approved}},
   "reason": "{{.Reason}}",
-  "credential_overrides": {
+  "credentialOverrides": {
     "kyc_credential": {
       "data": {
         "familyName": "Tee",

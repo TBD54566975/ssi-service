@@ -345,7 +345,7 @@ func (s Service) attemptAutomaticIssuance(ctx context.Context, request model.Sub
 
 	issuanceTemplate := issuanceTemplates[0].IssuanceTemplate
 	if len(issuanceTemplates) > 1 {
-		logrus.Warnf("found multiple issuance templates for manifest<%s>, using first entry only", manifestID)
+		logrus.Warnf("found issuance issuance templates for manifest<%s>, using first entry only", manifestID)
 	}
 
 	credResp, creds, err := s.buildFulfillmentCredentialResponseFromTemplate(ctx, applicantDID, manifestID, gotManifest.IssuerKID,

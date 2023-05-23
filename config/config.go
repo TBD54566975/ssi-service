@@ -53,7 +53,6 @@ type SSIServiceConfig struct {
 type ServerConfig struct {
 	Environment         Environment   `toml:"env" conf:"default:dev"`
 	APIHost             string        `toml:"api_host" conf:"default:0.0.0.0:3000"`
-	DebugHost           string        `toml:"debug_host" conf:"default:0.0.0.0:4000"`
 	JagerHost           string        `toml:"jager_host" conf:"http://jaeger:14268/api/traces"`
 	JagerEnabled        bool          `toml:"jager_enabled" conf:"default:false"`
 	ReadTimeout         time.Duration `toml:"read_timeout" conf:"default:5s"`

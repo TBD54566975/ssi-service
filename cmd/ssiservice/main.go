@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"expvar"
+	"io"
 	"os"
 	"os/signal"
 	"strconv"
@@ -14,6 +15,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/doc"
@@ -68,6 +70,12 @@ func run() error {
 		}(logFile)
 	}
 
+	// set up tracer
+	tp, err := newTracerProvider(cfg)
+	if err != nil {
+		logrus.WithError(err).Error("could not instantiate tracer provider")
+	}
+
 	// set up schema caching based on config
 	if cfg.Server.EnableSchemaCaching {
 		localSchemas, err := schema.GetAllLocalSchemas()
@@ -107,14 +115,6 @@ func run() error {
 
 	serverErrors := make(chan error, 1)
 
-	// Create a new tracer provider with a batch span processor and the given exporter.
-	tp, err := newTracerProvider(*cfg)
-	if err != nil {
-		logrus.Errorf("failed to initialize tracer provider: %s", err)
-	} else {
-		otel.SetTracerProvider(tp)
-	}
-
 	go func() {
 		logrus.Infof("main: server started and listening on -> %s", ssiServer.Server.Addr)
 		serverErrors <- ssiServer.ListenAndServe()
@@ -149,19 +149,21 @@ func run() error {
 // the Jaeger exporter that will send spans to the provided url. The returned
 // TracerProvider will also use a Resource configured with all the information
 // about the application.
-func newTracerProvider(cfg config.SSIServiceConfig) (*sdktrace.TracerProvider, error) {
+func newTracerProvider(cfg *config.SSIServiceConfig) (*sdktrace.TracerProvider, error) {
+	// Create a new tracer provider with a batch span processor and the given exporter.
 	// Create the Jaeger exporter
 	jagerHost := cfg.Server.JagerHost
 	if jagerHost == "" {
 		return nil, errors.New("no jager host provided")
 	}
-	exp, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(jagerHost)))
+	exporter, err := jaeger.New(jaeger.WithCollectorEndpoint(jaeger.WithEndpoint(jagerHost)))
 	if err != nil {
 		return nil, err
 	}
 	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		// Always be sure to batch in production.
-		sdktrace.WithBatcher(exp),
+		sdktrace.WithBatcher(exporter),
 		// Record information about this application in a Resource.
 		sdktrace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
@@ -169,6 +171,8 @@ func newTracerProvider(cfg config.SSIServiceConfig) (*sdktrace.TracerProvider, e
 			semconv.ServiceVersionKey.String(cfg.Version.SVN),
 		)),
 	)
+	otel.SetTracerProvider(tp)
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 	return tp, nil
 }
 
@@ -190,25 +194,18 @@ func configureLogger(level, location string) *os.File {
 		PrettyPrint:      true,
 	})
 	logrus.SetReportCaller(true)
-	logLevel, err := logrus.ParseLevel(level)
-	if err != nil {
-		logrus.WithError(err).Errorf("could not parse logs level<%s>, setting to info", level)
-		logrus.SetLevel(logrus.InfoLevel)
-	} else {
-		logrus.SetLevel(logLevel)
-	}
-
-	logrus.SetOutput(os.Stdout)
 
 	// set logs config from config file
 	now := time.Now()
+	logrus.SetOutput(os.Stdout)
 	if location != "" {
 		logFile := location + "/" + config.ServiceName + "-" + now.Format(time.DateOnly) + "-" + strconv.FormatInt(now.Unix(), 10) + ".log"
 		file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 		if err != nil {
 			logrus.WithError(err).Warn("failed to create logs file, using default stdout")
 		} else {
-			logrus.SetOutput(file)
+			mw := io.MultiWriter(os.Stdout, file)
+			logrus.SetOutput(mw)
 		}
 		return file
 	}

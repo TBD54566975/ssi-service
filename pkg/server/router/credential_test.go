@@ -24,7 +24,6 @@ import (
 )
 
 func TestCredentialRouter(t *testing.T) {
-
 	t.Run("Nil Service", func(tt *testing.T) {
 		credRouter, err := NewCredentialRouter(nil)
 		assert.Error(tt, err)
@@ -41,7 +40,7 @@ func TestCredentialRouter(t *testing.T) {
 
 	t.Run("Credential Service Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
+		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -204,7 +203,7 @@ func TestCredentialRouter(t *testing.T) {
 
 	t.Run("Credential Status List Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
+		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -324,7 +323,7 @@ func TestCredentialRouter(t *testing.T) {
 
 	t.Run("Credential Status List Test No Schemas", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
+		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -438,7 +437,7 @@ func TestCredentialRouter(t *testing.T) {
 
 	t.Run("Credential Status List Test Update Revoked Status", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
+		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
@@ -565,7 +564,7 @@ func TestCredentialRouter(t *testing.T) {
 
 	t.Run("Create Multiple Suspendable Credential Different IssuerDID SchemaID StatusPurpose Triples", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
+		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234"}}
 		keyStoreService := testKeyStoreService(tt, bolt)

@@ -1,6 +1,10 @@
 package framework
 
-import "github.com/pkg/errors"
+import (
+	"strings"
+
+	"github.com/pkg/errors"
+)
 
 // FieldError is used to indicate an error with a field in a request payload.
 type FieldError struct {
@@ -11,8 +15,8 @@ type FieldError struct {
 // ErrorResponse is the structure of response error payloads sent back to the requester
 // when validation of a request payload fails.
 type ErrorResponse struct {
-	Error  string       `json:"error"`
-	Fields []FieldError `json:"fields,omitempty"`
+	Error  string `json:"error"`
+	Fields string `json:"fields,omitempty"`
 }
 
 // SafeError is used to pass an error during the request through the server with
@@ -30,10 +34,22 @@ func (err *SafeError) Error() string {
 	return err.Err.Error()
 }
 
+// FieldErrors returns a string containing all field errors.
+func (err *SafeError) FieldErrors() string {
+	if len(err.Fields) == 0 {
+		return ""
+	}
+	fieldErrs := make([]string, 0, len(err.Fields))
+	for _, field := range err.Fields {
+		fieldErrs = append(fieldErrs, field.Error)
+	}
+	return strings.Join(fieldErrs, ", ")
+}
+
 // newRequestError wraps a provided error with an HTTP status code. This function should be used
 // when router encounter expected errors.
-func newRequestError(err error, statusCode int) error {
-	return &SafeError{err, statusCode, nil}
+func newRequestError(err error, statusCode int, fields ...FieldError) error {
+	return &SafeError{err, statusCode, fields}
 }
 
 // shutdown is a type used to help with graceful shutdown of a server.

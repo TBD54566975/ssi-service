@@ -7,7 +7,6 @@ desc = "Configuration to be used while running the service in a production envir
 [server]
 env = "prod" # either 'dev', 'test', or 'prod'
 api_host = "0.0.0.0:3000"
-debug_host = "0.0.0.0:4000"
 jager_host = "http://jaeger:14268/api/traces"
 jager_enabled = true
 

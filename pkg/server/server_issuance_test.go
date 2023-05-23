@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
@@ -28,8 +29,8 @@ import (
 func TestIssuanceRouter(t *testing.T) {
 	now := time.Now()
 	duration := 10 * time.Second
-	t.Run("CreateIssuanceTemplate", func(t *testing.T) {
-		issuerResp, createdSchema, manifest, r := setupAllThings(t)
+	t.Run("CreateIssuanceTemplate", func(tt *testing.T) {
+		issuerResp, createdSchema, manifest, r := setupAllThings(tt)
 		for _, tc := range []struct {
 			name    string
 			request router.CreateIssuanceTemplateRequest
@@ -81,14 +82,14 @@ func TestIssuanceRouter(t *testing.T) {
 				},
 			},
 		} {
-			t.Run(tc.name, func(t *testing.T) {
+			tt.Run(tc.name, func(t *testing.T) {
 				value := newRequestValue(t, tc.request)
 				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/issuancetemplates", value)
 				w := httptest.NewRecorder()
 
 				c := newRequestContext(w, req)
-				err := r.CreateIssuanceTemplate(c)
-				assert.NoError(t, err)
+				r.CreateIssuanceTemplate(c)
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				var resp issuance.Template
 				assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
@@ -97,8 +98,8 @@ func TestIssuanceRouter(t *testing.T) {
 		}
 	})
 
-	t.Run("CreateIssuanceTemplate returns error", func(t *testing.T) {
-		issuerResp, createdSchema, manifest, r := setupAllThings(t)
+	t.Run("CreateIssuanceTemplate returns error", func(tt *testing.T) {
+		issuerResp, createdSchema, manifest, r := setupAllThings(tt)
 
 		for _, tc := range []struct {
 			name          string
@@ -225,24 +226,21 @@ func TestIssuanceRouter(t *testing.T) {
 				expectedError: "field validation error",
 			},
 		} {
-			t.Run(tc.name, func(t *testing.T) {
-
-				value := newRequestValue(t, tc.request)
+			tt.Run(tc.name, func(ttt *testing.T) {
+				value := newRequestValue(ttt, tc.request)
 				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/issuancetemplates", value)
 				w := httptest.NewRecorder()
 
 				c := newRequestContext(w, req)
-				err := r.CreateIssuanceTemplate(c)
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tc.expectedError)
-
+				r.CreateIssuanceTemplate(c)
+				assert.Contains(ttt, w.Body.String(), tc.expectedError)
 			})
 
 		}
 	})
 
-	t.Run("Create, Get, Delete work as expected", func(t *testing.T) {
-		issuerResp, createdSchema, manifest, r := setupAllThings(t)
+	t.Run("Create, Get, Delete work as expected", func(tt *testing.T) {
+		issuerResp, createdSchema, manifest, r := setupAllThings(tt)
 
 		inputTemplate := issuance.Template{
 			CredentialManifest: manifest.Manifest.ID,
@@ -271,8 +269,8 @@ func TestIssuanceRouter(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			err := r.CreateIssuanceTemplate(c)
-			assert.NoError(t, err)
+			r.CreateIssuanceTemplate(c)
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&issuanceTemplate))
 			if diff := cmp.Diff(inputTemplate, issuanceTemplate, cmpopts.IgnoreFields(issuance.Template{}, "ID")); diff != "" {
@@ -281,92 +279,89 @@ func TestIssuanceRouter(t *testing.T) {
 		}
 
 		{
-			value := newRequestValue(t, nil)
+			value := newRequestValue(tt, nil)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates/"+issuanceTemplate.ID, value)
 			w := httptest.NewRecorder()
 
 			c := newRequestContextWithParams(w, req, map[string]string{"id": issuanceTemplate.ID})
-			err := r.GetIssuanceTemplate(c)
-			assert.NoError(t, err)
+			r.GetIssuanceTemplate(c)
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var getIssuanceTemplate issuance.Template
 			assert.NoError(t, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
 			if diff := cmp.Diff(issuanceTemplate, getIssuanceTemplate); diff != "" {
-				t.Errorf("IssuanceTemplate mismatch (-want +got):\n%s", diff)
+				tt.Errorf("Template mismatch (-want +got):\n%s", diff)
 			}
 		}
 
 		{
-			value := newRequestValue(t, nil)
+			value := newRequestValue(tt, nil)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates/"+issuanceTemplate.ID, value)
 			w := httptest.NewRecorder()
 			c := newRequestContextWithParams(w, req, map[string]string{"id": issuanceTemplate.ID})
-			err := r.DeleteIssuanceTemplate(c)
-			assert.NoError(t, err)
+			r.DeleteIssuanceTemplate(c)
+			assert.True(tt, util.Is2xxResponse(w.Code))
 		}
 
 		{
-			value := newRequestValue(t, nil)
+			value := newRequestValue(tt, nil)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates/"+issuanceTemplate.ID, value)
 			w := httptest.NewRecorder()
 			c := newRequestContextWithParams(w, req, map[string]string{"id": issuanceTemplate.ID})
-			err := r.GetIssuanceTemplate(c)
-
-			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "issuance template not found")
+			r.GetIssuanceTemplate(c)
+			assert.Contains(tt, w.Body.String(), "issuance template not found")
 		}
 	})
 
-	t.Run("GetIssuanceTemplate returns error for unknown ID", func(t *testing.T) {
-		s := setupTestDB(t)
-		r := testIssuanceRouter(t, s)
+	t.Run("GetIssuanceTemplate returns error for unknown ID", func(tt *testing.T) {
+		s := setupTestDB(tt)
+		r := testIssuanceRouter(tt, s)
 
-		value := newRequestValue(t, nil)
+		value := newRequestValue(tt, nil)
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates/where-is-it", value)
 		w := httptest.NewRecorder()
 		c := newRequestContextWithParams(w, req, map[string]string{"id": "where-is-it"})
-		err := r.GetIssuanceTemplate(c)
-
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "issuance template not found")
+		r.GetIssuanceTemplate(c)
+		assert.Contains(tt, w.Body.String(), "issuance template not found")
 	})
 
-	t.Run("ListIssuanceTemplates returns empty when there aren't templates", func(t *testing.T) {
-		s := setupTestDB(t)
-		r := testIssuanceRouter(t, s)
+	t.Run("ListIssuanceTemplates returns empty when there aren't templates", func(tt *testing.T) {
+		s := setupTestDB(tt)
+		r := testIssuanceRouter(tt, s)
 
-		value := newRequestValue(t, nil)
+		value := newRequestValue(tt, nil)
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates", value)
 		w := httptest.NewRecorder()
 		c := newRequestContext(w, req)
-		err := r.ListIssuanceTemplates(c)
+		r.ListIssuanceTemplates(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		assert.NoError(t, err)
 		var getIssuanceTemplate router.ListIssuanceTemplatesResponse
-		assert.NoError(t, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
-		assert.Empty(t, getIssuanceTemplate.IssuanceTemplates)
+		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
+		assert.Empty(tt, getIssuanceTemplate.IssuanceTemplates)
 	})
 
-	t.Run("ListIssuanceTemplates returns all created templates", func(t *testing.T) {
-		issuerResp, createdSchema, manifest, r := setupAllThings(t)
+	t.Run("ListIssuanceTemplates returns all created templates", func(tt *testing.T) {
+		issuerResp, createdSchema, manifest, r := setupAllThings(tt)
 
-		createSimpleTemplate(t, manifest, issuerResp, createdSchema, now, r)
-		createSimpleTemplate(t, manifest, issuerResp, createdSchema, now, r)
+		createSimpleTemplate(tt, manifest, issuerResp, createdSchema, now, r)
+		createSimpleTemplate(tt, manifest, issuerResp, createdSchema, now, r)
 
-		value := newRequestValue(t, nil)
+		value := newRequestValue(tt, nil)
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates", value)
 		w := httptest.NewRecorder()
 		c := newRequestContext(w, req)
-		err := r.ListIssuanceTemplates(c)
+		r.ListIssuanceTemplates(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		assert.NoError(t, err)
 		var getIssuanceTemplate router.ListIssuanceTemplatesResponse
-		assert.NoError(t, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
-		assert.Len(t, getIssuanceTemplate.IssuanceTemplates, 2)
+		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
+		assert.Len(tt, getIssuanceTemplate.IssuanceTemplates, 2)
 	})
 }
 
-func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, issuerResp *did.CreateDIDResponse, createdSchema *schema.CreateSchemaResponse, now time.Time, r *router.IssuanceRouter) {
+func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, issuerResp *did.CreateDIDResponse,
+	createdSchema *schema.CreateSchemaResponse, now time.Time, r *router.IssuanceRouter) {
 	{
 		request := router.CreateIssuanceTemplateRequest{
 			Template: issuance.Template{
@@ -393,8 +388,8 @@ func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, 
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := r.CreateIssuanceTemplate(c)
-		require.NoError(t, err)
+		r.CreateIssuanceTemplate(c)
+		assert.True(t, util.Is2xxResponse(w.Code))
 	}
 }
 

@@ -35,19 +35,21 @@ func NewIssuanceRouter(svc svcframework.Service) (*IssuanceRouter, error) {
 //	@Success		200	{object}	issuance.Template
 //	@Failure		400	{string}	string	"Bad request"
 //	@Router			/v1/issuancetemplates/{id} [get]
-func (ir IssuanceRouter) GetIssuanceTemplate(c *gin.Context) error {
+func (ir IssuanceRouter) GetIssuanceTemplate(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "cannot get issuance template without an ID"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	issuanceTemplate, err := ir.service.GetIssuanceTemplate(c, &issuance.GetIssuanceTemplateRequest{ID: *id})
 	if err != nil {
 		errMsg := "getting issuance template"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
-	return framework.Respond(c, issuanceTemplate.IssuanceTemplate, http.StatusOK)
+	framework.Respond(c, issuanceTemplate.IssuanceTemplate, http.StatusOK)
 }
 
 type CreateIssuanceTemplateRequest struct {
@@ -70,20 +72,22 @@ func (r CreateIssuanceTemplateRequest) toServiceRequest() *issuance.CreateIssuan
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/issuancetemplates [put]
-func (ir IssuanceRouter) CreateIssuanceTemplate(c *gin.Context) error {
-	var request CreateIssuanceTemplateRequest
+func (ir IssuanceRouter) CreateIssuanceTemplate(c *gin.Context) {
 	errMsg := "Invalid Issuance Template Request"
+	var request CreateIssuanceTemplateRequest
 	if err := framework.Decode(c.Request, &request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	template, err := ir.service.CreateIssuanceTemplate(c, request.toServiceRequest())
 	if err != nil {
-		errMsg := "creating issuance template"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		errMsg = "creating issuing template"
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
-	return framework.Respond(c, template, http.StatusCreated)
+	framework.Respond(c, template, http.StatusCreated)
 }
 
 // DeleteIssuanceTemplate godoc
@@ -98,19 +102,21 @@ func (ir IssuanceRouter) CreateIssuanceTemplate(c *gin.Context) error {
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/issuancetemplates/{id} [delete]
-func (ir IssuanceRouter) DeleteIssuanceTemplate(c *gin.Context) error {
+func (ir IssuanceRouter) DeleteIssuanceTemplate(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
 		errMsg := "cannot delete an issuance template without an ID parameter"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	if err := ir.service.DeleteIssuanceTemplate(c, &issuance.DeleteIssuanceTemplateRequest{ID: *id}); err != nil {
 		errMsg := fmt.Sprintf("could not delete issuance template with id: %s", *id)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
-	return framework.Respond(c, nil, http.StatusNoContent)
+	framework.Respond(c, nil, http.StatusNoContent)
 }
 
 type ListIssuanceTemplatesResponse struct {
@@ -128,14 +134,14 @@ type ListIssuanceTemplatesResponse struct {
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/manifests [get]
-func (ir IssuanceRouter) ListIssuanceTemplates(c *gin.Context) error {
+func (ir IssuanceRouter) ListIssuanceTemplates(c *gin.Context) {
 	gotManifests, err := ir.service.ListIssuanceTemplates(c, &issuance.ListIssuanceTemplatesRequest{})
-
 	if err != nil {
 		errMsg := "could not get templates"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	resp := ListIssuanceTemplatesResponse{IssuanceTemplates: gotManifests.IssuanceTemplates}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }

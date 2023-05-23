@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 )
@@ -34,9 +35,8 @@ func TestSchemaAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := schemaService.CreateSchema(c)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create schema request")
+		schemaService.CreateSchema(c)
+		assert.Contains(tt, w.Body.String(), "invalid create schema request")
 
 		// reset the http recorder
 		w = httptest.NewRecorder()
@@ -46,11 +46,11 @@ func TestSchemaAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 
 		c = newRequestContext(w, req)
-		err = schemaService.CreateSchema(c)
-		assert.NoError(tt, err)
+		schemaService.CreateSchema(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateSchemaResponse
-		err = json.NewDecoder(w.Body).Decode(&resp)
+		err := json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, resp.ID)
 		assert.EqualValues(tt, schemaRequest.Schema, resp.Schema.Schema)
@@ -72,9 +72,8 @@ func TestSchemaAPI(t *testing.T) {
 		schemaRequestValue := newRequestValue(tt, schemaRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		c := newRequestContext(w, req)
-		err := schemaService.CreateSchema(c)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "cannot sign schema without authorKID")
+		schemaService.CreateSchema(c)
+		assert.Contains(tt, w.Body.String(), "cannot sign schema without authorKID")
 
 		// create a DID
 		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
@@ -91,8 +90,8 @@ func TestSchemaAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		w = httptest.NewRecorder()
 		c = newRequestContext(w, req)
-		err = schemaService.CreateSchema(c)
-		assert.NoError(tt, err)
+		schemaService.CreateSchema(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateSchemaResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
@@ -106,8 +105,8 @@ func TestSchemaAPI(t *testing.T) {
 		verifySchemaRequestValue := newRequestValue(tt, verifySchemaRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas/verification", verifySchemaRequestValue)
 		c = newRequestContext(w, req)
-		err = schemaService.VerifySchema(c)
-		assert.NoError(tt, err)
+		schemaService.VerifySchema(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var verifyResp router.VerifySchemaResponse
 		err = json.NewDecoder(w.Body).Decode(&verifyResp)
@@ -121,8 +120,8 @@ func TestSchemaAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas/verification", verifySchemaRequestValue)
 		w = httptest.NewRecorder()
 		c = newRequestContext(w, req)
-		err = schemaService.VerifySchema(c)
-		assert.NoError(tt, err)
+		schemaService.VerifySchema(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		err = json.NewDecoder(w.Body).Decode(&verifyResp)
 		assert.NoError(tt, err)
@@ -143,9 +142,8 @@ func TestSchemaAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas/bad", nil)
 		c := newRequestContext(w, req)
-		err := schemaService.GetSchema(c)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "cannot get schema without ID parameter")
+		schemaService.GetSchema(c)
+		assert.Contains(tt, w.Body.String(), "cannot get schema without ID parameter")
 
 		// reset recorder between calls
 		w = httptest.NewRecorder()
@@ -153,9 +151,8 @@ func TestSchemaAPI(t *testing.T) {
 		// get schema with invalid id
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas/bad", nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": "bad"})
-		err = schemaService.GetSchema(c)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not get schema with id: bad")
+		schemaService.GetSchema(c)
+		assert.Contains(tt, w.Body.String(), "could not get schema with id: bad")
 
 		// reset recorder between calls
 		w = httptest.NewRecorder()
@@ -163,10 +160,11 @@ func TestSchemaAPI(t *testing.T) {
 		// get all schemas - get none
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas", nil)
 		c = newRequestContext(w, req)
-		err = schemaService.GetSchemas(c)
-		assert.NoError(tt, err)
+		schemaService.GetSchemas(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
+
 		var getSchemasResp router.GetSchemasResponse
-		err = json.NewDecoder(w.Body).Decode(&getSchemasResp)
+		err := json.NewDecoder(w.Body).Decode(&getSchemasResp)
 		assert.NoError(tt, err)
 		assert.Len(tt, getSchemasResp.Schemas, 0)
 
@@ -181,8 +179,8 @@ func TestSchemaAPI(t *testing.T) {
 		createReq := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 
 		c = newRequestContext(w, createReq)
-		err = schemaService.CreateSchema(c)
-		assert.NoError(tt, err)
+		schemaService.CreateSchema(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var createResp router.CreateSchemaResponse
 		err = json.NewDecoder(w.Body).Decode(&createResp)
@@ -197,8 +195,8 @@ func TestSchemaAPI(t *testing.T) {
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", createResp.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": createResp.ID})
-		err = schemaService.GetSchema(c)
-		assert.NoError(tt, err)
+		schemaService.GetSchema(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var gotSchemaResp router.GetSchemaResponse
 		err = json.NewDecoder(w.Body).Decode(&gotSchemaResp)
@@ -213,14 +211,15 @@ func TestSchemaAPI(t *testing.T) {
 		// get all schemas - get none
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas", nil)
 		c = newRequestContext(w, req)
-		err = schemaService.GetSchemas(c)
-		assert.NoError(tt, err)
+		schemaService.GetSchemas(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
+
 		err = json.NewDecoder(w.Body).Decode(&getSchemasResp)
 		assert.NoError(tt, err)
 		assert.Len(tt, getSchemasResp.Schemas, 1)
 	})
 
-	t.Run("Test Delete SchemaID", func(tt *testing.T) {
+	t.Run("Test Delete Schema", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
 
@@ -233,9 +232,8 @@ func TestSchemaAPI(t *testing.T) {
 		// delete a schema that doesn't exist
 		req := httptest.NewRequest(http.MethodDelete, "https://ssi-service.com/v1/schemas/bad", nil)
 		c := newRequestContextWithParams(w, req, map[string]string{"id": "bad"})
-		err := schemaService.DeleteSchema(c)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "could not delete schema with id: bad")
+		schemaService.DeleteSchema(c)
+		assert.Contains(tt, w.Body.String(), "could not delete schema with id: bad")
 
 		// create a schema
 		simpleSchema := getTestSchema()
@@ -245,11 +243,11 @@ func TestSchemaAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		w = httptest.NewRecorder()
 		c = newRequestContext(w, req)
-		err = schemaService.CreateSchema(c)
-		assert.NoError(tt, err)
+		schemaService.CreateSchema(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.CreateSchemaResponse
-		err = json.NewDecoder(w.Body).Decode(&resp)
+		err := json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, resp.ID)
 		assert.EqualValues(tt, schemaRequest.Schema, resp.Schema.Schema)
@@ -258,23 +256,22 @@ func TestSchemaAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.ID})
-		err = schemaService.GetSchema(c)
-		assert.NoError(tt, err)
+		schemaService.GetSchema(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		// delete it
 		req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.ID})
-		err = schemaService.DeleteSchema(c)
-		assert.NoError(tt, err)
+		schemaService.DeleteSchema(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		// get it back
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.ID})
-		err = schemaService.GetSchema(c)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "schema not found")
+		schemaService.GetSchema(c)
+		assert.Contains(tt, w.Body.String(), "schema not found")
 	})
 }
 

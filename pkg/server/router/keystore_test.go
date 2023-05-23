@@ -31,7 +31,7 @@ func TestKeyStoreRouter(t *testing.T) {
 
 	t.Run("Key Store Service Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
-		assert.NotNil(tt, bolt)
+		assert.NotEmpty(tt, bolt)
 
 		serviceConfig := config.KeyStoreServiceConfig{
 			BaseServiceConfig: &config.BaseServiceConfig{Name: "keystore"},
@@ -87,7 +87,7 @@ func TestKeyStoreRouter(t *testing.T) {
 		assert.Equal(tt, crypto.Ed25519, gotDetails.Type)
 		assert.Equal(tt, "did:test:me", gotDetails.Controller)
 
-		// delete key checks
+		// revoked key checks
 		err = keyStoreService.RevokeKey(context.Background(), keystore.RevokeKeyRequest{ID: keyID})
 		assert.NoError(tt, err)
 		gotDetails, err = keyStoreService.GetKeyDetails(context.Background(), keystore.GetKeyDetailsRequest{ID: keyID})

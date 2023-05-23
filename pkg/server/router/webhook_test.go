@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
@@ -25,9 +27,8 @@ func TestWebhookRouter(t *testing.T) {
 	})
 
 	t.Run("Webhook Service Test", func(tt *testing.T) {
-
 		db := setupTestDB(tt)
-		assert.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		serviceConfig := config.WebhookServiceConfig{WebhookTimeout: "10s"}
 		webhookService, err := webhook.NewWebhookService(serviceConfig, db)
@@ -38,5 +39,4 @@ func TestWebhookRouter(t *testing.T) {
 		assert.Equal(tt, framework.Webhook, webhookService.Type())
 		assert.Equal(tt, framework.StatusReady, webhookService.Status().Status)
 	})
-
 }

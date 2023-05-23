@@ -7,11 +7,11 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/gin-gonic/gin"
 
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
@@ -27,7 +27,6 @@ import (
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 
 	"github.com/tbd54566975/ssi-service/config"
-	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -59,9 +58,8 @@ func TestHealthCheckAPI(t *testing.T) {
 	w := httptest.NewRecorder()
 
 	c := newRequestContext(w, req)
-	err = router.Health(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+	router.Health(c)
+	assert.True(t, util.Is2xxResponse(w.Code))
 
 	var resp router.GetHealthCheckResponse
 	err = json.NewDecoder(w.Body).Decode(&resp)
@@ -96,9 +94,8 @@ func TestReadinessAPI(t *testing.T) {
 
 	handler := router.Readiness(nil)
 	c := newRequestContext(w, req)
-	err = handler(c)
-	assert.NoError(t, err)
-	assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+	handler(c)
+	assert.True(t, util.Is2xxResponse(w.Code))
 
 	var resp router.GetReadinessResponse
 	err = json.NewDecoder(w.Body).Decode(&resp)
@@ -119,11 +116,6 @@ func newRequestValue(t *testing.T, data any) io.Reader {
 func newRequestContext(w http.ResponseWriter, req *http.Request) *gin.Context {
 	c, _ := gin.CreateTestContext(w)
 	c.Request = req
-	c.Set(framework.KeyRequestState.String(), &framework.RequestState{
-		TraceID:    uuid.New().String(),
-		Now:        time.Now(),
-		StatusCode: 1,
-	})
 	return c
 }
 
@@ -230,7 +222,7 @@ func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Serv
 
 func testIssuanceService(t *testing.T, db storage.ServiceStorage) *issuance.Service {
 	cfg := config.IssuanceServiceConfig{
-		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-issuance"},
+		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-issuing"},
 	}
 
 	s, err := issuance.NewIssuanceService(cfg, db)

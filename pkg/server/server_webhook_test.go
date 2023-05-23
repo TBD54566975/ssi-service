@@ -16,7 +16,9 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -35,9 +37,11 @@ func freePort() string {
 }
 
 func TestSimpleWebhook(t *testing.T) {
-	ch := make(chan struct{}, 10)
+	ch := make(chan []byte, 10)
 	testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ch <- struct{}{}
+		received, err := io.ReadAll(r.Body)
+		assert.NoError(t, err)
+		ch <- received
 	}))
 	defer testServer.Close()
 
@@ -81,7 +85,17 @@ func TestSimpleWebhook(t *testing.T) {
 
 	// Check that exactly one call was received after 2 seconds.
 	select {
-	case <-ch:
+	case received := <-ch:
+		var parsed map[string]any
+		assert.NoError(t, json.Unmarshal(received, &parsed))
+		assert.NotEmpty(t, parsed["data"])
+
+		dataJSON, err := json.Marshal(parsed["data"])
+		assert.NoError(t, err)
+		var resp router.CreateDIDByMethodResponse
+		assert.NoError(t, json.Unmarshal(dataJSON, &resp))
+
+		assert.Equal(t, "did:web:tbd.website", resp.DID.ID)
 	case <-time.After(2 * time.Second):
 		assert.Fail(t, "should receive at least 1 message")
 	}
@@ -142,9 +156,8 @@ func TestWebhookAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := webhookRouter.CreateWebhook(c)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create webhook request")
+		webhookRouter.CreateWebhook(c)
+		assert.Contains(tt, w.Body.String(), "invalid create webhook request")
 	})
 
 	t.Run("CreateWebhook returns error when verb is not supported", func(tt *testing.T) {
@@ -164,9 +177,8 @@ func TestWebhookAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := webhookRouter.CreateWebhook(c)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create webhook request")
+		webhookRouter.CreateWebhook(c)
+		assert.Contains(tt, w.Body.String(), "invalid create webhook request")
 	})
 
 	t.Run("CreateWebhook returns error when url is not supported", func(tt *testing.T) {
@@ -186,14 +198,13 @@ func TestWebhookAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := webhookRouter.CreateWebhook(c)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create webhook request")
+		webhookRouter.CreateWebhook(c)
+		assert.Contains(tt, w.Body.String(), "invalid create webhook request")
 	})
 
 	t.Run("CreateWebhook returns error when url is is missing scheme", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookRouter := testWebhookRouter(tt, db)
 
@@ -208,14 +219,13 @@ func TestWebhookAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := webhookRouter.CreateWebhook(c)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid create webhook request")
+		webhookRouter.CreateWebhook(c)
+		assert.Contains(tt, w.Body.String(), "invalid create webhook request")
 	})
 
 	t.Run("CreateWebhook returns valid response", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookRouter := testWebhookRouter(tt, db)
 
@@ -230,13 +240,13 @@ func TestWebhookAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := webhookRouter.CreateWebhook(c)
-		assert.NoError(tt, err)
+		webhookRouter.CreateWebhook(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 	})
 
 	t.Run("Test Happy Path Delete Webhook", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookRouter := testWebhookRouter(tt, db)
 
@@ -251,24 +261,24 @@ func TestWebhookAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		err := webhookRouter.CreateWebhook(c)
-		assert.NoError(tt, err)
+		webhookRouter.CreateWebhook(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/webhooks", nil)
 		w = httptest.NewRecorder()
 
 		c = newRequestContext(w, req)
-		err = webhookRouter.GetWebhooks(c)
-		assert.NoError(tt, err)
+		webhookRouter.GetWebhooks(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var resp router.GetWebhooksResponse
-		err = json.NewDecoder(w.Body).Decode(&resp)
+		err := json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 		assert.Len(tt, resp.Webhooks, 1)
 
 		c = newRequestContext(w, req)
-		err = webhookRouter.GetWebhooks(c)
-		assert.NoError(tt, err)
+		webhookRouter.GetWebhooks(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		deleteWebhookRequest := router.DeleteWebhookRequest{
 			Noun: "Manifest",
@@ -281,15 +291,15 @@ func TestWebhookAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 
 		c = newRequestContext(w, req)
-		err = webhookRouter.DeleteWebhook(c)
-		assert.NoError(tt, err)
+		webhookRouter.DeleteWebhook(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/webhooks", nil)
 		w = httptest.NewRecorder()
 
 		c = newRequestContext(w, req)
-		err = webhookRouter.GetWebhooks(c)
-		assert.NoError(tt, err)
+		webhookRouter.GetWebhooks(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		var respAfter router.GetWebhooksResponse
 		err = json.NewDecoder(w.Body).Decode(&respAfter)
@@ -299,7 +309,7 @@ func TestWebhookAPI(t *testing.T) {
 
 	t.Run("GetWebhook Throws Error When Webhook None Exist", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookService := testWebhookService(tt, db)
 
@@ -310,7 +320,7 @@ func TestWebhookAPI(t *testing.T) {
 
 	t.Run("GetWebhook Returns Webhook That Does Exist", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookService := testWebhookService(tt, db)
 
@@ -337,7 +347,7 @@ func TestWebhookAPI(t *testing.T) {
 
 	t.Run("Test Get Webhooks", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookService := testWebhookService(tt, db)
 
@@ -373,7 +383,7 @@ func TestWebhookAPI(t *testing.T) {
 
 	t.Run("Test Delete Webhook", func(tt *testing.T) {
 		db := setupTestDB(tt)
-		require.NotNil(tt, db)
+		require.NotEmpty(tt, db)
 
 		webhookService := testWebhookService(tt, db)
 
@@ -398,6 +408,6 @@ func TestWebhookAPI(t *testing.T) {
 
 		gotWebhook, err = webhookService.GetWebhook(context.Background(), webhook.GetWebhookRequest{Noun: "Manifest", Verb: "Create"})
 		assert.ErrorContains(tt, err, "webhook does not exist")
-		assert.Nil(tt, gotWebhook)
+		assert.Empty(tt, gotWebhook)
 	})
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -23,11 +24,11 @@ import (
 func TestOperationsAPI(t *testing.T) {
 	t.Run("Marks operation as done after reviewing submission", func(tt *testing.T) {
 		s := setupTestDB(tt)
-		pRouter, didService := setupPresentationRouter(t, s)
-		authorDID := createDID(t, didService)
-		opRouter := setupOperationsRouter(t, s)
+		pRouter, didService := setupPresentationRouter(tt, s)
+		authorDID := createDID(tt, didService)
+		opRouter := setupOperationsRouter(tt, s)
 
-		holderSigner, holderDID := getSigner(t)
+		holderSigner, holderDID := getSigner(tt)
 		definition := createPresentationDefinition(t, pRouter)
 		submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 		sub := reviewSubmission(t, pRouter, opstorage.StatusObjectID(submissionOp.ID))
@@ -37,30 +38,31 @@ func TestOperationsAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
-		err := opRouter.GetOperation(c)
+		opRouter.GetOperation(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		assert.NoError(t, err)
 		var resp router.Operation
-		assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-		assert.True(t, resp.Done)
-		assert.Empty(t, resp.Result.Error)
+		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
+		assert.True(tt, resp.Done)
+		assert.Empty(tt, resp.Result.Error)
 		data, err := json.Marshal(sub)
-		assert.NoError(t, err)
+		assert.NoError(tt, err)
+
 		var responseAsMap map[string]any
-		assert.NoError(t, json.Unmarshal(data, &responseAsMap))
-		assert.Equal(t, responseAsMap, resp.Result.Response)
+		assert.NoError(tt, json.Unmarshal(data, &responseAsMap))
+		assert.Equal(tt, responseAsMap, resp.Result.Response)
 	})
 
-	t.Run("GetOperation", func(t *testing.T) {
-		t.Run("Returns operation after submission", func(tt *testing.T) {
-			s := setupTestDB(tt)
-			pRouter, didService := setupPresentationRouter(t, s)
-			authorDID := createDID(t, didService)
-			opRouter := setupOperationsRouter(t, s)
+	t.Run("GetOperation", func(tt *testing.T) {
+		tt.Run("Returns operation after submission", func(ttt *testing.T) {
+			s := setupTestDB(ttt)
+			pRouter, didService := setupPresentationRouter(ttt, s)
+			authorDID := createDID(ttt, didService)
+			opRouter := setupOperationsRouter(ttt, s)
 
-			holderSigner, holderDID := getSigner(t)
-			definition := createPresentationDefinition(t, pRouter)
-			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+			holderSigner, holderDID := getSigner(ttt)
+			definition := createPresentationDefinition(ttt, pRouter)
+			submissionOp := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			createdID := submissionOp.ID
 			req := httptest.NewRequest(
@@ -70,18 +72,18 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
-			err := opRouter.GetOperation(c)
-			assert.NoError(t, err)
+			opRouter.GetOperation(c)
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.Operation
-			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-			assert.False(t, resp.Done)
-			assert.Contains(t, resp.ID, "presentations/submissions/")
+			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
+			assert.False(ttt, resp.Done)
+			assert.Contains(ttt, resp.ID, "presentations/submissions/")
 		})
 
-		t.Run("Returns error when id doesn't exist", func(tt *testing.T) {
-			s := setupTestDB(tt)
-			opRouter := setupOperationsRouter(t, s)
+		tt.Run("Returns error when id doesn't exist", func(ttt *testing.T) {
+			s := setupTestDB(ttt)
+			opRouter := setupOperationsRouter(ttt, s)
 
 			req := httptest.NewRequest(
 				http.MethodPut,
@@ -90,57 +92,58 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContextWithParams(w, req, map[string]string{"id": "some_fake_id"})
-			err := opRouter.GetOperation(c)
-			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "operation not found with id")
+			opRouter.GetOperation(c)
+			assert.Contains(ttt, w.Body.String(), "operation not found with id")
 		})
 	})
 
-	t.Run("GetOperations", func(t *testing.T) {
-		t.Run("Returns empty when no operations stored", func(tt *testing.T) {
-			s := setupTestDB(tt)
-			opRouter := setupOperationsRouter(t, s)
+	t.Run("GetOperations", func(tt *testing.T) {
+		tt.Run("Returns empty when no operations stored", func(ttt *testing.T) {
+			s := setupTestDB(ttt)
+			opRouter := setupOperationsRouter(ttt, s)
 
 			request := router.GetOperationsRequest{
 				Parent: "presentations/submissions",
 			}
-			value := newRequestValue(t, request)
+			value := newRequestValue(ttt, request)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			assert.NoError(t, opRouter.GetOperations(c))
+			opRouter.GetOperations(c)
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.GetOperationsResponse
-			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Empty(t, resp.Operations)
+			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
+			assert.Empty(ttt, resp.Operations)
 		})
 
-		t.Run("Returns one operation for every submission", func(tt *testing.T) {
-			s := setupTestDB(tt)
-			pRouter, didService := setupPresentationRouter(t, s)
-			authorDID := createDID(t, didService)
-			opRouter := setupOperationsRouter(t, s)
+		tt.Run("Returns one operation for every submission", func(ttt *testing.T) {
+			s := setupTestDB(ttt)
+			pRouter, didService := setupPresentationRouter(ttt, s)
+			authorDID := createDID(ttt, didService)
+			opRouter := setupOperationsRouter(ttt, s)
 
-			def := createPresentationDefinition(t, pRouter)
-			holderSigner, holderDID := getSigner(t)
-			submissionOp := createSubmission(t, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+			def := createPresentationDefinition(ttt, pRouter)
+			holderSigner, holderDID := getSigner(ttt)
+			submissionOp := createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
-			holderSigner2, holderDID2 := getSigner(t)
-			submissionOp2 := createSubmission(t, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID2, holderSigner2)
+			holderSigner2, holderDID2 := getSigner(ttt)
+			submissionOp2 := createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID2, holderSigner2)
 
 			request := router.GetOperationsRequest{
 				Parent: "presentations/submissions",
 			}
-			value := newRequestValue(t, request)
+			value := newRequestValue(ttt, request)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			assert.NoError(t, opRouter.GetOperations(c))
+			opRouter.GetOperations(c)
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.GetOperationsResponse
-			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			ops := []router.Operation{submissionOp, submissionOp2}
 			diff := cmp.Diff(ops, resp.Operations,
 				cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
@@ -149,99 +152,102 @@ func TestOperationsAPI(t *testing.T) {
 				}),
 			)
 			if diff != "" {
-				t.Errorf("Mismatch on submissions (-want +got):\n%s", diff)
+				ttt.Errorf("Mismatch on submissions (-want +got):\n%s", diff)
 			}
 		})
 
-		t.Run("Returns operation when filtering to include", func(tt *testing.T) {
-			s := setupTestDB(tt)
-			pRouter, didService := setupPresentationRouter(t, s)
-			authorDID := createDID(t, didService)
-			opRouter := setupOperationsRouter(t, s)
+		tt.Run("Returns operation when filtering to include", func(ttt *testing.T) {
+			s := setupTestDB(ttt)
+			pRouter, didService := setupPresentationRouter(ttt, s)
+			authorDID := createDID(ttt, didService)
+			opRouter := setupOperationsRouter(ttt, s)
 
-			def := createPresentationDefinition(t, pRouter)
-			holderSigner, holderDID := getSigner(t)
-			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+			def := createPresentationDefinition(ttt, pRouter)
+			holderSigner, holderDID := getSigner(ttt)
+			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			request := router.GetOperationsRequest{
 				Parent: "presentations/submissions",
 				Filter: "done = false",
 			}
-			value := newRequestValue(t, request)
+			value := newRequestValue(ttt, request)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			assert.NoError(t, opRouter.GetOperations(c))
+			opRouter.GetOperations(c)
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.GetOperationsResponse
-			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Len(t, resp.Operations, 1)
-			assert.False(t, resp.Operations[0].Done)
+			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
+			assert.Len(ttt, resp.Operations, 1)
+			assert.False(ttt, resp.Operations[0].Done)
 		})
 
-		t.Run("Returns zero operations when filtering to exclude", func(tt *testing.T) {
-			s := setupTestDB(tt)
-			pRouter, didService := setupPresentationRouter(t, s)
-			authorDID := createDID(t, didService)
-			opRouter := setupOperationsRouter(t, s)
+		tt.Run("Returns zero operations when filtering to exclude", func(ttt *testing.T) {
+			s := setupTestDB(ttt)
+			pRouter, didService := setupPresentationRouter(ttt, s)
+			authorDID := createDID(ttt, didService)
+			opRouter := setupOperationsRouter(ttt, s)
 
-			def := createPresentationDefinition(t, pRouter)
-			holderSigner, holderDID := getSigner(t)
-			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+			def := createPresentationDefinition(ttt, pRouter)
+			holderSigner, holderDID := getSigner(ttt)
+			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			request := router.GetOperationsRequest{
 				Parent: "presentations/submissions",
 				Filter: "done = true",
 			}
-			value := newRequestValue(t, request)
+			value := newRequestValue(ttt, request)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			assert.NoError(t, opRouter.GetOperations(c))
+			opRouter.GetOperations(c)
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.GetOperationsResponse
-			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Empty(t, resp.Operations)
+			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
+			assert.Empty(ttt, resp.Operations)
 		})
 
-		t.Run("Returns zero operations when wrong parent is specified", func(tt *testing.T) {
-			s := setupTestDB(tt)
-			pRouter, didService := setupPresentationRouter(t, s)
-			authorDID := createDID(t, didService)
-			opRouter := setupOperationsRouter(t, s)
+		tt.Run("Returns zero operations when wrong parent is specified", func(ttt *testing.T) {
+			s := setupTestDB(ttt)
+			pRouter, didService := setupPresentationRouter(ttt, s)
+			authorDID := createDID(ttt, didService)
+			opRouter := setupOperationsRouter(ttt, s)
 
-			def := createPresentationDefinition(t, pRouter)
-			holderSigner, holderDID := getSigner(t)
-			_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+			def := createPresentationDefinition(ttt, pRouter)
+			holderSigner, holderDID := getSigner(ttt)
+			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			request := router.GetOperationsRequest{
 				Parent: "/presentations/other",
 			}
-			value := newRequestValue(t, request)
+			value := newRequestValue(ttt, request)
 			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			assert.NoError(t, opRouter.GetOperations(c))
+			opRouter.GetOperations(c)
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.GetOperationsResponse
-			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-			assert.Empty(t, resp.Operations)
+			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
+			assert.Empty(ttt, resp.Operations)
 		})
 	})
 
-	t.Run("CancelOperation", func(t *testing.T) {
-		t.Run("Marks an operation as done", func(t *testing.T) {
-			s := setupTestDB(t)
-			pRouter, didService := setupPresentationRouter(t, s)
-			authorDID := createDID(t, didService)
-			opRouter := setupOperationsRouter(t, s)
+	t.Run("CancelOperation", func(tt *testing.T) {
+		tt.Run("Marks an operation as done", func(ttt *testing.T) {
+			s := setupTestDB(ttt)
+			pRouter, didService := setupPresentationRouter(ttt, s)
+			authorDID := createDID(ttt, didService)
+			opRouter := setupOperationsRouter(ttt, s)
 
-			holderSigner, holderDID := getSigner(t)
-			definition := createPresentationDefinition(t, pRouter)
-			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+			holderSigner, holderDID := getSigner(ttt)
+			definition := createPresentationDefinition(ttt, pRouter)
+			submissionOp := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			createdID := submissionOp.ID
 			req := httptest.NewRequest(
@@ -251,26 +257,26 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
-			err := opRouter.CancelOperation(c)
-			assert.NoError(t, err)
+			opRouter.CancelOperation(c)
+			assert.True(tt, util.Is2xxResponse(w.Code))
 
 			var resp router.Operation
-			assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
-			assert.True(t, resp.Done)
-			assert.Contains(t, resp.Result.Response, "verifiablePresentation")
-			assert.Equal(t, "cancelled", resp.Result.Response.(map[string]any)["status"])
+			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
+			assert.True(ttt, resp.Done)
+			assert.Contains(ttt, resp.Result.Response, "verifiablePresentation")
+			assert.Equal(ttt, "cancelled", resp.Result.Response.(map[string]any)["status"])
 		})
 
-		t.Run("Returns error when operation is done already", func(t *testing.T) {
-			s := setupTestDB(t)
-			pRouter, didService := setupPresentationRouter(t, s)
-			authorDID := createDID(t, didService)
-			opRouter := setupOperationsRouter(t, s)
+		tt.Run("Returns error when operation is done already", func(ttt *testing.T) {
+			s := setupTestDB(ttt)
+			pRouter, didService := setupPresentationRouter(ttt, s)
+			authorDID := createDID(ttt, didService)
+			opRouter := setupOperationsRouter(ttt, s)
 
-			holderSigner, holderDID := getSigner(t)
-			definition := createPresentationDefinition(t, pRouter)
-			submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
-			_ = reviewSubmission(t, pRouter, opstorage.StatusObjectID(submissionOp.ID))
+			holderSigner, holderDID := getSigner(ttt)
+			definition := createPresentationDefinition(ttt, pRouter)
+			submissionOp := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+			_ = reviewSubmission(ttt, pRouter, opstorage.StatusObjectID(submissionOp.ID))
 
 			createdID := submissionOp.ID
 			req := httptest.NewRequest(
@@ -279,8 +285,8 @@ func TestOperationsAPI(t *testing.T) {
 				nil)
 			w := httptest.NewRecorder()
 			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
-			err := opRouter.CancelOperation(c)
-			assert.Error(t, err)
+			opRouter.CancelOperation(c)
+			assert.Contains(ttt, w.Body.String(), "operation already marked as done")
 		})
 	})
 
@@ -316,8 +322,8 @@ func reviewSubmission(t *testing.T, pRouter *router.PresentationRouter, submissi
 		value)
 	w := httptest.NewRecorder()
 	c := newRequestContextWithParams(w, req, map[string]string{"id": submissionID})
-	err := pRouter.ReviewSubmission(c)
-	assert.NoError(t, err)
+	pRouter.ReviewSubmission(c)
+	assert.True(t, util.Is2xxResponse(w.Code))
 
 	var resp router.ReviewSubmissionResponse
 	assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))

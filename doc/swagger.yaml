@@ -1357,8 +1357,19 @@ definitions:
     type: object
   pkg_server_router.GetSubmissionResponse:
     properties:
-      submission:
-        $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Submission'
+      reason:
+        description: The reason why the submission was approved or denied.
+        type: string
+      status:
+        description: One of {`pending`, `approved`, `denied`, `cancelled`}.
+        type: string
+      verifiablePresentation:
+        allOf:
+        - $ref: '#/definitions/credential.VerifiablePresentation'
+        description: The verifiable presentation containing the presentation_submission
+          along with the credentials presented.
+    required:
+    - status
     type: object
   pkg_server_router.GetWebhookResponse:
     properties:
@@ -1441,7 +1452,7 @@ definitions:
     properties:
       approved:
         type: boolean
-      credential_overrides:
+      credentialOverrides:
         additionalProperties:
           $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_manifest_model.CredentialOverride'
         description: |-
@@ -1475,6 +1486,11 @@ definitions:
           along with the credentials presented.
     required:
     - status
+    type: object
+  pkg_server_router.RevokeKeyResponse:
+    properties:
+      id:
+        type: string
     type: object
   pkg_server_router.StoreKeyRequest:
     properties:
@@ -2395,6 +2411,8 @@ paths:
       responses:
         "200":
           description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.RevokeKeyResponse'
         "400":
           description: Bad request
           schema:

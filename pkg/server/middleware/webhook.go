@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 
-	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 )
 
@@ -26,7 +25,7 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 
 // Webhook is a middleware that publishes a webhook after the request handler has finished writing the response
 // TODO(https://github.com/TBD54566975/ssi-service/issues/435): currently this runs on each request even if no webhooks are registered. It should be updated to only run if webhooks are registered.
-func Webhook(webhookService svcframework.Service, noun webhook.Noun, verb webhook.Verb) gin.HandlerFunc {
+func Webhook(webhookService *webhook.Service, noun webhook.Noun, verb webhook.Verb) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Wrap the original response writer with a new response writer that writes to the buffer
 		buf := bytes.NewBuffer([]byte{})
@@ -42,7 +41,6 @@ func Webhook(webhookService svcframework.Service, noun webhook.Noun, verb webhoo
 		}
 
 		// publish the webhook
-		whService := webhookService.(*webhook.Service)
-		go whService.PublishWebhook(noun, verb, buf)
+		go webhookService.PublishWebhook(c, noun, verb, buf)
 	}
 }

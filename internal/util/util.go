@@ -45,3 +45,8 @@ func SanitizeLog(log string) string {
 	escapedLog := strings.ReplaceAll(log, "\n", "")
 	return strings.ReplaceAll(escapedLog, "\r", "")
 }
+
+// Is2xxResponse returns true if the given status code is a 2xx response
+func Is2xxResponse(statusCode int) bool {
+	return statusCode/100 == 2
+}

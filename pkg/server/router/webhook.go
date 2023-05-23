@@ -54,31 +54,36 @@ type CreateWebhookResponse struct {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/webhooks [put]
-func (wr WebhookRouter) CreateWebhook(c *gin.Context) error {
+func (wr WebhookRouter) CreateWebhook(c *gin.Context) {
 	var request CreateWebhookRequest
 	invalidCreateWebhookRequest := "invalid create webhook request"
 	if err := framework.Decode(c.Request, &request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, invalidCreateWebhookRequest, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, invalidCreateWebhookRequest, http.StatusBadRequest)
+		return
 	}
 
 	if err := framework.ValidateRequest(request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, invalidCreateWebhookRequest, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, invalidCreateWebhookRequest, http.StatusBadRequest)
+		return
 	}
 
 	req := webhook.CreateWebhookRequest{Noun: request.Noun, Verb: request.Verb, URL: request.URL}
 	if !req.IsValid() {
 		errMsg := "invalid create webhook request. wrong noun, verb, or url format (needs http / https)"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	createWebhookResponse, err := wr.service.CreateWebhook(c, req)
 	if err != nil {
 		errMsg := "could not create webhook"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := CreateWebhookResponse{Webhook: createWebhookResponse.Webhook}
-	return framework.Respond(c, resp, http.StatusCreated)
+	framework.Respond(c, resp, http.StatusCreated)
+	return
 }
 
 type GetWebhookResponse struct {
@@ -96,27 +101,30 @@ type GetWebhookResponse struct {
 //	@Success		200	{object}	GetWebhookResponse
 //	@Failure		400	{string}	string	"Bad request"
 //	@Router			/v1/webhooks/{noun}/{verb} [get]
-func (wr WebhookRouter) GetWebhook(c *gin.Context) error {
+func (wr WebhookRouter) GetWebhook(c *gin.Context) {
 	noun := framework.GetParam(c, "noun")
 	if noun == nil {
 		errMsg := "cannot get webhook without noun parameter"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	verb := framework.GetParam(c, "verb")
 	if verb == nil {
 		errMsg := "cannot get webhook without verb parameter"
-		return framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
 	}
 
 	gotWebhook, err := wr.service.GetWebhook(c, webhook.GetWebhookRequest{Noun: webhook.Noun(*noun), Verb: webhook.Verb(*verb)})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get webhook with id: %s-%s", *noun, *verb)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	resp := GetWebhookResponse{Webhook: gotWebhook.Webhook}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 type GetWebhooksResponse struct {
@@ -133,11 +141,12 @@ type GetWebhooksResponse struct {
 //	@Success		200	{object}	GetWebhooksResponse
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/webhooks [get]
-func (wr WebhookRouter) GetWebhooks(c *gin.Context) error {
+func (wr WebhookRouter) GetWebhooks(c *gin.Context) {
 	gotWebhooks, err := wr.service.GetWebhooks(c)
 	if err != nil {
 		errMsg := "could not get webhooks"
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
 	webhooks := make([]GetWebhookResponse, 0, len(gotWebhooks.Webhooks))
@@ -146,7 +155,7 @@ func (wr WebhookRouter) GetWebhooks(c *gin.Context) error {
 	}
 
 	resp := GetWebhooksResponse{Webhooks: webhooks}
-	return framework.Respond(c, resp, http.StatusOK)
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 type DeleteWebhookRequest struct {
@@ -167,24 +176,27 @@ type DeleteWebhookRequest struct {
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/webhooks/{noun}/{verb}/{url} [delete]
-func (wr WebhookRouter) DeleteWebhook(c *gin.Context) error {
+func (wr WebhookRouter) DeleteWebhook(c *gin.Context) {
 	var request DeleteWebhookRequest
 	invalidCreateWebhookRequest := "invalid delete webhook request"
 	if err := framework.Decode(c.Request, &request); err != nil {
-		return framework.LoggingRespondErrWithMsg(c, err, invalidCreateWebhookRequest, http.StatusBadRequest)
+		framework.LoggingRespondErrWithMsg(c, err, invalidCreateWebhookRequest, http.StatusBadRequest)
+		return
 	}
 
 	req := webhook.DeleteWebhookRequest{Noun: request.Noun, Verb: request.Verb, URL: request.URL}
 	if !req.IsValid() {
-		return framework.LoggingRespondErrMsg(c, invalidCreateWebhookRequest, http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, invalidCreateWebhookRequest, http.StatusBadRequest)
+		return
 	}
 
 	if err := wr.service.DeleteWebhook(c, req); err != nil {
 		errMsg := fmt.Sprintf("could not delete webhook with id: %s-%s-%s", request.Noun, request.Verb, request.URL)
-		return framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
 	}
 
-	return framework.Respond(c, nil, http.StatusNoContent)
+	framework.Respond(c, nil, http.StatusNoContent)
 }
 
 type GetSupportedNounsResponse struct {
@@ -200,9 +212,9 @@ type GetSupportedNounsResponse struct {
 //	@Produce		json
 //	@Success		200	{object}	webhook.GetSupportedNounsResponse
 //	@Router			/v1/webhooks/nouns [get]
-func (wr WebhookRouter) GetSupportedNouns(c *gin.Context) error {
+func (wr WebhookRouter) GetSupportedNouns(c *gin.Context) {
 	nouns := wr.service.GetSupportedNouns()
-	return framework.Respond(c, GetSupportedNounsResponse{nouns.Nouns}, http.StatusOK)
+	framework.Respond(c, GetSupportedNounsResponse{Nouns: nouns.Nouns}, http.StatusOK)
 }
 
 type GetSupportedVerbsResponse struct {
@@ -218,7 +230,7 @@ type GetSupportedVerbsResponse struct {
 //	@Produce		json
 //	@Success		200	{object}	webhook.GetSupportedVerbsResponse
 //	@Router			/v1/webhooks/verbs [get]
-func (wr WebhookRouter) GetSupportedVerbs(c *gin.Context) error {
+func (wr WebhookRouter) GetSupportedVerbs(c *gin.Context) {
 	verbs := wr.service.GetSupportedVerbs()
-	return framework.Respond(c, GetSupportedVerbsResponse{verbs.Verbs}, http.StatusOK)
+	framework.Respond(c, GetSupportedVerbsResponse{Verbs: verbs.Verbs}, http.StatusOK)
 }

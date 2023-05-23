@@ -83,7 +83,6 @@ func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorag
 // produces a schema value that conforms with the VC JSON SchemaID specification.
 // TODO(gabe) support data integrity proof generation on schemas, versioning, and more
 func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) (*CreateSchemaResponse, error) {
-
 	logrus.Debugf("creating schema: %+v", request)
 
 	if !request.IsValid() {

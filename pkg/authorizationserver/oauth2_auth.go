@@ -23,12 +23,12 @@ func NewAuthService(issuerMetadata *issuance.IssuerMetadata, provider fosite.OAu
 }
 
 // AuthEndpoint is a Handler that implements https://openid.net/specs/openid-4-verifiable-credential-issuance-1_0.html#name-authorization-endpoint
-func (s AuthService) AuthEndpoint(c *gin.Context) error {
+func (s AuthService) AuthEndpoint(c *gin.Context) {
 	ar, err := s.provider.NewAuthorizeRequest(c, c.Request)
 	if err != nil {
 		logrus.WithError(err).Error("failed NewAuthorizeRequest")
 		s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
-		return nil
+		return
 	}
 
 	authorizationDetailsJSON := ar.GetRequestForm().Get("authorization_details")
@@ -36,13 +36,13 @@ func (s AuthService) AuthEndpoint(c *gin.Context) error {
 	if err = json.Unmarshal([]byte(authorizationDetailsJSON), &authorizationDetails); err != nil {
 		logrus.WithError(err).Error("failed Unmarshal")
 		s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
-		return nil
+		return
 	}
 
 	if err = authorizationDetails.IsValid(); err != nil {
 		logrus.WithError(err).Error("failed Unmarshal")
 		s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
-		return nil
+		return
 	}
 
 	// If the Credential Issuer metadata contains an authorization_server parameter, the authorization detail's
@@ -54,7 +54,7 @@ func (s AuthService) AuthEndpoint(c *gin.Context) error {
 				if err := s.processOpenIDCredential(d); err != nil {
 					logrus.WithError(err).Error("failed processing openid_credential")
 					s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
-					return nil
+					return
 				}
 				// TODO(https://github.com/TBD54566975/ssi-service/issues/368): support dynamic auth request
 
@@ -62,7 +62,7 @@ func (s AuthService) AuthEndpoint(c *gin.Context) error {
 				err := errors.Errorf("the value of authorization_details[%d].type found was %q, which is not recognized", i, d.Type)
 				logrus.WithError(err).Error("unrecognized type")
 				s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
-				return nil
+				return
 			}
 		}
 	}
@@ -75,11 +75,12 @@ func (s AuthService) AuthEndpoint(c *gin.Context) error {
 
 	// Normally, this would be the place where you would check if the user is logged in and gives his consent.
 	// We're simplifying things and just checking if the request includes a valid username and password
-	if err := c.Request.ParseForm(); err != nil {
+	if err = c.Request.ParseForm(); err != nil {
 		logrus.WithError(err).Error("failed parsing request form")
 		s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
-		return nil
+		return
 	}
+
 	if c.Request.PostForm.Get("username") != "peter" {
 		c.Writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = c.Writer.Write([]byte(`<h1>Login page</h1>`))
@@ -94,7 +95,7 @@ func (s AuthService) AuthEndpoint(c *gin.Context) error {
 				<input type="submit">
 			</form>
 		`, requestedScopes)))
-		return nil
+		return
 	}
 
 	// let's see what scopes the user gave consent to
@@ -138,12 +139,11 @@ func (s AuthService) AuthEndpoint(c *gin.Context) error {
 	if err != nil {
 		logrus.WithError(err).Error("failed NewAuthorizeResponse")
 		s.provider.WriteAuthorizeError(c, c.Writer, ar, err)
-		return nil
+		return
 	}
 
 	// Last but not least, send the response!
 	s.provider.WriteAuthorizeResponse(c, c.Writer, ar, response)
-	return nil
 }
 
 func (s AuthService) processOpenIDCredential(d request.AuthorizationDetail) error {
