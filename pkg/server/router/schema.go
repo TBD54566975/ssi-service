@@ -122,24 +122,24 @@ func (sr SchemaRouter) GetSchema(c *gin.Context) {
 	return
 }
 
-type GetSchemasResponse struct {
+type ListSchemasResponse struct {
 	Schemas []GetSchemaResponse `json:"schemas,omitempty"`
 }
 
-// GetSchemas godoc
+// ListSchemas godoc
 //
-//	@Summary		Get Schemas
-//	@Description	Get schemas
+//	@Summary		List Schemas
+//	@Description	List schemas
 //	@Tags			SchemaAPI
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	GetSchemasResponse
+//	@Success		200	{object}	ListSchemasResponse
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/schemas [get]
-func (sr SchemaRouter) GetSchemas(c *gin.Context) {
-	gotSchemas, err := sr.service.GetSchemas(c)
+func (sr SchemaRouter) ListSchemas(c *gin.Context) {
+	gotSchemas, err := sr.service.ListSchemas(c)
 	if err != nil {
-		errMsg := "could not get schemas"
+		errMsg := "could not list schemas"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
@@ -149,7 +149,7 @@ func (sr SchemaRouter) GetSchemas(c *gin.Context) {
 		schemas = append(schemas, GetSchemaResponse{Schema: s.Schema})
 	}
 
-	resp := GetSchemasResponse{Schemas: schemas}
+	resp := ListSchemasResponse{Schemas: schemas}
 	framework.Respond(c, resp, http.StatusOK)
 }
 

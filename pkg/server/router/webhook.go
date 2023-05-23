@@ -86,7 +86,7 @@ func (wr WebhookRouter) CreateWebhook(c *gin.Context) {
 	return
 }
 
-type GetWebhookResponse struct {
+type ListWebhookResponse struct {
 	Webhook webhook.Webhook `json:"webhook"`
 }
 
@@ -98,7 +98,7 @@ type GetWebhookResponse struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
-//	@Success		200	{object}	GetWebhookResponse
+//	@Success		200	{object}	ListWebhookResponse
 //	@Failure		400	{string}	string	"Bad request"
 //	@Router			/v1/webhooks/{noun}/{verb} [get]
 func (wr WebhookRouter) GetWebhook(c *gin.Context) {
@@ -123,35 +123,35 @@ func (wr WebhookRouter) GetWebhook(c *gin.Context) {
 		return
 	}
 
-	resp := GetWebhookResponse{Webhook: gotWebhook.Webhook}
+	resp := ListWebhookResponse{Webhook: gotWebhook.Webhook}
 	framework.Respond(c, resp, http.StatusOK)
 }
 
 type GetWebhooksResponse struct {
-	Webhooks []GetWebhookResponse `json:"webhooks,omitempty"`
+	Webhooks []ListWebhookResponse `json:"webhooks,omitempty"`
 }
 
-// GetWebhooks godoc
+// ListWebhooks godoc
 //
-//	@Summary		Get Webhooks
-//	@Description	Get webhooks
+//	@Summary		List Webhooks
+//	@Description	Lists all webhooks
 //	@Tags			WebhookAPI
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	GetWebhooksResponse
+//	@Success		200	{object}	ListWebhooksResponse
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/webhooks [get]
-func (wr WebhookRouter) GetWebhooks(c *gin.Context) {
-	gotWebhooks, err := wr.service.GetWebhooks(c)
+func (wr WebhookRouter) ListWebhooks(c *gin.Context) {
+	gotWebhooks, err := wr.service.ListWebhooks(c)
 	if err != nil {
-		errMsg := "could not get webhooks"
+		errMsg := "could not list webhooks"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
 
-	webhooks := make([]GetWebhookResponse, 0, len(gotWebhooks.Webhooks))
+	webhooks := make([]ListWebhookResponse, 0, len(gotWebhooks.Webhooks))
 	for _, w := range gotWebhooks.Webhooks {
-		webhooks = append(webhooks, GetWebhookResponse{Webhook: w})
+		webhooks = append(webhooks, ListWebhookResponse{Webhook: w})
 	}
 
 	resp := GetWebhooksResponse{Webhooks: webhooks}

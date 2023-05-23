@@ -246,11 +246,11 @@ func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 	return &GetDIDResponse{DID: resolved.Document}, nil
 }
 
-// GetDIDs returns all DIDs we have in storage for ION, it is not feasible to get all DIDs from the network
-func (h *ionHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
+// ListDIDs returns all DIDs we have in storage for ION, it is not feasible to get all DIDs from the network
+func (h *ionHandler) ListDIDs(ctx context.Context) (*ListDIDsResponse, error) {
 	logrus.Debug("getting stored did:ion DIDs")
 
-	gotDIDs, err := h.storage.GetDIDs(ctx, did.IONMethod.String(), new(ionStoredDID))
+	gotDIDs, err := h.storage.ListDIDs(ctx, did.IONMethod.String(), new(ionStoredDID))
 	if err != nil {
 		return nil, fmt.Errorf("error getting did:ion DIDs")
 	}
@@ -260,16 +260,16 @@ func (h *ionHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 			dids = append(dids, gotDID.GetDocument())
 		}
 	}
-	return &GetDIDsResponse{DIDs: dids}, nil
+	return &ListDIDsResponse{DIDs: dids}, nil
 }
 
-// GetDeletedDIDs returns only DIDs we have in storage for ION with SoftDeleted flag set to true
-func (h *ionHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error) {
-	logrus.Debug("getting stored did:ion DIDs")
+// ListDeletedDIDs returns only DIDs we have in storage for ION with SoftDeleted flag set to true
+func (h *ionHandler) ListDeletedDIDs(ctx context.Context) (*ListDIDsResponse, error) {
+	logrus.Debug("listing stored did:ion DIDs")
 
-	gotDIDs, err := h.storage.GetDIDs(ctx, did.IONMethod.String(), new(ionStoredDID))
+	gotDIDs, err := h.storage.ListDIDs(ctx, did.IONMethod.String(), new(ionStoredDID))
 	if err != nil {
-		return nil, fmt.Errorf("error getting did:ion DIDs")
+		return nil, fmt.Errorf("error listing did:ion DIDs")
 	}
 	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
@@ -277,7 +277,7 @@ func (h *ionHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, erro
 			dids = append(dids, gotDID.GetDocument())
 		}
 	}
-	return &GetDIDsResponse{DIDs: dids}, nil
+	return &ListDIDsResponse{DIDs: dids}, nil
 }
 
 // SoftDeleteDID soft deletes a DID from storage but has no effect on the DID's state on the network

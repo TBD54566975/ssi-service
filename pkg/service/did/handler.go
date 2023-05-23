@@ -17,8 +17,8 @@ type MethodHandler interface {
 	CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error)
 	// TODO(gabe): support query parameters to get soft deleted and other DIDs https://github.com/TBD54566975/ssi-service/issues/364
 	GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error)
-	GetDIDs(ctx context.Context) (*GetDIDsResponse, error)
-	GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error)
+	ListDIDs(ctx context.Context) (*ListDIDsResponse, error)
+	ListDeletedDIDs(ctx context.Context) (*ListDIDsResponse, error)
 	SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error
 }
 

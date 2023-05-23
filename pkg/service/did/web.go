@@ -126,12 +126,12 @@ func (h *webHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 	return &GetDIDResponse{DID: gotDID.GetDocument()}, nil
 }
 
-func (h *webHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
-	logrus.Debug("getting did:web DID")
+func (h *webHandler) ListDIDs(ctx context.Context) (*ListDIDsResponse, error) {
+	logrus.Debug("listing did:web DID")
 
-	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.WebMethod.String())
+	gotDIDs, err := h.storage.ListDIDsDefault(ctx, did.WebMethod.String())
 	if err != nil {
-		return nil, errors.Wrap(err, "getting did:web DIDs")
+		return nil, errors.Wrap(err, "listing did:web DIDs")
 	}
 	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
@@ -139,14 +139,15 @@ func (h *webHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 			dids = append(dids, gotDID.GetDocument())
 		}
 	}
-	return &GetDIDsResponse{DIDs: dids}, nil
+	return &ListDIDsResponse{DIDs: dids}, nil
 }
-func (h *webHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error) {
-	logrus.Debug("getting did:web DID")
 
-	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.WebMethod.String())
+func (h *webHandler) ListDeletedDIDs(ctx context.Context) (*ListDIDsResponse, error) {
+	logrus.Debug("listing deleted did:web DIDs")
+
+	gotDIDs, err := h.storage.ListDIDsDefault(ctx, did.WebMethod.String())
 	if err != nil {
-		return nil, errors.Wrap(err, "getting did:web DIDs")
+		return nil, errors.Wrap(err, "listing did:web DIDs")
 	}
 	dids := make([]did.Document, 0, len(gotDIDs))
 	for _, gotDID := range gotDIDs {
@@ -154,7 +155,7 @@ func (h *webHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, erro
 			dids = append(dids, gotDID.GetDocument())
 		}
 	}
-	return &GetDIDsResponse{DIDs: dids}, nil
+	return &ListDIDsResponse{DIDs: dids}, nil
 }
 
 func (h *webHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error {

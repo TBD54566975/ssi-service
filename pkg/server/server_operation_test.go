@@ -97,7 +97,7 @@ func TestOperationsAPI(t *testing.T) {
 		})
 	})
 
-	t.Run("GetOperations", func(tt *testing.T) {
+	t.Run("ListOperations", func(tt *testing.T) {
 		tt.Run("Returns empty when no operations stored", func(ttt *testing.T) {
 			s := setupTestDB(ttt)
 			opRouter := setupOperationsRouter(ttt, s)
@@ -110,10 +110,10 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			opRouter.GetOperations(c)
+			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
-			var resp router.GetOperationsResponse
+			var resp router.ListOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Empty(ttt, resp.Operations)
 		})
@@ -139,10 +139,10 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			opRouter.GetOperations(c)
+			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
-			var resp router.GetOperationsResponse
+			var resp router.ListOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			ops := []router.Operation{submissionOp, submissionOp2}
 			diff := cmp.Diff(ops, resp.Operations,
@@ -175,10 +175,10 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			opRouter.GetOperations(c)
+			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
-			var resp router.GetOperationsResponse
+			var resp router.ListOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Len(ttt, resp.Operations, 1)
 			assert.False(ttt, resp.Operations[0].Done)
@@ -203,10 +203,10 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			opRouter.GetOperations(c)
+			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
-			var resp router.GetOperationsResponse
+			var resp router.ListOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Empty(ttt, resp.Operations)
 		})
@@ -229,10 +229,10 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			opRouter.GetOperations(c)
+			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
-			var resp router.GetOperationsResponse
+			var resp router.ListOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Empty(ttt, resp.Operations)
 		})

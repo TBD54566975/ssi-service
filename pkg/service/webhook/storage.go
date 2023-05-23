@@ -49,7 +49,7 @@ func (whs *Storage) GetWebhook(ctx context.Context, noun, verb string) (*Webhook
 	return &webhook, nil
 }
 
-func (whs *Storage) GetWebhooks(ctx context.Context) ([]Webhook, error) {
+func (whs *Storage) ListWebhooks(ctx context.Context) ([]Webhook, error) {
 	gotWebhooks, err := whs.db.ReadAll(ctx, webhookNamespace)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not get all webhooks")

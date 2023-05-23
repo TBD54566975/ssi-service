@@ -95,10 +95,10 @@ func (h *keyHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 	return &GetDIDResponse{DID: gotDID.DID}, nil
 }
 
-func (h *keyHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
+func (h *keyHandler) ListDIDs(ctx context.Context) (*ListDIDsResponse, error) {
 	logrus.Debug("getting did:key DIDs")
 
-	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.KeyMethod.String())
+	gotDIDs, err := h.storage.ListDIDsDefault(ctx, did.KeyMethod.String())
 	if err != nil {
 		return nil, fmt.Errorf("error getting did:key DIDs")
 	}
@@ -108,14 +108,14 @@ func (h *keyHandler) GetDIDs(ctx context.Context) (*GetDIDsResponse, error) {
 			dids = append(dids, gotDID.GetDocument())
 		}
 	}
-	return &GetDIDsResponse{DIDs: dids}, nil
+	return &ListDIDsResponse{DIDs: dids}, nil
 }
 
-// GetDeletedDIDs returns only DIDs we have in storage for Key with SoftDeleted flag set to true
-func (h *keyHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, error) {
-	logrus.Debug("getting did:key DIDs")
+// ListDeletedDIDs returns only DIDs we have in storage for Key with SoftDeleted flag set to true
+func (h *keyHandler) ListDeletedDIDs(ctx context.Context) (*ListDIDsResponse, error) {
+	logrus.Debug("listing did:key DIDs")
 
-	gotDIDs, err := h.storage.GetDIDsDefault(ctx, did.KeyMethod.String())
+	gotDIDs, err := h.storage.ListDIDsDefault(ctx, did.KeyMethod.String())
 	if err != nil {
 		return nil, fmt.Errorf("error getting did:key DIDs")
 	}
@@ -125,7 +125,7 @@ func (h *keyHandler) GetDeletedDIDs(ctx context.Context) (*GetDIDsResponse, erro
 			dids = append(dids, gotDID.GetDocument())
 		}
 	}
-	return &GetDIDsResponse{DIDs: dids}, nil
+	return &ListDIDsResponse{DIDs: dids}, nil
 }
 
 func (h *keyHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error {

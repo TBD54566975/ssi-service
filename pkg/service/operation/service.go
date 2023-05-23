@@ -43,19 +43,17 @@ func (s Service) Status() framework.Status {
 	return framework.Status{Status: framework.StatusReady}
 }
 
-func (s Service) GetOperations(ctx context.Context, request GetOperationsRequest) (*GetOperationsResponse, error) {
+func (s Service) ListOperations(ctx context.Context, request ListOperationsRequest) (*ListOperationsResponse, error) {
 	if err := request.Validate(); err != nil {
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
-	ops, err := s.storage.GetOperations(ctx, request.Parent, request.Filter)
+	ops, err := s.storage.ListOperations(ctx, request.Parent, request.Filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching ops from storage")
 	}
 
-	resp := &GetOperationsResponse{
-		Operations: make([]Operation, len(ops)),
-	}
+	resp := ListOperationsResponse{Operations: make([]Operation, len(ops))}
 	for i, op := range ops {
 		op := op
 		newOp, err := ServiceModel(op)
@@ -65,7 +63,7 @@ func (s Service) GetOperations(ctx context.Context, request GetOperationsRequest
 		}
 		resp.Operations[i] = *newOp
 	}
-	return resp, nil
+	return &resp, nil
 }
 
 type ServiceModelFunc func(any) any

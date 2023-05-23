@@ -391,7 +391,6 @@ type VerifyCredentialResponse struct {
 // LATER: Makes sure the credential has not been revoked, other checks.
 // Note: https://github.com/TBD54566975/ssi-sdk/issues/213
 func (s Service) VerifyCredential(ctx context.Context, request VerifyCredentialRequest) (*VerifyCredentialResponse, error) {
-
 	logrus.Debugf("verifying credential: %+v", request)
 
 	if err := request.IsValid(); err != nil {
@@ -413,7 +412,6 @@ func (s Service) VerifyCredential(ctx context.Context, request VerifyCredentialR
 }
 
 func (s Service) GetCredential(ctx context.Context, request GetCredentialRequest) (*GetCredentialResponse, error) {
-
 	logrus.Debugf("getting credential: %s", request.ID)
 
 	gotCred, err := s.storage.GetCredential(ctx, request.ID)
@@ -433,13 +431,12 @@ func (s Service) GetCredential(ctx context.Context, request GetCredentialRequest
 	return &response, nil
 }
 
-func (s Service) GetCredentialsByIssuer(ctx context.Context, request GetCredentialByIssuerRequest) (*GetCredentialsResponse, error) {
-
-	logrus.Debugf("getting credential(s) for issuer: %s", util.SanitizeLog(request.Issuer))
+func (s Service) ListCredentialsByIssuer(ctx context.Context, request ListCredentialByIssuerRequest) (*ListCredentialsResponse, error) {
+	logrus.Debugf("listing credential(s) for issuer: %s", util.SanitizeLog(request.Issuer))
 
 	gotCreds, err := s.storage.GetCredentialsByIssuer(ctx, request.Issuer)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not get credential(s) for issuer: %s", request.Issuer)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not list credential(s) for issuer: %s", request.Issuer)
 	}
 
 	creds := make([]credint.Container, 0, len(gotCreds))
@@ -452,17 +449,16 @@ func (s Service) GetCredentialsByIssuer(ctx context.Context, request GetCredenti
 		creds = append(creds, container)
 	}
 
-	response := GetCredentialsResponse{Credentials: creds}
+	response := ListCredentialsResponse{Credentials: creds}
 	return &response, nil
 }
 
-func (s Service) GetCredentialsBySubject(ctx context.Context, request GetCredentialBySubjectRequest) (*GetCredentialsResponse, error) {
-
-	logrus.Debugf("getting credential(s) for subject: %s", util.SanitizeLog(request.Subject))
+func (s Service) ListCredentialsBySubject(ctx context.Context, request ListCredentialBySubjectRequest) (*ListCredentialsResponse, error) {
+	logrus.Debugf("listing credential(s) for subject: %s", util.SanitizeLog(request.Subject))
 
 	gotCreds, err := s.storage.GetCredentialsBySubject(ctx, request.Subject)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not get credential(s) for subject: %s", request.Subject)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not list credential(s) for subject: %s", request.Subject)
 	}
 
 	creds := make([]credint.Container, 0, len(gotCreds))
@@ -474,17 +470,16 @@ func (s Service) GetCredentialsBySubject(ctx context.Context, request GetCredent
 		}
 		creds = append(creds, container)
 	}
-	response := GetCredentialsResponse{Credentials: creds}
+	response := ListCredentialsResponse{Credentials: creds}
 	return &response, nil
 }
 
-func (s Service) GetCredentialsBySchema(ctx context.Context, request GetCredentialBySchemaRequest) (*GetCredentialsResponse, error) {
-
-	logrus.Debugf("getting credential(s) for schema: %s", util.SanitizeLog(request.Schema))
+func (s Service) ListCredentialsBySchema(ctx context.Context, request ListCredentialBySchemaRequest) (*ListCredentialsResponse, error) {
+	logrus.Debugf("listing credential(s) for schema: %s", util.SanitizeLog(request.Schema))
 
 	gotCreds, err := s.storage.GetCredentialsBySchema(ctx, request.Schema)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not get credential(s) for schema: %s", request.Schema)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not list credential(s) for schema: %s", request.Schema)
 	}
 
 	creds := make([]credint.Container, 0, len(gotCreds))
@@ -496,7 +491,7 @@ func (s Service) GetCredentialsBySchema(ctx context.Context, request GetCredenti
 		}
 		creds = append(creds, container)
 	}
-	response := GetCredentialsResponse{Credentials: creds}
+	response := ListCredentialsResponse{Credentials: creds}
 	return &response, nil
 }
 
