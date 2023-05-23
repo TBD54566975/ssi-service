@@ -140,7 +140,7 @@ func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, webh
 
 	didAPI := rg.Group(DIDsPrefix)
 	didAPI.GET("", didRouter.GetDIDMethods)
-	didAPI.PUT("/:method", didRouter.CreateDIDByMethod, middleware.Webhook(webhookService, webhook.DID, webhook.Create))
+	didAPI.PUT("/:method", middleware.Webhook(webhookService, webhook.DID, webhook.Create), didRouter.CreateDIDByMethod)
 	didAPI.GET("/:method", didRouter.GetDIDsByMethod)
 	didAPI.GET("/:method/:id", didRouter.GetDIDByMethod)
 	didAPI.DELETE("/:method/:id", didRouter.SoftDeleteDIDByMethod)
@@ -156,11 +156,11 @@ func SchemaAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService
 	}
 
 	schemaAPI := rg.Group(SchemasPrefix)
-	schemaAPI.PUT("", schemaRouter.CreateSchema, middleware.Webhook(webhookService, webhook.Schema, webhook.Create))
+	schemaAPI.PUT("", middleware.Webhook(webhookService, webhook.Schema, webhook.Create), schemaRouter.CreateSchema)
 	schemaAPI.GET("/:id", schemaRouter.GetSchema)
 	schemaAPI.GET("", schemaRouter.GetSchemas)
 	schemaAPI.PUT(VerificationPath, schemaRouter.VerifySchema)
-	schemaAPI.DELETE("/:id", schemaRouter.DeleteSchema, middleware.Webhook(webhookService, webhook.Schema, webhook.Delete))
+	schemaAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Schema, webhook.Delete), schemaRouter.DeleteSchema)
 	return
 }
 
@@ -173,11 +173,11 @@ func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookSer
 
 	// Credentials
 	credentialAPI := rg.Group(CredentialsPrefix)
-	credentialAPI.PUT("", credRouter.CreateCredential, middleware.Webhook(webhookService, webhook.Credential, webhook.Create))
+	credentialAPI.PUT("", middleware.Webhook(webhookService, webhook.Credential, webhook.Create), credRouter.CreateCredential)
 	credentialAPI.GET("", credRouter.GetCredentials)
 	credentialAPI.GET("/:id", credRouter.GetCredential)
 	credentialAPI.PUT(VerificationPath, credRouter.VerifyCredential)
-	credentialAPI.DELETE("/:id", credRouter.DeleteCredential, middleware.Webhook(webhookService, webhook.Credential, webhook.Delete))
+	credentialAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Credential, webhook.Delete), credRouter.DeleteCredential)
 
 	// Credential Status
 	credentialAPI.GET("/:id"+StatusPrefix, credRouter.GetCredentialStatus)
@@ -205,7 +205,7 @@ func PresentationAPI(rg *gin.RouterGroup, service svcframework.Service, webhookS
 	presReqAPI.PUT("/:id", presRouter.DeleteRequest)
 
 	presSubAPI := rg.Group(PresentationsPrefix + SubmissionsPrefix)
-	presSubAPI.PUT("", presRouter.CreateSubmission, middleware.Webhook(webhookService, webhook.Submission, webhook.Create))
+	presSubAPI.PUT("", middleware.Webhook(webhookService, webhook.Submission, webhook.Create), presRouter.CreateSubmission)
 	presSubAPI.GET("/:id", presRouter.GetSubmission)
 	presSubAPI.GET("", presRouter.ListSubmissions)
 	presSubAPI.PUT("/:id/review", presRouter.ReviewSubmission)
@@ -249,16 +249,16 @@ func ManifestAPI(rg *gin.RouterGroup, service svcframework.Service, webhookServi
 	}
 
 	manifestAPI := rg.Group(ManifestsPrefix)
-	manifestAPI.PUT("", manifestRouter.CreateManifest, middleware.Webhook(webhookService, webhook.Manifest, webhook.Create))
+	manifestAPI.PUT("", middleware.Webhook(webhookService, webhook.Manifest, webhook.Create), manifestRouter.CreateManifest)
 	manifestAPI.GET("", manifestRouter.GetManifests)
 	manifestAPI.GET("/:id", manifestRouter.GetManifest)
-	manifestAPI.DELETE("/:id", manifestRouter.DeleteManifest, middleware.Webhook(webhookService, webhook.Manifest, webhook.Delete))
+	manifestAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Manifest, webhook.Delete), manifestRouter.DeleteManifest)
 
 	applicationAPI := manifestAPI.Group(ApplicationsPrefix)
-	applicationAPI.PUT("", manifestRouter.SubmitApplication, middleware.Webhook(webhookService, webhook.Application, webhook.Create))
+	applicationAPI.PUT("", middleware.Webhook(webhookService, webhook.Application, webhook.Create), manifestRouter.SubmitApplication)
 	applicationAPI.GET("", manifestRouter.GetApplications)
 	applicationAPI.GET("/:id", manifestRouter.GetApplication)
-	applicationAPI.DELETE("/:id", manifestRouter.DeleteApplication, middleware.Webhook(webhookService, webhook.Application, webhook.Delete))
+	applicationAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Application, webhook.Delete), manifestRouter.DeleteApplication)
 	applicationAPI.PUT("/:id/review", manifestRouter.ReviewApplication)
 
 	responseAPI := manifestAPI.Group(ResponsesPrefix)
