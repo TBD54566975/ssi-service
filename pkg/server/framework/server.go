@@ -82,9 +82,6 @@ func NewHTTPServer(cfg config.ServerConfig, shutdown chan os.Signal, mws gin.Han
 // Handle sets a handler function for a given HTTP method and path pair
 // to the server mux.
 func (s *Server) Handle(method string, path string, handler Handler, middleware ...gin.HandlerFunc) {
-	// add the middleware to the router
-	s.router.Use(middleware...)
-
 	// request handler function
 	h := func(c *gin.Context) {
 		requestState := RequestState{
@@ -126,8 +123,12 @@ func (s *Server) Handle(method string, path string, handler Handler, middleware 
 		}
 	}
 
+	hs := make(gin.HandlersChain, 0, len(middleware)+1)
+	hs = append(hs, middleware...)
+	hs = append(hs, h)
+
 	// add the handler to the router
-	s.router.Handle(method, path, h)
+	s.router.Handle(method, path, hs...)
 }
 
 // SignalShutdown is used to gracefully shut down the server when an integrity issue is identified.
