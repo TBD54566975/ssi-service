@@ -271,7 +271,7 @@ func TestWebhookAPI(t *testing.T) {
 		webhookRouter.ListWebhooks(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var resp router.GetWebhooksResponse
+		var resp router.ListWebhooksResponse
 		err := json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 		assert.Len(tt, resp.Webhooks, 1)
@@ -301,7 +301,7 @@ func TestWebhookAPI(t *testing.T) {
 		webhookRouter.ListWebhooks(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var respAfter router.GetWebhooksResponse
+		var respAfter router.ListWebhooksResponse
 		err = json.NewDecoder(w.Body).Decode(&respAfter)
 		assert.NoError(tt, err)
 		assert.Len(tt, respAfter.Webhooks, 0)

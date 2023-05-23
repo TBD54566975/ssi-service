@@ -102,7 +102,7 @@ func TestOperationsAPI(t *testing.T) {
 			s := setupTestDB(ttt)
 			opRouter := setupOperationsRouter(ttt, s)
 
-			request := router.GetOperationsRequest{
+			request := router.ListOperationsRequest{
 				Parent: "presentations/submissions",
 			}
 			value := newRequestValue(ttt, request)
@@ -131,7 +131,7 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner2, holderDID2 := getSigner(ttt)
 			submissionOp2 := createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID2, holderSigner2)
 
-			request := router.GetOperationsRequest{
+			request := router.ListOperationsRequest{
 				Parent: "presentations/submissions",
 			}
 			value := newRequestValue(ttt, request)
@@ -166,7 +166,7 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(ttt)
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
-			request := router.GetOperationsRequest{
+			request := router.ListOperationsRequest{
 				Parent: "presentations/submissions",
 				Filter: "done = false",
 			}
@@ -194,7 +194,7 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(ttt)
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
-			request := router.GetOperationsRequest{
+			request := router.ListOperationsRequest{
 				Parent: "presentations/submissions",
 				Filter: "done = true",
 			}
@@ -221,7 +221,7 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(ttt)
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
-			request := router.GetOperationsRequest{
+			request := router.ListOperationsRequest{
 				Parent: "/presentations/other",
 			}
 			value := newRequestValue(ttt, request)

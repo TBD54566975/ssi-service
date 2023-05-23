@@ -77,7 +77,7 @@ func (o OperationRouter) GetOperation(c *gin.Context) {
 	framework.Respond(c, routerModel(*op), http.StatusOK)
 }
 
-type GetOperationsRequest struct {
+type ListOperationsRequest struct {
 	// The name of the parent's resource. For example: "/presentation/submissions".
 	Parent string `json:"parent"`
 
@@ -86,7 +86,7 @@ type GetOperationsRequest struct {
 	Filter string `json:"filter"`
 }
 
-func (r GetOperationsRequest) GetFilter() string {
+func (r ListOperationsRequest) GetFilter() string {
 	return r.Filter
 }
 
@@ -98,7 +98,7 @@ const (
 
 const FilterCharacterLimit = 1024
 
-func (r GetOperationsRequest) toServiceRequest() (operation.ListOperationsRequest, error) {
+func (r ListOperationsRequest) toServiceRequest() (operation.ListOperationsRequest, error) {
 	var opReq operation.ListOperationsRequest
 	opReq.Parent = r.Parent
 
@@ -144,7 +144,7 @@ type ListOperationsResponse struct {
 //	@Failure		500		{string}	string					"Internal server error"
 //	@Router			/v1/operations [get]
 func (o OperationRouter) ListOperations(c *gin.Context) {
-	var request GetOperationsRequest
+	var request ListOperationsRequest
 	invalidGetOperationsErr := "invalid list operations request"
 	if err := framework.Decode(c.Request, &request); err != nil {
 		framework.LoggingRespondErrWithMsg(c, err, invalidGetOperationsErr, http.StatusBadRequest)

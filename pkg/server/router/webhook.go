@@ -127,7 +127,7 @@ func (wr WebhookRouter) GetWebhook(c *gin.Context) {
 	framework.Respond(c, resp, http.StatusOK)
 }
 
-type GetWebhooksResponse struct {
+type ListWebhooksResponse struct {
 	Webhooks []ListWebhookResponse `json:"webhooks,omitempty"`
 }
 
@@ -154,7 +154,7 @@ func (wr WebhookRouter) ListWebhooks(c *gin.Context) {
 		webhooks = append(webhooks, ListWebhookResponse{Webhook: w})
 	}
 
-	resp := GetWebhooksResponse{Webhooks: webhooks}
+	resp := ListWebhooksResponse{Webhooks: webhooks}
 	framework.Respond(c, resp, http.StatusOK)
 }
 
