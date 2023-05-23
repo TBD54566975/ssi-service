@@ -77,7 +77,7 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 
 	doc, err := didWeb.CreateDoc(request.KeyType, pubKeyBytes)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create did:web doc")
+		return nil, errors.Wrap(err, "could not create did:web docs")
 	}
 
 	// store metadata in DID storage

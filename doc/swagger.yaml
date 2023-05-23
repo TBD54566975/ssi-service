@@ -224,7 +224,7 @@ definitions:
       publicKeyJwk:
         allOf:
         - $ref: '#/definitions/jwx.PublicKeyJWK'
-        description: must conform to https://datatracker.ietf.org/doc/html/rfc7517
+        description: must conform to https://datatracker.ietf.org/docs/html/rfc7517
       publicKeyMultibase:
         description: https://datatracker.ietf.org/doc/html/draft-multiformats-multibase-03
         type: string

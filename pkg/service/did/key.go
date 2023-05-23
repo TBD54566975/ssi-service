@@ -43,7 +43,7 @@ func (h *keyHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "could not create did:key")
 	}
 
-	// expand it to the full doc for storage
+	// expand it to the full docs for storage
 	expanded, err := doc.Expand()
 	if err != nil {
 		return nil, errors.Wrap(err, "error generating did:key document")

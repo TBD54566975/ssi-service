@@ -98,7 +98,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		}
 	}
 
-	// create a key for the doc
+	// create a key for the docs
 	_, privKey, err := crypto.GenerateKeyByKeyType(request.KeyType)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not generate key for ion DID")
@@ -173,7 +173,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	// store associated keys
 	// 1. update key
 	// 2. recovery key
-	// 3. key(s) in the did doc
+	// 3. key(s) in the did docs
 	updateStoreRequest, err := keyToStoreRequest(ionDID.ID()+"#"+updateKeySuffix, ionDID.GetUpdatePrivateKey(), ionDID.ID())
 	if err != nil {
 		return nil, errors.Wrap(err, "converting update private key to store request")

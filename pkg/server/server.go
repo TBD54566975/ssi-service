@@ -5,9 +5,15 @@ package server
 import (
 	"os"
 
+	swaggerfiles "github.com/swaggo/files"
+	ginswagger "github.com/swaggo/gin-swagger"
+
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
+
+	_ "github.com/tbd54566975/ssi-service/doc"
+	doc "github.com/tbd54566975/ssi-service/doc"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -18,6 +24,8 @@ import (
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 )
+
+// gin-swagger middleware
 
 const (
 	HealthPrefix           = "/health"
@@ -63,7 +71,14 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	// service-level routers
 	engine.GET(HealthPrefix, router.Health)
 	engine.GET(ReadinessPrefix, router.Readiness(ssi.GetServices()))
-	engine.GET(SwaggerPrefix, router.Swagger)
+
+	// swagger
+	doc.SwaggerInfo.Version = cfg.SVN
+	doc.SwaggerInfo.Description = cfg.Desc
+	doc.SwaggerInfo.Host = cfg.Server.APIHost
+	doc.SwaggerInfo.Schemes = []string{"http"}
+	engine.StaticFile("swagger.yaml", "./doc/swagger.yaml")
+	engine.GET(SwaggerPrefix, ginswagger.WrapHandler(swaggerfiles.Handler, ginswagger.URL("/swagger.yaml")))
 
 	// register all v1 routers
 	v1 := engine.Group(V1Prefix)
