@@ -2,15 +2,18 @@ package router
 
 import (
 	"context"
+	"encoding/base64"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -60,38 +63,30 @@ func TestPresentationDefinitionService(t *testing.T) {
 		pd := createPresentationDefinition(t)
 		created, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{
 			PresentationDefinition: *pd,
-			Author:                 authorDID.DID.ID,
-			AuthorKID:              authorDID.DID.VerificationMethod[0].ID,
 		})
 
 		assert.NoError(t, err)
 		assert.Equal(t, pd, &created.PresentationDefinition)
-		assert.NoError(t, ka.Verify(created.PresentationDefinitionJWT))
 	})
 
 	t.Run("Get returns the created definition", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
 		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{
 			PresentationDefinition: *pd,
-			Author:                 authorDID.DID.ID,
-			AuthorKID:              authorDID.DID.VerificationMethod[0].ID,
 		})
 		assert.NoError(t, err)
 
 		getPd, err := service.GetPresentationDefinition(context.Background(), model.GetPresentationDefinitionRequest{ID: pd.ID})
 
 		assert.NoError(t, err)
-		assert.Equal(t, pd.ID, getPd.ID)
+		assert.Equal(t, pd.ID, getPd.PresentationDefinition.ID)
 		assert.Equal(t, pd, &getPd.PresentationDefinition)
-		assert.NoError(t, ka.Verify(getPd.PresentationDefinitionJWT))
 	})
 
 	t.Run("Get does not return after deletion", func(t *testing.T) {
 		pd := createPresentationDefinition(t)
 		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{
 			PresentationDefinition: *pd,
-			Author:                 authorDID.DID.ID,
-			AuthorKID:              authorDID.DID.VerificationMethod[0].ID,
 		})
 		assert.NoError(t, err)
 
@@ -104,6 +99,114 @@ func TestPresentationDefinitionService(t *testing.T) {
 	t.Run("Delete can be called with any ID", func(t *testing.T) {
 		err := service.DeletePresentationDefinition(context.Background(), model.DeletePresentationDefinitionRequest{ID: "some crazy ID"})
 		assert.NoError(t, err)
+	})
+
+	t.Run("Signed request is return when creating request", func(t *testing.T) {
+		pd := createPresentationDefinition(t)
+		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{
+			PresentationDefinition: *pd,
+		})
+		assert.NoError(t, err)
+		expectedReq := model.Request{
+			Audience:                 []string{"did:web:heman"},
+			IssuerDID:                authorDID.DID.ID,
+			IssuerKID:                authorDID.DID.VerificationMethod[0].ID,
+			PresentationDefinitionID: pd.ID,
+			Expiration:               time.Date(2023, 10, 10, 10, 10, 10, 0, time.UTC),
+		}
+		req, err := service.CreateRequest(context.Background(), model.CreateRequestRequest{
+			PresentationRequest: expectedReq,
+		})
+
+		assert.NoError(t, err)
+		assert.NotEmpty(t, req.ID)
+		assert.NotEqual(t, req.ID, pd.ID)
+		assert.NoError(t, ka.Verify(req.PresentationDefinitionJWT))
+		payload, err := base64.RawURLEncoding.DecodeString(strings.Split(req.PresentationDefinitionJWT.String(), ".")[1])
+		assert.NoError(t, err)
+		var got exchange.PresentationDefinitionEnvelope
+		assert.NoError(t, json.Unmarshal(payload, &got))
+		assert.Equal(t, *pd, got.PresentationDefinition)
+		assert.Equal(t, expectedReq.Audience, req.Audience)
+		assert.Equal(t, expectedReq.IssuerDID, req.IssuerDID)
+		assert.Equal(t, expectedReq.IssuerKID, req.IssuerKID)
+		assert.Equal(t, expectedReq.PresentationDefinitionID, req.PresentationDefinitionID)
+		assert.Equal(t, expectedReq.Expiration, req.Expiration)
+	})
+
+	t.Run("Get request returns the created request", func(t *testing.T) {
+		pd := createPresentationDefinition(t)
+		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{
+			PresentationDefinition: *pd,
+		})
+		assert.NoError(t, err)
+		req, err := service.CreateRequest(context.Background(), model.CreateRequestRequest{
+			PresentationRequest: model.Request{
+				Audience:                 []string{"did:web:heman"},
+				IssuerDID:                authorDID.DID.ID,
+				IssuerKID:                authorDID.DID.VerificationMethod[0].ID,
+				Expiration:               time.Now().Add(30 * time.Second),
+				PresentationDefinitionID: pd.ID,
+			},
+		})
+		assert.NoError(t, err)
+
+		got, err := service.GetRequest(context.Background(), &model.GetRequestRequest{ID: req.ID})
+		assert.NoError(t, err)
+		assert.Equal(t, req, got)
+	})
+
+	t.Run("Returns not found after deleting request", func(t *testing.T) {
+		pd := createPresentationDefinition(t)
+		_, err := service.CreatePresentationDefinition(context.Background(), model.CreatePresentationDefinitionRequest{
+			PresentationDefinition: *pd,
+		})
+		assert.NoError(t, err)
+		req, err := service.CreateRequest(context.Background(), model.CreateRequestRequest{
+			PresentationRequest: model.Request{
+				IssuerDID:                authorDID.DID.ID,
+				IssuerKID:                authorDID.DID.VerificationMethod[0].ID,
+				PresentationDefinitionID: pd.ID,
+				Expiration:               time.Now().Add(30 * time.Second),
+			},
+		})
+		assert.NoError(t, err)
+
+		err = service.DeleteRequest(context.Background(), model.DeleteRequestRequest{ID: req.ID})
+		assert.NoError(t, err)
+
+		_, err = service.GetRequest(context.Background(), &model.GetRequestRequest{ID: req.ID})
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "presentation request not found")
+	})
+
+	t.Run("Error returned when missing required fields", func(t *testing.T) {
+		_, err := service.CreateRequest(context.Background(), model.CreateRequestRequest{
+			PresentationRequest: model.Request{
+				IssuerDID: "issuer id",
+				IssuerKID: "kid",
+			},
+		})
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "failed on the 'required' tag")
+
+		_, err = service.CreateRequest(context.Background(), model.CreateRequestRequest{
+			PresentationRequest: model.Request{
+				IssuerDID:                "issuer id",
+				PresentationDefinitionID: "something",
+			},
+		})
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "failed on the 'required' tag")
+
+		_, err = service.CreateRequest(context.Background(), model.CreateRequestRequest{
+			PresentationRequest: model.Request{
+				IssuerKID:                "kid",
+				PresentationDefinitionID: "something",
+			},
+		})
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "failed on the 'required' tag")
 	})
 }
 
