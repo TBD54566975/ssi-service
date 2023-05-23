@@ -66,6 +66,7 @@ name = "manifest"
 
 [services.presentation]
 name = "presentation"
+expiration_duration = "30m"
 
 [services.webhook]
 name = "webhook"

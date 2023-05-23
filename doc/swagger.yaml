@@ -646,6 +646,42 @@ definitions:
         description: Whether the credentials created should be revocable.
         type: boolean
     type: object
+  github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Request:
+    properties:
+      audience:
+        description: Audience as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.3.
+        items:
+          type: string
+        type: array
+      expiration:
+        description: Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
+        type: string
+      id:
+        description: |-
+          ID for this request. It matches the "jti" claim in the JWT.
+          This is an output only field.
+        type: string
+      issuerId:
+        description: DID of the issuer of this presentation definition.
+        type: string
+      issuerKid:
+        description: The privateKey associated with the KID used to sign the JWT.
+        type: string
+      presentationDefinitionId:
+        description: ID of the presentation definition used for this request.
+        type: string
+      presentationRequestJwt:
+        description: |-
+          PresentationDefinitionJWT is a JWT token with a "presentation_definition" claim within it. The
+          value of the field named "presentation_definition.id" matches PresentationDefinitionID.
+          This is an output only field.
+        type: string
+    required:
+    - expiration
+    - issuerId
+    - issuerKid
+    - presentationDefinitionId
+    type: object
   github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Submission:
     properties:
       reason:
@@ -1005,16 +1041,6 @@ definitions:
     type: object
   pkg_server_router.CreatePresentationDefinitionRequest:
     properties:
-      author:
-        description: |-
-          DID of the author of this presentation definition. The DID must have been previously created with the DID API,
-          or the PrivateKey must have been added independently.
-        type: string
-      authorKid:
-        description: |-
-          The privateKey associated with the KID will be used to sign an envelope that contains
-          the created presentation definition.
-        type: string
       format:
         $ref: '#/definitions/exchange.ClaimFormat'
       inputDescriptors:
@@ -1030,8 +1056,6 @@ definitions:
           $ref: '#/definitions/exchange.SubmissionRequirement'
         type: array
     required:
-    - author
-    - authorKid
     - inputDescriptors
     type: object
   pkg_server_router.CreatePresentationDefinitionResponse:
@@ -1043,6 +1067,43 @@ definitions:
           Signed envelope that contains the PresentationDefinition created using the privateKey of the author of the
           definition.
         type: string
+    type: object
+  pkg_server_router.CreateRequestRequest:
+    properties:
+      audience:
+        description: |-
+          Audience as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.3
+          Optional
+        items:
+          type: string
+        type: array
+      expiration:
+        description: |-
+          Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
+          Optional. When not specified, the request will be valid for a default duration.
+        type: string
+      issuerId:
+        description: |-
+          DID of the issuer of this presentation definition. The DID must have been previously created with the DID API,
+          or the PrivateKey must have been added independently.
+        type: string
+      issuerKid:
+        description: |-
+          The privateKey associated with the KID will be used to sign an envelope that contains
+          the created presentation definition.
+        type: string
+      presentationDefinitionId:
+        description: ID of the presentation definition to use for this request.
+        type: string
+    required:
+    - issuerId
+    - issuerKid
+    - presentationDefinitionId
+    type: object
+  pkg_server_router.CreateRequestResponse:
+    properties:
+      presentationRequest:
+        $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Request'
     type: object
   pkg_server_router.CreateSchemaRequest:
     properties:
@@ -1078,6 +1139,10 @@ definitions:
   pkg_server_router.CreateSubmissionRequest:
     properties:
       submissionJwt:
+        description: |-
+          A Verifiable Presentation that's encoded as a JWT.
+          Verifiable Presentation are described in https://www.w3.org/TR/vc-data-model/#presentations-0
+          JWT encoding of the Presentation as described in https://www.w3.org/TR/vc-data-model/#presentations-0
         type: string
     required:
     - submissionJwt
@@ -1240,11 +1305,6 @@ definitions:
     properties:
       presentation_definition:
         $ref: '#/definitions/exchange.PresentationDefinition'
-      presentationDefinitionJWT:
-        description: |-
-          Signed envelope that contains the PresentationDefinition created using the privateKey of the author of the
-          definition.
-        type: string
     type: object
   pkg_server_router.GetReadinessResponse:
     properties:
@@ -1258,6 +1318,11 @@ definitions:
         allOf:
         - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_framework.Status'
         description: Overall status of the ssi service.
+    type: object
+  pkg_server_router.GetRequestResponse:
+    properties:
+      presentationRequest:
+        $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Request'
     type: object
   pkg_server_router.GetResponseResponse:
     properties:
@@ -2883,6 +2948,90 @@ paths:
       summary: Get PresentationDefinition
       tags:
       - PresentationDefinitionAPI
+  /v1/presentation/request:
+    put:
+      consumes:
+      - application/json
+      description: Create presentation request from an existing presentation definition.
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.CreateRequestRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pkg_server_router.CreateRequestResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create Presentation Request
+      tags:
+      - PresentationRequestAPI
+  /v1/presentation/request/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get a presentation request by its ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.GetRequestResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+      summary: Get Presentation Request
+      tags:
+      - PresentationRequestAPI
+  /v1/presentation/requests/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a presentation request by its ID
+      parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Delete PresentationRequest
+      tags:
+      - PresentationRequestAPI
   /v1/presentations/definitions:
     get:
       consumes:

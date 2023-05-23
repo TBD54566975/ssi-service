@@ -29,8 +29,7 @@ func TestOperationsAPI(t *testing.T) {
 		opRouter := setupOperationsRouter(tt, s)
 
 		holderSigner, holderDID := getSigner(tt)
-		kid := authorDID.DID.VerificationMethod[0].ID
-		definition := createPresentationDefinition(t, pRouter, authorDID.DID.ID, kid)
+		definition := createPresentationDefinition(t, pRouter)
 		submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 		sub := reviewSubmission(t, pRouter, opstorage.StatusObjectID(submissionOp.ID))
 
@@ -62,8 +61,7 @@ func TestOperationsAPI(t *testing.T) {
 			opRouter := setupOperationsRouter(ttt, s)
 
 			holderSigner, holderDID := getSigner(ttt)
-			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			definition := createPresentationDefinition(ttt, pRouter)
 			submissionOp := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			createdID := submissionOp.ID
@@ -126,8 +124,7 @@ func TestOperationsAPI(t *testing.T) {
 			authorDID := createDID(ttt, didService)
 			opRouter := setupOperationsRouter(ttt, s)
 
-			kid := authorDID.DID.VerificationMethod[0].ID
-			def := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			def := createPresentationDefinition(ttt, pRouter)
 			holderSigner, holderDID := getSigner(ttt)
 			submissionOp := createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
@@ -165,8 +162,7 @@ func TestOperationsAPI(t *testing.T) {
 			authorDID := createDID(ttt, didService)
 			opRouter := setupOperationsRouter(ttt, s)
 
-			kid := authorDID.DID.VerificationMethod[0].ID
-			def := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			def := createPresentationDefinition(ttt, pRouter)
 			holderSigner, holderDID := getSigner(ttt)
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
@@ -194,8 +190,7 @@ func TestOperationsAPI(t *testing.T) {
 			authorDID := createDID(ttt, didService)
 			opRouter := setupOperationsRouter(ttt, s)
 
-			kid := authorDID.DID.VerificationMethod[0].ID
-			def := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			def := createPresentationDefinition(ttt, pRouter)
 			holderSigner, holderDID := getSigner(ttt)
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
@@ -222,8 +217,7 @@ func TestOperationsAPI(t *testing.T) {
 			authorDID := createDID(ttt, didService)
 			opRouter := setupOperationsRouter(ttt, s)
 
-			kid := authorDID.DID.VerificationMethod[0].ID
-			def := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			def := createPresentationDefinition(ttt, pRouter)
 			holderSigner, holderDID := getSigner(ttt)
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
@@ -252,8 +246,7 @@ func TestOperationsAPI(t *testing.T) {
 			opRouter := setupOperationsRouter(ttt, s)
 
 			holderSigner, holderDID := getSigner(ttt)
-			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			definition := createPresentationDefinition(ttt, pRouter)
 			submissionOp := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			createdID := submissionOp.ID
@@ -281,8 +274,7 @@ func TestOperationsAPI(t *testing.T) {
 			opRouter := setupOperationsRouter(ttt, s)
 
 			holderSigner, holderDID := getSigner(ttt)
-			kid := authorDID.DID.VerificationMethod[0].ID
-			definition := createPresentationDefinition(ttt, pRouter, authorDID.DID.ID, kid)
+			definition := createPresentationDefinition(ttt, pRouter)
 			submissionOp := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 			_ = reviewSubmission(ttt, pRouter, opstorage.StatusObjectID(submissionOp.ID))
 

@@ -177,6 +177,7 @@ func (m *ManifestServiceConfig) IsEmpty() bool {
 
 type PresentationServiceConfig struct {
 	*BaseServiceConfig
+	ExpirationDuration time.Duration `toml:"expiration_duration" conf:"default:30m"`
 }
 
 func (p *PresentationServiceConfig) IsEmpty() bool {

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/util"
@@ -14,8 +16,6 @@ import (
 
 type CreatePresentationDefinitionRequest struct {
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition" validate:"required"`
-	Author                 string                          `json:"author" validate:"required"`
-	AuthorKID              string                          `json:"authorKid" validate:"required"`
 }
 
 func (cpr CreatePresentationDefinitionRequest) IsValid() error {
@@ -23,8 +23,7 @@ func (cpr CreatePresentationDefinitionRequest) IsValid() error {
 }
 
 type CreatePresentationDefinitionResponse struct {
-	PresentationDefinition    exchange.PresentationDefinition `json:"presentationDefinition"`
-	PresentationDefinitionJWT keyaccess.JWT                   `json:"presentationDefinitionJWT"`
+	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
 }
 
 type GetPresentationDefinitionRequest struct {
@@ -32,9 +31,7 @@ type GetPresentationDefinitionRequest struct {
 }
 
 type GetPresentationDefinitionResponse struct {
-	ID                        string                          `json:"id"`
-	PresentationDefinition    exchange.PresentationDefinition `json:"presentationDefinition"`
-	PresentationDefinitionJWT keyaccess.JWT                   `json:"presentationDefinitionJWT"`
+	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
 }
 
 type DeletePresentationDefinitionRequest struct {
@@ -123,4 +120,51 @@ func ServiceModel(storedSubmission *storage.StoredSubmission) Submission {
 		Reason:                 storedSubmission.Reason,
 		VerifiablePresentation: &storedSubmission.VerifiablePresentation,
 	}
+}
+
+type CreateRequestRequest struct {
+	PresentationRequest Request `json:"presentationRequest"`
+}
+
+type CreateRequestResponse struct {
+	PresentationRequest Request `json:"presentationRequest"`
+}
+
+type GetRequestRequest struct {
+	ID string `json:"id" validate:"required"`
+}
+
+type GetRequestResponse struct {
+	ID                  string  `json:"id"`
+	PresentationRequest Request `json:"presentationRequest"`
+}
+
+type DeleteRequestRequest struct {
+	ID string `json:"id" validate:"required"`
+}
+
+type Request struct {
+	// ID for this request. It matches the "jti" claim in the JWT.
+	// This is an output only field.
+	ID string `json:"id,omitempty"`
+
+	// Audience as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.3.
+	Audience []string `json:"audience,omitempty"`
+
+	// Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
+	Expiration time.Time `json:"expiration" validate:"required"`
+
+	// DID of the issuer of this presentation definition.
+	IssuerDID string `json:"issuerId" validate:"required"`
+
+	// The privateKey associated with the KID used to sign the JWT.
+	IssuerKID string `json:"issuerKid" validate:"required"`
+
+	// ID of the presentation definition used for this request.
+	PresentationDefinitionID string `json:"presentationDefinitionId" validate:"required"`
+
+	// PresentationDefinitionJWT is a JWT token with a "presentation_definition" claim within it. The
+	// value of the field named "presentation_definition.id" matches PresentationDefinitionID.
+	// This is an output only field.
+	PresentationDefinitionJWT keyaccess.JWT `json:"presentationRequestJwt"`
 }
