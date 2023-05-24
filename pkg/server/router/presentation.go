@@ -371,8 +371,8 @@ func (pr PresentationRouter) ListSubmissions(c *gin.Context) {
 			return
 		}
 		// encode the query param as a status filter
-		filter := fmt.Sprintf("status=\"%s\"", unescaped)
-		request = listSubmissionRequest{Filter: filter}
+		// filter := fmt.Sprintf("status=\"%s\"", unescaped)
+		request = listSubmissionRequest{Filter: unescaped}
 	}
 
 	const StatusIdentifier = "status"
