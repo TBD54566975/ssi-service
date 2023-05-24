@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	"github.com/gin-gonic/gin"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
@@ -103,7 +104,13 @@ type GetKeyDetailsResponse struct {
 	ID         string         `json:"id,omitempty"`
 	Type       crypto.KeyType `json:"type,omitempty"`
 	Controller string         `json:"controller,omitempty"`
-	CreatedAt  string         `json:"createdAt,omitempty"`
+
+	// Represents the time at which the key was created. Encoded according to RFC3339.
+	CreatedAt string `json:"createdAt,omitempty"`
+
+	// The public key in JWK format according to RFC7517. This public key is associated with the private
+	// key with the associated ID.
+	PublicKeyJWK jwx.PublicKeyJWK `json:"publicKeyJwk"`
 }
 
 // GetKeyDetails godoc
@@ -133,10 +140,11 @@ func (ksr *KeyStoreRouter) GetKeyDetails(c *gin.Context) {
 	}
 
 	resp := GetKeyDetailsResponse{
-		ID:         gotKeyDetails.ID,
-		Type:       gotKeyDetails.Type,
-		Controller: gotKeyDetails.Controller,
-		CreatedAt:  gotKeyDetails.CreatedAt,
+		ID:           gotKeyDetails.ID,
+		Type:         gotKeyDetails.Type,
+		Controller:   gotKeyDetails.Controller,
+		CreatedAt:    gotKeyDetails.CreatedAt,
+		PublicKeyJWK: gotKeyDetails.PublicKeyJWK,
 	}
 	framework.Respond(c, resp, http.StatusOK)
 }

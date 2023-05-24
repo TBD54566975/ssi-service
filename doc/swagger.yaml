@@ -1224,9 +1224,17 @@ definitions:
       controller:
         type: string
       createdAt:
+        description: Represents the time at which the key was created. Encoded according
+          to RFC3339.
         type: string
       id:
         type: string
+      publicKeyJwk:
+        allOf:
+        - $ref: '#/definitions/jwx.PublicKeyJWK'
+        description: |-
+          The public key in JWK format according to RFC7517. This public key is associated with the private
+          key with the associated ID.
       type:
         $ref: '#/definitions/crypto.KeyType'
     type: object

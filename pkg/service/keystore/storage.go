@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/google/tink/go/aead"
@@ -37,12 +38,13 @@ type StoredKey struct {
 
 // KeyDetails represents a common data model to get information about a key, without revealing the key itself
 type KeyDetails struct {
-	ID         string         `json:"id"`
-	Controller string         `json:"controller"`
-	KeyType    crypto.KeyType `json:"keyType"`
-	Revoked    bool           `json:"revoked"`
-	RevokedAt  string         `json:"revokedAt"`
-	CreatedAt  string         `json:"createdAt"`
+	ID           string           `json:"id"`
+	Controller   string           `json:"controller"`
+	KeyType      crypto.KeyType   `json:"keyType"`
+	Revoked      bool             `json:"revoked"`
+	RevokedAt    string           `json:"revokedAt"`
+	CreatedAt    string           `json:"createdAt"`
+	PublicKeyJWK jwx.PublicKeyJWK `json:"publicKeyJwk"`
 }
 
 type ServiceKey struct {
@@ -51,9 +53,10 @@ type ServiceKey struct {
 }
 
 const (
-	namespace         = "keystore"
-	skKey             = "ssi-service-key"
-	keyNotFoundErrMsg = "key not found"
+	namespace             = "keystore"
+	publicNamespaceSuffix = ":public-keys"
+	skKey                 = "ssi-service-key"
+	keyNotFoundErrMsg     = "key not found"
 )
 
 type Storage struct {
@@ -240,7 +243,31 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 
 	keyBytes, err := json.Marshal(key)
 	if err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not store key: %s", id)
+		return sdkutil.LoggingErrorMsg(err, "deserializing key from base58")
+	}
+
+	skBytes, err := base58.Decode(key.Base58Key)
+	if err != nil {
+		return sdkutil.LoggingErrorMsg(err, "deserializing key from base58")
+	}
+
+	secretKey, err := crypto.BytesToPrivKey(skBytes, key.KeyType)
+	if err != nil {
+		return sdkutil.LoggingErrorMsg(err, "reconstructing private key from input")
+	}
+
+	publicJWK, _, err := jwx.PrivateKeyToPrivateKeyJWK(key.ID, secretKey)
+	if err != nil {
+		return sdkutil.LoggingErrorMsg(err, "reconstructing JWK")
+	}
+
+	publicBytes, err := json.Marshal(publicJWK)
+	if err != nil {
+		return sdkutil.LoggingErrorMsg(err, "marshalling JWK")
+	}
+
+	if err := kss.db.Write(ctx, namespace+publicNamespaceSuffix, id, publicBytes); err != nil {
+		return sdkutil.LoggingErrorMsgf(err, "writing public key")
 	}
 
 	// encrypt key before storing
@@ -292,13 +319,24 @@ func (kss *Storage) GetKey(ctx context.Context, id string) (*StoredKey, error) {
 func (kss *Storage) GetKeyDetails(ctx context.Context, id string) (*KeyDetails, error) {
 	stored, err := kss.GetKey(ctx, id)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not get key details for key: %s", id)
+		return nil, sdkutil.LoggingErrorMsgf(err, "reading details for private key %q", id)
 	}
+
+	storedPublicKeyBytes, err := kss.db.Read(ctx, namespace+publicNamespaceSuffix, id)
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "reading details for public key %q", id)
+	}
+	var storedPublicKey jwx.PublicKeyJWK
+	if err = json.Unmarshal(storedPublicKeyBytes, &storedPublicKey); err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "unmarshalling public key")
+	}
+
 	return &KeyDetails{
-		ID:         stored.ID,
-		Controller: stored.Controller,
-		KeyType:    stored.KeyType,
-		CreatedAt:  stored.CreatedAt,
-		Revoked:    stored.Revoked,
+		ID:           stored.ID,
+		Controller:   stored.Controller,
+		KeyType:      stored.KeyType,
+		CreatedAt:    stored.CreatedAt,
+		Revoked:      stored.Revoked,
+		PublicKeyJWK: storedPublicKey,
 	}, nil
 }
