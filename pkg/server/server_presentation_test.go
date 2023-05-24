@@ -323,8 +323,7 @@ func TestPresentationAPI(t *testing.T) {
 			s := setupTestDB(ttt)
 			pRouter, _ := setupPresentationRouter(ttt, s)
 
-			value := newRequestValue(ttt, nil)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", nil)
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
@@ -361,8 +360,7 @@ func TestPresentationAPI(t *testing.T) {
 					"givenName":      "Tee",
 					"id":             "did:web:mrt.com"})), mrTeeDID, mrTeeSigner)
 
-			value := newRequestValue(ttt, nil)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", nil)
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
@@ -426,9 +424,8 @@ func TestPresentationAPI(t *testing.T) {
 			s := setupTestDB(ttt)
 			pRouter, _ := setupPresentationRouter(ttt, s)
 
-			value := newRequestValue(ttt, nil)
 			query := url.QueryEscape("status=\"im a baaad filter that's trying to break a lot of stuff\"")
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions?status=%s", query), value)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions?status=%s", query), nil)
 			w := httptest.NewRecorder()
 
 			c := newRequestContextWithParams(w, req, map[string]string{"status": query})
@@ -445,15 +442,14 @@ func TestPresentationAPI(t *testing.T) {
 			definition := createPresentationDefinition(ttt, pRouter)
 			op := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
-					"additionalName": "Mclovin",
+					"additionalName": "McLovin",
 					"dateOfBirth":    "1987-01-02",
 					"familyName":     "Andres",
 					"givenName":      "Uribe",
 					"id":             "did:web:andresuribe.com",
 				})), holderDID, holderSigner)
 
-			value := newRequestValue(ttt, nil)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?status=pending", value)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?status=pending", nil)
 			w := httptest.NewRecorder()
 
 			c := newRequestContextWithParams(w, req, map[string]string{"status": "pending"})
@@ -505,8 +501,7 @@ func TestPresentationAPI(t *testing.T) {
 					"id":             "did:web:andresuribe.com",
 				})), holderDID, holderSigner)
 
-			value := newRequestValue(ttt, nil)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?status=done", value)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?status=done", nil)
 			w := httptest.NewRecorder()
 			c := newRequestContextWithParams(w, req, map[string]string{"status": "done"})
 			pRouter.ListSubmissions(c)

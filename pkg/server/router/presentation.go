@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	FilterParam string = "status"
+	StatusParam string = "status"
 )
 
 type PresentationRouter struct {
@@ -361,12 +361,12 @@ type ListSubmissionResponse struct {
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/presentations/submissions [get]
 func (pr PresentationRouter) ListSubmissions(c *gin.Context) {
-	filterParam := framework.GetQueryValue(c, FilterParam)
+	statusParam := framework.GetQueryValue(c, StatusParam)
 	var request listSubmissionRequest
-	if filterParam != nil {
-		unescaped, err := url.QueryUnescape(*filterParam)
+	if statusParam != nil {
+		unescaped, err := url.QueryUnescape(*statusParam)
 		if err != nil {
-			errMsg := "failed unescaping filter"
+			errMsg := "failed un-escaping filter"
 			framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
 			return
 		}
