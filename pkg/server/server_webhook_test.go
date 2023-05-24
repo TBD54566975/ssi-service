@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -76,12 +77,9 @@ func TestSimpleWebhook(t *testing.T) {
 	put(t, server, "/v1/webhooks", requestData)
 
 	createRequest := []byte(`{
-		"keyType":"Ed25519",
-		"options": {
-			"didWebId": "did:web:tbd.website"
-		}
+		"keyType":"Ed25519"
 	}`)
-	put(t, server, "/v1/dids/web", createRequest)
+	put(t, server, "/v1/dids/key", createRequest)
 
 	// Check that exactly one call was received after 2 seconds.
 	select {
@@ -95,7 +93,7 @@ func TestSimpleWebhook(t *testing.T) {
 		var resp router.CreateDIDByMethodResponse
 		assert.NoError(t, json.Unmarshal(dataJSON, &resp))
 
-		assert.Equal(t, "did:web:tbd.website", resp.DID.ID)
+		assert.True(t, strings.HasPrefix(resp.DID.ID, "did:key:"))
 	case <-time.After(2 * time.Second):
 		assert.Fail(t, "should receive at least 1 message")
 	}
