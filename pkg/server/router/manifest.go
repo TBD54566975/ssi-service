@@ -107,7 +107,7 @@ func (mr ManifestRouter) CreateManifest(c *gin.Context) {
 	framework.Respond(c, resp, http.StatusCreated)
 }
 
-type GetManifestResponse struct {
+type ListManifestResponse struct {
 	ID          string                         `json:"id"`
 	Manifest    manifestsdk.CredentialManifest `json:"credential_manifest"`
 	ManifestJWT keyaccess.JWT                  `json:"manifestJwt"`
@@ -121,7 +121,7 @@ type GetManifestResponse struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
-//	@Success		200	{object}	GetManifestResponse
+//	@Success		200	{object}	ListManifestResponse
 //	@Failure		400	{string}	string	"Bad request"
 //	@Router			/v1/manifests/{id} [get]
 func (mr ManifestRouter) GetManifest(c *gin.Context) {
@@ -139,7 +139,7 @@ func (mr ManifestRouter) GetManifest(c *gin.Context) {
 		return
 	}
 
-	resp := GetManifestResponse{
+	resp := ListManifestResponse{
 		ID:          gotManifest.Manifest.ID,
 		Manifest:    gotManifest.Manifest,
 		ManifestJWT: gotManifest.ManifestJWT,
@@ -147,13 +147,13 @@ func (mr ManifestRouter) GetManifest(c *gin.Context) {
 	framework.Respond(c, resp, http.StatusOK)
 }
 
-type GetManifestsResponse struct {
-	Manifests []GetManifestResponse `json:"manifests"`
+type ListManifestsResponse struct {
+	Manifests []ListManifestResponse `json:"manifests"`
 }
 
-// GetManifests godoc
+// ListManifests godoc
 //
-//	@Summary		Get manifests
+//	@Summary		List manifests
 //	@Description	Checks for the presence of a query parameter and calls the associated filtered get method
 //	@Tags			ManifestAPI
 //	@Accept			json
@@ -161,28 +161,28 @@ type GetManifestsResponse struct {
 //	@Param			issuer	query		string	false	"string issuer"
 //	@Param			schema	query		string	false	"string schema"
 //	@Param			subject	query		string	false	"string subject"
-//	@Success		200		{object}	GetManifestsResponse
+//	@Success		200		{object}	ListManifestsResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/manifests [get]
-func (mr ManifestRouter) GetManifests(c *gin.Context) {
-	gotManifests, err := mr.service.GetManifests(c)
+func (mr ManifestRouter) ListManifests(c *gin.Context) {
+	gotManifests, err := mr.service.ListManifests(c)
 	if err != nil {
-		errMsg := "could not get manifests"
+		errMsg := "could not list manifests"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
 		return
 	}
 
-	manifests := make([]GetManifestResponse, 0, len(gotManifests.Manifests))
+	manifests := make([]ListManifestResponse, 0, len(gotManifests.Manifests))
 	for _, m := range gotManifests.Manifests {
-		manifests = append(manifests, GetManifestResponse{
+		manifests = append(manifests, ListManifestResponse{
 			ID:          m.Manifest.ID,
 			Manifest:    m.Manifest,
 			ManifestJWT: m.ManifestJWT,
 		})
 	}
 
-	resp := GetManifestsResponse{Manifests: manifests}
+	resp := ListManifestsResponse{Manifests: manifests}
 	framework.Respond(c, resp, http.StatusOK)
 }
 
@@ -364,29 +364,29 @@ func (mr ManifestRouter) GetApplication(c *gin.Context) {
 	framework.Respond(c, resp, http.StatusOK)
 }
 
-type GetApplicationsResponse struct {
+type ListApplicationsResponse struct {
 	Applications []manifestsdk.CredentialApplication `json:"applications"`
 }
 
-// GetApplications godoc
+// ListApplications godoc
 //
-//	@Summary		Get applications
-//	@Description	Gets all the existing applications.
+//	@Summary		List applications
+//	@Description	List all the existing applications.
 //	@Tags			ApplicationAPI
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	GetApplicationsResponse
+//	@Success		200	{object}	ListApplicationsResponse
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/manifests/applications [get]
-func (mr ManifestRouter) GetApplications(c *gin.Context) {
-	gotApplications, err := mr.service.GetApplications(c)
+func (mr ManifestRouter) ListApplications(c *gin.Context) {
+	gotApplications, err := mr.service.ListApplications(c)
 	if err != nil {
-		errMsg := "could not get applications"
+		errMsg := "could not list applications"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
 
-	resp := GetApplicationsResponse{Applications: gotApplications.Applications}
+	resp := ListApplicationsResponse{Applications: gotApplications.Applications}
 	framework.Respond(c, resp, http.StatusOK)
 }
 
@@ -461,29 +461,29 @@ func (mr ManifestRouter) GetResponse(c *gin.Context) {
 	framework.Respond(c, resp, http.StatusOK)
 }
 
-type GetResponsesResponse struct {
+type ListResponsesResponse struct {
 	Responses []manifestsdk.CredentialResponse `json:"responses"`
 }
 
-// GetResponses godoc
+// ListResponses godoc
 //
-//	@Summary		Get responses
-//	@Description	Checks for the presence of a query parameter and calls the associated filtered get method
+//	@Summary		List responses
+//	@Description	Lists all responses
 //	@Tags			ResponseAPI
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	GetResponsesResponse
+//	@Success		200	{object}	ListResponsesResponse
 //	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/manifests/responses [get]
-func (mr ManifestRouter) GetResponses(c *gin.Context) {
-	gotResponses, err := mr.service.GetResponses(c)
+func (mr ManifestRouter) ListResponses(c *gin.Context) {
+	gotResponses, err := mr.service.ListResponses(c)
 	if err != nil {
-		errMsg := "could not get responses"
+		errMsg := "could not list responses"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
 
-	resp := GetResponsesResponse{Responses: gotResponses.Responses}
+	resp := ListResponsesResponse{Responses: gotResponses.Responses}
 	framework.Respond(c, resp, http.StatusOK)
 }
 

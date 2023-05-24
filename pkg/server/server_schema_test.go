@@ -160,10 +160,10 @@ func TestSchemaAPI(t *testing.T) {
 		// get all schemas - get none
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas", nil)
 		c = newRequestContext(w, req)
-		schemaService.GetSchemas(c)
+		schemaService.ListSchemas(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var getSchemasResp router.GetSchemasResponse
+		var getSchemasResp router.ListSchemasResponse
 		err := json.NewDecoder(w.Body).Decode(&getSchemasResp)
 		assert.NoError(tt, err)
 		assert.Len(tt, getSchemasResp.Schemas, 0)
@@ -211,7 +211,7 @@ func TestSchemaAPI(t *testing.T) {
 		// get all schemas - get none
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas", nil)
 		c = newRequestContext(w, req)
-		schemaService.GetSchemas(c)
+		schemaService.ListSchemas(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		err = json.NewDecoder(w.Body).Decode(&getSchemasResp)

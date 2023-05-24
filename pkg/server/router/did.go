@@ -41,22 +41,22 @@ func NewDIDRouter(s svcframework.Service) (*DIDRouter, error) {
 	return &DIDRouter{service: didService}, nil
 }
 
-type GetDIDMethodsResponse struct {
+type ListDIDMethodsResponse struct {
 	DIDMethods []didsdk.Method `json:"method,omitempty"`
 }
 
-// GetDIDMethods godoc
+// ListDIDMethods godoc
 //
-//	@Summary		Get DID Methods
-//	@Description	Get supported DID method
+//	@Summary		List DID Methods
+//	@Description	Get the list of supported DID methods
 //	@Tags			DecentralizedIdentityAPI
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	GetDIDMethodsResponse
+//	@Success		200	{object}	ListDIDMethodsResponse
 //	@Router			/v1/dids [get]
-func (dr DIDRouter) GetDIDMethods(c *gin.Context) {
+func (dr DIDRouter) ListDIDMethods(c *gin.Context) {
 	methods := dr.service.GetSupportedMethods()
-	response := GetDIDMethodsResponse{DIDMethods: methods.Methods}
+	response := ListDIDMethodsResponse{DIDMethods: methods.Methods}
 	framework.Respond(c, response, http.StatusOK)
 }
 
@@ -222,7 +222,7 @@ func (dr DIDRouter) GetDIDByMethod(c *gin.Context) {
 	framework.Respond(c, resp, http.StatusOK)
 }
 
-type GetDIDsByMethodResponse struct {
+type ListDIDsByMethodResponse struct {
 	DIDs []didsdk.Document `json:"dids,omitempty"`
 }
 
@@ -232,24 +232,23 @@ type GetDIDsRequest struct {
 	Filter string `json:"filter,omitempty"`
 }
 
-// GetDIDsByMethod godoc
+// ListDIDsByMethod godoc
 //
-//	@Summary		Get DIDs
-//	@Description	Get DIDs by method. Checks for an optional "deleted=true" query parameter, which exclusively returns DIDs that have been "Soft Deleted".
+//	@Summary		List DIDs
+//	@Description	List DIDs by method. Checks for an optional "deleted=true" query parameter, which exclusively returns DIDs that have been "Soft Deleted".
 //	@Tags			DecentralizedIdentityAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			deleted	query		boolean			false	"When true, returns soft-deleted DIDs. Otherwise, returns DIDs that have not been soft-deleted. Default is false."
-//	@Param			request	body		GetDIDsRequest	true	"request body"
-//	@Success		200		{object}	GetDIDsByMethodResponse
+//	@Param			deleted	query		boolean	false	"When true, returns soft-deleted DIDs. Otherwise, returns DIDs that have not been soft-deleted. Default is false."
+//	@Success		200		{object}	ListDIDsByMethodResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/dids/{method} [get]
-func (dr DIDRouter) GetDIDsByMethod(c *gin.Context) {
+func (dr DIDRouter) ListDIDsByMethod(c *gin.Context) {
 	method := framework.GetParam(c, MethodParam)
 	deleted := framework.GetQueryValue(c, DeletedParam)
 	if method == nil {
-		errMsg := "get DIDs by method request missing method parameter"
+		errMsg := "list DIDs by method request missing method parameter"
 		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 		return
 	}
@@ -259,7 +258,7 @@ func (dr DIDRouter) GetDIDsByMethod(c *gin.Context) {
 		getIsDeleted = checkDeleted
 
 		if err != nil {
-			errMsg := "get DIDs by method request encountered a problem with the `deleted` query param"
+			errMsg := "list DIDs by method request encountered a problem with the `deleted` query param"
 			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 			return
 		}
@@ -267,15 +266,15 @@ func (dr DIDRouter) GetDIDsByMethod(c *gin.Context) {
 
 	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
 	// TODO(gabe) differentiate between internal errors and not found DIDs
-	getDIDsRequest := did.GetDIDsRequest{Method: didsdk.Method(*method), Deleted: getIsDeleted}
-	gotDIDs, err := dr.service.GetDIDsByMethod(c, getDIDsRequest)
+	getDIDsRequest := did.ListDIDsRequest{Method: didsdk.Method(*method), Deleted: getIsDeleted}
+	gotDIDs, err := dr.service.ListDIDsByMethod(c, getDIDsRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get DIDs for method: %s", *method)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
 
-	resp := GetDIDsByMethodResponse{DIDs: gotDIDs.DIDs}
+	resp := ListDIDsByMethodResponse{DIDs: gotDIDs.DIDs}
 	framework.Respond(c, resp, http.StatusOK)
 }
 
@@ -288,7 +287,7 @@ type ResolveDIDResponse struct {
 // SoftDeleteDIDByMethod godoc
 //
 //	@Description	When this is called with the correct did method and id it will flip the softDelete flag to true for the db entry.
-//	@Description	A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the GetDIDsByMethod call
+//	@Description	A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the ListDIDsByMethod call
 //	@Description	This facilitates a clean SSI-Service Admin UI but not leave any hanging VCs with inaccessible hanging DIDs.
 //	@Summary		Soft Delete DID
 //	@Description	Soft Deletes DID by method

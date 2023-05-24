@@ -99,7 +99,7 @@ func (s Storage) GetOperation(ctx context.Context, id string) (opstorage.StoredO
 	return stored, nil
 }
 
-func (s Storage) GetOperations(ctx context.Context, parent string, filter filtering.Filter) ([]opstorage.StoredOperation, error) {
+func (s Storage) ListOperations(ctx context.Context, parent string, filter filtering.Filter) ([]opstorage.StoredOperation, error) {
 	operations, err := s.db.ReadAll(ctx, namespace.FromParent(parent))
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not get all operations")

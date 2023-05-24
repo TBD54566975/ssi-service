@@ -103,13 +103,13 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "credential not found with id: bad")
 
 		// get by schema - no schema
-		bySchema, err := credService.GetCredentialsBySchema(context.Background(), credential.GetCredentialBySchemaRequest{Schema: ""})
+		bySchema, err := credService.ListCredentialsBySchema(context.Background(), credential.ListCredentialBySchemaRequest{Schema: ""})
 		assert.NoError(tt, err)
 		assert.Len(tt, bySchema.Credentials, 1)
 		assert.EqualValues(tt, cred.CredentialSchema, bySchema.Credentials[0].Credential.CredentialSchema)
 
 		// get by subject
-		bySubject, err := credService.GetCredentialsBySubject(context.Background(), credential.GetCredentialBySubjectRequest{Subject: subject})
+		bySubject, err := credService.ListCredentialsBySubject(context.Background(), credential.ListCredentialBySubjectRequest{Subject: subject})
 		assert.NoError(tt, err)
 		assert.Len(tt, bySubject.Credentials, 1)
 
@@ -117,7 +117,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Equal(tt, cred.CredentialSubject[credsdk.VerifiableCredentialIDProperty], bySubject.Credentials[0].Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
 
 		// get by issuer
-		byIssuer, err := credService.GetCredentialsByIssuer(context.Background(), credential.GetCredentialByIssuerRequest{Issuer: issuer})
+		byIssuer, err := credService.ListCredentialsByIssuer(context.Background(), credential.ListCredentialByIssuerRequest{Issuer: issuer})
 		assert.NoError(tt, err)
 		assert.Len(tt, byIssuer.Credentials, 1)
 
@@ -168,19 +168,19 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, createdCredWithSchema)
 
 		// get by issuer
-		byIssuer, err = credService.GetCredentialsByIssuer(context.Background(), credential.GetCredentialByIssuerRequest{Issuer: issuer})
+		byIssuer, err = credService.ListCredentialsByIssuer(context.Background(), credential.ListCredentialByIssuerRequest{Issuer: issuer})
 		assert.NoError(tt, err)
 		assert.Len(tt, byIssuer.Credentials, 2)
 
 		// make sure the schema and subject queries are consistent
-		bySchema, err = credService.GetCredentialsBySchema(context.Background(), credential.GetCredentialBySchemaRequest{Schema: ""})
+		bySchema, err = credService.ListCredentialsBySchema(context.Background(), credential.ListCredentialBySchemaRequest{Schema: ""})
 		assert.NoError(tt, err)
 		assert.Len(tt, bySchema.Credentials, 1)
 
 		assert.Equal(tt, cred.ID, bySchema.Credentials[0].ID)
 		assert.EqualValues(tt, cred.CredentialSchema, bySchema.Credentials[0].Credential.CredentialSchema)
 
-		bySubject, err = credService.GetCredentialsBySubject(context.Background(), credential.GetCredentialBySubjectRequest{Subject: subject})
+		bySubject, err = credService.ListCredentialsBySubject(context.Background(), credential.ListCredentialBySubjectRequest{Subject: subject})
 		assert.NoError(tt, err)
 		assert.Len(tt, bySubject.Credentials, 1)
 

@@ -268,16 +268,16 @@ func TestWebhookAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 
 		c = newRequestContext(w, req)
-		webhookRouter.GetWebhooks(c)
+		webhookRouter.ListWebhooks(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var resp router.GetWebhooksResponse
+		var resp router.ListWebhooksResponse
 		err := json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 		assert.Len(tt, resp.Webhooks, 1)
 
 		c = newRequestContext(w, req)
-		webhookRouter.GetWebhooks(c)
+		webhookRouter.ListWebhooks(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
 		deleteWebhookRequest := router.DeleteWebhookRequest{
@@ -298,10 +298,10 @@ func TestWebhookAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 
 		c = newRequestContext(w, req)
-		webhookRouter.GetWebhooks(c)
+		webhookRouter.ListWebhooks(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var respAfter router.GetWebhooksResponse
+		var respAfter router.ListWebhooksResponse
 		err = json.NewDecoder(w.Body).Decode(&respAfter)
 		assert.NoError(tt, err)
 		assert.Len(tt, respAfter.Webhooks, 0)
@@ -351,7 +351,7 @@ func TestWebhookAPI(t *testing.T) {
 
 		webhookService := testWebhookService(tt, db)
 
-		gotWebhooks, err := webhookService.GetWebhooks(context.Background())
+		gotWebhooks, err := webhookService.ListWebhooks(context.Background())
 		assert.NoError(tt, err)
 		assert.Len(tt, gotWebhooks.Webhooks, 0)
 
@@ -376,7 +376,7 @@ func TestWebhookAPI(t *testing.T) {
 		})
 		assert.NoError(tt, err)
 
-		gotWebhooks, err = webhookService.GetWebhooks(context.Background())
+		gotWebhooks, err = webhookService.ListWebhooks(context.Background())
 		assert.NoError(tt, err)
 		assert.Len(tt, gotWebhooks.Webhooks, 2)
 	})

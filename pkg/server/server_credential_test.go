@@ -169,10 +169,10 @@ func TestCredentialAPI(t *testing.T) {
 		// get credential by schema
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?schema=%s", createdSchema.ID), nil)
 		c = newRequestContextWithParams(w, req, map[string]string{"schema": createdSchema.ID})
-		credRouter.GetCredentials(c)
+		credRouter.ListCredentials(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var getCredsResp router.GetCredentialsResponse
+		var getCredsResp router.ListCredentialsResponse
 		err = json.NewDecoder(w.Body).Decode(&getCredsResp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getCredsResp)
@@ -343,10 +343,10 @@ func TestCredentialAPI(t *testing.T) {
 		// get credential by schema
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?schema=%s", createdSchema.ID), nil)
 		c = newRequestContext(w, req)
-		credRouter.GetCredentials(c)
+		credRouter.ListCredentials(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var getCredsResp router.GetCredentialsResponse
+		var getCredsResp router.ListCredentialsResponse
 		err = json.NewDecoder(w.Body).Decode(&getCredsResp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getCredsResp)
@@ -401,10 +401,10 @@ func TestCredentialAPI(t *testing.T) {
 		// get credential by issuer id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?issuer=%s", issuerDID.DID.ID), nil)
 		c = newRequestContext(w, req)
-		credRouter.GetCredentials(c)
+		credRouter.ListCredentials(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var getCredsResp router.GetCredentialsResponse
+		var getCredsResp router.ListCredentialsResponse
 		err = json.NewDecoder(w.Body).Decode(&getCredsResp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getCredsResp)
@@ -459,10 +459,10 @@ func TestCredentialAPI(t *testing.T) {
 		// get credential by subject id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credential?subject=%s", subjectID), nil)
 		c = newRequestContext(w, req)
-		credRouter.GetCredentials(c)
+		credRouter.ListCredentials(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var getCredsResp router.GetCredentialsResponse
+		var getCredsResp router.ListCredentialsResponse
 		err = json.NewDecoder(w.Body).Decode(&getCredsResp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getCredsResp)

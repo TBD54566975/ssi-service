@@ -144,14 +144,14 @@ func TestStorage(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// get both back as default
-		got, err := ds.GetDIDsDefault(context.Background(), didsdk.KeyMethod.String())
+		got, err := ds.ListDIDsDefault(context.Background(), didsdk.KeyMethod.String())
 		assert.NoError(tt, err)
 		assert.Len(tt, got, 2)
 		assert.Contains(tt, got, toStore1)
 		assert.Contains(tt, got, toStore2)
 
 		// get back as did
-		gotDIDs, err := ds.GetDIDs(context.Background(), didsdk.KeyMethod.String(), new(DefaultStoredDID))
+		gotDIDs, err := ds.ListDIDs(context.Background(), didsdk.KeyMethod.String(), new(DefaultStoredDID))
 		assert.NoError(tt, err)
 		assert.Len(tt, gotDIDs, 2)
 		assert.Contains(tt, gotDIDs, &toStore1)
@@ -188,7 +188,7 @@ func TestStorage(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// get both and verify there are two
-		gotDIDs, err := ds.GetDIDsDefault(context.Background(), didsdk.KeyMethod.String())
+		gotDIDs, err := ds.ListDIDsDefault(context.Background(), didsdk.KeyMethod.String())
 		assert.NoError(tt, err)
 		assert.Len(tt, gotDIDs, 2)
 
@@ -202,7 +202,7 @@ func TestStorage(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not get DID: did:key:test-1")
 
 		// get both and verify there is one
-		gotDIDs, err = ds.GetDIDsDefault(context.Background(), didsdk.KeyMethod.String())
+		gotDIDs, err = ds.ListDIDsDefault(context.Background(), didsdk.KeyMethod.String())
 		assert.NoError(tt, err)
 		assert.Len(tt, gotDIDs, 1)
 		assert.Contains(tt, gotDIDs, toStore2)

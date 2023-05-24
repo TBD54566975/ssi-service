@@ -230,11 +230,10 @@ func (s Service) verifySchemaJWT(ctx context.Context, token keyaccess.JWT) (*sch
 	return &parsedSchema, nil
 }
 
-func (s Service) GetSchemas(ctx context.Context) (*GetSchemasResponse, error) {
+func (s Service) ListSchemas(ctx context.Context) (*ListSchemasResponse, error) {
+	logrus.Debug("listing all schema")
 
-	logrus.Debug("getting all schema")
-
-	storedSchemas, err := s.storage.GetSchemas(ctx)
+	storedSchemas, err := s.storage.ListSchemas(ctx)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "error getting schemas")
 	}
@@ -247,7 +246,7 @@ func (s Service) GetSchemas(ctx context.Context) (*GetSchemasResponse, error) {
 		})
 	}
 
-	return &GetSchemasResponse{Schemas: schemas}, nil
+	return &ListSchemasResponse{Schemas: schemas}, nil
 }
 
 func (s Service) GetSchema(ctx context.Context, request GetSchemaRequest) (*GetSchemaResponse, error) {

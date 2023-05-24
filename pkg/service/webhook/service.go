@@ -126,15 +126,16 @@ func (s Service) GetWebhook(ctx context.Context, request GetWebhookRequest) (*Ge
 	return &GetWebhookResponse{Webhook: *webhook}, nil
 }
 
-func (s Service) GetWebhooks(ctx context.Context) (*GetWebhooksResponse, error) {
-	logrus.Debug("getting all webhooks")
+// ListWebhooks returns all webhooks in storage.
+func (s Service) ListWebhooks(ctx context.Context) (*ListWebhooksResponse, error) {
+	logrus.Debug("listing all webhooks")
 
-	webhooks, err := s.storage.GetWebhooks(ctx)
+	webhooks, err := s.storage.ListWebhooks(ctx)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "get webhooks")
+		return nil, sdkutil.LoggingErrorMsg(err, "list webhooks")
 	}
 
-	return &GetWebhooksResponse{Webhooks: webhooks}, nil
+	return &ListWebhooksResponse{Webhooks: webhooks}, nil
 }
 
 // DeleteWebhook deletes a webhook from the storage by removing a given DIDWebID from the list of URLs associated with the webhook.

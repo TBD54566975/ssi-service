@@ -61,7 +61,7 @@ type GetWebhookResponse struct {
 	Webhook Webhook `json:"webhook"`
 }
 
-type GetWebhooksResponse struct {
+type ListWebhooksResponse struct {
 	Webhooks []Webhook `json:"webhooks,omitempty"`
 }
 

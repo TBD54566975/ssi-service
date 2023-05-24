@@ -97,12 +97,12 @@ func TestOperationsAPI(t *testing.T) {
 		})
 	})
 
-	t.Run("GetOperations", func(tt *testing.T) {
+	t.Run("ListOperations", func(tt *testing.T) {
 		tt.Run("Returns empty when no operations stored", func(ttt *testing.T) {
 			s := setupTestDB(ttt)
 			opRouter := setupOperationsRouter(ttt, s)
 
-			request := router.GetOperationsRequest{
+			request := router.ListOperationsRequest{
 				Parent: "presentations/submissions",
 			}
 			value := newRequestValue(ttt, request)
@@ -110,10 +110,10 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			opRouter.GetOperations(c)
+			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
-			var resp router.GetOperationsResponse
+			var resp router.ListOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Empty(ttt, resp.Operations)
 		})
@@ -131,7 +131,7 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner2, holderDID2 := getSigner(ttt)
 			submissionOp2 := createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID2, holderSigner2)
 
-			request := router.GetOperationsRequest{
+			request := router.ListOperationsRequest{
 				Parent: "presentations/submissions",
 			}
 			value := newRequestValue(ttt, request)
@@ -139,10 +139,10 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			opRouter.GetOperations(c)
+			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
-			var resp router.GetOperationsResponse
+			var resp router.ListOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			ops := []router.Operation{submissionOp, submissionOp2}
 			diff := cmp.Diff(ops, resp.Operations,
@@ -166,7 +166,7 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(ttt)
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
-			request := router.GetOperationsRequest{
+			request := router.ListOperationsRequest{
 				Parent: "presentations/submissions",
 				Filter: "done = false",
 			}
@@ -175,10 +175,10 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			opRouter.GetOperations(c)
+			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
-			var resp router.GetOperationsResponse
+			var resp router.ListOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Len(ttt, resp.Operations, 1)
 			assert.False(ttt, resp.Operations[0].Done)
@@ -194,7 +194,7 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(ttt)
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
-			request := router.GetOperationsRequest{
+			request := router.ListOperationsRequest{
 				Parent: "presentations/submissions",
 				Filter: "done = true",
 			}
@@ -203,10 +203,10 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			opRouter.GetOperations(c)
+			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
-			var resp router.GetOperationsResponse
+			var resp router.ListOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Empty(ttt, resp.Operations)
 		})
@@ -221,7 +221,7 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(ttt)
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
-			request := router.GetOperationsRequest{
+			request := router.ListOperationsRequest{
 				Parent: "/presentations/other",
 			}
 			value := newRequestValue(ttt, request)
@@ -229,10 +229,10 @@ func TestOperationsAPI(t *testing.T) {
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
-			opRouter.GetOperations(c)
+			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
-			var resp router.GetOperationsResponse
+			var resp router.ListOperationsResponse
 			assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
 			assert.Empty(ttt, resp.Operations)
 		})

@@ -58,13 +58,13 @@ type GetKeyFromDIDResponse struct {
 	PublicKey gocrypto.PublicKey `json:"publicKey"`
 }
 
-type GetDIDsRequest struct {
+type ListDIDsRequest struct {
 	Method  didsdk.Method `json:"method" validate:"required"`
 	Deleted bool          `json:"deleted"`
 }
 
-// GetDIDsResponse is the JSON-serializable response for getting all DIDs for a given method
-type GetDIDsResponse struct {
+// ListDIDsResponse is the JSON-serializable response for getting all DIDs for a given method
+type ListDIDsResponse struct {
 	DIDs []didsdk.Document `json:"dids"`
 }
 

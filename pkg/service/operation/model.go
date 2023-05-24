@@ -16,16 +16,16 @@ type Operation struct {
 	Result Result `json:"result,omitempty"`
 }
 
-type GetOperationsRequest struct {
+type ListOperationsRequest struct {
 	Parent string `validate:"required"`
 	Filter filtering.Filter
 }
 
-func (r GetOperationsRequest) Validate() error {
+func (r ListOperationsRequest) Validate() error {
 	return util.NewValidator().Struct(r)
 }
 
-type GetOperationsResponse struct {
+type ListOperationsResponse struct {
 	Operations []Operation
 }
 
