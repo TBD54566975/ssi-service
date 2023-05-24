@@ -77,7 +77,7 @@ func (o OperationRouter) GetOperation(c *gin.Context) {
 	framework.Respond(c, routerModel(*op), http.StatusOK)
 }
 
-type GetOperationsRequest struct {
+type ListOperationsRequest struct {
 	// The name of the parent's resource. For example: "/presentation/submissions".
 	Parent string `json:"parent"`
 
@@ -86,7 +86,7 @@ type GetOperationsRequest struct {
 	Filter string `json:"filter"`
 }
 
-func (r GetOperationsRequest) GetFilter() string {
+func (r ListOperationsRequest) GetFilter() string {
 	return r.Filter
 }
 
@@ -98,8 +98,8 @@ const (
 
 const FilterCharacterLimit = 1024
 
-func (r GetOperationsRequest) toServiceRequest() (operation.GetOperationsRequest, error) {
-	var opReq operation.GetOperationsRequest
+func (r ListOperationsRequest) toServiceRequest() (operation.ListOperationsRequest, error) {
+	var opReq operation.ListOperationsRequest
 	opReq.Parent = r.Parent
 
 	declarations, err := filtering.NewDeclarations(
@@ -127,25 +127,25 @@ func (r GetOperationsRequest) toServiceRequest() (operation.GetOperationsRequest
 	return opReq, nil
 }
 
-type GetOperationsResponse struct {
+type ListOperationsResponse struct {
 	Operations []Operation `json:"operations"`
 }
 
-// GetOperations godoc
+// ListOperations godoc
 //
 //	@Summary		List operations
 //	@Description	List operations according to the request
 //	@Tags			OperationAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		GetOperationsRequest	true	"request body"
-//	@Success		200		{object}	GetOperationsResponse	"OK"
+//	@Param			request	body		ListOperationsRequest	true	"request body"
+//	@Success		200		{object}	ListOperationsResponse	"OK"
 //	@Failure		400		{string}	string					"Bad request"
 //	@Failure		500		{string}	string					"Internal server error"
 //	@Router			/v1/operations [get]
-func (o OperationRouter) GetOperations(c *gin.Context) {
-	var request GetOperationsRequest
-	invalidGetOperationsErr := "invalid get operations request"
+func (o OperationRouter) ListOperations(c *gin.Context) {
+	var request ListOperationsRequest
+	invalidGetOperationsErr := "invalid list operations request"
 	if err := framework.Decode(c.Request, &request); err != nil {
 		framework.LoggingRespondErrWithMsg(c, err, invalidGetOperationsErr, http.StatusBadRequest)
 		return
@@ -162,13 +162,13 @@ func (o OperationRouter) GetOperations(c *gin.Context) {
 		return
 	}
 
-	ops, err := o.service.GetOperations(c, req)
+	ops, err := o.service.ListOperations(c, req)
 	if err != nil {
 		errMsg := "getting operations from service"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
-	resp := GetOperationsResponse{Operations: make([]Operation, 0, len(ops.Operations))}
+	resp := ListOperationsResponse{Operations: make([]Operation, 0, len(ops.Operations))}
 	for _, op := range ops.Operations {
 		resp.Operations = append(resp.Operations, routerModel(op))
 	}

@@ -1178,13 +1178,6 @@ definitions:
       id:
         type: string
     type: object
-  pkg_server_router.GetApplicationsResponse:
-    properties:
-      applications:
-        items:
-          $ref: '#/definitions/manifest.CredentialApplication'
-        type: array
-    type: object
   pkg_server_router.GetCredentialResponse:
     properties:
       credential:
@@ -1215,40 +1208,10 @@ definitions:
         description: Whether the credential has been suspended.
         type: boolean
     type: object
-  pkg_server_router.GetCredentialsResponse:
-    properties:
-      credentials:
-        description: Array of credential containers.
-        items:
-          $ref: '#/definitions/github_com_tbd54566975_ssi-service_internal_credential.Container'
-        type: array
-    type: object
   pkg_server_router.GetDIDByMethodResponse:
     properties:
       did:
         $ref: '#/definitions/did.Document'
-    type: object
-  pkg_server_router.GetDIDMethodsResponse:
-    properties:
-      method:
-        items:
-          $ref: '#/definitions/did.Method'
-        type: array
-    type: object
-  pkg_server_router.GetDIDsByMethodResponse:
-    properties:
-      dids:
-        items:
-          $ref: '#/definitions/did.Document'
-        type: array
-    type: object
-  pkg_server_router.GetDIDsRequest:
-    properties:
-      filter:
-        description: |-
-          A standard filter expression conforming to https://google.aip.dev/160.
-          Not implemented yet.
-        type: string
     type: object
   pkg_server_router.GetHealthCheckResponse:
     properties:
@@ -1266,40 +1229,6 @@ definitions:
         type: string
       type:
         $ref: '#/definitions/crypto.KeyType'
-    type: object
-  pkg_server_router.GetManifestResponse:
-    properties:
-      credential_manifest:
-        $ref: '#/definitions/manifest.CredentialManifest'
-      id:
-        type: string
-      manifestJwt:
-        type: string
-    type: object
-  pkg_server_router.GetManifestsResponse:
-    properties:
-      manifests:
-        items:
-          $ref: '#/definitions/pkg_server_router.GetManifestResponse'
-        type: array
-    type: object
-  pkg_server_router.GetOperationsRequest:
-    properties:
-      filter:
-        description: |-
-          A standard filter expression conforming to https://google.aip.dev/160.
-          For example: `done = true`.
-        type: string
-      parent:
-        description: 'The name of the parent''s resource. For example: "/presentation/submissions".'
-        type: string
-    type: object
-  pkg_server_router.GetOperationsResponse:
-    properties:
-      operations:
-        items:
-          $ref: '#/definitions/pkg_server_router.Operation'
-        type: array
     type: object
   pkg_server_router.GetPresentationDefinitionResponse:
     properties:
@@ -1334,26 +1263,12 @@ definitions:
         description: this is an interface type to union Data Integrity and JWT style
           VCs
     type: object
-  pkg_server_router.GetResponsesResponse:
-    properties:
-      responses:
-        items:
-          $ref: '#/definitions/manifest.CredentialResponse'
-        type: array
-    type: object
   pkg_server_router.GetSchemaResponse:
     properties:
       schema:
         $ref: '#/definitions/schema.VCJSONSchema'
       schemaJwt:
         type: string
-    type: object
-  pkg_server_router.GetSchemasResponse:
-    properties:
-      schemas:
-        items:
-          $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
-        type: array
     type: object
   pkg_server_router.GetSubmissionResponse:
     properties:
@@ -1371,16 +1286,33 @@ definitions:
     required:
     - status
     type: object
-  pkg_server_router.GetWebhookResponse:
+  pkg_server_router.ListApplicationsResponse:
     properties:
-      webhook:
-        $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_webhook.Webhook'
-    type: object
-  pkg_server_router.GetWebhooksResponse:
-    properties:
-      webhooks:
+      applications:
         items:
-          $ref: '#/definitions/pkg_server_router.GetWebhookResponse'
+          $ref: '#/definitions/manifest.CredentialApplication'
+        type: array
+    type: object
+  pkg_server_router.ListCredentialsResponse:
+    properties:
+      credentials:
+        description: Array of credential containers.
+        items:
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_internal_credential.Container'
+        type: array
+    type: object
+  pkg_server_router.ListDIDMethodsResponse:
+    properties:
+      method:
+        items:
+          $ref: '#/definitions/did.Method'
+        type: array
+    type: object
+  pkg_server_router.ListDIDsByMethodResponse:
+    properties:
+      dids:
+        items:
+          $ref: '#/definitions/did.Document'
         type: array
     type: object
   pkg_server_router.ListDefinitionsRequest:
@@ -1399,6 +1331,54 @@ definitions:
           $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_issuance.Template'
         type: array
     type: object
+  pkg_server_router.ListManifestResponse:
+    properties:
+      credential_manifest:
+        $ref: '#/definitions/manifest.CredentialManifest'
+      id:
+        type: string
+      manifestJwt:
+        type: string
+    type: object
+  pkg_server_router.ListManifestsResponse:
+    properties:
+      manifests:
+        items:
+          $ref: '#/definitions/pkg_server_router.ListManifestResponse'
+        type: array
+    type: object
+  pkg_server_router.ListOperationsRequest:
+    properties:
+      filter:
+        description: |-
+          A standard filter expression conforming to https://google.aip.dev/160.
+          For example: `done = true`.
+        type: string
+      parent:
+        description: 'The name of the parent''s resource. For example: "/presentation/submissions".'
+        type: string
+    type: object
+  pkg_server_router.ListOperationsResponse:
+    properties:
+      operations:
+        items:
+          $ref: '#/definitions/pkg_server_router.Operation'
+        type: array
+    type: object
+  pkg_server_router.ListResponsesResponse:
+    properties:
+      responses:
+        items:
+          $ref: '#/definitions/manifest.CredentialResponse'
+        type: array
+    type: object
+  pkg_server_router.ListSchemasResponse:
+    properties:
+      schemas:
+        items:
+          $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
+        type: array
+    type: object
   pkg_server_router.ListSubmissionRequest:
     properties:
       filter:
@@ -1412,6 +1392,18 @@ definitions:
       submissions:
         items:
           $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Submission'
+        type: array
+    type: object
+  pkg_server_router.ListWebhookResponse:
+    properties:
+      webhook:
+        $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_webhook.Webhook'
+    type: object
+  pkg_server_router.ListWebhooksResponse:
+    properties:
+      webhooks:
+        items:
+          $ref: '#/definitions/pkg_server_router.ListWebhookResponse'
         type: array
     type: object
   pkg_server_router.Operation:
@@ -1875,7 +1867,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetCredentialsResponse'
+            $ref: '#/definitions/pkg_server_router.ListCredentialsResponse'
         "400":
           description: Bad request
           schema:
@@ -1884,7 +1876,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Get Credentials
+      summary: List Credentials
       tags:
       - CredentialAPI
     put:
@@ -2099,22 +2091,22 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get supported DID method
+      description: Get the list of supported DID methods
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDMethodsResponse'
-      summary: Get DID Methods
+            $ref: '#/definitions/pkg_server_router.ListDIDMethodsResponse'
+      summary: List DID Methods
       tags:
       - DecentralizedIdentityAPI
   /v1/dids/{method}:
     get:
       consumes:
       - application/json
-      description: Get DIDs by method. Checks for an optional "deleted=true" query
+      description: List DIDs by method. Checks for an optional "deleted=true" query
         parameter, which exclusively returns DIDs that have been "Soft Deleted".
       parameters:
       - description: When true, returns soft-deleted DIDs. Otherwise, returns DIDs
@@ -2122,19 +2114,13 @@ paths:
         in: query
         name: deleted
         type: boolean
-      - description: request body
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/pkg_server_router.GetDIDsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetDIDsByMethodResponse'
+            $ref: '#/definitions/pkg_server_router.ListDIDsByMethodResponse'
         "400":
           description: Bad request
           schema:
@@ -2143,7 +2129,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Get DIDs
+      summary: List DIDs
       tags:
       - DecentralizedIdentityAPI
     put:
@@ -2190,7 +2176,7 @@ paths:
       - application/json
       description: |-
         When this is called with the correct did method and id it will flip the softDelete flag to true for the db entry.
-        A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the GetDIDsByMethod call
+        A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the ListDIDsByMethod call
         This facilitates a clean SSI-Service Admin UI but not leave any hanging VCs with inaccessible hanging DIDs.
         Soft Deletes DID by method
       parameters:
@@ -2473,7 +2459,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetManifestsResponse'
+            $ref: '#/definitions/pkg_server_router.ListManifestsResponse'
         "400":
           description: Bad request
           schema:
@@ -2482,7 +2468,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Get manifests
+      summary: List manifests
       tags:
       - ManifestAPI
     put:
@@ -2559,7 +2545,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetManifestResponse'
+            $ref: '#/definitions/pkg_server_router.ListManifestResponse'
         "400":
           description: Bad request
           schema:
@@ -2571,19 +2557,19 @@ paths:
     get:
       consumes:
       - application/json
-      description: Gets all the existing applications.
+      description: List all the existing applications.
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetApplicationsResponse'
+            $ref: '#/definitions/pkg_server_router.ListApplicationsResponse'
         "500":
           description: Internal server error
           schema:
             type: string
-      summary: Get applications
+      summary: List applications
       tags:
       - ApplicationAPI
     put:
@@ -2704,20 +2690,19 @@ paths:
     get:
       consumes:
       - application/json
-      description: Checks for the presence of a query parameter and calls the associated
-        filtered get method
+      description: Lists all responses
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetResponsesResponse'
+            $ref: '#/definitions/pkg_server_router.ListResponsesResponse'
         "500":
           description: Internal server error
           schema:
             type: string
-      summary: Get responses
+      summary: List responses
       tags:
       - ResponseAPI
   /v1/manifests/responses/{id}:
@@ -2788,14 +2773,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.GetOperationsRequest'
+          $ref: '#/definitions/pkg_server_router.ListOperationsRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetOperationsResponse'
+            $ref: '#/definitions/pkg_server_router.ListOperationsResponse'
         "400":
           description: Bad request
           schema:
@@ -3183,19 +3168,19 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get schemas
+      description: List schemas
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetSchemasResponse'
+            $ref: '#/definitions/pkg_server_router.ListSchemasResponse'
         "500":
           description: Internal server error
           schema:
             type: string
-      summary: Get Schemas
+      summary: List Schemas
       tags:
       - SchemaAPI
     put:
@@ -3310,19 +3295,19 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get webhooks
+      description: Lists all webhooks
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetWebhooksResponse'
+            $ref: '#/definitions/pkg_server_router.ListWebhooksResponse'
         "500":
           description: Internal server error
           schema:
             type: string
-      summary: Get Webhooks
+      summary: List Webhooks
       tags:
       - WebhookAPI
     put:
@@ -3371,7 +3356,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.GetWebhookResponse'
+            $ref: '#/definitions/pkg_server_router.ListWebhookResponse'
         "400":
           description: Bad request
           schema:

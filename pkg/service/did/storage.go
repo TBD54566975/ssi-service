@@ -115,10 +115,10 @@ func (ds *Storage) GetDIDDefault(ctx context.Context, id string) (*DefaultStored
 	return outType, nil
 }
 
-// GetDIDs attempts to get all DIDs for a given method. It will return those it can even if it has trouble with some.
+// ListDIDs attempts to get all DIDs for a given method. It will return those it can even if it has trouble with some.
 // The out parameter must be a pointer to a struct for a type that implement the StoredDID interface.
 // The result is a slice of the type of the out parameter (an array of pointers to the type of the out parameter).)
-func (ds *Storage) GetDIDs(ctx context.Context, method string, outType StoredDID) ([]StoredDID, error) {
+func (ds *Storage) ListDIDs(ctx context.Context, method string, outType StoredDID) ([]StoredDID, error) {
 	if err := validateOut(outType); err != nil {
 		return nil, errors.Wrap(err, "validating the out type")
 	}
@@ -146,8 +146,8 @@ func (ds *Storage) GetDIDs(ctx context.Context, method string, outType StoredDID
 	return out, nil
 }
 
-func (ds *Storage) GetDIDsDefault(ctx context.Context, method string) ([]DefaultStoredDID, error) {
-	gotDIDs, err := ds.GetDIDs(ctx, method, new(DefaultStoredDID))
+func (ds *Storage) ListDIDsDefault(ctx context.Context, method string) ([]DefaultStoredDID, error) {
+	gotDIDs, err := ds.ListDIDs(ctx, method, new(DefaultStoredDID))
 	if err != nil {
 		return nil, err
 	}

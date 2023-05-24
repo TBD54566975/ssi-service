@@ -48,7 +48,7 @@ type GetManifestResponse struct {
 	ManifestJWT keyaccess.JWT                  `json:"manifestJwt,omitempty"`
 }
 
-type GetManifestsResponse struct {
+type ListManifestsResponse struct {
 	Manifests []GetManifestResponse `json:"manifests,omitempty"`
 }
 
@@ -83,7 +83,7 @@ type GetApplicationResponse struct {
 	Application manifestsdk.CredentialApplication `json:"application"`
 }
 
-type GetApplicationsResponse struct {
+type ListApplicationsResponse struct {
 	Applications []manifestsdk.CredentialApplication `json:"applications,omitempty"`
 }
 
@@ -115,7 +115,7 @@ type GetResponseResponse struct {
 	ResponseJWT keyaccess.JWT
 }
 
-type GetResponsesResponse struct {
+type ListResponsesResponse struct {
 	Responses []manifestsdk.CredentialResponse `json:"responses,omitempty"`
 }
 

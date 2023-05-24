@@ -32,10 +32,10 @@ func TestDIDAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
-		didService.GetDIDMethods(c)
+		didService.ListDIDMethods(c)
 		assert.Equal(tt, http.StatusOK, w.Result().StatusCode)
 
-		var resp router.GetDIDMethodsResponse
+		var resp router.ListDIDMethodsResponse
 		err := json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 
@@ -361,10 +361,10 @@ func TestDIDAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key", requestReader)
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, params)
-		didService.GetDIDsByMethod(c)
+		didService.ListDIDsByMethod(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var gotDIDsResponse router.GetDIDsByMethodResponse
+		var gotDIDsResponse router.ListDIDsByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&gotDIDsResponse)
 		assert.NoError(tt, err)
 		assert.Len(tt, gotDIDsResponse.DIDs, 1)
@@ -415,10 +415,10 @@ func TestDIDAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key", requestReader)
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, params)
-		didService.GetDIDsByMethod(c)
+		didService.ListDIDsByMethod(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var gotDIDsResponseAfterDelete router.GetDIDsByMethodResponse
+		var gotDIDsResponseAfterDelete router.ListDIDsByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&gotDIDsResponseAfterDelete)
 		assert.NoError(tt, err)
 		assert.Len(tt, gotDIDsResponseAfterDelete.DIDs, 0)
@@ -427,10 +427,10 @@ func TestDIDAPI(t *testing.T) {
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key?deleted=true", requestReader)
 		w = httptest.NewRecorder()
 		c = newRequestContextWithParams(w, req, params)
-		didService.GetDIDsByMethod(c)
+		didService.ListDIDsByMethod(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var gotDeletedDIDsResponseAfterDelete router.GetDIDsByMethodResponse
+		var gotDeletedDIDsResponseAfterDelete router.ListDIDsByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&gotDeletedDIDsResponseAfterDelete)
 		assert.NoError(tt, err)
 		assert.Len(tt, gotDeletedDIDsResponseAfterDelete.DIDs, 1)
@@ -451,7 +451,7 @@ func TestDIDAPI(t *testing.T) {
 			"method": "bad",
 		}
 		c := newRequestContextWithParams(w, req, badParams)
-		didService.GetDIDsByMethod(c)
+		didService.ListDIDsByMethod(c)
 		assert.Contains(tt, w.Body.String(), "could not get DIDs for method: bad")
 
 		w = httptest.NewRecorder()
@@ -459,7 +459,7 @@ func TestDIDAPI(t *testing.T) {
 		// good method
 		goodParams := map[string]string{"method": "key"}
 		c = newRequestContextWithParams(w, req, goodParams)
-		didService.GetDIDsByMethod(c)
+		didService.ListDIDsByMethod(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 		var gotDIDs router.GetDIDByMethodResponse
 		err := json.NewDecoder(w.Body).Decode(&gotDIDs)
@@ -503,10 +503,10 @@ func TestDIDAPI(t *testing.T) {
 		// get all dids for method
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key", requestReader)
 		c = newRequestContextWithParams(w, req, params)
-		didService.GetDIDsByMethod(c)
+		didService.ListDIDsByMethod(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var gotDIDsResponse router.GetDIDsByMethodResponse
+		var gotDIDsResponse router.ListDIDsByMethodResponse
 		err = json.NewDecoder(w.Body).Decode(&gotDIDsResponse)
 		assert.NoError(tt, err)
 

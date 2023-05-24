@@ -172,7 +172,7 @@ func TestManifestAPI(t *testing.T) {
 		manifestRouter.GetManifest(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var getManifestResp router.GetManifestResponse
+		var getManifestResp router.ListManifestResponse
 		err = json.NewDecoder(w.Body).Decode(&getManifestResp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getManifestResp)
@@ -230,10 +230,10 @@ func TestManifestAPI(t *testing.T) {
 		// get manifest by id
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests", nil)
 		c = newRequestContext(w, req)
-		manifestRouter.GetManifests(c)
+		manifestRouter.ListManifests(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var getManifestsResp router.GetManifestsResponse
+		var getManifestsResp router.ListManifestsResponse
 		err = json.NewDecoder(w.Body).Decode(&getManifestsResp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getManifestsResp)
@@ -920,10 +920,10 @@ func TestManifestAPI(t *testing.T) {
 		// get all responses
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/responses", nil)
 		c = newRequestContext(w, req)
-		manifestRouter.GetResponses(c)
+		manifestRouter.ListResponses(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var getResponsesResp router.GetResponsesResponse
+		var getResponsesResp router.ListResponsesResponse
 		err = json.NewDecoder(w.Body).Decode(&getResponsesResp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getResponsesResp)
@@ -933,10 +933,10 @@ func TestManifestAPI(t *testing.T) {
 		// get all applications
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		c = newRequestContext(w, req)
-		manifestRouter.GetApplications(c)
+		manifestRouter.ListApplications(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var getApplicationsResp router.GetApplicationsResponse
+		var getApplicationsResp router.ListApplicationsResponse
 		err = json.NewDecoder(w.Body).Decode(&getApplicationsResp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getApplicationsResp)
@@ -1053,10 +1053,10 @@ func TestManifestAPI(t *testing.T) {
 		// get all applications
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/applications", applicationRequestValue)
 		c = newRequestContext(w, req)
-		manifestRouter.GetApplications(c)
+		manifestRouter.ListApplications(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var getApplicationsResp router.GetApplicationsResponse
+		var getApplicationsResp router.ListApplicationsResponse
 		err = json.NewDecoder(w.Body).Decode(&getApplicationsResp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getApplicationsResp)

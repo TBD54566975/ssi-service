@@ -137,7 +137,7 @@ type ListIssuanceTemplatesResponse struct {
 func (ir IssuanceRouter) ListIssuanceTemplates(c *gin.Context) {
 	gotManifests, err := ir.service.ListIssuanceTemplates(c, &issuance.ListIssuanceTemplatesRequest{})
 	if err != nil {
-		errMsg := "could not get templates"
+		errMsg := "could not list templates"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
 		return
 	}

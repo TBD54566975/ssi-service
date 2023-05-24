@@ -40,7 +40,7 @@ type VerifySchemaResponse struct {
 	Reason   string `json:"reason,omitempty"`
 }
 
-type GetSchemasResponse struct {
+type ListSchemasResponse struct {
 	Schemas []GetSchemaResponse `json:"schemas,omitempty"`
 }
 

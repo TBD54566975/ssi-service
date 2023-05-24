@@ -218,11 +218,11 @@ func (s Service) GetManifest(ctx context.Context, request model.GetManifestReque
 	return &response, nil
 }
 
-func (s Service) GetManifests(ctx context.Context) (*model.GetManifestsResponse, error) {
-	gotManifests, err := s.storage.GetManifests(ctx)
+func (s Service) ListManifests(ctx context.Context) (*model.ListManifestsResponse, error) {
+	gotManifests, err := s.storage.ListManifests(ctx)
 
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not get manifests(s)")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not list manifests(s)")
 	}
 
 	manifests := make([]model.GetManifestResponse, 0, len(gotManifests))
@@ -230,7 +230,7 @@ func (s Service) GetManifests(ctx context.Context) (*model.GetManifestsResponse,
 		response := model.GetManifestResponse{Manifest: m.Manifest, ManifestJWT: m.ManifestJWT}
 		manifests = append(manifests, response)
 	}
-	response := model.GetManifestsResponse{Manifests: manifests}
+	response := model.ListManifestsResponse{Manifests: manifests}
 	return &response, nil
 }
 
@@ -459,12 +459,12 @@ func (s Service) GetApplication(ctx context.Context, request model.GetApplicatio
 	return &response, nil
 }
 
-func (s Service) GetApplications(ctx context.Context) (*model.GetApplicationsResponse, error) {
-	logrus.Debugf("getting application(s)")
+func (s Service) ListApplications(ctx context.Context) (*model.ListApplicationsResponse, error) {
+	logrus.Debugf("listing application(s)")
 
-	gotApps, err := s.storage.GetApplications(ctx)
+	gotApps, err := s.storage.ListApplications(ctx)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not get application(s)")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not list application(s)")
 	}
 
 	apps := make([]manifest.CredentialApplication, 0, len(gotApps))
@@ -472,7 +472,7 @@ func (s Service) GetApplications(ctx context.Context) (*model.GetApplicationsRes
 		apps = append(apps, cred.Application)
 	}
 
-	response := model.GetApplicationsResponse{Applications: apps}
+	response := model.ListApplicationsResponse{Applications: apps}
 	return &response, nil
 }
 
@@ -502,12 +502,12 @@ func (s Service) GetResponse(ctx context.Context, request model.GetResponseReque
 	return &response, nil
 }
 
-func (s Service) GetResponses(ctx context.Context) (*model.GetResponsesResponse, error) {
-	logrus.Debugf("getting response(s)")
+func (s Service) ListResponses(ctx context.Context) (*model.ListResponsesResponse, error) {
+	logrus.Debugf("listing responses")
 
-	gotResponses, err := s.storage.GetResponses(ctx)
+	gotResponses, err := s.storage.ListResponses(ctx)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not get response(s)")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not list responses")
 	}
 
 	responses := make([]manifest.CredentialResponse, 0, len(gotResponses))
@@ -515,7 +515,7 @@ func (s Service) GetResponses(ctx context.Context) (*model.GetResponsesResponse,
 		responses = append(responses, res.Response)
 	}
 
-	response := model.GetResponsesResponse{Responses: responses}
+	response := model.ListResponsesResponse{Responses: responses}
 	return &response, nil
 }
 

@@ -9,6 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
+
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -72,8 +73,8 @@ func (ss *Storage) GetSchema(ctx context.Context, id string) (*StoredSchema, err
 	return &stored, nil
 }
 
-// GetSchemas attempts to get all stored schemas. It will return those it can even if it has trouble with some.
-func (ss *Storage) GetSchemas(ctx context.Context) ([]StoredSchema, error) {
+// ListSchemas attempts to get all stored schemas. It will return those it can even if it has trouble with some.
+func (ss *Storage) ListSchemas(ctx context.Context) ([]StoredSchema, error) {
 	gotSchemas, err := ss.db.ReadAll(ctx, namespace)
 	if err != nil {
 		errMsg := "could not get all schemas"
