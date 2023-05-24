@@ -57,6 +57,14 @@ type ServiceStorage interface {
 	Read(ctx context.Context, namespace, key string) ([]byte, error)
 	Exists(ctx context.Context, namespace, key string) (bool, error)
 	ReadAll(ctx context.Context, namespace string) (map[string][]byte, error)
+
+	// ReadPage returns a page of elements. When pageSize == -1, all elements are returned. Results are returned
+	// starting from the pageToken. pageToken may be empty.
+	// Note that pageSize is a hint and may not be enforced by the DB implementation. This is intentional, as some DBs
+	// do not have a way to enforce this (e.g. Redis), and the DB may decide to return everything in some cases. A more
+	// detailed explanation is available at https://redis.io/commands/scan/, section
+	// "Why SCAN may return all the items of an aggregate data type in a single call?".
+	ReadPage(ctx context.Context, namespace string, pageToken string, pageSize int) (results map[string][]byte, nextPageToken string, err error)
 	ReadPrefix(ctx context.Context, namespace, prefix string) (map[string][]byte, error)
 	ReadAllKeys(ctx context.Context, namespace string) ([]string, error)
 	Delete(ctx context.Context, namespace, key string) error

@@ -141,6 +141,79 @@ func TestDB(t *testing.T) {
 	}
 }
 
+func TestDBWriteMany(t *testing.T) {
+	for _, dbImpl := range getDBImplementations(t) {
+		db := dbImpl
+
+		namespace := "blockchains"
+		dummyData := []byte("dummy")
+		var ns []string
+		var keys []string
+		var datas [][]byte
+		for i := 0; i < 200; i++ {
+			ns = append(ns, namespace)
+			keys = append(keys, fmt.Sprintf("key-%d", i))
+			datas = append(datas, dummyData)
+		}
+		err := db.WriteMany(context.Background(), ns, keys, datas)
+		assert.NoError(t, err)
+
+		results, err := db.ReadAll(context.Background(), namespace)
+		assert.NoError(t, err)
+		assert.Len(t, results, 200)
+	}
+}
+func TestDBReadPage(t *testing.T) {
+	for _, dbImpl := range getDBImplementations(t) {
+		db := dbImpl
+
+		namespace := "blockchains"
+
+		dummyData := []byte("dummy")
+		err := db.Write(context.Background(), namespace, "bitcoin-testnet", dummyData)
+		assert.NoError(t, err)
+
+		err = db.Write(context.Background(), namespace, "bitcoin-mainnet", dummyData)
+		assert.NoError(t, err)
+
+		err = db.Write(context.Background(), namespace, "tezos-testnet", dummyData)
+		assert.NoError(t, err)
+
+		t.Run(string(db.Type())+" returns all elements when page size is -1", func(t *testing.T) {
+			results, nextToken, err := db.ReadPage(context.Background(), namespace, "", -1)
+			assert.NoError(t, err)
+			assert.Len(t, results, 3)
+			assert.Empty(t, nextToken)
+		})
+
+		t.Run(string(db.Type())+" returns pageSize elements", func(t *testing.T) {
+			if db.Type() == Redis {
+				t.Skip("redis can return more than COUNT elements")
+			}
+			results, nextToken, err := db.ReadPage(context.Background(), namespace, "", 2)
+			assert.NoError(t, err)
+			assert.Len(t, results, 2)
+			assert.NotEmpty(t, nextToken)
+		})
+
+		t.Run(string(db.Type())+" pagination works", func(t *testing.T) {
+			if db.Type() == Redis {
+				t.Skip("miniredis doesn't support scanning with count")
+			}
+
+			results, nextToken, err := db.ReadPage(context.Background(), namespace, "", 2)
+			assert.NoError(t, err)
+			assert.Len(t, results, 2)
+			assert.NotEmpty(t, nextToken)
+
+			results, nextToken, err = db.ReadPage(context.Background(), namespace, nextToken, 2)
+			assert.NoError(t, err)
+			assert.Len(t, results, 1)
+			assert.Empty(t, nextToken)
+		})
+	}
+}
+
 func TestDBPrefixAndKeys(t *testing.T) {
 	for _, dbImpl := range getDBImplementations(t) {
 		db := dbImpl
