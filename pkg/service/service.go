@@ -159,6 +159,6 @@ func (s *SSIService) GetServices() []framework.Service {
 	}
 }
 
-func (service *SSIService) GetStorage() storage.ServiceStorage {
-	return service.storage
+func (s *SSIService) GetStorage() storage.ServiceStorage {
+	return s.storage
 }
