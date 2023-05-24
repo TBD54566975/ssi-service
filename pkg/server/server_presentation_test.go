@@ -427,7 +427,7 @@ func TestPresentationAPI(t *testing.T) {
 			pRouter, _ := setupPresentationRouter(ttt, s)
 
 			value := newRequestValue(ttt, nil)
-			query := url.QueryEscape("im a baaad filter that's trying to break a lot of stuff")
+			query := url.QueryEscape("status=\"im a baaad filter that's trying to break a lot of stuff\"")
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions?status=%s", query), value)
 			w := httptest.NewRecorder()
 
