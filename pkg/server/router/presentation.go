@@ -67,7 +67,7 @@ type CreatePresentationDefinitionResponse struct {
 //	@Success		201		{object}	CreatePresentationDefinitionResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
-//	@Router			/v1/presentation/definition [put]
+//	@Router			/v1/presentations/definitions [put]
 func (pr PresentationRouter) CreateDefinition(c *gin.Context) {
 	var request CreatePresentationDefinitionRequest
 	errMsg := "Invalid Presentation Definition Request"
@@ -145,7 +145,7 @@ type GetPresentationDefinitionResponse struct {
 //	@Param			id	path		string	true	"ID"
 //	@Success		200	{object}	GetPresentationDefinitionResponse
 //	@Failure		400	{string}	string	"Bad request"
-//	@Router			/v1/presentation/definition/{id} [get]
+//	@Router			/v1/presentations/definitions/{id} [get]
 func (pr PresentationRouter) GetDefinition(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
@@ -205,7 +205,7 @@ func (pr PresentationRouter) ListDefinitions(c *gin.Context) {
 //	@Success		204	{string}	string	"No Content"
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
-//	@Router			/v1/presentation/definition/{id} [delete]
+//	@Router			/v1/presentations/definitions/{id} [delete]
 func (pr PresentationRouter) DeleteDefinition(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
@@ -506,7 +506,7 @@ type GetRequestResponse struct {
 //	@Success		201		{object}	CreateRequestResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
-//	@Router			/v1/presentation/request [put]
+//	@Router			/v1/presentations/requests [put]
 func (pr PresentationRouter) CreateRequest(c *gin.Context) {
 	var request CreateRequestRequest
 	errMsg := "Invalid Presentation Request Request"
@@ -565,7 +565,7 @@ func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequ
 //	@Param			id	path		string	true	"ID"
 //	@Success		200	{object}	GetRequestResponse
 //	@Failure		400	{string}	string	"Bad request"
-//	@Router			/v1/presentation/request/{id} [get]
+//	@Router			/v1/presentations/requests/{id} [get]
 func (pr PresentationRouter) GetRequest(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
@@ -592,7 +592,7 @@ func (pr PresentationRouter) GetRequest(c *gin.Context) {
 //	@Success		204	{string}	string	"No Content"
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
-//	@Router			/v1/presentation/requests/{id} [delete]
+//	@Router			/v1/presentations/requests/{id} [delete]
 func (pr PresentationRouter) DeleteRequest(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
