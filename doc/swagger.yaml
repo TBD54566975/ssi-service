@@ -2858,7 +2858,36 @@ paths:
       summary: Cancel an ongoing operation
       tags:
       - OperationAPI
-  /v1/presentation/definition:
+  /v1/presentations/definitions:
+    get:
+      consumes:
+      - application/json
+      description: Lists all the existing presentation definitions
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.ListDefinitionsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.ListDefinitionsResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: List Presentation Definitions
+      tags:
+      - PresentationDefinitionAPI
     put:
       consumes:
       - application/json
@@ -2888,7 +2917,7 @@ paths:
       summary: Create PresentationDefinition
       tags:
       - PresentationDefinitionAPI
-  /v1/presentation/definition/{id}:
+  /v1/presentations/definitions/{id}:
     delete:
       consumes:
       - application/json
@@ -2941,7 +2970,7 @@ paths:
       summary: Get PresentationDefinition
       tags:
       - PresentationDefinitionAPI
-  /v1/presentation/request:
+  /v1/presentations/requests:
     put:
       consumes:
       - application/json
@@ -2971,32 +3000,7 @@ paths:
       summary: Create Presentation Request
       tags:
       - PresentationRequestAPI
-  /v1/presentation/request/{id}:
-    get:
-      consumes:
-      - application/json
-      description: Get a presentation request by its ID
-      parameters:
-      - description: ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/pkg_server_router.GetRequestResponse'
-        "400":
-          description: Bad request
-          schema:
-            type: string
-      summary: Get Presentation Request
-      tags:
-      - PresentationRequestAPI
-  /v1/presentation/requests/{id}:
+  /v1/presentations/requests/{id}:
     delete:
       consumes:
       - application/json
@@ -3025,36 +3029,30 @@ paths:
       summary: Delete PresentationRequest
       tags:
       - PresentationRequestAPI
-  /v1/presentations/definitions:
     get:
       consumes:
       - application/json
-      description: Lists all the existing presentation definitions
+      description: Get a presentation request by its ID
       parameters:
-      - description: request body
-        in: body
-        name: request
+      - description: ID
+        in: path
+        name: id
         required: true
-        schema:
-          $ref: '#/definitions/pkg_server_router.ListDefinitionsRequest'
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/pkg_server_router.ListDefinitionsResponse'
+            $ref: '#/definitions/pkg_server_router.GetRequestResponse'
         "400":
           description: Bad request
           schema:
             type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: List Presentation Definitions
+      summary: Get Presentation Request
       tags:
-      - PresentationDefinitionAPI
+      - PresentationRequestAPI
   /v1/presentations/submissions:
     get:
       consumes:
