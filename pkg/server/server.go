@@ -5,17 +5,14 @@ package server
 import (
 	"os"
 
-	swaggerfiles "github.com/swaggo/files"
-	ginswagger "github.com/swaggo/gin-swagger"
-
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginswagger "github.com/swaggo/gin-swagger"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
-	_ "github.com/tbd54566975/ssi-service/doc"
-	doc "github.com/tbd54566975/ssi-service/doc"
-
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/doc"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/middleware"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
