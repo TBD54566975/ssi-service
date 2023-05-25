@@ -2759,10 +2759,10 @@ paths:
         in: query
         name: parent
         type: string
-      - description: 'A boolean value filtering for whether an operation is completed
-          or not. For example: `?done=true`'
+      - description: 'A standard filter expression conforming to https://google.aip.dev/160.
+          For example: `?filter=done='
         in: query
-        name: done
+        name: filter
         type: string
       produces:
       - application/json
@@ -3036,7 +3036,7 @@ paths:
         field follows the syntax described in https://google.aip.dev/160.
       parameters:
       - description: 'A standard filter expression conforming to https://google.aip.dev/160.
-          For example: `?status=done`'
+          For example: `?filter=status='
         in: query
         name: filter
         type: string

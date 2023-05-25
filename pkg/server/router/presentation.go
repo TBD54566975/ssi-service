@@ -21,10 +21,6 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 )
 
-const (
-	StatusParam string = "status"
-)
-
 type PresentationRouter struct {
 	service *presentation.Service
 }
@@ -355,24 +351,23 @@ type ListSubmissionResponse struct {
 //	@Tags			PresentationSubmissionAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			filter	query		string	false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?status=done`"
+//	@Param			filter	query		string	false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=status="done"`"
 //	@Success		200		{object}	ListSubmissionResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/presentations/submissions [get]
 func (pr PresentationRouter) ListSubmissions(c *gin.Context) {
-	statusParam := framework.GetQueryValue(c, StatusParam)
+	filterParam := framework.GetQueryValue(c, FilterParam)
 	var request listSubmissionRequest
-	if statusParam != nil {
-		unescaped, err := url.QueryUnescape(*statusParam)
+	if filterParam != nil {
+		unescaped, err := url.QueryUnescape(*filterParam)
 		if err != nil {
 			errMsg := "failed un-escaping filter"
 			framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
 			return
 		}
 		// encode the query param as a status filter
-		filter := fmt.Sprintf("status=\"%s\"", unescaped)
-		request = listSubmissionRequest{Filter: filter}
+		request = listSubmissionRequest{Filter: unescaped}
 	}
 
 	const StatusIdentifier = "status"

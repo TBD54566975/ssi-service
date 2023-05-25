@@ -17,7 +17,7 @@ import (
 
 const (
 	ParentParam string = "parent"
-	DoneParam   string = "done"
+	FilterParam string = "filter"
 )
 
 type OperationRouter struct {
@@ -145,14 +145,14 @@ type ListOperationsResponse struct {
 //	@Accept			json
 //	@Produce		json
 //	@Param			parent	query		string					false	"The name of the parent's resource. For example: `parent?=/presentation/submissions`"
-//	@Param			done	query		string					false	"A boolean value filtering for whether an operation is completed or not. For example: `?done=true`"
+//	@Param			filter	query		string					false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=done="true"`"
 //	@Success		200		{object}	ListOperationsResponse	"OK"
 //	@Failure		400		{string}	string					"Bad request"
 //	@Failure		500		{string}	string					"Internal server error"
 //	@Router			/v1/operations [get]
 func (o OperationRouter) ListOperations(c *gin.Context) {
 	parentParam := framework.GetParam(c, ParentParam)
-	doneParam := framework.GetParam(c, DoneParam)
+	filterParam := framework.GetParam(c, FilterParam)
 	var request listOperationsRequest
 	if parentParam != nil {
 		unescaped, err := url.QueryUnescape(*parentParam)
@@ -163,9 +163,16 @@ func (o OperationRouter) ListOperations(c *gin.Context) {
 		}
 		request.Parent = unescaped
 	}
-	if doneParam != nil {
-		request.Filter = fmt.Sprintf("%s = %s", DoneIdentifier, *doneParam)
+	if filterParam != nil {
+		unescaped, err := url.QueryUnescape(*filterParam)
+		if err != nil {
+			errMsg := "failed un-escaping filter param"
+			framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+			return
+		}
+		request.Filter = unescaped
 	}
+
 	invalidGetOperationsErr := "invalid list operations request"
 	if err := framework.ValidateRequest(request); err != nil {
 		framework.LoggingRespondErrWithMsg(c, err, invalidGetOperationsErr, http.StatusBadRequest)

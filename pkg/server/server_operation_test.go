@@ -159,8 +159,8 @@ func TestOperationsAPI(t *testing.T) {
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			queryParent := url.QueryEscape("presentations/submissions")
-			queryDone := url.QueryEscape("false")
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/operations?parent=%s&done=%s", queryParent, queryDone), nil)
+			queryDone := url.QueryEscape("done=false")
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/operations?parent=%s&filter=%s", queryParent, queryDone), nil)
 			w := httptest.NewRecorder()
 
 			c := newRequestContextWithParams(w, req, map[string]string{"parent": queryParent, "done": queryDone})
@@ -184,11 +184,12 @@ func TestOperationsAPI(t *testing.T) {
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			queryParent := url.QueryEscape("presentations/submissions")
-			queryDone := url.QueryEscape("true")
-			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/operations?parent=%s&done=%s", queryParent, queryDone), nil)
+			queryDone := url.QueryEscape("done=true")
+			sprintf := fmt.Sprintf("https://ssi-service.com/v1/operations?parent=%s&filter=%s", queryParent, queryDone)
+			req := httptest.NewRequest(http.MethodGet, sprintf, nil)
 			w := httptest.NewRecorder()
 
-			c := newRequestContextWithParams(w, req, map[string]string{"parent": queryParent, "done": queryDone})
+			c := newRequestContextWithParams(w, req, map[string]string{"parent": queryParent, "filter": queryDone})
 			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
