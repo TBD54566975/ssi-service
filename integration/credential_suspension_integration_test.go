@@ -14,7 +14,7 @@ var credentialSuspensionContext = NewTestContext("CredentialSuspension")
 
 func TestSuspensionCreateIssuerDIDKeyIntegration(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping integration testz")
+		t.Skip("skipping integration test")
 	}
 
 	didKeyOutput, err := CreateDIDKey()

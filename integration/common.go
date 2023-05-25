@@ -116,6 +116,7 @@ type credInputParams struct {
 func CreateVerifiableCredential(credentialInput credInputParams) (string, error) {
 	return CreateVerifiableCredentialWithStatus(credentialInput, false, false)
 }
+
 func CreateVerifiableCredentialWithStatus(credentialInput credInputParams, revocable bool, suspendable bool) (string, error) {
 	logrus.Println("\n\nCreate a verifiable credential")
 
