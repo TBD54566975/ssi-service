@@ -144,7 +144,7 @@ type ListOperationsResponse struct {
 //	@Tags			OperationAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			parent	query		string					false	"The name of the parent's resource. For example: `parent?=/presentation/submissions`"
+//	@Param			parent	query		string					false	"The name of the parent's resource. For example: `?parent=/presentation/submissions`"
 //	@Param			filter	query		string					false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=done="true"`"
 //	@Success		200		{object}	ListOperationsResponse	"OK"
 //	@Failure		400		{string}	string					"Bad request"
