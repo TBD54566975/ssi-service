@@ -431,6 +431,30 @@ func (s Service) GetCredential(ctx context.Context, request GetCredentialRequest
 	return &response, nil
 }
 
+func (s Service) ListCredentials(ctx context.Context) (*ListCredentialsResponse, error) {
+	logrus.Debugf("listing credential(s) ")
+
+	gotCreds, err := s.storage.GetCredentials(ctx)
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not list credential(s)")
+	}
+
+	creds := make([]credint.Container, 0, len(gotCreds))
+	for _, cred := range gotCreds {
+		container := credint.Container{
+			ID:            cred.CredentialID,
+			Credential:    cred.Credential,
+			CredentialJWT: cred.CredentialJWT,
+			Revoked:       cred.Revoked,
+			Suspended:     cred.Suspended,
+		}
+		creds = append(creds, container)
+	}
+
+	response := ListCredentialsResponse{Credentials: creds}
+	return &response, nil
+}
+
 func (s Service) ListCredentialsByIssuer(ctx context.Context, request ListCredentialByIssuerRequest) (*ListCredentialsResponse, error) {
 	logrus.Debugf("listing credential(s) for issuer: %s", util.SanitizeLog(request.Issuer))
 

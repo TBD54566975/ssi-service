@@ -346,6 +346,36 @@ func (cs *Storage) getCredential(ctx context.Context, id string, namespace strin
 	return &stored, nil
 }
 
+// GetCredentials gets all credentials stored with a prefix key
+// The method is greedy, meaning if multiple values are found...and some fail during processing, we will
+// return only the successful values and log an error for the failures.
+func (cs *Storage) GetCredentials(ctx context.Context) ([]StoredCredential, error) {
+	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage")
+	}
+
+	var storedCreds []StoredCredential
+	for _, key := range keys {
+		credBytes, err := cs.db.Read(ctx, credentialNamespace, key)
+		if err != nil {
+			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
+		} else {
+			var cred StoredCredential
+			if err = json.Unmarshal(credBytes, &cred); err != nil {
+				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
+			}
+			storedCreds = append(storedCreds, cred)
+		}
+	}
+
+	if len(storedCreds) == 0 {
+		logrus.Warnf("no credentials able to be retrieved")
+	}
+
+	return storedCreds, nil
+}
+
 // Note: this is a lazy  implementation. Optimizations are to be had by adjusting prefix
 // queries, and nested buckets. It is not intended that bolt is run in production, or at any scale,
 // so this is not much of a concern.

@@ -402,7 +402,7 @@ type ListCredentialsResponse struct {
 // ListCredentials godoc
 //
 //	@Summary		List Credentials
-//	@Description	Checks for the presence of a query parameter and calls the associated filtered get method. Only one parameter is allowed to be specified.
+//	@Description	Checks for the presence of an optional query parameter and calls the associated filtered get method. Only one optional parameter is allowed to be specified.
 //	@Tags			CredentialAPI
 //	@Accept			json
 //	@Produce		json
@@ -418,7 +418,7 @@ func (cr CredentialRouter) ListCredentials(c *gin.Context) {
 	schema := framework.GetQueryValue(c, SchemaParam)
 	subject := framework.GetQueryValue(c, SubjectParam)
 
-	errMsg := "must use one of the following query parameters: issuer, subject, schema"
+	errMsg := "must use only one of the following optional query parameters: issuer, subject, schema"
 
 	// check if there are multiple parameters set, which is not allowed
 	if (issuer != nil && subject != nil) || (issuer != nil && schema != nil) || (subject != nil && schema != nil) {
@@ -426,6 +426,10 @@ func (cr CredentialRouter) ListCredentials(c *gin.Context) {
 		return
 	}
 
+	if issuer == nil && schema == nil && subject == nil {
+		cr.getCredentials(c)
+		return
+	}
 	if issuer != nil {
 		cr.getCredentialsByIssuer(c, *issuer)
 		return
@@ -438,7 +442,21 @@ func (cr CredentialRouter) ListCredentials(c *gin.Context) {
 		cr.getCredentialsBySchema(c, *schema)
 		return
 	}
+
 	framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+}
+
+func (cr CredentialRouter) getCredentials(c *gin.Context) {
+	gotCredentials, err := cr.service.ListCredentials(c)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get credentials")
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+
+	resp := ListCredentialsResponse{Credentials: gotCredentials.Credentials}
+	framework.Respond(c, resp, http.StatusOK)
+	return
 }
 
 func (cr CredentialRouter) getCredentialsByIssuer(c *gin.Context, issuer string) {
