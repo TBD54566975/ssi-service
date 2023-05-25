@@ -543,6 +543,10 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.Equal(tt, updatedStatus.Revoked, true)
 
+		updatedCred, err := credService.GetCredential(context.Background(), credential.GetCredentialRequest{ID: createdCred.ID})
+		assert.NoError(tt, err)
+		assert.Equal(tt, updatedCred.Revoked, true)
+
 		credStatusListAfterRevoke, err := credService.GetCredentialStatusList(context.Background(), credential.GetCredentialStatusListRequest{ID: credStatusListID})
 		assert.NoError(tt, err)
 		assert.Equal(tt, credStatusListAfterRevoke.Credential.ID, statusEntry.StatusListCredential)
@@ -669,6 +673,10 @@ func TestCredentialRouter(t *testing.T) {
 		updatedStatus, err := credService.UpdateCredentialStatus(context.Background(), credential.UpdateCredentialStatusRequest{ID: createdCred.ID, Suspended: true})
 		assert.NoError(tt, err)
 		assert.Equal(tt, updatedStatus.Suspended, true)
+
+		updatedCred, err := credService.GetCredential(context.Background(), credential.GetCredentialRequest{ID: createdCred.ID})
+		assert.NoError(tt, err)
+		assert.Equal(tt, updatedCred.Suspended, true)
 
 		credStatusListAfterRevoke, err := credService.GetCredentialStatusList(context.Background(), credential.GetCredentialStatusListRequest{ID: credStatusListID})
 		assert.NoError(tt, err)

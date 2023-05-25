@@ -195,3 +195,36 @@ func TestRevocationValidateCredentialInStatusListIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, valid)
 }
+
+func TestRevocationUnRevokeCredential(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	credStatusURL, err := GetValue(credentialRevocationContext, "credStatusURL")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, credStatusURL)
+
+	credStatusOutput, err := get(credStatusURL.(string))
+	assert.NoError(t, err)
+	assert.NotEmpty(t, credStatusOutput)
+
+	revoked, err := getJSONElement(credStatusOutput, "$.revoked")
+	assert.NoError(t, err)
+	assert.Equal(t, "true", revoked)
+
+	revokedOutput, err := put(credStatusURL.(string), `{"revoked":false}`)
+	assert.NoError(t, err)
+
+	revoked, err = getJSONElement(revokedOutput, "$.revoked")
+	assert.NoError(t, err)
+	assert.Equal(t, "false", revoked)
+
+	credStatusOutput, err = get(credStatusURL.(string))
+	assert.NoError(t, err)
+	assert.NotEmpty(t, credStatusOutput)
+
+	revoked, err = getJSONElement(credStatusOutput, "$.revoked")
+	assert.NoError(t, err)
+	assert.Equal(t, "false", revoked)
+}

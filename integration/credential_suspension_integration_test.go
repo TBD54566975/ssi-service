@@ -198,3 +198,36 @@ func TestSuspensionValidateCredentialInStatusListIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, valid)
 }
+
+func TestSuspensionUnSuspendCredential(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	credStatusURL, err := GetValue(credentialSuspensionContext, "credStatusURL")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, credStatusURL)
+
+	credStatusOutput, err := get(credStatusURL.(string))
+	assert.NoError(t, err)
+	assert.NotEmpty(t, credStatusOutput)
+
+	suspended, err := getJSONElement(credStatusOutput, "$.suspended")
+	assert.NoError(t, err)
+	assert.Equal(t, "true", suspended)
+
+	suspendedOutput, err := put(credStatusURL.(string), `{"suspended":false}`)
+	assert.NoError(t, err)
+
+	suspended, err = getJSONElement(suspendedOutput, "$.suspended")
+	assert.NoError(t, err)
+	assert.Equal(t, "false", suspended)
+
+	credStatusOutput, err = get(credStatusURL.(string))
+	assert.NoError(t, err)
+	assert.NotEmpty(t, credStatusOutput)
+
+	suspended, err = getJSONElement(credStatusOutput, "$.suspended")
+	assert.NoError(t, err)
+	assert.Equal(t, "false", suspended)
+}

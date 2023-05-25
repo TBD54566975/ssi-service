@@ -426,6 +426,8 @@ func (s Service) GetCredential(ctx context.Context, request GetCredentialRequest
 			ID:            gotCred.CredentialID,
 			Credential:    gotCred.Credential,
 			CredentialJWT: gotCred.CredentialJWT,
+			Revoked:       gotCred.Revoked,
+			Suspended:     gotCred.Suspended,
 		},
 	}
 	return &response, nil
@@ -445,6 +447,8 @@ func (s Service) ListCredentialsByIssuer(ctx context.Context, request ListCreden
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
+			Revoked:       cred.Revoked,
+			Suspended:     cred.Suspended,
 		}
 		creds = append(creds, container)
 	}
@@ -467,6 +471,8 @@ func (s Service) ListCredentialsBySubject(ctx context.Context, request ListCrede
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
+			Revoked:       cred.Revoked,
+			Suspended:     cred.Suspended,
 		}
 		creds = append(creds, container)
 	}
@@ -488,6 +494,8 @@ func (s Service) ListCredentialsBySchema(ctx context.Context, request ListCreden
 			ID:            cred.CredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
+			Revoked:       cred.Revoked,
+			Suspended:     cred.Suspended,
 		}
 		creds = append(creds, container)
 	}
@@ -527,6 +535,8 @@ func (s Service) GetCredentialStatusList(ctx context.Context, request GetCredent
 			ID:            gotCred.CredentialID,
 			Credential:    gotCred.Credential,
 			CredentialJWT: gotCred.CredentialJWT,
+			Revoked:       false, // Credential Status List cannot be revoked
+			Suspended:     false, // Credential Status List cannot be suspended
 		},
 	}
 	return &response, nil
