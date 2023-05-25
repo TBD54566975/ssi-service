@@ -502,7 +502,7 @@ func TestPresentationAPI(t *testing.T) {
 					"id":             "did:web:andresuribe.com",
 				})), holderDID, holderSigner)
 
-			query := url.QueryEscape("status=\"done\"")
+			query := url.QueryEscape(`status="done"`)
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions?filter=%s", query), nil)
 			w := httptest.NewRecorder()
 			c := newRequestContextWithParams(w, req, map[string]string{"filter": query})
