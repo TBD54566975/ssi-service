@@ -2755,7 +2755,7 @@ paths:
       - application/json
       description: List operations according to the request
       parameters:
-      - description: 'The name of the parent''s resource. For example: `parent?=/presentation/submissions`'
+      - description: 'The name of the parent''s resource. For example: `?parent=/presentation/submissions`'
         in: query
         name: parent
         type: string
