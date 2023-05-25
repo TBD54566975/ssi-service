@@ -15,12 +15,12 @@ import (
 // JWT representations are parsed upon container creation, while the original JWT is maintained
 type Container struct {
 	// Credential ID
-	ID            string
-	IssuerKID     string
-	Credential    *credential.VerifiableCredential
-	CredentialJWT *keyaccess.JWT
-	Revoked       bool
-	Suspended     bool
+	ID            string                           `json:"id,omitempty"`
+	IssuerKID     string                           `json:"issuerKid,omitempty"`
+	Credential    *credential.VerifiableCredential `json:"credential,omitempty"`
+	CredentialJWT *keyaccess.JWT                   `json:"credentialJwt,omitempty"`
+	Revoked       bool                             `json:"revoked,omitempty"`
+	Suspended     bool                             `json:"suspended,omitempty"`
 }
 
 func (c Container) JWTString() string {

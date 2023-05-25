@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
@@ -162,8 +163,6 @@ func (pr PresentationRouter) GetDefinition(c *gin.Context) {
 	framework.Respond(c, resp, http.StatusOK)
 }
 
-type ListDefinitionsRequest struct{}
-
 type ListDefinitionsResponse struct {
 	Definitions []*exchange.PresentationDefinition `json:"definitions,omitempty"`
 }
@@ -175,15 +174,14 @@ type ListDefinitionsResponse struct {
 //	@Tags			PresentationDefinitionAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		ListDefinitionsRequest	true	"request body"
-//	@Success		200		{object}	ListDefinitionsResponse
-//	@Failure		400		{string}	string	"Bad request"
-//	@Failure		500		{string}	string	"Internal server error"
+//	@Success		200	{object}	ListDefinitionsResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/presentations/definitions [get]
 func (pr PresentationRouter) ListDefinitions(c *gin.Context) {
 	svcResponse, err := pr.service.ListDefinitions(c)
 	if err != nil {
-		errMsg := "could not get definitions"
+		errMsg := "could not list definitions"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
@@ -332,13 +330,13 @@ func (pr PresentationRouter) GetSubmission(c *gin.Context) {
 	framework.Respond(c, resp, http.StatusOK)
 }
 
-type ListSubmissionRequest struct {
+type listSubmissionRequest struct {
 	// A standard filter expression conforming to https://google.aip.dev/160.
 	// For example: `status = "done"`.
 	Filter string `json:"filter,omitempty"`
 }
 
-func (l ListSubmissionRequest) GetFilter() string {
+func (l listSubmissionRequest) GetFilter() string {
 	return l.Filter
 }
 
@@ -353,17 +351,23 @@ type ListSubmissionResponse struct {
 //	@Tags			PresentationSubmissionAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		ListSubmissionRequest	true	"request body"
+//	@Param			filter	query		string	false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=status="pending"`"
 //	@Success		200		{object}	ListSubmissionResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/presentations/submissions [get]
 func (pr PresentationRouter) ListSubmissions(c *gin.Context) {
-	var request ListSubmissionRequest
-	if err := framework.Decode(c.Request, &request); err != nil {
-		errMsg := "invalid list submissions request"
-		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
-		return
+	filterParam := framework.GetQueryValue(c, FilterParam)
+	var request listSubmissionRequest
+	if filterParam != nil {
+		unescaped, err := url.QueryUnescape(*filterParam)
+		if err != nil {
+			errMsg := "failed un-escaping filter"
+			framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+			return
+		}
+		// encode the query param as a status filter
+		request = listSubmissionRequest{Filter: unescaped}
 	}
 
 	const StatusIdentifier = "status"

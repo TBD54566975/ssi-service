@@ -3,6 +3,7 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
@@ -12,6 +13,11 @@ import (
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	manifestsvc "github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
+)
+
+const (
+	ParentParam string = "parent"
+	FilterParam string = "filter"
 )
 
 type OperationRouter struct {
@@ -77,7 +83,7 @@ func (o OperationRouter) GetOperation(c *gin.Context) {
 	framework.Respond(c, routerModel(*op), http.StatusOK)
 }
 
-type ListOperationsRequest struct {
+type listOperationsRequest struct {
 	// The name of the parent's resource. For example: "/presentation/submissions".
 	Parent string `json:"parent"`
 
@@ -86,7 +92,7 @@ type ListOperationsRequest struct {
 	Filter string `json:"filter"`
 }
 
-func (r ListOperationsRequest) GetFilter() string {
+func (r listOperationsRequest) GetFilter() string {
 	return r.Filter
 }
 
@@ -98,7 +104,7 @@ const (
 
 const FilterCharacterLimit = 1024
 
-func (r ListOperationsRequest) toServiceRequest() (operation.ListOperationsRequest, error) {
+func (r listOperationsRequest) toServiceRequest() (operation.ListOperationsRequest, error) {
 	var opReq operation.ListOperationsRequest
 	opReq.Parent = r.Parent
 
@@ -138,19 +144,36 @@ type ListOperationsResponse struct {
 //	@Tags			OperationAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		ListOperationsRequest	true	"request body"
+//	@Param			parent	query		string					false	"The name of the parent's resource. For example: `?parent=/presentation/submissions`"
+//	@Param			filter	query		string					false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=done="true"`"
 //	@Success		200		{object}	ListOperationsResponse	"OK"
 //	@Failure		400		{string}	string					"Bad request"
 //	@Failure		500		{string}	string					"Internal server error"
 //	@Router			/v1/operations [get]
 func (o OperationRouter) ListOperations(c *gin.Context) {
-	var request ListOperationsRequest
-	invalidGetOperationsErr := "invalid list operations request"
-	if err := framework.Decode(c.Request, &request); err != nil {
-		framework.LoggingRespondErrWithMsg(c, err, invalidGetOperationsErr, http.StatusBadRequest)
-		return
+	parentParam := framework.GetParam(c, ParentParam)
+	filterParam := framework.GetParam(c, FilterParam)
+	var request listOperationsRequest
+	if parentParam != nil {
+		unescaped, err := url.QueryUnescape(*parentParam)
+		if err != nil {
+			errMsg := "failed un-escaping parent param"
+			framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+			return
+		}
+		request.Parent = unescaped
+	}
+	if filterParam != nil {
+		unescaped, err := url.QueryUnescape(*filterParam)
+		if err != nil {
+			errMsg := "failed un-escaping filter param"
+			framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+			return
+		}
+		request.Filter = unescaped
 	}
 
+	invalidGetOperationsErr := "invalid list operations request"
 	if err := framework.ValidateRequest(request); err != nil {
 		framework.LoggingRespondErrWithMsg(c, err, invalidGetOperationsErr, http.StatusBadRequest)
 		return
@@ -168,6 +191,7 @@ func (o OperationRouter) ListOperations(c *gin.Context) {
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
+
 	resp := ListOperationsResponse{Operations: make([]Operation, 0, len(ops.Operations))}
 	for _, op := range ops.Operations {
 		resp.Operations = append(resp.Operations, routerModel(op))
