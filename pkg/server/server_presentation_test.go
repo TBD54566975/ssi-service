@@ -206,7 +206,7 @@ func TestPresentationAPI(t *testing.T) {
 			definition := createPresentationDefinition(ttt, pRouter)
 			op := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
-					"additionalName": "Mclovin",
+					"additionalName": "McLovin",
 					"dateOfBirth":    "1987-01-02",
 					"familyName":     "Andres",
 					"givenName":      "Uribe",
@@ -236,7 +236,7 @@ func TestPresentationAPI(t *testing.T) {
 			definition := createPresentationDefinition(ttt, pRouter)
 			request := createSubmissionRequest(ttt, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
-					"additionalName": "Mclovin",
+					"additionalName": "McLovin",
 					"dateOfBirth":    "1987-01-02",
 					"familyName":     "Andres",
 					"givenName":      "Uribe",
@@ -344,7 +344,7 @@ func TestPresentationAPI(t *testing.T) {
 			definition := createPresentationDefinition(ttt, pRouter)
 			op := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
-					"additionalName": "Mclovin",
+					"additionalName": "McLovin",
 					"dateOfBirth":    "1987-01-02",
 					"familyName":     "Andres",
 					"givenName":      "Uribe",

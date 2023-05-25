@@ -351,7 +351,7 @@ type ListSubmissionResponse struct {
 //	@Tags			PresentationSubmissionAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			filter	query		string	false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=status="done"`"
+//	@Param			filter	query		string	false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=status="pending"`"
 //	@Success		200		{object}	ListSubmissionResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
