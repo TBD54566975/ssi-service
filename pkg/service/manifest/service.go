@@ -12,9 +12,10 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
@@ -27,6 +28,8 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
+const requestNamespace = "manifest_request"
+
 type Service struct {
 	storage                 *manifeststg.Storage
 	opsStorage              *operation.Storage
@@ -38,7 +41,8 @@ type Service struct {
 	didResolver resolution.Resolver
 	credential  *credential.Service
 
-	Clock clock.Clock
+	Clock      clock.Clock
+	reqStorage common.RequestStorage
 }
 
 func (s Service) Type() framework.Type {
@@ -86,6 +90,7 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for issuance templates")
 	}
+	requestStorage := common.NewRequestStorage(s, requestNamespace)
 	return &Service{
 		storage:                 manifestStorage,
 		opsStorage:              opsStorage,
@@ -95,6 +100,7 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 		didResolver:             didResolver,
 		credential:              credential,
 		Clock:                   clock.New(),
+		reqStorage:              requestStorage,
 	}, nil
 }
 
@@ -165,19 +171,12 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 		return nil, sdkutil.LoggingErrorMsg(err, "could not build manifest")
 	}
 
-	// sign the manifest
-	manifestJWT, err := s.signManifestJWT(ctx, request.IssuerKID, CredentialManifestContainer{Manifest: *m})
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not sign manifest")
-	}
-
 	// store the manifest
 	storageRequest := manifeststg.StoredManifest{
-		ID:          m.ID,
-		IssuerDID:   m.Issuer.ID,
-		IssuerKID:   request.IssuerKID,
-		Manifest:    *m,
-		ManifestJWT: *manifestJWT,
+		ID:        m.ID,
+		IssuerDID: m.Issuer.ID,
+		IssuerKID: request.IssuerKID,
+		Manifest:  *m,
 	}
 
 	if err = s.storage.StoreManifest(ctx, storageRequest); err != nil {
@@ -185,7 +184,7 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 	}
 
 	// return the result
-	response := model.CreateManifestResponse{Manifest: *m, ManifestJWT: *manifestJWT}
+	response := model.CreateManifestResponse{Manifest: *m}
 	return &response, nil
 }
 
@@ -214,7 +213,7 @@ func (s Service) GetManifest(ctx context.Context, request model.GetManifestReque
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not get manifest: %s", request.ID)
 	}
 
-	response := model.GetManifestResponse{Manifest: gotManifest.Manifest, ManifestJWT: gotManifest.ManifestJWT}
+	response := model.GetManifestResponse{Manifest: gotManifest.Manifest}
 	return &response, nil
 }
 
@@ -227,7 +226,7 @@ func (s Service) ListManifests(ctx context.Context) (*model.ListManifestsRespons
 
 	manifests := make([]model.GetManifestResponse, 0, len(gotManifests))
 	for _, m := range gotManifests {
-		response := model.GetManifestResponse{Manifest: m.Manifest, ManifestJWT: m.ManifestJWT}
+		response := model.GetManifestResponse{Manifest: m.Manifest}
 		manifests = append(manifests, response)
 	}
 	response := model.ListManifestsResponse{Manifests: manifests}
@@ -527,4 +526,84 @@ func (s Service) DeleteResponse(ctx context.Context, request model.DeleteRespons
 	}
 
 	return nil
+}
+
+func (s Service) CreateRequest(ctx context.Context, req model.CreateRequestRequest) (*model.Request, error) {
+	if err := sdkutil.IsValidStruct(req); err != nil {
+		return nil, err
+	}
+
+	request := req.ManifestRequest
+	storedManifest, err := s.storage.GetManifest(ctx, request.ManifestID)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting credential manifest")
+	}
+	if storedManifest == nil {
+		return nil, errors.Errorf("credential manifest %q is nil", request.ManifestID)
+	}
+
+	claimName := "credential_manifest"
+	claimValue := storedManifest.Manifest
+
+	stored, err := common.CreateStoredRequest(ctx, s.keyStore, claimName, claimValue, request.Request, request.ManifestID)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating stored request")
+	}
+	if err := s.reqStorage.StoreRequest(ctx, stored); err != nil {
+		return nil, errors.Wrap(err, "storing request")
+	}
+	return serviceModel(&stored)
+}
+
+func (s Service) ListRequests(ctx context.Context) (*model.ListRequestsResponse, error) {
+	requests, err := s.reqStorage.ListRequests(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "listing from storage")
+	}
+	reqs := make([]model.Request, 0, len(requests))
+	for _, storedReq := range requests {
+		storedReq := storedReq
+		r, err := serviceModel(&storedReq)
+		if err != nil {
+			return nil, err
+		}
+		reqs = append(reqs, *r)
+	}
+	return &model.ListRequestsResponse{ManifestRequests: reqs}, nil
+}
+
+func (s Service) GetRequest(ctx context.Context, request *model.GetRequestRequest) (*model.Request, error) {
+	logrus.Debugf("getting manifest request: %s", request.ID)
+
+	storedRequest, err := s.reqStorage.GetRequest(ctx, request.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "getting signed document with id: %s", request.ID)
+	}
+	if storedRequest == nil {
+		return nil, sdkutil.LoggingNewErrorf("manifest request with id<%s> could not be found", request.ID)
+	}
+
+	return serviceModel(storedRequest)
+}
+
+func (s Service) DeleteRequest(ctx context.Context, request model.DeleteRequestRequest) error {
+	logrus.Debugf("deleting manifest request: %s", request.ID)
+
+	if err := s.reqStorage.DeleteRequest(ctx, request.ID); err != nil {
+		return sdkutil.LoggingNewErrorf("could not delete manifest request with id: %s", request.ID)
+	}
+
+	return nil
+}
+
+func serviceModel(stored *common.StoredRequest) (*model.Request, error) {
+	req, err := common.ToServiceModel(stored)
+	if err != nil {
+		return nil, err
+	}
+	return &model.Request{
+		Request:               *req,
+		ManifestID:            stored.ReferenceID,
+		CredentialManifestJWT: keyaccess.JWT(stored.JWT),
+	}, nil
 }

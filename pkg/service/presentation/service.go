@@ -3,21 +3,19 @@ package presentation
 import (
 	"context"
 	"fmt"
-	"time"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
-	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/jws"
-	"github.com/lestrrat-go/jwx/jwt"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
@@ -310,30 +308,16 @@ func (s Service) CreateRequest(ctx context.Context, req model.CreateRequestReque
 		return nil, errors.Errorf("presentation definition %q is nil", request.PresentationDefinitionID)
 	}
 
-	requestID := uuid.NewString()
-	token, err := jwt.NewBuilder().Claim("presentation_definition", pd.PresentationDefinition).
-		Audience(request.Audience).
-		Expiration(request.Expiration).
-		Issuer(request.IssuerDID).
-		NotBefore(time.Now()).
-		JwtID(requestID).
-		Build()
+	stored, err := common.CreateStoredRequest(
+		ctx,
+		s.keystore,
+		"presentation_definition",
+		pd.PresentationDefinition,
+		request.Request,
+		request.PresentationDefinitionID,
+	)
 	if err != nil {
-		return nil, errors.Wrap(err, "building jwt")
-	}
-	signedToken, err := s.keystore.Sign(ctx, request.IssuerKID, token)
-	if err != nil {
-		return nil, errors.Wrapf(err, "signing payload with KID %q", request.IssuerKID)
-	}
-
-	stored := presentationstorage.StoredRequest{
-		ID:                        requestID,
-		Audience:                  request.Audience,
-		Expiration:                request.Expiration.Format(time.RFC3339),
-		IssuerDID:                 request.IssuerDID,
-		IssuerKID:                 request.IssuerKID,
-		PresentationDefinitionID:  request.PresentationDefinitionID,
-		PresentationDefinitionJWT: signedToken.String(),
+		return nil, errors.Wrap(err, "creating stored request")
 	}
 	if err := s.storage.StoreRequest(ctx, stored); err != nil {
 		return nil, errors.Wrap(err, "storing signed document")
@@ -342,7 +326,7 @@ func (s Service) CreateRequest(ctx context.Context, req model.CreateRequestReque
 }
 
 func (s Service) GetRequest(ctx context.Context, request *model.GetRequestRequest) (*model.Request, error) {
-	logrus.Debugf("getting presentation definition: %s", request.ID)
+	logrus.Debugf("getting presentation request: %s", request.ID)
 
 	storedRequest, err := s.storage.GetRequest(ctx, request.ID)
 	if err != nil {
@@ -365,18 +349,14 @@ func (s Service) DeleteRequest(ctx context.Context, request model.DeleteRequestR
 	return nil
 }
 
-func serviceModel(storedRequest *presentationstorage.StoredRequest) (*model.Request, error) {
-	expiration, err := time.Parse(time.RFC3339, storedRequest.Expiration)
+func serviceModel(storedRequest *common.StoredRequest) (*model.Request, error) {
+	req, err := common.ToServiceModel(storedRequest)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing expiration time")
+		return nil, err
 	}
 	return &model.Request{
-		ID:                        storedRequest.ID,
-		Audience:                  storedRequest.Audience,
-		Expiration:                expiration,
-		IssuerDID:                 storedRequest.IssuerDID,
-		IssuerKID:                 storedRequest.IssuerKID,
-		PresentationDefinitionID:  storedRequest.PresentationDefinitionID,
-		PresentationDefinitionJWT: keyaccess.JWT(storedRequest.PresentationDefinitionJWT),
+		Request:                   *req,
+		PresentationDefinitionID:  storedRequest.ReferenceID,
+		PresentationDefinitionJWT: keyaccess.JWT(storedRequest.JWT),
 	}, nil
 }

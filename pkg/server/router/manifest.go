@@ -3,12 +3,13 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
-
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 
 	"github.com/tbd54566975/ssi-service/internal/credential"
@@ -35,7 +36,9 @@ func NewManifestRouter(s svcframework.Service) (*ManifestRouter, error) {
 	if !ok {
 		return nil, fmt.Errorf("could not create manifest router with service type: %s", s.Type())
 	}
-	return &ManifestRouter{service: manifestService}, nil
+	return &ManifestRouter{
+		service: manifestService,
+	}, nil
 }
 
 // CreateManifestRequest is the request body for creating a manifest, which populates all remaining fields
@@ -65,8 +68,7 @@ func (c CreateManifestRequest) ToServiceRequest() model.CreateManifestRequest {
 }
 
 type CreateManifestResponse struct {
-	Manifest    manifestsdk.CredentialManifest `json:"credential_manifest"`
-	ManifestJWT keyaccess.JWT                  `json:"manifestJwt"`
+	Manifest manifestsdk.CredentialManifest `json:"credential_manifest"`
 }
 
 // CreateManifest godoc
@@ -103,14 +105,13 @@ func (mr ManifestRouter) CreateManifest(c *gin.Context) {
 		return
 	}
 
-	resp := CreateManifestResponse{Manifest: createManifestResponse.Manifest, ManifestJWT: createManifestResponse.ManifestJWT}
+	resp := CreateManifestResponse{Manifest: createManifestResponse.Manifest}
 	framework.Respond(c, resp, http.StatusCreated)
 }
 
 type ListManifestResponse struct {
-	ID          string                         `json:"id"`
-	Manifest    manifestsdk.CredentialManifest `json:"credential_manifest"`
-	ManifestJWT keyaccess.JWT                  `json:"manifestJwt"`
+	ID       string                         `json:"id"`
+	Manifest manifestsdk.CredentialManifest `json:"credential_manifest"`
 }
 
 // GetManifest godoc
@@ -140,9 +141,8 @@ func (mr ManifestRouter) GetManifest(c *gin.Context) {
 	}
 
 	resp := ListManifestResponse{
-		ID:          gotManifest.Manifest.ID,
-		Manifest:    gotManifest.Manifest,
-		ManifestJWT: gotManifest.ManifestJWT,
+		ID:       gotManifest.Manifest.ID,
+		Manifest: gotManifest.Manifest,
 	}
 	framework.Respond(c, resp, http.StatusOK)
 }
@@ -176,9 +176,8 @@ func (mr ManifestRouter) ListManifests(c *gin.Context) {
 	manifests := make([]ListManifestResponse, 0, len(gotManifests.Manifests))
 	for _, m := range gotManifests.Manifests {
 		manifests = append(manifests, ListManifestResponse{
-			ID:          m.Manifest.ID,
-			Manifest:    m.Manifest,
-			ManifestJWT: m.ManifestJWT,
+			ID:       m.Manifest.ID,
+			Manifest: m.Manifest,
 		})
 	}
 
@@ -572,4 +571,174 @@ func (mr ManifestRouter) ReviewApplication(c *gin.Context) {
 		Credentials: applicationResponse.Credentials,
 		ResponseJWT: applicationResponse.ResponseJWT,
 	}, http.StatusCreated)
+}
+
+type CreateManifestRequestRequest struct {
+	*CommonCreateRequestRequest
+
+	// ID of the credential manifest to use for this request.
+	CredentialManifestID string `json:"credentialManifestId" validate:"required"`
+}
+
+type CreateManifestRequestResponse struct {
+	Request *model.Request `json:"manifestRequest"`
+}
+
+// CreateRequest godoc
+//
+//	@Summary		Create Manifest Request Request
+//	@Description	Create manifest request from an existing credential manifest.
+//	@Tags			ManifestAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		CreateManifestRequestRequest	true	"request body"
+//	@Success		201		{object}	CreateManifestRequestResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/manifests/requests [put]
+func (mr ManifestRouter) CreateRequest(c *gin.Context) {
+	var request CreateManifestRequestRequest
+	errMsg := "Invalid Manifest Request Request"
+	if err := framework.Decode(c.Request, &request); err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
+	}
+	if err := framework.ValidateRequest(request); err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	req, err := mr.serviceRequestFromRequest(request)
+	if err != nil {
+		framework.LoggingRespondError(c, err, http.StatusBadRequest)
+		return
+	}
+
+	doc, err := mr.service.CreateRequest(c, model.CreateRequestRequest{ManifestRequest: *req})
+	if err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, "signing and storing", http.StatusInternalServerError)
+		return
+	}
+	framework.Respond(c, CreateManifestRequestResponse{Request: doc}, http.StatusCreated)
+}
+
+func (mr ManifestRouter) serviceRequestFromRequest(request CreateManifestRequestRequest) (*model.Request, error) {
+	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest, mr.service.Config().ExpirationDuration)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Request{
+		Request:    *req,
+		ManifestID: request.CredentialManifestID,
+	}, nil
+}
+
+type ListManifestRequestsResponse struct {
+	// The manifest requests matching the query.
+	Requests []model.Request `json:"manifestRequests"`
+}
+
+// ListRequests godoc
+//
+//	@Summary		List Credential Manifest Requests
+//	@Description	Lists all the existing credential manifest requests
+//	@Tags			ManifestAPI
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	ListManifestRequestsResponse
+//	@Failure		500	{string}	string	"Internal server error"
+//	@Router			/v1/manifests/requests [get]
+func (mr ManifestRouter) ListRequests(c *gin.Context) {
+	svcResponse, err := mr.service.ListRequests(c)
+
+	if err != nil {
+		errMsg := "could not get requests"
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+	resp := ListManifestRequestsResponse{
+		Requests: svcResponse.ManifestRequests,
+	}
+	framework.Respond(c, resp, http.StatusOK)
+}
+
+type GetManifestRequestResponse struct {
+	Request *model.Request `json:"manifestRequest"`
+}
+
+// GetRequest godoc
+//
+//	@Summary		Get Manifest Request
+//	@Description	Get a manifest request by its ID
+//	@Tags			ManifestAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		200	{object}	GetManifestRequestResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Router			/v1/manifests/requests/{id} [get]
+func (mr ManifestRouter) GetRequest(c *gin.Context) {
+	id := framework.GetParam(c, IDParam)
+	if id == nil {
+		framework.LoggingRespondErrMsg(c, "cannot get manifest request without an ID", http.StatusBadRequest)
+		return
+	}
+
+	request, err := mr.service.GetRequest(c, &model.GetRequestRequest{ID: *id})
+	if err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, "getting manifest request", http.StatusInternalServerError)
+		return
+	}
+	framework.Respond(c, GetManifestRequestResponse{Request: request}, http.StatusOK)
+}
+
+// DeleteRequest godoc
+//
+//	@Summary		Delete Manifest Request
+//	@Description	Delete a manifest request by its ID
+//	@Tags			ManifestAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			id	path		string	true	"ID"
+//	@Success		204	{string}	string	"No Content"
+//	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
+//	@Router			/v1/manifests/requests/{id} [delete]
+func (mr ManifestRouter) DeleteRequest(c *gin.Context) {
+	id := framework.GetParam(c, IDParam)
+	if id == nil {
+		errMsg := "cannot delete a manigest request without an ID parameter"
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	if err := mr.service.DeleteRequest(c, model.DeleteRequestRequest{ID: *id}); err != nil {
+		errMsg := fmt.Sprintf("could not delete manifest request with id: %s", *id)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+
+	framework.Respond(c, nil, http.StatusNoContent)
+}
+
+func commonRequestToServiceRequest(request *CommonCreateRequestRequest, expirationDuration time.Duration) (*common.Request, error) {
+	var expiration time.Time
+	var err error
+
+	if request.Expiration != "" {
+		expiration, err = time.Parse(time.RFC3339, request.Expiration)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		expiration = time.Now().Add(expirationDuration)
+	}
+	req := &common.Request{
+		Audience:   request.Audience,
+		Expiration: expiration,
+		IssuerDID:  request.IssuerDID,
+		IssuerKID:  request.IssuerKID,
+	}
+	return req, nil
 }

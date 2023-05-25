@@ -166,6 +166,7 @@ func (c *CredentialServiceConfig) IsEmpty() bool {
 
 type ManifestServiceConfig struct {
 	*BaseServiceConfig
+	ExpirationDuration time.Duration `toml:"expiration_duration" conf:"default:30m"`
 }
 
 func (m *ManifestServiceConfig) IsEmpty() bool {

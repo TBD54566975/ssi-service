@@ -5,6 +5,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -14,19 +15,19 @@ import (
 // Manifest
 
 type CreateManifestRequest struct {
-	Name                   *string                          `json:"name,omitempty"`
-	Description            *string                          `json:"description,omitempty"`
-	IssuerDID              string                           `json:"issuerDid" validate:"required"`
-	IssuerKID              string                           `json:"issuerKid" validate:"required"`
-	IssuerName             *string                          `json:"issuerName,omitempty"`
-	OutputDescriptors      []manifestsdk.OutputDescriptor   `json:"outputDescriptors" validate:"required,dive"`
-	ClaimFormat            *exchange.ClaimFormat            `json:"format" validate:"required,dive"`
+	Name              *string                        `json:"name,omitempty"`
+	Description       *string                        `json:"description,omitempty"`
+	IssuerDID         string                         `json:"issuerDid" validate:"required"`
+	IssuerKID         string                         `json:"issuerKid" validate:"required"`
+	IssuerName        *string                        `json:"issuerName,omitempty"`
+	OutputDescriptors []manifestsdk.OutputDescriptor `json:"outputDescriptors" validate:"required,dive"`
+	ClaimFormat       *exchange.ClaimFormat          `json:"format" validate:"required,dive"`
+	// TODO: Allow for specifying the presentation definition only by id.
 	PresentationDefinition *exchange.PresentationDefinition `json:"presentationDefinition,omitempty" validate:"omitempty,dive"`
 }
 
 type CreateManifestResponse struct {
-	Manifest    manifestsdk.CredentialManifest `json:"manifest"`
-	ManifestJWT keyaccess.JWT                  `json:"manifestJwt,omitempty"`
+	Manifest manifestsdk.CredentialManifest `json:"manifest"`
 }
 
 type VerifyManifestRequest struct {
@@ -44,8 +45,7 @@ type GetManifestRequest struct {
 }
 
 type GetManifestResponse struct {
-	Manifest    manifestsdk.CredentialManifest `json:"manifest"`
-	ManifestJWT keyaccess.JWT                  `json:"manifestJwt,omitempty"`
+	Manifest manifestsdk.CredentialManifest `json:"manifest"`
 }
 
 type ListManifestsResponse struct {
@@ -141,4 +141,43 @@ type CredentialOverride struct {
 
 	// Whether the credentials created should be revocable.
 	Revocable bool `json:"revocable"`
+}
+
+type CreateRequestRequest struct {
+	ManifestRequest Request `json:"manifestRequest"`
+}
+
+type CreateRequestResponse struct {
+	ManifestRequest Request `json:"manifestRequest"`
+}
+
+type GetRequestRequest struct {
+	ID string `json:"id" validate:"required"`
+}
+
+type GetRequestResponse struct {
+	ID              string  `json:"id"`
+	ManifestRequest Request `json:"manifestRequest"`
+}
+
+type DeleteRequestRequest struct {
+	ID string `json:"id" validate:"required"`
+}
+
+type ListRequestsRequest struct{}
+
+type ListRequestsResponse struct {
+	ManifestRequests []Request `json:"manifestRequests"`
+}
+
+type Request struct {
+	common.Request
+
+	// ID of the credential manifest used for this request.
+	ManifestID string `json:"manifestId" validate:"required"`
+
+	// CredentialManifestJWT is a JWT token with a "presentation_definition" claim within it. The
+	// value of the field named "presentation_definition.id" matches PresentationDefinitionID.
+	// This is an output only field.
+	CredentialManifestJWT keyaccess.JWT `json:"CredentialManifestJwt"`
 }

@@ -3,6 +3,7 @@ package router
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
@@ -11,6 +12,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -104,7 +106,24 @@ func TestManifestRouter(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
 
-		verificationResponse, err := manifestService.VerifyManifest(context.Background(), model.VerifyManifestRequest{ManifestJWT: createdManifest.ManifestJWT})
+		manifestRequestRequest := getValidManifestRequestRequest(issuerDID, kid, createdManifest)
+		manifestRequest, err := manifestService.CreateRequest(context.Background(), manifestRequestRequest)
+		assert.NoError(tt, err)
+		assert.Equal(tt, createdManifest.Manifest.ID, manifestRequest.ManifestID)
+		assert.NotEmpty(tt, manifestRequest.CredentialManifestJWT.String())
+
+		got, err := manifestService.GetRequest(context.Background(), &model.GetRequestRequest{ID: manifestRequest.ID})
+		assert.NoError(t, err)
+		assert.Equal(t, manifestRequest, got)
+
+		err = manifestService.DeleteRequest(context.Background(), model.DeleteRequestRequest{ID: manifestRequest.ID})
+		assert.NoError(t, err)
+
+		_, err = manifestService.GetRequest(context.Background(), &model.GetRequestRequest{ID: manifestRequest.ID})
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "request not found")
+
+		verificationResponse, err := manifestService.VerifyManifest(context.Background(), model.VerifyManifestRequest{ManifestJWT: manifestRequest.CredentialManifestJWT})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, verificationResponse)
 		assert.True(tt, verificationResponse.Verified)
@@ -144,6 +163,20 @@ func TestManifestRouter(t *testing.T) {
 		assert.Empty(tt, createdApplicationResponse.Response.Denial)
 		assert.Equal(tt, len(createManifestRequest.OutputDescriptors), len(createdApplicationResponse.Credentials))
 	})
+}
+
+func getValidManifestRequestRequest(issuerDID *did.CreateDIDResponse, kid string, createdManifest *model.CreateManifestResponse) model.CreateRequestRequest {
+	return model.CreateRequestRequest{
+		ManifestRequest: model.Request{
+			Request: common.Request{
+				Audience:   []string{"mario"},
+				IssuerDID:  issuerDID.DID.ID,
+				IssuerKID:  kid,
+				Expiration: time.Now().Add(100 * time.Second),
+			},
+			ManifestID: createdManifest.Manifest.ID,
+		},
+	}
 }
 
 // getValidManifestRequest returns a valid manifest request, expecting a single JWT-VC EdDSA credential
