@@ -69,7 +69,7 @@ func TestKeyStoreAPI(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		// store a valid key
-		_, privKey, err := crypto.GenerateKeyByKeyType(crypto.Ed25519)
+		pubKey, privKey, err := crypto.GenerateKeyByKeyType(crypto.Ed25519)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, privKey)
 
@@ -104,5 +104,11 @@ func TestKeyStoreAPI(t *testing.T) {
 		assert.Equal(tt, keyID, resp.ID)
 		assert.Equal(tt, controller, resp.Controller)
 		assert.Equal(tt, crypto.Ed25519, resp.Type)
+
+		gotPubKey, err := resp.PublicKeyJWK.ToPublicKey()
+		assert.NoError(tt, err)
+		wantPubKey, err := crypto.PubKeyToBytes(pubKey)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, wantPubKey, gotPubKey)
 	})
 }

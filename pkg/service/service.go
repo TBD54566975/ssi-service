@@ -30,6 +30,7 @@ type SSIService struct {
 	Presentation *presentation.Service
 	Operation    *operation.Service
 	Webhook      *webhook.Service
+	storage      storage.ServiceStorage
 }
 
 // InstantiateSSIService creates a new instance of the SSIS which instantiates all services and their
@@ -139,6 +140,7 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		Presentation: presentationService,
 		Operation:    operationService,
 		Webhook:      webhookService,
+		storage:      storageProvider,
 	}, nil
 }
 
@@ -155,4 +157,8 @@ func (s *SSIService) GetServices() []framework.Service {
 		s.Operation,
 		s.Webhook,
 	}
+}
+
+func (s *SSIService) GetStorage() storage.ServiceStorage {
+	return s.storage
 }

@@ -37,19 +37,19 @@ type GetCredentialResponse struct {
 	credential.Container `json:"credential,omitempty"`
 }
 
-type GetCredentialByIssuerRequest struct {
+type ListCredentialByIssuerRequest struct {
 	Issuer string `json:"issuer" validate:"required"`
 }
 
-type GetCredentialBySubjectRequest struct {
+type ListCredentialBySubjectRequest struct {
 	Subject string `json:"subject" validate:"required"`
 }
 
-type GetCredentialBySchemaRequest struct {
+type ListCredentialBySchemaRequest struct {
 	Schema string `json:"schema" validate:"required"`
 }
 
-type GetCredentialsResponse struct {
+type ListCredentialsResponse struct {
 	Credentials []credential.Container `json:"credentials,omitempty"`
 }
 

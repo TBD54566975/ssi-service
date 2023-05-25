@@ -4,6 +4,7 @@ import (
 	gocrypto "crypto"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 )
 
 type StoreKeyRequest struct {
@@ -32,12 +33,13 @@ type GetKeyDetailsRequest struct {
 }
 
 type GetKeyDetailsResponse struct {
-	ID         string
-	Type       crypto.KeyType
-	Controller string
-	CreatedAt  string
-	Revoked    bool
-	RevokedAt  string
+	ID           string
+	Type         crypto.KeyType
+	Controller   string
+	CreatedAt    string
+	Revoked      bool
+	RevokedAt    string
+	PublicKeyJWK jwx.PublicKeyJWK
 }
 
 type RevokeKeyRequest struct {

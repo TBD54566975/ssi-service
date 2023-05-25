@@ -7,9 +7,12 @@ import (
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
+	swaggerfiles "github.com/swaggo/files"
+	ginswagger "github.com/swaggo/gin-swagger"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/doc"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/middleware"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
@@ -18,6 +21,8 @@ import (
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 )
+
+// gin-swagger middleware
 
 const (
 	HealthPrefix           = "/health"
@@ -63,7 +68,14 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	// service-level routers
 	engine.GET(HealthPrefix, router.Health)
 	engine.GET(ReadinessPrefix, router.Readiness(ssi.GetServices()))
-	engine.GET(SwaggerPrefix, router.Swagger)
+
+	// swagger
+	doc.SwaggerInfo.Version = cfg.SVN
+	doc.SwaggerInfo.Description = cfg.Desc
+	doc.SwaggerInfo.Host = cfg.Server.APIHost
+	doc.SwaggerInfo.Schemes = []string{"http"}
+	engine.StaticFile("swagger.yaml", "./doc/swagger.yaml")
+	engine.GET(SwaggerPrefix, ginswagger.WrapHandler(swaggerfiles.Handler, ginswagger.URL("/swagger.yaml")))
 
 	// register all v1 routers
 	v1 := engine.Group(V1Prefix)
@@ -139,9 +151,9 @@ func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, webh
 	}
 
 	didAPI := rg.Group(DIDsPrefix)
-	didAPI.GET("", didRouter.GetDIDMethods)
+	didAPI.GET("", didRouter.ListDIDMethods)
 	didAPI.PUT("/:method", middleware.Webhook(webhookService, webhook.DID, webhook.Create), didRouter.CreateDIDByMethod)
-	didAPI.GET("/:method", didRouter.GetDIDsByMethod)
+	didAPI.GET("/:method", didRouter.ListDIDsByMethod)
 	didAPI.GET("/:method/:id", didRouter.GetDIDByMethod)
 	didAPI.DELETE("/:method/:id", didRouter.SoftDeleteDIDByMethod)
 	didAPI.GET(ResolverPrefix+"/:id", didRouter.ResolveDID)
@@ -158,7 +170,7 @@ func SchemaAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService
 	schemaAPI := rg.Group(SchemasPrefix)
 	schemaAPI.PUT("", middleware.Webhook(webhookService, webhook.Schema, webhook.Create), schemaRouter.CreateSchema)
 	schemaAPI.GET("/:id", schemaRouter.GetSchema)
-	schemaAPI.GET("", schemaRouter.GetSchemas)
+	schemaAPI.GET("", schemaRouter.ListSchemas)
 	schemaAPI.PUT(VerificationPath, schemaRouter.VerifySchema)
 	schemaAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Schema, webhook.Delete), schemaRouter.DeleteSchema)
 	return
@@ -174,7 +186,7 @@ func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookSer
 	// Credentials
 	credentialAPI := rg.Group(CredentialsPrefix)
 	credentialAPI.PUT("", middleware.Webhook(webhookService, webhook.Credential, webhook.Create), credRouter.CreateCredential)
-	credentialAPI.GET("", credRouter.GetCredentials)
+	credentialAPI.GET("", credRouter.ListCredentials)
 	credentialAPI.GET("/:id", credRouter.GetCredential)
 	credentialAPI.PUT(VerificationPath, credRouter.VerifyCredential)
 	credentialAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Credential, webhook.Delete), credRouter.DeleteCredential)
@@ -233,7 +245,7 @@ func OperationAPI(rg *gin.RouterGroup, service svcframework.Service) (err error)
 	}
 
 	operationAPI := rg.Group(OperationPrefix)
-	operationAPI.GET("", operationRouter.GetOperations)
+	operationAPI.GET("", operationRouter.ListOperations)
 	// In this case, it's used so that the operation id matches `presentations/submissions/{submission_id}` for the DIDWebID
 	// path	`/v1/operations/cancel/presentations/submissions/{id}`
 	operationAPI.PUT("/cancel/*id", operationRouter.CancelOperation)
@@ -250,19 +262,19 @@ func ManifestAPI(rg *gin.RouterGroup, service svcframework.Service, webhookServi
 
 	manifestAPI := rg.Group(ManifestsPrefix)
 	manifestAPI.PUT("", middleware.Webhook(webhookService, webhook.Manifest, webhook.Create), manifestRouter.CreateManifest)
-	manifestAPI.GET("", manifestRouter.GetManifests)
+	manifestAPI.GET("", manifestRouter.ListManifests)
 	manifestAPI.GET("/:id", manifestRouter.GetManifest)
 	manifestAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Manifest, webhook.Delete), manifestRouter.DeleteManifest)
 
 	applicationAPI := manifestAPI.Group(ApplicationsPrefix)
 	applicationAPI.PUT("", middleware.Webhook(webhookService, webhook.Application, webhook.Create), manifestRouter.SubmitApplication)
-	applicationAPI.GET("", manifestRouter.GetApplications)
+	applicationAPI.GET("", manifestRouter.ListApplications)
 	applicationAPI.GET("/:id", manifestRouter.GetApplication)
 	applicationAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Application, webhook.Delete), manifestRouter.DeleteApplication)
 	applicationAPI.PUT("/:id/review", manifestRouter.ReviewApplication)
 
 	responseAPI := manifestAPI.Group(ResponsesPrefix)
-	responseAPI.GET("", manifestRouter.GetResponses)
+	responseAPI.GET("", manifestRouter.ListResponses)
 	responseAPI.GET("/:id", manifestRouter.GetResponse)
 	responseAPI.DELETE("/:id", manifestRouter.DeleteResponse)
 	return
@@ -292,7 +304,7 @@ func WebhookAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 
 	webhookAPI := rg.Group(WebhookPrefix)
 	webhookAPI.PUT("", webhookRouter.CreateWebhook)
-	webhookAPI.GET("", webhookRouter.GetWebhooks)
+	webhookAPI.GET("", webhookRouter.ListWebhooks)
 	webhookAPI.GET("/:noun/:verb", webhookRouter.GetWebhook)
 	webhookAPI.DELETE("/:noun/:verb", webhookRouter.DeleteWebhook)
 

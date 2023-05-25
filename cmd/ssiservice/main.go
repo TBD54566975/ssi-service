@@ -18,7 +18,6 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 
 	"github.com/tbd54566975/ssi-service/config"
-	"github.com/tbd54566975/ssi-service/doc"
 	"github.com/tbd54566975/ssi-service/pkg/server"
 
 	"go.opentelemetry.io/otel/exporters/jaeger"
@@ -54,12 +53,6 @@ func run() error {
 	if err != nil {
 		logrus.Fatalf("could not instantiate config: %s", err.Error())
 	}
-
-	// set up some additional swagger config
-	doc.SwaggerInfo.Version = cfg.SVN
-	doc.SwaggerInfo.Description = cfg.Desc
-	doc.SwaggerInfo.Host = cfg.Server.APIHost
-	doc.SwaggerInfo.Schemes = []string{"http"}
 
 	// set up logger
 	if logFile := configureLogger(cfg.Server.LogLevel, cfg.Server.LogLocation); logFile != nil {
@@ -114,7 +107,6 @@ func run() error {
 	}
 
 	serverErrors := make(chan error, 1)
-
 	go func() {
 		logrus.Infof("main: server started and listening on -> %s", ssiServer.Server.Addr)
 		serverErrors <- ssiServer.ListenAndServe()
