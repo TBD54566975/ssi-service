@@ -113,7 +113,10 @@ type credInputParams struct {
 	SubjectID string
 }
 
-func CreateVerifiableCredential(credentialInput credInputParams, revocable bool) (string, error) {
+func CreateVerifiableCredential(credentialInput credInputParams) (string, error) {
+	return CreateVerifiableCredentialWithStatus(credentialInput, false, false)
+}
+func CreateVerifiableCredentialWithStatus(credentialInput credInputParams, revocable bool, suspendable bool) (string, error) {
 	logrus.Println("\n\nCreate a verifiable credential")
 
 	if credentialInput.SubjectID == "" {
@@ -124,6 +127,10 @@ func CreateVerifiableCredential(credentialInput credInputParams, revocable bool)
 	if revocable {
 		fileName = "credential-revocable-input.json"
 	}
+	if suspendable {
+		fileName = "credential-suspendable-input.json"
+	}
+
 	credentialJSON, err := resolveTemplate(credentialInput, fileName)
 	if err != nil {
 		return "", err

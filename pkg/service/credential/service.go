@@ -511,7 +511,8 @@ func (s Service) GetCredentialStatus(ctx context.Context, request GetCredentialS
 		return nil, sdkutil.LoggingNewErrorf("credential returned is not valid: %s", request.ID)
 	}
 	response := GetCredentialStatusResponse{
-		Revoked: gotCred.Revoked,
+		Revoked:   gotCred.Revoked,
+		Suspended: gotCred.Suspended,
 	}
 	return &response, nil
 }
@@ -587,7 +588,7 @@ func (s Service) updateCredentialStatusFunc(request UpdateCredentialStatusReques
 }
 
 func (s Service) updateCredentialStatusBusinessLogic(ctx context.Context, tx storage.Tx, request UpdateCredentialStatusRequest, slcMetadata StatusListCredentialMetadata) (*UpdateCredentialStatusResponse, error) {
-	logrus.Debugf("updating credential status: %s to Revoked: %v", request.ID, request.Revoked)
+	logrus.Debugf("updating credential status: %s to Revoked: %v, Suspended: %v", request.ID, request.Revoked, request.Suspended)
 
 	if request.Suspended && request.Revoked {
 		return nil, sdkutil.LoggingNewErrorf("cannot update both suspended and revoked status")

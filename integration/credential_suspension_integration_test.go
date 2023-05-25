@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
@@ -9,11 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var credentialRevocationContext = NewTestContext("CredentialRevocation")
+var credentialSuspensionContext = NewTestContext("CredentialSuspension")
 
-func TestRevocationCreateIssuerDIDKeyIntegration(t *testing.T) {
+func TestSuspensionCreateIssuerDIDKeyIntegration(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping integration test")
+		t.Skip("skipping integration testz")
 	}
 
 	didKeyOutput, err := CreateDIDKey()
@@ -22,15 +23,15 @@ func TestRevocationCreateIssuerDIDKeyIntegration(t *testing.T) {
 	issuerDID, err := getJSONElement(didKeyOutput, "$.did.id")
 	assert.NoError(t, err)
 	assert.Contains(t, issuerDID, "did:key")
-	SetValue(credentialRevocationContext, "issuerDID", issuerDID)
+	SetValue(credentialSuspensionContext, "issuerDID", issuerDID)
 
 	issuerKID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerKID)
-	SetValue(credentialRevocationContext, "issuerKID", issuerKID)
+	SetValue(credentialSuspensionContext, "issuerKID", issuerKID)
 }
 
-func TestRevocationCreateSchemaIntegration(t *testing.T) {
+func TestSuspensionCreateSchemaIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
@@ -41,23 +42,23 @@ func TestRevocationCreateSchemaIntegration(t *testing.T) {
 	schemaID, err := getJSONElement(output, "$.id")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
-	SetValue(credentialRevocationContext, "schemaID", schemaID)
+	SetValue(credentialSuspensionContext, "schemaID", schemaID)
 }
 
-func TestRevocationCreateVerifiableCredentialIntegration(t *testing.T) {
+func TestSuspensionCreateVerifiableCredentialIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
 
-	issuerDID, err := GetValue(credentialRevocationContext, "issuerDID")
+	issuerDID, err := GetValue(credentialSuspensionContext, "issuerDID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKID, err := GetValue(credentialRevocationContext, "issuerKID")
+	issuerKID, err := GetValue(credentialSuspensionContext, "issuerKID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerKID)
 
-	schemaID, err := GetValue(credentialRevocationContext, "schemaID")
+	schemaID, err := GetValue(credentialSuspensionContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
@@ -66,26 +67,28 @@ func TestRevocationCreateVerifiableCredentialIntegration(t *testing.T) {
 		IssuerKID: issuerKID.(string),
 		SchemaID:  schemaID.(string),
 		SubjectID: issuerDID.(string),
-	}, true, false)
+	}, false, true)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vcOutput)
 
 	cred, err := getJSONElement(vcOutput, "$.credential")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, cred)
-	SetValue(credentialRevocationContext, "cred", cred)
+	SetValue(credentialSuspensionContext, "cred", cred)
 
 	credStatusURL, err := getJSONElement(vcOutput, "$.credential.credentialStatus.id")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credStatusURL)
 	assert.Contains(t, credStatusURL, "http")
-	SetValue(credentialRevocationContext, "credStatusURL", credStatusURL)
+	SetValue(credentialSuspensionContext, "credStatusURL", credStatusURL)
+
+	fmt.Print(credStatusURL)
 
 	statusListCredentialURL, err := getJSONElement(vcOutput, "$.credential.credentialStatus.statusListCredential")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, statusListCredentialURL)
 	assert.Contains(t, statusListCredentialURL, "http")
-	SetValue(credentialRevocationContext, "statusListCredentialURL", statusListCredentialURL)
+	SetValue(credentialSuspensionContext, "statusListCredentialURL", statusListCredentialURL)
 
 	credStatusListCredentialOutput, err := get(statusListCredentialURL)
 	assert.NoError(t, err)
@@ -94,15 +97,15 @@ func TestRevocationCreateVerifiableCredentialIntegration(t *testing.T) {
 	encodedListOriginal, err := getJSONElement(credStatusListCredentialOutput, "$.credential.credentialSubject.encodedList")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, encodedListOriginal)
-	SetValue(credentialRevocationContext, "encodedListOriginal", encodedListOriginal)
+	SetValue(credentialSuspensionContext, "encodedListOriginal", encodedListOriginal)
 }
 
-func TestRevocationCheckStatusIntegration(t *testing.T) {
+func TestSuspensionCheckStatusIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
 
-	credStatusURL, err := GetValue(credentialRevocationContext, "credStatusURL")
+	credStatusURL, err := GetValue(credentialSuspensionContext, "credStatusURL")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credStatusURL)
 
@@ -110,32 +113,32 @@ func TestRevocationCheckStatusIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credStatusOutput)
 
-	revoked, err := getJSONElement(credStatusOutput, "$.revoked")
+	suspended, err := getJSONElement(credStatusOutput, "$.suspended")
 	assert.NoError(t, err)
-	assert.Equal(t, "false", revoked)
+	assert.Equal(t, "false", suspended)
 
-	revokedOutput, err := put(credStatusURL.(string), getJSONFromFile("revoked-input.json"))
+	suspendedOutput, err := put(credStatusURL.(string), getJSONFromFile("suspended-input.json"))
 	assert.NoError(t, err)
 
-	revoked, err = getJSONElement(revokedOutput, "$.revoked")
+	suspended, err = getJSONElement(suspendedOutput, "$.suspended")
 	assert.NoError(t, err)
-	assert.Equal(t, "true", revoked)
+	assert.Equal(t, "true", suspended)
 
 	credStatusOutput, err = get(credStatusURL.(string))
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credStatusOutput)
 
-	revoked, err = getJSONElement(credStatusOutput, "$.revoked")
+	suspended, err = getJSONElement(credStatusOutput, "$.suspended")
 	assert.NoError(t, err)
-	assert.Equal(t, "true", revoked)
+	assert.Equal(t, "true", suspended)
 }
 
-func TestRevocationCheckStatusListCredentialIntegration(t *testing.T) {
+func TestSuspensionCheckStatusListCredentialIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
 
-	statusListCredentialURL, err := GetValue(credentialRevocationContext, "statusListCredentialURL")
+	statusListCredentialURL, err := GetValue(credentialSuspensionContext, "statusListCredentialURL")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, statusListCredentialURL)
 
@@ -152,19 +155,19 @@ func TestRevocationCheckStatusListCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, encodedList)
 
-	encodedListOriginal, err := GetValue(credentialRevocationContext, "encodedListOriginal")
+	encodedListOriginal, err := GetValue(credentialSuspensionContext, "encodedListOriginal")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, encodedListOriginal)
 
 	assert.NotEqual(t, encodedListOriginal.(string), encodedList)
 }
 
-func TestRevocationValidateCredentialInStatusListIntegration(t *testing.T) {
+func TestSuspensionValidateCredentialInStatusListIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}
 
-	credJSON, err := GetValue(credentialRevocationContext, "cred")
+	credJSON, err := GetValue(credentialSuspensionContext, "cred")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credJSON)
 
@@ -173,7 +176,7 @@ func TestRevocationValidateCredentialInStatusListIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vc)
 
-	statusListCredentialURL, err := GetValue(credentialRevocationContext, "statusListCredentialURL")
+	statusListCredentialURL, err := GetValue(credentialSuspensionContext, "statusListCredentialURL")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, statusListCredentialURL)
 

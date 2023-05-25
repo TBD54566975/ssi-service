@@ -30,7 +30,7 @@ func TestCreateRevocationVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
-	vcOutput, err := CreateVerifiableCredential(credInputParams{IssuerID: issuerDID, IssuerKID: issuerKID, SchemaID: schemaID, SubjectID: issuerDID}, true)
+	vcOutput, err := CreateVerifiableCredentialWithStatus(credInputParams{IssuerID: issuerDID, IssuerKID: issuerKID, SchemaID: schemaID, SubjectID: issuerDID}, true, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vcOutput)
 
@@ -68,7 +68,7 @@ func TestCreateRevocationVerifiableCredentialShareStatusListIntegration(t *testi
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
-	vcOutput, err := CreateVerifiableCredential(credInputParams{IssuerID: issuerDID, IssuerKID: issuerKID, SchemaID: schemaID, SubjectID: issuerDID}, true)
+	vcOutput, err := CreateVerifiableCredentialWithStatus(credInputParams{IssuerID: issuerDID, IssuerKID: issuerKID, SchemaID: schemaID, SubjectID: issuerDID}, true, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vcOutput)
 
@@ -82,7 +82,7 @@ func TestCreateRevocationVerifiableCredentialShareStatusListIntegration(t *testi
 	assert.NotEmpty(t, credStatusListURL)
 	assert.Contains(t, credStatusListURL, "http")
 
-	vcOutputTwo, err := CreateVerifiableCredential(credInputParams{IssuerID: issuerDID, IssuerKID: issuerKID, SchemaID: schemaID, SubjectID: issuerDID}, true)
+	vcOutputTwo, err := CreateVerifiableCredentialWithStatus(credInputParams{IssuerID: issuerDID, IssuerKID: issuerKID, SchemaID: schemaID, SubjectID: issuerDID}, true, false)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vcOutputTwo)
 
@@ -135,7 +135,7 @@ func TestConcurrencyRevocationVerifiableCredentialIntegration(t *testing.T) {
 		go func() {
 			defer wg.Done()
 
-			vcOutput, err := CreateVerifiableCredential(credInputParams{IssuerID: issuerDID, IssuerKID: issuerKID, SchemaID: schemaID, SubjectID: issuerDID}, true)
+			vcOutput, err := CreateVerifiableCredentialWithStatus(credInputParams{IssuerID: issuerDID, IssuerKID: issuerKID, SchemaID: schemaID, SubjectID: issuerDID}, true, false)
 
 			// We're hammering the DB, so some calls might fail due to internal timeouts or similar. Upon failure, we
 			// shouldn't check any assertions, since we know they'll fail.
