@@ -48,7 +48,7 @@ func (ps *Storage) GetRequest(ctx context.Context, id string) (*prestorage.Store
 		return nil, sdkutil.LoggingNewErrorf("presentation request not found with id: %s", id)
 	}
 	var stored prestorage.StoredRequest
-	if err := json.Unmarshal(jsonBytes, &stored); err != nil {
+	if err = json.Unmarshal(jsonBytes, &stored); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not unmarshal stored presentation definition: %s", id)
 	}
 	return &stored, nil
