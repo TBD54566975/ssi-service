@@ -144,8 +144,8 @@ type ListOperationsResponse struct {
 //	@Tags			OperationAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			filter	parent		string	false	"The name of the parent's resource. For example: "parent?=/presentation/submissions""
-//	@Param			filter	done		string	false	"A boolean value filtering for whether an operation is completed or not. For example: `?done=true`"
+//	@Param			parent	query		string					false	"The name of the parent's resource. For example: `parent?=/presentation/submissions`"
+//	@Param			done	query		string					false	"A boolean value filtering for whether an operation is completed or not. For example: `?done=true`"
 //	@Success		200		{object}	ListOperationsResponse	"OK"
 //	@Failure		400		{string}	string					"Bad request"
 //	@Failure		500		{string}	string					"Internal server error"

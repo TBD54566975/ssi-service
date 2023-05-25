@@ -532,12 +532,12 @@ definitions:
     properties:
       credential:
         $ref: '#/definitions/credential.VerifiableCredential'
-      credentialJWT:
+      credentialJwt:
         type: string
       id:
         description: Credential ID
         type: string
-      issuerKID:
+      issuerKid:
         type: string
       revoked:
         type: boolean
@@ -1323,8 +1323,6 @@ definitions:
           $ref: '#/definitions/did.Document'
         type: array
     type: object
-  pkg_server_router.ListDefinitionsRequest:
-    type: object
   pkg_server_router.ListDefinitionsResponse:
     properties:
       definitions:
@@ -1355,17 +1353,6 @@ definitions:
           $ref: '#/definitions/pkg_server_router.ListManifestResponse'
         type: array
     type: object
-  pkg_server_router.ListOperationsRequest:
-    properties:
-      filter:
-        description: |-
-          A standard filter expression conforming to https://google.aip.dev/160.
-          For example: `done = true`.
-        type: string
-      parent:
-        description: 'The name of the parent''s resource. For example: "/presentation/submissions".'
-        type: string
-    type: object
   pkg_server_router.ListOperationsResponse:
     properties:
       operations:
@@ -1386,14 +1373,6 @@ definitions:
         items:
           $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
         type: array
-    type: object
-  pkg_server_router.ListSubmissionRequest:
-    properties:
-      filter:
-        description: |-
-          A standard filter expression conforming to https://google.aip.dev/160.
-          For example: `status = "done"`.
-        type: string
     type: object
   pkg_server_router.ListSubmissionResponse:
     properties:
@@ -2776,12 +2755,15 @@ paths:
       - application/json
       description: List operations according to the request
       parameters:
-      - description: request body
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/pkg_server_router.ListOperationsRequest'
+      - description: 'The name of the parent''s resource. For example: `parent?=/presentation/submissions`'
+        in: query
+        name: parent
+        type: string
+      - description: 'A boolean value filtering for whether an operation is completed
+          or not. For example: `?done=true`'
+        in: query
+        name: done
+        type: string
       produces:
       - application/json
       responses:
@@ -2863,13 +2845,6 @@ paths:
       consumes:
       - application/json
       description: Lists all the existing presentation definitions
-      parameters:
-      - description: request body
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/pkg_server_router.ListDefinitionsRequest'
       produces:
       - application/json
       responses:
@@ -3060,12 +3035,11 @@ paths:
       description: List existing submissions according to a filtering query. The `filter`
         field follows the syntax described in https://google.aip.dev/160.
       parameters:
-      - description: request body
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/pkg_server_router.ListSubmissionRequest'
+      - description: 'A standard filter expression conforming to https://google.aip.dev/160.
+          For example: `?status=done`'
+        in: query
+        name: filter
+        type: string
       produces:
       - application/json
       responses:

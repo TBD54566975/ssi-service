@@ -178,9 +178,9 @@ type ListDefinitionsResponse struct {
 //	@Tags			PresentationDefinitionAPI
 //	@Accept			json
 //	@Produce		json
-//	@Success		200		{object}	ListDefinitionsResponse
-//	@Failure		400		{string}	string	"Bad request"
-//	@Failure		500		{string}	string	"Internal server error"
+//	@Success		200	{object}	ListDefinitionsResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/presentations/definitions [get]
 func (pr PresentationRouter) ListDefinitions(c *gin.Context) {
 	svcResponse, err := pr.service.ListDefinitions(c)
@@ -357,7 +357,7 @@ type ListSubmissionResponse struct {
 //	@Produce		json
 //	@Param			filter	query		string	false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?status=done`"
 //	@Success		200		{object}	ListSubmissionResponse
-//	@Failure		400		{string}lstring	"Bad request"
+//	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/presentations/submissions [get]
 func (pr PresentationRouter) ListSubmissions(c *gin.Context) {
