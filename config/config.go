@@ -288,30 +288,30 @@ func getDefaultServicesConfig() ServicesConfig {
 			MasterKeyPassword: "default-password",
 		},
 		DIDConfig: DIDServiceConfig{
-			BaseServiceConfig:      &BaseServiceConfig{Name: "did", ServiceEndpoint: DefaultServiceEndpoint + "/dids"},
+			BaseServiceConfig:      &BaseServiceConfig{Name: "did", ServiceEndpoint: DefaultServiceEndpoint + "/v1/dids"},
 			Methods:                []string{"key", "web"},
 			LocalResolutionMethods: []string{"key", "peer", "web", "jwk", "pkh"},
 		},
 		SchemaConfig: SchemaServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "schema", ServiceEndpoint: DefaultServiceEndpoint + "/schemas"},
+			BaseServiceConfig: &BaseServiceConfig{Name: "schema", ServiceEndpoint: DefaultServiceEndpoint + "/v1/schemas"},
 		},
 		CredentialConfig: CredentialServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "credential", ServiceEndpoint: DefaultServiceEndpoint + "/credentials"},
+			BaseServiceConfig: &BaseServiceConfig{Name: "credential", ServiceEndpoint: DefaultServiceEndpoint + "/v1/credentials"},
 		},
 		OperationConfig: OperationServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "operation", ServiceEndpoint: DefaultServiceEndpoint + "/operations"},
+			BaseServiceConfig: &BaseServiceConfig{Name: "operation", ServiceEndpoint: DefaultServiceEndpoint + "/v1/operations"},
 		},
 		PresentationConfig: PresentationServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "presentation", ServiceEndpoint: DefaultServiceEndpoint + "/presentations"},
+			BaseServiceConfig: &BaseServiceConfig{Name: "presentation", ServiceEndpoint: DefaultServiceEndpoint + "/v1/presentations"},
 		},
 		ManifestConfig: ManifestServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "manifest", ServiceEndpoint: DefaultServiceEndpoint + "/manifests"},
+			BaseServiceConfig: &BaseServiceConfig{Name: "manifest", ServiceEndpoint: DefaultServiceEndpoint + "/v1/manifests"},
 		},
 		IssuanceServiceConfig: IssuanceServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "issuance", ServiceEndpoint: DefaultServiceEndpoint + "/issuancetemplates"},
+			BaseServiceConfig: &BaseServiceConfig{Name: "issuance", ServiceEndpoint: DefaultServiceEndpoint + "/v1/issuancetemplates"},
 		},
 		WebhookConfig: WebhookServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "webhook", ServiceEndpoint: DefaultServiceEndpoint + "/webhooks"},
+			BaseServiceConfig: &BaseServiceConfig{Name: "webhook", ServiceEndpoint: DefaultServiceEndpoint + "/v1/webhooks"},
 			WebhookTimeout:    "10s",
 		},
 	}
@@ -325,15 +325,60 @@ func loadTOMLConfig(path string, config *SSIServiceConfig) error {
 
 	// apply defaults
 	services := config.Services
-	endpoint := services.ServiceEndpoint
+	endpoint := services.ServiceEndpoint + "/v1"
+	if services.KeyStoreConfig.IsEmpty() {
+		services.KeyStoreConfig = KeyStoreServiceConfig{
+			BaseServiceConfig: new(BaseServiceConfig),
+		}
+	}
 	services.KeyStoreConfig.ServiceEndpoint = endpoint + "/keys"
+	if services.DIDConfig.IsEmpty() {
+		services.DIDConfig = DIDServiceConfig{
+			BaseServiceConfig: new(BaseServiceConfig),
+		}
+	}
 	services.DIDConfig.ServiceEndpoint = endpoint + "/dids"
+	if services.SchemaConfig.IsEmpty() {
+		services.SchemaConfig = SchemaServiceConfig{
+			BaseServiceConfig: new(BaseServiceConfig),
+		}
+	}
 	services.SchemaConfig.ServiceEndpoint = endpoint + "/schemas"
+	if services.CredentialConfig.IsEmpty() {
+		services.CredentialConfig = CredentialServiceConfig{
+			BaseServiceConfig: new(BaseServiceConfig),
+		}
+	}
 	services.CredentialConfig.ServiceEndpoint = endpoint + "/credentials"
+	if services.OperationConfig.IsEmpty() {
+		services.OperationConfig = OperationServiceConfig{
+			BaseServiceConfig: new(BaseServiceConfig),
+		}
+	}
 	services.OperationConfig.ServiceEndpoint = endpoint + "/operations"
+	if services.PresentationConfig.IsEmpty() {
+		services.PresentationConfig = PresentationServiceConfig{
+			BaseServiceConfig: new(BaseServiceConfig),
+		}
+	}
 	services.PresentationConfig.ServiceEndpoint = endpoint + "/presentations"
+	if services.ManifestConfig.IsEmpty() {
+		services.ManifestConfig = ManifestServiceConfig{
+			BaseServiceConfig: new(BaseServiceConfig),
+		}
+	}
 	services.ManifestConfig.ServiceEndpoint = endpoint + "/manifests"
+	if services.IssuanceServiceConfig.IsEmpty() {
+		services.IssuanceServiceConfig = IssuanceServiceConfig{
+			BaseServiceConfig: new(BaseServiceConfig),
+		}
+	}
 	services.IssuanceServiceConfig.ServiceEndpoint = endpoint + "/issuancetemplates"
+	if services.WebhookConfig.IsEmpty() {
+		services.WebhookConfig = WebhookServiceConfig{
+			BaseServiceConfig: new(BaseServiceConfig),
+		}
+	}
 	services.WebhookConfig.ServiceEndpoint = endpoint + "/webhooks"
 	return nil
 }

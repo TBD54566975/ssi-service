@@ -79,7 +79,7 @@ func (ss *Storage) ListSchemas(ctx context.Context) ([]StoredSchema, error) {
 		if err = json.Unmarshal(schemaBytes, &nextSchema); err == nil {
 			stored = append(stored, nextSchema)
 		} else {
-			logrus.WithError(err).Error("could not unmarshal stored schema: %s", string(schemaBytes))
+			logrus.WithError(err).Errorf("could not unmarshal stored schema: %s", string(schemaBytes))
 		}
 	}
 	return stored, nil

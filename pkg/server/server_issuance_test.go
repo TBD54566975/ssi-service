@@ -45,7 +45,7 @@ func TestIssuanceRouter(t *testing.T) {
 						Credentials: []issuance.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
-								Schema: createdSchema.Schema.ID,
+								Schema: createdSchema.ID,
 								Data: issuance.ClaimTemplates{
 									"foo":   "bar",
 									"hello": "$.vcsomething.something",
@@ -116,7 +116,7 @@ func TestIssuanceRouter(t *testing.T) {
 						Credentials: []issuance.CredentialTemplate{
 							{
 								ID:     "",
-								Schema: createdSchema.Schema.ID,
+								Schema: createdSchema.ID,
 								Data: issuance.ClaimTemplates{
 									"foo":   "bar",
 									"hello": "$.vcsomething.something",
@@ -140,7 +140,7 @@ func TestIssuanceRouter(t *testing.T) {
 						Credentials: []issuance.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
-								Schema: createdSchema.Schema.ID,
+								Schema: createdSchema.ID,
 								Data: issuance.ClaimTemplates{
 									"foo":   "bar",
 									"hello": "$.vcsomething.something",
@@ -249,7 +249,7 @@ func TestIssuanceRouter(t *testing.T) {
 			Credentials: []issuance.CredentialTemplate{
 				{
 					ID:     "output_descriptor_1",
-					Schema: createdSchema.Schema.ID,
+					Schema: createdSchema.ID,
 					Data: issuance.ClaimTemplates{
 						"foo":   "bar",
 						"hello": "$.vcsomething.something",
@@ -371,7 +371,7 @@ func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, 
 				Credentials: []issuance.CredentialTemplate{
 					{
 						ID:     "output_descriptor_1",
-						Schema: createdSchema.Schema.ID,
+						Schema: createdSchema.ID,
 						Data: issuance.ClaimTemplates{
 							"foo":   "bar",
 							"hello": "$.vcsomething.something",
@@ -432,7 +432,7 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 		OutputDescriptors: []manifestsdk.OutputDescriptor{
 			{
 				ID:     "output_descriptor_1",
-				Schema: createdSchema.Schema.ID,
+				Schema: createdSchema.ID,
 			},
 		},
 	})

@@ -123,17 +123,25 @@ func TestCredentialAPI(t *testing.T) {
 
 		// create a schema
 		simpleSchema := map[string]any{
-			"type": "object",
+			"$schema": "https://json-schema.org/draft-07/schema",
+			"type":    "object",
 			"properties": map[string]any{
-				"firstName": map[string]any{
-					"type": "string",
-				},
-				"lastName": map[string]any{
-					"type": "string",
+				"credentialSubject": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id": map[string]any{
+							"type": "string",
+						},
+						"firstName": map[string]any{
+							"type": "string",
+						},
+						"lastName": map[string]any{
+							"type": "string",
+						},
+					},
+					"required": []any{"firstName", "lastName"},
 				},
 			},
-			"required":             []any{"firstName", "lastName"},
-			"additionalProperties": false,
 		}
 		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
@@ -299,17 +307,25 @@ func TestCredentialAPI(t *testing.T) {
 
 		// create a schema
 		simpleSchema := map[string]any{
-			"type": "object",
+			"$schema": "https://json-schema.org/draft-07/schema",
+			"type":    "object",
 			"properties": map[string]any{
-				"firstName": map[string]any{
-					"type": "string",
-				},
-				"lastName": map[string]any{
-					"type": "string",
+				"credentialSubject": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id": map[string]any{
+							"type": "string",
+						},
+						"firstName": map[string]any{
+							"type": "string",
+						},
+						"lastName": map[string]any{
+							"type": "string",
+						},
+					},
+					"required": []any{"firstName", "lastName"},
 				},
 			},
-			"required":             []any{"firstName", "lastName"},
-			"additionalProperties": false,
 		}
 		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)

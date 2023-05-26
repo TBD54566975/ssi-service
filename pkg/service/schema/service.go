@@ -105,44 +105,25 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 	// set id, name, and description on the schema
 	schemaID := uuid.NewString()
 	jsonSchema[schema.JSONSchemaIDProperty] = strings.Join([]string{s.Config().ServiceEndpoint, schemaID}, "/")
+	if jsonSchema[schema.JSONSchemaNameProperty] != "" && request.Name != "" {
+		logrus.Infof("schema has name: %s, which is being overwritten", jsonSchema[schema.JSONSchemaNameProperty])
+	}
 	jsonSchema[schema.JSONSchemaNameProperty] = request.Name
 	if request.Description != "" {
+		if jsonSchema[schema.JSONSchemaDescriptionProperty] != "" {
+			logrus.Infof("schema has description: %s, which is being overwritten", jsonSchema[schema.JSONSchemaDescriptionProperty])
+		}
 		jsonSchema[schema.JSONSchemaDescriptionProperty] = request.Description
 	}
 
+	// TODO(gabe) support signing credential schemas
 	// create schema
 	storedSchema := StoredSchema{ID: schemaID, Schema: jsonSchema}
-
-	// sign the schema
-	// if request.Sign {
-	// 	signedSchema, err := s.signSchemaJWT(ctx, request.IssuerKID, schemaValue)
-	// 	if err != nil {
-	// 		return nil, sdkutil.LoggingError(err)
-	// 	}
-	// 	storedSchema.CredentialSchema = signedSchema
-	// }
-
 	if err = s.storage.StoreSchema(ctx, storedSchema); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not store schema")
 	}
 
 	return &CreateSchemaResponse{ID: schemaID, Schema: jsonSchema, CredentialSchema: storedSchema.CredentialSchema}, nil
-}
-
-func (s Service) createCredentialSchemaJWT(ctx context.Context, issuerKID string, schemaValue schema.JSONSchema) (string, error) {
-	// get issuer key
-	issuerKey, err := s.keyStore.GetKey(ctx, issuerKID)
-	if err != nil {
-		return "", sdkutil.LoggingError(err)
-	}
-
-	// create JWT
-	schemaJWT, err := schema.CreateCredentialSchemaJWT(schemaValue, issuerKey)
-	if err != nil {
-		return "", sdkutil.LoggingError(err)
-	}
-
-	return schemaJWT, nil
 }
 
 func (s Service) ListSchemas(ctx context.Context) (*ListSchemasResponse, error) {
