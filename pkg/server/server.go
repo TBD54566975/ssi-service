@@ -274,6 +274,12 @@ func ManifestAPI(rg *gin.RouterGroup, service svcframework.Service, webhookServi
 	applicationAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Application, webhook.Delete), manifestRouter.DeleteApplication)
 	applicationAPI.PUT("/:id/review", manifestRouter.ReviewApplication)
 
+	manifestReqAPI := manifestAPI.Group(RequestsPrefix)
+	manifestReqAPI.PUT("", manifestRouter.CreateRequest)
+	manifestReqAPI.GET("", manifestRouter.ListRequests)
+	manifestReqAPI.GET("/:id", manifestRouter.GetRequest)
+	manifestReqAPI.PUT("/:id", manifestRouter.DeleteRequest)
+
 	responseAPI := manifestAPI.Group(ResponsesPrefix)
 	responseAPI.GET("", manifestRouter.ListResponses)
 	responseAPI.GET("/:id", manifestRouter.GetResponse)

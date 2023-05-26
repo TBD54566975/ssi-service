@@ -8,7 +8,6 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
@@ -25,11 +24,10 @@ const (
 )
 
 type StoredManifest struct {
-	ID          string                      `json:"id"`
-	IssuerDID   string                      `json:"issuerDid"`
-	IssuerKID   string                      `json:"issuerKid"`
-	Manifest    manifest.CredentialManifest `json:"manifest"`
-	ManifestJWT keyaccess.JWT               `json:"manifestJwt"`
+	ID        string                      `json:"id"`
+	IssuerDID string                      `json:"issuerDid"`
+	IssuerKID string                      `json:"issuerKid"`
+	Manifest  manifest.CredentialManifest `json:"manifest"`
 }
 
 type StoredApplication struct {

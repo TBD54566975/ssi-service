@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
@@ -108,11 +109,13 @@ func TestPresentationDefinitionService(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		expectedReq := model.Request{
-			Audience:                 []string{"did:web:heman"},
-			IssuerDID:                authorDID.DID.ID,
-			IssuerKID:                authorDID.DID.VerificationMethod[0].ID,
+			Request: common.Request{
+				Audience:   []string{"did:web:heman"},
+				IssuerDID:  authorDID.DID.ID,
+				IssuerKID:  authorDID.DID.VerificationMethod[0].ID,
+				Expiration: time.Date(2023, 10, 10, 10, 10, 10, 0, time.UTC),
+			},
 			PresentationDefinitionID: pd.ID,
-			Expiration:               time.Date(2023, 10, 10, 10, 10, 10, 0, time.UTC),
 		}
 		req, err := service.CreateRequest(context.Background(), model.CreateRequestRequest{
 			PresentationRequest: expectedReq,
@@ -142,10 +145,12 @@ func TestPresentationDefinitionService(t *testing.T) {
 		assert.NoError(t, err)
 		req, err := service.CreateRequest(context.Background(), model.CreateRequestRequest{
 			PresentationRequest: model.Request{
-				Audience:                 []string{"did:web:heman"},
-				IssuerDID:                authorDID.DID.ID,
-				IssuerKID:                authorDID.DID.VerificationMethod[0].ID,
-				Expiration:               time.Now().Add(30 * time.Second),
+				Request: common.Request{
+					Audience:   []string{"did:web:heman"},
+					IssuerDID:  authorDID.DID.ID,
+					IssuerKID:  authorDID.DID.VerificationMethod[0].ID,
+					Expiration: time.Now().Add(30 * time.Second),
+				},
 				PresentationDefinitionID: pd.ID,
 			},
 		})
@@ -164,10 +169,12 @@ func TestPresentationDefinitionService(t *testing.T) {
 		assert.NoError(t, err)
 		req, err := service.CreateRequest(context.Background(), model.CreateRequestRequest{
 			PresentationRequest: model.Request{
-				IssuerDID:                authorDID.DID.ID,
-				IssuerKID:                authorDID.DID.VerificationMethod[0].ID,
+				Request: common.Request{
+					IssuerDID:  authorDID.DID.ID,
+					IssuerKID:  authorDID.DID.VerificationMethod[0].ID,
+					Expiration: time.Now().Add(30 * time.Second),
+				},
 				PresentationDefinitionID: pd.ID,
-				Expiration:               time.Now().Add(30 * time.Second),
 			},
 		})
 		assert.NoError(t, err)
@@ -177,14 +184,16 @@ func TestPresentationDefinitionService(t *testing.T) {
 
 		_, err = service.GetRequest(context.Background(), &model.GetRequestRequest{ID: req.ID})
 		assert.Error(t, err)
-		assert.ErrorContains(t, err, "presentation request not found")
+		assert.ErrorContains(t, err, "request not found")
 	})
 
 	t.Run("Error returned when missing required fields", func(t *testing.T) {
 		_, err := service.CreateRequest(context.Background(), model.CreateRequestRequest{
 			PresentationRequest: model.Request{
-				IssuerDID: "issuer id",
-				IssuerKID: "kid",
+				Request: common.Request{
+					IssuerDID: "issuer id",
+					IssuerKID: "kid",
+				},
 			},
 		})
 		assert.Error(t, err)
@@ -192,7 +201,9 @@ func TestPresentationDefinitionService(t *testing.T) {
 
 		_, err = service.CreateRequest(context.Background(), model.CreateRequestRequest{
 			PresentationRequest: model.Request{
-				IssuerDID:                "issuer id",
+				Request: common.Request{
+					IssuerDID: "issuer id",
+				},
 				PresentationDefinitionID: "something",
 			},
 		})
@@ -201,7 +212,9 @@ func TestPresentationDefinitionService(t *testing.T) {
 
 		_, err = service.CreateRequest(context.Background(), model.CreateRequestRequest{
 			PresentationRequest: model.Request{
-				IssuerKID:                "kid",
+				Request: common.Request{
+					IssuerKID: "kid",
+				},
 				PresentationDefinitionID: "something",
 			},
 		})
