@@ -63,7 +63,7 @@ type Storage struct {
 
 func NewDIDStorage(db storage.ServiceStorage) (*Storage, error) {
 	if db == nil {
-		return nil, errors.New("bolt db reference is nil")
+		return nil, errors.New("db reference is nil")
 	}
 	return &Storage{db: db}, nil
 }

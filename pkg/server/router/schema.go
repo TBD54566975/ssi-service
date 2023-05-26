@@ -30,21 +30,26 @@ func NewSchemaRouter(s svcframework.Service) (*SchemaRouter, error) {
 }
 
 type CreateSchemaRequest struct {
-	Author string               `json:"author" validate:"required"`
-	Name   string               `json:"name" validate:"required"`
+	Name        string `json:"name" validate:"required"`
+	Description string `json:"description,omitempty"`
+	// Schema represents the JSON schema for the credential schema
+	// If the schema has an $id field, it will be overwritten with an ID the service generates.
+	// The schema must be against draft 2020-12, 2019-09, or 7.
 	Schema schemalib.JSONSchema `json:"schema" validate:"required"`
 
 	// Sign represents whether the schema should be signed by the author. Default is false.
-	// If sign is true, the schema will be signed by the author's private key with the specified KID
+	// If sign is true, the schema will be signed by the issuer's private key with the specified KID
 	Sign bool `json:"sign"`
-	// AuthorKID represents the KID of the author's private key to sign the schema. Required if sign is true.
-	AuthorKID string `json:"authorKid"`
+	// Issuer represents the DID of the issuer for the schema if it's signed. Required if sign is true.
+	Issuer string `json:"issuer,omitempty"`
+	// IssuerKID represents the KID of the issuer's private key to sign the schema. Required if sign is true.
+	IssuerKID string `json:"issuerKid,omitempty"`
 }
 
 type CreateSchemaResponse struct {
-	ID        string                 `json:"id"`
-	Schema    schemalib.VCJSONSchema `json:"schema"`
-	SchemaJWT *keyaccess.JWT         `json:"schemaJwt,omitempty"`
+	ID        string               `json:"id"`
+	Schema    schemalib.JSONSchema `json:"schema"`
+	SchemaJWT *keyaccess.JWT       `json:"schemaJwt,omitempty"`
 }
 
 // CreateSchema godoc
@@ -72,16 +77,23 @@ func (sr SchemaRouter) CreateSchema(c *gin.Context) {
 		return
 	}
 
-	if request.Sign && request.AuthorKID == "" {
-		errMsg := "cannot sign schema without authorKID"
+	if request.Sign && (request.Issuer == "" || request.IssuerKID == "") {
+		errMsg := "cannot sign schema without an issuer DID and KID"
 		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 		return
 	}
 
-	req := schema.CreateSchemaRequest{Author: request.Author, AuthorKID: request.AuthorKID, Name: request.Name, Schema: request.Schema, Sign: request.Sign}
+	req := schema.CreateSchemaRequest{
+		Name:        request.Name,
+		Description: request.Description,
+		Schema:      request.Schema,
+		Sign:        request.Sign,
+		Issuer:      request.Issuer,
+		IssuerKID:   request.IssuerKID,
+	}
 	createSchemaResponse, err := sr.service.CreateSchema(c, req)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create schema with authoring DID<%s> and KID<%s>", request.Author, request.AuthorKID)
+		errMsg := fmt.Sprintf("could not create schema with issuing DID<%s> and KID<%s>", request.Issuer, request.IssuerKID)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
@@ -154,47 +166,8 @@ func (sr SchemaRouter) ListSchemas(c *gin.Context) {
 }
 
 type GetSchemaResponse struct {
-	Schema    schemalib.VCJSONSchema `json:"schema,omitempty"`
-	SchemaJWT *keyaccess.JWT         `json:"schemaJwt,omitempty"`
-}
-
-type VerifySchemaRequest struct {
-	SchemaJWT keyaccess.JWT `json:"schemaJwt" validate:"required"`
-}
-
-type VerifySchemaResponse struct {
-	Verified bool   `json:"verified" validate:"required"`
-	Reason   string `json:"reason,omitempty"`
-}
-
-// VerifySchema godoc
-//
-//	@Summary		Verify SchemaID
-//	@Description	Verify a given schema by its id
-//	@Tags			SchemaAPI
-//	@Accept			json
-//	@Produce		json
-//	@Param			request	body		VerifySchemaRequest	true	"request body"
-//	@Success		200		{object}	VerifySchemaResponse
-//	@Failure		400		{string}	string	"Bad request"
-//	@Router			/v1/schemas/verification [put]
-func (sr SchemaRouter) VerifySchema(c *gin.Context) {
-	var request VerifySchemaRequest
-	if err := framework.Decode(c.Request, &request); err != nil {
-		errMsg := "invalid verify schema request"
-		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
-		return
-	}
-
-	verificationResult, err := sr.service.VerifySchema(c, schema.VerifySchemaRequest{SchemaJWT: request.SchemaJWT})
-	if err != nil {
-		errMsg := "could not verify schema"
-		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	resp := VerifySchemaResponse{Verified: verificationResult.Verified, Reason: verificationResult.Reason}
-	framework.Respond(c, resp, http.StatusOK)
+	Schema    schemalib.JSONSchema `json:"schema,omitempty"`
+	SchemaJWT *keyaccess.JWT       `json:"schemaJwt,omitempty"`
 }
 
 // DeleteSchema godoc

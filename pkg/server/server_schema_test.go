@@ -41,7 +41,7 @@ func TestSchemaAPI(t *testing.T) {
 		// reset the http recorder
 		w = httptest.NewRecorder()
 
-		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema}
+		schemaRequest := router.CreateSchemaRequest{Issuer: "did:test", Name: "test schema", Schema: simpleSchema}
 		schemaRequestValue = newRequestValue(tt, schemaRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 
@@ -68,7 +68,7 @@ func TestSchemaAPI(t *testing.T) {
 
 		// sign request with unknown DID
 		simpleSchema := getTestSchema()
-		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema, Sign: true}
+		schemaRequest := router.CreateSchemaRequest{Issuer: "did:test", Name: "test schema", Schema: simpleSchema, Sign: true}
 		schemaRequestValue := newRequestValue(tt, schemaRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		c := newRequestContext(w, req)
@@ -85,7 +85,7 @@ func TestSchemaAPI(t *testing.T) {
 
 		// sign with known DID
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		schemaRequest = router.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "test schema", Schema: simpleSchema, Sign: true}
+		schemaRequest = router.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "test schema", Schema: simpleSchema, Sign: true}
 		schemaRequestValue = newRequestValue(tt, schemaRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		w = httptest.NewRecorder()
@@ -174,7 +174,7 @@ func TestSchemaAPI(t *testing.T) {
 		// create a schema
 		simpleSchema := getTestSchema()
 
-		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema}
+		schemaRequest := router.CreateSchemaRequest{Issuer: "did:test", Name: "test schema", Schema: simpleSchema}
 		schemaRequestValue := newRequestValue(tt, schemaRequest)
 		createReq := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 
@@ -238,7 +238,7 @@ func TestSchemaAPI(t *testing.T) {
 		// create a schema
 		simpleSchema := getTestSchema()
 
-		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema}
+		schemaRequest := router.CreateSchemaRequest{Issuer: "did:test", Name: "test schema", Schema: simpleSchema}
 		schemaRequestValue := newRequestValue(tt, schemaRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		w = httptest.NewRecorder()

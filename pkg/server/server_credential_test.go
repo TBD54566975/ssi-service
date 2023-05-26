@@ -135,7 +135,7 @@ func TestCredentialAPI(t *testing.T) {
 			"required":             []any{"firstName", "lastName"},
 			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -311,7 +311,7 @@ func TestCredentialAPI(t *testing.T) {
 			"required":             []any{"firstName", "lastName"},
 			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 

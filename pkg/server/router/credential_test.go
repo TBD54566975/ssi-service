@@ -149,7 +149,7 @@ func TestCredentialRouter(t *testing.T) {
 			"required":             []any{"email"},
 			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -234,7 +234,7 @@ func TestCredentialRouter(t *testing.T) {
 			"additionalProperties": false,
 		}
 
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -290,7 +290,7 @@ func TestCredentialRouter(t *testing.T) {
 		// Cred with same <issuer, schema> pair share the same statusListCredential
 		assert.Equal(tt, credStatusMapTwo["statusListCredential"], credStatusMap["statusListCredential"])
 
-		createdSchemaTwo, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		createdSchemaTwo, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchemaTwo)
 
@@ -404,7 +404,7 @@ func TestCredentialRouter(t *testing.T) {
 			"additionalProperties": false,
 		}
 
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -467,7 +467,7 @@ func TestCredentialRouter(t *testing.T) {
 			"additionalProperties": false,
 		}
 
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -598,7 +598,7 @@ func TestCredentialRouter(t *testing.T) {
 			"additionalProperties": false,
 		}
 
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -729,7 +729,7 @@ func TestCredentialRouter(t *testing.T) {
 			"additionalProperties": false,
 		}
 
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -1115,7 +1115,7 @@ func createCredServicePrereqs(tt *testing.T) (issuer, issuerKID, schemaID string
 		"additionalProperties": false,
 	}
 
-	createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+	createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
 	require.NoError(tt, err)
 	require.NotEmpty(tt, createdSchema)
 

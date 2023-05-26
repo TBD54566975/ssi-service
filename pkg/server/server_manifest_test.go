@@ -74,7 +74,7 @@ func TestManifestAPI(t *testing.T) {
 			"additionalProperties": true,
 		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -162,7 +162,7 @@ func TestManifestAPI(t *testing.T) {
 			"additionalProperties": true,
 		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -223,7 +223,7 @@ func TestManifestAPI(t *testing.T) {
 			"additionalProperties": true,
 		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -318,7 +318,7 @@ func TestManifestAPI(t *testing.T) {
 			"additionalProperties": true,
 		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -409,7 +409,7 @@ func TestManifestAPI(t *testing.T) {
 		kid := issuerDID.DID.VerificationMethod[0].ID
 		createdSchema, err := schemaService.CreateSchema(
 			context.Background(),
-			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -570,7 +570,7 @@ func TestManifestAPI(t *testing.T) {
 		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
 		createdSchema, err := schemaService.CreateSchema(context.Background(),
-			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -723,7 +723,7 @@ func TestManifestAPI(t *testing.T) {
 		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
 		createdSchema, err := schemaService.CreateSchema(context.Background(),
-			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -878,7 +878,7 @@ func TestManifestAPI(t *testing.T) {
 		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
 		createdSchema, err := schemaService.CreateSchema(context.Background(),
-			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -1038,7 +1038,7 @@ func TestManifestAPI(t *testing.T) {
 		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
 		createdSchema, err := schemaService.CreateSchema(context.Background(),
-			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 

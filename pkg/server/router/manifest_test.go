@@ -12,6 +12,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
@@ -85,7 +86,7 @@ func TestManifestRouter(t *testing.T) {
 			"additionalProperties": true,
 		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 

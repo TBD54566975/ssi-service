@@ -2,8 +2,8 @@ package schema
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -20,9 +20,9 @@ const (
 )
 
 type StoredSchema struct {
-	ID        string              `json:"id"`
-	Schema    schema.VCJSONSchema `json:"schema"`
-	SchemaJWT *keyaccess.JWT      `json:"token,omitempty"`
+	ID        string            `json:"id"`
+	Schema    schema.JSONSchema `json:"schema"`
+	SchemaJWT *keyaccess.JWT    `json:"schemaJwt,omitempty"`
 }
 
 type Storage struct {
@@ -31,7 +31,7 @@ type Storage struct {
 
 func NewSchemaStorage(db storage.ServiceStorage) (*Storage, error) {
 	if db == nil {
-		return nil, errors.New("bolt db reference is nil")
+		return nil, errors.New("db reference is nil")
 	}
 	return &Storage{db: db}, nil
 }
@@ -39,15 +39,11 @@ func NewSchemaStorage(db storage.ServiceStorage) (*Storage, error) {
 func (ss *Storage) StoreSchema(ctx context.Context, schema StoredSchema) error {
 	id := schema.ID
 	if id == "" {
-		err := errors.New("could not store schema without an ID")
-		logrus.WithError(err).Error()
-		return err
+		return util.LoggingNewError("could not store schema without an ID")
 	}
 	schemaBytes, err := json.Marshal(schema)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not store schema: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return errors.Wrapf(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not store schema: %s", id)
 	}
 	return ss.db.Write(ctx, namespace, id, schemaBytes)
 }
@@ -55,20 +51,14 @@ func (ss *Storage) StoreSchema(ctx context.Context, schema StoredSchema) error {
 func (ss *Storage) GetSchema(ctx context.Context, id string) (*StoredSchema, error) {
 	schemaBytes, err := ss.db.Read(ctx, namespace, id)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not get schema: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrapf(err, errMsg)
+		return nil, util.LoggingErrorMsgf(err, "could not get schema: %s", id)
 	}
 	if len(schemaBytes) == 0 {
-		err := fmt.Errorf("schema not found with id: %s", id)
-		logrus.WithError(err).Error("could not get schema from storage")
-		return nil, err
+		return nil, util.LoggingNewErrorf("schema not found with id: %s", id)
 	}
 	var stored StoredSchema
-	if err := json.Unmarshal(schemaBytes, &stored); err != nil {
-		errMsg := fmt.Sprintf("could not unmarshal stored schema: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrapf(err, errMsg)
+	if err = json.Unmarshal(schemaBytes, &stored); err != nil {
+		return nil, util.LoggingErrorMsgf(err, "could not unmarshal stored schema: %s", id)
 	}
 	return &stored, nil
 }
@@ -77,19 +67,19 @@ func (ss *Storage) GetSchema(ctx context.Context, id string) (*StoredSchema, err
 func (ss *Storage) ListSchemas(ctx context.Context) ([]StoredSchema, error) {
 	gotSchemas, err := ss.db.ReadAll(ctx, namespace)
 	if err != nil {
-		errMsg := "could not get all schemas"
-		logrus.WithError(err).Error(errMsg)
-		return nil, errors.Wrap(err, errMsg)
+		return nil, util.LoggingErrorMsg(err, "could not list schemas")
 	}
 	if len(gotSchemas) == 0 {
-		logrus.Info("no schemas to get")
+		logrus.Info("no schemas to list")
 		return nil, nil
 	}
 	var stored []StoredSchema
 	for _, schemaBytes := range gotSchemas {
 		var nextSchema StoredSchema
-		if err := json.Unmarshal(schemaBytes, &nextSchema); err == nil {
+		if err = json.Unmarshal(schemaBytes, &nextSchema); err == nil {
 			stored = append(stored, nextSchema)
+		} else {
+			logrus.WithError(err).Error("could not unmarshal stored schema: %s", string(schemaBytes))
 		}
 	}
 	return stored, nil
@@ -97,9 +87,7 @@ func (ss *Storage) ListSchemas(ctx context.Context) ([]StoredSchema, error) {
 
 func (ss *Storage) DeleteSchema(ctx context.Context, id string) error {
 	if err := ss.db.Delete(ctx, namespace, id); err != nil {
-		errMsg := fmt.Sprintf("could not delete schema: %s", id)
-		logrus.WithError(err).Error(errMsg)
-		return errors.Wrapf(err, errMsg)
+		return util.LoggingErrorMsgf(err, "could not delete schema: %s", id)
 	}
 	return nil
 }

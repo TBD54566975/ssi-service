@@ -66,7 +66,7 @@ func TestSchemaRouter(t *testing.T) {
 			"required":             []any{"foo"},
 			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.ID)
@@ -86,7 +86,7 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Len(tt, gotSchemas.Schemas, 1)
 
 		// store another
-		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema 2", Schema: simpleSchema})
+		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: "me", Name: "simple schema 2", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.ID)
@@ -142,7 +142,7 @@ func TestSchemaSigning(t *testing.T) {
 			"required":             []any{"foo"},
 			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.ID)
@@ -151,7 +151,7 @@ func TestSchemaSigning(t *testing.T) {
 		assert.Equal(tt, "simple schema", createdSchema.Schema.Name)
 
 		// missing kid
-		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema, Sign: true})
+		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: "me", Name: "simple schema", Schema: simpleSchema, Sign: true})
 		assert.Error(tt, err)
 		assert.Empty(tt, createdSchema)
 		assert.Contains(tt, err.Error(), "could not get key for signing schema for authorKID<>: getting key with id:")
@@ -165,7 +165,7 @@ func TestSchemaSigning(t *testing.T) {
 		assert.NotEmpty(tt, authorDID)
 
 		kid := authorDID.DID.VerificationMethod[0].ID
-		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: authorDID.DID.ID, AuthorKID: kid, Name: "simple schema", Schema: simpleSchema, Sign: true})
+		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: authorDID.DID.ID, IssuerKID: kid, Name: "simple schema", Schema: simpleSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.SchemaJWT)
