@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 
@@ -85,10 +86,7 @@ func TestOperationsAPI(t *testing.T) {
 			s := setupTestDB(ttt)
 			opRouter := setupOperationsRouter(ttt, s)
 
-			req := httptest.NewRequest(
-				http.MethodPut,
-				"https://ssi-service.com/v1/operations/some_fake_id",
-				nil)
+			req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/operations/some_fake_id", nil)
 			w := httptest.NewRecorder()
 
 			c := newRequestContextWithParams(w, req, map[string]string{"id": "some_fake_id"})
@@ -102,14 +100,11 @@ func TestOperationsAPI(t *testing.T) {
 			s := setupTestDB(ttt)
 			opRouter := setupOperationsRouter(ttt, s)
 
-			request := router.ListOperationsRequest{
-				Parent: "presentations/submissions",
-			}
-			value := newRequestValue(ttt, request)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
+			query := url.QueryEscape("presentations/submissions")
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/operations?parent=%s", query), nil)
 			w := httptest.NewRecorder()
 
-			c := newRequestContext(w, req)
+			c := newRequestContextWithParams(w, req, map[string]string{"parent": query})
 			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
@@ -131,14 +126,11 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner2, holderDID2 := getSigner(ttt)
 			submissionOp2 := createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID2, holderSigner2)
 
-			request := router.ListOperationsRequest{
-				Parent: "presentations/submissions",
-			}
-			value := newRequestValue(ttt, request)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
+			query := url.QueryEscape("presentations/submissions")
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/operations?parent=%s", query), nil)
 			w := httptest.NewRecorder()
 
-			c := newRequestContext(w, req)
+			c := newRequestContextWithParams(w, req, map[string]string{"parent": query})
 			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
@@ -166,15 +158,12 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(ttt)
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
-			request := router.ListOperationsRequest{
-				Parent: "presentations/submissions",
-				Filter: "done = false",
-			}
-			value := newRequestValue(ttt, request)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
+			queryParent := url.QueryEscape("presentations/submissions")
+			queryDone := url.QueryEscape("done=false")
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/operations?parent=%s&filter=%s", queryParent, queryDone), nil)
 			w := httptest.NewRecorder()
 
-			c := newRequestContext(w, req)
+			c := newRequestContextWithParams(w, req, map[string]string{"parent": queryParent, "done": queryDone})
 			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
@@ -194,15 +183,13 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(ttt)
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
-			request := router.ListOperationsRequest{
-				Parent: "presentations/submissions",
-				Filter: "done = true",
-			}
-			value := newRequestValue(ttt, request)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
+			queryParent := url.QueryEscape("presentations/submissions")
+			queryDone := url.QueryEscape("done=true")
+			sprintf := fmt.Sprintf("https://ssi-service.com/v1/operations?parent=%s&filter=%s", queryParent, queryDone)
+			req := httptest.NewRequest(http.MethodGet, sprintf, nil)
 			w := httptest.NewRecorder()
 
-			c := newRequestContext(w, req)
+			c := newRequestContextWithParams(w, req, map[string]string{"parent": queryParent, "filter": queryDone})
 			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
@@ -221,14 +208,11 @@ func TestOperationsAPI(t *testing.T) {
 			holderSigner, holderDID := getSigner(ttt)
 			_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
-			request := router.ListOperationsRequest{
-				Parent: "/presentations/other",
-			}
-			value := newRequestValue(ttt, request)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/operations", value)
+			queryParent := url.QueryEscape("/presentations/other")
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/operations?parent=%s", queryParent), nil)
 			w := httptest.NewRecorder()
 
-			c := newRequestContext(w, req)
+			c := newRequestContextWithParams(w, req, map[string]string{"parent": queryParent})
 			opRouter.ListOperations(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
@@ -250,10 +234,7 @@ func TestOperationsAPI(t *testing.T) {
 			submissionOp := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 			createdID := submissionOp.ID
-			req := httptest.NewRequest(
-				http.MethodPut,
-				fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID),
-				nil)
+			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID), nil)
 			w := httptest.NewRecorder()
 
 			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
@@ -279,10 +260,7 @@ func TestOperationsAPI(t *testing.T) {
 			_ = reviewSubmission(ttt, pRouter, opstorage.StatusObjectID(submissionOp.ID))
 
 			createdID := submissionOp.ID
-			req := httptest.NewRequest(
-				http.MethodPut,
-				fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID),
-				nil)
+			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID), nil)
 			w := httptest.NewRecorder()
 			c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
 			opRouter.CancelOperation(c)
@@ -316,10 +294,7 @@ func reviewSubmission(t *testing.T, pRouter *router.PresentationRouter, submissi
 	}
 
 	value := newRequestValue(t, request)
-	req := httptest.NewRequest(
-		http.MethodPut,
-		fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s/review", submissionID),
-		value)
+	req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions/%s/review", submissionID), value)
 	w := httptest.NewRecorder()
 	c := newRequestContextWithParams(w, req, map[string]string{"id": submissionID})
 	pRouter.ReviewSubmission(c)

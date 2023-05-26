@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -28,6 +29,44 @@ const (
 type BoltDB struct {
 	db *bolt.DB
 }
+
+func (b *BoltDB) ReadPage(_ context.Context, namespace string, pageToken string, pageSize int) (map[string][]byte, string, error) {
+	result := make(map[string][]byte)
+	var nextCursorToReturn []byte
+
+	err := b.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(namespace))
+		if bucket == nil {
+			logrus.Warnf("namespace<%s> does not exist", namespace)
+			return nil
+		}
+		cursor := bucket.Cursor()
+		var k, v []byte
+		if pageToken != "" {
+			tokenKey, err := base64.RawURLEncoding.DecodeString(pageToken)
+			if err != nil {
+				return errors.Wrap(err, "base64 decoding page token")
+			}
+			k, v = cursor.Seek(tokenKey)
+		} else {
+			k, v = cursor.First()
+		}
+		for pageSize == -1 || len(result) < pageSize {
+			if k == nil {
+				break
+			}
+
+			result[string(k)] = v
+
+			k, v = cursor.Next()
+			nextCursorToReturn = k
+		}
+		return nil
+	})
+	return result, base64.RawURLEncoding.EncodeToString(nextCursorToReturn), err
+}
+
+var _ ServiceStorage = (*BoltDB)(nil)
 
 // Init instantiates a file-based storage instance for Bolt https://github.com/boltdb/bolt
 func (b *BoltDB) Init(opts ...Option) error {

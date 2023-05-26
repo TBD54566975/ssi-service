@@ -3,6 +3,8 @@ package router
 import (
 	"fmt"
 	"net/http"
+	"net/url"
+	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
@@ -61,7 +63,7 @@ type CreatePresentationDefinitionResponse struct {
 //	@Success		201		{object}	CreatePresentationDefinitionResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
-//	@Router			/v1/presentation/definition [put]
+//	@Router			/v1/presentations/definitions [put]
 func (pr PresentationRouter) CreateDefinition(c *gin.Context) {
 	var request CreatePresentationDefinitionRequest
 	errMsg := "Invalid Presentation Definition Request"
@@ -139,7 +141,7 @@ type GetPresentationDefinitionResponse struct {
 //	@Param			id	path		string	true	"ID"
 //	@Success		200	{object}	GetPresentationDefinitionResponse
 //	@Failure		400	{string}	string	"Bad request"
-//	@Router			/v1/presentation/definition/{id} [get]
+//	@Router			/v1/presentations/definitions/{id} [get]
 func (pr PresentationRouter) GetDefinition(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
@@ -161,8 +163,6 @@ func (pr PresentationRouter) GetDefinition(c *gin.Context) {
 	framework.Respond(c, resp, http.StatusOK)
 }
 
-type ListDefinitionsRequest struct{}
-
 type ListDefinitionsResponse struct {
 	Definitions []*exchange.PresentationDefinition `json:"definitions,omitempty"`
 }
@@ -174,15 +174,14 @@ type ListDefinitionsResponse struct {
 //	@Tags			PresentationDefinitionAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		ListDefinitionsRequest	true	"request body"
-//	@Success		200		{object}	ListDefinitionsResponse
-//	@Failure		400		{string}	string	"Bad request"
-//	@Failure		500		{string}	string	"Internal server error"
+//	@Success		200	{object}	ListDefinitionsResponse
+//	@Failure		400	{string}	string	"Bad request"
+//	@Failure		500	{string}	string	"Internal server error"
 //	@Router			/v1/presentations/definitions [get]
 func (pr PresentationRouter) ListDefinitions(c *gin.Context) {
 	svcResponse, err := pr.service.ListDefinitions(c)
 	if err != nil {
-		errMsg := "could not get definitions"
+		errMsg := "could not list definitions"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
@@ -202,7 +201,7 @@ func (pr PresentationRouter) ListDefinitions(c *gin.Context) {
 //	@Success		204	{string}	string	"No Content"
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
-//	@Router			/v1/presentation/definition/{id} [delete]
+//	@Router			/v1/presentations/definitions/{id} [delete]
 func (pr PresentationRouter) DeleteDefinition(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
@@ -331,13 +330,13 @@ func (pr PresentationRouter) GetSubmission(c *gin.Context) {
 	framework.Respond(c, resp, http.StatusOK)
 }
 
-type ListSubmissionRequest struct {
+type listSubmissionRequest struct {
 	// A standard filter expression conforming to https://google.aip.dev/160.
 	// For example: `status = "done"`.
 	Filter string `json:"filter,omitempty"`
 }
 
-func (l ListSubmissionRequest) GetFilter() string {
+func (l listSubmissionRequest) GetFilter() string {
 	return l.Filter
 }
 
@@ -352,17 +351,23 @@ type ListSubmissionResponse struct {
 //	@Tags			PresentationSubmissionAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		ListSubmissionRequest	true	"request body"
+//	@Param			filter	query		string	false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=status="pending"`"
 //	@Success		200		{object}	ListSubmissionResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/presentations/submissions [get]
 func (pr PresentationRouter) ListSubmissions(c *gin.Context) {
-	var request ListSubmissionRequest
-	if err := framework.Decode(c.Request, &request); err != nil {
-		errMsg := "invalid list submissions request"
-		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
-		return
+	filterParam := framework.GetQueryValue(c, FilterParam)
+	var request listSubmissionRequest
+	if filterParam != nil {
+		unescaped, err := url.QueryUnescape(*filterParam)
+		if err != nil {
+			errMsg := "failed un-escaping filter"
+			framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+			return
+		}
+		// encode the query param as a status filter
+		request = listSubmissionRequest{Filter: unescaped}
 	}
 
 	const StatusIdentifier = "status"
@@ -499,7 +504,7 @@ type GetRequestResponse struct {
 //	@Success		201		{object}	CreateRequestResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
-//	@Router			/v1/presentation/request [put]
+//	@Router			/v1/presentations/requests [put]
 func (pr PresentationRouter) CreateRequest(c *gin.Context) {
 	var request CreateRequestRequest
 	errMsg := "Invalid Presentation Request Request"
@@ -548,7 +553,7 @@ func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequ
 //	@Param			id	path		string	true	"ID"
 //	@Success		200	{object}	GetRequestResponse
 //	@Failure		400	{string}	string	"Bad request"
-//	@Router			/v1/presentation/request/{id} [get]
+//	@Router			/v1/presentations/requests/{id} [get]
 func (pr PresentationRouter) GetRequest(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
@@ -575,7 +580,7 @@ func (pr PresentationRouter) GetRequest(c *gin.Context) {
 //	@Success		204	{string}	string	"No Content"
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
-//	@Router			/v1/presentation/requests/{id} [delete]
+//	@Router			/v1/presentations/requests/{id} [delete]
 func (pr PresentationRouter) DeleteRequest(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {

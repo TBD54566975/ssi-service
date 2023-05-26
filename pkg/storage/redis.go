@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -30,6 +31,29 @@ const (
 type RedisDB struct {
 	db *goredislib.Client
 }
+
+func (b *RedisDB) ReadPage(ctx context.Context, namespace string, pageToken string, pageSize int) (map[string][]byte, string, error) {
+	cursor := uint64(0)
+	if pageToken != "" {
+		var err error
+		cursor, err = strconv.ParseUint(pageToken, 10, 64)
+		if err != nil {
+			return nil, "", errors.Wrap(err, "parsing page token")
+		}
+	}
+
+	keys, nextCursor, err := readAllKeys(ctx, namespace, b, pageSize, cursor)
+	if err != nil {
+		return nil, "", err
+	}
+	results, err := readAll(ctx, keys, b)
+	if err != nil {
+		return nil, "", err
+	}
+	return results, nextCursor, nil
+}
+
+var _ ServiceStorage = (*RedisDB)(nil)
 
 type redisTx struct {
 	pipe goredislib.Pipeliner
@@ -187,12 +211,13 @@ func (b *RedisDB) WriteMany(ctx context.Context, namespaces, keys []string, valu
 		return errors.New("namespaces, keys, and values, are not of equal length")
 	}
 
-	nameSpaceKeys := make([]string, 0)
+	valuesToSet := make([]string, 0, 2*len(values))
 	for i := range namespaces {
-		nameSpaceKeys = append(nameSpaceKeys, getRedisKey(namespaces[i], keys[i]))
+		valuesToSet = append(valuesToSet, getRedisKey(namespaces[i], keys[i]))
+		valuesToSet = append(valuesToSet, string(values[i]))
 	}
 
-	return b.db.MSet(ctx, nameSpaceKeys, values, 0).Err()
+	return b.db.MSet(ctx, valuesToSet).Err()
 }
 
 func (b *RedisDB) Read(ctx context.Context, namespace, key string) ([]byte, error) {
@@ -211,7 +236,7 @@ func (b *RedisDB) Read(ctx context.Context, namespace, key string) ([]byte, erro
 func (b *RedisDB) ReadPrefix(ctx context.Context, namespace, prefix string) (map[string][]byte, error) {
 	namespacePrefix := getRedisKey(namespace, prefix)
 
-	keys, err := readAllKeys(ctx, namespacePrefix, b)
+	keys, _, err := readAllKeys(ctx, namespacePrefix, b, -1, 0)
 	if err != nil {
 		return nil, errors.Wrap(err, "read all keys")
 	}
@@ -220,7 +245,7 @@ func (b *RedisDB) ReadPrefix(ctx context.Context, namespace, prefix string) (map
 }
 
 func (b *RedisDB) ReadAll(ctx context.Context, namespace string) (map[string][]byte, error) {
-	keys, err := readAllKeys(ctx, namespace, b)
+	keys, _, err := readAllKeys(ctx, namespace, b, -1, 0)
 	if err != nil {
 		return nil, errors.Wrap(err, "read all keys")
 	}
@@ -257,7 +282,7 @@ func readAll(ctx context.Context, keys []string, b *RedisDB) (map[string][]byte,
 }
 
 func (b *RedisDB) ReadAllKeys(ctx context.Context, namespace string) ([]string, error) {
-	keys, err := readAllKeys(ctx, namespace, b)
+	keys, _, err := readAllKeys(ctx, namespace, b, -1, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -276,15 +301,21 @@ func (b *RedisDB) ReadAllKeys(ctx context.Context, namespace string) ([]string, 
 }
 
 // TODO: This potentially could dangerous as it might run out of memory as we populate allKeys
-func readAllKeys(ctx context.Context, namespace string, b *RedisDB) ([]string, error) {
-	var cursor uint64
+func readAllKeys(ctx context.Context, namespace string, b *RedisDB, pageSize int, cursor uint64) ([]string, string, error) {
 
 	var allKeys []string
 
-	for {
-		keys, nextCursor, err := b.db.Scan(ctx, cursor, namespace+"*", RedisScanBatchSize).Result()
+	var nextCursor uint64
+	var err error
+	var keys []string
+	scanCount := RedisScanBatchSize
+	if pageSize != -1 {
+		scanCount = min(RedisScanBatchSize, pageSize)
+	}
+	for pageSize == -1 || (len(allKeys) < pageSize) {
+		keys, nextCursor, err = b.db.Scan(ctx, cursor, namespace+"*", int64(scanCount)).Result()
 		if err != nil {
-			return nil, errors.Wrap(err, "scan error")
+			return nil, "", errors.Wrap(err, "scan error")
 		}
 
 		allKeys = append(allKeys, keys...)
@@ -296,7 +327,18 @@ func readAllKeys(ctx context.Context, namespace string, b *RedisDB) ([]string, e
 		cursor = nextCursor
 	}
 
-	return allKeys, nil
+	var nextCursorToReturn string
+	if nextCursor != 0 {
+		nextCursorToReturn = strconv.FormatUint(nextCursor, 10)
+	}
+	return allKeys, nextCursorToReturn, nil
+}
+
+func min(l int, r int) int {
+	if l <= r {
+		return l
+	}
+	return r
 }
 
 func (b *RedisDB) Delete(ctx context.Context, namespace, key string) error {
@@ -316,7 +358,7 @@ func (b *RedisDB) Delete(ctx context.Context, namespace, key string) error {
 }
 
 func (b *RedisDB) DeleteNamespace(ctx context.Context, namespace string) error {
-	keys, err := readAllKeys(ctx, namespace, b)
+	keys, _, err := readAllKeys(ctx, namespace, b, -1, 0)
 	if err != nil {
 		return errors.Wrap(err, "read all keys")
 	}

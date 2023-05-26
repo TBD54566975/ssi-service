@@ -160,8 +160,8 @@ CI is managed via [GitHub Actions](https://github.com/TBD54566975/ssi-service/ac
 for each Pull Request, and on merge to `main`. You can run CI locally using a tool
 like [act](https://github.com/nektos/act).
 
-## HTTP Endpoints
-You can find all HTTP endpoints by checking out the swagger docs at: `http://localhost:8080/swagger`
+## API Documentation
+You can find all HTTP endpoints by checking out the swagger docs at: `http://localhost:8080/swagger/index.html`
 
 Note: Your port may differ; swagger docs are hosted on the same endpoint as the ssi service itself.
 
