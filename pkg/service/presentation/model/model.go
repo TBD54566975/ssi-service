@@ -1,12 +1,11 @@
 package model
 
 import (
-	"time"
-
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"go.einride.tech/aip/filtering"
 
 	"github.com/tbd54566975/ssi-service/internal/credential"
@@ -144,21 +143,7 @@ type DeleteRequestRequest struct {
 }
 
 type Request struct {
-	// ID for this request. It matches the "jti" claim in the JWT.
-	// This is an output only field.
-	ID string `json:"id,omitempty"`
-
-	// Audience as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.3.
-	Audience []string `json:"audience,omitempty"`
-
-	// Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
-	Expiration time.Time `json:"expiration" validate:"required"`
-
-	// DID of the issuer of this presentation definition.
-	IssuerDID string `json:"issuerId" validate:"required"`
-
-	// The privateKey associated with the KID used to sign the JWT.
-	IssuerKID string `json:"issuerKid" validate:"required"`
+	common.Request
 
 	// ID of the presentation definition used for this request.
 	PresentationDefinitionID string `json:"presentationDefinitionId" validate:"required"`

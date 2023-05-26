@@ -6,6 +6,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"go.einride.tech/aip/filtering"
@@ -20,7 +21,7 @@ type StoredDefinition struct {
 
 type Storage interface {
 	DefinitionStorage
-	RequestStorage
+	common.RequestStorage
 	SubmissionStorage
 }
 
@@ -52,19 +53,3 @@ type SubmissionStorage interface {
 }
 
 var ErrSubmissionNotFound = errors.New("submission not found")
-
-type StoredRequest struct {
-	ID                        string   `json:"id"`
-	Audience                  []string `json:"audience"`
-	Expiration                string   `json:"expiration"`
-	IssuerDID                 string   `json:"issuerId"`
-	IssuerKID                 string   `json:"issuerKid"`
-	PresentationDefinitionID  string   `json:"presentationDefinitionId"`
-	PresentationDefinitionJWT string   `json:"presentationRequestJwt"`
-}
-
-type RequestStorage interface {
-	StoreRequest(context.Context, StoredRequest) error
-	GetRequest(context.Context, string) (*StoredRequest, error)
-	DeleteRequest(context.Context, string) error
-}

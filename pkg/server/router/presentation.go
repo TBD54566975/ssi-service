@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
@@ -462,22 +461,7 @@ func (pr PresentationRouter) ReviewSubmission(c *gin.Context) {
 }
 
 type CreateRequestRequest struct {
-	// Audience as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.3
-	// Optional
-	Audience []string `json:"audience"`
-
-	// Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
-	// Optional. When not specified, the request will be valid for a default duration.
-	Expiration string `json:"expiration"`
-
-	// DID of the issuer of this presentation definition. The DID must have been previously created with the DID API,
-	// or the PrivateKey must have been added independently.
-	IssuerDID string `json:"issuerId" validate:"required"`
-
-	// The privateKey associated with the KID will be used to sign an envelope that contains
-	// the created presentation definition.
-	IssuerKID string `json:"issuerKid" validate:"required"`
-
+	*CommonCreateRequestRequest
 	// ID of the presentation definition to use for this request.
 	PresentationDefinitionID string `json:"presentationDefinitionId" validate:"required"`
 }
@@ -529,23 +513,13 @@ func (pr PresentationRouter) CreateRequest(c *gin.Context) {
 }
 
 func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequest) (*model.Request, error) {
-	var expiration time.Time
-	var err error
-
-	if request.Expiration != "" {
-		expiration, err = time.Parse(time.RFC3339, request.Expiration)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		expiration = time.Now().Add(pr.service.Config().ExpirationDuration)
+	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest, pr.service.Config().ExpirationDuration)
+	if err != nil {
+		return nil, err
 	}
 
 	return &model.Request{
-		Audience:                 request.Audience,
-		Expiration:               expiration,
-		IssuerDID:                request.IssuerDID,
-		IssuerKID:                request.IssuerKID,
+		Request:                  *req,
 		PresentationDefinitionID: request.PresentationDefinitionID,
 	}, nil
 }
