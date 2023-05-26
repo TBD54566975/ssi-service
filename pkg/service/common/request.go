@@ -44,14 +44,9 @@ func ToServiceModel(stored *StoredRequest) (*Request, error) {
 	}, nil
 }
 
-func CreateStoredRequest(
-	ctx context.Context,
-	keyStore *keystore.Service,
-	claimName string,
-	claimValue any,
-	request Request,
-	id string,
-) (StoredRequest, error) {
+// CreateStoredRequest creates a StoredRequest with the associated signed JWT populated. In addition to the fields
+// present in request, the JWT will also include a claim with claimName and claimValue.
+func CreateStoredRequest(ctx context.Context, keyStore *keystore.Service, claimName string, claimValue any, request Request, id string) (*StoredRequest, error) {
 	requestID := uuid.NewString()
 	token, err := jwt.NewBuilder().
 		Claim(claimName, claimValue).
@@ -62,14 +57,14 @@ func CreateStoredRequest(
 		JwtID(requestID).
 		Build()
 	if err != nil {
-		return StoredRequest{}, errors.Wrap(err, "building jwt")
+		return nil, errors.Wrap(err, "building jwt")
 	}
 	signedToken, err := keyStore.Sign(ctx, request.IssuerKID, token)
 	if err != nil {
-		return StoredRequest{}, errors.Wrapf(err, "signing payload with KID %q", request.IssuerKID)
+		return nil, errors.Wrapf(err, "signing payload with KID %q", request.IssuerKID)
 	}
 
-	stored := StoredRequest{
+	stored := &StoredRequest{
 		ID:          requestID,
 		Audience:    request.Audience,
 		Expiration:  request.Expiration.Format(time.RFC3339),

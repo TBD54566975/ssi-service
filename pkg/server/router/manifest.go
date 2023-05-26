@@ -708,7 +708,7 @@ func (mr ManifestRouter) GetRequest(c *gin.Context) {
 func (mr ManifestRouter) DeleteRequest(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
-		errMsg := "cannot delete a manigest request without an ID parameter"
+		errMsg := "cannot delete a manifest request without an ID parameter"
 		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 		return
 	}

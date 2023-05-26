@@ -22,8 +22,8 @@ type StoredRequest struct {
 type RequestStorage interface {
 	StoreRequest(context.Context, StoredRequest) error
 	GetRequest(context.Context, string) (*StoredRequest, error)
-	DeleteRequest(context.Context, string) error
 	ListRequests(context.Context) ([]StoredRequest, error)
+	DeleteRequest(context.Context, string) error
 }
 
 type requestStorage struct {

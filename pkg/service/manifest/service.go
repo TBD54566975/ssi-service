@@ -549,10 +549,10 @@ func (s Service) CreateRequest(ctx context.Context, req model.CreateRequestReque
 	if err != nil {
 		return nil, errors.Wrap(err, "creating stored request")
 	}
-	if err := s.reqStorage.StoreRequest(ctx, stored); err != nil {
+	if err := s.reqStorage.StoreRequest(ctx, *stored); err != nil {
 		return nil, errors.Wrap(err, "storing request")
 	}
-	return serviceModel(&stored)
+	return serviceModel(stored)
 }
 
 func (s Service) ListRequests(ctx context.Context) (*model.ListRequestsResponse, error) {

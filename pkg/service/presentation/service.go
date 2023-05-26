@@ -319,10 +319,10 @@ func (s Service) CreateRequest(ctx context.Context, req model.CreateRequestReque
 	if err != nil {
 		return nil, errors.Wrap(err, "creating stored request")
 	}
-	if err := s.storage.StoreRequest(ctx, stored); err != nil {
+	if err := s.storage.StoreRequest(ctx, *stored); err != nil {
 		return nil, errors.Wrap(err, "storing signed document")
 	}
-	return serviceModel(&stored)
+	return serviceModel(stored)
 }
 
 func (s Service) GetRequest(ctx context.Context, request *model.GetRequestRequest) (*model.Request, error) {
