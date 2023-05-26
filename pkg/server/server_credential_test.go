@@ -105,7 +105,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
 	})
 
-	t.Run("Test Create Credential with SchemaID", func(tt *testing.T) {
+	t.Run("Test Create Credential with Schema", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
 
@@ -279,7 +279,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.ID, getCredResp.ID)
 	})
 
-	t.Run("Test Get Credential By SchemaID", func(tt *testing.T) {
+	t.Run("Test Get Credential By Schema", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
 

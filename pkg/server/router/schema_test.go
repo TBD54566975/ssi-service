@@ -30,7 +30,7 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create schema router with service type: test")
 	})
 
-	t.Run("SchemaID Service Test", func(tt *testing.T) {
+	t.Run("Schema Service Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotEmpty(tt, bolt)
 
@@ -116,7 +116,7 @@ func TestSchemaRouter(t *testing.T) {
 
 func TestSchemaSigning(t *testing.T) {
 
-	t.Run("Unsigned SchemaID Test", func(tt *testing.T) {
+	t.Run("Unsigned Schema Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotEmpty(tt, bolt)
 
@@ -146,7 +146,7 @@ func TestSchemaSigning(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.ID)
-		assert.Empty(tt, createdSchema.SchemaJWT)
+		assert.Empty(tt, createdSchema.CredentialSchema)
 		assert.Equal(tt, "me", createdSchema.Schema.Author)
 		assert.Equal(tt, "simple schema", createdSchema.Schema.Name)
 
@@ -168,10 +168,10 @@ func TestSchemaSigning(t *testing.T) {
 		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: authorDID.DID.ID, IssuerKID: kid, Name: "simple schema", Schema: simpleSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
-		assert.NotEmpty(tt, createdSchema.SchemaJWT)
+		assert.NotEmpty(tt, createdSchema.CredentialSchema)
 
 		// verify the schema
-		verifiedSchema, err := schemaService.VerifySchema(context.Background(), schema.VerifySchemaRequest{SchemaJWT: *createdSchema.SchemaJWT})
+		verifiedSchema, err := schemaService.VerifySchema(context.Background(), schema.VerifySchemaRequest{SchemaJWT: *createdSchema.CredentialSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, verifiedSchema)
 		assert.True(tt, verifiedSchema.Verified)

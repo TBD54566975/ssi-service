@@ -20,9 +20,9 @@ const (
 )
 
 type StoredSchema struct {
-	ID        string            `json:"id"`
-	Schema    schema.JSONSchema `json:"schema"`
-	SchemaJWT *keyaccess.JWT    `json:"schemaJwt,omitempty"`
+	ID               string            `json:"id"`
+	Schema           schema.JSONSchema `json:"schema"`
+	CredentialSchema *keyaccess.JWT    `json:"credentialSchema,omitempty"`
 }
 
 type Storage struct {

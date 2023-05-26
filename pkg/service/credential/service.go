@@ -3,7 +3,6 @@ package credential
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
@@ -11,7 +10,6 @@ import (
 	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -91,10 +89,8 @@ func NewCredentialService(config config.CredentialServiceConfig, s storage.Servi
 func (s Service) CreateCredential(ctx context.Context, request CreateCredentialRequest) (*CreateCredentialResponse, error) {
 	watchKeys := make([]storage.WatchKey, 0)
 
-	var slcMetadata StatusListCredentialMetadata
-
+	var statusMetadata StatusListCredentialMetadata
 	if request.hasStatus() && request.isStatusValid() {
-
 		statusPurpose := statussdk.StatusRevocation
 
 		if request.Suspendable {
@@ -109,11 +105,10 @@ func (s Service) CreateCredential(ctx context.Context, request CreateCredentialR
 		watchKeys = append(watchKeys, statusListCredentialIndexPoolWatchKey)
 		watchKeys = append(watchKeys, statusListCredentialCurrentIndexWatchKey)
 
-		slcMetadata = StatusListCredentialMetadata{statusListCredentialWatchKey: statusListCredentialWatchKey, statusListIndexPoolWatchKey: statusListCredentialIndexPoolWatchKey, statusListCurrentIndexWatchKey: statusListCredentialCurrentIndexWatchKey}
+		statusMetadata = StatusListCredentialMetadata{statusListCredentialWatchKey: statusListCredentialWatchKey, statusListIndexPoolWatchKey: statusListCredentialIndexPoolWatchKey, statusListCurrentIndexWatchKey: statusListCredentialCurrentIndexWatchKey}
 	}
 
-	returnFunc := s.createCredentialFunc(request, slcMetadata)
-
+	returnFunc := s.createCredentialFunc(request, statusMetadata)
 	returnValue, err := s.storage.db.Execute(ctx, returnFunc, watchKeys)
 	if err != nil {
 		return nil, errors.Wrap(err, "execute")
@@ -121,7 +116,7 @@ func (s Service) CreateCredential(ctx context.Context, request CreateCredentialR
 
 	credResponse, ok := returnValue.(*CreateCredentialResponse)
 	if !ok {
-		return nil, errors.New("Problem with casting to CreateCredentialResponse")
+		return nil, errors.New("problem casting to CreateCredentialResponse")
 	}
 
 	return credResponse, nil
@@ -129,11 +124,11 @@ func (s Service) CreateCredential(ctx context.Context, request CreateCredentialR
 
 func (s Service) createCredentialFunc(request CreateCredentialRequest, slcMetadata StatusListCredentialMetadata) storage.BusinessLogicFunc {
 	return func(ctx context.Context, tx storage.Tx) (any, error) {
-		return s.createCredentialBusinessLogic(ctx, request, tx, slcMetadata)
+		return s.createCredential(ctx, request, tx, slcMetadata)
 	}
 }
 
-func (s Service) createCredentialBusinessLogic(ctx context.Context, request CreateCredentialRequest, tx storage.Tx, slcMetadata StatusListCredentialMetadata) (*CreateCredentialResponse, error) {
+func (s Service) createCredential(ctx context.Context, request CreateCredentialRequest, tx storage.Tx, statusMetadata StatusListCredentialMetadata) (*CreateCredentialResponse, error) {
 	logrus.Debugf("creating credential: %+v", request)
 
 	if !request.isStatusValid() {
@@ -141,7 +136,6 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 	}
 
 	builder := credential.NewVerifiableCredentialBuilder()
-
 	if err := builder.SetIssuer(request.Issuer); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not build credential when setting issuer: %s", request.Issuer)
 	}
@@ -154,7 +148,6 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 	// set subject value
 	subject := credential.CredentialSubject(request.Data)
 	subject[credential.VerifiableCredentialIDProperty] = request.Subject
-
 	if err := builder.SetCredentialSubject(subject); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not set subject: %+v", subject)
 	}
@@ -167,7 +160,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 	}
 
 	// if a schema value exists, verify we can access it, validate the data against it, then set it
-	var knownSchema *schemalib.VCJSONSchema
+	var knownSchema *schemalib.JSONSchema
 	if request.SchemaID != "" {
 		// resolve schema and save it for validation later
 		gotSchema, err := s.schema.GetSchema(ctx, schema.GetSchemaRequest{ID: request.SchemaID})
@@ -175,13 +168,16 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 			return nil, sdkutil.LoggingErrorMsgf(err, "failed to create credential; could not get schema: %s", request.SchemaID)
 		}
 		knownSchema = &gotSchema.Schema
-
+		schemaType := schemalib.CredentialSchema2023Type
+		if gotSchema.CredentialSchema == nil {
+			schemaType = schemalib.JSONSchema2023Type
+		}
 		credSchema := credential.CredentialSchema{
 			ID:   request.SchemaID,
-			Type: SchemaLDType,
+			Type: schemaType.String(),
 		}
 		if err = builder.SetCredentialSchema(credSchema); err != nil {
-			return nil, sdkutil.LoggingErrorMsgf(err, "could not set JSON SchemaID for credential: %s", request.SchemaID)
+			return nil, sdkutil.LoggingErrorMsgf(err, "could not set JSON Schema for credential: %s", request.SchemaID)
 		}
 	}
 
@@ -198,62 +194,11 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 	}
 
 	if request.hasStatus() {
-		credID := builder.ID
-		issuerID := request.Issuer
-		issuerKID := request.IssuerKID
-		schemaID := request.SchemaID
-
-		statusPurpose := statussdk.StatusRevocation
-
-		if request.Suspendable {
-			statusPurpose = statussdk.StatusSuspension
-		}
-
-		var slCredential *credential.VerifiableCredential
-		var statusListCredentialID string
-		var randomIndex int
-		var err error
-
-		statusListCredential, err := s.storage.GetStatusListCredentialKeyData(
-			ctx,
-			issuerID,
-			schemaID,
-			statusPurpose,
-		)
+		statusEntry, err := s.createStatusListEntryForCredential(ctx, builder.ID, request, tx, statusMetadata)
 		if err != nil {
-			return nil, errors.Wrap(err, "getting status list credential key data")
+			return nil, sdkutil.LoggingErrorMsg(err, "could not create status list entry for credential")
 		}
-
-		if statusListCredential == nil {
-			// creates status list credential with random index
-			randomIndex, slCredential, err = createStatusListCredential(ctx, tx, s, statusPurpose, issuerID, issuerKID, schemaID, slcMetadata)
-			if err != nil {
-				return nil, sdkutil.LoggingErrorMsgf(err, "problem with getting status list credential")
-			}
-
-			statusListCredentialID = slCredential.ID
-		} else {
-			randomIndex, err = s.storage.GetNextStatusListRandomIndex(ctx, slcMetadata)
-			if err != nil {
-				return nil, sdkutil.LoggingErrorMsg(err, "problem with getting status list index")
-			}
-
-			statusListCredentialID = statusListCredential.Credential.ID
-
-			if err := s.storage.IncrementStatusListIndexTx(ctx, tx, slcMetadata); err != nil {
-				return nil, errors.Wrap(err, "incrementing status list index")
-			}
-		}
-
-		status := statussdk.StatusList2021Entry{
-			ID:                   fmt.Sprintf(`%s/v1/credentials/%s/status`, s.config.ServiceEndpoint, credID),
-			Type:                 statussdk.StatusList2021EntryType,
-			StatusPurpose:        statusPurpose,
-			StatusListIndex:      strconv.Itoa(randomIndex),
-			StatusListCredential: statusListCredentialID,
-		}
-
-		if err := builder.SetCredentialStatus(status); err != nil {
+		if err = builder.SetCredentialStatus(statusEntry); err != nil {
 			return nil, sdkutil.LoggingErrorMsg(err, "could not set credential status")
 		}
 	}
@@ -265,7 +210,7 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 
 	// verify the built schema complies with the schema we've set
 	if knownSchema != nil {
-		if err = schemalib.IsCredentialValidForVCJSONSchema(*cred, *knownSchema); err != nil {
+		if err = schemalib.IsCredentialValidForJSONSchema(*cred, *knownSchema); err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(err, "credential data does not comply with the provided schema: %s", request.SchemaID)
 		}
 	}
@@ -289,56 +234,13 @@ func (s Service) createCredentialBusinessLogic(ctx context.Context, request Crea
 		Suspended:     false,
 	}
 
-	credentialStorageRequest := StoreCredentialRequest{
-		Container: container,
-	}
-
+	credentialStorageRequest := StoreCredentialRequest{Container: container}
 	if err = s.storage.StoreCredentialTx(ctx, tx, credentialStorageRequest); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "saving credential")
 	}
 
 	response := CreateCredentialResponse{Container: container}
 	return &response, nil
-}
-
-func createStatusListCredential(ctx context.Context, tx storage.Tx, s Service, statusPurpose statussdk.StatusPurpose, issuerID, issuerKID, schemaID string, slcMetadata StatusListCredentialMetadata) (int, *credential.VerifiableCredential, error) {
-	statusListID := fmt.Sprintf("%s/v1/credentials/status/%s", s.config.ServiceEndpoint, uuid.NewString())
-
-	generatedStatusListCredential, err := statussdk.GenerateStatusList2021Credential(statusListID, issuerID, statusPurpose, []credential.VerifiableCredential{})
-	if err != nil {
-		return -1, nil, sdkutil.LoggingErrorMsg(err, "could not generate status list")
-	}
-
-	if schemaID != "" {
-		credSchema := credential.CredentialSchema{
-			ID:   schemaID,
-			Type: SchemaLDType,
-		}
-		generatedStatusListCredential.CredentialSchema = &credSchema
-	}
-
-	statusListCredJWT, err := s.signCredentialJWT(ctx, issuerKID, *generatedStatusListCredential)
-	if err != nil {
-		return -1, nil, sdkutil.LoggingErrorMsg(err, "could not sign status list credential")
-	}
-
-	statusListContainer := credint.Container{
-		ID:            generatedStatusListCredential.ID,
-		IssuerKID:     issuerKID,
-		Credential:    generatedStatusListCredential,
-		CredentialJWT: statusListCredJWT,
-	}
-
-	statusListStorageRequest := StoreCredentialRequest{
-		Container: statusListContainer,
-	}
-
-	randomIndex, err := s.storage.CreateStatusListCredentialTx(ctx, tx, statusListStorageRequest, slcMetadata)
-	if err != nil {
-		return -1, nil, errors.Wrap(err, "creating status list credential")
-	}
-
-	return randomIndex, generatedStatusListCredential, nil
 }
 
 // signCredentialJWT signs a credential and returns it as a vc-jwt

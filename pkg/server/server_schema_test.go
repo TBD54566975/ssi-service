@@ -20,7 +20,7 @@ import (
 )
 
 func TestSchemaAPI(t *testing.T) {
-	t.Run("Test Create SchemaID", func(tt *testing.T) {
+	t.Run("Test Create Schema", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
 
@@ -96,12 +96,12 @@ func TestSchemaAPI(t *testing.T) {
 		var resp router.CreateSchemaResponse
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, resp.SchemaJWT)
+		assert.NotEmpty(tt, resp.CredentialSchema)
 		assert.NotEmpty(tt, resp.ID)
 		assert.EqualValues(tt, schemaRequest.Schema, resp.Schema.Schema)
 
 		// verify schema
-		verifySchemaRequest := router.VerifySchemaRequest{SchemaJWT: *resp.SchemaJWT}
+		verifySchemaRequest := router.VerifySchemaRequest{SchemaJWT: *resp.CredentialSchema}
 		verifySchemaRequestValue := newRequestValue(tt, verifySchemaRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas/verification", verifySchemaRequestValue)
 		c = newRequestContext(w, req)
@@ -130,7 +130,7 @@ func TestSchemaAPI(t *testing.T) {
 		assert.Contains(tt, verifyResp.Reason, "could not verify schema")
 	})
 
-	t.Run("Test Get SchemaID and Get Schemas", func(tt *testing.T) {
+	t.Run("Test Get Schema and Get Schemas", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
 

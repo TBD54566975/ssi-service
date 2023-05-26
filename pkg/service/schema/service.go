@@ -58,7 +58,8 @@ func (s Service) Config() config.SchemaServiceConfig {
 	return s.config
 }
 
-func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, resolver resolution.Resolver) (*Service, error) {
+func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service,
+	resolver resolution.Resolver) (*Service, error) {
 	schemaStorage, err := NewSchemaStorage(s)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the schema service")
@@ -118,14 +119,30 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 	// 	if err != nil {
 	// 		return nil, sdkutil.LoggingError(err)
 	// 	}
-	// 	storedSchema.SchemaJWT = signedSchema
+	// 	storedSchema.CredentialSchema = signedSchema
 	// }
 
 	if err = s.storage.StoreSchema(ctx, storedSchema); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not store schema")
 	}
 
-	return &CreateSchemaResponse{ID: schemaID, Schema: jsonSchema, SchemaJWT: storedSchema.SchemaJWT}, nil
+	return &CreateSchemaResponse{ID: schemaID, Schema: jsonSchema, CredentialSchema: storedSchema.CredentialSchema}, nil
+}
+
+func (s Service) createCredentialSchemaJWT(ctx context.Context, issuerKID string, schemaValue schema.JSONSchema) (string, error) {
+	// get issuer key
+	issuerKey, err := s.keyStore.GetKey(ctx, issuerKID)
+	if err != nil {
+		return "", sdkutil.LoggingError(err)
+	}
+
+	// create JWT
+	schemaJWT, err := schema.CreateCredentialSchemaJWT(schemaValue, issuerKey)
+	if err != nil {
+		return "", sdkutil.LoggingError(err)
+	}
+
+	return schemaJWT, nil
 }
 
 func (s Service) ListSchemas(ctx context.Context) (*ListSchemasResponse, error) {
@@ -138,9 +155,9 @@ func (s Service) ListSchemas(ctx context.Context) (*ListSchemasResponse, error) 
 	schemas := make([]GetSchemaResponse, 0, len(storedSchemas))
 	for _, stored := range storedSchemas {
 		schemas = append(schemas, GetSchemaResponse{
-			ID:        stored.ID,
-			Schema:    stored.Schema,
-			SchemaJWT: stored.SchemaJWT,
+			ID:               stored.ID,
+			Schema:           stored.Schema,
+			CredentialSchema: stored.CredentialSchema,
 		})
 	}
 
@@ -158,7 +175,7 @@ func (s Service) GetSchema(ctx context.Context, request GetSchemaRequest) (*GetS
 	if gotSchema == nil {
 		return nil, sdkutil.LoggingNewErrorf("schema with id<%s> could not be found", request.ID)
 	}
-	return &GetSchemaResponse{Schema: gotSchema.Schema, SchemaJWT: gotSchema.SchemaJWT}, nil
+	return &GetSchemaResponse{Schema: gotSchema.Schema, CredentialSchema: gotSchema.CredentialSchema}, nil
 }
 
 func (s Service) DeleteSchema(ctx context.Context, request DeleteSchemaRequest) error {
@@ -169,4 +186,13 @@ func (s Service) DeleteSchema(ctx context.Context, request DeleteSchemaRequest) 
 	}
 
 	return nil
+}
+
+// Resolve wraps our get schema method for exposing schema access to other services
+func (s Service) Resolve(ctx context.Context, id string) (*schema.JSONSchema, error) {
+	gotSchemaResponse, err := s.GetSchema(ctx, GetSchemaRequest{ID: id})
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "resolving schema")
+	}
+	return &gotSchemaResponse.Schema, nil
 }

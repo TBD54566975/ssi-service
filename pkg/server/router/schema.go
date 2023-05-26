@@ -39,7 +39,7 @@ type CreateSchemaRequest struct {
 
 	// Sign represents whether the schema should be signed by the author. Default is false.
 	// If sign is true, the schema will be signed by the issuer's private key with the specified KID
-	Sign bool `json:"sign"`
+	Sign bool `json:"sign,omitempty"`
 	// Issuer represents the DID of the issuer for the schema if it's signed. Required if sign is true.
 	Issuer string `json:"issuer,omitempty"`
 	// IssuerKID represents the KID of the issuer's private key to sign the schema. Required if sign is true.
@@ -47,14 +47,14 @@ type CreateSchemaRequest struct {
 }
 
 type CreateSchemaResponse struct {
-	ID        string               `json:"id"`
-	Schema    schemalib.JSONSchema `json:"schema"`
-	SchemaJWT *keyaccess.JWT       `json:"schemaJwt,omitempty"`
+	ID               string               `json:"id"`
+	Schema           schemalib.JSONSchema `json:"schema"`
+	CredentialSchema *keyaccess.JWT       `json:"credentialSchema,omitempty"`
 }
 
 // CreateSchema godoc
 //
-//	@Summary		Create SchemaID
+//	@Summary		Create Schema
 //	@Description	Create schema
 //	@Tags			SchemaAPI
 //	@Accept			json
@@ -98,13 +98,13 @@ func (sr SchemaRouter) CreateSchema(c *gin.Context) {
 		return
 	}
 
-	resp := CreateSchemaResponse{ID: createSchemaResponse.ID, Schema: createSchemaResponse.Schema, SchemaJWT: createSchemaResponse.SchemaJWT}
+	resp := CreateSchemaResponse{ID: createSchemaResponse.ID, Schema: createSchemaResponse.Schema, CredentialSchema: createSchemaResponse.CredentialSchema}
 	framework.Respond(c, resp, http.StatusCreated)
 }
 
 // GetSchema godoc
 //
-//	@Summary		Get SchemaID
+//	@Summary		Get Schema
 //	@Description	Get a schema by its ID
 //	@Tags			SchemaAPI
 //	@Accept			json
@@ -129,7 +129,7 @@ func (sr SchemaRouter) GetSchema(c *gin.Context) {
 		return
 	}
 
-	resp := GetSchemaResponse{Schema: gotSchema.Schema, SchemaJWT: gotSchema.SchemaJWT}
+	resp := GetSchemaResponse{Schema: gotSchema.Schema, CredentialSchema: gotSchema.CredentialSchema}
 	framework.Respond(c, resp, http.StatusOK)
 	return
 }
@@ -166,13 +166,13 @@ func (sr SchemaRouter) ListSchemas(c *gin.Context) {
 }
 
 type GetSchemaResponse struct {
-	Schema    schemalib.JSONSchema `json:"schema,omitempty"`
-	SchemaJWT *keyaccess.JWT       `json:"schemaJwt,omitempty"`
+	Schema           schemalib.JSONSchema `json:"schema,omitempty"`
+	CredentialSchema *keyaccess.JWT       `json:"credentialSchema,omitempty"`
 }
 
 // DeleteSchema godoc
 //
-//	@Summary		Delete SchemaID
+//	@Summary		Delete Schema
 //	@Description	Delete a schema by its ID
 //	@Tags			SchemaAPI
 //	@Accept			json
