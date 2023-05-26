@@ -648,17 +648,17 @@ definitions:
     type: object
   github_com_tbd54566975_ssi-service_pkg_service_manifest_model.Request:
     properties:
-      CredentialManifestJwt:
-        description: |-
-          CredentialManifestJWT is a JWT token with a "presentation_definition" claim within it. The
-          value of the field named "presentation_definition.id" matches PresentationDefinitionID.
-          This is an output only field.
-        type: string
       audience:
         description: Audience as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.3.
         items:
           type: string
         type: array
+      credentialManifestJwt:
+        description: |-
+          CredentialManifestJWT is a JWT token with a "presentation_definition" claim within it. The
+          value of the field named "presentation_definition.id" matches PresentationDefinitionID.
+          This is an output only field.
+        type: string
       expiration:
         description: Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
         type: string
