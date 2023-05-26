@@ -106,7 +106,7 @@ func TestDIDIONCreateVerifiableCredentialIntegration(t *testing.T) {
 		IssuerKID: issuerKID.(string),
 		SchemaID:  schemaID.(string),
 		SubjectID: issuerDID.(string),
-	}, false)
+	})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vcOutput)
 

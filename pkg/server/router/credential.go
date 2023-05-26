@@ -69,7 +69,7 @@ type CreateCredentialRequest struct {
 	// TODO(gabe) support more capabilities like signature type, format, and more.
 }
 
-func (c CreateCredentialRequest) ToServiceRequest() credential.CreateCredentialRequest {
+func (c CreateCredentialRequest) toServiceRequest() credential.CreateCredentialRequest {
 	return credential.CreateCredentialRequest{
 		Issuer:      c.Issuer,
 		IssuerKID:   c.IssuerKID,
@@ -117,7 +117,7 @@ func (cr CredentialRouter) CreateCredential(c *gin.Context) {
 		return
 	}
 
-	req := request.ToServiceRequest()
+	req := request.toServiceRequest()
 	createCredentialResponse, err := cr.service.CreateCredential(c, req)
 	if err != nil {
 		errMsg := "could not create credential"

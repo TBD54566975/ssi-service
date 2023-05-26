@@ -42,7 +42,7 @@
           }
         }
       },
-      "taxID":{
+      "taxId":{
         "type":"string"
       }
     },

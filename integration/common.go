@@ -107,24 +107,30 @@ func CreateKYCSchema() (string, error) {
 }
 
 type credInputParams struct {
-	IssuerID  string
-	IssuerKID string
-	SchemaID  string
-	SubjectID string
+	IssuerID    string
+	IssuerKID   string
+	SchemaID    string
+	SubjectID   string
+	Revocable   bool
+	Suspendable bool
 }
 
-func CreateVerifiableCredential(credentialInput credInputParams, revocable bool) (string, error) {
+func CreateVerifiableCredential(credentialInput credInputParams) (string, error) {
 	logrus.Println("\n\nCreate a verifiable credential")
 
 	if credentialInput.SubjectID == "" {
 		credentialInput.SubjectID = credentialInput.IssuerID
 	}
 
-	fileName := "credential-input.json"
-	if revocable {
-		fileName = "credential-revocable-input.json"
+	if credentialInput.Revocable {
+		credentialInput.Revocable = true
 	}
-	credentialJSON, err := resolveTemplate(credentialInput, fileName)
+
+	if credentialInput.Suspendable {
+		credentialInput.Suspendable = true
+	}
+
+	credentialJSON, err := resolveTemplate(credentialInput, "credential-input.json")
 	if err != nil {
 		return "", err
 	}

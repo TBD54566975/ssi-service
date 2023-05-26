@@ -214,6 +214,7 @@ func PresentationAPI(rg *gin.RouterGroup, service svcframework.Service, webhookS
 	presReqAPI := rg.Group(PresentationsPrefix + RequestsPrefix)
 	presReqAPI.PUT("", presRouter.CreateRequest)
 	presReqAPI.GET("/:id", presRouter.GetRequest)
+	// TODO add list requests endpoint https://github.com/TBD54566975/ssi-service/issues/479
 	presReqAPI.PUT("/:id", presRouter.DeleteRequest)
 
 	presSubAPI := rg.Group(PresentationsPrefix + SubmissionsPrefix)
@@ -272,6 +273,12 @@ func ManifestAPI(rg *gin.RouterGroup, service svcframework.Service, webhookServi
 	applicationAPI.GET("/:id", manifestRouter.GetApplication)
 	applicationAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Application, webhook.Delete), manifestRouter.DeleteApplication)
 	applicationAPI.PUT("/:id/review", manifestRouter.ReviewApplication)
+
+	manifestReqAPI := manifestAPI.Group(RequestsPrefix)
+	manifestReqAPI.PUT("", manifestRouter.CreateRequest)
+	manifestReqAPI.GET("", manifestRouter.ListRequests)
+	manifestReqAPI.GET("/:id", manifestRouter.GetRequest)
+	manifestReqAPI.PUT("/:id", manifestRouter.DeleteRequest)
 
 	responseAPI := manifestAPI.Group(ResponsesPrefix)
 	responseAPI.GET("", manifestRouter.ListResponses)

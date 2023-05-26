@@ -9,6 +9,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"go.einride.tech/aip/filtering"
 
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -25,40 +26,7 @@ const (
 
 type Storage struct {
 	db storage.ServiceStorage
-}
-
-func (ps *Storage) StoreRequest(ctx context.Context, request prestorage.StoredRequest) error {
-	id := request.ID
-	if id == "" {
-		return sdkutil.LoggingNewError("could not store presentation request without an ID")
-	}
-	jsonBytes, err := json.Marshal(request)
-	if err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not store presentation request: %s", id)
-	}
-	return ps.db.Write(ctx, presentationRequestNamespace, id, jsonBytes)
-}
-
-func (ps *Storage) GetRequest(ctx context.Context, id string) (*prestorage.StoredRequest, error) {
-	jsonBytes, err := ps.db.Read(ctx, presentationRequestNamespace, id)
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not get presentation request: %s", id)
-	}
-	if len(jsonBytes) == 0 {
-		return nil, sdkutil.LoggingNewErrorf("presentation request not found with id: %s", id)
-	}
-	var stored prestorage.StoredRequest
-	if err := json.Unmarshal(jsonBytes, &stored); err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not unmarshal stored presentation definition: %s", id)
-	}
-	return &stored, nil
-}
-
-func (ps *Storage) DeleteRequest(ctx context.Context, id string) error {
-	if err := ps.db.Delete(ctx, presentationRequestNamespace, id); err != nil {
-		return sdkutil.LoggingNewErrorf("could not delete presentation request: %s", id)
-	}
-	return nil
+	common.RequestStorage
 }
 
 func (ps *Storage) UpdateSubmission(ctx context.Context, id string, approved bool, reason string, opID string) (prestorage.StoredSubmission, opstorage.StoredOperation, error) {
@@ -129,7 +97,7 @@ func NewPresentationStorage(db storage.ServiceStorage) (prestorage.Storage, erro
 	if db == nil {
 		return nil, errors.New("bolt db reference is nil")
 	}
-	return &Storage{db: db}, nil
+	return &Storage{db: db, RequestStorage: common.NewRequestStorage(db, presentationRequestNamespace)}, nil
 }
 
 func (ps *Storage) StoreDefinition(ctx context.Context, presentation prestorage.StoredDefinition) error {

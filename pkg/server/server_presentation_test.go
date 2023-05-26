@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
@@ -205,7 +206,7 @@ func TestPresentationAPI(t *testing.T) {
 			definition := createPresentationDefinition(ttt, pRouter)
 			op := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
-					"additionalName": "Mclovin",
+					"additionalName": "McLovin",
 					"dateOfBirth":    "1987-01-02",
 					"familyName":     "Andres",
 					"givenName":      "Uribe",
@@ -235,7 +236,7 @@ func TestPresentationAPI(t *testing.T) {
 			definition := createPresentationDefinition(ttt, pRouter)
 			request := createSubmissionRequest(ttt, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
-					"additionalName": "Mclovin",
+					"additionalName": "McLovin",
 					"dateOfBirth":    "1987-01-02",
 					"familyName":     "Andres",
 					"givenName":      "Uribe",
@@ -322,10 +323,7 @@ func TestPresentationAPI(t *testing.T) {
 			s := setupTestDB(ttt)
 			pRouter, _ := setupPresentationRouter(ttt, s)
 
-			request := router.ListSubmissionRequest{}
-
-			value := newRequestValue(ttt, request)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", nil)
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
@@ -346,7 +344,7 @@ func TestPresentationAPI(t *testing.T) {
 			definition := createPresentationDefinition(ttt, pRouter)
 			op := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
-					"additionalName": "Mclovin",
+					"additionalName": "McLovin",
 					"dateOfBirth":    "1987-01-02",
 					"familyName":     "Andres",
 					"givenName":      "Uribe",
@@ -362,10 +360,7 @@ func TestPresentationAPI(t *testing.T) {
 					"givenName":      "Tee",
 					"id":             "did:web:mrt.com"})), mrTeeDID, mrTeeSigner)
 
-			request := router.ListSubmissionRequest{}
-
-			value := newRequestValue(ttt, request)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", nil)
 			w := httptest.NewRecorder()
 
 			c := newRequestContext(w, req)
@@ -428,15 +423,12 @@ func TestPresentationAPI(t *testing.T) {
 		tt.Run("bad filter returns error", func(ttt *testing.T) {
 			s := setupTestDB(ttt)
 			pRouter, _ := setupPresentationRouter(ttt, s)
-			request := router.ListSubmissionRequest{
-				Filter: `im a baaad filter that's trying to break a lot of stuff'`,
-			}
 
-			value := newRequestValue(ttt, request)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
+			query := url.QueryEscape("im a baaad filter that's trying to break a lot of stuff")
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions?filter=%s", query), nil)
 			w := httptest.NewRecorder()
 
-			c := newRequestContext(w, req)
+			c := newRequestContextWithParams(w, req, map[string]string{"filter": query})
 			pRouter.ListSubmissions(c)
 			assert.Contains(ttt, w.Body.String(), "invalid filter")
 		})
@@ -450,22 +442,18 @@ func TestPresentationAPI(t *testing.T) {
 			definition := createPresentationDefinition(ttt, pRouter)
 			op := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
-					"additionalName": "Mclovin",
+					"additionalName": "McLovin",
 					"dateOfBirth":    "1987-01-02",
 					"familyName":     "Andres",
 					"givenName":      "Uribe",
 					"id":             "did:web:andresuribe.com",
 				})), holderDID, holderSigner)
 
-			request := router.ListSubmissionRequest{
-				Filter: `status="pending"`,
-			}
-
-			value := newRequestValue(ttt, request)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
+			query := url.QueryEscape("status=\"pending\"")
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions?filter=%s", query), nil)
 			w := httptest.NewRecorder()
 
-			c := newRequestContext(w, req)
+			c := newRequestContextWithParams(w, req, map[string]string{"filter": query})
 			pRouter.ListSubmissions(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 
@@ -507,21 +495,17 @@ func TestPresentationAPI(t *testing.T) {
 			definition := createPresentationDefinition(ttt, pRouter)
 			_ = createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
 				WithCredentialSubject(credential.CredentialSubject{
-					"additionalName": "Mclovin",
+					"additionalName": "McLovin",
 					"dateOfBirth":    "1987-01-02",
 					"familyName":     "Andres",
 					"givenName":      "Uribe",
 					"id":             "did:web:andresuribe.com",
 				})), holderDID, holderSigner)
 
-			request := router.ListSubmissionRequest{
-				Filter: `status = "done"`,
-			}
-
-			value := newRequestValue(ttt, request)
-			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions", value)
+			query := url.QueryEscape(`status="done"`)
+			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/presentations/submissions?filter=%s", query), nil)
 			w := httptest.NewRecorder()
-			c := newRequestContext(w, req)
+			c := newRequestContextWithParams(w, req, map[string]string{"filter": query})
 			pRouter.ListSubmissions(c)
 			assert.True(tt, util.Is2xxResponse(w.Code))
 

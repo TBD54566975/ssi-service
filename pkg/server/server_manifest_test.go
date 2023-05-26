@@ -93,8 +93,21 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, resp.Manifest)
 		assert.Equal(tt, resp.Manifest.Issuer.ID, issuerDID.DID.ID)
 
+		// create a credential manifest request
+		manifestRequestRequest := getValidManifestRequestRequest(issuerDID, kid, resp.Manifest)
+		requestValue = newRequestValue(tt, manifestRequestRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/requests", requestValue)
+		c = newRequestContext(w, req)
+		manifestRouter.CreateRequest(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
+
+		var reqResp router.CreateManifestRequestResponse
+		err = json.NewDecoder(w.Body).Decode(&reqResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, reqResp.Request)
+
 		// verify the manifest
-		verificationResponse, err := manifestService.VerifyManifest(context.Background(), manifestsvc.VerifyManifestRequest{ManifestJWT: resp.ManifestJWT})
+		verificationResponse, err := manifestService.VerifyManifest(context.Background(), manifestsvc.VerifyManifestRequest{ManifestJWT: reqResp.Request.CredentialManifestJWT})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, verificationResponse)
 		assert.True(tt, verificationResponse.Verified)
@@ -227,7 +240,7 @@ func TestManifestAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 
-		// get manifest by id
+		// list all manifests
 		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests", nil)
 		c = newRequestContext(w, req)
 		manifestRouter.ListManifests(c)
@@ -240,9 +253,36 @@ func TestManifestAPI(t *testing.T) {
 		assert.Len(tt, getManifestsResp.Manifests, 1)
 		assert.Equal(tt, resp.Manifest.ID, getManifestsResp.Manifests[0].ID)
 
-		// verify each manifest
-		for _, m := range getManifestsResp.Manifests {
-			verificationResponse, err := manifestService.VerifyManifest(context.Background(), manifestsvc.VerifyManifestRequest{ManifestJWT: m.ManifestJWT})
+		// create a credential manifest request
+		manifestRequestRequest := getValidManifestRequestRequest(issuerDID, kid, resp.Manifest)
+		requestValue = newRequestValue(tt, manifestRequestRequest)
+		w = httptest.NewRecorder()
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/requests", requestValue)
+		c = newRequestContext(w, req)
+		manifestRouter.CreateRequest(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
+
+		var reqResp router.CreateManifestRequestResponse
+		err = json.NewDecoder(w.Body).Decode(&reqResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, reqResp.Request)
+
+		// list the manifest requests
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/manifests/requests", nil)
+		c = newRequestContext(w, req)
+		manifestRouter.ListRequests(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
+
+		var getManifestReqsResp router.ListManifestRequestsResponse
+		err = json.NewDecoder(w.Body).Decode(&getManifestReqsResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, getManifestReqsResp)
+		assert.Len(tt, getManifestReqsResp.Requests, 1)
+		assert.Equal(tt, reqResp.Request.ID, getManifestReqsResp.Requests[0].ID)
+
+		// verify each manifest request
+		for _, m := range getManifestReqsResp.Requests {
+			verificationResponse, err := manifestService.VerifyManifest(context.Background(), manifestsvc.VerifyManifestRequest{ManifestJWT: m.CredentialManifestJWT})
 			assert.NoError(tt, err)
 			assert.NotEmpty(tt, verificationResponse)
 			assert.True(tt, verificationResponse.Verified)
@@ -1088,6 +1128,18 @@ func TestManifestAPI(t *testing.T) {
 		manifestRouter.GetApplication(c)
 		assert.Contains(tt, w.Body.String(), fmt.Sprintf("could not get application with id: %s", appResp.Response.ID))
 	})
+}
+
+func getValidManifestRequestRequest(issuerDID *did.CreateDIDResponse, kid string, credentialManifest manifest.CredentialManifest) router.CreateManifestRequestRequest {
+	return router.CreateManifestRequestRequest{
+		CommonCreateRequestRequest: &router.CommonCreateRequestRequest{
+			Audience:   []string{"mario"},
+			IssuerDID:  issuerDID.DID.ID,
+			IssuerKID:  kid,
+			Expiration: "",
+		},
+		CredentialManifestID: credentialManifest.ID,
+	}
 }
 
 func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *did.CreateDIDResponse,
