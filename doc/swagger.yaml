@@ -1184,14 +1184,6 @@ definitions:
     properties:
       description:
         type: string
-      issuer:
-        description: Issuer represents the DID of the issuer for the schema if it's
-          signed. Required if sign is true.
-        type: string
-      issuerKid:
-        description: IssuerKID represents the KID of the issuer's private key to sign
-          the schema. Required if sign is true.
-        type: string
       name:
         type: string
       schema:
@@ -1201,11 +1193,6 @@ definitions:
           Schema represents the JSON schema for the credential schema
           If the schema has an $id field, it will be overwritten with an ID the service generates.
           The schema must be against draft 2020-12, 2019-09, or 7.
-      sign:
-        description: |-
-          Sign represents whether the schema should be signed by the author. Default is false.
-          If sign is true, the schema will be signed by the issuer's private key with the specified KID
-        type: boolean
     required:
     - name
     - schema
