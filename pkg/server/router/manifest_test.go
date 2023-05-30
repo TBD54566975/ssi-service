@@ -77,13 +77,22 @@ func TestManifestRouter(t *testing.T) {
 
 		// create a schema for the creds to be issued against
 		licenseSchema := map[string]any{
-			"type": "object",
+			"$schema": "https://json-schema.org/draft-07/schema",
+			"type":    "object",
 			"properties": map[string]any{
-				"licenseType": map[string]any{
-					"type": "string",
+				"credentialSubject": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id": map[string]any{
+							"type": "string",
+						},
+						"licenseType": map[string]any{
+							"type": "string",
+						},
+					},
+					"required": []any{"licenseType", "id"},
 				},
 			},
-			"additionalProperties": true,
 		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
 		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
@@ -156,6 +165,14 @@ func TestManifestRouter(t *testing.T) {
 			ID:       storage.StatusObjectID(createdApplicationResponseOp.ID),
 			Approved: true,
 			Reason:   "ApprovalMan is here",
+			CredentialOverrides: map[string]model.CredentialOverride{
+				"id1": {
+					Data: map[string]any{"licenseType": "Class D"},
+				},
+				"id2": {
+					Data: map[string]any{"licenseType": "Class D"},
+				},
+			},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
@@ -192,7 +209,7 @@ func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.Create
 			ID: "id123",
 			InputDescriptors: []exchange.InputDescriptor{
 				{
-					ID: "test-id",
+					ID: "license-type",
 					Constraints: &exchange.Constraints{
 						Fields: []exchange.Field{
 							{

@@ -11,9 +11,9 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
-	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
@@ -50,9 +50,9 @@ func TestPresentationDefinitionService(t *testing.T) {
 		KeyType: crypto.Ed25519,
 	})
 	require.NoError(t, err)
-	pubKeyBytes, err := base58.Decode(authorDID.DID.VerificationMethod[0].PublicKeyBase58)
-	require.NoError(t, err)
-	pubKey, err := crypto.BytesToPubKey(pubKeyBytes, crypto.Ed25519)
+	pubKeyJWK := authorDID.DID.VerificationMethod[0].PublicKeyJWK
+	require.NotEmpty(t, pubKeyJWK)
+	pubKey, err := pubKeyJWK.ToPublicKey()
 	require.NoError(t, err)
 	ka, err := keyaccess.NewJWKKeyAccessVerifier(authorDID.DID.ID, authorDID.DID.ID, pubKey)
 	require.NoError(t, err)
