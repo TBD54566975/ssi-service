@@ -37,7 +37,7 @@ func TestSchemaAPI(t *testing.T) {
 		// reset the http recorder
 		w = httptest.NewRecorder()
 
-		schemaRequest := router.CreateSchemaRequest{Issuer: "did:test", Name: "test schema", Schema: simpleSchema}
+		schemaRequest := router.CreateSchemaRequest{Name: "test schema", Schema: simpleSchema}
 		schemaRequestValue = newRequestValue(tt, schemaRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 
@@ -99,7 +99,7 @@ func TestSchemaAPI(t *testing.T) {
 		// create a schema
 		simpleSchema := getTestSchema()
 
-		schemaRequest := router.CreateSchemaRequest{Issuer: "did:test", Name: "test schema", Schema: simpleSchema}
+		schemaRequest := router.CreateSchemaRequest{Name: "test schema", Schema: simpleSchema}
 		schemaRequestValue := newRequestValue(tt, schemaRequest)
 		createReq := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 
@@ -166,7 +166,7 @@ func TestSchemaAPI(t *testing.T) {
 		// create a schema
 		simpleSchema := getTestSchema()
 
-		schemaRequest := router.CreateSchemaRequest{Issuer: "did:test", Name: "test schema", Schema: simpleSchema}
+		schemaRequest := router.CreateSchemaRequest{Name: "test schema", Schema: simpleSchema}
 		schemaRequestValue := newRequestValue(tt, schemaRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		w = httptest.NewRecorder()

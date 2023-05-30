@@ -37,13 +37,14 @@ type CreateSchemaRequest struct {
 	// The schema must be against draft 2020-12, 2019-09, or 7.
 	Schema schemalib.JSONSchema `json:"schema" validate:"required"`
 
+	// TODO(gabe): re-enable in https://github.com/TBD54566975/ssi-service/issues/493
 	// Sign represents whether the schema should be signed by the author. Default is false.
 	// If sign is true, the schema will be signed by the issuer's private key with the specified KID
-	Sign bool `json:"sign,omitempty"`
+	// Sign bool `json:"sign,omitempty"`
 	// Issuer represents the DID of the issuer for the schema if it's signed. Required if sign is true.
-	Issuer string `json:"issuer,omitempty"`
+	// Issuer string `json:"issuer,omitempty"`
 	// IssuerKID represents the KID of the issuer's private key to sign the schema. Required if sign is true.
-	IssuerKID string `json:"issuerKid,omitempty"`
+	// IssuerKID string `json:"issuerKid,omitempty"`
 }
 
 type CreateSchemaResponse struct {
@@ -77,24 +78,23 @@ func (sr SchemaRouter) CreateSchema(c *gin.Context) {
 		return
 	}
 
-	if request.Sign && (request.Issuer == "" || request.IssuerKID == "") {
-		errMsg := "cannot sign schema without an issuer DID and KID"
-		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
-		return
-	}
+	// if request.Sign && (request.Issuer == "" || request.IssuerKID == "") {
+	// 	errMsg := "cannot sign schema without an issuer DID and KID"
+	// 	framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+	// 	return
+	// }
 
 	req := schema.CreateSchemaRequest{
 		Name:        request.Name,
 		Description: request.Description,
 		Schema:      request.Schema,
-		Sign:        request.Sign,
-		Issuer:      request.Issuer,
-		IssuerKID:   request.IssuerKID,
+		// Sign:        request.Sign,
+		// Issuer:      request.Issuer,
+		// IssuerKID:   request.IssuerKID,
 	}
 	createSchemaResponse, err := sr.service.CreateSchema(c, req)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create schema with issuing DID<%s> and KID<%s>", request.Issuer, request.IssuerKID)
-		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, "could not create schema", http.StatusInternalServerError)
 		return
 	}
 
