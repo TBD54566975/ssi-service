@@ -139,17 +139,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "schema not found with id: https://test-schema.com")
 
 		// create schema
-		emailSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"email": map[string]any{
-					"type": "string",
-				},
-			},
-			"required":             []any{"email"},
-			"additionalProperties": false,
-		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: getEmailSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -205,7 +195,7 @@ func TestCredentialRouter(t *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotEmpty(tt, bolt)
 
-		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "v1/credentials"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
@@ -223,18 +213,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema
-		emailSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"email": map[string]any{
-					"type": "string",
-				},
-			},
-			"required":             []any{"email"},
-			"additionalProperties": false,
-		}
-
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: getEmailSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -290,7 +269,7 @@ func TestCredentialRouter(t *testing.T) {
 		// Cred with same <issuer, schema> pair share the same statusListCredential
 		assert.Equal(tt, credStatusMapTwo["statusListCredential"], credStatusMap["statusListCredential"])
 
-		createdSchemaTwo, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		createdSchemaTwo, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: getEmailSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchemaTwo)
 
@@ -325,7 +304,7 @@ func TestCredentialRouter(t *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotEmpty(tt, bolt)
 
-		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "/v1/credentials"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
@@ -393,18 +372,8 @@ func TestCredentialRouter(t *testing.T) {
 		// Cred with same <issuer, schema> pair share the same statusListCredential
 		assert.Equal(tt, credStatusMapTwo["statusListCredential"], credStatusMap["statusListCredential"])
 
-		emailSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"email": map[string]any{
-					"type": "string",
-				},
-			},
-			"required":             []any{"email"},
-			"additionalProperties": false,
-		}
-
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		// create schema
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: getEmailSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -439,7 +408,7 @@ func TestCredentialRouter(t *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotEmpty(tt, bolt)
 
-		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234"}}
+		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234/v1/credentials"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
@@ -456,18 +425,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema
-		emailSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"email": map[string]any{
-					"type": "string",
-				},
-			},
-			"required":             []any{"email"},
-			"additionalProperties": false,
-		}
-
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: getEmailSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -570,7 +528,7 @@ func TestCredentialRouter(t *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotEmpty(tt, bolt)
 
-		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234"}}
+		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234/v1/credentials"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
@@ -587,18 +545,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema
-		emailSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"email": map[string]any{
-					"type": "string",
-				},
-			},
-			"required":             []any{"email"},
-			"additionalProperties": false,
-		}
-
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: getEmailSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -701,7 +648,7 @@ func TestCredentialRouter(t *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotEmpty(tt, bolt)
 
-		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234"}}
+		serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234/v1/credentials"}}
 		keyStoreService := testKeyStoreService(tt, bolt)
 		didService := testDIDService(tt, bolt, keyStoreService)
 		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
@@ -718,18 +665,7 @@ func TestCredentialRouter(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema
-		emailSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"email": map[string]any{
-					"type": "string",
-				},
-			},
-			"required":             []any{"email"},
-			"additionalProperties": false,
-		}
-
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: getEmailSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -1086,7 +1022,7 @@ func createCredServicePrereqs(tt *testing.T) (issuer, issuerKID, schemaID string
 	bolt := setupTestDB(tt)
 	require.NotEmpty(tt, bolt)
 
-	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234"}}
+	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234/v1/credentials"}}
 	keyStoreService := testKeyStoreService(tt, bolt)
 	didService := testDIDService(tt, bolt, keyStoreService)
 	schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
@@ -1104,20 +1040,27 @@ func createCredServicePrereqs(tt *testing.T) (issuer, issuerKID, schemaID string
 	require.NotEmpty(tt, issuerDID)
 
 	// create a schema
-	emailSchema := map[string]any{
-		"type": "object",
-		"properties": map[string]any{
-			"email": map[string]any{
-				"type": "string",
-			},
-		},
-		"required":             []any{"email"},
-		"additionalProperties": false,
-	}
-
-	createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: emailSchema})
+	createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, Name: "simple schema", Schema: getEmailSchema()})
 	require.NoError(tt, err)
 	require.NotEmpty(tt, createdSchema)
 
 	return issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID, *credService
+}
+
+func getEmailSchema() map[string]any {
+	return map[string]any{
+		"$schema": "https://json-schema.org/draft-07/schema",
+		"type":    "object",
+		"properties": map[string]any{
+			"credentialSubject": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"email": map[string]any{
+						"type": "string",
+					},
+				},
+				"required": []any{"email"},
+			},
+		},
+	}
 }

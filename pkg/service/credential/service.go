@@ -189,8 +189,7 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 	}
 
 	if err := builder.SetIssuanceDate(time.Now().Format(time.RFC3339)); err != nil {
-		errMsg := fmt.Sprintf("could not set credential issuance date")
-		return nil, sdkutil.LoggingErrorMsg(err, errMsg)
+		return nil, sdkutil.LoggingErrorMsg(err, "could not set credential issuance date")
 	}
 
 	if request.hasStatus() {
@@ -239,8 +238,7 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 		return nil, sdkutil.LoggingErrorMsg(err, "saving credential")
 	}
 
-	response := CreateCredentialResponse{Container: container}
-	return &response, nil
+	return &CreateCredentialResponse{Container: container}, nil
 }
 
 // signCredentialJWT signs a credential and returns it as a vc-jwt

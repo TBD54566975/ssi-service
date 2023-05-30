@@ -409,13 +409,22 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 	require.NoError(t, err)
 
 	licenseSchema := map[string]any{
-		"type": "object",
+		"$schema": "https://json-schema.org/draft-07/schema",
+		"type":    "object",
 		"properties": map[string]any{
-			"licenseType": map[string]any{
-				"type": "string",
+			"credentialSubject": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"id": map[string]any{
+						"type": "string",
+					},
+					"licenseType": map[string]any{
+						"type": "string",
+					},
+				},
+				"required": []any{"licenseType", "id"},
 			},
 		},
-		"additionalProperties": true,
 	}
 	keyID := issuerResp.DID.VerificationMethod[0].ID
 	createdSchema, err := schemaSvc.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerResp.DID.ID, IssuerKID: keyID, Name: "license schema", Schema: licenseSchema, Sign: true})
