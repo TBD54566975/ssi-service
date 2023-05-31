@@ -1,26 +1,22 @@
 package server
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
-	"github.com/TBD54566975/ssi-sdk/crypto"
-	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
-	"github.com/tbd54566975/ssi-service/pkg/service/did"
 )
 
 func TestSchemaAPI(t *testing.T) {
-	t.Run("Test Create SchemaID", func(tt *testing.T) {
+	t.Run("Test Create Schema", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
 
@@ -41,7 +37,7 @@ func TestSchemaAPI(t *testing.T) {
 		// reset the http recorder
 		w = httptest.NewRecorder()
 
-		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema}
+		schemaRequest := router.CreateSchemaRequest{Name: "test schema", Schema: simpleSchema}
 		schemaRequestValue = newRequestValue(tt, schemaRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 
@@ -53,84 +49,13 @@ func TestSchemaAPI(t *testing.T) {
 		err := json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, resp.ID)
-		assert.EqualValues(tt, schemaRequest.Schema, resp.Schema.Schema)
+
+		// since the id is generated, we need to manually override it
+		schemaRequest.Schema[schema.JSONSchemaIDProperty] = resp.Schema.ID()
+		assert.JSONEq(tt, schemaRequest.Schema.String(), resp.Schema.String())
 	})
 
-	t.Run("Test Sign & Verify Schema", func(tt *testing.T) {
-		bolt := setupTestDB(tt)
-		require.NotEmpty(tt, bolt)
-
-		keyStoreService := testKeyStoreService(tt, bolt)
-		didService := testDIDService(tt, bolt, keyStoreService)
-		schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
-
-		w := httptest.NewRecorder()
-
-		// sign request with unknown DID
-		simpleSchema := getTestSchema()
-		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema, Sign: true}
-		schemaRequestValue := newRequestValue(tt, schemaRequest)
-		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
-		c := newRequestContext(w, req)
-		schemaService.CreateSchema(c)
-		assert.Contains(tt, w.Body.String(), "cannot sign schema without authorKID")
-
-		// create a DID
-		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
-			Method:  didsdk.KeyMethod,
-			KeyType: crypto.Ed25519,
-		})
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, issuerDID)
-
-		// sign with known DID
-		kid := issuerDID.DID.VerificationMethod[0].ID
-		schemaRequest = router.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "test schema", Schema: simpleSchema, Sign: true}
-		schemaRequestValue = newRequestValue(tt, schemaRequest)
-		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
-		w = httptest.NewRecorder()
-		c = newRequestContext(w, req)
-		schemaService.CreateSchema(c)
-		assert.True(tt, util.Is2xxResponse(w.Code))
-
-		var resp router.CreateSchemaResponse
-		err = json.NewDecoder(w.Body).Decode(&resp)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, resp.SchemaJWT)
-		assert.NotEmpty(tt, resp.ID)
-		assert.EqualValues(tt, schemaRequest.Schema, resp.Schema.Schema)
-
-		// verify schema
-		verifySchemaRequest := router.VerifySchemaRequest{SchemaJWT: *resp.SchemaJWT}
-		verifySchemaRequestValue := newRequestValue(tt, verifySchemaRequest)
-		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas/verification", verifySchemaRequestValue)
-		c = newRequestContext(w, req)
-		schemaService.VerifySchema(c)
-		assert.True(tt, util.Is2xxResponse(w.Code))
-
-		var verifyResp router.VerifySchemaResponse
-		err = json.NewDecoder(w.Body).Decode(&verifyResp)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, verifyResp)
-		assert.True(tt, verifyResp.Verified)
-
-		// verify a bad schema
-		verifySchemaRequest = router.VerifySchemaRequest{SchemaJWT: "bad"}
-		verifySchemaRequestValue = newRequestValue(tt, verifySchemaRequest)
-		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas/verification", verifySchemaRequestValue)
-		w = httptest.NewRecorder()
-		c = newRequestContext(w, req)
-		schemaService.VerifySchema(c)
-		assert.True(tt, util.Is2xxResponse(w.Code))
-
-		err = json.NewDecoder(w.Body).Decode(&verifyResp)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, verifyResp)
-		assert.False(tt, verifyResp.Verified)
-		assert.Contains(tt, verifyResp.Reason, "could not verify schema")
-	})
-
-	t.Run("Test Get SchemaID and Get Schemas", func(tt *testing.T) {
+	t.Run("Test Get Schema and Get Schemas", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
 
@@ -174,7 +99,7 @@ func TestSchemaAPI(t *testing.T) {
 		// create a schema
 		simpleSchema := getTestSchema()
 
-		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema}
+		schemaRequest := router.CreateSchemaRequest{Name: "test schema", Schema: simpleSchema}
 		schemaRequestValue := newRequestValue(tt, schemaRequest)
 		createReq := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 
@@ -187,7 +112,10 @@ func TestSchemaAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		assert.NotEmpty(tt, createResp.ID)
-		assert.EqualValues(tt, schemaRequest.Schema, createResp.Schema.Schema)
+
+		// since the id is generated, we need to manually override it
+		schemaRequest.Schema[schema.JSONSchemaIDProperty] = createResp.Schema.ID()
+		assert.JSONEq(tt, schemaRequest.Schema.String(), createResp.Schema.String())
 
 		// reset recorder between calls
 		w = httptest.NewRecorder()
@@ -202,8 +130,8 @@ func TestSchemaAPI(t *testing.T) {
 		err = json.NewDecoder(w.Body).Decode(&gotSchemaResp)
 		assert.NoError(tt, err)
 
-		assert.Equal(tt, createResp.ID, gotSchemaResp.Schema.ID)
-		assert.Equal(tt, createResp.Schema.Schema, gotSchemaResp.Schema.Schema)
+		assert.Contains(tt, gotSchemaResp.Schema.ID(), createResp.ID)
+		assert.Equal(tt, createResp.Schema.Schema(), gotSchemaResp.Schema.Schema())
 
 		// reset recorder between calls
 		w = httptest.NewRecorder()
@@ -238,7 +166,7 @@ func TestSchemaAPI(t *testing.T) {
 		// create a schema
 		simpleSchema := getTestSchema()
 
-		schemaRequest := router.CreateSchemaRequest{Author: "did:test", Name: "test schema", Schema: simpleSchema}
+		schemaRequest := router.CreateSchemaRequest{Name: "test schema", Schema: simpleSchema}
 		schemaRequestValue := newRequestValue(tt, schemaRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		w = httptest.NewRecorder()
@@ -250,7 +178,10 @@ func TestSchemaAPI(t *testing.T) {
 		err := json.NewDecoder(w.Body).Decode(&resp)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, resp.ID)
-		assert.EqualValues(tt, schemaRequest.Schema, resp.Schema.Schema)
+
+		// since the id is generated, we need to manually override it
+		schemaRequest.Schema[schema.JSONSchemaIDProperty] = resp.Schema.ID()
+		assert.JSONEq(tt, schemaRequest.Schema.String(), resp.Schema.String())
 
 		// get schema by id
 		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
@@ -278,8 +209,9 @@ func TestSchemaAPI(t *testing.T) {
 func getTestSchema() schema.JSONSchema {
 	return map[string]any{
 		"$id":         "https://example.com/foo.schema.json",
-		"$schema":     "http://json-schema.org/draft-07/schema#",
-		"description": "foo schema",
+		"$schema":     "https://json-schema.org/draft-07/schema",
+		"name":        "test schema",
+		"description": "test schema",
 		"type":        "object",
 		"properties": map[string]any{
 			"foo": map[string]any{

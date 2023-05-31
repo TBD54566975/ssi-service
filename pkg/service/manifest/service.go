@@ -12,6 +12,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -261,12 +262,10 @@ func (s Service) ProcessApplicationSubmission(ctx context.Context, request model
 	gotManifest, err := s.storage.GetManifest(ctx, manifestID)
 	applicationID := request.Application.ID
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err,
-			"problem with retrieving manifest<%s> during application<%s>'s validation", manifestID, applicationID)
+		return nil, sdkutil.LoggingErrorMsgf(err, "problem with retrieving manifest<%s> during application<%s>'s validation", manifestID, applicationID)
 	}
 	if gotManifest == nil {
-		return nil, sdkutil.LoggingNewErrorf(
-			"application<%s> is not valid; a manifest does not exist with id: %s", applicationID, manifestID)
+		return nil, sdkutil.LoggingNewErrorf("application<%s> is not valid; a manifest does not exist with id: %s", applicationID, manifestID)
 	}
 
 	opID := opcredential.IDFromResponseID(applicationID)

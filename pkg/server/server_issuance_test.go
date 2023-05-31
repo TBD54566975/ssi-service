@@ -45,7 +45,7 @@ func TestIssuanceRouter(t *testing.T) {
 						Credentials: []issuance.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
-								Schema: createdSchema.Schema.ID,
+								Schema: createdSchema.ID,
 								Data: issuance.ClaimTemplates{
 									"foo":   "bar",
 									"hello": "$.vcsomething.something",
@@ -116,7 +116,7 @@ func TestIssuanceRouter(t *testing.T) {
 						Credentials: []issuance.CredentialTemplate{
 							{
 								ID:     "",
-								Schema: createdSchema.Schema.ID,
+								Schema: createdSchema.ID,
 								Data: issuance.ClaimTemplates{
 									"foo":   "bar",
 									"hello": "$.vcsomething.something",
@@ -140,7 +140,7 @@ func TestIssuanceRouter(t *testing.T) {
 						Credentials: []issuance.CredentialTemplate{
 							{
 								ID:     "output_descriptor_1",
-								Schema: createdSchema.Schema.ID,
+								Schema: createdSchema.ID,
 								Data: issuance.ClaimTemplates{
 									"foo":   "bar",
 									"hello": "$.vcsomething.something",
@@ -249,7 +249,7 @@ func TestIssuanceRouter(t *testing.T) {
 			Credentials: []issuance.CredentialTemplate{
 				{
 					ID:     "output_descriptor_1",
-					Schema: createdSchema.Schema.ID,
+					Schema: createdSchema.ID,
 					Data: issuance.ClaimTemplates{
 						"foo":   "bar",
 						"hello": "$.vcsomething.something",
@@ -371,7 +371,7 @@ func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, 
 				Credentials: []issuance.CredentialTemplate{
 					{
 						ID:     "output_descriptor_1",
-						Schema: createdSchema.Schema.ID,
+						Schema: createdSchema.ID,
 						Data: issuance.ClaimTemplates{
 							"foo":   "bar",
 							"hello": "$.vcsomething.something",
@@ -409,16 +409,25 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 	require.NoError(t, err)
 
 	licenseSchema := map[string]any{
-		"type": "object",
+		"$schema": "https://json-schema.org/draft-07/schema",
+		"type":    "object",
 		"properties": map[string]any{
-			"licenseType": map[string]any{
-				"type": "string",
+			"credentialSubject": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"id": map[string]any{
+						"type": "string",
+					},
+					"licenseType": map[string]any{
+						"type": "string",
+					},
+				},
+				"required": []any{"licenseType", "id"},
 			},
 		},
-		"additionalProperties": true,
 	}
 	keyID := issuerResp.DID.VerificationMethod[0].ID
-	createdSchema, err := schemaSvc.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerResp.DID.ID, AuthorKID: keyID, Name: "license schema", Schema: licenseSchema, Sign: true})
+	createdSchema, err := schemaSvc.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerResp.DID.ID, IssuerKID: keyID, Name: "license schema", Schema: licenseSchema, Sign: true})
 	require.NoError(t, err)
 
 	sillyName := "some silly name"
@@ -432,7 +441,7 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 		OutputDescriptors: []manifestsdk.OutputDescriptor{
 			{
 				ID:     "output_descriptor_1",
-				Schema: createdSchema.Schema.ID,
+				Schema: createdSchema.ID,
 			},
 		},
 	})

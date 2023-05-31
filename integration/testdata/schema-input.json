@@ -1,55 +1,55 @@
 {
-  "author":"did:example:123",
-  "name":"KYC",
-  "schema":{
-    "$id":"kyc-schema-1.0",
-    "$schema":"https://json-schema.org/draft/2020-12/schema",
-    "description":"KYC Schema",
-    "type":"object",
-    "properties":{
-      "id":{
-        "type":"string"
-      },
-      "givenName":{
-        "type":"string"
-      },
-      "additionalName":{
-        "type":"string"
-      },
-      "familyName":{
-        "type":"string"
-      },
-      "birthDate":{
-        "type":"string"
-      },
-      "postalAddress":{
-        "type":"object",
-        "properties":{
-          "addressCountry":{
-            "type":"string"
+  "name": "KYC",
+  "description": "KYC Schema",
+  "schema": {
+    "$id": "kyc-schema-1.0",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+      "credentialSubject": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
           },
-          "addressLocality":{
-            "type":"string"
+          "givenName": {
+            "type": "string"
           },
-          "addressRegion":{
-            "type":"string"
+          "additionalName": {
+            "type": "string"
           },
-          "postalCode":{
-            "type":"string"
+          "familyName": {
+            "type": "string"
           },
-          "streetAddress":{
-            "type":"string"
+          "birthDate": {
+            "type": "string"
+          },
+          "postalAddress": {
+            "type": "object",
+            "properties": {
+              "addressCountry": {
+                "type": "string"
+              },
+              "addressLocality": {
+                "type": "string"
+              },
+              "addressRegion": {
+                "type": "string"
+              },
+              "postalCode": {
+                "type": "string"
+              },
+              "streetAddress": {
+                "type": "string"
+              }
+            }
+          },
+          "taxId": {
+            "type": "string"
           }
-        }
-      },
-      "taxId":{
-        "type":"string"
+        },
+        "additionalProperties": false
       }
-    },
-    "required":[
-
-    ],
-    "additionalProperties":false
-  },
-  "sign":false
+    }
+  }
 }

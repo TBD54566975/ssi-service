@@ -64,22 +64,13 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"licenseType": map[string]any{
-					"type": "string",
-				},
-			},
-			"additionalProperties": true,
-		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema(), Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
+		createManifestRequest := getValidCreateManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -152,22 +143,13 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"licenseType": map[string]any{
-					"type": "string",
-				},
-			},
-			"additionalProperties": true,
-		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema(), Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
+		createManifestRequest := getValidCreateManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -213,22 +195,13 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"licenseType": map[string]any{
-					"type": "string",
-				},
-			},
-			"additionalProperties": true,
-		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema(), Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
+		createManifestRequest := getValidCreateManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -308,22 +281,13 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, issuerDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"licenseType": map[string]any{
-					"type": "string",
-				},
-			},
-			"additionalProperties": true,
-		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema(), Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
+		createManifestRequest := getValidCreateManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -396,22 +360,20 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, applicantDID)
 
-		// create a schema for the creds to be issued against
-		licenseSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"licenseType": map[string]any{
-					"type": "string",
-				},
-			},
-			"additionalProperties": true,
-		}
+		// create a schema for the creds to be issued against, needed for the application
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(
+		licenseApplicationSchema, err := schemaService.CreateSchema(
 			context.Background(),
-			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license application schema", Schema: getLicenseApplicationSchema(), Sign: true})
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, createdSchema)
+		assert.NotEmpty(tt, licenseApplicationSchema)
+
+		// create a second schema for the creds to be issued after the application is approved
+		licenseSchema, err := schemaService.CreateSchema(
+			context.Background(),
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseSchema(), Sign: true})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, licenseSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
 		createdCred, err := credentialService.CreateCredential(
@@ -420,9 +382,9 @@ func TestManifestAPI(t *testing.T) {
 				Issuer:    issuerDID.DID.ID,
 				IssuerKID: kid,
 				Subject:   applicantDID.ID,
-				SchemaID:  createdSchema.ID,
+				SchemaID:  licenseApplicationSchema.ID,
 				Data: map[string]any{
-					"licenseType": "WA-DL-CLASS-A",
+					"licenseType": "Class D",
 					"firstName":   "Tester",
 					"lastName":    "McTest",
 				},
@@ -430,9 +392,8 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)
 
-		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
-
+		// create a manifest with the schema we'll be issuing against after reviewing applications
+		createManifestRequest := getValidCreateManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, licenseSchema.ID)
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		w := httptest.NewRecorder()
@@ -464,7 +425,7 @@ func TestManifestAPI(t *testing.T) {
 		mockClock.Set(expiryDateTime)
 		expiryDuration := 5 * time.Second
 		issuanceTemplate, err := issuanceService.CreateIssuanceTemplate(context.Background(),
-			getValidIssuanceTemplateRequest(m, issuerDID, createdSchema, expiryDateTime, expiryDuration))
+			getValidIssuanceTemplateRequest(m, issuerDID, licenseSchema.ID, expiryDateTime, expiryDuration))
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, issuanceTemplate)
 
@@ -496,13 +457,16 @@ func TestManifestAPI(t *testing.T) {
 		}
 		assert.Equal(tt, expectedSubject, vc.CredentialSubject)
 		assert.Equal(tt, time.Date(2022, 10, 31, 0, 0, 0, 0, time.UTC).Format(time.RFC3339), vc.ExpirationDate)
-		assert.Equal(tt, createdSchema.ID, vc.CredentialSchema.ID)
+		assert.Equal(tt, licenseSchema.ID, vc.CredentialSchema.ID)
 		assert.Empty(tt, vc.CredentialStatus)
 
 		_, _, vc2, err := credsdk.ToCredential(appResp.Credentials[1])
 		assert.NoError(tt, err)
 		expectedSubject = credsdk.CredentialSubject{
-			"id": applicantDID.ID,
+			"id":        applicantDID.ID,
+			"firstName": "Tester",
+			"lastName":  "McTest",
+			"state":     "NY",
 			"someCrazyObject": map[string]any{
 				"foo": 123.,
 				"bar": false,
@@ -516,11 +480,11 @@ func TestManifestAPI(t *testing.T) {
 			time.Date(2022, 10, 31, 0, 0, 5, 0, time.UTC).Format(time.RFC3339),
 			vc2.ExpirationDate,
 		)
-		assert.Equal(tt, createdSchema.ID, vc2.CredentialSchema.ID)
+		assert.Equal(tt, licenseSchema.ID, vc2.CredentialSchema.ID)
 		assert.NotEmpty(tt, vc2.CredentialStatus)
 	})
 
-	t.Run("Test Submit Application", func(tt *testing.T) {
+	t.Run("Test Submit Application with multiple outputs and overrides", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
 
@@ -558,38 +522,35 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, applicantDID)
 
-		// create a schema for the creds to be issued against
-		licenseSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"licenseType": map[string]any{
-					"type": "string",
-				},
-			},
-			"additionalProperties": true,
-		}
+		// create a schema for the creds to be issued against, needed for the application
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(),
-			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+		licenseApplicationSchema, err := schemaService.CreateSchema(
+			context.Background(),
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license application schema", Schema: getLicenseApplicationSchema(), Sign: true})
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, createdSchema)
+		assert.NotEmpty(tt, licenseApplicationSchema)
+
+		// create a second schema for the creds to be issued after the application is approved
+		licenseSchema, err := schemaService.CreateSchema(
+			context.Background(),
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseSchema(), Sign: true})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, licenseSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
 		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:    issuerDID.DID.ID,
 			IssuerKID: kid,
 			Subject:   applicantDID.ID,
-			SchemaID:  createdSchema.ID,
-			Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
+			SchemaID:  licenseApplicationSchema.ID,
+			Data:      map[string]any{"licenseType": "Class D"},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)
 
-		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
-
+		// good request to create a manifest
+		createManifestRequest := getValidCreateManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, licenseSchema.ID)
 		w = httptest.NewRecorder()
-
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
 		c = newRequestContext(w, req)
@@ -635,8 +596,23 @@ func TestManifestAPI(t *testing.T) {
 			Approved: true,
 			Reason:   "I'm the almighty approver",
 			CredentialOverrides: map[string]manifestsvc.CredentialOverride{
-				"id1": {
-					Data:      map[string]any{"looks": "pretty darn handsome"},
+				"drivers-license-ca": {
+					Data: map[string]any{
+						"firstName": "John",
+						"lastName":  "Doe",
+						"state":     "CA",
+						"looks":     "pretty darn handsome",
+					},
+					Expiry:    &expireAt,
+					Revocable: true,
+				},
+				"drivers-license-ny": {
+					Data: map[string]any{
+						"firstName": "John",
+						"lastName":  "Doe",
+						"state":     "NY",
+						"looks":     "even handsomer",
+					},
 					Expiry:    &expireAt,
 					Revocable: true,
 				},
@@ -662,12 +638,15 @@ func TestManifestAPI(t *testing.T) {
 		_, _, vc, err := credsdk.ToCredential(appResp.Credentials[0])
 		assert.NoError(tt, err)
 		assert.Equal(tt, credsdk.CredentialSubject{
-			"id":    applicantDID.ID,
-			"looks": "pretty darn handsome",
+			"id":        applicantDID.ID,
+			"firstName": "John",
+			"lastName":  "Doe",
+			"state":     "CA",
+			"looks":     "pretty darn handsome",
 		}, vc.CredentialSubject)
 		assert.Equal(tt, expireAt.Format(time.RFC3339), vc.ExpirationDate)
 		assert.NotEmpty(tt, vc.CredentialStatus)
-		assert.Equal(tt, createdSchema.ID, vc.CredentialSchema.ID)
+		assert.Equal(tt, licenseSchema.ID, vc.CredentialSchema.ID)
 	})
 
 	t.Run("Test Denied Application", func(tt *testing.T) {
@@ -712,28 +691,19 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, applicantDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"licenseType": map[string]any{
-					"type": "string",
-				},
-			},
-			"additionalProperties": true,
-		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(),
-			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+		licenseApplicationSchema, err := schemaService.CreateSchema(context.Background(),
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license application schema", Schema: getLicenseApplicationSchema(), Sign: true})
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, createdSchema)
+		assert.NotEmpty(tt, licenseApplicationSchema)
 
 		// issue a credential against the schema to the subject, from the issuer
 		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:    issuerDID.DID.ID,
 			IssuerKID: kid,
 			Subject:   applicantDID.ID,
-			SchemaID:  createdSchema.ID,
-			Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
+			SchemaID:  licenseApplicationSchema.ID,
+			Data:      map[string]any{"licenseType": "Class D"},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)
@@ -741,7 +711,7 @@ func TestManifestAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
+		createManifestRequest := getValidCreateManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, licenseApplicationSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -823,9 +793,9 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, appResp.Response)
 		assert.Equal(tt, resp.Manifest.ID, appResp.Response.ManifestID)
 		assert.NotEmpty(tt, appResp.Response.Denial)
-		assert.Contains(tt, appResp.Response.Denial.Reason, "unfilled input descriptor(s): test-id: no submission descriptor found for input descriptor")
+		assert.Contains(tt, appResp.Response.Denial.Reason, "unfilled input descriptor(s): license-type: no submission descriptor found for input descriptor")
 		assert.Len(tt, appResp.Response.Denial.InputDescriptors, 1)
-		assert.Equal(tt, appResp.Response.Denial.InputDescriptors[0], "test-id")
+		assert.Equal(tt, appResp.Response.Denial.InputDescriptors[0], "license-type")
 	})
 
 	t.Run("Test Get Application By ID and Get Applications", func(tt *testing.T) {
@@ -867,34 +837,30 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, applicantDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"licenseType": map[string]any{
-					"type": "string",
-				},
-			},
-			"additionalProperties": true,
-		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(),
-			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+		licenseApplicationSchema, err := schemaService.CreateSchema(context.Background(),
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license application schema", Schema: getLicenseApplicationSchema(), Sign: true})
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, createdSchema)
+		assert.NotEmpty(tt, licenseApplicationSchema)
 
+		licenseSchema, err := schemaService.CreateSchema(
+			context.Background(),
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseSchema(), Sign: true})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, licenseSchema)
 		// issue a credential against the schema to the subject, from the issuer
 		createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 			Issuer:    issuerDID.DID.ID,
 			IssuerKID: kid,
 			Subject:   applicantDID.ID,
-			SchemaID:  createdSchema.ID,
-			Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
+			SchemaID:  licenseApplicationSchema.ID,
+			Data:      map[string]any{"licenseType": "Class D"},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdCred)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
+		createManifestRequest := getValidCreateManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, licenseSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -931,7 +897,28 @@ func TestManifestAPI(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// review application
-		reviewApplicationRequestValue := newRequestValue(tt, router.ReviewApplicationRequest{Approved: true, Reason: "I'm the almighty approver"})
+		reviewApplicationRequestValue := newRequestValue(tt, router.ReviewApplicationRequest{
+			Approved: true,
+			Reason:   "I'm the almighty approver",
+			CredentialOverrides: map[string]manifestsvc.CredentialOverride{
+				"drivers-license-ca": {
+					Data: map[string]any{
+						"firstName": "John",
+						"lastName":  "Doe",
+						"state":     "CA",
+						"looks":     "pretty darn handsome",
+					},
+				},
+				"drivers-license-ny": {
+					Data: map[string]any{
+						"firstName": "John",
+						"lastName":  "Doe",
+						"state":     "NY",
+						"looks":     "even handsomer",
+					},
+				},
+			},
+		})
 		applicationID := storage.StatusObjectID(op.ID)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests/applications/"+applicationID+"/review", reviewApplicationRequestValue)
 		c = newRequestContextWithParams(w, req, map[string]string{"id": applicationID})
@@ -1027,18 +1014,9 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, applicantDID)
 
 		// create a schema for the creds to be issued against
-		licenseSchema := map[string]any{
-			"type": "object",
-			"properties": map[string]any{
-				"licenseType": map[string]any{
-					"type": "string",
-				},
-			},
-			"additionalProperties": true,
-		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
 		createdSchema, err := schemaService.CreateSchema(context.Background(),
-			schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema(), Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -1054,7 +1032,7 @@ func TestManifestAPI(t *testing.T) {
 		assert.NotEmpty(tt, createdCred)
 
 		// good request
-		createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
+		createManifestRequest := getValidCreateManifestRequest(issuerDID.DID.ID, issuerDID.DID.VerificationMethod[0].ID, createdSchema.ID)
 
 		requestValue := newRequestValue(tt, createManifestRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/manifests", requestValue)
@@ -1133,17 +1111,16 @@ func TestManifestAPI(t *testing.T) {
 func getValidManifestRequestRequest(issuerDID *did.CreateDIDResponse, kid string, credentialManifest manifest.CredentialManifest) router.CreateManifestRequestRequest {
 	return router.CreateManifestRequestRequest{
 		CommonCreateRequestRequest: &router.CommonCreateRequestRequest{
-			Audience:   []string{"mario"},
-			IssuerDID:  issuerDID.DID.ID,
-			IssuerKID:  kid,
-			Expiration: "",
+			Audience:  []string{"mario"},
+			IssuerDID: issuerDID.DID.ID,
+			IssuerKID: kid,
 		},
 		CredentialManifestID: credentialManifest.ID,
 	}
 }
 
 func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *did.CreateDIDResponse,
-	createdSchema *schema.CreateSchemaResponse, expiry1 time.Time, expiry2 time.Duration) *issuance.CreateIssuanceTemplateRequest {
+	schemaID string, expiry1 time.Time, expiry2 time.Duration) *issuance.CreateIssuanceTemplateRequest {
 	return &issuance.CreateIssuanceTemplateRequest{
 		IssuanceTemplate: issuance.Template{
 			ID:                 uuid.NewString(),
@@ -1152,9 +1129,9 @@ func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *d
 			IssuerKID:          issuerDID.DID.VerificationMethod[0].ID,
 			Credentials: []issuance.CredentialTemplate{
 				{
-					ID:                        "id1",
-					Schema:                    createdSchema.ID,
-					CredentialInputDescriptor: "test-id",
+					ID:                        "drivers-license-ca",
+					Schema:                    schemaID,
+					CredentialInputDescriptor: "license-type",
 					Data: issuance.ClaimTemplates{
 						"firstName": "$.credentialSubject.firstName",
 						"lastName":  "$.credentialSubject.lastName",
@@ -1165,10 +1142,13 @@ func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *d
 					},
 				},
 				{
-					ID:                        "id2",
-					Schema:                    createdSchema.ID,
-					CredentialInputDescriptor: "test-id",
+					ID:                        "drivers-license-ny",
+					Schema:                    schemaID,
+					CredentialInputDescriptor: "license-type",
 					Data: issuance.ClaimTemplates{
+						"firstName": "$.credentialSubject.firstName",
+						"lastName":  "$.credentialSubject.lastName",
+						"state":     "NY",
 						"someCrazyObject": map[string]any{
 							"foo": 123,
 							"bar": false,
@@ -1180,6 +1160,48 @@ func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *d
 					Expiry:    issuance.TimeLike{Duration: &expiry2},
 					Revocable: true,
 				},
+			},
+		},
+	}
+}
+
+func getLicenseApplicationSchema() map[string]any {
+	return map[string]any{
+		"$schema": "https://json-schema.org/draft-07/schema",
+		"type":    "object",
+		"properties": map[string]any{
+			"credentialSubject": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"licenseType": map[string]any{
+						"type": "string",
+					},
+				},
+				"required": []any{"licenseType"},
+			},
+		},
+	}
+}
+
+func getLicenseSchema() map[string]any {
+	return map[string]any{
+		"$schema": "https://json-schema.org/draft-07/schema",
+		"type":    "object",
+		"properties": map[string]any{
+			"credentialSubject": map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"firstName": map[string]any{
+						"type": "string",
+					},
+					"lastName": map[string]any{
+						"type": "string",
+					},
+					"state": map[string]any{
+						"type": "string",
+					},
+				},
+				"required": []any{"firstName", "lastName", "state"},
 			},
 		},
 	}

@@ -35,7 +35,7 @@ func newUniversalResolver(url string) (*universalResolver, error) {
 }
 
 // Resolve results resolution results by doing a GET on <url>/1.0.identifiers/<did>.
-func (ur *universalResolver) Resolve(ctx context.Context, did string, _ ...resolution.ResolutionOption) (*resolution.ResolutionResult, error) {
+func (ur *universalResolver) Resolve(ctx context.Context, did string, _ ...resolution.Option) (*resolution.Result, error) {
 	url := ur.url + "/1.0/identifiers/" + did
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -51,7 +51,7 @@ func (ur *universalResolver) Resolve(ctx context.Context, did string, _ ...resol
 	if err != nil {
 		return nil, err
 	}
-	var result resolution.ResolutionResult
+	var result resolution.Result
 	if err = json.Unmarshal(respBody, &result); err != nil {
 		return nil, errors.Wrap(err, "unmarshalling JSON")
 	}

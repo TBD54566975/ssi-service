@@ -3,22 +3,17 @@ package schema
 import (
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/TBD54566975/ssi-sdk/util"
-
-	"github.com/tbd54566975/ssi-service/internal/keyaccess"
-)
-
-const (
-	Version1 string = "1.0"
 )
 
 type CreateSchemaRequest struct {
-	Author string            `json:"author" validate:"required"`
-	Name   string            `json:"name" validate:"required"`
-	Schema schema.JSONSchema `json:"schema" validate:"required"`
+	Name        string            `json:"name" validate:"required"`
+	Description string            `json:"description,omitempty"`
+	Schema      schema.JSONSchema `json:"schema" validate:"required"`
 
 	// If sign == true, the schema will be signed by the author's private key with the specified KID
-	Sign      bool   `json:"signed"`
-	AuthorKID string `json:"authorKid"`
+	Sign      bool   `json:"sign,omitempty"`
+	Issuer    string `json:"issuer,omitempty"`
+	IssuerKID string `json:"issuerKid,omitempty"`
 }
 
 func (csr CreateSchemaRequest) IsValid() bool {
@@ -26,18 +21,8 @@ func (csr CreateSchemaRequest) IsValid() bool {
 }
 
 type CreateSchemaResponse struct {
-	ID        string              `json:"id"`
-	Schema    schema.VCJSONSchema `json:"schema"`
-	SchemaJWT *keyaccess.JWT      `json:"schemaJwt,omitempty"`
-}
-
-type VerifySchemaRequest struct {
-	SchemaJWT keyaccess.JWT `json:"schemaJwt"`
-}
-
-type VerifySchemaResponse struct {
-	Verified bool   `json:"verified"`
-	Reason   string `json:"reason,omitempty"`
+	ID     string            `json:"id"`
+	Schema schema.JSONSchema `json:"schema"`
 }
 
 type ListSchemasResponse struct {
@@ -49,9 +34,8 @@ type GetSchemaRequest struct {
 }
 
 type GetSchemaResponse struct {
-	ID        string              `json:"id"`
-	Schema    schema.VCJSONSchema `json:"schema"`
-	SchemaJWT *keyaccess.JWT      `json:"schemaJwt,omitempty"`
+	ID     string            `json:"id"`
+	Schema schema.JSONSchema `json:"schema"`
 }
 
 type DeleteSchemaRequest struct {
