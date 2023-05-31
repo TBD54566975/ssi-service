@@ -8,6 +8,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
@@ -56,7 +57,7 @@ type Storage struct {
 
 func NewManifestStorage(db storage.ServiceStorage) (*Storage, error) {
 	if db == nil {
-		return nil, errors.New("bolt db reference is nil")
+		return nil, errors.New("db reference is nil")
 	}
 	return &Storage{db: db}, nil
 }

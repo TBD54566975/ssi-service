@@ -279,9 +279,9 @@ func (dr DIDRouter) ListDIDsByMethod(c *gin.Context) {
 }
 
 type ResolveDIDResponse struct {
-	ResolutionMetadata  *resolution.ResolutionMetadata `json:"didResolutionMetadata,omitempty"`
-	DIDDocument         *didsdk.Document               `json:"didDocument"`
-	DIDDocumentMetadata *resolution.DocumentMetadata   `json:"didDocumentMetadata,omitempty"`
+	ResolutionMetadata  *resolution.Metadata         `json:"didResolutionMetadata,omitempty"`
+	DIDDocument         *didsdk.Document             `json:"didDocument"`
+	DIDDocumentMetadata *resolution.DocumentMetadata `json:"didDocumentMetadata,omitempty"`
 }
 
 // SoftDeleteDIDByMethod godoc

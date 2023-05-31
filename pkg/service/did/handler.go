@@ -49,7 +49,7 @@ type handlerResolver struct {
 	method  didsdk.Method
 }
 
-func (h handlerResolver) Resolve(ctx context.Context, did string, _ ...resolution.ResolutionOption) (*resolution.ResolutionResult, error) {
+func (h handlerResolver) Resolve(ctx context.Context, did string, _ ...resolution.Option) (*resolution.Result, error) {
 	method, err := resolution.GetMethodForDID(did)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting method from DID")
@@ -66,7 +66,7 @@ func (h handlerResolver) Resolve(ctx context.Context, did string, _ ...resolutio
 	if err != nil {
 		return nil, errors.Wrap(err, "getting DID from handler")
 	}
-	return &resolution.ResolutionResult{Document: gotDIDResponse.DID}, nil
+	return &resolution.Result{Document: gotDIDResponse.DID}, nil
 }
 
 func (h handlerResolver) Methods() []didsdk.Method {

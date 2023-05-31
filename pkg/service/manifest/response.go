@@ -111,14 +111,23 @@ func (s Service) fulfillmentCredentialResponse(ctx context.Context, responseBuil
 
 		// apply issuance template and then overrides
 		if len(templateMap) != 0 {
-			templatedCredentialRequest, err := s.applyIssuanceTemplate(createCredentialRequest, templateMap, od, applicationJSON, credManifest, *application.PresentationSubmission)
+			template, ok := templateMap[od.ID]
+			if !ok {
+				logrus.Warnf("Did not find output_descriptor with ID \"%s\" in template. Skipping application.", od.ID)
+				continue
+			}
+			templatedCredentialRequest, err := s.applyIssuanceTemplate(createCredentialRequest, template, applicationJSON, credManifest, *application.PresentationSubmission)
 			if err != nil {
 				return nil, nil, err
 			}
 			createCredentialRequest = *templatedCredentialRequest
 		}
 		if len(credentialOverrides) != 0 {
-			createCredentialRequest = s.applyCredentialOverrides(createCredentialRequest, credentialOverrides, od)
+			if credentialOverride, ok := credentialOverrides[od.ID]; ok {
+				createCredentialRequest = s.applyCredentialOverrides(createCredentialRequest, credentialOverride)
+			} else {
+				logrus.Warnf("Did not find output_descriptor with ID \"%s\" in overrides. Skipping overrides.", od.ID)
+			}
 		}
 
 		credentialResponse, err := s.credential.CreateCredential(ctx, createCredentialRequest)
@@ -156,23 +165,17 @@ func (s Service) fulfillmentCredentialResponse(ctx context.Context, responseBuil
 	return credRes, creds, nil
 }
 
-func (s Service) applyIssuanceTemplate(credentialRequest credential.CreateCredentialRequest,
-	templateMap map[string]issuance.CredentialTemplate, od manifest.OutputDescriptor,
+func (s Service) applyIssuanceTemplate(credentialRequest credential.CreateCredentialRequest, template issuance.CredentialTemplate,
 	applicationJSON map[string]any, credManifest manifest.CredentialManifest, submission exchange.PresentationSubmission) (*credential.CreateCredentialRequest, error) {
-	ct, ok := templateMap[od.ID]
-	if !ok {
-		logrus.Warnf("Did not find output_descriptor with ID \"%s\" in template. Skipping application.", od.ID)
-		return nil, nil
-	}
-	c, err := getCredentialJSON(applicationJSON, ct, credManifest, submission)
+	cred, err := getCredentialForInputDescriptor(applicationJSON, template.CredentialInputDescriptor, credManifest, submission)
 	if err != nil {
 		return nil, err
 	}
-	for k, v := range ct.Data {
+	for k, v := range template.Data {
 		claimValue := v
 		if vs, ok := v.(string); ok {
 			if strings.HasPrefix(vs, "$") {
-				claimValue, err = jsonpath.JsonPathLookup(c, vs)
+				claimValue, err = jsonpath.JsonPathLookup(cred, vs)
 				if err != nil {
 					return nil, errors.Wrapf(err, "looking up json path \"%s\" for key=\"%s\"", vs, k)
 				}
@@ -181,48 +184,48 @@ func (s Service) applyIssuanceTemplate(credentialRequest credential.CreateCreden
 		credentialRequest.Data[k] = claimValue
 	}
 
-	if ct.Expiry.Time != nil {
-		credentialRequest.Expiry = ct.Expiry.Time.Format(time.RFC3339)
+	if template.Expiry.Time != nil {
+		credentialRequest.Expiry = template.Expiry.Time.Format(time.RFC3339)
 	}
 
-	if ct.Expiry.Duration != nil {
-		credentialRequest.Expiry = s.Clock.Now().Add(*ct.Expiry.Duration).Format(time.RFC3339)
+	if template.Expiry.Duration != nil {
+		credentialRequest.Expiry = s.Clock.Now().Add(*template.Expiry.Duration).Format(time.RFC3339)
 	}
 
-	credentialRequest.Revocable = ct.Revocable
+	credentialRequest.Revocable = template.Revocable
 	return &credentialRequest, nil
 }
 
-func (s Service) applyCredentialOverrides(credentialRequest credential.CreateCredentialRequest, credentialOverrides map[string]model.CredentialOverride, od manifest.OutputDescriptor) credential.CreateCredentialRequest {
-	if credentialOverride, ok := credentialOverrides[od.ID]; ok {
-		for k, v := range credentialOverride.Data {
-			if len(credentialRequest.Data) == 0 {
-				credentialRequest.Data = make(map[string]any)
-			}
-			credentialRequest.Data[k] = v
+// applyCredentialOverrides applies the overrides to the credential request
+func (s Service) applyCredentialOverrides(credentialRequest credential.CreateCredentialRequest, credentialOverride model.CredentialOverride) credential.CreateCredentialRequest {
+	for k, v := range credentialOverride.Data {
+		if len(credentialRequest.Data) == 0 {
+			credentialRequest.Data = make(map[string]any)
 		}
-
-		if credentialOverride.Expiry != nil {
-			credentialRequest.Expiry = credentialOverride.Expiry.Format(time.RFC3339)
-		}
-		credentialRequest.Revocable = credentialOverride.Revocable
+		credentialRequest.Data[k] = v
 	}
+
+	if credentialOverride.Expiry != nil {
+		credentialRequest.Expiry = credentialOverride.Expiry.Format(time.RFC3339)
+	}
+	credentialRequest.Revocable = credentialOverride.Revocable
 	return credentialRequest
 }
 
-func getCredentialJSON(applicationJSON map[string]any, ct issuance.CredentialTemplate,
-	credManifest manifest.CredentialManifest, submission exchange.PresentationSubmission) (any, error) {
-	if ct.CredentialInputDescriptor == "" {
-		return nil, errors.New("cannot provide input descriptor when credential template does not have input descriptor")
+// getCredentialForInputDescriptor returns the credential as JSON for the given input descriptor.
+func getCredentialForInputDescriptor(applicationJSON map[string]any, templateInputDescriptorID string,
+	credManifest manifest.CredentialManifest, submission exchange.PresentationSubmission) (map[string]any, error) {
+	if templateInputDescriptorID == "" {
+		return nil, errors.New("cannot provide input descriptor when the credential template does not have input descriptor")
 	}
 
 	if credManifest.PresentationDefinition.IsEmpty() {
-		return nil, errors.New("cannot provide input descriptor when manifest does not have presentation definition")
+		return nil, errors.New("cannot provide input descriptor when the manifest does not have presentation definition")
 	}
 
 	// Lookup the claim that's sent in the submission.
 	for _, descriptor := range submission.DescriptorMap {
-		if descriptor.ID == ct.CredentialInputDescriptor {
+		if descriptor.ID == templateInputDescriptorID {
 			c, err := jsonpath.JsonPathLookup(applicationJSON, descriptor.Path)
 			if err != nil {
 				return nil, errors.Wrapf(err, "looking up json path \"%s\" for submission=\"%s\"", descriptor.Path, descriptor.ID)
@@ -231,7 +234,7 @@ func getCredentialJSON(applicationJSON map[string]any, ct issuance.CredentialTem
 			return toCredentialJSON(c)
 		}
 	}
-	return nil, errors.Errorf("could not find credential for input_descriptor=\"%s\"", ct.CredentialInputDescriptor)
+	return nil, errors.Errorf("could not find credential for input_descriptor=\"%s\"", templateInputDescriptorID)
 }
 
 func toCredentialJSON(c any) (map[string]any, error) {
