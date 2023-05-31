@@ -550,6 +550,35 @@ func (pr PresentationRouter) GetRequest(c *gin.Context) {
 	framework.Respond(c, GetRequestResponse{Request: request}, http.StatusOK)
 }
 
+type ListPresentationRequestsResponse struct {
+	// The presentation requests matching the query.
+	Requests []model.Request `json:"presentationRequests"`
+}
+
+// ListRequests godoc
+//
+//	@Summary		List Presentation Requests
+//	@Description	Lists all the existing presentation requests
+//	@Tags			PresentationRequestAPI
+//	@Accept			json
+//	@Produce		json
+//	@Success		200	{object}	ListPresentationRequestsResponse
+//	@Failure		500	{string}	string	"Internal server error"
+//	@Router			/v1/presentations/requests [get]
+func (pr PresentationRouter) ListRequests(c *gin.Context) {
+	svcResponse, err := pr.service.ListRequests(c)
+
+	if err != nil {
+		errMsg := "could not get requests"
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+	resp := ListPresentationRequestsResponse{
+		Requests: svcResponse.PresentationRequests,
+	}
+	framework.Respond(c, resp, http.StatusOK)
+}
+
 // DeleteRequest godoc
 //
 //	@Summary		Delete PresentationRequest
