@@ -356,7 +356,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.CredentialSchema.ID, getCredsResp.Credentials[0].Credential.CredentialSchema.ID)
 	})
 
-	t.Run("Test Get Credential No Param", func(tt *testing.T) {
+	t.Run("Get Credential No Param", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
 

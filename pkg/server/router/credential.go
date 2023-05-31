@@ -456,7 +456,6 @@ func (cr CredentialRouter) getCredentials(c *gin.Context) {
 
 	resp := ListCredentialsResponse{Credentials: gotCredentials.Credentials}
 	framework.Respond(c, resp, http.StatusOK)
-	return
 }
 
 func (cr CredentialRouter) getCredentialsByIssuer(c *gin.Context, issuer string) {
