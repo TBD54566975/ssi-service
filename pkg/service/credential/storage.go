@@ -89,7 +89,7 @@ type StatusListIndex struct {
 
 func NewCredentialStorage(db storage.ServiceStorage) (*Storage, error) {
 	if db == nil {
-		return nil, sdkutil.LoggingNewError("bolt db reference is nil")
+		return nil, sdkutil.LoggingNewError("db reference is nil")
 	}
 
 	return &Storage{db: db}, nil

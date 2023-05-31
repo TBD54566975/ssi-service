@@ -4,12 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/TBD54566975/ssi-sdk/crypto"
-	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tbd54566975/ssi-service/config"
-	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 )
@@ -30,7 +27,7 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create schema router with service type: test")
 	})
 
-	t.Run("SchemaID Service Test", func(tt *testing.T) {
+	t.Run("Schema Service Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotEmpty(tt, bolt)
 
@@ -57,21 +54,31 @@ func TestSchemaRouter(t *testing.T) {
 
 		// create a schema
 		simpleSchema := map[string]any{
-			"type": "object",
+			"$schema": "https://json-schema.org/draft-07/schema",
+			"type":    "object",
 			"properties": map[string]any{
-				"foo": map[string]any{
-					"type": "string",
+				"credentialSubject": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id": map[string]any{
+							"type": "string",
+						},
+						"firstName": map[string]any{
+							"type": "string",
+						},
+						"lastName": map[string]any{
+							"type": "string",
+						},
+					},
+					"required": []any{"firstName", "lastName"},
 				},
 			},
-			"required":             []any{"foo"},
-			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.ID)
-		assert.Equal(tt, "me", createdSchema.Schema.Author)
-		assert.Equal(tt, "simple schema", createdSchema.Schema.Name)
+		assert.Equal(tt, "simple schema", createdSchema.Schema.Name())
 
 		// get schema by ID
 		gotSchema, err := schemaService.GetSchema(context.Background(), schema.GetSchemaRequest{ID: createdSchema.ID})
@@ -86,12 +93,11 @@ func TestSchemaRouter(t *testing.T) {
 		assert.Len(tt, gotSchemas.Schemas, 1)
 
 		// store another
-		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema 2", Schema: simpleSchema})
+		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: "me", Name: "simple schema 2", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.ID)
-		assert.Equal(tt, "me", createdSchema.Schema.Author)
-		assert.Equal(tt, "simple schema 2", createdSchema.Schema.Name)
+		assert.Equal(tt, "simple schema 2", createdSchema.Schema.Name())
 
 		// get all schemas, expect two
 		gotSchemas, err = schemaService.ListSchemas(context.Background())
@@ -116,7 +122,7 @@ func TestSchemaRouter(t *testing.T) {
 
 func TestSchemaSigning(t *testing.T) {
 
-	t.Run("Unsigned SchemaID Test", func(tt *testing.T) {
+	t.Run("Unsigned Schema Test", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		assert.NotEmpty(tt, bolt)
 
@@ -133,54 +139,30 @@ func TestSchemaSigning(t *testing.T) {
 
 		// create a schema and don't sign it
 		simpleSchema := map[string]any{
-			"type": "object",
+			"$schema": "https://json-schema.org/draft-07/schema",
+			"type":    "object",
 			"properties": map[string]any{
-				"foo": map[string]any{
-					"type": "string",
+				"credentialSubject": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id": map[string]any{
+							"type": "string",
+						},
+						"firstName": map[string]any{
+							"type": "string",
+						},
+						"lastName": map[string]any{
+							"type": "string",
+						},
+					},
+					"required": []any{"firstName", "lastName"},
 				},
 			},
-			"required":             []any{"foo"},
-			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.ID)
-		assert.Empty(tt, createdSchema.SchemaJWT)
-		assert.Equal(tt, "me", createdSchema.Schema.Author)
-		assert.Equal(tt, "simple schema", createdSchema.Schema.Name)
-
-		// missing kid
-		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema, Sign: true})
-		assert.Error(tt, err)
-		assert.Empty(tt, createdSchema)
-		assert.Contains(tt, err.Error(), "could not get key for signing schema for authorKID<>: getting key with id:")
-
-		// create an author DID
-		authorDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
-			Method:  didsdk.KeyMethod,
-			KeyType: crypto.Ed25519,
-		})
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, authorDID)
-
-		kid := authorDID.DID.VerificationMethod[0].ID
-		createdSchema, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: authorDID.DID.ID, AuthorKID: kid, Name: "simple schema", Schema: simpleSchema, Sign: true})
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, createdSchema)
-		assert.NotEmpty(tt, createdSchema.SchemaJWT)
-
-		// verify the schema
-		verifiedSchema, err := schemaService.VerifySchema(context.Background(), schema.VerifySchemaRequest{SchemaJWT: *createdSchema.SchemaJWT})
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, verifiedSchema)
-		assert.True(tt, verifiedSchema.Verified)
-
-		// verify a bad schema
-		verifiedSchema, err = schemaService.VerifySchema(context.Background(), schema.VerifySchemaRequest{SchemaJWT: "bad"})
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, verifiedSchema)
-		assert.False(tt, verifiedSchema.Verified)
-		assert.Contains(tt, verifiedSchema.Reason, "could not verify schema")
+		assert.Equal(tt, "simple schema", createdSchema.Schema.Name())
 	})
 }

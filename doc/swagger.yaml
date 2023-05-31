@@ -121,6 +121,8 @@ definitions:
     - P-384
     - P-521
     - RSA
+    - BLS12381G1
+    - BLS12381G2
     - Dilithium2
     - Dilithium3
     - Dilithium5
@@ -135,6 +137,8 @@ definitions:
     - P384
     - P521
     - RSA
+    - BLS12381G1
+    - BLS12381G2
     - Dilithium2
     - Dilithium3
     - Dilithium5
@@ -1178,34 +1182,31 @@ definitions:
     type: object
   pkg_server_router.CreateSchemaRequest:
     properties:
-      author:
-        type: string
-      authorKid:
-        description: AuthorKID represents the KID of the author's private key to sign
-          the schema. Required if sign is true.
+      description:
+        description: Description is an optional human-readable description for a schema
         type: string
       name:
+        description: Name is a human-readable name for a schema
         type: string
       schema:
-        $ref: '#/definitions/schema.JSONSchema'
-      sign:
+        allOf:
+        - $ref: '#/definitions/schema.JSONSchema'
         description: |-
-          Sign represents whether the schema should be signed by the author. Default is false.
-          If sign is true, the schema will be signed by the author's private key with the specified KID
-        type: boolean
+          Schema represents the JSON schema for the credential schema
+          If the schema has an $id field, it will be overwritten with an ID the service generates.
+          The schema must be against draft 2020-12, 2019-09, or 7.
     required:
-    - author
     - name
     - schema
     type: object
   pkg_server_router.CreateSchemaResponse:
     properties:
+      credentialSchema:
+        type: string
       id:
         type: string
       schema:
-        $ref: '#/definitions/schema.VCJSONSchema'
-      schemaJwt:
-        type: string
+        $ref: '#/definitions/schema.JSONSchema'
     type: object
   pkg_server_router.CreateSubmissionRequest:
     properties:
@@ -1349,10 +1350,10 @@ definitions:
     type: object
   pkg_server_router.GetSchemaResponse:
     properties:
-      schema:
-        $ref: '#/definitions/schema.VCJSONSchema'
-      schemaJwt:
+      credentialSchema:
         type: string
+      schema:
+        $ref: '#/definitions/schema.JSONSchema'
     type: object
   pkg_server_router.GetSubmissionResponse:
     properties:
@@ -1507,7 +1508,7 @@ definitions:
       didDocumentMetadata:
         $ref: '#/definitions/resolution.DocumentMetadata'
       didResolutionMetadata:
-        $ref: '#/definitions/resolution.ResolutionMetadata'
+        $ref: '#/definitions/resolution.Metadata'
     type: object
   pkg_server_router.ReviewApplicationRequest:
     properties:
@@ -1639,22 +1640,6 @@ definitions:
       verified:
         description: Whether the credential was verified.
         type: boolean
-    type: object
-  pkg_server_router.VerifySchemaRequest:
-    properties:
-      schemaJwt:
-        type: string
-    required:
-    - schemaJwt
-    type: object
-  pkg_server_router.VerifySchemaResponse:
-    properties:
-      reason:
-        type: string
-      verified:
-        type: boolean
-    required:
-    - verified
     type: object
   rendering.ColorResource:
     properties:
@@ -1809,7 +1794,7 @@ definitions:
       versionId:
         type: string
     type: object
-  resolution.ResolutionError:
+  resolution.Error:
     properties:
       code:
         type: string
@@ -1820,32 +1805,15 @@ definitions:
       representationNotSupported:
         type: boolean
     type: object
-  resolution.ResolutionMetadata:
+  resolution.Metadata:
     properties:
       contentType:
         type: string
       error:
-        $ref: '#/definitions/resolution.ResolutionError'
+        $ref: '#/definitions/resolution.Error'
     type: object
   schema.JSONSchema:
     additionalProperties: {}
-    type: object
-  schema.VCJSONSchema:
-    properties:
-      author:
-        type: string
-      authored:
-        type: string
-      id:
-        type: string
-      name:
-        type: string
-      schema:
-        $ref: '#/definitions/schema.JSONSchema'
-      type:
-        type: string
-      version:
-        type: string
     type: object
   time.Duration:
     enum:
@@ -3372,7 +3340,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create SchemaID
+      summary: Create Schema
       tags:
       - SchemaAPI
   /v1/schemas/{id}:
@@ -3401,7 +3369,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Delete SchemaID
+      summary: Delete Schema
       tags:
       - SchemaAPI
     get:
@@ -3425,33 +3393,7 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get SchemaID
-      tags:
-      - SchemaAPI
-  /v1/schemas/verification:
-    put:
-      consumes:
-      - application/json
-      description: Verify a given schema by its id
-      parameters:
-      - description: request body
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/pkg_server_router.VerifySchemaRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/pkg_server_router.VerifySchemaResponse'
-        "400":
-          description: Bad request
-          schema:
-            type: string
-      summary: Verify SchemaID
+      summary: Get Schema
       tags:
       - SchemaAPI
   /v1/webhooks:

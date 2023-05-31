@@ -8,7 +8,6 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
-	"github.com/TBD54566975/ssi-sdk/did/ion"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -202,7 +201,7 @@ func TestDIDAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 
 		// good options
-		options := did.CreateIONDIDOptions{ServiceEndpoints: []ion.Service{{ID: "test", Type: "test", ServiceEndpoint: "test"}}}
+		options := did.CreateIONDIDOptions{ServiceEndpoints: []didsdk.Service{{ID: "test", Type: "test", ServiceEndpoint: "test"}}}
 
 		// with body, bad key type
 		createDIDRequest = router.CreateDIDByMethodRequest{KeyType: "bad", Options: options}

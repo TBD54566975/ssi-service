@@ -79,6 +79,9 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 
 	// register all v1 routers
 	v1 := engine.Group(V1Prefix)
+	if err = KeyStoreAPI(v1, ssi.KeyStore); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate KeyStore API")
+	}
 	if err = DecentralizedIdentityAPI(v1, ssi.DID, ssi.Webhook); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate DID API")
 	}
@@ -88,14 +91,11 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	if err = CredentialAPI(v1, ssi.Credential, ssi.Webhook); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Credential API")
 	}
-	if err = PresentationAPI(v1, ssi.Presentation, ssi.Webhook); err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Presentation API")
-	}
-	if err = KeyStoreAPI(v1, ssi.KeyStore); err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate KeyStore API")
-	}
 	if err = OperationAPI(v1, ssi.Operation); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Operation API")
+	}
+	if err = PresentationAPI(v1, ssi.Presentation, ssi.Webhook); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Presentation API")
 	}
 	if err = ManifestAPI(v1, ssi.Manifest, ssi.Webhook); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Manifest API")
@@ -171,7 +171,6 @@ func SchemaAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService
 	schemaAPI.PUT("", middleware.Webhook(webhookService, webhook.Schema, webhook.Create), schemaRouter.CreateSchema)
 	schemaAPI.GET("/:id", schemaRouter.GetSchema)
 	schemaAPI.GET("", schemaRouter.ListSchemas)
-	schemaAPI.PUT(VerificationPath, schemaRouter.VerifySchema)
 	schemaAPI.DELETE("/:id", middleware.Webhook(webhookService, webhook.Schema, webhook.Delete), schemaRouter.DeleteSchema)
 	return
 }

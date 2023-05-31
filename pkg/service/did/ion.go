@@ -53,7 +53,7 @@ type CreateIONDIDOptions struct {
 	//  Related:
 	//  - https://github.com/TBD54566975/ssi-sdk/issues/336
 	//  - https://github.com/TBD54566975/ssi-sdk/issues/335
-	ServiceEndpoints []ion.Service `json:"serviceEndpoints"`
+	ServiceEndpoints []did.Service `json:"serviceEndpoints"`
 }
 
 func (c CreateIONDIDOptions) Method() did.Method {
@@ -131,7 +131,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	}
 
 	// construct first document state
-	ldKeyType, err := did.KeyTypeToLDKeyType(request.KeyType)
+	ldKeyType, err := did.KeyTypeToMultikeyLDType(request.KeyType)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting key type to LD key type")
 	}

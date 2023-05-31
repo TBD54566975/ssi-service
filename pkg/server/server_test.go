@@ -129,7 +129,7 @@ func newRequestContextWithParams(w http.ResponseWriter, req *http.Request, param
 	return c
 }
 
-func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.CreateManifestRequest {
+func getValidCreateManifestRequest(issuerDID, issuerKID, schemaID string) model.CreateManifestRequest {
 	return model.CreateManifestRequest{
 		IssuerDID: issuerDID,
 		IssuerKID: issuerKID,
@@ -137,14 +137,18 @@ func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.Create
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
 		PresentationDefinition: &exchange.PresentationDefinition{
-			ID: "id123",
+			ID: "valid-license-application",
 			InputDescriptors: []exchange.InputDescriptor{
 				{
-					ID: "test-id",
+					ID: "license-type",
 					Constraints: &exchange.Constraints{
 						Fields: []exchange.Field{
 							{
 								Path: []string{"$.vc.credentialSubject.licenseType"},
+								Filter: &exchange.Filter{
+									Type:    "string",
+									Pattern: "Class D|Class M|Class V",
+								},
 							},
 						},
 					},
@@ -153,16 +157,16 @@ func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.Create
 		},
 		OutputDescriptors: []manifestsdk.OutputDescriptor{
 			{
-				ID:          "id1",
+				ID:          "drivers-license-ca",
 				Schema:      schemaID,
-				Name:        "good ID",
-				Description: "it's all good",
+				Name:        "drivers license CA",
+				Description: "license for CA",
 			},
 			{
-				ID:          "id2",
+				ID:          "drivers-license-ny",
 				Schema:      schemaID,
-				Name:        "good ID",
-				Description: "it's all good",
+				Name:        "drivers license NY",
+				Description: "license for NY",
 			},
 		},
 	}
@@ -177,7 +181,7 @@ func getValidApplicationRequest(manifestID, presDefID, submissionDescriptorID st
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
 		PresentationSubmission: &exchange.PresentationSubmission{
-			ID:           "psid",
+			ID:           "license-application-submission",
 			DefinitionID: presDefID,
 			DescriptorMap: []exchange.SubmissionDescriptor{
 				{
