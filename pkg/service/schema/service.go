@@ -123,7 +123,7 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 		return nil, sdkutil.LoggingErrorMsg(err, "could not store schema")
 	}
 
-	return &CreateSchemaResponse{ID: schemaID, Schema: jsonSchema, CredentialSchema: storedSchema.CredentialSchema}, nil
+	return &CreateSchemaResponse{ID: schemaID, Schema: jsonSchema}, nil
 }
 
 func (s Service) ListSchemas(ctx context.Context) (*ListSchemasResponse, error) {
@@ -136,9 +136,8 @@ func (s Service) ListSchemas(ctx context.Context) (*ListSchemasResponse, error) 
 	schemas := make([]GetSchemaResponse, 0, len(storedSchemas))
 	for _, stored := range storedSchemas {
 		schemas = append(schemas, GetSchemaResponse{
-			ID:               stored.ID,
-			Schema:           stored.Schema,
-			CredentialSchema: stored.CredentialSchema,
+			ID:     stored.ID,
+			Schema: stored.Schema,
 		})
 	}
 
@@ -156,7 +155,7 @@ func (s Service) GetSchema(ctx context.Context, request GetSchemaRequest) (*GetS
 	if gotSchema == nil {
 		return nil, sdkutil.LoggingNewErrorf("schema with id<%s> could not be found", request.ID)
 	}
-	return &GetSchemaResponse{Schema: gotSchema.Schema, CredentialSchema: gotSchema.CredentialSchema}, nil
+	return &GetSchemaResponse{Schema: gotSchema.Schema}, nil
 }
 
 func (s Service) DeleteSchema(ctx context.Context, request DeleteSchemaRequest) error {

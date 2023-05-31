@@ -279,12 +279,13 @@ func parseAndApplyDefaults(config SSIServiceConfig) error {
 	return errors.Wrap(err, "parsing config")
 }
 
+// TODO(gabe) remove this from config in https://github.com/TBD54566975/ssi-service/issues/502
 func getDefaultServicesConfig() ServicesConfig {
 	return ServicesConfig{
 		StorageProvider: "bolt",
 		ServiceEndpoint: DefaultServiceEndpoint,
 		KeyStoreConfig: KeyStoreServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "keystore", ServiceEndpoint: DefaultServiceEndpoint + "/keys"},
+			BaseServiceConfig: &BaseServiceConfig{Name: "keystore", ServiceEndpoint: DefaultServiceEndpoint + "/v1/keys"},
 			MasterKeyPassword: "default-password",
 		},
 		DIDConfig: DIDServiceConfig{

@@ -168,13 +168,9 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 			return nil, sdkutil.LoggingErrorMsgf(err, "failed to create credential; could not get schema: %s", request.SchemaID)
 		}
 		knownSchema = &gotSchema.Schema
-		schemaType := schemalib.CredentialSchema2023Type
-		if gotSchema.CredentialSchema == nil {
-			schemaType = schemalib.JSONSchema2023Type
-		}
 		credSchema := credential.CredentialSchema{
 			ID:   request.SchemaID,
-			Type: schemaType.String(),
+			Type: schemalib.JSONSchema2023Type.String(),
 		}
 		if err = builder.SetCredentialSchema(credSchema); err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(err, "could not set JSON Schema for credential: %s", request.SchemaID)

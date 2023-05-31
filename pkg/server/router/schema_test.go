@@ -163,7 +163,6 @@ func TestSchemaSigning(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.ID)
-		assert.Empty(tt, createdSchema.CredentialSchema)
 		assert.Equal(tt, "simple schema", createdSchema.Schema.Name())
 	})
 }

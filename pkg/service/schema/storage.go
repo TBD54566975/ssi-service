@@ -11,8 +11,6 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 
 	"github.com/tbd54566975/ssi-service/pkg/storage"
-
-	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 )
 
 const (
@@ -20,9 +18,8 @@ const (
 )
 
 type StoredSchema struct {
-	ID               string            `json:"id"`
-	Schema           schema.JSONSchema `json:"schema"`
-	CredentialSchema *keyaccess.JWT    `json:"credentialSchema,omitempty"`
+	ID     string            `json:"id"`
+	Schema schema.JSONSchema `json:"schema"`
 }
 
 type Storage struct {
@@ -73,14 +70,14 @@ func (ss *Storage) ListSchemas(ctx context.Context) ([]StoredSchema, error) {
 		logrus.Info("no schemas to list")
 		return nil, nil
 	}
-	var stored []StoredSchema
+	stored := make([]StoredSchema, 0, len(gotSchemas))
 	for _, schemaBytes := range gotSchemas {
 		var nextSchema StoredSchema
-		if err = json.Unmarshal(schemaBytes, &nextSchema); err == nil {
-			stored = append(stored, nextSchema)
-		} else {
+		if err = json.Unmarshal(schemaBytes, &nextSchema); err != nil {
 			logrus.WithError(err).Errorf("could not unmarshal stored schema: %s", string(schemaBytes))
+			continue
 		}
+		stored = append(stored, nextSchema)
 	}
 	return stored, nil
 }

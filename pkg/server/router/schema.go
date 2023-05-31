@@ -30,7 +30,9 @@ func NewSchemaRouter(s svcframework.Service) (*SchemaRouter, error) {
 }
 
 type CreateSchemaRequest struct {
-	Name        string `json:"name" validate:"required"`
+	// Name is a human-readable name for a schema
+	Name string `json:"name" validate:"required"`
+	// Description is an optional human-readable description for a schema
 	Description string `json:"description,omitempty"`
 	// Schema represents the JSON schema for the credential schema
 	// If the schema has an $id field, it will be overwritten with an ID the service generates.
@@ -98,7 +100,7 @@ func (sr SchemaRouter) CreateSchema(c *gin.Context) {
 		return
 	}
 
-	resp := CreateSchemaResponse{ID: createSchemaResponse.ID, Schema: createSchemaResponse.Schema, CredentialSchema: createSchemaResponse.CredentialSchema}
+	resp := CreateSchemaResponse{ID: createSchemaResponse.ID, Schema: createSchemaResponse.Schema}
 	framework.Respond(c, resp, http.StatusCreated)
 }
 
@@ -129,7 +131,7 @@ func (sr SchemaRouter) GetSchema(c *gin.Context) {
 		return
 	}
 
-	resp := GetSchemaResponse{Schema: gotSchema.Schema, CredentialSchema: gotSchema.CredentialSchema}
+	resp := GetSchemaResponse{Schema: gotSchema.Schema}
 	framework.Respond(c, resp, http.StatusOK)
 	return
 }
