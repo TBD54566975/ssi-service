@@ -41,7 +41,7 @@ type CreateCredentialRequest struct {
 	// The issuer id.
 	Issuer string `json:"issuer" validate:"required" example:"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
 
-	// The KID used to sign the credential
+	// The KID used to sign the credential.
 	IssuerKID string `json:"issuerKid" validate:"required" example:"#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
 
 	// The subject id.
@@ -84,12 +84,7 @@ func (c CreateCredentialRequest) toServiceRequest() credential.CreateCredentialR
 }
 
 type CreateCredentialResponse struct {
-	// A verifiable credential conformant to the media type `application/vc+ld+json`.
-	Credential *credsdk.VerifiableCredential `json:"credential,omitempty"`
-
-	// The same verifiable credential, but using the syntax defined for the media type `application/vc+jwt`. See
-	// https://w3c.github.io/vc-jwt/ for more details.
-	CredentialJWT *keyaccess.JWT `json:"credentialJwt,omitempty"`
+	credmodel.Container
 }
 
 // CreateCredential godoc
@@ -125,7 +120,7 @@ func (cr CredentialRouter) CreateCredential(c *gin.Context) {
 		return
 	}
 
-	resp := CreateCredentialResponse{Credential: createCredentialResponse.Credential, CredentialJWT: createCredentialResponse.CredentialJWT}
+	resp := CreateCredentialResponse{Container: createCredentialResponse.Container}
 	framework.Respond(c, resp, http.StatusCreated)
 }
 
@@ -395,7 +390,7 @@ func (cr CredentialRouter) VerifyCredential(c *gin.Context) {
 }
 
 type ListCredentialsResponse struct {
-	// Array of credential containers.
+	// Array of credentials that match the query parameters.
 	Credentials []credmodel.Container `json:"credentials,omitempty"`
 }
 
@@ -485,7 +480,7 @@ func (cr CredentialRouter) getCredentialsBySchema(c *gin.Context, schema string)
 //	@Tags			CredentialAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path		string	true	"ID"
+//	@Param			id	path		string	true	"ID of the credential to delete"
 //	@Success		204	{string}	string	"No Content"
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"

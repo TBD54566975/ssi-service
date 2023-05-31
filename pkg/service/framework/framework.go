@@ -28,10 +28,10 @@ func (t Type) String() string {
 
 // Status is for service reporting on their status
 type Status struct {
-	// Either `ready` or `not_ready`.
+	// Enum of the status.
 	Status StatusState `json:"status,omitempty"`
 
-	// When `status` is `not_ready`, then message contains explanation of why it's not ready.
+	// When `status` is `"not_ready"`, message contains an explanation of why it's not ready.
 	Message string `json:"message,omitempty"`
 }
 
