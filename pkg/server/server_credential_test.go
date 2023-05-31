@@ -448,10 +448,10 @@ func TestCredentialAPI(t *testing.T) {
 		credRouter.CreateCredential(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var resp router.CreateCredentialResponse
-		err = json.NewDecoder(w.Body).Decode(&resp)
+		var createCredentialResponse router.CreateCredentialResponse
+		err = json.NewDecoder(w.Body).Decode(&createCredentialResponse)
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, resp.CredentialJWT)
+		assert.NotEmpty(tt, createCredentialResponse.CredentialJWT)
 
 		// reset the http recorder
 		w = httptest.NewRecorder()
@@ -462,14 +462,14 @@ func TestCredentialAPI(t *testing.T) {
 		credRouter.ListCredentials(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var getCredsResp router.ListCredentialsResponse
-		err = json.NewDecoder(w.Body).Decode(&getCredsResp)
+		var listCredentialsResponse router.ListCredentialsResponse
+		err = json.NewDecoder(w.Body).Decode(&listCredentialsResponse)
 		assert.NoError(tt, err)
-		assert.NotEmpty(tt, getCredsResp)
+		assert.NotEmpty(tt, listCredentialsResponse)
 
-		assert.Len(tt, getCredsResp.Credentials, 1)
-		assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].ID)
-		assert.Equal(tt, resp.Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty], getCredsResp.Credentials[0].Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
+		assert.Len(tt, listCredentialsResponse.Credentials, 1)
+		assert.Equal(tt, createCredentialResponse.Credential.ID, listCredentialsResponse.Credentials[0].ID)
+		assert.Equal(tt, createCredentialResponse.Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty], listCredentialsResponse.Credentials[0].Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
 	})
 
 	t.Run("Test Delete Credential", func(tt *testing.T) {
