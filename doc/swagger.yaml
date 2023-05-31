@@ -1183,8 +1183,10 @@ definitions:
   pkg_server_router.CreateSchemaRequest:
     properties:
       description:
+        description: Description is an optional human-readable description for a schema
         type: string
       name:
+        description: Name is a human-readable name for a schema
         type: string
       schema:
         allOf:
