@@ -12,6 +12,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
@@ -76,16 +77,25 @@ func TestManifestRouter(t *testing.T) {
 
 		// create a schema for the creds to be issued against
 		licenseSchema := map[string]any{
-			"type": "object",
+			"$schema": "https://json-schema.org/draft-07/schema",
+			"type":    "object",
 			"properties": map[string]any{
-				"licenseType": map[string]any{
-					"type": "string",
+				"credentialSubject": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id": map[string]any{
+							"type": "string",
+						},
+						"licenseType": map[string]any{
+							"type": "string",
+						},
+					},
+					"required": []any{"licenseType", "id"},
 				},
 			},
-			"additionalProperties": true,
 		}
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: issuerDID.DID.ID, AuthorKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -155,6 +165,14 @@ func TestManifestRouter(t *testing.T) {
 			ID:       storage.StatusObjectID(createdApplicationResponseOp.ID),
 			Approved: true,
 			Reason:   "ApprovalMan is here",
+			CredentialOverrides: map[string]model.CredentialOverride{
+				"id1": {
+					Data: map[string]any{"licenseType": "Class D"},
+				},
+				"id2": {
+					Data: map[string]any{"licenseType": "Class D"},
+				},
+			},
 		})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdManifest)
@@ -191,7 +209,7 @@ func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.Create
 			ID: "id123",
 			InputDescriptors: []exchange.InputDescriptor{
 				{
-					ID: "test-id",
+					ID: "license-type",
 					Constraints: &exchange.Constraints{
 						Fields: []exchange.Field{
 							{

@@ -9,8 +9,9 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"go.einride.tech/aip/filtering"
+
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage/namespace"
@@ -95,7 +96,7 @@ func (ps *Storage) ListSubmissions(ctx context.Context, filter filtering.Filter)
 
 func NewPresentationStorage(db storage.ServiceStorage) (prestorage.Storage, error) {
 	if db == nil {
-		return nil, errors.New("bolt db reference is nil")
+		return nil, errors.New("db reference is nil")
 	}
 	return &Storage{db: db, RequestStorage: common.NewRequestStorage(db, presentationRequestNamespace)}, nil
 }

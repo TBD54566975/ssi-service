@@ -133,7 +133,7 @@ func (s Storage) DeleteOperation(ctx context.Context, id string) error {
 
 func NewOperationStorage(db storage.ServiceStorage) (*Storage, error) {
 	if db == nil {
-		return nil, errors.New("bolt db reference is nil")
+		return nil, errors.New("db reference is nil")
 	}
 	return &Storage{db: db}, nil
 }

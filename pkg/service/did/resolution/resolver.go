@@ -58,7 +58,7 @@ func NewServiceResolver(handlerResolver resolution.Resolver, localResolutionMeth
 // 2. Try to resolve with the local resolver
 // 3. Try to resolve with the universal resolver
 // TODO(gabe) avoid caching DIDs that should be externally resolved https://github.com/TBD54566975/ssi-service/issues/361
-func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...resolution.ResolutionOption) (*resolution.ResolutionResult, error) {
+func (sr *ServiceResolver) Resolve(ctx context.Context, did string, opts ...resolution.Option) (*resolution.Result, error) {
 	// check the did is valid
 	if _, err := utilint.GetMethodForDID(did); err != nil {
 		return nil, errors.Wrap(err, "getting method DID")

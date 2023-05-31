@@ -105,7 +105,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
 	})
 
-	t.Run("Test Create Credential with SchemaID", func(tt *testing.T) {
+	t.Run("Test Create Credential with Schema", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
 
@@ -123,19 +123,27 @@ func TestCredentialAPI(t *testing.T) {
 
 		// create a schema
 		simpleSchema := map[string]any{
-			"type": "object",
+			"$schema": "https://json-schema.org/draft-07/schema",
+			"type":    "object",
 			"properties": map[string]any{
-				"firstName": map[string]any{
-					"type": "string",
-				},
-				"lastName": map[string]any{
-					"type": "string",
+				"credentialSubject": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id": map[string]any{
+							"type": "string",
+						},
+						"firstName": map[string]any{
+							"type": "string",
+						},
+						"lastName": map[string]any{
+							"type": "string",
+						},
+					},
+					"required": []any{"firstName", "lastName"},
 				},
 			},
-			"required":             []any{"firstName", "lastName"},
-			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -279,7 +287,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.ID, getCredResp.ID)
 	})
 
-	t.Run("Test Get Credential By SchemaID", func(tt *testing.T) {
+	t.Run("Test Get Credential By Schema", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
 
@@ -299,19 +307,27 @@ func TestCredentialAPI(t *testing.T) {
 
 		// create a schema
 		simpleSchema := map[string]any{
-			"type": "object",
+			"$schema": "https://json-schema.org/draft-07/schema",
+			"type":    "object",
 			"properties": map[string]any{
-				"firstName": map[string]any{
-					"type": "string",
-				},
-				"lastName": map[string]any{
-					"type": "string",
+				"credentialSubject": map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"id": map[string]any{
+							"type": "string",
+						},
+						"firstName": map[string]any{
+							"type": "string",
+						},
+						"lastName": map[string]any{
+							"type": "string",
+						},
+					},
+					"required": []any{"firstName", "lastName"},
 				},
 			},
-			"required":             []any{"firstName", "lastName"},
-			"additionalProperties": false,
 		}
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Author: "me", Name: "simple schema", Schema: simpleSchema})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: "me", Name: "simple schema", Schema: simpleSchema})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
