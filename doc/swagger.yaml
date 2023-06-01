@@ -1230,6 +1230,8 @@ definitions:
           If the schema has an $id field, it will be overwritten with an ID the service generates.
           The schema must be against draft 2020-12, 2019-09, or 7.
     required:
+    - issuer
+    - issuerKid
     - name
     - schema
     type: object
@@ -1240,6 +1242,7 @@ definitions:
           when the type is CredentialSchema2023
         type: string
       id:
+        description: ID is the URL of for resolution of the schema
         type: string
       schema:
         allOf:
@@ -1247,7 +1250,9 @@ definitions:
         description: Schema is the JSON schema for the credential, returned when the
           type is JsonSchema2023
       type:
-        $ref: '#/definitions/schema.VCJSONSchemaType'
+        allOf:
+        - $ref: '#/definitions/schema.VCJSONSchemaType'
+        description: Type is the type of schema such as `JsonSchema2023` or `CredentialSchema2023`
     required:
     - type
     type: object
@@ -1398,6 +1403,7 @@ definitions:
           when the type is CredentialSchema2023
         type: string
       id:
+        description: ID is the URL of for resolution of the schema
         type: string
       schema:
         allOf:
@@ -1405,9 +1411,10 @@ definitions:
         description: Schema is the JSON schema for the credential, returned when the
           type is JsonSchema2023
       type:
-        $ref: '#/definitions/schema.VCJSONSchemaType'
+        allOf:
+        - $ref: '#/definitions/schema.VCJSONSchemaType'
+        description: Type is the type of schema such as `JsonSchema2023` or `CredentialSchema2023`
     required:
-    - id
     - type
     type: object
   pkg_server_router.GetSubmissionResponse:
@@ -1508,6 +1515,7 @@ definitions:
   pkg_server_router.ListSchemasResponse:
     properties:
       schemas:
+        description: Schemas is the list of all schemas the service holds
         items:
           $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
         type: array
