@@ -161,7 +161,7 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 	}
 	if request.PresentationDefinition != nil {
 		var pd *exchange.PresentationDefinition
-		if request.PresentationDefinition.ID != nil && request.PresentationDefinition.Value != nil {
+		if request.PresentationDefinition.ID != nil && request.PresentationDefinition.PresentationDefinition != nil {
 			return nil, errors.New(`only one of "id" and "value" can be provided`)
 		}
 
@@ -173,8 +173,8 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 			pd = &resp.PresentationDefinition
 		}
 
-		if request.PresentationDefinition.Value != nil {
-			pd = request.PresentationDefinition.Value
+		if request.PresentationDefinition.PresentationDefinition != nil {
+			pd = request.PresentationDefinition.PresentationDefinition
 		}
 
 		if err := builder.SetPresentationDefinition(*pd); err != nil {

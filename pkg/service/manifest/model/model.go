@@ -15,15 +15,14 @@ import (
 // Manifest
 
 type CreateManifestRequest struct {
-	Name              *string                        `json:"name,omitempty"`
-	Description       *string                        `json:"description,omitempty"`
-	IssuerDID         string                         `json:"issuerDid" validate:"required"`
-	IssuerKID         string                         `json:"issuerKid" validate:"required"`
-	IssuerName        *string                        `json:"issuerName,omitempty"`
-	OutputDescriptors []manifestsdk.OutputDescriptor `json:"outputDescriptors" validate:"required,dive"`
-	ClaimFormat       *exchange.ClaimFormat          `json:"format" validate:"required,dive"`
-	// TODO: Allow for specifying the presentation definition only by id. https://github.com/TBD54566975/ssi-service/issues/491
-	PresentationDefinition *PresentationDefinitionRef `json:"presentationDefinition,omitempty" validate:"omitempty,dive"`
+	Name                   *string                        `json:"name,omitempty"`
+	Description            *string                        `json:"description,omitempty"`
+	IssuerDID              string                         `json:"issuerDid" validate:"required"`
+	IssuerKID              string                         `json:"issuerKid" validate:"required"`
+	IssuerName             *string                        `json:"issuerName,omitempty"`
+	OutputDescriptors      []manifestsdk.OutputDescriptor `json:"outputDescriptors" validate:"required,dive"`
+	ClaimFormat            *exchange.ClaimFormat          `json:"format" validate:"required,dive"`
+	PresentationDefinition *PresentationDefinitionRef     `json:"presentationDefinition,omitempty" validate:"omitempty,dive"`
 }
 
 type CreateManifestResponse struct {
@@ -182,8 +181,8 @@ type Request struct {
 
 type PresentationDefinitionRef struct {
 	// id of the presentation definition created with PresentationDefinitionAPI. Must be empty if `value` is present.
-	ID *string `json:"id"`
+	ID *string `json:"presentationDefinitionId"`
 
 	// value of the presentation definition to use. Must be empty if `id` is present.
-	Value *exchange.PresentationDefinition `json:"value,omitempty" validate:"omitempty,dive"`
+	PresentationDefinition *exchange.PresentationDefinition `json:"presentationDefinition" validate:"omitempty,dive"`
 }

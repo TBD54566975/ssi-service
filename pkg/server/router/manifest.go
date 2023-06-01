@@ -75,7 +75,7 @@ type CreateManifestRequest struct {
 	// Describes what proofs are required in order to issue this credential. When present, only `id` or `value` may be
 	// populated, but not both.
 	// Optional.
-	PresentationDefinition *model.PresentationDefinitionRef `json:"presentationDefinition,omitempty" validate:"omitempty,dive"`
+	*model.PresentationDefinitionRef
 }
 
 func (c CreateManifestRequest) ToServiceRequest() model.CreateManifestRequest {
@@ -87,7 +87,7 @@ func (c CreateManifestRequest) ToServiceRequest() model.CreateManifestRequest {
 		IssuerName:             c.IssuerName,
 		OutputDescriptors:      c.OutputDescriptors,
 		ClaimFormat:            c.ClaimFormat,
-		PresentationDefinition: c.PresentationDefinition,
+		PresentationDefinition: c.PresentationDefinitionRef,
 	}
 }
 

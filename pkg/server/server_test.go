@@ -129,15 +129,15 @@ func newRequestContextWithParams(w http.ResponseWriter, req *http.Request, param
 	return c
 }
 
-func getValidCreateManifestRequest(issuerDID, issuerKID, schemaID string) model.CreateManifestRequest {
-	return model.CreateManifestRequest{
+func getValidCreateManifestRequest(issuerDID, issuerKID, schemaID string) router.CreateManifestRequest {
+	return router.CreateManifestRequest{
 		IssuerDID: issuerDID,
 		IssuerKID: issuerKID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
-		PresentationDefinition: &model.PresentationDefinitionRef{
-			Value: &exchange.PresentationDefinition{
+		PresentationDefinitionRef: &model.PresentationDefinitionRef{
+			PresentationDefinition: &exchange.PresentationDefinition{
 				ID: "valid-license-application",
 				InputDescriptors: []exchange.InputDescriptor{
 					{

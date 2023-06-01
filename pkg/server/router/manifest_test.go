@@ -249,7 +249,7 @@ func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.Create
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
 		PresentationDefinition: &model.PresentationDefinitionRef{
-			Value: &exchange.PresentationDefinition{
+			PresentationDefinition: &exchange.PresentationDefinition{
 				ID: "id123",
 				InputDescriptors: []exchange.InputDescriptor{
 					{
