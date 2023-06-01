@@ -22,7 +22,7 @@ type GetReadinessResponse struct {
 	// Overall status of the ssi service.
 	Status svcframework.Status `json:"status"`
 
-	// A map from the name of the service ot the status of that current service.
+	// A map from the name of the service to the status of that current service.
 	ServiceStatuses map[svcframework.Type]svcframework.Status `json:"serviceStatuses"`
 }
 

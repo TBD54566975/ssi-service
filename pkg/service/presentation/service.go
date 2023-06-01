@@ -27,6 +27,8 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
+const presentationRequestNamespace = "presentation_request"
+
 type Service struct {
 	storage    presentationstorage.Storage
 	keystore   *keystore.Service
@@ -35,6 +37,7 @@ type Service struct {
 	resolver   resolution.Resolver
 	schema     *schema.Service
 	verifier   *credential.Verifier
+	reqStorage common.RequestStorage
 }
 
 func (s Service) Type() framework.Type {
@@ -73,6 +76,7 @@ func NewPresentationService(config config.PresentationServiceConfig, s storage.S
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate verifier")
 	}
+	requestStorage := common.NewRequestStorage(s, presentationRequestNamespace)
 	service := Service{
 		storage:    presentationStorage,
 		keystore:   keystore,
@@ -81,6 +85,7 @@ func NewPresentationService(config config.PresentationServiceConfig, s storage.S
 		resolver:   resolver,
 		schema:     schema,
 		verifier:   verifier,
+		reqStorage: requestStorage,
 	}
 	if !service.Status().IsReady() {
 		return nil, errors.New(service.Status().Message)
@@ -130,6 +135,23 @@ func (s Service) GetPresentationDefinition(ctx context.Context,
 	return &model.GetPresentationDefinitionResponse{
 		PresentationDefinition: storedDefinition.PresentationDefinition,
 	}, nil
+}
+
+func (s Service) ListRequests(ctx context.Context) (*model.ListRequestsResponse, error) {
+	requests, err := s.reqStorage.ListRequests(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "listing from storage")
+	}
+	reqs := make([]model.Request, 0, len(requests))
+	for _, storedReq := range requests {
+		storedReq := storedReq
+		r, err := serviceModel(&storedReq)
+		if err != nil {
+			return nil, err
+		}
+		reqs = append(reqs, *r)
+	}
+	return &model.ListRequestsResponse{PresentationRequests: reqs}, nil
 }
 
 func (s Service) DeletePresentationDefinition(ctx context.Context, request model.DeletePresentationDefinitionRequest) error {
@@ -319,7 +341,7 @@ func (s Service) CreateRequest(ctx context.Context, req model.CreateRequestReque
 	if err != nil {
 		return nil, errors.Wrap(err, "creating stored request")
 	}
-	if err := s.storage.StoreRequest(ctx, *stored); err != nil {
+	if err := s.reqStorage.StoreRequest(ctx, *stored); err != nil {
 		return nil, errors.Wrap(err, "storing signed document")
 	}
 	return serviceModel(stored)
@@ -328,7 +350,7 @@ func (s Service) CreateRequest(ctx context.Context, req model.CreateRequestReque
 func (s Service) GetRequest(ctx context.Context, request *model.GetRequestRequest) (*model.Request, error) {
 	logrus.Debugf("getting presentation request: %s", request.ID)
 
-	storedRequest, err := s.storage.GetRequest(ctx, request.ID)
+	storedRequest, err := s.reqStorage.GetRequest(ctx, request.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "getting signed document with id: %s", request.ID)
 	}
@@ -342,7 +364,7 @@ func (s Service) GetRequest(ctx context.Context, request *model.GetRequestReques
 func (s Service) DeleteRequest(ctx context.Context, request model.DeleteRequestRequest) error {
 	logrus.Debugf("deleting presentation request: %s", request.ID)
 
-	if err := s.storage.DeleteRequest(ctx, request.ID); err != nil {
+	if err := s.reqStorage.DeleteRequest(ctx, request.ID); err != nil {
 		return sdkutil.LoggingNewErrorf("could not delete presentation request with id: %s", request.ID)
 	}
 

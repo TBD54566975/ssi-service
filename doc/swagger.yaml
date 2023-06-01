@@ -535,29 +535,39 @@ definitions:
   github_com_tbd54566975_ssi-service_internal_credential.Container:
     properties:
       credential:
-        $ref: '#/definitions/credential.VerifiableCredential'
+        allOf:
+        - $ref: '#/definitions/credential.VerifiableCredential'
+        description: |-
+          Verifiable Credential in the `application/vc+ld+json` format. The credential is secured with an external proof
+          using JWS. In other words, the `proof` field is not present. See `credentialJwt` for the secured Verifiable
+          Credential.
       credentialJwt:
+        description: JWT representation of `credential`, secured with an external
+          proof signed by `issuerKid`.
         type: string
       id:
         description: Credential ID
         type: string
       issuerKid:
+        description: The KID of the private key used to sign `credentialJwt`.
         type: string
       revoked:
+        description: Whether this credential is currently revoked.
         type: boolean
       suspended:
+        description: Whether this credential is currently suspended.
         type: boolean
     type: object
   github_com_tbd54566975_ssi-service_pkg_service_framework.Status:
     properties:
       message:
-        description: When `status` is `not_ready`, then message contains explanation
+        description: When `status` is `"not_ready"`, message contains an explanation
           of why it's not ready.
         type: string
       status:
         allOf:
         - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_framework.StatusState'
-        description: Either `ready` or `not_ready`.
+        description: Enum of the status.
     type: object
   github_com_tbd54566975_ssi-service_pkg_service_framework.StatusState:
     enum:
@@ -963,7 +973,7 @@ definitions:
         example: did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp
         type: string
       issuerKid:
-        description: The KID used to sign the credential
+        description: The KID used to sign the credential.
         example: '#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp'
         type: string
       revocable:
@@ -995,12 +1005,26 @@ definitions:
       credential:
         allOf:
         - $ref: '#/definitions/credential.VerifiableCredential'
-        description: A verifiable credential conformant to the media type `application/vc+ld+json`.
-      credentialJwt:
         description: |-
-          The same verifiable credential, but using the syntax defined for the media type `application/vc+jwt`. See
-          https://w3c.github.io/vc-jwt/ for more details.
+          Verifiable Credential in the `application/vc+ld+json` format. The credential is secured with an external proof
+          using JWS. In other words, the `proof` field is not present. See `credentialJwt` for the secured Verifiable
+          Credential.
+      credentialJwt:
+        description: JWT representation of `credential`, secured with an external
+          proof signed by `issuerKid`.
         type: string
+      id:
+        description: Credential ID
+        type: string
+      issuerKid:
+        description: The KID of the private key used to sign `credentialJwt`.
+        type: string
+      revoked:
+        description: Whether this credential is currently revoked.
+        type: boolean
+      suspended:
+        description: Whether this credential is currently suspended.
+        type: boolean
     type: object
   pkg_server_router.CreateDIDByMethodRequest:
     properties:
@@ -1185,6 +1209,16 @@ definitions:
       description:
         description: Description is an optional human-readable description for a schema
         type: string
+      issuer:
+        description: |-
+          Issuer represents the DID of the issuer for the schema if it's signed. Required if intending to sign the
+          schema as a credential using CredentialSchema2023.
+        type: string
+      issuerKid:
+        description: |-
+          IssuerKID represents the KID of the issuer's private key to sign the schema. Required if intending to sign the
+          schema as a credential using CredentialSchema2023.
+        type: string
       name:
         description: Name is a human-readable name for a schema
         type: string
@@ -1196,17 +1230,31 @@ definitions:
           If the schema has an $id field, it will be overwritten with an ID the service generates.
           The schema must be against draft 2020-12, 2019-09, or 7.
     required:
+    - issuer
+    - issuerKid
     - name
     - schema
     type: object
   pkg_server_router.CreateSchemaResponse:
     properties:
       credentialSchema:
+        description: CredentialSchema is the JWT schema for the credential, returned
+          when the type is CredentialSchema2023
         type: string
       id:
+        description: ID is the URL of for resolution of the schema
         type: string
       schema:
-        $ref: '#/definitions/schema.JSONSchema'
+        allOf:
+        - $ref: '#/definitions/schema.JSONSchema'
+        description: Schema is the JSON schema for the credential, returned when the
+          type is JsonSchema2023
+      type:
+        allOf:
+        - $ref: '#/definitions/schema.VCJSONSchemaType'
+        description: Type is the type of schema such as `JsonSchema2023` or `CredentialSchema2023`
+    required:
+    - type
     type: object
   pkg_server_router.CreateSubmissionRequest:
     properties:
@@ -1325,7 +1373,7 @@ definitions:
       serviceStatuses:
         additionalProperties:
           $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_framework.Status'
-        description: A map from the name of the service ot the status of that current
+        description: A map from the name of the service to the status of that current
           service.
         type: object
       status:
@@ -1351,9 +1399,23 @@ definitions:
   pkg_server_router.GetSchemaResponse:
     properties:
       credentialSchema:
+        description: CredentialSchema is the JWT schema for the credential, returned
+          when the type is CredentialSchema2023
+        type: string
+      id:
+        description: ID is the URL of for resolution of the schema
         type: string
       schema:
-        $ref: '#/definitions/schema.JSONSchema'
+        allOf:
+        - $ref: '#/definitions/schema.JSONSchema'
+        description: Schema is the JSON schema for the credential, returned when the
+          type is JsonSchema2023
+      type:
+        allOf:
+        - $ref: '#/definitions/schema.VCJSONSchemaType'
+        description: Type is the type of schema such as `JsonSchema2023` or `CredentialSchema2023`
+    required:
+    - type
     type: object
   pkg_server_router.GetSubmissionResponse:
     properties:
@@ -1381,7 +1443,7 @@ definitions:
   pkg_server_router.ListCredentialsResponse:
     properties:
       credentials:
-        description: Array of credential containers.
+        description: Array of credentials that match the query parameters.
         items:
           $ref: '#/definitions/github_com_tbd54566975_ssi-service_internal_credential.Container'
         type: array
@@ -1443,6 +1505,14 @@ definitions:
           $ref: '#/definitions/pkg_server_router.Operation'
         type: array
     type: object
+  pkg_server_router.ListPresentationRequestsResponse:
+    properties:
+      presentationRequests:
+        description: The presentation requests matching the query.
+        items:
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Request'
+        type: array
+    type: object
   pkg_server_router.ListResponsesResponse:
     properties:
       responses:
@@ -1453,6 +1523,7 @@ definitions:
   pkg_server_router.ListSchemasResponse:
     properties:
       schemas:
+        description: Schemas is the list of all schemas the service holds
         items:
           $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
         type: array
@@ -1815,6 +1886,14 @@ definitions:
   schema.JSONSchema:
     additionalProperties: {}
     type: object
+  schema.VCJSONSchemaType:
+    enum:
+    - CredentialSchema2023
+    - JsonSchema2023
+    type: string
+    x-enum-varnames:
+    - CredentialSchema2023Type
+    - JSONSchema2023Type
   time.Duration:
     enum:
     - -9223372036854775808
@@ -1951,7 +2030,7 @@ paths:
       - application/json
       description: Delete credential by ID
       parameters:
-      - description: ID
+      - description: ID of the credential to delete
         in: path
         name: id
         required: true
@@ -3097,6 +3176,24 @@ paths:
       tags:
       - PresentationDefinitionAPI
   /v1/presentations/requests:
+    get:
+      consumes:
+      - application/json
+      description: Lists all the existing presentation requests
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.ListPresentationRequestsResponse'
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: List Presentation Requests
+      tags:
+      - PresentationRequestAPI
     put:
       consumes:
       - application/json

@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	schemalib "github.com/TBD54566975/ssi-sdk/schema"
@@ -15,6 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 
@@ -102,9 +105,7 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 		logrus.Infof("schema has id: %s, which is being overwritten", jsonSchema.ID())
 	}
 
-	// set id, name, and description on the schema
-	schemaID := uuid.NewString()
-	jsonSchema[schema.JSONSchemaIDProperty] = strings.Join([]string{s.Config().ServiceEndpoint, schemaID}, "/")
+	// set name, and description on the schema
 	if jsonSchema[schema.JSONSchemaNameProperty] != "" && request.Name != "" {
 		logrus.Infof("schema has name: %s, which is being overwritten", jsonSchema[schema.JSONSchemaNameProperty])
 	}
@@ -116,14 +117,84 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 		jsonSchema[schema.JSONSchemaDescriptionProperty] = request.Description
 	}
 
-	// TODO(gabe) support signing credential schemas
-	// create schema
-	storedSchema := StoredSchema{ID: schemaID, Schema: jsonSchema}
+	// if the schema is a credential schema, the credential's id is a fully qualified URI
+	// if the schema is a JSON schema, the schema's id is a fully qualified URI
+	schemaID := uuid.NewString()
+	schemaURI := strings.Join([]string{s.Config().ServiceEndpoint, schemaID}, "/")
+
+	// create schema for storage
+	storedSchema := StoredSchema{ID: schemaID}
+	if request.IsCredentialSchemaRequest() {
+		jsonSchema[schema.JSONSchemaIDProperty] = schemaID
+		credSchema, err := s.createCredentialSchema(ctx, jsonSchema, schemaURI, request.Issuer, request.IssuerKID)
+		if err != nil {
+			return nil, sdkutil.LoggingErrorMsg(err, "could not create credential schema")
+		}
+		storedSchema.Type = schema.CredentialSchema2023Type
+		storedSchema.CredentialSchema = credSchema
+	} else {
+		jsonSchema[schema.JSONSchemaIDProperty] = schemaURI
+		storedSchema.Type = schema.JSONSchema2023Type
+		storedSchema.Schema = &jsonSchema
+	}
+	// store schema
 	if err = s.storage.StoreSchema(ctx, storedSchema); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not store schema")
 	}
 
-	return &CreateSchemaResponse{ID: schemaID, Schema: jsonSchema}, nil
+	return &CreateSchemaResponse{
+		ID:               schemaID,
+		Type:             storedSchema.Type,
+		Schema:           storedSchema.Schema,
+		CredentialSchema: storedSchema.CredentialSchema,
+	}, nil
+}
+
+// createCredentialSchema creates a credential schema, and signs it with the issuer's key and kid
+func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.JSONSchema, schemaURI, issuer, issuerKID string) (*keyaccess.JWT, error) {
+	builder := credential.NewVerifiableCredentialBuilder()
+	if err := builder.SetID(schemaURI); err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "building credential when setting id: %s", schemaURI)
+	}
+	if err := builder.SetIssuer(issuer); err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "building credential when setting issuer: %s", issuer)
+	}
+
+	// set subject value as the schema
+	subject := credential.CredentialSubject(jsonSchema)
+	// TODO(gabe) remove this after https://github.com/TBD54566975/ssi-sdk/pull/404 is merged
+	subject[credential.VerifiableCredentialIDProperty] = schemaURI
+	if err := builder.SetCredentialSubject(subject); err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not set subject: %+v", subject)
+	}
+	if err := builder.SetIssuanceDate(time.Now().Format(time.RFC3339)); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "could not set credential schema issuance date")
+	}
+	cred, err := builder.Build()
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "could not build credential schema")
+	}
+	return s.signCredentialSchema(ctx, *cred, issuer, issuerKID)
+}
+
+// signCredentialSchema signs a credential schema with the issuer's key and kid as a  VC JWT
+func (s Service) signCredentialSchema(ctx context.Context, cred credential.VerifiableCredential, issuer, issuerKID string) (*keyaccess.JWT, error) {
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: issuerKID})
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing credential schema<%s>", issuerKID)
+	}
+	if gotKey.Controller != issuer {
+		return nil, sdkutil.LoggingNewErrorf("key controller<%s> does not match credential issuer<%s> for key<%s>", gotKey.Controller, issuer, issuerKID)
+	}
+	keyAccess, err := keyaccess.NewJWKKeyAccess(issuerKID, gotKey.ID, gotKey.Key)
+	if err != nil {
+		return nil, errors.Wrapf(err, "creating key access for signing credential schema with key<%s>", gotKey.ID)
+	}
+	credToken, err := keyAccess.SignVerifiableCredential(cred)
+	if err != nil {
+		return nil, errors.Wrapf(err, "could not sign credential schema with key<%s>", gotKey.ID)
+	}
+	return credToken, nil
 }
 
 func (s Service) ListSchemas(ctx context.Context) (*ListSchemasResponse, error) {
@@ -155,7 +226,12 @@ func (s Service) GetSchema(ctx context.Context, request GetSchemaRequest) (*GetS
 	if gotSchema == nil {
 		return nil, sdkutil.LoggingNewErrorf("schema with id<%s> could not be found", request.ID)
 	}
-	return &GetSchemaResponse{Schema: gotSchema.Schema}, nil
+	return &GetSchemaResponse{
+		ID:               gotSchema.ID,
+		Type:             gotSchema.Type,
+		Schema:           gotSchema.Schema,
+		CredentialSchema: gotSchema.CredentialSchema,
+	}, nil
 }
 
 func (s Service) DeleteSchema(ctx context.Context, request DeleteSchemaRequest) error {
@@ -169,10 +245,29 @@ func (s Service) DeleteSchema(ctx context.Context, request DeleteSchemaRequest) 
 }
 
 // Resolve wraps our get schema method for exposing schema access to other services
-func (s Service) Resolve(ctx context.Context, id string) (*schema.JSONSchema, error) {
+func (s Service) Resolve(ctx context.Context, id string) (*schema.JSONSchema, schema.VCJSONSchemaType, error) {
 	gotSchemaResponse, err := s.GetSchema(ctx, GetSchemaRequest{ID: id})
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "resolving schema")
+		return nil, "", sdkutil.LoggingErrorMsg(err, "resolving schema")
 	}
-	return &gotSchemaResponse.Schema, nil
+	switch gotSchemaResponse.Type {
+	case schema.JSONSchema2023Type:
+		return gotSchemaResponse.Schema, schema.JSONSchema2023Type, nil
+	case schema.CredentialSchema2023Type:
+		_, _, cred, err := credential.ToCredential(gotSchemaResponse.CredentialSchema.String())
+		if err != nil {
+			return nil, "", sdkutil.LoggingErrorMsg(err, "converting credential schema from jwt to credential map")
+		}
+		credSubjectBytes, err := json.Marshal(cred.CredentialSubject)
+		if err != nil {
+			return nil, "", errors.Wrap(err, "marshalling credential subject")
+		}
+		var s schema.JSONSchema
+		if err = json.Unmarshal(credSubjectBytes, &s); err != nil {
+			return nil, "", errors.Wrap(err, "unmarshalling credential subject")
+		}
+		return &s, schema.CredentialSchema2023Type, nil
+	default:
+		return nil, "", sdkutil.LoggingNewErrorf("unknown schema type: %s", gotSchemaResponse.Type)
+	}
 }

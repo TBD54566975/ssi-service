@@ -163,14 +163,14 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 	var knownSchema *schemalib.JSONSchema
 	if request.SchemaID != "" {
 		// resolve schema and save it for validation later
-		gotSchema, err := s.schema.GetSchema(ctx, schema.GetSchemaRequest{ID: request.SchemaID})
+		gotSchema, schemaType, err := s.schema.Resolve(ctx, request.SchemaID)
 		if err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(err, "failed to create credential; could not get schema: %s", request.SchemaID)
 		}
-		knownSchema = &gotSchema.Schema
+		knownSchema = gotSchema
 		credSchema := credential.CredentialSchema{
 			ID:   request.SchemaID,
-			Type: schemalib.JSONSchema2023Type.String(),
+			Type: schemaType.String(),
 		}
 		if err = builder.SetCredentialSchema(credSchema); err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(err, "could not set JSON Schema for credential: %s", request.SchemaID)

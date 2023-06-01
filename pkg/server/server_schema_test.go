@@ -1,22 +1,26 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
+	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
+	"github.com/tbd54566975/ssi-service/pkg/service/did"
 )
 
 func TestSchemaAPI(t *testing.T) {
-	t.Run("Test Create Schema", func(tt *testing.T) {
+	t.Run("Test Create JsonSchema2023 Schema", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
 
@@ -53,6 +57,86 @@ func TestSchemaAPI(t *testing.T) {
 		// since the id is generated, we need to manually override it
 		schemaRequest.Schema[schema.JSONSchemaIDProperty] = resp.Schema.ID()
 		assert.JSONEq(tt, schemaRequest.Schema.String(), resp.Schema.String())
+		assert.Equal(tt, schema.JSONSchema2023Type, resp.Type)
+		assert.Empty(tt, resp.CredentialSchema)
+		assert.NotEmpty(tt, resp.Schema)
+	})
+
+	t.Run("Test Create CredentialSchema2023 Schema", func(tt *testing.T) {
+		bolt := setupTestDB(tt)
+		require.NotEmpty(tt, bolt)
+
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
+
+		simpleSchema := getTestSchema()
+		badSchemaRequest := router.CreateSchemaRequest{
+			Name:   "test schema",
+			Schema: simpleSchema,
+			CredentialSchemaRequest: &router.CredentialSchemaRequest{
+				Issuer: "issuer",
+			},
+		}
+		schemaRequestValue := newRequestValue(tt, badSchemaRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
+		w := httptest.NewRecorder()
+
+		c := newRequestContext(w, req)
+		schemaService.CreateSchema(c)
+		assert.Contains(tt, w.Body.String(), "issuerKid is a required field")
+
+		// reset the http recorder
+		w = httptest.NewRecorder()
+
+		// create an issuer for the credential schema
+		issuerResp, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
+			Method:  "key",
+			KeyType: crypto.Ed25519,
+		})
+		require.NoError(t, err)
+		issuerID := issuerResp.DID.ID
+		issuerKID := issuerResp.DID.VerificationMethod[0].ID
+
+		// create the credential schema
+		schemaRequest := router.CreateSchemaRequest{
+			Name:   "test schema",
+			Schema: simpleSchema,
+			CredentialSchemaRequest: &router.CredentialSchemaRequest{
+				Issuer:    issuerID,
+				IssuerKID: issuerKID,
+			},
+		}
+		schemaRequestValue = newRequestValue(tt, schemaRequest)
+		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
+
+		c = newRequestContext(w, req)
+		schemaService.CreateSchema(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
+
+		var resp router.CreateSchemaResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, resp.ID)
+
+		assert.Empty(tt, resp.Schema)
+		assert.NotEmpty(tt, resp.CredentialSchema)
+		assert.Equal(tt, schema.CredentialSchema2023Type, resp.Type)
+
+		// decode the schema from the response and verify it
+		_, _, cred, err := credential.ToCredential(resp.CredentialSchema.String())
+		assert.NoError(tt, err)
+		credSubjectBytes, err := json.Marshal(cred.CredentialSubject)
+		assert.NoError(tt, err)
+		var s schema.JSONSchema
+		err = json.Unmarshal(credSubjectBytes, &s)
+		assert.NoError(tt, err)
+		assert.Equal(tt, schemaRequest.Issuer, cred.Issuer)
+
+		// since the id is generated, we need to manually override it
+		schemaRequest.Schema[schema.JSONSchemaIDProperty] = s.ID()
+		delete(s, schema.JSONSchemaAdditionalIDProperty)
+		assert.JSONEq(tt, schemaRequest.Schema.String(), s.String())
 	})
 
 	t.Run("Test Get Schema and Get Schemas", func(tt *testing.T) {
