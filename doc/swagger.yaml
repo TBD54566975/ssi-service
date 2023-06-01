@@ -660,18 +660,6 @@ definitions:
         description: Whether the credentials created should be revocable.
         type: boolean
     type: object
-  github_com_tbd54566975_ssi-service_pkg_service_manifest_model.PresentationDefinitionRef:
-    properties:
-      id:
-        description: id of the presentation definition created with PresentationDefinitionAPI.
-          Must be empty if `value` is present.
-        type: string
-      value:
-        allOf:
-        - $ref: '#/definitions/exchange.PresentationDefinition'
-        description: value of the presentation definition to use. Must be empty if
-          `id` is present.
-    type: object
   github_com_tbd54566975_ssi-service_pkg_service_manifest_model.Request:
     properties:
       audience:
@@ -1123,11 +1111,13 @@ definitions:
         type: array
       presentationDefinition:
         allOf:
-        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_manifest_model.PresentationDefinitionRef'
-        description: |-
-          Describes what proofs are required in order to issue this credential. When present, only `id` or `value` may be
-          populated, but not both.
-          Optional.
+        - $ref: '#/definitions/exchange.PresentationDefinition'
+        description: value of the presentation definition to use. Must be empty if
+          `id` is present.
+      presentationDefinitionId:
+        description: id of the presentation definition created with PresentationDefinitionAPI.
+          Must be empty if `value` is present.
+        type: string
     required:
     - format
     - issuerDid
