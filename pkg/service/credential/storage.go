@@ -242,11 +242,11 @@ func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*Sto
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Warnf("no credentials able to be retrieved for id: %s", id)
+		logrus.Info("no credentials able to be retrieved for id: %s", id)
 	}
 
 	if len(storedCreds) > 1 {
-		logrus.Warnf("there should only be status list credential per <issuer,schema,statuspurpose> tripple, bad state")
+		logrus.Error("there should only be status list credential per <issuer,schema,statuspurpose> tripple, bad state")
 	}
 
 	return &storedCreds[0], nil
@@ -370,7 +370,7 @@ func (cs *Storage) GetCredentials(ctx context.Context) ([]StoredCredential, erro
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Warnf("no credentials able to be retrieved")
+		logrus.Info("no credentials able to be retrieved")
 	}
 
 	return storedCreds, nil
@@ -416,7 +416,7 @@ func (cs *Storage) GetCredentialsByIssuer(ctx context.Context, issuer string) ([
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Warnf("no credentials able to be retrieved for issuer: %s", issuerKeys)
+		logrus.Info("no credentials able to be retrieved for issuer: %s", issuerKeys)
 	}
 
 	return storedCreds, nil
@@ -459,7 +459,7 @@ func (cs *Storage) GetCredentialsBySubject(ctx context.Context, subject string) 
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Warnf("no credentials able to be retrieved for subject: %s", subjectKeys)
+		logrus.Info("no credentials able to be retrieved for subject: %s", subjectKeys)
 	}
 
 	return storedCreds, nil
@@ -503,7 +503,7 @@ func (cs *Storage) GetCredentialsBySchema(ctx context.Context, schema string) ([
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Warnf("no credentials able to be retrieved for schema: %s", schemaKeys)
+		logrus.Info("no credentials able to be retrieved for schema: %s", schemaKeys)
 	}
 
 	return storedCreds, nil
@@ -553,7 +553,7 @@ func (cs *Storage) GetStatusListCredentialsByIssuerSchemaPurpose(ctx context.Con
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Warnf("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
+		logrus.Info("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
 	}
 
 	return storedCreds, nil
@@ -594,7 +594,7 @@ func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer s
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Warnf("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
+		logrus.Info("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
 	}
 
 	return storedCreds, nil
