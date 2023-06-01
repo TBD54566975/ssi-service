@@ -153,8 +153,8 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 // createCredentialSchema creates a credential schema, and signs it with the issuer's key and kid
 func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.JSONSchema, schemaURI, issuer, issuerKID string) (*keyaccess.JWT, error) {
 	builder := credential.NewVerifiableCredentialBuilder()
-	if err := builder.SetID(id); err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "building credential when setting id: %s", id)
+	if err := builder.SetID(schemaURI); err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "building credential when setting id: %s", schemaURI)
 	}
 	if err := builder.SetIssuer(issuer); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "building credential when setting issuer: %s", issuer)
@@ -163,7 +163,7 @@ func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.J
 	// set subject value as the schema
 	subject := credential.CredentialSubject(jsonSchema)
 	// TODO(gabe) remove this after https://github.com/TBD54566975/ssi-sdk/pull/404 is merged
-	subject[credential.VerifiableCredentialIDProperty] = id
+	subject[credential.VerifiableCredentialIDProperty] = schemaURI
 	if err := builder.SetCredentialSubject(subject); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not set subject: %+v", subject)
 	}
@@ -174,7 +174,7 @@ func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.J
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not build credential schema")
 	}
-	return s.keyStore.Sign(ctx, issuerKID, *cred)
+	return s.signCredentialSchema(ctx, *cred, issuer, issuerKID)
 }
 
 // signCredentialSchema signs a credential schema with the issuer's key and kid as a  VC JWT
