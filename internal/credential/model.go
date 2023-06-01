@@ -15,12 +15,24 @@ import (
 // JWT representations are parsed upon container creation, while the original JWT is maintained
 type Container struct {
 	// Credential ID
-	ID            string                           `json:"id,omitempty"`
-	IssuerKID     string                           `json:"issuerKid,omitempty"`
-	Credential    *credential.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT *keyaccess.JWT                   `json:"credentialJwt,omitempty"`
-	Revoked       bool                             `json:"revoked,omitempty"`
-	Suspended     bool                             `json:"suspended,omitempty"`
+	ID string `json:"id,omitempty"`
+
+	// The KID of the private key used to sign `credentialJwt`.
+	IssuerKID string `json:"issuerKid,omitempty"`
+
+	// Verifiable Credential in the `application/vc+ld+json` format. The credential is secured with an external proof
+	// using JWS. In other words, the `proof` field is not present. See `credentialJwt` for the secured Verifiable
+	// Credential.
+	Credential *credential.VerifiableCredential `json:"credential,omitempty"`
+
+	// JWT representation of `credential`, secured with an external proof signed by `issuerKid`.
+	CredentialJWT *keyaccess.JWT `json:"credentialJwt,omitempty"`
+
+	// Whether this credential is currently revoked.
+	Revoked bool `json:"revoked,omitempty"`
+
+	// Whether this credential is currently suspended.
+	Suspended bool `json:"suspended,omitempty"`
 }
 
 func (c Container) JWTString() string {
