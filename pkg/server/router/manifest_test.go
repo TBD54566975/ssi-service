@@ -140,7 +140,7 @@ func TestManifestRouter(t *testing.T) {
 				},
 			}
 			kid := issuerDID.DID.VerificationMethod[0].ID
-			createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema, Sign: true})
+			createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema})
 			assert.NoError(ttt, err)
 			assert.NotEmpty(ttt, createdSchema)
 

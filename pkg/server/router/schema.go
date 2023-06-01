@@ -39,20 +39,42 @@ type CreateSchemaRequest struct {
 	// The schema must be against draft 2020-12, 2019-09, or 7.
 	Schema schemalib.JSONSchema `json:"schema" validate:"required"`
 
-	// TODO(gabe): re-enable in https://github.com/TBD54566975/ssi-service/issues/493
-	// Sign represents whether the schema should be signed by the author. Default is false.
-	// If sign is true, the schema will be signed by the issuer's private key with the specified KID
-	// Sign bool `json:"sign,omitempty"`
-	// Issuer represents the DID of the issuer for the schema if it's signed. Required if sign is true.
-	// Issuer string `json:"issuer,omitempty"`
-	// IssuerKID represents the KID of the issuer's private key to sign the schema. Required if sign is true.
-	// IssuerKID string `json:"issuerKid,omitempty"`
+	// CredentialSchemaRequest request is an optional additional request to create a credentialized version of a schema.
+	*CredentialSchemaRequest
+}
+
+// CredentialSchemaRequest request is an optional additional request to create a credentialized version of a schema.
+type CredentialSchemaRequest struct {
+	// Issuer represents the DID of the issuer for the schema if it's signed. Required if intending to sign the
+	// schema as a credential using CredentialSchema2023.
+	Issuer string `json:"issuer,omitempty" validate:"required"`
+	// IssuerKID represents the KID of the issuer's private key to sign the schema. Required if intending to sign the
+	// schema as a credential using CredentialSchema2023.
+	IssuerKID string `json:"issuerKid,omitempty" validate:"required"`
+}
+
+func (csr *CredentialSchemaRequest) IsValid() bool {
+	if csr == nil {
+		return false
+	}
+	return csr.Issuer != "" && csr.IssuerKID != ""
 }
 
 type CreateSchemaResponse struct {
-	ID               string               `json:"id"`
-	Schema           schemalib.JSONSchema `json:"schema"`
-	CredentialSchema *keyaccess.JWT       `json:"credentialSchema,omitempty"`
+	*SchemaResponse
+}
+
+type SchemaResponse struct {
+	// ID is the URL of for resolution of the schema
+	ID string `json:"id"`
+	// Type is the type of schema such as `JsonSchema2023` or `CredentialSchema2023`
+	Type schemalib.VCJSONSchemaType `json:"type" validate:"required"`
+
+	// Schema is the JSON schema for the credential, returned when the type is JsonSchema2023
+	Schema *schemalib.JSONSchema `json:"schema,omitempty"`
+
+	// CredentialSchema is the JWT schema for the credential, returned when the type is CredentialSchema2023
+	CredentialSchema *keyaccess.JWT `json:"credentialSchema,omitempty"`
 }
 
 // CreateSchema godoc
@@ -80,27 +102,37 @@ func (sr SchemaRouter) CreateSchema(c *gin.Context) {
 		return
 	}
 
-	// if request.Sign && (request.Issuer == "" || request.IssuerKID == "") {
-	// 	errMsg := "cannot sign schema without an issuer DID and KID"
-	// 	framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
-	// 	return
-	// }
-
 	req := schema.CreateSchemaRequest{
 		Name:        request.Name,
 		Description: request.Description,
 		Schema:      request.Schema,
-		// Sign:        request.Sign,
-		// Issuer:      request.Issuer,
-		// IssuerKID:   request.IssuerKID,
 	}
+
+	if request.CredentialSchemaRequest != nil {
+		if !request.CredentialSchemaRequest.IsValid() {
+			errMsg := "cannot sign schema without an issuer DID and KID"
+			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+			return
+		}
+		// if we have a valid credential schema request, set the issuer and kid properties
+		req.Issuer = request.Issuer
+		req.IssuerKID = request.IssuerKID
+	}
+
 	createSchemaResponse, err := sr.service.CreateSchema(c, req)
 	if err != nil {
 		framework.LoggingRespondErrWithMsg(c, err, "could not create schema", http.StatusInternalServerError)
 		return
 	}
 
-	resp := CreateSchemaResponse{ID: createSchemaResponse.ID, Schema: createSchemaResponse.Schema}
+	resp := CreateSchemaResponse{
+		SchemaResponse: &SchemaResponse{
+			ID:               createSchemaResponse.ID,
+			Type:             createSchemaResponse.Type,
+			Schema:           createSchemaResponse.Schema,
+			CredentialSchema: createSchemaResponse.CredentialSchema,
+		},
+	}
 	framework.Respond(c, resp, http.StatusCreated)
 }
 
@@ -131,12 +163,20 @@ func (sr SchemaRouter) GetSchema(c *gin.Context) {
 		return
 	}
 
-	resp := GetSchemaResponse{Schema: gotSchema.Schema}
+	resp := GetSchemaResponse{
+		SchemaResponse: &SchemaResponse{
+			ID:               gotSchema.ID,
+			Type:             gotSchema.Type,
+			Schema:           gotSchema.Schema,
+			CredentialSchema: gotSchema.CredentialSchema,
+		},
+	}
 	framework.Respond(c, resp, http.StatusOK)
 	return
 }
 
 type ListSchemasResponse struct {
+	// Schemas is the list of all schemas the service holds
 	Schemas []GetSchemaResponse `json:"schemas,omitempty"`
 }
 
@@ -160,7 +200,14 @@ func (sr SchemaRouter) ListSchemas(c *gin.Context) {
 
 	schemas := make([]GetSchemaResponse, 0, len(gotSchemas.Schemas))
 	for _, s := range gotSchemas.Schemas {
-		schemas = append(schemas, GetSchemaResponse{Schema: s.Schema})
+		schemas = append(schemas, GetSchemaResponse{
+			SchemaResponse: &SchemaResponse{
+				ID:               s.ID,
+				Type:             s.Type,
+				Schema:           s.Schema,
+				CredentialSchema: s.CredentialSchema,
+			},
+		})
 	}
 
 	resp := ListSchemasResponse{Schemas: schemas}
@@ -168,8 +215,7 @@ func (sr SchemaRouter) ListSchemas(c *gin.Context) {
 }
 
 type GetSchemaResponse struct {
-	Schema           schemalib.JSONSchema `json:"schema,omitempty"`
-	CredentialSchema *keyaccess.JWT       `json:"credentialSchema,omitempty"`
+	*SchemaResponse
 }
 
 // DeleteSchema godoc
