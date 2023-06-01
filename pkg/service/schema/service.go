@@ -174,7 +174,7 @@ func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.J
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not build credential schema")
 	}
-	return s.signCredentialSchema(ctx, *cred, issuer, issuerKID)
+	return s.keyStore.Sign(ctx, issuerKID, *cred)
 }
 
 // signCredentialSchema signs a credential schema with the issuer's key and kid as a  VC JWT
@@ -260,11 +260,11 @@ func (s Service) Resolve(ctx context.Context, id string) (*schema.JSONSchema, sc
 		}
 		credSubjectBytes, err := json.Marshal(cred.CredentialSubject)
 		if err != nil {
-			return nil, "", errors.Wrap(err, "error marshalling credential subject")
+			return nil, "", errors.Wrap(err, "marshalling credential subject")
 		}
 		var s schema.JSONSchema
 		if err = json.Unmarshal(credSubjectBytes, &s); err != nil {
-			return nil, "", errors.Wrap(err, "error unmarshalling credential subject")
+			return nil, "", errors.Wrap(err, "unmarshalling credential subject")
 		}
 		return &s, schema.CredentialSchema2023Type, nil
 	default:
