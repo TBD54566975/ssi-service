@@ -114,7 +114,45 @@ func TestPresentationAPI(t *testing.T) {
 		}
 	})
 
-	t.Run("List returns empty", func(tt *testing.T) {
+	t.Run("List presentation requests returns empty", func(tt *testing.T) {
+		s := setupTestDB(tt)
+		pRouter, _ := setupPresentationRouter(tt, s)
+
+		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/requests", nil)
+		w := httptest.NewRecorder()
+		c := newRequestContext(w, req)
+		pRouter.ListRequests(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
+
+		var resp router.ListPresentationRequestsResponse
+		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
+		assert.Empty(tt, resp.Requests)
+	})
+
+	t.Run("List presentation requests returns many requests", func(tt *testing.T) {
+		s := setupTestDB(tt)
+		pRouter, didService := setupPresentationRouter(tt, s)
+		issuerDID := createDID(tt, didService)
+		def := createPresentationDefinition(tt, pRouter)
+		req1 := createPresentationRequest(tt, pRouter, def.PresentationDefinition.ID, issuerDID.DID)
+		req2 := createPresentationRequest(tt, pRouter, def.PresentationDefinition.ID, issuerDID.DID)
+
+		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/requests", nil)
+		w := httptest.NewRecorder()
+		c := newRequestContext(w, req)
+		pRouter.ListRequests(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
+
+		var resp router.ListPresentationRequestsResponse
+		assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
+		assert.Len(tt, resp.Requests, 2)
+		assert.ElementsMatch(tt, resp.Requests, []model.Request{
+			*req1.Request,
+			*req2.Request,
+		})
+	})
+
+	t.Run("List definitions returns empty", func(tt *testing.T) {
 		s := setupTestDB(tt)
 		pRouter, _ := setupPresentationRouter(tt, s)
 
@@ -129,7 +167,7 @@ func TestPresentationAPI(t *testing.T) {
 		assert.Empty(tt, resp.Definitions)
 	})
 
-	t.Run("List returns many definitions", func(tt *testing.T) {
+	t.Run("List definitions returns many definitions", func(tt *testing.T) {
 		s := setupTestDB(tt)
 		pRouter, _ := setupPresentationRouter(tt, s)
 		def1 := createPresentationDefinition(tt, pRouter)
@@ -515,6 +553,26 @@ func TestPresentationAPI(t *testing.T) {
 		})
 	})
 
+}
+
+func createPresentationRequest(t *testing.T, pRouter *router.PresentationRouter, definitionID string, issuerDID didsdk.Document) router.CreateRequestResponse {
+	request := router.CreateRequestRequest{
+		CommonCreateRequestRequest: &router.CommonCreateRequestRequest{
+			IssuerDID: issuerDID.ID,
+			IssuerKID: issuerDID.VerificationMethod[0].ID,
+		},
+		PresentationDefinitionID: definitionID,
+	}
+	value := newRequestValue(t, request)
+	req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/presentations/requests", value)
+	w := httptest.NewRecorder()
+	c := newRequestContext(w, req)
+	pRouter.CreateRequest(c)
+	require.True(t, util.Is2xxResponse(w.Code))
+
+	var resp router.CreateRequestResponse
+	require.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+	return resp
 }
 
 func setupPresentationRouter(t *testing.T, s storage.ServiceStorage) (*router.PresentationRouter, *did.Service) {
