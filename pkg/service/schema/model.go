@@ -3,6 +3,8 @@ package schema
 import (
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/TBD54566975/ssi-sdk/util"
+
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 )
 
 type CreateSchemaRequest struct {
@@ -10,10 +12,14 @@ type CreateSchemaRequest struct {
 	Description string            `json:"description,omitempty"`
 	Schema      schema.JSONSchema `json:"schema" validate:"required"`
 
-	// If sign == true, the schema will be signed by the author's private key with the specified KID
-	Sign      bool   `json:"sign,omitempty"`
+	// If both are present the schema will be signed by the issuer's private key with the specified KID
 	Issuer    string `json:"issuer,omitempty"`
 	IssuerKID string `json:"issuerKid,omitempty"`
+}
+
+// IsCredentialSchemaRequest returns true if the request is for a credential schema
+func (csr CreateSchemaRequest) IsCredentialSchemaRequest() bool {
+	return csr.Issuer != "" && csr.IssuerKID != ""
 }
 
 func (csr CreateSchemaRequest) IsValid() bool {
@@ -21,8 +27,10 @@ func (csr CreateSchemaRequest) IsValid() bool {
 }
 
 type CreateSchemaResponse struct {
-	ID     string            `json:"id"`
-	Schema schema.JSONSchema `json:"schema"`
+	ID               string                  `json:"id"`
+	Type             schema.VCJSONSchemaType `json:"type"`
+	Schema           *schema.JSONSchema      `json:"schema,omitempty"`
+	CredentialSchema *keyaccess.JWT          `json:"credentialSchema,omitempty"`
 }
 
 type ListSchemasResponse struct {
@@ -34,8 +42,10 @@ type GetSchemaRequest struct {
 }
 
 type GetSchemaResponse struct {
-	ID     string            `json:"id"`
-	Schema schema.JSONSchema `json:"schema"`
+	ID               string                  `json:"id"`
+	Type             schema.VCJSONSchemaType `json:"type"`
+	Schema           *schema.JSONSchema      `json:"schema,omitempty"`
+	CredentialSchema *keyaccess.JWT          `json:"credentialSchema,omitempty"`
 }
 
 type DeleteSchemaRequest struct {
