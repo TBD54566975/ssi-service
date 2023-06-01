@@ -104,6 +104,7 @@ func (sr SchemaRouter) CreateSchema(c *gin.Context) {
 
 	resp := CreateSchemaResponse{
 		ID:               createSchemaResponse.ID,
+		Type:             createSchemaResponse.Type,
 		Schema:           createSchemaResponse.Schema,
 		CredentialSchema: createSchemaResponse.CredentialSchema,
 	}
