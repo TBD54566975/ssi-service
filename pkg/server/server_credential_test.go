@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
+	"github.com/google/uuid"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -103,6 +104,11 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, resp.CredentialJWT)
 		assert.NoError(tt, err)
 		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
+		after, found := strings.CutPrefix(resp.Credential.ID, "https://ssi-service.com/v1/credentials/")
+		assert.True(tt, found)
+		assert.NotPanics(tt, func() {
+			uuid.MustParse(after)
+		})
 	})
 
 	t.Run("Test Create Credential with Schema", func(tt *testing.T) {

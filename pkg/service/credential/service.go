@@ -10,6 +10,7 @@ import (
 	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -136,6 +137,11 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 	}
 
 	builder := credential.NewVerifiableCredentialBuilder()
+	credentialURI := s.Config().ServiceEndpoint + "/" + uuid.NewString()
+	if err := builder.SetID(credentialURI); err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not build credential when setting id: %s", credentialURI)
+	}
+
 	if err := builder.SetIssuer(request.Issuer); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not build credential when setting issuer: %s", request.Issuer)
 	}
