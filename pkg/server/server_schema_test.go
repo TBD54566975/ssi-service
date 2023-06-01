@@ -71,14 +71,20 @@ func TestSchemaAPI(t *testing.T) {
 		schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
 
 		simpleSchema := getTestSchema()
-		badSchemaRequest := router.CreateSchemaRequest{Name: "test schema", Schema: simpleSchema, Issuer: "bad"}
+		badSchemaRequest := router.CreateSchemaRequest{
+			Name:   "test schema",
+			Schema: simpleSchema,
+			CredentialSchemaRequest: &router.CredentialSchemaRequest{
+				Issuer: "issuer",
+			},
+		}
 		schemaRequestValue := newRequestValue(tt, badSchemaRequest)
 		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 		w := httptest.NewRecorder()
 
 		c := newRequestContext(w, req)
 		schemaService.CreateSchema(c)
-		assert.Contains(tt, w.Body.String(), "cannot sign schema without an issuer DID and KID")
+		assert.Contains(tt, w.Body.String(), "issuerKid is a required field")
 
 		// reset the http recorder
 		w = httptest.NewRecorder()
@@ -93,7 +99,14 @@ func TestSchemaAPI(t *testing.T) {
 		issuerKID := issuerResp.DID.VerificationMethod[0].ID
 
 		// create the credential schema
-		schemaRequest := router.CreateSchemaRequest{Name: "test schema", Schema: simpleSchema, Issuer: issuerID, IssuerKID: issuerKID}
+		schemaRequest := router.CreateSchemaRequest{
+			Name:   "test schema",
+			Schema: simpleSchema,
+			CredentialSchemaRequest: &router.CredentialSchemaRequest{
+				Issuer:    issuerID,
+				IssuerKID: issuerKID,
+			},
+		}
 		schemaRequestValue = newRequestValue(tt, schemaRequest)
 		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 
