@@ -1505,6 +1505,14 @@ definitions:
           $ref: '#/definitions/pkg_server_router.Operation'
         type: array
     type: object
+  pkg_server_router.ListPresentationRequestsResponse:
+    properties:
+      presentationRequests:
+        description: The presentation requests matching the query.
+        items:
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Request'
+        type: array
+    type: object
   pkg_server_router.ListResponsesResponse:
     properties:
       responses:
@@ -3168,6 +3176,24 @@ paths:
       tags:
       - PresentationDefinitionAPI
   /v1/presentations/requests:
+    get:
+      consumes:
+      - application/json
+      description: Lists all the existing presentation requests
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.ListPresentationRequestsResponse'
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: List Presentation Requests
+      tags:
+      - PresentationRequestAPI
     put:
       consumes:
       - application/json

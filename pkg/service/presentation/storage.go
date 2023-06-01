@@ -11,8 +11,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.einride.tech/aip/filtering"
 
-	"github.com/tbd54566975/ssi-service/pkg/service/common"
-
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage/namespace"
 	opsubmission "github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
@@ -22,12 +20,10 @@ import (
 
 const (
 	presentationDefinitionNamespace = "presentation_definition"
-	presentationRequestNamespace    = "presentation_request"
 )
 
 type Storage struct {
 	db storage.ServiceStorage
-	common.RequestStorage
 }
 
 func (ps *Storage) UpdateSubmission(ctx context.Context, id string, approved bool, reason string, opID string) (prestorage.StoredSubmission, opstorage.StoredOperation, error) {
@@ -98,7 +94,7 @@ func NewPresentationStorage(db storage.ServiceStorage) (prestorage.Storage, erro
 	if db == nil {
 		return nil, errors.New("db reference is nil")
 	}
-	return &Storage{db: db, RequestStorage: common.NewRequestStorage(db, presentationRequestNamespace)}, nil
+	return &Storage{db: db}, nil
 }
 
 func (ps *Storage) StoreDefinition(ctx context.Context, presentation prestorage.StoredDefinition) error {

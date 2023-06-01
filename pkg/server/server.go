@@ -213,7 +213,7 @@ func PresentationAPI(rg *gin.RouterGroup, service svcframework.Service, webhookS
 	presReqAPI := rg.Group(PresentationsPrefix + RequestsPrefix)
 	presReqAPI.PUT("", presRouter.CreateRequest)
 	presReqAPI.GET("/:id", presRouter.GetRequest)
-	// TODO add list requests endpoint https://github.com/TBD54566975/ssi-service/issues/479
+	presReqAPI.GET("", presRouter.ListRequests)
 	presReqAPI.PUT("/:id", presRouter.DeleteRequest)
 
 	presSubAPI := rg.Group(PresentationsPrefix + SubmissionsPrefix)

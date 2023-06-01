@@ -6,7 +6,6 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"go.einride.tech/aip/filtering"
@@ -21,7 +20,6 @@ type StoredDefinition struct {
 
 type Storage interface {
 	DefinitionStorage
-	common.RequestStorage
 	SubmissionStorage
 }
 

@@ -138,6 +138,10 @@ type GetRequestResponse struct {
 	PresentationRequest Request `json:"presentationRequest"`
 }
 
+type ListRequestsResponse struct {
+	PresentationRequests []Request `json:"presentationRequests"`
+}
+
 type DeleteRequestRequest struct {
 	ID string `json:"id" validate:"required"`
 }
