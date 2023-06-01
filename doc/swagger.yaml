@@ -1209,6 +1209,16 @@ definitions:
       description:
         description: Description is an optional human-readable description for a schema
         type: string
+      issuer:
+        description: |-
+          Issuer represents the DID of the issuer for the schema if it's signed. Required if intending to sign the
+          schema as a credential using CredentialSchema2023.
+        type: string
+      issuerKid:
+        description: |-
+          IssuerKID represents the KID of the issuer's private key to sign the schema. Required if intending to sign the
+          schema as a credential using CredentialSchema2023.
+        type: string
       name:
         description: Name is a human-readable name for a schema
         type: string
@@ -1226,11 +1236,20 @@ definitions:
   pkg_server_router.CreateSchemaResponse:
     properties:
       credentialSchema:
+        description: CredentialSchema is the JWT schema for the credential, returned
+          when the type is CredentialSchema2023
         type: string
       id:
         type: string
       schema:
-        $ref: '#/definitions/schema.JSONSchema'
+        allOf:
+        - $ref: '#/definitions/schema.JSONSchema'
+        description: Schema is the JSON schema for the credential, returned when the
+          type is JsonSchema2023
+      type:
+        $ref: '#/definitions/schema.VCJSONSchemaType'
+    required:
+    - type
     type: object
   pkg_server_router.CreateSubmissionRequest:
     properties:
@@ -1375,9 +1394,21 @@ definitions:
   pkg_server_router.GetSchemaResponse:
     properties:
       credentialSchema:
+        description: CredentialSchema is the JWT schema for the credential, returned
+          when the type is CredentialSchema2023
+        type: string
+      id:
         type: string
       schema:
-        $ref: '#/definitions/schema.JSONSchema'
+        allOf:
+        - $ref: '#/definitions/schema.JSONSchema'
+        description: Schema is the JSON schema for the credential, returned when the
+          type is JsonSchema2023
+      type:
+        $ref: '#/definitions/schema.VCJSONSchemaType'
+    required:
+    - id
+    - type
     type: object
   pkg_server_router.GetSubmissionResponse:
     properties:
@@ -1839,6 +1870,14 @@ definitions:
   schema.JSONSchema:
     additionalProperties: {}
     type: object
+  schema.VCJSONSchemaType:
+    enum:
+    - CredentialSchema2023
+    - JsonSchema2023
+    type: string
+    x-enum-varnames:
+    - CredentialSchema2023Type
+    - JSONSchema2023Type
   time.Duration:
     enum:
     - -9223372036854775808
