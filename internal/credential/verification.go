@@ -182,7 +182,7 @@ func (v Verifier) staticVerificationChecks(ctx context.Context, credential creds
 	var verificationOpts []verification.Option
 	if credential.CredentialSchema != nil {
 		schemaID := credential.CredentialSchema.ID
-		resolvedSchema, err := v.schemaResolver.Resolve(ctx, schemaID)
+		resolvedSchema, _, err := v.schemaResolver.Resolve(ctx, schemaID)
 		if err != nil {
 			return errors.Wrapf(err, "for credential<%s> failed to resolve schemas: %s", credential.ID, schemaID)
 		}

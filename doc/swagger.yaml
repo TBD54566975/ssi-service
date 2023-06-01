@@ -1209,6 +1209,16 @@ definitions:
       description:
         description: Description is an optional human-readable description for a schema
         type: string
+      issuer:
+        description: |-
+          Issuer represents the DID of the issuer for the schema if it's signed. Required if intending to sign the
+          schema as a credential using CredentialSchema2023.
+        type: string
+      issuerKid:
+        description: |-
+          IssuerKID represents the KID of the issuer's private key to sign the schema. Required if intending to sign the
+          schema as a credential using CredentialSchema2023.
+        type: string
       name:
         description: Name is a human-readable name for a schema
         type: string
@@ -1220,17 +1230,31 @@ definitions:
           If the schema has an $id field, it will be overwritten with an ID the service generates.
           The schema must be against draft 2020-12, 2019-09, or 7.
     required:
+    - issuer
+    - issuerKid
     - name
     - schema
     type: object
   pkg_server_router.CreateSchemaResponse:
     properties:
       credentialSchema:
+        description: CredentialSchema is the JWT schema for the credential, returned
+          when the type is CredentialSchema2023
         type: string
       id:
+        description: ID is the URL of for resolution of the schema
         type: string
       schema:
-        $ref: '#/definitions/schema.JSONSchema'
+        allOf:
+        - $ref: '#/definitions/schema.JSONSchema'
+        description: Schema is the JSON schema for the credential, returned when the
+          type is JsonSchema2023
+      type:
+        allOf:
+        - $ref: '#/definitions/schema.VCJSONSchemaType'
+        description: Type is the type of schema such as `JsonSchema2023` or `CredentialSchema2023`
+    required:
+    - type
     type: object
   pkg_server_router.CreateSubmissionRequest:
     properties:
@@ -1375,9 +1399,23 @@ definitions:
   pkg_server_router.GetSchemaResponse:
     properties:
       credentialSchema:
+        description: CredentialSchema is the JWT schema for the credential, returned
+          when the type is CredentialSchema2023
+        type: string
+      id:
+        description: ID is the URL of for resolution of the schema
         type: string
       schema:
-        $ref: '#/definitions/schema.JSONSchema'
+        allOf:
+        - $ref: '#/definitions/schema.JSONSchema'
+        description: Schema is the JSON schema for the credential, returned when the
+          type is JsonSchema2023
+      type:
+        allOf:
+        - $ref: '#/definitions/schema.VCJSONSchemaType'
+        description: Type is the type of schema such as `JsonSchema2023` or `CredentialSchema2023`
+    required:
+    - type
     type: object
   pkg_server_router.GetSubmissionResponse:
     properties:
@@ -1485,6 +1523,7 @@ definitions:
   pkg_server_router.ListSchemasResponse:
     properties:
       schemas:
+        description: Schemas is the list of all schemas the service holds
         items:
           $ref: '#/definitions/pkg_server_router.GetSchemaResponse'
         type: array
@@ -1847,6 +1886,14 @@ definitions:
   schema.JSONSchema:
     additionalProperties: {}
     type: object
+  schema.VCJSONSchemaType:
+    enum:
+    - CredentialSchema2023
+    - JsonSchema2023
+    type: string
+    x-enum-varnames:
+    - CredentialSchema2023Type
+    - JSONSchema2023Type
   time.Duration:
     enum:
     - -9223372036854775808

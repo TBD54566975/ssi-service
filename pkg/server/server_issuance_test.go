@@ -427,7 +427,7 @@ func setupAllThings(t *testing.T) (*did.CreateDIDResponse, *schema.CreateSchemaR
 		},
 	}
 	keyID := issuerResp.DID.VerificationMethod[0].ID
-	createdSchema, err := schemaSvc.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerResp.DID.ID, IssuerKID: keyID, Name: "license schema", Schema: licenseSchema, Sign: true})
+	createdSchema, err := schemaSvc.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerResp.DID.ID, IssuerKID: keyID, Name: "license schema", Schema: licenseSchema})
 	require.NoError(t, err)
 
 	sillyName := "some silly name"
