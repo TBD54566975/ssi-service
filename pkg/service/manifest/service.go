@@ -13,9 +13,6 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
-	model2 "github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
-
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -29,6 +26,8 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/operation"
 	opcredential "github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
+	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
+	presmodel "github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -167,7 +166,7 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 		}
 
 		if request.PresentationDefinition.ID != nil {
-			resp, err := s.presentationSvc.GetPresentationDefinition(ctx, model2.GetPresentationDefinitionRequest{ID: *request.PresentationDefinition.ID})
+			resp, err := s.presentationSvc.GetPresentationDefinition(ctx, presmodel.GetPresentationDefinitionRequest{ID: *request.PresentationDefinition.ID})
 			if err != nil {
 				return nil, errors.Wrap(err, "getting presentation definition")
 			}

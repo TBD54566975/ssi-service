@@ -12,18 +12,15 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	model2 "github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
-
-	"github.com/tbd54566975/ssi-service/pkg/service/common"
-
-	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
-	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
-
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
+	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
+	presmodel "github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 )
 
@@ -81,7 +78,7 @@ func TestManifestRouter(t *testing.T) {
 
 		tt.Run("CreateManifest with presentation ID returns manifest", func(ttt *testing.T) {
 			definition := createPresentationDefinition(ttt)
-			resp, err := presentationService.CreatePresentationDefinition(context.Background(), model2.CreatePresentationDefinitionRequest{
+			resp, err := presentationService.CreatePresentationDefinition(context.Background(), presmodel.CreatePresentationDefinitionRequest{
 				PresentationDefinition: *definition,
 			})
 			assert.NoError(ttt, err)
