@@ -136,18 +136,20 @@ func getValidCreateManifestRequest(issuerDID, issuerKID, schemaID string) model.
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
-		PresentationDefinition: &exchange.PresentationDefinition{
-			ID: "valid-license-application",
-			InputDescriptors: []exchange.InputDescriptor{
-				{
-					ID: "license-type",
-					Constraints: &exchange.Constraints{
-						Fields: []exchange.Field{
-							{
-								Path: []string{"$.vc.credentialSubject.licenseType"},
-								Filter: &exchange.Filter{
-									Type:    "string",
-									Pattern: "Class D|Class M|Class V",
+		PresentationDefinition: &model.PresentationDefinitionRef{
+			Value: &exchange.PresentationDefinition{
+				ID: "valid-license-application",
+				InputDescriptors: []exchange.InputDescriptor{
+					{
+						ID: "license-type",
+						Constraints: &exchange.Constraints{
+							Fields: []exchange.Field{
+								{
+									Path: []string{"$.vc.credentialSubject.licenseType"},
+									Filter: &exchange.Filter{
+										Type:    "string",
+										Pattern: "Class D|Class M|Class V",
+									},
 								},
 							},
 						},
@@ -304,7 +306,7 @@ func testCredentialRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *k
 func testManifest(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, credential *credential.Service) (*router.ManifestRouter, *manifest.Service) {
 	serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
 	// create a manifest service
-	manifestService, err := manifest.NewManifestService(serviceConfig, db, keyStore, did.GetResolver(), credential)
+	manifestService, err := manifest.NewManifestService(serviceConfig, db, keyStore, did.GetResolver(), credential, nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, manifestService)
 

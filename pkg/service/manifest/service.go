@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
@@ -12,6 +13,8 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
+	model2 "github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
 
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
@@ -38,9 +41,10 @@ type Service struct {
 	config                  config.ManifestServiceConfig
 
 	// external dependencies
-	keyStore    *keystore.Service
-	didResolver resolution.Resolver
-	credential  *credential.Service
+	keyStore        *keystore.Service
+	presentationSvc *presentation.Service
+	didResolver     resolution.Resolver
+	credential      *credential.Service
 
 	Clock      clock.Clock
 	reqStorage common.RequestStorage
@@ -77,8 +81,7 @@ func (s Service) Config() config.ManifestServiceConfig {
 	return s.config
 }
 
-func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service,
-	didResolver resolution.Resolver, credential *credential.Service) (*Service, error) {
+func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver resolution.Resolver, credential *credential.Service, presentationSvc *presentation.Service) (*Service, error) {
 	manifestStorage, err := manifeststg.NewManifestStorage(s)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the manifest service")
@@ -102,6 +105,7 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 		credential:              credential,
 		Clock:                   clock.New(),
 		reqStorage:              requestStorage,
+		presentationSvc:         presentationSvc,
 	}, nil
 }
 
@@ -157,7 +161,24 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 		)
 	}
 	if request.PresentationDefinition != nil {
-		if err := builder.SetPresentationDefinition(*request.PresentationDefinition); err != nil {
+		var pd *exchange.PresentationDefinition
+		if request.PresentationDefinition.ID != nil && request.PresentationDefinition.Value != nil {
+			return nil, errors.New(`only one of "id" and "value" can be provided`)
+		}
+
+		if request.PresentationDefinition.ID != nil {
+			resp, err := s.presentationSvc.GetPresentationDefinition(ctx, model2.GetPresentationDefinitionRequest{ID: *request.PresentationDefinition.ID})
+			if err != nil {
+				return nil, errors.Wrap(err, "getting presentation definition")
+			}
+			pd = &resp.PresentationDefinition
+		}
+
+		if request.PresentationDefinition.Value != nil {
+			pd = request.PresentationDefinition.Value
+		}
+
+		if err := builder.SetPresentationDefinition(*pd); err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(
 				err,
 				"could not set presentation definition<%+v> for manifest",
