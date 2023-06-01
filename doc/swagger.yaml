@@ -660,6 +660,18 @@ definitions:
         description: Whether the credentials created should be revocable.
         type: boolean
     type: object
+  github_com_tbd54566975_ssi-service_pkg_service_manifest_model.PresentationDefinitionRef:
+    properties:
+      id:
+        description: id of the presentation definition created with PresentationDefinitionAPI.
+          Must be empty if `value` is present.
+        type: string
+      value:
+        allOf:
+        - $ref: '#/definitions/exchange.PresentationDefinition'
+        description: value of the presentation definition to use. Must be empty if
+          `id` is present.
+    type: object
   github_com_tbd54566975_ssi-service_pkg_service_manifest_model.Request:
     properties:
       audience:
@@ -1073,23 +1085,49 @@ definitions:
   pkg_server_router.CreateManifestRequest:
     properties:
       description:
+        description: |-
+          Explains what the Manifest in question is generally offering in exchange for meeting its requirements.
+          Optional.
         type: string
       format:
-        $ref: '#/definitions/exchange.ClaimFormat'
+        allOf:
+        - $ref: '#/definitions/exchange.ClaimFormat'
+        description: |-
+          Formats that the issuer can support when issuing the credential. At least one needs to be set. We currently only
+          support `jwt_vc` for issuance. See https://identity.foundation/claim-format-registry/#registry for the definition.
+          TODO: support different claim formats https://github.com/TBD54566975/ssi-service/issues/96
       issuerDid:
+        description: |-
+          DID that identifies who the issuer of the credential(s) will be.
+          Required.
         type: string
       issuerKid:
+        description: |-
+          The KID of the private key that will be used when signing issued credentials.
+          Required.
         type: string
       issuerName:
+        description: |-
+          Human-readable name the Issuer wishes to be recognized by.
+          Optional.
         type: string
       name:
+        description: |-
+          Summarizing title for the Manifest in question.
+          Optional.
         type: string
       outputDescriptors:
+        description: Array of objects as defined in https://identity.foundation/credential-manifest/#output-descriptor.
         items:
           $ref: '#/definitions/manifest.OutputDescriptor'
         type: array
       presentationDefinition:
-        $ref: '#/definitions/exchange.PresentationDefinition'
+        allOf:
+        - $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_manifest_model.PresentationDefinitionRef'
+        description: |-
+          Describes what proofs are required in order to issue this credential. When present, only `id` or `value` may be
+          populated, but not both.
+          Optional.
     required:
     - format
     - issuerDid
@@ -2590,7 +2628,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: Create manifest
+      description: Create manifest. Most fields map to the definitions from https://identity.foundation/credential-manifest/#general-composition.
       parameters:
       - description: request body
         in: body
