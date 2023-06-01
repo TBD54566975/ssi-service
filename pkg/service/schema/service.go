@@ -151,7 +151,7 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 }
 
 // createCredentialSchema creates a credential schema, and signs it with the issuer's key and kid
-func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.JSONSchema, id, issuer, issuerKID string) (*keyaccess.JWT, error) {
+func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.JSONSchema, schemaURI, issuer, issuerKID string) (*keyaccess.JWT, error) {
 	builder := credential.NewVerifiableCredentialBuilder()
 	if err := builder.SetID(id); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "building credential when setting id: %s", id)
