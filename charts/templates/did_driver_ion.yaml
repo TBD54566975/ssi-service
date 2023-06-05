@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "dion.fullname" . }}
+  labels:
+    {{- include "dion.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.driverDidIon.service.type }}
+  ports:
+    - port: {{ .Values.driverDidIon.service.port }}
+      targetPort: {{ .Values.driverDidIon.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "dion.selectorLabels" . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "dion.fullname" . }}
+  labels:
+    {{- include "dion.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.driverDidIon.replicaCount }}
+  serviceName: {{ include "dion.fullname" . }}
+  selector:
+    matchLabels:
+      {{- include "dion.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "dion.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: dion
+          image: "{{ .Values.driverDidIon.image.repository }}:{{ .Values.driverDidIon.image.tag }}"
+          imagePullPolicy: {{ .Values.driverDidIon.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.driverDidIon.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.driverDidIon.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 13 }}
+      {{- end }}
+      {{- with .Values.driverDidIon.affinity }}
+      affinity:
+        {{- toYaml . | nindent 13 }}
+      {{- end }}
+      {{- with .Values.driverDidIon.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 13 }}
+      {{- end }}
+      {{- with .Values.driverDidIon.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 13 }}
+      {{- end }}
