@@ -339,3 +339,7 @@ func testWebhookRouter(t *testing.T, bolt storage.ServiceStorage) *router.Webhoo
 
 	return webhookRouter
 }
+
+func idFromURI(id string) string {
+	return id[len(id)-36:]
+}

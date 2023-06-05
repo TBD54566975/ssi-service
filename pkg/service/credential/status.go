@@ -55,19 +55,21 @@ func (s Service) createStatusListEntryForCredential(ctx context.Context, credID 
 		}
 	}
 
+	indexStr := strconv.Itoa(randomIndex)
 	return &statussdk.StatusList2021Entry{
-		ID:                   fmt.Sprintf(`%s/%s/status`, s.config.ServiceEndpoint, credID),
+		ID:                   fmt.Sprintf(`%s/status`, credID),
 		Type:                 statussdk.StatusList2021EntryType,
 		StatusPurpose:        statusPurpose,
-		StatusListIndex:      strconv.Itoa(randomIndex),
+		StatusListIndex:      indexStr,
 		StatusListCredential: statusListCredentialID,
 	}, nil
 }
 
 func (s Service) createStatusListCredential(ctx context.Context, tx storage.Tx, statusPurpose statussdk.StatusPurpose, issuerID, issuerKID string, slcMetadata StatusListCredentialMetadata) (int, *credential.VerifiableCredential, error) {
-	statusListID := fmt.Sprintf("%s/status/%s", s.config.ServiceEndpoint, uuid.NewString())
+	statusListID := uuid.NewString()
+	statusListURI := fmt.Sprintf("%s/status/%s", s.config.ServiceEndpoint, statusListID)
 
-	generatedStatusListCredential, err := statussdk.GenerateStatusList2021Credential(statusListID, issuerID, statusPurpose, []credential.VerifiableCredential{})
+	generatedStatusListCredential, err := statussdk.GenerateStatusList2021Credential(statusListURI, issuerID, statusPurpose, []credential.VerifiableCredential{})
 	if err != nil {
 		return -1, nil, sdkutil.LoggingErrorMsg(err, "could not generate status list")
 	}
@@ -85,6 +87,7 @@ func (s Service) createStatusListCredential(ctx context.Context, tx storage.Tx, 
 	}
 
 	statusListStorageRequest := StoreCredentialRequest{
+		ID:        statusListID,
 		Container: statusListContainer,
 	}
 

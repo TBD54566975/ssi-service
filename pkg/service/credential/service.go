@@ -137,7 +137,8 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 	}
 
 	builder := credential.NewVerifiableCredentialBuilder()
-	credentialURI := s.Config().ServiceEndpoint + "/" + uuid.NewString()
+	credentialID := uuid.NewString()
+	credentialURI := s.Config().ServiceEndpoint + "/" + credentialID
 	if err := builder.SetID(credentialURI); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not build credential when setting id: %s", credentialURI)
 	}
@@ -235,7 +236,10 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 		Suspended:     false,
 	}
 
-	credentialStorageRequest := StoreCredentialRequest{Container: container}
+	credentialStorageRequest := StoreCredentialRequest{
+		ID:        credentialID,
+		Container: container,
+	}
 	if err = s.storage.StoreCredentialTx(ctx, tx, credentialStorageRequest); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "saving credential")
 	}
@@ -528,7 +532,7 @@ func (s Service) updateCredentialStatusBusinessLogic(ctx context.Context, tx sto
 func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCred *StoredCredential, request UpdateCredentialStatusRequest, slcMetadata StatusListCredentialMetadata) (*credint.Container, error) {
 	// store the credential with updated status
 	container := credint.Container{
-		ID:            gotCred.ID,
+		ID:            gotCred.Key,
 		IssuerKID:     gotCred.IssuerKID,
 		Credential:    gotCred.Credential,
 		CredentialJWT: gotCred.CredentialJWT,
@@ -537,6 +541,7 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 	}
 
 	storageRequest := StoreCredentialRequest{
+		ID:        request.ID,
 		Container: container,
 	}
 
@@ -544,10 +549,15 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 		return nil, sdkutil.LoggingErrorMsg(err, "could not store credential")
 	}
 
-	statusListCredentialID := gotCred.Credential.CredentialStatus.(map[string]any)["statusListCredential"].(string)
+	statusListCredentialURI := gotCred.Credential.CredentialStatus.(map[string]any)["statusListCredential"].(string)
 
-	if len(statusListCredentialID) == 0 {
+	if len(statusListCredentialURI) == 0 {
 		return nil, sdkutil.LoggingNewErrorf("problem with getting status list credential id")
+	}
+
+	statusListCredentialID, err := parseIDFromURI(statusListCredentialURI)
+	if err != nil {
+		return nil, err
 	}
 
 	creds, err := s.storage.GetCredentialsByIssuerAndSchema(ctx, gotCred.Issuer, gotCred.Schema)
@@ -580,7 +590,7 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 		statusPurpose = statussdk.StatusSuspension
 	}
 
-	generatedStatusListCredential, err := statussdk.GenerateStatusList2021Credential(statusListCredentialID, gotCred.Issuer, statusPurpose, revokedOrSuspendedStatusCreds)
+	generatedStatusListCredential, err := statussdk.GenerateStatusList2021Credential(statusListCredentialURI, gotCred.Issuer, statusPurpose, revokedOrSuspendedStatusCreds)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not generate status list")
 	}
@@ -601,6 +611,7 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 	}
 
 	storageRequest = StoreCredentialRequest{
+		ID:        statusListCredentialID,
 		Container: statusListContainer,
 	}
 
@@ -609,6 +620,14 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 	}
 
 	return &container, nil
+}
+
+func parseIDFromURI(uri string) (string, error) {
+	const uuidStandardFormLen = 36
+	if len(uri) < uuidStandardFormLen {
+		return "", sdkutil.LoggingNewErrorf("cannot infer status list credential id from %q", uri)
+	}
+	return uri[len(uri)-uuidStandardFormLen:], nil
 }
 
 func (s Service) GetCredentialsByIssuerAndSchemaWithStatus(ctx context.Context, issuer string, schema string) ([]credential.VerifiableCredential, error) {
