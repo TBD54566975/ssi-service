@@ -22,7 +22,6 @@ metadata:
     {{- include "uni-resolver.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.uniResolver.replicaCount }}
-  serviceName: {{ include "uni-resolver.fullname" . }}
   selector:
     matchLabels:
       {{- include "uni-resolver.selectorLabels" . | nindent 6 }}

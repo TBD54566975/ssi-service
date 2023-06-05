@@ -22,7 +22,6 @@ metadata:
     {{- include "dion.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.driverDidIon.replicaCount }}
-  serviceName: {{ include "dion.fullname" . }}
   selector:
     matchLabels:
       {{- include "dion.selectorLabels" . | nindent 6 }}

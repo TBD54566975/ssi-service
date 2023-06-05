@@ -22,7 +22,6 @@ metadata:
     {{- include "ssi-service.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.ssiService.replicaCount }}
-  serviceName: {{ include "ssi-service.fullname" . }}
   selector:
     matchLabels:
       {{- include "ssi-service.selectorLabels" . | nindent 6 }}

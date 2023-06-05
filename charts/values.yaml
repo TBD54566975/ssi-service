@@ -19,7 +19,7 @@ ssiService:
       memory: 500Mi
 
   env:
-    jaegerHttpUrl: ""
+    jaegerHttpUrl: "http://ssi-service-jaeger:14268/api/traces"
 
   port: 3000
 
