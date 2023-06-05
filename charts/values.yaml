@@ -163,6 +163,7 @@ driverDidIon:
     type: ClusterIP
     port: 8080
     targetPort: 8080
+    nameOverride: driver-did-ion #this is hardcoded in https://github.com/decentralized-identity/universal-resolver/blob/main/uni-resolver-web/src/main/resources/application.yml
 
   resources:
     requests:
@@ -204,6 +205,9 @@ jaeger:
 # see https://github.com/DandyDeveloper/charts/blob/master/charts/redis-ha/values.yaml for all options
 redis-ha:
   enabled: false
+
+  auth: true
+  redisPassword: password
 
   exporter:
     enabled: true
