@@ -40,6 +40,9 @@ spec:
               protocol: TCP
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: SSI_SERVICE
+              value: {{ include "ssi-service.fullname" . }}
       {{- with .Values.ssiConsole.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 13 }}
