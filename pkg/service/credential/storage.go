@@ -242,11 +242,11 @@ func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*Sto
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Warnf("no credentials able to be retrieved for id: %s", id)
+		logrus.Infof("no credentials able to be retrieved for id: %s", id)
 	}
 
 	if len(storedCreds) > 1 {
-		logrus.Warnf("there should only be status list credential per <issuer,schema,statuspurpose> tripple, bad state")
+		logrus.Error("there should only be status list credential per <issuer,schema,statuspurpose> tripple, bad state")
 	}
 
 	return &storedCreds[0], nil
@@ -346,14 +346,44 @@ func (cs *Storage) getCredential(ctx context.Context, id string, namespace strin
 	return &stored, nil
 }
 
+// ListCredentials gets all credentials stored with a prefix key
+// The method is greedy, meaning if multiple values are found...and some fail during processing, we will
+// return only the successful values and log an error for the failures.
+func (cs *Storage) ListCredentials(ctx context.Context) ([]StoredCredential, error) {
+	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage")
+	}
+
+	var storedCreds []StoredCredential
+	for _, key := range keys {
+		credBytes, err := cs.db.Read(ctx, credentialNamespace, key)
+		if err != nil {
+			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
+		} else {
+			var cred StoredCredential
+			if err = json.Unmarshal(credBytes, &cred); err != nil {
+				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
+			}
+			storedCreds = append(storedCreds, cred)
+		}
+	}
+
+	if len(storedCreds) == 0 {
+		logrus.Info("no credentials able to be retrieved")
+	}
+
+	return storedCreds, nil
+}
+
 // Note: this is a lazy  implementation. Optimizations are to be had by adjusting prefix
 // queries, and nested buckets. It is not intended that bolt is run in production, or at any scale,
 // so this is not much of a concern.
 
-// GetCredentialsByIssuer gets all credentials stored with a prefix key containing the issuer value
+// ListCredentialsByIssuer gets all credentials stored with a prefix key containing the issuer value
 // The method is greedy, meaning if multiple values are found and some fail during processing, we will
 // return only the successful values and log an error for the failures.
-func (cs *Storage) GetCredentialsByIssuer(ctx context.Context, issuer string) ([]StoredCredential, error) {
+func (cs *Storage) ListCredentialsByIssuer(ctx context.Context, issuer string) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
@@ -386,16 +416,16 @@ func (cs *Storage) GetCredentialsByIssuer(ctx context.Context, issuer string) ([
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Warnf("no credentials able to be retrieved for issuer: %s", issuerKeys)
+		logrus.Infof("no credentials able to be retrieved for issuer: %s", issuerKeys)
 	}
 
 	return storedCreds, nil
 }
 
-// GetCredentialsBySubject gets all credentials stored with a prefix key containing the subject value
+// ListCredentialsBySubject gets all credentials stored with a prefix key containing the subject value
 // The method is greedy, meaning if multiple values are found...and some fail during processing, we will
 // return only the successful values and log an error for the failures.
-func (cs *Storage) GetCredentialsBySubject(ctx context.Context, subject string) ([]StoredCredential, error) {
+func (cs *Storage) ListCredentialsBySubject(ctx context.Context, subject string) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for subject: %s", subject)
@@ -429,7 +459,7 @@ func (cs *Storage) GetCredentialsBySubject(ctx context.Context, subject string) 
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Warnf("no credentials able to be retrieved for subject: %s", subjectKeys)
+		logrus.Infof("no credentials able to be retrieved for subject: %s", subjectKeys)
 	}
 
 	return storedCreds, nil
@@ -473,7 +503,7 @@ func (cs *Storage) GetCredentialsBySchema(ctx context.Context, schema string) ([
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Warnf("no credentials able to be retrieved for schema: %s", schemaKeys)
+		logrus.Infof("no credentials able to be retrieved for schema: %s", schemaKeys)
 	}
 
 	return storedCreds, nil
@@ -523,7 +553,7 @@ func (cs *Storage) GetStatusListCredentialsByIssuerSchemaPurpose(ctx context.Con
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Warnf("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
+		logrus.Infof("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
 	}
 
 	return storedCreds, nil
@@ -564,7 +594,7 @@ func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer s
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Warnf("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
+		logrus.Infof("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
 	}
 
 	return storedCreds, nil

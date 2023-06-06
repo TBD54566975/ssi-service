@@ -1989,8 +1989,9 @@ paths:
     get:
       consumes:
       - application/json
-      description: Checks for the presence of a query parameter and calls the associated
-        filtered get method. Only one parameter is allowed to be specified.
+      description: Checks for the presence of an optional query parameter and calls
+        the associated filtered get method. Only one optional parameter is allowed
+        to be specified.
       parameters:
       - description: The issuer id
         example: did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp
