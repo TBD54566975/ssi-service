@@ -65,7 +65,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create a schema for the creds to be issued against
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema(), Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -144,7 +144,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create a schema for the creds to be issued against
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema(), Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -196,7 +196,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create a schema for the creds to be issued against
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema(), Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -282,7 +282,7 @@ func TestManifestAPI(t *testing.T) {
 
 		// create a schema for the creds to be issued against
 		kid := issuerDID.DID.VerificationMethod[0].ID
-		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema(), Sign: true})
+		createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 
@@ -364,14 +364,14 @@ func TestManifestAPI(t *testing.T) {
 		kid := issuerDID.DID.VerificationMethod[0].ID
 		licenseApplicationSchema, err := schemaService.CreateSchema(
 			context.Background(),
-			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license application schema", Schema: getLicenseApplicationSchema(), Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license application schema", Schema: getLicenseApplicationSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, licenseApplicationSchema)
 
 		// create a second schema for the creds to be issued after the application is approved
 		licenseSchema, err := schemaService.CreateSchema(
 			context.Background(),
-			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseSchema(), Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, licenseSchema)
 
@@ -526,14 +526,14 @@ func TestManifestAPI(t *testing.T) {
 		kid := issuerDID.DID.VerificationMethod[0].ID
 		licenseApplicationSchema, err := schemaService.CreateSchema(
 			context.Background(),
-			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license application schema", Schema: getLicenseApplicationSchema(), Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license application schema", Schema: getLicenseApplicationSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, licenseApplicationSchema)
 
 		// create a second schema for the creds to be issued after the application is approved
 		licenseSchema, err := schemaService.CreateSchema(
 			context.Background(),
-			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseSchema(), Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, licenseSchema)
 
@@ -693,7 +693,7 @@ func TestManifestAPI(t *testing.T) {
 		// create a schema for the creds to be issued against
 		kid := issuerDID.DID.VerificationMethod[0].ID
 		licenseApplicationSchema, err := schemaService.CreateSchema(context.Background(),
-			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license application schema", Schema: getLicenseApplicationSchema(), Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license application schema", Schema: getLicenseApplicationSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, licenseApplicationSchema)
 
@@ -839,13 +839,13 @@ func TestManifestAPI(t *testing.T) {
 		// create a schema for the creds to be issued against
 		kid := issuerDID.DID.VerificationMethod[0].ID
 		licenseApplicationSchema, err := schemaService.CreateSchema(context.Background(),
-			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license application schema", Schema: getLicenseApplicationSchema(), Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license application schema", Schema: getLicenseApplicationSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, licenseApplicationSchema)
 
 		licenseSchema, err := schemaService.CreateSchema(
 			context.Background(),
-			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseSchema(), Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, licenseSchema)
 		// issue a credential against the schema to the subject, from the issuer
@@ -1016,7 +1016,7 @@ func TestManifestAPI(t *testing.T) {
 		// create a schema for the creds to be issued against
 		kid := issuerDID.DID.VerificationMethod[0].ID
 		createdSchema, err := schemaService.CreateSchema(context.Background(),
-			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema(), Sign: true})
+			schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: getLicenseApplicationSchema()})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, createdSchema)
 

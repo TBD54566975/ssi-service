@@ -170,14 +170,14 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 	var knownSchema *schemalib.JSONSchema
 	if request.SchemaID != "" {
 		// resolve schema and save it for validation later
-		gotSchema, err := s.schema.GetSchema(ctx, schema.GetSchemaRequest{ID: request.SchemaID})
+		gotSchema, schemaType, err := s.schema.Resolve(ctx, request.SchemaID)
 		if err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(err, "failed to create credential; could not get schema: %s", request.SchemaID)
 		}
-		knownSchema = &gotSchema.Schema
+		knownSchema = gotSchema
 		credSchema := credential.CredentialSchema{
 			ID:   request.SchemaID,
-			Type: schemalib.JSONSchema2023Type.String(),
+			Type: schemaType.String(),
 		}
 		if err = builder.SetCredentialSchema(credSchema); err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(err, "could not set JSON Schema for credential: %s", request.SchemaID)
@@ -339,10 +339,34 @@ func (s Service) GetCredential(ctx context.Context, request GetCredentialRequest
 	return &response, nil
 }
 
+func (s Service) ListCredentials(ctx context.Context) (*ListCredentialsResponse, error) {
+	logrus.Debugf("listing credential(s) ")
+
+	gotCreds, err := s.storage.ListCredentials(ctx)
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not list credential(s)")
+	}
+
+	creds := make([]credint.Container, 0, len(gotCreds))
+	for _, cred := range gotCreds {
+		container := credint.Container{
+			ID:            cred.CredentialID,
+			Credential:    cred.Credential,
+			CredentialJWT: cred.CredentialJWT,
+			Revoked:       cred.Revoked,
+			Suspended:     cred.Suspended,
+		}
+		creds = append(creds, container)
+	}
+
+	response := ListCredentialsResponse{Credentials: creds}
+	return &response, nil
+}
+
 func (s Service) ListCredentialsByIssuer(ctx context.Context, request ListCredentialByIssuerRequest) (*ListCredentialsResponse, error) {
 	logrus.Debugf("listing credential(s) for issuer: %s", util.SanitizeLog(request.Issuer))
 
-	gotCreds, err := s.storage.GetCredentialsByIssuer(ctx, request.Issuer)
+	gotCreds, err := s.storage.ListCredentialsByIssuer(ctx, request.Issuer)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not list credential(s) for issuer: %s", request.Issuer)
 	}
@@ -366,7 +390,7 @@ func (s Service) ListCredentialsByIssuer(ctx context.Context, request ListCreden
 func (s Service) ListCredentialsBySubject(ctx context.Context, request ListCredentialBySubjectRequest) (*ListCredentialsResponse, error) {
 	logrus.Debugf("listing credential(s) for subject: %s", util.SanitizeLog(request.Subject))
 
-	gotCreds, err := s.storage.GetCredentialsBySubject(ctx, request.Subject)
+	gotCreds, err := s.storage.ListCredentialsBySubject(ctx, request.Subject)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not list credential(s) for subject: %s", request.Subject)
 	}

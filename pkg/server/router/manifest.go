@@ -44,26 +44,50 @@ func NewManifestRouter(s svcframework.Service) (*ManifestRouter, error) {
 // CreateManifestRequest is the request body for creating a manifest, which populates all remaining fields
 // and builds a well-formed manifest object.
 type CreateManifestRequest struct {
-	Name                   *string                          `json:"name,omitempty"`
-	Description            *string                          `json:"description,omitempty"`
-	IssuerDID              string                           `json:"issuerDid" validate:"required"`
-	IssuerKID              string                           `json:"issuerKid" validate:"required"`
-	IssuerName             *string                          `json:"issuerName,omitempty"`
-	ClaimFormat            *exchange.ClaimFormat            `json:"format" validate:"required,dive"`
-	OutputDescriptors      []manifestsdk.OutputDescriptor   `json:"outputDescriptors" validate:"required,dive"`
-	PresentationDefinition *exchange.PresentationDefinition `json:"presentationDefinition,omitempty" validate:"omitempty,dive"`
+	// Summarizing title for the Manifest in question.
+	// Optional.
+	Name *string `json:"name,omitempty"`
+
+	// Explains what the Manifest in question is generally offering in exchange for meeting its requirements.
+	// Optional.
+	Description *string `json:"description,omitempty"`
+
+	// DID that identifies who the issuer of the credential(s) will be.
+	// Required.
+	IssuerDID string `json:"issuerDid" validate:"required"`
+
+	// The KID of the private key that will be used when signing issued credentials.
+	// Required.
+	IssuerKID string `json:"issuerKid" validate:"required"`
+
+	// Human-readable name the Issuer wishes to be recognized by.
+	// Optional.
+	IssuerName *string `json:"issuerName,omitempty"`
+
+	// Formats that the issuer can support when issuing the credential. At least one needs to be set. We currently only
+	// support `jwt_vc` for issuance. See https://identity.foundation/claim-format-registry/#registry for the definition.
+	// TODO: support different claim formats https://github.com/TBD54566975/ssi-service/issues/96
+	ClaimFormat *exchange.ClaimFormat `json:"format" validate:"required,dive"`
+
+	// Array of objects as defined in https://identity.foundation/credential-manifest/#output-descriptor.
+	OutputDescriptors []manifestsdk.OutputDescriptor `json:"outputDescriptors" validate:"required,dive"`
+
+	// Describes what proofs are required in order to issue this credential. When present, only `id` or `value` may be
+	// populated, but not both.
+	// Optional.
+	*model.PresentationDefinitionRef
 }
 
 func (c CreateManifestRequest) ToServiceRequest() model.CreateManifestRequest {
 	return model.CreateManifestRequest{
-		Name:                   c.Name,
-		Description:            c.Description,
-		IssuerDID:              c.IssuerDID,
-		IssuerKID:              c.IssuerKID,
-		IssuerName:             c.IssuerName,
-		OutputDescriptors:      c.OutputDescriptors,
-		ClaimFormat:            c.ClaimFormat,
-		PresentationDefinition: c.PresentationDefinition,
+		Name:                      c.Name,
+		Description:               c.Description,
+		IssuerDID:                 c.IssuerDID,
+		IssuerKID:                 c.IssuerKID,
+		IssuerName:                c.IssuerName,
+		OutputDescriptors:         c.OutputDescriptors,
+		ClaimFormat:               c.ClaimFormat,
+		PresentationDefinitionRef: c.PresentationDefinitionRef,
 	}
 }
 
@@ -74,7 +98,7 @@ type CreateManifestResponse struct {
 // CreateManifest godoc
 //
 //	@Summary		Create manifest
-//	@Description	Create manifest
+//	@Description	Create manifest. Most fields map to the definitions from https://identity.foundation/credential-manifest/#general-composition.
 //	@Tags			ManifestAPI
 //	@Accept			json
 //	@Produce		json
