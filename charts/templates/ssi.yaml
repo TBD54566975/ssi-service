@@ -43,6 +43,16 @@ spec:
           env:
             - name: JAEGER_HTTP_URL
               value: "{{ .Values.ssiService.env.jaegerHttpUrl }}"
+            - name: CONFIG_PATH
+              value: "/etc/ssiservice/ssiservice.conf"
+          volumeMounts:
+          - name: {{ include "ssi-service.shortname" . }}-conf
+            mountPath: /etc/ssiservice/ssiservice.conf
+            subPath: ssiservice.conf
+      volumes:
+      - name: {{ include "ssi-service.shortname" . }}-conf
+        configMap:
+          name: {{ include "ssi-service.shortname" . }}-conf
       {{- with .Values.ssiService.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 13 }}
@@ -59,3 +69,11 @@ spec:
       tolerations:
         {{- toYaml . | nindent 13 }}
       {{- end }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "ssi-service.shortname" . }}-conf
+data:
+  ssiservice.conf:
+    {{- toYaml .Values.ssiService.config | nindent 4 }}
