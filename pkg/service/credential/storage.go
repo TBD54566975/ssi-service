@@ -346,10 +346,10 @@ func (cs *Storage) getCredential(ctx context.Context, id string, namespace strin
 	return &stored, nil
 }
 
-// GetCredentials gets all credentials stored with a prefix key
+// ListCredentials gets all credentials stored with a prefix key
 // The method is greedy, meaning if multiple values are found...and some fail during processing, we will
 // return only the successful values and log an error for the failures.
-func (cs *Storage) GetCredentials(ctx context.Context) ([]StoredCredential, error) {
+func (cs *Storage) ListCredentials(ctx context.Context) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage")
@@ -380,10 +380,10 @@ func (cs *Storage) GetCredentials(ctx context.Context) ([]StoredCredential, erro
 // queries, and nested buckets. It is not intended that bolt is run in production, or at any scale,
 // so this is not much of a concern.
 
-// GetCredentialsByIssuer gets all credentials stored with a prefix key containing the issuer value
+// ListCredentialsByIssuer gets all credentials stored with a prefix key containing the issuer value
 // The method is greedy, meaning if multiple values are found and some fail during processing, we will
 // return only the successful values and log an error for the failures.
-func (cs *Storage) GetCredentialsByIssuer(ctx context.Context, issuer string) ([]StoredCredential, error) {
+func (cs *Storage) ListCredentialsByIssuer(ctx context.Context, issuer string) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
@@ -422,10 +422,10 @@ func (cs *Storage) GetCredentialsByIssuer(ctx context.Context, issuer string) ([
 	return storedCreds, nil
 }
 
-// GetCredentialsBySubject gets all credentials stored with a prefix key containing the subject value
+// ListCredentialsBySubject gets all credentials stored with a prefix key containing the subject value
 // The method is greedy, meaning if multiple values are found...and some fail during processing, we will
 // return only the successful values and log an error for the failures.
-func (cs *Storage) GetCredentialsBySubject(ctx context.Context, subject string) ([]StoredCredential, error) {
+func (cs *Storage) ListCredentialsBySubject(ctx context.Context, subject string) ([]StoredCredential, error) {
 	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for subject: %s", subject)
