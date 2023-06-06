@@ -242,7 +242,7 @@ func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*Sto
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Info("no credentials able to be retrieved for id: %s", id)
+		logrus.Infof("no credentials able to be retrieved for id: %s", id)
 	}
 
 	if len(storedCreds) > 1 {
@@ -553,7 +553,7 @@ func (cs *Storage) GetStatusListCredentialsByIssuerSchemaPurpose(ctx context.Con
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Info("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
+		logrus.Infof("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
 	}
 
 	return storedCreds, nil
@@ -594,7 +594,7 @@ func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer s
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Info("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
+		logrus.Infof("no credentials able to be retrieved for issuer: %s", issuerSchemaKeys)
 	}
 
 	return storedCreds, nil
