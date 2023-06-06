@@ -55,7 +55,7 @@ func TestManifestRouter(t *testing.T) {
 		tt.Run("CreateManifest with presentation ID and value error", func(ttt *testing.T) {
 			defID := "an ID I know"
 			createManifestRequest := getValidManifestRequest("issuerDID", "issuerKID", "schemaID")
-			createManifestRequest.PresentationDefinition.ID = &defID
+			createManifestRequest.PresentationDefinitionRef.ID = &defID
 
 			_, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
 
@@ -66,7 +66,7 @@ func TestManifestRouter(t *testing.T) {
 		tt.Run("CreateManifest with bad presentation ID returns error", func(ttt *testing.T) {
 			defID := "a bad ID"
 			createManifestRequest := getValidManifestRequest("issuerDID", "issuerKID", "schemaID")
-			createManifestRequest.PresentationDefinition = &model.PresentationDefinitionRef{
+			createManifestRequest.PresentationDefinitionRef = &model.PresentationDefinitionRef{
 				ID: &defID,
 			}
 
@@ -85,7 +85,7 @@ func TestManifestRouter(t *testing.T) {
 			assert.NotEmpty(ttt, resp)
 
 			createManifestRequest := getValidManifestRequest("issuerDID", "issuerKID", "schemaID")
-			createManifestRequest.PresentationDefinition = &model.PresentationDefinitionRef{
+			createManifestRequest.PresentationDefinitionRef = &model.PresentationDefinitionRef{
 				ID: &resp.PresentationDefinition.ID,
 			}
 			manifest, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
@@ -248,7 +248,7 @@ func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.Create
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
-		PresentationDefinition: &model.PresentationDefinitionRef{
+		PresentationDefinitionRef: &model.PresentationDefinitionRef{
 			PresentationDefinition: &exchange.PresentationDefinition{
 				ID: "id123",
 				InputDescriptors: []exchange.InputDescriptor{

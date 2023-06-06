@@ -15,14 +15,14 @@ import (
 // Manifest
 
 type CreateManifestRequest struct {
-	Name                   *string                        `json:"name,omitempty"`
-	Description            *string                        `json:"description,omitempty"`
-	IssuerDID              string                         `json:"issuerDid" validate:"required"`
-	IssuerKID              string                         `json:"issuerKid" validate:"required"`
-	IssuerName             *string                        `json:"issuerName,omitempty"`
-	OutputDescriptors      []manifestsdk.OutputDescriptor `json:"outputDescriptors" validate:"required,dive"`
-	ClaimFormat            *exchange.ClaimFormat          `json:"format" validate:"required,dive"`
-	PresentationDefinition *PresentationDefinitionRef     `json:"presentationDefinition,omitempty" validate:"omitempty,dive"`
+	Name                      *string                        `json:"name,omitempty"`
+	Description               *string                        `json:"description,omitempty"`
+	IssuerDID                 string                         `json:"issuerDid" validate:"required"`
+	IssuerKID                 string                         `json:"issuerKid" validate:"required"`
+	IssuerName                *string                        `json:"issuerName,omitempty"`
+	OutputDescriptors         []manifestsdk.OutputDescriptor `json:"outputDescriptors" validate:"required,dive"`
+	ClaimFormat               *exchange.ClaimFormat          `json:"format" validate:"required,dive"`
+	PresentationDefinitionRef *PresentationDefinitionRef     `json:"presentationDefinitionRef,omitempty" validate:"omitempty,dive"`
 }
 
 type CreateManifestResponse struct {

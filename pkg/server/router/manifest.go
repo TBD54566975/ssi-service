@@ -80,14 +80,14 @@ type CreateManifestRequest struct {
 
 func (c CreateManifestRequest) ToServiceRequest() model.CreateManifestRequest {
 	return model.CreateManifestRequest{
-		Name:                   c.Name,
-		Description:            c.Description,
-		IssuerDID:              c.IssuerDID,
-		IssuerKID:              c.IssuerKID,
-		IssuerName:             c.IssuerName,
-		OutputDescriptors:      c.OutputDescriptors,
-		ClaimFormat:            c.ClaimFormat,
-		PresentationDefinition: c.PresentationDefinitionRef,
+		Name:                      c.Name,
+		Description:               c.Description,
+		IssuerDID:                 c.IssuerDID,
+		IssuerKID:                 c.IssuerKID,
+		IssuerName:                c.IssuerName,
+		OutputDescriptors:         c.OutputDescriptors,
+		ClaimFormat:               c.ClaimFormat,
+		PresentationDefinitionRef: c.PresentationDefinitionRef,
 	}
 }
 

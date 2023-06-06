@@ -159,29 +159,29 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 			request.OutputDescriptors,
 		)
 	}
-	if request.PresentationDefinition != nil {
+	if request.PresentationDefinitionRef != nil {
 		var pd *exchange.PresentationDefinition
-		if request.PresentationDefinition.ID != nil && request.PresentationDefinition.PresentationDefinition != nil {
+		if request.PresentationDefinitionRef.ID != nil && request.PresentationDefinitionRef.PresentationDefinition != nil {
 			return nil, errors.New(`only one of "id" and "value" can be provided`)
 		}
 
-		if request.PresentationDefinition.ID != nil {
-			resp, err := s.presentationSvc.GetPresentationDefinition(ctx, presmodel.GetPresentationDefinitionRequest{ID: *request.PresentationDefinition.ID})
+		if request.PresentationDefinitionRef.ID != nil {
+			resp, err := s.presentationSvc.GetPresentationDefinition(ctx, presmodel.GetPresentationDefinitionRequest{ID: *request.PresentationDefinitionRef.ID})
 			if err != nil {
 				return nil, errors.Wrap(err, "getting presentation definition")
 			}
 			pd = &resp.PresentationDefinition
 		}
 
-		if request.PresentationDefinition.PresentationDefinition != nil {
-			pd = request.PresentationDefinition.PresentationDefinition
+		if request.PresentationDefinitionRef.PresentationDefinition != nil {
+			pd = request.PresentationDefinitionRef.PresentationDefinition
 		}
 
 		if err := builder.SetPresentationDefinition(*pd); err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(
 				err,
 				"could not set presentation definition<%+v> for manifest",
-				request.PresentationDefinition,
+				request.PresentationDefinitionRef,
 			)
 		}
 	}
