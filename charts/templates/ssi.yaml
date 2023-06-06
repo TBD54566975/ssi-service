@@ -47,7 +47,7 @@ spec:
               value: "/etc/ssiservice/ssiservice.conf"
           volumeMounts:
           - name: {{ include "ssi-service.shortname" . }}-conf
-            mountPath: /etc/ssiservice/ssiservice.conf
+            mountPath: /etc/ssiservice
       volumes:
       - name: {{ include "ssi-service.shortname" . }}-conf
         secret:
