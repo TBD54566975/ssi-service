@@ -75,5 +75,5 @@ kind: ConfigMap
 metadata:
   name: {{ include "ssi-service.shortname" . }}-conf
 data:
-  ssiservice.conf:
+  ssiservice.conf: |-
     {{- toYaml .Values.ssiService.config | nindent 4 }}
