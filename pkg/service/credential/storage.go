@@ -416,7 +416,7 @@ func (cs *Storage) GetCredentialsByIssuer(ctx context.Context, issuer string) ([
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Info("no credentials able to be retrieved for issuer: %s", issuerKeys)
+		logrus.Infof("no credentials able to be retrieved for issuer: %s", issuerKeys)
 	}
 
 	return storedCreds, nil
@@ -459,7 +459,7 @@ func (cs *Storage) GetCredentialsBySubject(ctx context.Context, subject string) 
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Info("no credentials able to be retrieved for subject: %s", subjectKeys)
+		logrus.Infof("no credentials able to be retrieved for subject: %s", subjectKeys)
 	}
 
 	return storedCreds, nil
@@ -503,7 +503,7 @@ func (cs *Storage) GetCredentialsBySchema(ctx context.Context, schema string) ([
 	}
 
 	if len(storedCreds) == 0 {
-		logrus.Info("no credentials able to be retrieved for schema: %s", schemaKeys)
+		logrus.Infof("no credentials able to be retrieved for schema: %s", schemaKeys)
 	}
 
 	return storedCreds, nil
