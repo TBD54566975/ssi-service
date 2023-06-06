@@ -44,7 +44,7 @@ spec:
             - name: JAEGER_HTTP_URL
               value: "{{ .Values.ssiService.env.jaegerHttpUrl }}"
             - name: CONFIG_PATH
-              value: "/etc/ssiservice/ssiservice.conf"
+              value: "/etc/ssiservice/ssiservice.toml"
           volumeMounts:
           - name: {{ include "ssi-service.shortname" . }}-conf
             mountPath: /etc/ssiservice
@@ -75,5 +75,5 @@ type: Opaque
 metadata:
   name: {{ include "ssi-service.shortname" . }}-conf
 stringData:
-  ssiservice.conf: |
+  ssiservice.toml: |
     {{- .Values.ssiService.config | nindent 4 }}
