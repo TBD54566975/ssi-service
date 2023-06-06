@@ -76,4 +76,4 @@ metadata:
   name: {{ include "ssi-service.shortname" . }}-conf
 data:
   ssiservice.conf: |-
-    {{- toYaml .Values.ssiService.config | nindent 4 }}
+    {{- .Values.ssiService.config | nindent 4 }}
