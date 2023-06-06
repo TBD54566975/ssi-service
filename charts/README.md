@@ -32,7 +32,6 @@ The following table lists some of the configurable parameters of the SSI Service
 | `ssiService.service` | The service details, including `type`, `port`, and `targetPort`. |
 | `ssiService.resources` | The resources to allocate for the ssiService, including CPU and memory `requests`. |
 | `ssiService.env` | The environment variables for the ssiService, such as `jaegerHttpUrl`. |
-| `ssiService.ingress` | The ingress configuration, including `enabled` flag, `annotations`, `hosts`, `paths`, `tls`, and `secretName`. |
 | `ssiService.istio` | The Istio configuration, including `virtualService` and `authorizationPolicy` options. |
 | `ssiService.config` | The configuration content for running the service in a production environment. It includes configurations for the server, logging, CORS, services, and more. |
 | `uniResolver` | Configuration for the universal resolver service. |

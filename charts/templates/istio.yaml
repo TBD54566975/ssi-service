@@ -1,0 +1,44 @@
+{{- if .Values.istio.virtualService.enabled }}
+{{ $ssiService := include "ssi-service.fullname" . -}}
+{{ $ssiConsole := include "ssi-console.fullname" . -}}
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: {{ $ssiService }}
+spec:
+  hosts:
+  - "{{ .Values.istio.virtualService.host }}"
+  gateways:
+  - {{ .Values.istio.virtualService.gateway }}
+  http:
+  - name: "api-route"
+    match:
+    - uri:
+        prefix: "/v1"
+    route:
+    - destination:
+        host: {{ $ssiService }}
+        port:
+          number: {{ .Values.ssiConsole.service.port }}
+  - name: console-route
+    route:
+    - destination:
+        host: {{ $ssiConsole }}
+        port:
+          number: {{ .Values.ssiService.service.port }}
+---
+{{- end }}
+{{- if .Values.istio.authorizationPolicy.enabled }}
+{{ $fullName := include "ssi-service.fullname" . -}}
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ $fullName }}
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        namespaces: ["{{ .Release.Namespace }}", "{{ .Values.istio.authorizationPolicy.gatewayNamespace }}"]
+---
+{{- end }}

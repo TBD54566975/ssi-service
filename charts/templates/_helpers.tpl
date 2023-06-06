@@ -103,3 +103,24 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/name: {{ include "jaeger.fullname" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
+
+
+
+
+{{- define "ssi-console.fullname" -}}
+{{- printf "%s-con" (include "ssi-service.shortname" .) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{- define "ssi-console.labels" -}}
+helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+app.kubernetes.io/name: {{ include "ssi-console.fullname" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- if .Values.customLabels -}}
+{{ toYaml .Values.customLabels }}
+{{- end -}}
+{{- end -}}
+
+{{- define "ssi-console.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "ssi-console.fullname" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end -}}

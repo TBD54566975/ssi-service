@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ssi-console.fullname" . }}
+  labels:
+    {{- include "ssi-console.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.ssiConsole.service.type }}
+  ports:
+    - port: {{ .Values.ssiConsole.service.port }}
+      targetPort: {{ .Values.ssiConsole.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "ssi-console.selectorLabels" . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ssi-console.fullname" . }}
+  labels:
+    {{- include "ssi-console.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.ssiConsole.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ssi-console.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ssi-console.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: ssi-console
+          image: "{{ .Values.ssiConsole.image.repository }}:{{ .Values.ssiConsole.image.tag }}"
+          imagePullPolicy: {{ .Values.ssiConsole.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.ssiConsole.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.ssiConsole.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 13 }}
+      {{- end }}
+      {{- with .Values.ssiConsole.affinity }}
+      affinity:
+        {{- toYaml . | nindent 13 }}
+      {{- end }}
+      {{- with .Values.ssiConsole.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 13 }}
+      {{- end }}
+      {{- with .Values.ssiConsole.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 13 }}
+      {{- end }}
+---

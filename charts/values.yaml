@@ -28,30 +28,6 @@ ssiService:
   # topologySpreadConstraints:
   # nodeSelector:
 
-  ingress:
-    enabled: false
-    annotations:
-      kubernetes.io/ingress.class: nginx
-    hosts:
-      - host: ssi.example.com
-        paths:
-          - path: /
-            pathType: Prefix
-    tls:
-    - hosts:
-      - ssi.example.com
-      secretName: ssi-tls
-
-  istio:
-    virtualService:
-      enabled: false
-      host: ssi.example.com
-      gateway: istio-system/primary-gateway
-
-    authorizationPolicy:
-      enabled: false
-      gatewayNamespace: istio-system
-
   # from https://raw.githubusercontent.com/TBD54566975/ssi-service/main/config/prod.toml
   config: |
     title = "SSI Service Config"
@@ -125,6 +101,31 @@ ssiService:
     [services.webhook]
     name = "webhook"
     webhook_timeout = "10s"
+
+ssiConsole:
+  replicaCount: 1
+
+  image:
+    repository: 844731274526.dkr.ecr.us-west-2.amazonaws.com/ssiconsole
+    tag: 0.0.1
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 80
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+  port: 8080
+
+  # tolerations:
+  # affinity:
+  # topologySpreadConstraints:
+  # nodeSelector:
 
 uniResolver:
   replicaCount: 1
@@ -229,3 +230,13 @@ redis-ha:
   image:
     # -- Redis tag
     tag: 7.0.11-alpine
+
+istio:
+  virtualService:
+    enabled: false
+    host: ssi.example.com
+    gateway: istio-system/primary-gateway
+
+  authorizationPolicy:
+    enabled: false
+    gatewayNamespace: istio-system
