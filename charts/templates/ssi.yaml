@@ -48,11 +48,10 @@ spec:
           volumeMounts:
           - name: {{ include "ssi-service.shortname" . }}-conf
             mountPath: /etc/ssiservice/ssiservice.conf
-            subPath: ssiservice.conf
       volumes:
       - name: {{ include "ssi-service.shortname" . }}-conf
-        configMap:
-          name: {{ include "ssi-service.shortname" . }}-conf
+        secret:
+          secretName: {{ include "ssi-service.shortname" . }}-conf
       {{- with .Values.ssiService.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 13 }}
@@ -71,9 +70,10 @@ spec:
       {{- end }}
 ---
 apiVersion: v1
-kind: ConfigMap
+kind: Secret
+type: Opaque
 metadata:
   name: {{ include "ssi-service.shortname" . }}-conf
-data:
+stringData:
   ssiservice.conf: |
     {{- .Values.ssiService.config | nindent 4 }}
