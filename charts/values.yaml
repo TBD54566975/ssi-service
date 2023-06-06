@@ -106,7 +106,7 @@ ssiConsole:
   replicaCount: 1
 
   image:
-    repository: 844731274526.dkr.ecr.us-west-2.amazonaws.com/ssiconsole
+    repository: ""
     tag: 0.0.1
     pullPolicy: IfNotPresent
 
