@@ -397,7 +397,7 @@ type ListCredentialsResponse struct {
 // ListCredentials godoc
 //
 //	@Summary		List Credentials
-//	@Description	Checks for the presence of a query parameter and calls the associated filtered get method. Only one parameter is allowed to be specified.
+//	@Description	Checks for the presence of an optional query parameter and calls the associated filtered get method. Only one optional parameter is allowed to be specified.
 //	@Tags			CredentialAPI
 //	@Accept			json
 //	@Produce		json
@@ -413,7 +413,7 @@ func (cr CredentialRouter) ListCredentials(c *gin.Context) {
 	schema := framework.GetQueryValue(c, SchemaParam)
 	subject := framework.GetQueryValue(c, SubjectParam)
 
-	errMsg := "must use one of the following query parameters: issuer, subject, schema"
+	errMsg := "must use only one of the following optional query parameters: issuer, subject, schema"
 
 	// check if there are multiple parameters set, which is not allowed
 	if (issuer != nil && subject != nil) || (issuer != nil && schema != nil) || (subject != nil && schema != nil) {
@@ -421,22 +421,39 @@ func (cr CredentialRouter) ListCredentials(c *gin.Context) {
 		return
 	}
 
+	if issuer == nil && schema == nil && subject == nil {
+		cr.listCredentials(c)
+		return
+	}
 	if issuer != nil {
-		cr.getCredentialsByIssuer(c, *issuer)
+		cr.listCredentialsByIssuer(c, *issuer)
 		return
 	}
 	if subject != nil {
-		cr.getCredentialsBySubject(c, *subject)
+		cr.listCredentialsBySubject(c, *subject)
 		return
 	}
 	if schema != nil {
-		cr.getCredentialsBySchema(c, *schema)
+		cr.listCredentialsBySchema(c, *schema)
 		return
 	}
+
 	framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 }
 
-func (cr CredentialRouter) getCredentialsByIssuer(c *gin.Context, issuer string) {
+func (cr CredentialRouter) listCredentials(c *gin.Context) {
+	gotCredentials, err := cr.service.ListCredentials(c)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not get credentials")
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+
+	resp := ListCredentialsResponse{Credentials: gotCredentials.Credentials}
+	framework.Respond(c, resp, http.StatusOK)
+}
+
+func (cr CredentialRouter) listCredentialsByIssuer(c *gin.Context, issuer string) {
 	gotCredentials, err := cr.service.ListCredentialsByIssuer(c, credential.ListCredentialByIssuerRequest{Issuer: issuer})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for issuer: %s", util.SanitizeLog(issuer))
@@ -449,7 +466,7 @@ func (cr CredentialRouter) getCredentialsByIssuer(c *gin.Context, issuer string)
 	return
 }
 
-func (cr CredentialRouter) getCredentialsBySubject(c *gin.Context, subject string) {
+func (cr CredentialRouter) listCredentialsBySubject(c *gin.Context, subject string) {
 	gotCredentials, err := cr.service.ListCredentialsBySubject(c, credential.ListCredentialBySubjectRequest{Subject: subject})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for subject: %s", util.SanitizeLog(subject))
@@ -461,7 +478,7 @@ func (cr CredentialRouter) getCredentialsBySubject(c *gin.Context, subject strin
 	framework.Respond(c, resp, http.StatusOK)
 }
 
-func (cr CredentialRouter) getCredentialsBySchema(c *gin.Context, schema string) {
+func (cr CredentialRouter) listCredentialsBySchema(c *gin.Context, schema string) {
 	gotCredentials, err := cr.service.ListCredentialsBySchema(c, credential.ListCredentialBySchemaRequest{Schema: schema})
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials for schema: %s", util.SanitizeLog(schema))
