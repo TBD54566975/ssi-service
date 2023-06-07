@@ -52,7 +52,7 @@ func (r BatchCreateCredentialsRequest) toServiceRequest() credential.BatchCreate
 
 type BatchCreateCredentialsResponse struct {
 	// The credentials created.
-	Credentials []credmodel.Container
+	Credentials []credmodel.Container `json:"credentials"`
 }
 
 // BatchCreateCredentials godoc

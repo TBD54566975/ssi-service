@@ -156,6 +156,34 @@ func CreateVerifiableCredential(credentialInput credInputParams) (string, error)
 	return output, nil
 }
 
+type batchCredInputParams struct {
+	IssuerID     string
+	IssuerKID    string
+	SchemaID     string
+	SubjectID0   string
+	Revocable0   bool
+	Suspendable0 bool
+	SubjectID1   string
+	Revocable1   bool
+	Suspendable1 bool
+}
+
+func BatchCreateVerifiableCredentials(credentialInput batchCredInputParams) (string, error) {
+	logrus.Println("\n\nCreate a verifiable credential")
+
+	credentialJSON, err := resolveTemplate(credentialInput, "batch-create-credential-input.json")
+	if err != nil {
+		return "", err
+	}
+
+	output, err := put(endpoint+version+"credentials/batchCreate", credentialJSON)
+	if err != nil {
+		return "", errors.Wrap(err, "error writing batch credentials")
+	}
+
+	return output, nil
+}
+
 func CreateSubmissionCredential(params credInputParams) (string, error) {
 	logrus.Println("\n\nCreate a submission credential")
 
