@@ -115,14 +115,14 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the credential service")
 	}
 
-	manifestService, err := manifest.NewManifestService(config.ManifestConfig, storageProvider, keyStoreService, didResolver, credentialService)
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the manifest service")
-	}
-
 	presentationService, err := presentation.NewPresentationService(config.PresentationConfig, storageProvider, didResolver, schemaService, keyStoreService)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the presentation service")
+	}
+
+	manifestService, err := manifest.NewManifestService(config.ManifestConfig, storageProvider, keyStoreService, didResolver, credentialService, presentationService)
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the manifest service")
 	}
 
 	operationService, err := operation.NewOperationService(storageProvider)

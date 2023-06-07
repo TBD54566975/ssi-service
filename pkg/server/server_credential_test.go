@@ -372,6 +372,63 @@ func TestCredentialAPI(t *testing.T) {
 		assert.Equal(tt, resp.Credential.CredentialSchema.ID, getCredsResp.Credentials[0].Credential.CredentialSchema.ID)
 	})
 
+	t.Run("Get Credential No Param", func(tt *testing.T) {
+		bolt := setupTestDB(tt)
+		require.NotEmpty(tt, bolt)
+
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
+
+		w := httptest.NewRecorder()
+
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		createCredRequest := router.CreateCredentialRequest{
+			Issuer:    issuerDID.DID.ID,
+			IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+			Subject:   "did:abc:456",
+			Data: map[string]any{
+				"firstName": "Jack",
+				"lastName":  "Dorsey",
+			},
+			Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+		}
+		requestValue := newRequestValue(tt, createCredRequest)
+		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", requestValue)
+		c := newRequestContext(w, req)
+		credRouter.CreateCredential(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
+
+		var resp router.CreateCredentialResponse
+		err = json.NewDecoder(w.Body).Decode(&resp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, resp.CredentialJWT)
+
+		// reset the http recorder
+		w = httptest.NewRecorder()
+
+		// get credential by issuer id
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/credentials", nil)
+		c = newRequestContext(w, req)
+		credRouter.ListCredentials(c)
+		assert.True(tt, util.Is2xxResponse(w.Code))
+
+		var getCredsResp router.ListCredentialsResponse
+		err = json.NewDecoder(w.Body).Decode(&getCredsResp)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, getCredsResp)
+
+		assert.Len(tt, getCredsResp.Credentials, 1)
+		assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].ID)
+	})
+
 	t.Run("Test Get Credential By Issuer", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
