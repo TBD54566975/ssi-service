@@ -15,15 +15,14 @@ import (
 // Manifest
 
 type CreateManifestRequest struct {
-	Name              *string                        `json:"name,omitempty"`
-	Description       *string                        `json:"description,omitempty"`
-	IssuerDID         string                         `json:"issuerDid" validate:"required"`
-	IssuerKID         string                         `json:"issuerKid" validate:"required"`
-	IssuerName        *string                        `json:"issuerName,omitempty"`
-	OutputDescriptors []manifestsdk.OutputDescriptor `json:"outputDescriptors" validate:"required,dive"`
-	ClaimFormat       *exchange.ClaimFormat          `json:"format" validate:"required,dive"`
-	// TODO: Allow for specifying the presentation definition only by id. https://github.com/TBD54566975/ssi-service/issues/491
-	PresentationDefinition *exchange.PresentationDefinition `json:"presentationDefinition,omitempty" validate:"omitempty,dive"`
+	Name                      *string                        `json:"name,omitempty"`
+	Description               *string                        `json:"description,omitempty"`
+	IssuerDID                 string                         `json:"issuerDid" validate:"required"`
+	IssuerKID                 string                         `json:"issuerKid" validate:"required"`
+	IssuerName                *string                        `json:"issuerName,omitempty"`
+	OutputDescriptors         []manifestsdk.OutputDescriptor `json:"outputDescriptors" validate:"required,dive"`
+	ClaimFormat               *exchange.ClaimFormat          `json:"format" validate:"required,dive"`
+	PresentationDefinitionRef *PresentationDefinitionRef     `json:"presentationDefinitionRef,omitempty" validate:"omitempty,dive"`
 }
 
 type CreateManifestResponse struct {
@@ -178,4 +177,12 @@ type Request struct {
 	// value of the field named "presentation_definition.id" matches PresentationDefinitionID.
 	// This is an output only field.
 	CredentialManifestJWT keyaccess.JWT `json:"credentialManifestJwt"`
+}
+
+type PresentationDefinitionRef struct {
+	// id of the presentation definition created with PresentationDefinitionAPI. Must be empty if `value` is present.
+	ID *string `json:"presentationDefinitionId"`
+
+	// value of the presentation definition to use. Must be empty if `id` is present.
+	PresentationDefinition *exchange.PresentationDefinition `json:"presentationDefinition" validate:"omitempty,dive"`
 }
