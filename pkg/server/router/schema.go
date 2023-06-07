@@ -37,6 +37,8 @@ type CreateSchemaRequest struct {
 	// Schema represents the JSON schema for the credential schema
 	// If the schema has an $id field, it will be overwritten with an ID the service generates.
 	// The schema must be against draft 2020-12, 2019-09, or 7.
+	// Must include a string field `$schema` that must be one of `https://json-schema.org/draft/2020-12/schema`,
+	// `https://json-schema.org/draft/2019-09/schema`, or `https://json-schema.org/draft-07/schema`.
 	Schema schemalib.JSONSchema `json:"schema" validate:"required"`
 
 	// CredentialSchemaRequest request is an optional additional request to create a credentialized version of a schema.
