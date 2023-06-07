@@ -153,7 +153,7 @@ func (ds *Storage) storedDIDs(gotDIDs map[string][]byte, outType StoredDID) []St
 
 type Page struct {
 	Token *string
-	Size  *int64
+	Size  *int
 }
 
 type StoredDIDs struct {
@@ -173,7 +173,7 @@ func (ds *Storage) ListDIDsPage(ctx context.Context, method string, page *Page, 
 	}
 	size := -1
 	if page != nil && page.Size != nil {
-		size = int(*page.Size)
+		size = *page.Size
 	}
 
 	gotDIDs, nextPageToken, err := ds.db.ReadPage(ctx, ns, token, size)

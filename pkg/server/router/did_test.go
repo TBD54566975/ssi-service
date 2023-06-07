@@ -40,7 +40,7 @@ func TestDIDRouter(t *testing.T) {
 		createDID(tt, didService)
 		createDID(tt, didService)
 
-		one := int64(1)
+		one := 1
 		listDIDsResponse1, err := didService.ListDIDsByMethod(context.Background(),
 			did.ListDIDsRequest{
 				Method:   didsdk.KeyMethod,

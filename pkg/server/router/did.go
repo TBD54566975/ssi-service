@@ -286,7 +286,7 @@ func (dr DIDRouter) ListDIDsByMethod(c *gin.Context) {
 	pageSizeStr := framework.GetParam(c, PageSizeParam)
 
 	if pageSizeStr != nil {
-		pageSize, err := strconv.ParseInt(*pageSizeStr, 10, 64)
+		pageSize, err := strconv.Atoi(*pageSizeStr)
 		if err != nil {
 			errMsg := fmt.Sprintf("list DIDs by method request encountered a problem with the %q query param", PageSizeParam)
 			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)

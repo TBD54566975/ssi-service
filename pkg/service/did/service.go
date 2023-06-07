@@ -202,10 +202,10 @@ func (s *Service) ListDIDsByMethod(ctx context.Context, request ListDIDsRequest)
 	if request.Deleted {
 		return handler.ListDeletedDIDs(ctx)
 	}
-	const allPages = int64(-1)
+	const allPages = -1
 
 	var page Page
-	page.Size = new(int64)
+	page.Size = new(int)
 	*page.Size = allPages
 	if request.PageSize != nil {
 		page = Page{

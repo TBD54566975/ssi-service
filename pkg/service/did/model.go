@@ -63,7 +63,7 @@ type ListDIDsRequest struct {
 	Deleted bool          `json:"deleted"`
 
 	// When nil, all DIDs will be returned.
-	PageSize  *int64  `json:"pageSize,omitempty"`
+	PageSize  *int    `json:"pageSize,omitempty"`
 	PageToken *string `json:"pageToken,omitempty"`
 }
 
