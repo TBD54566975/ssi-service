@@ -63,8 +63,9 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 
 	didWeb := web.DIDWeb(opts.DIDWebID)
 
-	if !didWeb.IsValid() {
-		return nil, fmt.Errorf("could not resolve did:web DID: %s", didWeb)
+	err := didWeb.Validate(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not validate did:web")
 	}
 
 	pubKey, privKey, err := crypto.GenerateKeyByKeyType(request.KeyType)
