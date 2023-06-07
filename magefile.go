@@ -112,6 +112,12 @@ func Spec() error {
 		return err
 	}
 
+	// We need to download deps first as a workaround to https://github.com/TBD54566975/ssi-service/issues/515
+	if err := sh.Run(Go, "mod", "download"); err != nil {
+		logrus.WithError(err).Error("failed to download dependencies")
+		return err
+	}
+
 	if err := sh.Run(swagCommand, "fmt", "-d", "pkg/server/router"); err != nil {
 		logrus.WithError(err).Error("failed to format swagger docs")
 		return err
