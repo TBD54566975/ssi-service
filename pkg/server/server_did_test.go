@@ -437,10 +437,10 @@ func TestDIDAPI(t *testing.T) {
 	})
 
 	t.Run("List DIDs made up token fails", func(tt *testing.T) {
-		bolt := setupTestDB(tt)
-		require.NotEmpty(tt, bolt)
-		_, keyStore := testKeyStore(tt, bolt)
-		didService := testDIDRouter(tt, bolt, keyStore, []string{"key", "web"})
+		db := setupTestDB(tt)
+		require.NotEmpty(tt, db)
+		_, keyStore := testKeyStore(tt, db)
+		didService := testDIDRouter(tt, db, keyStore, []string{"key", "web"})
 
 		w := httptest.NewRecorder()
 		badParams := url.Values{
@@ -494,10 +494,10 @@ func TestDIDAPI(t *testing.T) {
 	})
 
 	t.Run("List DIDs pagination change query between calls returns error", func(tt *testing.T) {
-		bolt := setupTestDB(tt)
-		require.NotEmpty(tt, bolt)
-		_, keyStore := testKeyStore(tt, bolt)
-		didRouter := testDIDRouter(tt, bolt, keyStore, []string{"key", "web"})
+		db := setupTestDB(tt)
+		require.NotEmpty(tt, db)
+		_, keyStore := testKeyStore(tt, db)
+		didRouter := testDIDRouter(tt, db, keyStore, []string{"key", "web"})
 		createDIDWithRouter(tt, didRouter)
 		createDIDWithRouter(tt, didRouter)
 
