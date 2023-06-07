@@ -13,12 +13,23 @@ import (
 // TODO(gabe) consider smaller/more composable interfaces and promoting reusability across methods
 // https://github.com/TBD54566975/ssi-service/issues/362
 type MethodHandler interface {
+	// GetMethod returns the did method that this handler is implementing.
 	GetMethod() didsdk.Method
+
+	// CreateDID creates a DID who's did method is `GetMethod`.
 	CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error)
+
+	// GetDID returns a DID document for a did who's method is `GetMethod`. The DID must not have been soft-deleted.
 	// TODO(gabe): support query parameters to get soft deleted and other DIDs https://github.com/TBD54566975/ssi-service/issues/364
 	GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error)
-	ListDIDs(ctx context.Context) (*ListDIDsResponse, error)
+
+	// ListDIDs returns all non-deleted DIDs for the given page. When page is nil, all non-deleted DIDs will be returned.
+	ListDIDs(ctx context.Context, page *Page) (*ListDIDsResponse, error)
+
+	// ListDeletedDIDs returns all soft-deleted DIDs.
 	ListDeletedDIDs(ctx context.Context) (*ListDIDsResponse, error)
+
+	// SoftDeleteDID marks the given DID as deleted. It is not removed from storage.
 	SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error
 }
 

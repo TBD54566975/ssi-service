@@ -136,14 +136,59 @@ func (ds *Storage) ListDIDs(ctx context.Context, method string, outType StoredDI
 		return nil, nil
 	}
 
+	out := ds.storedDIDs(gotDIDs, outType)
+	return out, nil
+}
+
+func (ds *Storage) storedDIDs(gotDIDs map[string][]byte, outType StoredDID) []StoredDID {
 	out := make([]StoredDID, 0, len(gotDIDs))
 	for _, didBytes := range gotDIDs {
 		nextDID := reflect.New(reflect.TypeOf(outType).Elem()).Interface()
-		if err = json.Unmarshal(didBytes, &nextDID); err == nil {
+		if err := json.Unmarshal(didBytes, &nextDID); err == nil {
 			out = append(out, nextDID.(StoredDID))
 		}
 	}
-	return out, nil
+	return out
+}
+
+type Page struct {
+	Token *string
+	Size  *int64
+}
+
+type PageResult struct {
+	NextPageToken string
+}
+
+type StoredDIDs struct {
+	DIDs          []StoredDID
+	NextPageToken string
+}
+
+func (ds *Storage) ListDIDsPage(ctx context.Context, method string, page *Page, outType StoredDID) (*StoredDIDs, error) {
+	ns, err := getNamespaceForMethod(method)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting namespace")
+	}
+
+	token := ""
+	if page != nil && page.Token != nil {
+		token = *page.Token
+	}
+	size := -1
+	if page != nil && page.Size != nil {
+		size = int(*page.Size)
+	}
+
+	gotDIDs, nextPageToken, err := ds.db.ReadPage(ctx, ns, token, size)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading page")
+	}
+
+	return &StoredDIDs{
+		DIDs:          ds.storedDIDs(gotDIDs, outType),
+		NextPageToken: nextPageToken,
+	}, nil
 }
 
 func (ds *Storage) ListDIDsDefault(ctx context.Context, method string) ([]DefaultStoredDID, error) {

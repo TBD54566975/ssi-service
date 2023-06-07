@@ -28,8 +28,40 @@ func TestDIDRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create DID router with service type: test")
 	})
 
-	t.Run("DID Service Test", func(tt *testing.T) {
+	t.Run("List DIDs supports paging", func(tt *testing.T) {
+		db := setupTestDB(tt)
+		assert.NotEmpty(tt, db)
+		keyStoreService := testKeyStoreService(tt, db)
+		methods := []string{didsdk.KeyMethod.String()}
+		serviceConfig := config.DIDServiceConfig{Methods: methods, LocalResolutionMethods: methods}
+		didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, didService)
+		createDID(tt, didService)
+		createDID(tt, didService)
 
+		one := int64(1)
+		listDIDsResponse1, err := didService.ListDIDsByMethod(context.Background(),
+			did.ListDIDsRequest{
+				Method:   didsdk.KeyMethod,
+				PageSize: &one,
+			})
+		assert.NoError(tt, err)
+		assert.Len(tt, listDIDsResponse1.DIDs, 1)
+		assert.NotEmpty(tt, listDIDsResponse1.NextPageToken)
+
+		listDIDsResponse2, err := didService.ListDIDsByMethod(context.Background(),
+			did.ListDIDsRequest{
+				Method:    didsdk.KeyMethod,
+				PageSize:  &one,
+				PageToken: &listDIDsResponse1.NextPageToken,
+			})
+		assert.NoError(tt, err)
+		assert.Len(tt, listDIDsResponse2.DIDs, 1)
+		assert.Empty(tt, listDIDsResponse2.NextPageToken)
+	})
+
+	t.Run("DID Service Test", func(tt *testing.T) {
 		db := setupTestDB(tt)
 		assert.NotEmpty(tt, db)
 
@@ -117,7 +149,6 @@ func TestDIDRouter(t *testing.T) {
 	})
 
 	t.Run("DID Web Service Test", func(tt *testing.T) {
-
 		db := setupTestDB(tt)
 		assert.NotEmpty(tt, db)
 
@@ -201,4 +232,10 @@ func TestDIDRouter(t *testing.T) {
 		assert.Len(tt, getDIDsResponse.DIDs, 0)
 	})
 
+}
+
+func createDID(tt *testing.T, didService *did.Service) {
+	createDIDResponse, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
+	assert.NoError(tt, err)
+	assert.NotEmpty(tt, createDIDResponse)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -435,6 +436,98 @@ func TestDIDAPI(t *testing.T) {
 		assert.Len(tt, gotDeletedDIDsResponseAfterDelete.DIDs, 1)
 	})
 
+	t.Run("List DIDs made up token fails", func(tt *testing.T) {
+		bolt := setupTestDB(tt)
+		require.NotEmpty(tt, bolt)
+		_, keyStore := testKeyStore(tt, bolt)
+		didService := testDIDRouter(tt, bolt, keyStore, []string{"key", "web"})
+
+		w := httptest.NewRecorder()
+		badParams := url.Values{
+			"method":    []string{"key"},
+			"pageSize":  []string{"1"},
+			"pageToken": []string{"made up token"},
+		}
+		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key?"+badParams.Encode(), nil)
+		c := newRequestContextWithURLValues(w, req, badParams)
+		didService.ListDIDsByMethod(c)
+		assert.Contains(tt, w.Body.String(), "token value cannot be decoded")
+	})
+
+	t.Run("List DIDs pagination", func(tt *testing.T) {
+		db := setupTestDB(tt)
+		require.NotEmpty(tt, db)
+		_, keyStore := testKeyStore(tt, db)
+		didRouter := testDIDRouter(tt, db, keyStore, []string{"key", "web"})
+
+		createDIDWithRouter(tt, didRouter)
+		createDIDWithRouter(tt, didRouter)
+
+		w := httptest.NewRecorder()
+		params := url.Values{
+			"method":   []string{"key"},
+			"pageSize": []string{"1"},
+		}
+		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key?"+params.Encode(), nil)
+		c := newRequestContextWithURLValues(w, req, params)
+
+		didRouter.ListDIDsByMethod(c)
+
+		var listDIDsByMethodResponse router.ListDIDsByMethodResponse
+		err := json.NewDecoder(w.Body).Decode(&listDIDsByMethodResponse)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, listDIDsByMethodResponse.NextPageToken)
+		assert.Len(tt, listDIDsByMethodResponse.DIDs, 1)
+
+		w = httptest.NewRecorder()
+		params["pageToken"] = []string{listDIDsByMethodResponse.NextPageToken}
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key?"+params.Encode(), nil)
+		c = newRequestContextWithURLValues(w, req, params)
+
+		didRouter.ListDIDsByMethod(c)
+
+		var listDIDsByMethodResponse2 router.ListDIDsByMethodResponse
+		err = json.NewDecoder(w.Body).Decode(&listDIDsByMethodResponse2)
+		assert.NoError(tt, err)
+		assert.Empty(tt, listDIDsByMethodResponse2.NextPageToken)
+		assert.Len(tt, listDIDsByMethodResponse2.DIDs, 1)
+	})
+
+	t.Run("List DIDs pagination change query between calls returns error", func(tt *testing.T) {
+		bolt := setupTestDB(tt)
+		require.NotEmpty(tt, bolt)
+		_, keyStore := testKeyStore(tt, bolt)
+		didRouter := testDIDRouter(tt, bolt, keyStore, []string{"key", "web"})
+		createDIDWithRouter(tt, didRouter)
+		createDIDWithRouter(tt, didRouter)
+
+		w := httptest.NewRecorder()
+		params := url.Values{
+			"method":   []string{"key"},
+			"pageSize": []string{"1"},
+		}
+		req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key?"+params.Encode(), nil)
+
+		c := newRequestContextWithURLValues(w, req, params)
+		didRouter.ListDIDsByMethod(c)
+		assert.True(tt, util.Is2xxResponse(w.Result().StatusCode))
+
+		var listDIDsByMethodResponse router.ListDIDsByMethodResponse
+		err := json.NewDecoder(w.Body).Decode(&listDIDsByMethodResponse)
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, listDIDsByMethodResponse.NextPageToken)
+		assert.Len(tt, listDIDsByMethodResponse.DIDs, 1)
+
+		w = httptest.NewRecorder()
+		params["pageToken"] = []string{listDIDsByMethodResponse.NextPageToken}
+		params["deleted"] = []string{"true"}
+		req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key?"+params.Encode(), nil)
+		c = newRequestContextWithURLValues(w, req, params)
+		didRouter.ListDIDsByMethod(c)
+		assert.Equal(tt, http.StatusBadRequest, w.Result().StatusCode)
+		assert.Contains(tt, w.Body.String(), "page token must be for the same query")
+	})
+
 	t.Run("Test Get DIDs By Method", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)
@@ -564,4 +657,20 @@ func TestDIDAPI(t *testing.T) {
 		assert.NotEmpty(tt, resolutionResponse.DIDDocument)
 		assert.Equal(tt, "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp", resolutionResponse.DIDDocument.ID)
 	})
+}
+
+func createDIDWithRouter(tt *testing.T, didService *router.DIDRouter) {
+	w := httptest.NewRecorder()
+	createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
+	requestReader := newRequestValue(tt, createDIDRequest)
+	params := map[string]string{"method": "key"}
+	req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", requestReader)
+
+	c := newRequestContextWithParams(w, req, params)
+	didService.CreateDIDByMethod(c)
+	assert.True(tt, util.Is2xxResponse(w.Code))
+
+	var createdDID router.CreateDIDByMethodResponse
+	err := json.NewDecoder(w.Body).Decode(&createdDID)
+	assert.NoError(tt, err)
 }

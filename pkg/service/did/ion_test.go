@@ -172,7 +172,7 @@ func TestIONHandler(t *testing.T) {
 		defer gock.Off()
 
 		// get all DIDs
-		gotDIDs, err := handler.ListDIDs(context.Background())
+		gotDIDs, err := handler.ListDIDs(context.Background(), nil)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, gotDIDs)
 		assert.Len(tt, gotDIDs.DIDs, 1)
@@ -185,7 +185,7 @@ func TestIONHandler(t *testing.T) {
 		assert.NoError(tt, err)
 
 		// get all DIDs after deleting
-		gotDIDsAfterDelete, err := handler.ListDIDs(context.Background())
+		gotDIDsAfterDelete, err := handler.ListDIDs(context.Background(), nil)
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, gotDIDs)
 		assert.Len(tt, gotDIDsAfterDelete.DIDs, 0)

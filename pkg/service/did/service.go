@@ -202,7 +202,18 @@ func (s *Service) ListDIDsByMethod(ctx context.Context, request ListDIDsRequest)
 	if request.Deleted {
 		return handler.ListDeletedDIDs(ctx)
 	}
-	return handler.ListDIDs(ctx)
+	const allPages = int64(-1)
+
+	var page Page
+	page.Size = new(int64)
+	*page.Size = allPages
+	if request.PageSize != nil {
+		page = Page{
+			Token: request.PageToken,
+			Size:  request.PageSize,
+		}
+	}
+	return handler.ListDIDs(ctx, &page)
 }
 
 func (s *Service) SoftDeleteDIDByMethod(ctx context.Context, request DeleteDIDRequest) error {

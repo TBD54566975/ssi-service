@@ -1,8 +1,11 @@
 package router
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
+	"net/url"
+	"reflect"
 	"strconv"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -11,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -19,9 +23,11 @@ import (
 )
 
 const (
-	MethodParam  = "method"
-	IDParam      = "id"
-	DeletedParam = "deleted"
+	MethodParam    = "method"
+	IDParam        = "id"
+	DeletedParam   = "deleted"
+	PageSizeParam  = "pageSize"
+	PageTokenParam = "pageToken"
 )
 
 // DIDRouter represents the dependencies required to instantiate a DID-HTTP service
@@ -224,12 +230,20 @@ func (dr DIDRouter) GetDIDByMethod(c *gin.Context) {
 
 type ListDIDsByMethodResponse struct {
 	DIDs []didsdk.Document `json:"dids,omitempty"`
+
+	// Pagination token to retrieve the next page of results. If the value is "", it means no further results for the request.
+	NextPageToken string `json:"nextPageToken"`
 }
 
 type GetDIDsRequest struct {
 	// A standard filter expression conforming to https://google.aip.dev/160.
 	// Not implemented yet.
 	Filter string `json:"filter,omitempty"`
+}
+
+type PageToken struct {
+	EncodedQuery  string
+	NextPageToken string
 }
 
 // ListDIDsByMethod godoc
@@ -239,20 +253,22 @@ type GetDIDsRequest struct {
 //	@Tags			DecentralizedIdentityAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			deleted	query		boolean	false	"When true, returns soft-deleted DIDs. Otherwise, returns DIDs that have not been soft-deleted. Default is false."
-//	@Success		200		{object}	ListDIDsByMethodResponse
-//	@Failure		400		{string}	string	"Bad request"
-//	@Failure		500		{string}	string	"Internal server error"
+//	@Param			deleted		query		boolean	false	"When true, returns soft-deleted DIDs. Otherwise, returns DIDs that have not been soft-deleted. Default is false."
+//	@Param			pageSize	query		number	false	"Hint to the server of the maximum elements to return. More may be returned. When not set, the server will return all elements."
+//	@Param			pageToken	query		string	false	"Used to indicate to the server to return a specific page of the list results. Must match a previous requests' `nextPageToken`."
+//	@Success		200			{object}	ListDIDsByMethodResponse
+//	@Failure		400			{string}	string	"Bad request"
+//	@Failure		500			{string}	string	"Internal server error"
 //	@Router			/v1/dids/{method} [get]
 func (dr DIDRouter) ListDIDsByMethod(c *gin.Context) {
 	method := framework.GetParam(c, MethodParam)
-	deleted := framework.GetQueryValue(c, DeletedParam)
 	if method == nil {
 		errMsg := "list DIDs by method request missing method parameter"
 		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
 		return
 	}
 	getIsDeleted := false
+	deleted := framework.GetQueryValue(c, DeletedParam)
 	if deleted != nil {
 		checkDeleted, err := strconv.ParseBool(*deleted)
 		getIsDeleted = checkDeleted
@@ -263,19 +279,81 @@ func (dr DIDRouter) ListDIDsByMethod(c *gin.Context) {
 			return
 		}
 	}
-
 	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
 	// TODO(gabe) differentiate between internal errors and not found DIDs
 	getDIDsRequest := did.ListDIDsRequest{Method: didsdk.Method(*method), Deleted: getIsDeleted}
-	gotDIDs, err := dr.service.ListDIDsByMethod(c, getDIDsRequest)
+
+	pageSizeStr := framework.GetParam(c, PageSizeParam)
+
+	if pageSizeStr != nil {
+		pageSize, err := strconv.ParseInt(*pageSizeStr, 10, 64)
+		if err != nil {
+			errMsg := fmt.Sprintf("list DIDs by method request encountered a problem with the %q query param", PageSizeParam)
+			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+			return
+		}
+		getDIDsRequest.PageSize = &pageSize
+	}
+
+	queryPageToken := framework.GetParam(c, PageTokenParam)
+	if queryPageToken != nil {
+		errMsg := "token value cannot be decoded"
+		tokenData, err := base64.RawURLEncoding.DecodeString(*queryPageToken)
+		if err != nil {
+			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+			return
+		}
+		var pageToken PageToken
+		if err := json.Unmarshal(tokenData, &pageToken); err != nil {
+			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+			return
+		}
+		pageTokenValues, err := url.ParseQuery(pageToken.EncodedQuery)
+		if err != nil {
+			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+			return
+		}
+
+		query := pageTokenQuery(c)
+		if !reflect.DeepEqual(pageTokenValues, query) {
+			logrus.Warnf("expected query from token to be equal to query from request. token: %v\nrequest%v", pageTokenValues, query)
+			framework.LoggingRespondErrMsg(c, "page token must be for the same query", http.StatusBadRequest)
+			return
+		}
+		getDIDsRequest.PageToken = &pageToken.NextPageToken
+	}
+
+	listResp, err := dr.service.ListDIDsByMethod(c, getDIDsRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get DIDs for method: %s", *method)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
 
-	resp := ListDIDsByMethodResponse{DIDs: gotDIDs.DIDs}
+	resp := ListDIDsByMethodResponse{
+		DIDs: listResp.DIDs,
+	}
+	if listResp.NextPageToken != "" {
+		tokenQuery := pageTokenQuery(c)
+		pageToken := PageToken{
+			EncodedQuery:  tokenQuery.Encode(),
+			NextPageToken: listResp.NextPageToken,
+		}
+		nextPageTokenData, err := json.Marshal(pageToken)
+		if err != nil {
+			framework.LoggingRespondErrWithMsg(c, err, "marshalling page token", http.StatusInternalServerError)
+			return
+		}
+		resp.NextPageToken = base64.RawURLEncoding.EncodeToString(nextPageTokenData)
+	}
 	framework.Respond(c, resp, http.StatusOK)
+}
+
+func pageTokenQuery(c *gin.Context) url.Values {
+	query := c.Request.URL.Query()
+	delete(query, PageTokenParam)
+	delete(query, PageSizeParam)
+	return query
 }
 
 type ResolveDIDResponse struct {
