@@ -37,6 +37,12 @@ github.com/Shopify/sarama v1.19.0/go.mod h1:FVkBWblsNy7DGZRfXLU0O9RCGt5g3g3yEuWX
 github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMxUHB2q5Ap20/P/eIdh4G0pI=
 github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230526191213-380b671c2a1a h1:y8dmyhELNtnxolMNjBjddNVGeW0psdzCDoJJJwSBXJI=
 github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230526191213-380b671c2a1a/go.mod h1:jnnNbOc+tAYoN603vvY7ZGZZ9Kn3VFSu1XK8qUCVSbM=
+github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230530142506-7878abde8732 h1:P77jCw/0EBbaFdBd6pnwGjF7ZF/fhGdM79NvzQ0Vl4w=
+github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230530142506-7878abde8732/go.mod h1:Lbdhy8ASuiEuRRk/bKbNcwa5VOrejk/CXo+6HESlwxo=
+github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230531200025-70d1269416c1 h1:iBKYaZd7dbvgQxRL19fr56MC9Fsyjpd7sw7oWnbeeXI=
+github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230531200025-70d1269416c1/go.mod h1:Lbdhy8ASuiEuRRk/bKbNcwa5VOrejk/CXo+6HESlwxo=
+github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230601154259-07707db2c404 h1:EwiJaa6rT7HciSJSK1cDhXbwW8jVln0nwm5X+6s0Lxs=
+github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230601154259-07707db2c404/go.mod h1:Lbdhy8ASuiEuRRk/bKbNcwa5VOrejk/CXo+6HESlwxo=
 github.com/ajg/form v0.0.0-20160822230020-523a5da1a92f/go.mod h1:uL1WgH+h2mgNtvBq0339dVnzXdBETtL2LeUXaIv25UY=
 github.com/ajstarks/svgo v0.0.0-20180226025133-644b8db467af/go.mod h1:K08gAheRH3/J6wwsYMMT4xOr94bZjxIelGM0+d/wbFw=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
@@ -582,8 +588,8 @@ github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db/go.mod h1:/XxbfmMg8l
 github.com/golang/snappy v0.0.1/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
 github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
 github.com/google/btree v1.0.0/go.mod h1:lNA+9X1NB3Zf8V7Ke586lFgjr2dZNuvo3lPJSGZ5JPQ=
-github.com/google/cel-go v0.15.2 h1:jX8b/sSNoE1JBaxLAVDb+rTuEk9F7+Yd8UVKWjoz7SU=
-github.com/google/cel-go v0.15.2/go.mod h1:YzWEoI07MC/a/wj9in8GeVatqfypkldgBlwXh9bCwqY=
+github.com/google/cel-go v0.16.0 h1:DG9YQ8nFCFXAs/FDDwBxmL1tpKNrdlGUM9U3537bX/Y=
+github.com/google/cel-go v0.16.0/go.mod h1:HXZKzB0LXqer5lHHgfWAnlYwJaQBDKMjxjulNQzhwhY=
 github.com/google/go-cmp v0.2.0/go.mod h1:oXzfMopK8JAjlY9xF4vHSVASa0yLyX7SntLO5aqRK0M=
 github.com/google/go-cmp v0.3.0/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
 github.com/google/go-cmp v0.3.1/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
@@ -895,6 +901,8 @@ github.com/multiformats/go-multicodec v0.9.0 h1:pb/dlPnzee/Sxv/j4PmkDRxCOi3hXTz3
 github.com/multiformats/go-multicodec v0.9.0/go.mod h1:L3QTQvMIaVBkXOXXtVmYE+LI16i14xuaojr/H7Ai54k=
 github.com/multiformats/go-multihash v0.2.1 h1:aem8ZT0VA2nCHHk7bPJ1BjUbHNciqZC/d16Vve9l108=
 github.com/multiformats/go-multihash v0.2.1/go.mod h1:WxoMcYG85AZVQUyRyo9s4wULvW5qrI9vb2Lt6evduFc=
+github.com/multiformats/go-multihash v0.2.2 h1:Uu7LWs/PmWby1gkj1S1DXx3zyd3aVabA4FiMKn/2tAc=
+github.com/multiformats/go-multihash v0.2.2/go.mod h1:dXgKXCXjBzdscBLk9JkjINiEsCKRVch90MdaGiKsvSM=
 github.com/multiformats/go-varint v0.0.7 h1:sWSGR+f/eu5ABZA2ZpYKBILXTTs9JWpdEM/nEGOHFS8=
 github.com/multiformats/go-varint v0.0.7/go.mod h1:r8PUYw/fD/SjBCiKOoDlGF6QawOELpZAu9eioSos/OU=
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
