@@ -25,6 +25,111 @@ import (
 )
 
 func TestCredentialAPI(t *testing.T) {
+	t.Run("Batch Create Credentials", func(tt *testing.T) {
+		bolt := setupTestDB(tt)
+		require.NotEmpty(tt, bolt)
+
+		keyStoreService := testKeyStoreService(tt, bolt)
+		didService := testDIDService(tt, bolt, keyStoreService)
+		schemaService := testSchemaService(tt, bolt, keyStoreService, didService)
+		credRouter := testCredentialRouter(tt, bolt, keyStoreService, didService, schemaService)
+
+		issuerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{
+			Method:  didsdk.KeyMethod,
+			KeyType: crypto.Ed25519,
+		})
+		assert.NoError(tt, err)
+		assert.NotEmpty(tt, issuerDID)
+
+		batchCreateCredentialsRequest := router.BatchCreateCredentialsRequest{
+			Requests: []router.CreateCredentialRequest{
+				{
+					Issuer:    issuerDID.DID.ID,
+					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:   "did:abc:456",
+					Data: map[string]any{
+						"firstName": "Jack",
+						"lastName":  "Dorsey",
+					},
+					Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+				},
+				{
+					Issuer:    issuerDID.DID.ID,
+					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:   "did:abc:789",
+					Data: map[string]any{
+						"firstName": "Lemony",
+						"lastName":  "Snickets",
+					},
+					Expiry:    time.Now().Add(12 * time.Hour).Format(time.RFC3339),
+					Revocable: true,
+				},
+			},
+		}
+		tt.Run("Returns Many Credentials", func(ttt *testing.T) {
+			requestValue := newRequestValue(ttt, batchCreateCredentialsRequest)
+			req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/batchCreate", requestValue)
+			w := httptest.NewRecorder()
+			c := newRequestContext(w, req)
+			credRouter.BatchCreateCredentials(c)
+			assert.True(ttt, util.Is2xxResponse(w.Code))
+
+			var resp router.BatchCreateCredentialsResponse
+			err = json.NewDecoder(w.Body).Decode(&resp)
+			assert.NoError(ttt, err)
+
+			assert.Len(ttt, resp.Credentials, 2)
+
+			assert.NotEmpty(ttt, resp.Credentials[0].CredentialJWT)
+			assert.Equal(ttt, resp.Credentials[0].Credential.Issuer, issuerDID.DID.ID)
+			assert.Equal(ttt, "did:abc:456", resp.Credentials[0].Credential.CredentialSubject.GetID())
+			assert.Equal(ttt, "Jack", resp.Credentials[0].Credential.CredentialSubject["firstName"])
+			assert.Equal(ttt, "Dorsey", resp.Credentials[0].Credential.CredentialSubject["lastName"])
+			assert.Empty(ttt, resp.Credentials[0].Credential.CredentialStatus)
+
+			assert.NotEmpty(ttt, resp.Credentials[1].CredentialJWT)
+			assert.Equal(ttt, resp.Credentials[1].Credential.Issuer, issuerDID.DID.ID)
+			assert.Equal(ttt, "did:abc:789", resp.Credentials[1].Credential.CredentialSubject.GetID())
+			assert.Equal(ttt, "Lemony", resp.Credentials[1].Credential.CredentialSubject["firstName"])
+			assert.Equal(ttt, "Snickets", resp.Credentials[1].Credential.CredentialSubject["lastName"])
+			assert.NotEmpty(ttt, resp.Credentials[1].Credential.CredentialStatus)
+		})
+
+		tt.Run("Fails with malformed request", func(ttt *testing.T) {
+			batchCreateCredentialsRequest := batchCreateCredentialsRequest
+			// missing the data field
+			batchCreateCredentialsRequest.Requests = append(batchCreateCredentialsRequest.Requests, router.CreateCredentialRequest{
+				Issuer:    issuerDID.DID.ID,
+				IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
+				Subject:   "did:abc:456",
+				Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+			})
+
+			requestValue := newRequestValue(ttt, batchCreateCredentialsRequest)
+			req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/batchCreate", requestValue)
+			w := httptest.NewRecorder()
+			c := newRequestContext(w, req)
+			credRouter.BatchCreateCredentials(c)
+			assert.Equal(ttt, http.StatusBadRequest, w.Code)
+			assert.Contains(ttt, w.Body.String(), "invalid batch create credential request")
+		})
+
+		tt.Run("Fails with more than 1000 requests", func(ttt *testing.T) {
+			batchCreateCredentialsRequest := batchCreateCredentialsRequest
+			// missing the data field
+			for i := 0; i < 1000; i++ {
+				batchCreateCredentialsRequest.Requests = append(batchCreateCredentialsRequest.Requests, batchCreateCredentialsRequest.Requests[0])
+			}
+
+			requestValue := newRequestValue(ttt, batchCreateCredentialsRequest)
+			req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/batchCreate", requestValue)
+			w := httptest.NewRecorder()
+			c := newRequestContext(w, req)
+			credRouter.BatchCreateCredentials(c)
+			assert.Equal(ttt, http.StatusBadRequest, w.Code)
+			assert.Contains(ttt, w.Body.String(), "max number of requests is 1000")
+		})
+	})
 	t.Run("Test Create Credential", func(tt *testing.T) {
 		bolt := setupTestDB(tt)
 		require.NotEmpty(tt, bolt)

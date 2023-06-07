@@ -37,6 +37,65 @@ func NewCredentialRouter(s svcframework.Service) (*CredentialRouter, error) {
 	return &CredentialRouter{service: credService}, nil
 }
 
+type BatchCreateCredentialsRequest struct {
+	// Required. The list of create credential requests. Cannot be more than 1000 items.
+	Requests []CreateCredentialRequest `json:"requests" maxItems:"1000" validate:"required,dive"`
+}
+
+func (r BatchCreateCredentialsRequest) toServiceRequest() credential.BatchCreateCredentialsRequest {
+	var req credential.BatchCreateCredentialsRequest
+	for _, routerReq := range r.Requests {
+		req.Requests = append(req.Requests, routerReq.toServiceRequest())
+	}
+	return req
+}
+
+type BatchCreateCredentialsResponse struct {
+	// The credentials created.
+	Credentials []credmodel.Container
+}
+
+// BatchCreateCredentials godoc
+//
+//	@Summary		Batch Create Credentials
+//	@Description	Create a batch of verifiable credentials.
+//	@Tags			CredentialAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		BatchCreateCredentialsRequest	true	"The batch requests"
+//	@Success		201		{object}	BatchCreateCredentialsResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/credentials/batchCreate [put]
+func (cr CredentialRouter) BatchCreateCredentials(c *gin.Context) {
+	invalidCreateCredentialRequest := "invalid batch create credential request"
+	var batchRequest BatchCreateCredentialsRequest
+	if err := framework.Decode(c.Request, &batchRequest); err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, invalidCreateCredentialRequest, http.StatusBadRequest)
+		return
+	}
+
+	const batchCreateMaxItems = 1000
+	if len(batchRequest.Requests) > batchCreateMaxItems {
+		framework.LoggingRespondErrMsg(c, fmt.Sprintf("max number of requests is %d", batchCreateMaxItems), http.StatusBadRequest)
+		return
+	}
+
+	req := batchRequest.toServiceRequest()
+	batchCreateCredentialsResponse, err := cr.service.BatchCreateCredentials(c, req)
+	if err != nil {
+		errMsg := "could not create credentials"
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+
+	var resp BatchCreateCredentialsResponse
+	for _, cred := range batchCreateCredentialsResponse.Credentials {
+		resp.Credentials = append(resp.Credentials, cred)
+	}
+	framework.Respond(c, resp, http.StatusCreated)
+}
+
 type CreateCredentialRequest struct {
 	// The issuer id.
 	Issuer string `json:"issuer" validate:"required" example:"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`

@@ -655,3 +655,64 @@ func (s Service) DeleteCredential(ctx context.Context, request DeleteCredentialR
 
 	return nil
 }
+
+func (s Service) BatchCreateCredentials(ctx context.Context, batchRequest BatchCreateCredentialsRequest) (*BatchCreateCredentialsResponse, error) {
+	watchKeys := make([]storage.WatchKey, 0, len(batchRequest.Requests)*3)
+
+	funcs := make([]storage.BusinessLogicFunc, 0, len(batchRequest.Requests))
+	for _, request := range batchRequest.Requests {
+		var statusMetadata StatusListCredentialMetadata
+		if request.hasStatus() && request.isStatusValid() {
+			statusPurpose := statussdk.StatusRevocation
+
+			if request.Suspendable {
+				statusPurpose = statussdk.StatusSuspension
+			}
+
+			statusListCredentialWatchKey := s.storage.GetStatusListCredentialWatchKey(request.Issuer, request.SchemaID, string(statusPurpose))
+			statusListCredentialIndexPoolWatchKey := s.storage.GetStatusListIndexPoolWatchKey(request.Issuer, request.SchemaID, string(statusPurpose))
+			statusListCredentialCurrentIndexWatchKey := s.storage.GetStatusListCurrentIndexWatchKey(request.Issuer, request.SchemaID, string(statusPurpose))
+
+			watchKeys = append(watchKeys, statusListCredentialWatchKey)
+			watchKeys = append(watchKeys, statusListCredentialIndexPoolWatchKey)
+			watchKeys = append(watchKeys, statusListCredentialCurrentIndexWatchKey)
+
+			statusMetadata = StatusListCredentialMetadata{
+				statusListCredentialWatchKey:   statusListCredentialWatchKey,
+				statusListIndexPoolWatchKey:    statusListCredentialIndexPoolWatchKey,
+				statusListCurrentIndexWatchKey: statusListCredentialCurrentIndexWatchKey,
+			}
+		}
+
+		funcs = append(funcs, s.createCredentialFunc(request, statusMetadata))
+	}
+
+	returnFunc := storage.BusinessLogicFunc(func(ctx context.Context, tx storage.Tx) (any, error) {
+		resp := new(BatchCreateCredentialsResponse)
+		resp.Credentials = make([]credint.Container, len(batchRequest.Requests))
+		for i, f := range funcs {
+			credRespAny, err := f(ctx, tx)
+			if err != nil {
+				return nil, err
+			}
+			credResp, ok := credRespAny.(*CreateCredentialResponse)
+			if !ok {
+				return nil, errors.New("problem casting to CreateCredentialResponse")
+			}
+			resp.Credentials[i] = credResp.Container
+		}
+		return resp, nil
+	})
+
+	returnValue, err := s.storage.db.Execute(ctx, returnFunc, watchKeys)
+	if err != nil {
+		return nil, errors.Wrap(err, "execute")
+	}
+
+	credResponse, ok := returnValue.(*BatchCreateCredentialsResponse)
+	if !ok {
+		return nil, errors.New("problem casting to BatchCreateCredentialsResponse")
+	}
+
+	return credResponse, nil
+}
