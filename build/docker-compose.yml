@@ -8,7 +8,7 @@ services:
       context: ../
       dockerfile: build/Dockerfile
     ports:
-      - "8080:3000"
+      - "1234:3000"
     environment:
       - CONFIG_PATH=/app/config/test.toml
       - JAEGER_HTTP_URL=http://jaeger:14268/api/traces
