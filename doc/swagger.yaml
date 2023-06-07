@@ -1333,11 +1333,30 @@ definitions:
   pkg_server_router.GetCredentialResponse:
     properties:
       credential:
-        $ref: '#/definitions/credential.VerifiableCredential'
+        allOf:
+        - $ref: '#/definitions/credential.VerifiableCredential'
+        description: |-
+          Verifiable Credential in the `application/vc+ld+json` format. The credential is secured with an external proof
+          using JWS. In other words, the `proof` field is not present. See `credentialJwt` for the secured Verifiable
+          Credential.
       credentialJwt:
+        description: JWT representation of `credential`, secured with an external
+          proof signed by `issuerKid`.
         type: string
       id:
+        description: |-
+          Credential ID. This is the same value as the id within the secured credential. It is typically a URL that can be
+          dereferenced. For example, `https://ssi-service.com/v1/credentials/48958871-6a6d-4a25-889f-88c9c6835780`.
         type: string
+      issuerKid:
+        description: The KID of the private key used to sign `credentialJwt`.
+        type: string
+      revoked:
+        description: Whether this credential is currently revoked.
+        type: boolean
+      suspended:
+        description: Whether this credential is currently suspended.
+        type: boolean
     type: object
   pkg_server_router.GetCredentialStatusListResponse:
     properties:
@@ -2091,7 +2110,7 @@ paths:
       - application/json
       description: Get credential by id
       parameters:
-      - description: ID
+      - description: ID of the credential within SSI-Service. Must be a UUID.
         in: path
         name: id
         required: true

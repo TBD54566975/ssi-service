@@ -290,7 +290,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getCredResp)
 		assert.NotEmpty(tt, getCredResp.CredentialJWT)
-		assert.Equal(tt, resp.Credential.ID, getCredResp.ID)
+		assert.Equal(tt, resp.Credential.ID, getCredResp.Credential.ID)
 	})
 
 	t.Run("Test Get Credential By Schema", func(tt *testing.T) {
