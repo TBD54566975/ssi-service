@@ -247,7 +247,7 @@ func checkValidConfigPath(path string) (bool, error) {
 		logrus.Info("no config path provided, loading default config...")
 		defaultConfig = true
 	} else if filepath.Ext(path) != Extension {
-		return false, fmt.Errorf("path<%s> did not match the expected TOML format", path)
+		return false, fmt.Errorf("file extension for path %q must be %q", path, Extension)
 	}
 	return defaultConfig, nil
 }
