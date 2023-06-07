@@ -156,10 +156,6 @@ type Page struct {
 	Size  *int64
 }
 
-type PageResult struct {
-	NextPageToken string
-}
-
 type StoredDIDs struct {
 	DIDs          []StoredDID
 	NextPageToken string
