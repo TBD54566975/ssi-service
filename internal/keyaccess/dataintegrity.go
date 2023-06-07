@@ -6,6 +6,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	"github.com/TBD54566975/ssi-sdk/cryptosuite"
+	"github.com/TBD54566975/ssi-sdk/cryptosuite/jws2020"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 )
@@ -15,8 +16,8 @@ import (
 // DataIntegrityKeyAccess represents a key access object for data integrity using the JsonWebSignature2020 suite:
 // https://w3c.github.io/vc-jws-2020/
 type DataIntegrityKeyAccess struct {
-	Signer      cryptosuite.JSONWebKeySigner
-	Verifier    cryptosuite.JSONWebKeyVerifier
+	Signer      jws2020.JSONWebKeySigner
+	Verifier    jws2020.JSONWebKeyVerifier
 	CryptoSuite cryptosuite.CryptoSuite
 }
 
@@ -33,18 +34,18 @@ func NewDataIntegrityKeyAccess(id, kid string, key gocrypto.PrivateKey) (*DataIn
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not convert private key to JWK: %s", kid)
 	}
-	signer, err := cryptosuite.NewJSONWebKeySigner(id, *privateKeyJWK, cryptosuite.AssertionMethod)
+	signer, err := jws2020.NewJSONWebKeySigner(id, *privateKeyJWK, cryptosuite.AssertionMethod)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not create JWK signer: %s", kid)
 	}
-	verifier, err := cryptosuite.NewJSONWebKeyVerifier(id, *publicKeyJWK)
+	verifier, err := jws2020.NewJSONWebKeyVerifier(id, *publicKeyJWK)
 	if err != nil {
 		return nil, errors.Wrapf(err, "could not create JWK verifier: %s", kid)
 	}
 	return &DataIntegrityKeyAccess{
 		Signer:      *signer,
 		Verifier:    *verifier,
-		CryptoSuite: cryptosuite.GetJSONWebSignature2020Suite(),
+		CryptoSuite: jws2020.GetJSONWebSignature2020Suite(),
 	}, nil
 }
 
@@ -54,7 +55,7 @@ type DataIntegrityJSON struct {
 	Data []byte `json:"data" validate:"required"`
 }
 
-func (ka DataIntegrityKeyAccess) Sign(payload cryptosuite.Provable) (*DataIntegrityJSON, error) {
+func (ka DataIntegrityKeyAccess) Sign(payload cryptosuite.WithEmbeddedProof) (*DataIntegrityJSON, error) {
 	if payload == nil {
 		return nil, errors.New("payload cannot be nil")
 	}
@@ -68,7 +69,7 @@ func (ka DataIntegrityKeyAccess) Sign(payload cryptosuite.Provable) (*DataIntegr
 	return &DataIntegrityJSON{Data: signedJSONBytes}, nil
 }
 
-func (ka DataIntegrityKeyAccess) Verify(payload cryptosuite.Provable) error {
+func (ka DataIntegrityKeyAccess) Verify(payload cryptosuite.WithEmbeddedProof) error {
 	if payload == nil {
 		return errors.New("payload cannot be nil")
 	}
@@ -82,6 +83,6 @@ func (ka DataIntegrityKeyAccess) SignVerifiablePresentation(_ string, _ credenti
 	return nil, errors.New("not implemented")
 }
 
-func (ka DataIntegrityKeyAccess) VerifyVerifiablePresentation(_ cryptosuite.Provable) error {
+func (ka DataIntegrityKeyAccess) VerifyVerifiablePresentation(_ cryptosuite.WithEmbeddedProof) error {
 	return errors.New("not implemented")
 }
