@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"text/template"
 	"time"
 
@@ -81,6 +82,18 @@ func CreateDIDION() (string, error) {
 	output, err := put(endpoint+version+"dids/ion", getJSONFromFile("did-ion-input.json"))
 	if err != nil {
 		return "", errors.Wrapf(err, "did endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
+func ListWebDIDs() (string, error) {
+	urlValues := url.Values{
+		"pageSize": []string{"10"},
+	}
+	output, err := get(endpoint + version + "dids/web?" + urlValues.Encode())
+	if err != nil {
+		return "", errors.Wrapf(err, "list web did")
 	}
 
 	return output, nil
