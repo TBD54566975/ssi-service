@@ -62,7 +62,6 @@ func (dr DIDRouter) ListDIDMethods(c *gin.Context) {
 
 type CreateDIDByMethodRequest struct {
 	// Identifies the cryptographic algorithm family to use when generating this key.
-	// One of the following: "Ed25519", "X25519", "secp256k1", "P-224","P-256","P-384", "P-521", "RSA"
 	KeyType crypto.KeyType `json:"keyType" validate:"required"`
 
 	// Options for creating the DID. Implementation dependent on the method.
@@ -83,8 +82,8 @@ type CreateDIDByMethodResponse struct {
 //	@Tags			DecentralizedIdentityAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			request	body		CreateDIDByMethodRequest	true	"request body"
 //	@Param			method	path		string						true	"Method"
+//	@Param			request	body		CreateDIDByMethodRequest	true	"request body"
 //	@Success		201		{object}	CreateDIDByMethodResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
@@ -239,6 +238,7 @@ type GetDIDsRequest struct {
 //	@Tags			DecentralizedIdentityAPI
 //	@Accept			json
 //	@Produce		json
+//	@Param			method	path		string	true	"Method must be one returned by GET /v1/dids"
 //	@Param			deleted	query		boolean	false	"When true, returns soft-deleted DIDs. Otherwise, returns DIDs that have not been soft-deleted. Default is false."
 //	@Success		200		{object}	ListDIDsByMethodResponse
 //	@Failure		400		{string}	string	"Bad request"

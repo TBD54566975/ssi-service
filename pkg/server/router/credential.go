@@ -39,33 +39,33 @@ func NewCredentialRouter(s svcframework.Service) (*CredentialRouter, error) {
 
 type CreateCredentialRequest struct {
 	// The issuer id.
-	Issuer string `json:"issuer" validate:"required" example:"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
+	Issuer string `json:"issuer" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
 
 	// The KID used to sign the credential.
-	IssuerKID string `json:"issuerKid" validate:"required" example:"#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
+	IssuerKID string `json:"issuerKid" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
 
 	// The subject id.
 	Subject string `json:"subject" validate:"required" example:"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
 
 	// A context is optional. If not present, we'll apply default, required context values.
-	Context string `json:"@context,omitempty"`
+	Context string `json:"@context,omitempty" example:""`
 
 	// A schema ID is optional. If present, we'll attempt to look it up and validate the data against it.
-	SchemaID string `json:"schemaId,omitempty"`
+	SchemaID string `json:"schemaId,omitempty" example:"30e3f9b7-0528-4f6f-8aac-b74c8843187a"`
 
 	// Claims about the subject. The keys should be predicates (e.g. "alumniOf"), and the values can be any object.
 	Data map[string]any `json:"data" validate:"required" swaggertype:"object,string" example:"alumniOf:did_for_uni"`
 
 	// Optional. Corresponds to `expirationDate` in https://www.w3.org/TR/vc-data-model/#expiration.
-	Expiry string `json:"expiry,omitempty" example:"2020-01-01T19:23:24Z"`
+	Expiry string `json:"expiry,omitempty" example:"2029-01-01T19:23:24Z"`
 
 	// Whether this credential can be revoked. When true, the created VC will have the "credentialStatus"
 	// property set.
-	Revocable bool `json:"revocable,omitempty"`
+	Revocable bool `json:"revocable,omitempty" example:"true"`
 
 	// Whether this credential can be suspended. When true, the created VC will have the "credentialStatus"
 	// property set.
-	Suspendable bool `json:"suspendable,omitempty"`
+	Suspendable bool `json:"suspendable,omitempty" example:"false"`
 	// TODO(gabe) support more capabilities like signature type, format, and more.
 }
 
