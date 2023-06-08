@@ -32,10 +32,11 @@ spec:
 {{- end }}
 {{- if .Values.istio.authorizationPolicy.enabled }}
 {{ $fullName := include "ssi-service.fullname" . -}}
+{{ $shortName := include "ssi-service.shortname" . -}}
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: {{ $fullName }}
+  name: {{ $shortName }}-host
 spec:
   action: ALLOW
   rules:
@@ -50,7 +51,7 @@ spec:
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: {{ $fullName }}
+  name: {{ $shortName }}-ns
 spec:
   action: ALLOW
   rules:
