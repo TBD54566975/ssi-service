@@ -283,7 +283,7 @@ func testSchemaRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keyst
 }
 
 func testCredentialService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
-	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "https://ssi-service.com/v1/credentials"}}
 
 	// create a credential service
 	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver(), schema)
@@ -340,4 +340,8 @@ func testWebhookRouter(t *testing.T, bolt storage.ServiceStorage) *router.Webhoo
 	require.NotEmpty(t, webhookRouter)
 
 	return webhookRouter
+}
+
+func idFromURI(id string) string {
+	return id[len(id)-36:]
 }

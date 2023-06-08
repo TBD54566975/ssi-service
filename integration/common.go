@@ -389,14 +389,14 @@ func get(url string) (string, error) {
 		return "", fmt.Errorf("status code not in the 200s. body: %s", string(body))
 	}
 
-	logrus.Infof("Received:  %s", string(body))
+	logrus.Infof("Received:  %s", prettyJSON(body))
 	return string(body), err
 }
 
-func put(url string, json string) (string, error) {
-	logrus.Printf("\nPerforming PUT request to:  %s \n\nwith data: \n%s\n", url, json)
+func put(url string, jsonData string) (string, error) {
+	logrus.Printf("\nPerforming PUT request to:  %s \n\nwith data: \n%s\n", url, jsonData)
 
-	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer([]byte(json)))
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer([]byte(jsonData)))
 	if err != nil {
 		return "", errors.Wrap(err, "building http req")
 	}
@@ -419,9 +419,18 @@ func put(url string, json string) (string, error) {
 	}
 
 	logrus.Println("\nOutput:")
-	logrus.Println(bodyStr)
+	indentedBodyStr := prettyJSON(body)
+	logrus.Println(indentedBodyStr)
 
 	return bodyStr, err
+}
+
+func prettyJSON(body []byte) string {
+	var d any
+	_ = json.Unmarshal(body, &d)
+	indentedBody, _ := json.MarshalIndent(d, "", "  ")
+	indentedBodyStr := string(indentedBody)
+	return indentedBodyStr
 }
 
 func getJSONFromFile(fileName string) string {

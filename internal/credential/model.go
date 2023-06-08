@@ -14,7 +14,8 @@ import (
 // Container acts as an abstraction over both possible credential representations
 // JWT representations are parsed upon container creation, while the original JWT is maintained
 type Container struct {
-	// Credential ID
+	// Credential ID. This is the same value as the id within the secured credential. It is typically a URL that can be
+	// dereferenced. For example, `https://ssi-service.com/v1/credentials/48958871-6a6d-4a25-889f-88c9c6835780`.
 	ID string `json:"id,omitempty"`
 
 	// The KID of the private key used to sign `credentialJwt`.
