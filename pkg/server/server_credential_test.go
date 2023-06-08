@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/goccy/go-json"
+	"github.com/google/uuid"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -208,6 +209,11 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NotEmpty(tt, resp.CredentialJWT)
 		assert.NoError(tt, err)
 		assert.Equal(tt, resp.Credential.Issuer, issuerDID.DID.ID)
+		after, found := strings.CutPrefix(resp.Credential.ID, "https://ssi-service.com/v1/credentials/")
+		assert.True(tt, found)
+		assert.NotPanics(tt, func() {
+			uuid.MustParse(after)
+		})
 	})
 
 	t.Run("Test Create Credential with Schema", func(tt *testing.T) {
@@ -379,8 +385,8 @@ func TestCredentialAPI(t *testing.T) {
 		w = httptest.NewRecorder()
 
 		// get credential by id
-		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", resp.Credential.ID), nil)
-		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.Credential.ID})
+		req = httptest.NewRequest(http.MethodGet, resp.Credential.ID, nil)
+		c = newRequestContextWithParams(w, req, map[string]string{"id": idFromURI(resp.Credential.ID)})
 		credRouter.GetCredential(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
@@ -389,7 +395,7 @@ func TestCredentialAPI(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, getCredResp)
 		assert.NotEmpty(tt, getCredResp.CredentialJWT)
-		assert.Equal(tt, resp.Credential.ID, getCredResp.ID)
+		assert.Equal(tt, resp.Credential.ID, getCredResp.Credential.ID)
 	})
 
 	t.Run("Test Get Credential By Schema", func(tt *testing.T) {
@@ -692,8 +698,8 @@ func TestCredentialAPI(t *testing.T) {
 
 		// get credential by id
 		credID := resp.Credential.ID
-		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s", credID), nil)
-		c = newRequestContextWithParams(w, req, map[string]string{"id": credID})
+		req = httptest.NewRequest(http.MethodGet, credID, nil)
+		c = newRequestContextWithParams(w, req, map[string]string{"id": idFromURI(credID)})
 		credRouter.GetCredential(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
@@ -1024,8 +1030,8 @@ func TestCredentialAPI(t *testing.T) {
 
 		assert.NotEmpty(tt, credStatusMap["statusListIndex"])
 
-		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s/status", resp.Credential.ID), nil)
-		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.Credential.ID})
+		req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("%s/status", resp.Credential.ID), nil)
+		c = newRequestContextWithParams(w, req, map[string]string{"id": idFromURI(resp.Credential.ID)})
 		credRouter.GetCredentialStatus(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 
@@ -1038,8 +1044,8 @@ func TestCredentialAPI(t *testing.T) {
 		updateCredStatusRequest := router.UpdateCredentialStatusRequest{Revoked: true}
 
 		requestValue = newRequestValue(tt, updateCredStatusRequest)
-		req = httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/credentials/%s/status", resp.Credential.ID), requestValue)
-		c = newRequestContextWithParams(w, req, map[string]string{"id": resp.Credential.ID})
+		req = httptest.NewRequest(http.MethodPut, fmt.Sprintf("%s/status", resp.Credential.ID), requestValue)
+		c = newRequestContextWithParams(w, req, map[string]string{"id": idFromURI(resp.Credential.ID)})
 		credRouter.UpdateCredentialStatus(c)
 		assert.True(tt, util.Is2xxResponse(w.Code))
 

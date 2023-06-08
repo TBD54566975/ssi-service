@@ -61,11 +61,16 @@ type GetKeyFromDIDResponse struct {
 type ListDIDsRequest struct {
 	Method  didsdk.Method `json:"method" validate:"required"`
 	Deleted bool          `json:"deleted"`
+
+	// When nil, all DIDs will be returned.
+	PageSize  *int    `json:"pageSize,omitempty"`
+	PageToken *string `json:"pageToken,omitempty"`
 }
 
 // ListDIDsResponse is the JSON-serializable response for getting all DIDs for a given method
 type ListDIDsResponse struct {
-	DIDs []didsdk.Document `json:"dids"`
+	DIDs          []didsdk.Document `json:"dids"`
+	NextPageToken string
 }
 
 type DeleteDIDRequest struct {

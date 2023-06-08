@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"text/template"
 	"time"
 
@@ -81,6 +82,18 @@ func CreateDIDION() (string, error) {
 	output, err := put(endpoint+version+"dids/ion", getJSONFromFile("did-ion-input.json"))
 	if err != nil {
 		return "", errors.Wrapf(err, "did endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
+func ListWebDIDs() (string, error) {
+	urlValues := url.Values{
+		"pageSize": []string{"10"},
+	}
+	output, err := get(endpoint + version + "dids/web?" + urlValues.Encode())
+	if err != nil {
+		return "", errors.Wrapf(err, "list web did")
 	}
 
 	return output, nil
@@ -417,14 +430,14 @@ func get(url string) (string, error) {
 		return "", fmt.Errorf("status code not in the 200s. body: %s", string(body))
 	}
 
-	logrus.Infof("Received:  %s", string(body))
+	logrus.Infof("Received:  %s", prettyJSON(body))
 	return string(body), err
 }
 
-func put(url string, json string) (string, error) {
-	logrus.Printf("\nPerforming PUT request to:  %s \n\nwith data: \n%s\n", url, json)
+func put(url string, jsonData string) (string, error) {
+	logrus.Printf("\nPerforming PUT request to:  %s \n\nwith data: \n%s\n", url, jsonData)
 
-	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer([]byte(json)))
+	req, err := http.NewRequest(http.MethodPut, url, bytes.NewBuffer([]byte(jsonData)))
 	if err != nil {
 		return "", errors.Wrap(err, "building http req")
 	}
@@ -447,9 +460,18 @@ func put(url string, json string) (string, error) {
 	}
 
 	logrus.Println("\nOutput:")
-	logrus.Println(bodyStr)
+	indentedBodyStr := prettyJSON(body)
+	logrus.Println(indentedBodyStr)
 
 	return bodyStr, err
+}
+
+func prettyJSON(body []byte) string {
+	var d any
+	_ = json.Unmarshal(body, &d)
+	indentedBody, _ := json.MarshalIndent(d, "", "  ")
+	indentedBodyStr := string(indentedBody)
+	return indentedBodyStr
 }
 
 func getJSONFromFile(fileName string) string {

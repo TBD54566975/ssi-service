@@ -546,7 +546,9 @@ definitions:
           proof signed by `issuerKid`.
         type: string
       id:
-        description: Credential ID
+        description: |-
+          Credential ID. This is the same value as the id within the secured credential. It is typically a URL that can be
+          dereferenced. For example, `https://ssi-service.com/v1/credentials/48958871-6a6d-4a25-889f-88c9c6835780`.
         type: string
       issuerKid:
         description: The KID of the private key used to sign `credentialJwt`.
@@ -1035,7 +1037,9 @@ definitions:
           proof signed by `issuerKid`.
         type: string
       id:
-        description: Credential ID
+        description: |-
+          Credential ID. This is the same value as the id within the secured credential. It is typically a URL that can be
+          dereferenced. For example, `https://ssi-service.com/v1/credentials/48958871-6a6d-4a25-889f-88c9c6835780`.
         type: string
       issuerKid:
         description: The KID of the private key used to sign `credentialJwt`.
@@ -1278,6 +1282,8 @@ definitions:
           Schema represents the JSON schema for the credential schema
           If the schema has an $id field, it will be overwritten with an ID the service generates.
           The schema must be against draft 2020-12, 2019-09, or 7.
+          Must include a string field `$schema` that must be one of `https://json-schema.org/draft/2020-12/schema`,
+          `https://json-schema.org/draft/2019-09/schema`, or `https://json-schema.org/draft-07/schema`.
     required:
     - issuer
     - issuerKid
@@ -1350,11 +1356,30 @@ definitions:
   pkg_server_router.GetCredentialResponse:
     properties:
       credential:
-        $ref: '#/definitions/credential.VerifiableCredential'
+        allOf:
+        - $ref: '#/definitions/credential.VerifiableCredential'
+        description: |-
+          Verifiable Credential in the `application/vc+ld+json` format. The credential is secured with an external proof
+          using JWS. In other words, the `proof` field is not present. See `credentialJwt` for the secured Verifiable
+          Credential.
       credentialJwt:
+        description: JWT representation of `credential`, secured with an external
+          proof signed by `issuerKid`.
         type: string
       id:
+        description: |-
+          Credential ID. This is the same value as the id within the secured credential. It is typically a URL that can be
+          dereferenced. For example, `https://ssi-service.com/v1/credentials/48958871-6a6d-4a25-889f-88c9c6835780`.
         type: string
+      issuerKid:
+        description: The KID of the private key used to sign `credentialJwt`.
+        type: string
+      revoked:
+        description: Whether this credential is currently revoked.
+        type: boolean
+      suspended:
+        description: Whether this credential is currently suspended.
+        type: boolean
     type: object
   pkg_server_router.GetCredentialStatusListResponse:
     properties:
@@ -1510,6 +1535,10 @@ definitions:
         items:
           $ref: '#/definitions/did.Document'
         type: array
+      nextPageToken:
+        description: Pagination token to retrieve the next page of results. If the
+          value is "", it means no further results for the request.
+        type: string
     type: object
   pkg_server_router.ListDefinitionsResponse:
     properties:
@@ -2108,7 +2137,7 @@ paths:
       - application/json
       description: Get credential by id
       parameters:
-      - description: ID
+      - description: ID of the credential within SSI-Service. Must be a UUID.
         in: path
         name: id
         required: true
@@ -2310,6 +2339,16 @@ paths:
         in: query
         name: deleted
         type: boolean
+      - description: Hint to the server of the maximum elements to return. More may
+          be returned. When not set, the server will return all elements.
+        in: query
+        name: pageSize
+        type: number
+      - description: Used to indicate to the server to return a specific page of the
+          list results. Must match a previous requests' `nextPageToken`.
+        in: query
+        name: pageToken
+        type: string
       produces:
       - application/json
       responses:

@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 
@@ -122,9 +123,18 @@ func newRequestContext(w http.ResponseWriter, req *http.Request) *gin.Context {
 // construct a context value with query params as expected by our handler
 func newRequestContextWithParams(w http.ResponseWriter, req *http.Request, params map[string]string) *gin.Context {
 	c := newRequestContext(w, req)
-	c.Params = make([]gin.Param, 0, len(params))
 	for k, v := range params {
-		c.Params = append(c.Params, gin.Param{Key: k, Value: v})
+		c.AddParam(k, v)
+	}
+	return c
+}
+
+func newRequestContextWithURLValues(w http.ResponseWriter, req *http.Request, params url.Values) *gin.Context {
+	c := newRequestContext(w, req)
+	for k, vs := range params {
+		for _, v := range vs {
+			c.AddParam(k, v)
+		}
 	}
 	return c
 }
@@ -283,7 +293,7 @@ func testSchemaRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keyst
 }
 
 func testCredentialService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
-	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "https://ssi-service.com/v1/credentials"}}
 
 	// create a credential service
 	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver(), schema)
@@ -340,4 +350,8 @@ func testWebhookRouter(t *testing.T, bolt storage.ServiceStorage) *router.Webhoo
 	require.NotEmpty(t, webhookRouter)
 
 	return webhookRouter
+}
+
+func idFromURI(id string) string {
+	return id[len(id)-36:]
 }

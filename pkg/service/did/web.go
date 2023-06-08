@@ -31,6 +31,8 @@ type webHandler struct {
 	keyStore *keystore.Service
 }
 
+var _ MethodHandler = (*webHandler)(nil)
+
 type CreateWebDIDOptions struct {
 	// e.g. did:web:example.com
 	DIDWebID string `json:"didWebId" validate:"required"`
@@ -127,20 +129,21 @@ func (h *webHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 	return &GetDIDResponse{DID: gotDID.GetDocument()}, nil
 }
 
-func (h *webHandler) ListDIDs(ctx context.Context) (*ListDIDsResponse, error) {
-	logrus.Debug("listing did:web DID")
-
-	gotDIDs, err := h.storage.ListDIDsDefault(ctx, did.WebMethod.String())
+func (h *webHandler) ListDIDs(ctx context.Context, page *Page) (*ListDIDsResponse, error) {
+	gotDIDs, err := h.storage.ListDIDsPage(ctx, did.WebMethod.String(), page, new(DefaultStoredDID))
 	if err != nil {
-		return nil, errors.Wrap(err, "listing did:web DIDs")
+		return nil, errors.Wrap(err, "listing did:web DIDs page")
 	}
-	dids := make([]did.Document, 0, len(gotDIDs))
-	for _, gotDID := range gotDIDs {
+	dids := make([]did.Document, 0, len(gotDIDs.DIDs))
+	for _, gotDID := range gotDIDs.DIDs {
 		if !gotDID.IsSoftDeleted() {
 			dids = append(dids, gotDID.GetDocument())
 		}
 	}
-	return &ListDIDsResponse{DIDs: dids}, nil
+	return &ListDIDsResponse{
+		DIDs:          dids,
+		NextPageToken: gotDIDs.NextPageToken,
+	}, nil
 }
 
 func (h *webHandler) ListDeletedDIDs(ctx context.Context) (*ListDIDsResponse, error) {
