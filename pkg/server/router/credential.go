@@ -125,9 +125,9 @@ func (cr CredentialRouter) CreateCredential(c *gin.Context) {
 }
 
 type GetCredentialResponse struct {
-	ID            string                        `json:"id"`
-	Credential    *credsdk.VerifiableCredential `json:"credential,omitempty"`
-	CredentialJWT *keyaccess.JWT                `json:"credentialJwt,omitempty"`
+	// The `id` of this credential within SSI-Service. Same as the `id` passed in the query parameter.
+	ID string `json:"id"`
+	credmodel.Container
 }
 
 // GetCredential godoc
@@ -137,7 +137,7 @@ type GetCredentialResponse struct {
 //	@Tags			CredentialAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path		string	true	"ID"
+//	@Param			id	path		string	true	"ID of the credential within SSI-Service. Must be a UUID."
 //	@Success		200	{object}	GetCredentialResponse
 //	@Failure		400	{string}	string	"Bad request"
 //	@Failure		500	{string}	string	"Internal server error"
@@ -158,9 +158,8 @@ func (cr CredentialRouter) GetCredential(c *gin.Context) {
 	}
 
 	resp := GetCredentialResponse{
-		ID:            gotCredential.ID,
-		Credential:    gotCredential.Credential,
-		CredentialJWT: gotCredential.CredentialJWT,
+		ID:        *id,
+		Container: gotCredential.Container,
 	}
 	framework.Respond(c, resp, http.StatusOK)
 }
