@@ -197,6 +197,45 @@ func BatchCreateVerifiableCredentials(credentialInput batchCredInputParams) (str
 	return output, nil
 }
 
+func BatchCreate1000VerifiableCredentials(credentialInput credInputParams) (string, error) {
+	logrus.Println("\n\nCreate a verifiable credential")
+
+	creds := make([]any, 0, 1000)
+	for i := 0; i < 1000; i++ {
+		credentialInput, err := resolveTemplate(credInputParams{
+			IssuerID:    credentialInput.IssuerID,
+			IssuerKID:   credentialInput.IssuerKID,
+			SchemaID:    credentialInput.SchemaID,
+			SubjectID:   credentialInput.SubjectID,
+			Revocable:   true,
+			Suspendable: false,
+		}, "credential-input.json")
+		if err != nil {
+			return "", err
+		}
+		var credJSON any
+		if err := json.Unmarshal([]byte(credentialInput), &credJSON); err != nil {
+			return "", err
+		}
+		creds = append(creds, credJSON)
+	}
+
+	batchCreate := map[string]any{
+		"requests": creds,
+	}
+	batchCreateData, err := json.Marshal(batchCreate)
+	if err != nil {
+		return "", err
+	}
+
+	output, err := put(endpoint+version+"credentials/batchCreate", string(batchCreateData))
+	if err != nil {
+		return "", errors.Wrap(err, "error writing batch credentials")
+	}
+
+	return output, nil
+}
+
 func CreateSubmissionCredential(params credInputParams) (string, error) {
 	logrus.Println("\n\nCreate a submission credential")
 
@@ -448,6 +487,7 @@ func put(url string, jsonData string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "client http client")
 	}
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

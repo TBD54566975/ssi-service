@@ -140,6 +140,34 @@ func TestBatchCreateCredentialsIntegration(t *testing.T) {
 	assert.NotEmpty(t, credentialJWT1)
 }
 
+func TestBatchCreate1000CredentialsIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	issuerDID, err := GetValue(credentialManifestContext, "issuerDID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerDID)
+
+	issuerKID, err := GetValue(credentialManifestContext, "issuerKID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKID)
+
+	schemaID, err := GetValue(credentialManifestContext, "schemaID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, schemaID)
+
+	// This test is simply about making sure we can create the maximum configured by default.
+	vcsOutput, err := BatchCreate1000VerifiableCredentials(credInputParams{
+		IssuerID:  issuerDID.(string),
+		IssuerKID: issuerKID.(string),
+		SchemaID:  schemaID.(string),
+		SubjectID: issuerDID.(string),
+	})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, vcsOutput)
+}
+
 func TestCreateCredentialManifestIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
