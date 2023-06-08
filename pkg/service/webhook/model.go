@@ -25,8 +25,9 @@ const (
 
 // Supported Verbs
 const (
-	Create = Verb("Create")
-	Delete = Verb("Delete")
+	BatchCreate = Verb("BatchCreate")
+	Create      = Verb("Create")
+	Delete      = Verb("Delete")
 )
 
 type Webhook struct {

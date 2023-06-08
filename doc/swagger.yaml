@@ -784,10 +784,12 @@ definitions:
     - Submission
   github_com_tbd54566975_ssi-service_pkg_service_webhook.Verb:
     enum:
+    - BatchCreate
     - Create
     - Delete
     type: string
     x-enum-varnames:
+    - BatchCreate
     - Create
     - Delete
   github_com_tbd54566975_ssi-service_pkg_service_webhook.Webhook:
@@ -951,6 +953,25 @@ definitions:
     required:
     - id
     - schema
+    type: object
+  pkg_server_router.BatchCreateCredentialsRequest:
+    properties:
+      requests:
+        description: Required. The list of create credential requests. Cannot be more
+          than 1000 items.
+        items:
+          $ref: '#/definitions/pkg_server_router.CreateCredentialRequest'
+        type: array
+    required:
+    - requests
+    type: object
+  pkg_server_router.BatchCreateCredentialsResponse:
+    properties:
+      credentials:
+        description: The credentials created.
+        items:
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_internal_credential.Container'
+        type: array
     type: object
   pkg_server_router.CreateCredentialRequest:
     properties:
@@ -2195,6 +2216,36 @@ paths:
           schema:
             type: string
       summary: Update Credential Status
+      tags:
+      - CredentialAPI
+  /v1/credentials/batchCreate:
+    put:
+      consumes:
+      - application/json
+      description: Create a batch of verifiable credentials.
+      parameters:
+      - description: The batch requests
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.BatchCreateCredentialsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pkg_server_router.BatchCreateCredentialsResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Batch Create Credentials
       tags:
       - CredentialAPI
   /v1/credentials/status/{id}:

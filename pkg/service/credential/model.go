@@ -4,6 +4,14 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/credential"
 )
 
+type BatchCreateCredentialsRequest struct {
+	Requests []CreateCredentialRequest
+}
+
+type BatchCreateCredentialsResponse struct {
+	Credentials []credential.Container
+}
+
 type CreateCredentialRequest struct {
 	Issuer    string `json:"issuer" validate:"required"`
 	IssuerKID string `json:"issuerKid" validate:"required"`

@@ -55,6 +55,7 @@ name = "schema"
 
 [services.credential]
 name = "credential"
+batch_create_max_items = 100
 
 [services.issuance]
 name = "issuance"
