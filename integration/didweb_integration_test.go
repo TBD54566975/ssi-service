@@ -31,6 +31,21 @@ func TestCreateIssuerDIDWebIntegration(t *testing.T) {
 	SetValue(didWebContext, "issuerKID", issuerKID)
 }
 
+func TestListDIDWebIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	listWebDIDsOutput, err := ListWebDIDs()
+	assert.NoError(t, err)
+
+	issuerDID, err := GetValue(didWebContext, "issuerDID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerDID)
+
+	assert.Contains(t, listWebDIDsOutput, issuerDID)
+}
+
 func TestCreateAliceDIDKeyForDIDWebIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")

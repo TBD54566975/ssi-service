@@ -47,6 +47,9 @@ type ionHandler struct {
 	keyStore *keystore.Service
 }
 
+// Verify interface compliance https://github.com/uber-go/guide/blob/master/style.md#verify-interface-compliance
+var _ MethodHandler = (*ionHandler)(nil)
+
 type CreateIONDIDOptions struct {
 	// TODO(gabe) for now we only allow adding service endpoints upon creation.
 	//  we do not allow adding external keys or other properties.
@@ -247,20 +250,21 @@ func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 }
 
 // ListDIDs returns all DIDs we have in storage for ION, it is not feasible to get all DIDs from the network
-func (h *ionHandler) ListDIDs(ctx context.Context) (*ListDIDsResponse, error) {
-	logrus.Debug("getting stored did:ion DIDs")
-
-	gotDIDs, err := h.storage.ListDIDs(ctx, did.IONMethod.String(), new(ionStoredDID))
+func (h *ionHandler) ListDIDs(ctx context.Context, page *Page) (*ListDIDsResponse, error) {
+	gotDIDs, err := h.storage.ListDIDsPage(ctx, did.IONMethod.String(), page, new(ionStoredDID))
 	if err != nil {
-		return nil, fmt.Errorf("error getting did:ion DIDs")
+		return nil, errors.Wrap(err, "error getting did:ion DIDs")
 	}
-	dids := make([]did.Document, 0, len(gotDIDs))
-	for _, gotDID := range gotDIDs {
+	dids := make([]did.Document, 0, len(gotDIDs.DIDs))
+	for _, gotDID := range gotDIDs.DIDs {
 		if !gotDID.IsSoftDeleted() {
 			dids = append(dids, gotDID.GetDocument())
 		}
 	}
-	return &ListDIDsResponse{DIDs: dids}, nil
+	return &ListDIDsResponse{
+		DIDs:          dids,
+		NextPageToken: gotDIDs.NextPageToken,
+	}, nil
 }
 
 // ListDeletedDIDs returns only DIDs we have in storage for ION with SoftDeleted flag set to true
