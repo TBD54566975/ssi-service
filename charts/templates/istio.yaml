@@ -20,20 +20,12 @@ spec:
         host: {{ $ssiService }}
         port:
           number: {{ .Values.ssiConsole.service.port }}
-      headers:
-        request:
-          set:
-            Authorization: 'Bearer %REQ(x-auth-request-access-token)%'
   - name: console-route
     route:
     - destination:
         host: {{ $ssiConsole }}
         port:
           number: {{ .Values.ssiService.service.port }}
-      headers:
-        request:
-          set:
-            Authorization: 'Bearer %REQ(x-auth-request-access-token)%'
 ---
 {{- end }}
 {{- if .Values.istio.authorizationPolicy.enabled }}
