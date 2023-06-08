@@ -15,6 +15,8 @@ spec:
     match:
     - uri:
         prefix: "/v1"
+    - uri:
+        prefix: "/swagger"
     route:
     - destination:
         host: {{ $ssiService }}
@@ -30,7 +32,21 @@ spec:
 {{- end }}
 {{- if .Values.istio.authorizationPolicy.enabled }}
 {{ $fullName := include "ssi-service.fullname" . -}}
-{{ $shortName := include "ssi-service.shortname" . -}}
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ $fullName }}
+spec:
+  action: ALLOW
+  rules:
+  - to:
+    - operation:
+        hosts:
+        - "{{ .Values.istio.virtualService.host }}"
+  - from:
+    - source:
+        namespaces: ["{{ .Values.istio.authorizationPolicy.gatewayNamespace }}"]
+---
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
@@ -41,26 +57,5 @@ spec:
   - from:
     - source:
         namespaces: ["{{ .Release.Namespace }}"]
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: {{ $shortName }}-oauth
-  namespace: {{ .Values.istio.authorizationPolicy.gatewayNamespace }}
-spec:
-  selector:
-    matchLabels:
-      istio: ingressgateway
-  action: CUSTOM
-  provider:
-    name: "oauth2-proxy"
-  rules:
-  - to:
-    - operation:
-        hosts:
-        - "{{ .Values.istio.virtualService.host }}"
-        notPaths:
-        - "/apply*"
-        - "/submit*"
 ---
 {{- end }}
