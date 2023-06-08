@@ -140,7 +140,7 @@ func TestBatchCreateCredentialsIntegration(t *testing.T) {
 	assert.NotEmpty(t, credentialJWT1)
 }
 
-func TestBatchCreate1000CredentialsIntegration(t *testing.T) {
+func TestBatchCreate100CredentialsIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")
 	}

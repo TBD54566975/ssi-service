@@ -143,6 +143,8 @@ func (s *SchemaServiceConfig) IsEmpty() bool {
 
 type CredentialServiceConfig struct {
 	*BaseServiceConfig
+	// BatchCreateMaxItems set's the maximum amount that can be.
+	BatchCreateMaxItems int `toml:"batch_create_max_items" conf:"default:100"`
 
 	// TODO(gabe) supported key and signature types
 }

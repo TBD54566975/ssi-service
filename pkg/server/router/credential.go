@@ -75,7 +75,7 @@ func (cr CredentialRouter) BatchCreateCredentials(c *gin.Context) {
 		return
 	}
 
-	const batchCreateMaxItems = 1000
+	batchCreateMaxItems := cr.service.Config().BatchCreateMaxItems
 	if len(batchRequest.Requests) > batchCreateMaxItems {
 		framework.LoggingRespondErrMsg(c, fmt.Sprintf("max number of requests is %d", batchCreateMaxItems), http.StatusBadRequest)
 		return
