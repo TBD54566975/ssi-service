@@ -102,6 +102,72 @@ func TestCreateVerifiableCredentialIntegration(t *testing.T) {
 	SetValue(credentialManifestContext, "credentialJWT", credentialJWT)
 }
 
+func TestBatchCreateCredentialsIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	issuerDID, err := GetValue(credentialManifestContext, "issuerDID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerDID)
+
+	issuerKID, err := GetValue(credentialManifestContext, "issuerKID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKID)
+
+	schemaID, err := GetValue(credentialManifestContext, "schemaID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, schemaID)
+
+	vcsOutput, err := BatchCreateVerifiableCredentials(batchCredInputParams{
+		IssuerID:   issuerDID.(string),
+		IssuerKID:  issuerKID.(string),
+		SchemaID:   schemaID.(string),
+		SubjectID0: issuerDID.(string),
+		SubjectID1: issuerDID.(string),
+		Revocable0: false,
+		Revocable1: true,
+	})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, vcsOutput)
+
+	credentialJWT, err := getJSONElement(vcsOutput, "$.credentials[0].credentialJwt")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, credentialJWT)
+
+	credentialJWT1, err := getJSONElement(vcsOutput, "$.credentials[1].credentialJwt")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, credentialJWT1)
+}
+
+func TestBatchCreate100CredentialsIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	issuerDID, err := GetValue(credentialManifestContext, "issuerDID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerDID)
+
+	issuerKID, err := GetValue(credentialManifestContext, "issuerKID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, issuerKID)
+
+	schemaID, err := GetValue(credentialManifestContext, "schemaID")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, schemaID)
+
+	// This test is simply about making sure we can create the maximum configured by default.
+	vcsOutput, err := BatchCreate100VerifiableCredentials(credInputParams{
+		IssuerID:  issuerDID.(string),
+		IssuerKID: issuerKID.(string),
+		SchemaID:  schemaID.(string),
+		SubjectID: issuerDID.(string),
+	})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, vcsOutput)
+}
+
 func TestCreateCredentialManifestIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test")

@@ -12,9 +12,10 @@ api_host = "0.0.0.0:3000"
 jager_host = "http://jaeger:14268/api/traces"
 jager_enabled = true
 
+# 10 seconds, time is in nanoseconds
+read_timeout = 10000000000
+write_timeout = 10000000000
 # 5 seconds, time is in nanoseconds
-read_timeout = 5000000000
-write_timeout = 5000000000
 shutdown_timeout = 5000000000
 
 log_location = "log"
@@ -57,6 +58,7 @@ name = "schema"
 
 [services.credential]
 name = "credential"
+batch_create_max_items = 100
 
 [services.issuance]
 name = "issuance"

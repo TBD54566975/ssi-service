@@ -784,10 +784,12 @@ definitions:
     - Submission
   github_com_tbd54566975_ssi-service_pkg_service_webhook.Verb:
     enum:
+    - BatchCreate
     - Create
     - Delete
     type: string
     x-enum-varnames:
+    - BatchCreate
     - Create
     - Delete
   github_com_tbd54566975_ssi-service_pkg_service_webhook.Webhook:
@@ -951,6 +953,25 @@ definitions:
     required:
     - id
     - schema
+    type: object
+  pkg_server_router.BatchCreateCredentialsRequest:
+    properties:
+      requests:
+        description: Required. The list of create credential requests. Cannot be more
+          than 1000 items.
+        items:
+          $ref: '#/definitions/pkg_server_router.CreateCredentialRequest'
+        type: array
+    required:
+    - requests
+    type: object
+  pkg_server_router.BatchCreateCredentialsResponse:
+    properties:
+      credentials:
+        description: The credentials created.
+        items:
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_internal_credential.Container'
+        type: array
     type: object
   pkg_server_router.CreateCredentialRequest:
     properties:
@@ -1517,6 +1538,10 @@ definitions:
         items:
           $ref: '#/definitions/did.Document'
         type: array
+      nextPageToken:
+        description: Pagination token to retrieve the next page of results. If the
+          value is "", it means no further results for the request.
+        type: string
     type: object
   pkg_server_router.ListDefinitionsResponse:
     properties:
@@ -2196,6 +2221,36 @@ paths:
       summary: Update Credential Status
       tags:
       - CredentialAPI
+  /v1/credentials/batchCreate:
+    put:
+      consumes:
+      - application/json
+      description: Create a batch of verifiable credentials.
+      parameters:
+      - description: The batch requests
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.BatchCreateCredentialsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pkg_server_router.BatchCreateCredentialsResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Batch Create Credentials
+      tags:
+      - CredentialAPI
   /v1/credentials/status/{id}:
     get:
       consumes:
@@ -2292,6 +2347,16 @@ paths:
         in: query
         name: deleted
         type: boolean
+      - description: Hint to the server of the maximum elements to return. More may
+          be returned. When not set, the server will return all elements.
+        in: query
+        name: pageSize
+        type: number
+      - description: Used to indicate to the server to return a specific page of the
+          list results. Must match a previous requests' `nextPageToken`.
+        in: query
+        name: pageToken
+        type: string
       produces:
       - application/json
       responses:

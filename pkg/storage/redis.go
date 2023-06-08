@@ -300,7 +300,9 @@ func (b *RedisDB) ReadAllKeys(ctx context.Context, namespace string) ([]string, 
 	return keys, nil
 }
 
-// TODO: This potentially could dangerous as it might run out of memory as we populate allKeys
+// NOTE: When passing pageSize == -1, **all** items are returns. Exercise caution regarding memory limits. Always
+// prefer to set the pageSize.
+// TODO: Remove all calls that set pageSize to -1. https://github.com/TBD54566975/ssi-service/issues/525
 func readAllKeys(ctx context.Context, namespace string, b *RedisDB, pageSize int, cursor uint64) ([]string, string, error) {
 
 	var allKeys []string
