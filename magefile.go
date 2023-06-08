@@ -124,7 +124,7 @@ func Spec() error {
 	}
 
 	// We need to enable dependencies because many of our external API objects have ssi-sdk objects.
-	return sh.Run(swagCommand, "init", "-g", "cmd/ssiservice/main.go", "--overridesFile", "doc/overrides.swaggo", "--pd", "--parseInternal", "-o", "doc", "-ot", "go,yaml")
+	return sh.Run(swagCommand, "init", "-g", "cmd/ssiservice/main.go", "--overridesFile", "doc/overrides.swaggo", "--pd", "--parseInternal", "-o", "doc", "-ot", "yaml")
 }
 
 func runCITests(extraTestArgs ...string) error {

@@ -12,7 +12,6 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 
 	"github.com/tbd54566975/ssi-service/config"
-	"github.com/tbd54566975/ssi-service/doc"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/middleware"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
@@ -70,10 +69,6 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	engine.GET(ReadinessPrefix, router.Readiness(ssi.GetServices()))
 
 	// swagger
-	doc.SwaggerInfo.Version = cfg.SVN
-	doc.SwaggerInfo.Description = cfg.Desc
-	doc.SwaggerInfo.Host = cfg.Server.APIHost
-	doc.SwaggerInfo.Schemes = []string{"http"}
 	engine.StaticFile("swagger.yaml", "./doc/swagger.yaml")
 	engine.GET(SwaggerPrefix, ginswagger.WrapHandler(swaggerfiles.Handler, ginswagger.URL("/swagger.yaml")))
 
