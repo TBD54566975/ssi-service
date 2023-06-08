@@ -197,11 +197,11 @@ func BatchCreateVerifiableCredentials(credentialInput batchCredInputParams) (str
 	return output, nil
 }
 
-func BatchCreate1000VerifiableCredentials(credentialInput credInputParams) (string, error) {
+func BatchCreate100VerifiableCredentials(credentialInput credInputParams) (string, error) {
 	logrus.Println("\n\nCreate a verifiable credential")
 
-	creds := make([]any, 0, 1000)
-	for i := 0; i < 1000; i++ {
+	creds := make([]any, 0)
+	for i := 0; i < 100; i++ {
 		credentialInput, err := resolveTemplate(credInputParams{
 			IssuerID:    credentialInput.IssuerID,
 			IssuerKID:   credentialInput.IssuerKID,

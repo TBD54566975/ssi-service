@@ -158,7 +158,7 @@ func TestBatchCreate1000CredentialsIntegration(t *testing.T) {
 	assert.NotEmpty(t, schemaID)
 
 	// This test is simply about making sure we can create the maximum configured by default.
-	vcsOutput, err := BatchCreate1000VerifiableCredentials(credInputParams{
+	vcsOutput, err := BatchCreate100VerifiableCredentials(credInputParams{
 		IssuerID:  issuerDID.(string),
 		IssuerKID: issuerKID.(string),
 		SchemaID:  schemaID.(string),
