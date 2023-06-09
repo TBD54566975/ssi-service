@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	credschema "github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -98,6 +99,7 @@ func TestSchemaRouter(t *testing.T) {
 		assert.NotEmpty(tt, createdSchema)
 		assert.NotEmpty(tt, createdSchema.ID)
 		assert.Equal(tt, "simple schema 2", createdSchema.Schema.Name())
+		assert.Equal(tt, credschema.JSONSchema2023Type, createdSchema.Type)
 
 		// get all schemas, expect two
 		gotSchemas, err = schemaService.ListSchemas(context.Background())
