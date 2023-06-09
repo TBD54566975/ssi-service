@@ -252,7 +252,7 @@ type PageToken struct {
 //	@Tags			DecentralizedIdentityAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			method	path		string	true	"Method must be one returned by GET /v1/dids"
+//	@Param			method		path		string	true	"Method must be one returned by GET /v1/dids"
 //	@Param			deleted		query		boolean	false	"When true, returns soft-deleted DIDs. Otherwise, returns DIDs that have not been soft-deleted. Default is false."
 //	@Param			pageSize	query		number	false	"Hint to the server of the maximum elements to return. More may be returned. When not set, the server will return all elements."
 //	@Param			pageToken	query		string	false	"Used to indicate to the server to return a specific page of the list results. Must match a previous requests' `nextPageToken`."

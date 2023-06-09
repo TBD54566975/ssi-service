@@ -118,7 +118,7 @@ func Spec() error {
 		return err
 	}
 
-	if err := sh.Run(swagCommand, "fmt", "-d", "pkg/server/router"); err != nil {
+	if err := sh.Run(swagCommand, "fmt", "-d", "pkg/server/router,cmd/ssiservice"); err != nil {
 		logrus.WithError(err).Error("failed to format swagger docs")
 		return err
 	}
