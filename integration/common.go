@@ -14,7 +14,6 @@ import (
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/goccy/go-json"
-	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -422,16 +421,15 @@ func compactJSONOutput(jsonString string) string {
 }
 
 func getJSONElement(jsonString string, jsonPath string) (string, error) {
-	jsonMap := make(map[string]any)
-	if err := json.Unmarshal([]byte(jsonString), &jsonMap); err != nil {
-		return "", errors.Wrap(err, "unmarshalling json string")
-	}
-
-	element, err := jsonpath.JsonPathLookup(jsonMap, jsonPath)
+	path, err := json.CreatePath(jsonPath)
 	if err != nil {
-		return "", errors.Wrap(err, "finding element in json string")
+		return "", err
 	}
-
+	var elements []any
+	if err := path.Unmarshal([]byte(jsonString), &elements); err != nil {
+		return "", err
+	}
+	element := elements[0]
 	if element == nil {
 		return "<nil>", nil
 	}
@@ -487,7 +485,9 @@ func put(url string, jsonData string) (string, error) {
 	if err != nil {
 		return "", errors.Wrap(err, "client http client")
 	}
-	defer resp.Body.Close()
+	defer func(c io.ReadCloser) {
+		_ = c.Close()
+	}(resp.Body)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

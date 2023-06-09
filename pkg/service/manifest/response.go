@@ -12,7 +12,6 @@ import (
 	errresp "github.com/TBD54566975/ssi-sdk/error"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
-	"github.com/oliveagle/jsonpath"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
@@ -167,7 +166,7 @@ func (s Service) fulfillmentCredentialResponse(ctx context.Context, responseBuil
 
 func (s Service) applyIssuanceTemplate(credentialRequest credential.CreateCredentialRequest, template issuance.CredentialTemplate,
 	applicationJSON map[string]any, credManifest manifest.CredentialManifest, submission exchange.PresentationSubmission) (*credential.CreateCredentialRequest, error) {
-	cred, err := getCredentialForInputDescriptor(applicationJSON, template.CredentialInputDescriptor, credManifest, submission)
+	inputCredential, err := getCredentialForInputDescriptor(applicationJSON, template.CredentialInputDescriptor, credManifest, submission)
 	if err != nil {
 		return nil, err
 	}
@@ -175,8 +174,11 @@ func (s Service) applyIssuanceTemplate(credentialRequest credential.CreateCreden
 		claimValue := v
 		if vs, ok := v.(string); ok {
 			if strings.HasPrefix(vs, "$") {
-				claimValue, err = jsonpath.JsonPathLookup(cred, vs)
+				path, err := json.CreatePath(vs)
 				if err != nil {
+					return nil, err
+				}
+				if err := path.Get(inputCredential, &claimValue); err != nil {
 					return nil, errors.Wrapf(err, "looking up json path \"%s\" for key=\"%s\"", vs, k)
 				}
 			}
@@ -226,11 +228,14 @@ func getCredentialForInputDescriptor(applicationJSON map[string]any, templateInp
 	// Lookup the claim that's sent in the submission.
 	for _, descriptor := range submission.DescriptorMap {
 		if descriptor.ID == templateInputDescriptorID {
-			c, err := jsonpath.JsonPathLookup(applicationJSON, descriptor.Path)
+			path, err := json.CreatePath(descriptor.Path)
 			if err != nil {
+				return nil, errors.Wrapf(err, "creating json path")
+			}
+			var c any
+			if err := path.Get(applicationJSON, &c); err != nil {
 				return nil, errors.Wrapf(err, "looking up json path \"%s\" for submission=\"%s\"", descriptor.Path, descriptor.ID)
 			}
-
 			return toCredentialJSON(c)
 		}
 	}

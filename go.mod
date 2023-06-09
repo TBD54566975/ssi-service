@@ -23,7 +23,6 @@ require (
 	github.com/lestrrat-go/jwx/v2 v2.0.9
 	github.com/magefile/mage v1.15.0
 	github.com/mr-tron/base58 v1.2.0
-	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/ory/fosite v0.44.0
 	github.com/pkg/errors v0.9.1
 	github.com/redis/go-redis/extra/redisotel/v9 v9.0.5
@@ -132,6 +131,7 @@ require (
 	github.com/multiformats/go-multicodec v0.9.0 // indirect
 	github.com/multiformats/go-multihash v0.2.2 // indirect
 	github.com/multiformats/go-varint v0.0.7 // indirect
+	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852 // indirect
 	github.com/ory/go-acc v0.2.9-0.20230103102148-6b1c9a70dbbe // indirect
 	github.com/ory/go-convenience v0.1.0 // indirect
 	github.com/ory/x v0.0.558 // indirect
