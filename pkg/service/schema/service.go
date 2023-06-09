@@ -207,8 +207,10 @@ func (s Service) ListSchemas(ctx context.Context) (*ListSchemasResponse, error) 
 	schemas := make([]GetSchemaResponse, 0, len(storedSchemas))
 	for _, stored := range storedSchemas {
 		schemas = append(schemas, GetSchemaResponse{
-			ID:     stored.ID,
-			Schema: stored.Schema,
+			ID:               stored.ID,
+			Type:             stored.Type,
+			Schema:           stored.Schema,
+			CredentialSchema: stored.CredentialSchema,
 		})
 	}
 
