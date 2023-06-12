@@ -14,6 +14,7 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
@@ -250,7 +251,7 @@ func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 }
 
 // ListDIDs returns all DIDs we have in storage for ION, it is not feasible to get all DIDs from the network
-func (h *ionHandler) ListDIDs(ctx context.Context, page *Page) (*ListDIDsResponse, error) {
+func (h *ionHandler) ListDIDs(ctx context.Context, page *common.Page) (*ListDIDsResponse, error) {
 	gotDIDs, err := h.storage.ListDIDsPage(ctx, did.IONMethod.String(), page, new(ionStoredDID))
 	if err != nil {
 		return nil, errors.Wrap(err, "error getting did:ion DIDs")

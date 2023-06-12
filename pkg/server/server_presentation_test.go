@@ -373,6 +373,129 @@ func TestPresentationAPI(t *testing.T) {
 			assert.Empty(ttt, resp.Submissions)
 		})
 
+		t.Run("List submissions made up token fails", func(ttt *testing.T) {
+			s := setupTestDB(ttt)
+			pRouter, _ := setupPresentationRouter(ttt, s)
+
+			w := httptest.NewRecorder()
+			badParams := url.Values{
+				"pageSize":  []string{"1"},
+				"pageToken": []string{"made up token"},
+			}
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?"+badParams.Encode(), nil)
+			c := newRequestContextWithURLValues(w, req, badParams)
+			pRouter.ListSubmissions(c)
+
+			assert.Contains(tt, w.Body.String(), "token value cannot be decoded")
+		})
+
+		t.Run("List submissions pagination", func(ttt *testing.T) {
+			s := setupTestDB(ttt)
+			pRouter, didService := setupPresentationRouter(ttt, s)
+
+			authorDID := createDID(ttt, didService)
+
+			holderSigner, holderDID := getSigner(ttt)
+			definition := createPresentationDefinition(ttt, pRouter)
+			_ = createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
+				WithCredentialSubject(credential.CredentialSubject{
+					"additionalName": "McLovin",
+					"dateOfBirth":    "1987-01-02",
+					"familyName":     "Andres",
+					"givenName":      "Uribe",
+					"id":             "did:web:andresuribe.com",
+				})), holderDID, holderSigner)
+
+			mrTeeSigner, mrTeeDID := getSigner(ttt)
+			_ = createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
+				WithCredentialSubject(credential.CredentialSubject{
+					"additionalName": "Mr. T",
+					"dateOfBirth":    "1999-01-02",
+					"familyName":     "Mister",
+					"givenName":      "Tee",
+					"id":             "did:web:mrt.com"})), mrTeeDID, mrTeeSigner)
+
+			w := httptest.NewRecorder()
+			params := url.Values{
+				"pageSize": []string{"1"},
+			}
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?"+params.Encode(), nil)
+			c := newRequestContextWithURLValues(w, req, params)
+
+			pRouter.ListSubmissions(c)
+
+			var listSubmissionResponse router.ListSubmissionResponse
+			err := json.NewDecoder(w.Body).Decode(&listSubmissionResponse)
+			assert.NoError(tt, err)
+			assert.NotEmpty(tt, listSubmissionResponse.NextPageToken)
+			assert.Len(tt, listSubmissionResponse.Submissions, 1)
+
+			w = httptest.NewRecorder()
+			params["pageToken"] = []string{listSubmissionResponse.NextPageToken}
+			req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?"+params.Encode(), nil)
+			c = newRequestContextWithURLValues(w, req, params)
+
+			pRouter.ListSubmissions(c)
+
+			var listSubmissionsResponse2 router.ListSubmissionResponse
+			err = json.NewDecoder(w.Body).Decode(&listSubmissionsResponse2)
+			assert.NoError(tt, err)
+			assert.Empty(tt, listSubmissionsResponse2.NextPageToken)
+			assert.Len(tt, listSubmissionsResponse2.Submissions, 1)
+		})
+
+		t.Run("List submissions pagination change query between calls returns error", func(ttt *testing.T) {
+			s := setupTestDB(ttt)
+			pRouter, didService := setupPresentationRouter(ttt, s)
+
+			authorDID := createDID(ttt, didService)
+
+			holderSigner, holderDID := getSigner(ttt)
+			definition := createPresentationDefinition(ttt, pRouter)
+			_ = createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
+				WithCredentialSubject(credential.CredentialSubject{
+					"additionalName": "McLovin",
+					"dateOfBirth":    "1987-01-02",
+					"familyName":     "Andres",
+					"givenName":      "Uribe",
+					"id":             "did:web:andresuribe.com",
+				})), holderDID, holderSigner)
+
+			mrTeeSigner, mrTeeDID := getSigner(ttt)
+			_ = createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(
+				WithCredentialSubject(credential.CredentialSubject{
+					"additionalName": "Mr. T",
+					"dateOfBirth":    "1999-01-02",
+					"familyName":     "Mister",
+					"givenName":      "Tee",
+					"id":             "did:web:mrt.com"})), mrTeeDID, mrTeeSigner)
+
+			w := httptest.NewRecorder()
+			params := url.Values{
+				"pageSize": []string{"1"},
+			}
+			req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?"+params.Encode(), nil)
+			c := newRequestContextWithURLValues(w, req, params)
+
+			pRouter.ListSubmissions(c)
+
+			var listSubmissionResponse router.ListSubmissionResponse
+			err := json.NewDecoder(w.Body).Decode(&listSubmissionResponse)
+			assert.NoError(tt, err)
+			assert.NotEmpty(tt, listSubmissionResponse.NextPageToken)
+			assert.Len(tt, listSubmissionResponse.Submissions, 1)
+
+			w = httptest.NewRecorder()
+			params["pageToken"] = []string{listSubmissionResponse.NextPageToken}
+			params["filter"] = []string{"status=\"pending\""}
+			req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?"+params.Encode(), nil)
+			c = newRequestContextWithURLValues(w, req, params)
+
+			pRouter.ListSubmissions(c)
+			assert.Equal(tt, http.StatusBadRequest, w.Result().StatusCode)
+			assert.Contains(tt, w.Body.String(), "page token must be for the same query")
+		})
+
 		tt.Run("List submissions returns many submissions", func(ttt *testing.T) {
 			s := setupTestDB(ttt)
 			pRouter, didService := setupPresentationRouter(ttt, s)
