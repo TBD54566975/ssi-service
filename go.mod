@@ -3,7 +3,7 @@ module github.com/tbd54566975/ssi-service
 go 1.20
 
 require (
-	github.com/BurntSushi/toml v1.3.1
+	github.com/BurntSushi/toml v1.3.2
 	github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230601154259-07707db2c404
 	github.com/alicebob/miniredis/v2 v2.30.3
 	github.com/ardanlabs/conf v1.5.0
