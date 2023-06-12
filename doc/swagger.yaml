@@ -978,6 +978,7 @@ definitions:
       '@context':
         description: A context is optional. If not present, we'll apply default, required
           context values.
+        example: ""
         type: string
       data:
         additionalProperties:
@@ -989,24 +990,26 @@ definitions:
         type: object
       expiry:
         description: Optional. Corresponds to `expirationDate` in https://www.w3.org/TR/vc-data-model/#expiration.
-        example: "2020-01-01T19:23:24Z"
+        example: "2029-01-01T19:23:24Z"
         type: string
       issuer:
         description: The issuer id.
-        example: did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
         type: string
       issuerKid:
         description: The KID used to sign the credential.
-        example: '#z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp'
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
         type: string
       revocable:
         description: |-
           Whether this credential can be revoked. When true, the created VC will have the "credentialStatus"
           property set.
+        example: true
         type: boolean
       schemaId:
         description: A schema ID is optional. If present, we'll attempt to look it
           up and validate the data against it.
+        example: 30e3f9b7-0528-4f6f-8aac-b74c8843187a
         type: string
       subject:
         description: The subject id.
@@ -1016,6 +1019,7 @@ definitions:
         description: |-
           Whether this credential can be suspended. When true, the created VC will have the "credentialStatus"
           property set.
+        example: false
         type: boolean
     required:
     - data
@@ -1056,9 +1060,8 @@ definitions:
       keyType:
         allOf:
         - $ref: '#/definitions/crypto.KeyType'
-        description: |-
-          Identifies the cryptographic algorithm family to use when generating this key.
-          One of the following: "Ed25519", "X25519", "secp256k1", "P-224","P-256","P-384", "P-521", "RSA"
+        description: Identifies the cryptographic algorithm family to use when generating
+          this key.
       options:
         description: Options for creating the DID. Implementation dependent on the
           method.
@@ -1992,16 +1995,18 @@ definitions:
     - Second
     - Minute
     - Hour
+host: '{{.SwaggerInfoHost}}'
 info:
   contact:
     email: tbd-developer@squareup.com
     name: TBD
     url: https://github.com/TBD54566975/ssi-service/issues
-  description: https://github.com/TBD54566975/ssi-service
+  description: '{{.SwaggerInfoDescription}}'
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: SSI Service API
+  version: '{{.SwaggerInfoVersion}}'
 paths:
   /health:
     get:
@@ -2334,6 +2339,11 @@ paths:
       description: List DIDs by method. Checks for an optional "deleted=true" query
         parameter, which exclusively returns DIDs that have been "Soft Deleted".
       parameters:
+      - description: Method must be one returned by GET /v1/dids
+        in: path
+        name: method
+        required: true
+        type: string
       - description: When true, returns soft-deleted DIDs. Otherwise, returns DIDs
           that have not been soft-deleted. Default is false.
         in: query
@@ -2376,17 +2386,17 @@ paths:
         registration) is left up to the clients of this API. The private key(s) created by the method are stored
         internally never leave the service boundary.
       parameters:
+      - description: Method
+        in: path
+        name: method
+        required: true
+        type: string
       - description: request body
         in: body
         name: request
         required: true
         schema:
           $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
-      - description: Method
-        in: path
-        name: method
-        required: true
-        type: string
       produces:
       - application/json
       responses:

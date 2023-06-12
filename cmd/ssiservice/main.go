@@ -26,13 +26,17 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 )
 
-// @title          SSI Service API
-// @description    https://github.com/TBD54566975/ssi-service
-// @contact.name   TBD
-// @contact.url    https://github.com/TBD54566975/ssi-service/issues
-// @contact.email  tbd-developer@squareup.com
-// @license.name   Apache 2.0
-// @license.url    http://www.apache.org/licenses/LICENSE-2.0.html
+// main godoc
+//
+//	@title			SSI Service API
+//	@description	{{.SwaggerInfoDescription}}
+//	@contact.name	TBD
+//	@contact.url	https://github.com/TBD54566975/ssi-service/issues
+//	@contact.email	tbd-developer@squareup.com
+//	@license.name	Apache 2.0
+//	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
+//	@host			{{.SwaggerInfoHost}}
+//	@version		{{.SwaggerInfoVersion}}
 func main() {
 	logrus.Info("Starting up...")
 
@@ -122,15 +126,21 @@ func run() error {
 		defer cancel()
 
 		// Handle shutdown properly so nothing leaks.
-		if err = tp.Shutdown(ctx); err != nil {
-			logrus.Errorf("main: failed to shutdown tracer: %s", err)
+		if tp != nil {
+			if err = tp.Shutdown(ctx); err != nil {
+				logrus.Errorf("main: failed to shutdown tracer: %s", err)
+			}
+		}
+
+		if err := ssiServer.PreShutdownHooks(ctx); err != nil {
+			logrus.WithError(err).Error("main: failed to run pre shutdown hooks")
 		}
 
 		if err = ssiServer.Shutdown(ctx); err != nil {
+			logrus.WithError(err).Error("main: failed to stop server gracefully, forcing shutdown")
 			if err = ssiServer.Close(); err != nil {
-				return err
+				logrus.WithError(err).Error("main: failed to close server")
 			}
-			return errors.Wrap(err, "main: failed to stop server gracefully")
 		}
 	}
 
