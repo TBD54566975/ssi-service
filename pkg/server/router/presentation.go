@@ -354,12 +354,12 @@ type ListSubmissionResponse struct {
 //	@Tags			PresentationSubmissionAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			filter	query		string	false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=status="pending"`"
+//	@Param			filter		query		string	false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=status="pending"`"
 //	@Param			pageSize	query		number	false	"Hint to the server of the maximum elements to return. More may be returned. When not set, the server will return all elements."
 //	@Param			pageToken	query		string	false	"Used to indicate to the server to return a specific page of the list results. Must match a previous requests' `nextPageToken`."
-//	@Success		200		{object}	ListSubmissionResponse
-//	@Failure		400		{string}	string	"Bad request"
-//	@Failure		500		{string}	string	"Internal server error"
+//	@Success		200			{object}	ListSubmissionResponse
+//	@Failure		400			{string}	string	"Bad request"
+//	@Failure		500			{string}	string	"Internal server error"
 //	@Router			/v1/presentations/submissions [get]
 func (pr PresentationRouter) ListSubmissions(c *gin.Context) {
 	filterParam := framework.GetQueryValue(c, FilterParam)
