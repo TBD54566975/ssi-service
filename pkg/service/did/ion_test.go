@@ -17,34 +17,15 @@ import (
 )
 
 func TestIONHandler(t *testing.T) {
-
-	tests := []struct {
-		name           string
-		serviceStorage func(t *testing.T) storage.ServiceStorage
-	}{
-		{
-			name: "Test with Bolt DB",
-			serviceStorage: func(t *testing.T) storage.ServiceStorage {
-				return testutil.SetupBoltTestDB(t)
-			},
-		},
-		{
-			name: "Test with Redis DB",
-			serviceStorage: func(t *testing.T) storage.ServiceStorage {
-				return testutil.SetupRedisTestDB(t)
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := range testutil.TestDatabases {
+		t.Run(test.Name, func(t *testing.T) {
 			t.Run("Test Create ION Handler", func(tt *testing.T) {
 				handler, err := NewIONHandler("", nil, nil)
 				assert.Error(tt, err)
 				assert.Empty(tt, handler)
 				assert.Contains(tt, err.Error(), "baseURL cannot be empty")
 
-				s := test.serviceStorage(t)
+				s := test.ServiceStorage(t)
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
@@ -72,7 +53,7 @@ func TestIONHandler(t *testing.T) {
 
 			t.Run("Test Create DID", func(tt *testing.T) {
 				// create a handler
-				s := test.serviceStorage(t)
+				s := test.ServiceStorage(t)
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
@@ -101,7 +82,7 @@ func TestIONHandler(t *testing.T) {
 				defer gock.Off()
 
 				// create a handler
-				s := test.serviceStorage(t)
+				s := test.ServiceStorage(t)
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
@@ -128,7 +109,7 @@ func TestIONHandler(t *testing.T) {
 
 			t.Run("Test Get DID from storage", func(tt *testing.T) {
 				// create a handler
-				s := test.serviceStorage(t)
+				s := test.ServiceStorage(t)
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
@@ -166,7 +147,7 @@ func TestIONHandler(t *testing.T) {
 
 			t.Run("Test Get DIDs from storage", func(tt *testing.T) {
 				// create a handler
-				s := test.serviceStorage(t)
+				s := test.ServiceStorage(t)
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
@@ -220,7 +201,7 @@ func TestIONHandler(t *testing.T) {
 
 			t.Run("Test Get DID from resolver", func(tt *testing.T) {
 				// create a handler
-				s := test.serviceStorage(t)
+				s := test.ServiceStorage(t)
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)

@@ -9,7 +9,25 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
-func SetupRedisTestDB(t *testing.T) storage.ServiceStorage {
+var TestDatabases = []struct {
+	Name           string
+	ServiceStorage func(t *testing.T) storage.ServiceStorage
+}{
+	{
+		Name: "Test with Bolt DB",
+		ServiceStorage: func(t *testing.T) storage.ServiceStorage {
+			return setupBoltTestDB(t)
+		},
+	},
+	{
+		Name: "Test with Redis DB",
+		ServiceStorage: func(t *testing.T) storage.ServiceStorage {
+			return setupRedisTestDB(t)
+		},
+	},
+}
+
+func setupRedisTestDB(t *testing.T) storage.ServiceStorage {
 	server := miniredis.RunT(t)
 	options := []storage.Option{
 		{
@@ -31,7 +49,7 @@ func SetupRedisTestDB(t *testing.T) storage.ServiceStorage {
 	return s
 }
 
-func SetupBoltTestDB(t *testing.T) storage.ServiceStorage {
+func setupBoltTestDB(t *testing.T) storage.ServiceStorage {
 	file, err := os.CreateTemp("", "bolt")
 	require.NoError(t, err)
 	name := file.Name()

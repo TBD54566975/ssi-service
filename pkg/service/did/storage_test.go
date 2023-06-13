@@ -6,35 +6,15 @@ import (
 
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
-	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
 )
 
 func TestStorage(t *testing.T) {
-
-	tests := []struct {
-		name           string
-		serviceStorage func(t *testing.T) storage.ServiceStorage
-	}{
-		{
-			name: "Test with Bolt DB",
-			serviceStorage: func(t *testing.T) storage.ServiceStorage {
-				return testutil.SetupBoltTestDB(t)
-			},
-		},
-		{
-			name: "Test with Redis DB",
-			serviceStorage: func(t *testing.T) storage.ServiceStorage {
-				return testutil.SetupRedisTestDB(t)
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := range testutil.TestDatabases {
+		t.Run(test.Name, func(t *testing.T) {
 
 			t.Run("Create bad DID - no namespace", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.serviceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
 				assert.NoError(tt, err)
 
 				// create a did
@@ -53,7 +33,7 @@ func TestStorage(t *testing.T) {
 			})
 
 			t.Run("Get bad DID - namespace does not exist", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.serviceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
 				assert.NoError(tt, err)
 
 				// store
@@ -64,7 +44,7 @@ func TestStorage(t *testing.T) {
 			})
 
 			t.Run("Get bad DID - does not exist", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.serviceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
 				assert.NoError(tt, err)
 
 				// store
@@ -75,7 +55,7 @@ func TestStorage(t *testing.T) {
 			})
 
 			t.Run("Create and Get DID", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.serviceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
 				assert.NoError(tt, err)
 
 				// create a did
@@ -104,7 +84,7 @@ func TestStorage(t *testing.T) {
 			})
 
 			t.Run("Create and Get DID of a custom type", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.serviceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
 				assert.NoError(tt, err)
 
 				// create a did
@@ -130,7 +110,7 @@ func TestStorage(t *testing.T) {
 			})
 
 			t.Run("Create and Get Multiple DIDs", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.serviceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
 				assert.NoError(tt, err)
 
 				// create two dids
@@ -173,7 +153,7 @@ func TestStorage(t *testing.T) {
 			})
 
 			t.Run("Soft delete DID", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.serviceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
 				assert.NoError(tt, err)
 
 				// create two dids

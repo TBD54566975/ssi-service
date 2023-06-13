@@ -18,27 +18,9 @@ import (
 )
 
 func TestStorage_CancelOperation(t *testing.T) {
-	tests := []struct {
-		name           string
-		serviceStorage func(t *testing.T) storage.ServiceStorage
-	}{
-		{
-			name: "Test with Bolt DB",
-			serviceStorage: func(t *testing.T) storage.ServiceStorage {
-				return testutil.SetupBoltTestDB(t)
-			},
-		},
-		{
-			name: "Test with Redis DB",
-			serviceStorage: func(t *testing.T) storage.ServiceStorage {
-				return testutil.SetupRedisTestDB(t)
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			s := test.serviceStorage(t)
+	for _, test := range testutil.TestDatabases {
+		t.Run(test.Name, func(t *testing.T) {
+			s := test.ServiceStorage(t)
 			data, err := json.Marshal(manifeststg.StoredApplication{})
 			require.NoError(t, err)
 			require.NoError(t, s.Write(context.Background(), credential.ApplicationNamespace, "hello", data))
