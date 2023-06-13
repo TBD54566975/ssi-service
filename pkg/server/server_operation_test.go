@@ -281,23 +281,6 @@ func TestOperationsAPI(t *testing.T) {
 	}
 }
 
-//func setupTestDB(t *testing.T) storage.ServiceStorage {
-//	file, err := os.CreateTemp("", "bolt")
-//	require.NoError(t, err)
-//	name := file.Name()
-//	s, err := storage.NewStorage(storage.Bolt, storage.Option{
-//		ID:     storage.BoltDBFilePathOption,
-//		Option: name,
-//	})
-//	require.NoError(t, err)
-//	t.Cleanup(func() {
-//		_ = s.Close()
-//		_ = file.Close()
-//		_ = os.Remove(name)
-//	})
-//	return s
-//}
-
 func reviewSubmission(t *testing.T, pRouter *router.PresentationRouter, submissionID string) router.ReviewSubmissionResponse {
 	request := router.ReviewSubmissionRequest{
 		Approved: true,

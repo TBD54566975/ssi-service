@@ -14,17 +14,34 @@ var TestDatabases = []struct {
 	ServiceStorage func(t *testing.T) storage.ServiceStorage
 }{
 	{
-		Name: "Test with Bolt DB",
-		ServiceStorage: func(t *testing.T) storage.ServiceStorage {
-			return setupBoltTestDB(t)
-		},
+		Name:           "Test with Bolt DB",
+		ServiceStorage: setupBoltTestDB,
 	},
 	{
-		Name: "Test with Redis DB",
-		ServiceStorage: func(t *testing.T) storage.ServiceStorage {
-			return setupRedisTestDB(t)
-		},
+		Name:           "Test with Redis DB",
+		ServiceStorage: setupRedisTestDB,
 	},
+}
+
+func setupBoltTestDB(t *testing.T) storage.ServiceStorage {
+	file, err := os.CreateTemp("", "bolt")
+	require.NoError(t, err)
+	name := file.Name()
+	err = file.Close()
+	require.NoError(t, err)
+	s, err := storage.NewStorage(storage.Bolt, storage.Option{
+		ID:     storage.BoltDBFilePathOption,
+		Option: name,
+	})
+
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		_ = s.Close()
+		_ = os.Remove(s.URI())
+	})
+
+	return s
 }
 
 func setupRedisTestDB(t *testing.T) storage.ServiceStorage {
@@ -44,27 +61,6 @@ func setupRedisTestDB(t *testing.T) storage.ServiceStorage {
 
 	t.Cleanup(func() {
 		_ = s.Close()
-	})
-
-	return s
-}
-
-func setupBoltTestDB(t *testing.T) storage.ServiceStorage {
-	file, err := os.CreateTemp("", "bolt")
-	require.NoError(t, err)
-	name := file.Name()
-	err = file.Close()
-	require.NoError(t, err)
-	s, err := storage.NewStorage(storage.Bolt, storage.Option{
-		ID:     storage.BoltDBFilePathOption,
-		Option: name,
-	})
-
-	require.NoError(t, err)
-
-	t.Cleanup(func() {
-		_ = s.Close()
-		_ = os.Remove(s.URI())
 	})
 
 	return s

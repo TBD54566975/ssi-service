@@ -28,21 +28,3 @@ func (s *testService) Config() config.ServicesConfig {
 		ManifestConfig:   config.ManifestServiceConfig{},
 	}
 }
-
-//func setupTestDB(t *testing.T) storage.ServiceStorage {
-//	file, err := os.CreateTemp("", "bolt")
-//	require.NoError(t, err)
-//	name := file.Name()
-//	err = file.Close()
-//	require.NoError(t, err)
-//	s, err := storage.NewStorage(storage.Bolt, storage.Option{
-//		ID:     storage.BoltDBFilePathOption,
-//		Option: name,
-//	})
-//	require.NoError(t, err)
-//	t.Cleanup(func() {
-//		_ = s.Close()
-//		_ = os.Remove(s.URI())
-//	})
-//	return s
-//}

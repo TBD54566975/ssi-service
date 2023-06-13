@@ -400,8 +400,6 @@ func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, 
 }
 
 func setupAllThings(t *testing.T, s storage.ServiceStorage) (*did.CreateDIDResponse, *schema.CreateSchemaResponse, *model.CreateManifestResponse, *router.IssuanceRouter) {
-	//s := setupTestDB(t)
-
 	_, keyStoreSvc := testKeyStore(t, s)
 	didSvc := testDIDService(t, s, keyStoreSvc)
 	schemaSvc := testSchemaService(t, s, keyStoreSvc, didSvc)
