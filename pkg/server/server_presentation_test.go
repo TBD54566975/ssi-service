@@ -727,8 +727,8 @@ func createPresentationRequest(t *testing.T, pRouter *router.PresentationRouter,
 }
 
 func setupPresentationRouter(t *testing.T, s storage.ServiceStorage) (*router.PresentationRouter, *did.Service) {
-	keyStoreService := testKeyStoreService(t, s)
-	didService := testDIDService(t, s, keyStoreService)
+	keyStoreService, _ := testKeyStoreService(t, s)
+	didService, _ := testDIDService(t, s, keyStoreService, nil)
 	schemaService := testSchemaService(t, s, keyStoreService, didService)
 
 	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s, didService.GetResolver(), schemaService, keyStoreService)

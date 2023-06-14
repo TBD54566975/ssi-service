@@ -121,6 +121,8 @@ type DIDServiceConfig struct {
 	UniversalResolverURL     string   `toml:"universal_resolver_url"`
 	UniversalResolverMethods []string `toml:"universal_resolver_methods"`
 	IONResolverURL           string   `toml:"ion_resolver_url"`
+	// BatchCreateMaxItems set's the maximum amount that can be.
+	BatchCreateMaxItems int `toml:"batch_create_max_items" conf:"default:100"`
 }
 
 func (d *DIDServiceConfig) IsEmpty() bool {

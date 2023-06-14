@@ -60,13 +60,28 @@ func (d DefaultStoredDID) IsSoftDeleted() bool {
 
 type Storage struct {
 	db storage.ServiceStorage
+	tx storage.Tx
 }
 
 func NewDIDStorage(db storage.ServiceStorage) (*Storage, error) {
-	if db == nil {
-		return nil, errors.New("db reference is nil")
+	return NewDIDStorageFactory(db)(db)
+}
+
+type StorageFactory func(tx storage.Tx) (*Storage, error)
+
+func NewDIDStorageFactory(db storage.ServiceStorage) StorageFactory {
+	return func(tx storage.Tx) (*Storage, error) {
+		if db == nil {
+			return nil, errors.New("db reference is nil")
+		}
+		if tx == nil {
+			return nil, errors.New("tx reference is nil")
+		}
+		return &Storage{
+			db: db,
+			tx: tx,
+		}, nil
 	}
-	return &Storage{db: db}, nil
 }
 
 func (ds *Storage) StoreDID(ctx context.Context, did StoredDID) error {
@@ -79,7 +94,7 @@ func (ds *Storage) StoreDID(ctx context.Context, did StoredDID) error {
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, couldNotStoreDIDErr)
 	}
-	return ds.db.Write(ctx, ns, did.GetID(), didBytes)
+	return ds.tx.Write(ctx, ns, did.GetID(), didBytes)
 }
 
 // GetDID attempts to get a DID from the database. It will return an error if it cannot.
@@ -102,7 +117,7 @@ func (ds *Storage) GetDID(ctx context.Context, id string, out StoredDID) error {
 		return sdkutil.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
 	if err = json.Unmarshal(docBytes, out); err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not ummarshal stored DID: %s", id)
+		return sdkutil.LoggingErrorMsgf(err, "could not unmarshal stored DID: %s", id)
 	}
 	return nil
 }

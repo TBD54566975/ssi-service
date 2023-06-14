@@ -958,7 +958,7 @@ definitions:
     properties:
       requests:
         description: Required. The list of create credential requests. Cannot be more
-          than 1000 items.
+          than {{.Services.CredentialConfig.BatchCreateMaxItems}} items.
         items:
           $ref: '#/definitions/pkg_server_router.CreateCredentialRequest'
         type: array
@@ -971,6 +971,25 @@ definitions:
         description: The credentials created.
         items:
           $ref: '#/definitions/github_com_tbd54566975_ssi-service_internal_credential.Container'
+        type: array
+    type: object
+  pkg_server_router.BatchCreateDIDsRequest:
+    properties:
+      requests:
+        description: Required. The list of create credential requests. Cannot be more
+          than {{.Services.DIDConfig.BatchCreateMaxItems}} items.
+        items:
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+        type: array
+    required:
+    - requests
+    type: object
+  pkg_server_router.BatchCreateDIDsResponse:
+    properties:
+      dids:
+        description: The DID documents created.
+        items:
+          $ref: '#/definitions/did.Document'
         type: array
     type: object
   pkg_server_router.CreateCredentialRequest:
@@ -2007,18 +2026,18 @@ definitions:
     - Second
     - Minute
     - Hour
-host: '{{.SwaggerInfoHost}}'
+host: '{{.Server.APIHost}}'
 info:
   contact:
     email: tbd-developer@squareup.com
     name: TBD
     url: https://github.com/TBD54566975/ssi-service/issues
-  description: '{{.SwaggerInfoDescription}}'
+  description: '{{.Desc}}'
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: SSI Service API
-  version: '{{.SwaggerInfoVersion}}'
+  version: '{{.SVN}}'
 paths:
   /health:
     get:
@@ -2235,7 +2254,7 @@ paths:
       summary: Update Credential Status
       tags:
       - CredentialAPI
-  /v1/credentials/batchCreate:
+  /v1/credentials/batch:
     put:
       consumes:
       - application/json
@@ -2500,6 +2519,43 @@ paths:
       summary: Get DID
       tags:
       - DecentralizedIdentityAPI
+  /v1/dids/{method}/batch:
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Create a batch of verifiable credentials. The operation is atomic, meaning that all requests will
+        succeed or fail. This is currently only supported for the DID method named `did:key`.
+      parameters:
+      - description: Method. Only `key` is supported.
+        in: path
+        name: method
+        required: true
+        type: string
+      - description: The batch requests
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.BatchCreateDIDsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pkg_server_router.BatchCreateDIDsResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Batch Create DIDs
+      tags:
+      - CredentialAPI
   /v1/dids/resolver/{id}:
     get:
       consumes:
