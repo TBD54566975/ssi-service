@@ -14,101 +14,107 @@ import (
 
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
+	"github.com/tbd54566975/ssi-service/pkg/testutil"
 )
 
 func TestKeyStoreAPI(t *testing.T) {
-	t.Run("Test Store Key", func(tt *testing.T) {
-		bolt := setupTestDB(tt)
-		require.NotEmpty(tt, bolt)
 
-		keyStoreRouter, _ := testKeyStore(tt, bolt)
-		w := httptest.NewRecorder()
+	for _, test := range testutil.TestDatabases {
+		t.Run(test.Name, func(t *testing.T) {
+			t.Run("Test Store Key", func(tt *testing.T) {
+				db := test.ServiceStorage(t)
+				require.NotEmpty(tt, db)
 
-		// bad key type
-		badKeyStoreRequest := router.StoreKeyRequest{
-			ID:               "test-kid",
-			Type:             "bad",
-			Controller:       "me",
-			PrivateKeyBase58: "bad",
-		}
-		badRequestValue := newRequestValue(tt, badKeyStoreRequest)
-		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", badRequestValue)
+				keyStoreRouter, _ := testKeyStore(tt, db)
+				w := httptest.NewRecorder()
 
-		c := newRequestContext(w, req)
-		keyStoreRouter.StoreKey(c)
-		assert.Contains(tt, w.Body.String(), "unsupported key type: bad")
+				// bad key type
+				badKeyStoreRequest := router.StoreKeyRequest{
+					ID:               "test-kid",
+					Type:             "bad",
+					Controller:       "me",
+					PrivateKeyBase58: "bad",
+				}
+				badRequestValue := newRequestValue(tt, badKeyStoreRequest)
+				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", badRequestValue)
 
-		// store a valid key
-		_, privKey, err := crypto.GenerateKeyByKeyType(crypto.Ed25519)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, privKey)
+				c := newRequestContext(w, req)
+				keyStoreRouter.StoreKey(c)
+				assert.Contains(tt, w.Body.String(), "unsupported key type: bad")
 
-		privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
-		assert.NoError(tt, err)
+				// store a valid key
+				_, privKey, err := crypto.GenerateKeyByKeyType(crypto.Ed25519)
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, privKey)
 
-		// good request
-		storeKeyRequest := router.StoreKeyRequest{
-			ID:               "did:test:me#key-1",
-			Type:             crypto.Ed25519,
-			Controller:       "did:test:me",
-			PrivateKeyBase58: base58.Encode(privKeyBytes),
-		}
-		requestValue := newRequestValue(tt, storeKeyRequest)
-		req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
-		w = httptest.NewRecorder()
-		c = newRequestContext(w, req)
-		keyStoreRouter.StoreKey(c)
-		assert.True(tt, util.Is2xxResponse(w.Code))
-	})
+				privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
+				assert.NoError(tt, err)
 
-	t.Run("Test Get Key Details", func(tt *testing.T) {
-		bolt := setupTestDB(tt)
-		require.NotEmpty(tt, bolt)
+				// good request
+				storeKeyRequest := router.StoreKeyRequest{
+					ID:               "did:test:me#key-1",
+					Type:             crypto.Ed25519,
+					Controller:       "did:test:me",
+					PrivateKeyBase58: base58.Encode(privKeyBytes),
+				}
+				requestValue := newRequestValue(tt, storeKeyRequest)
+				req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
+				w = httptest.NewRecorder()
+				c = newRequestContext(w, req)
+				keyStoreRouter.StoreKey(c)
+				assert.True(tt, util.Is2xxResponse(w.Code))
+			})
 
-		keyStoreService, _ := testKeyStore(tt, bolt)
-		w := httptest.NewRecorder()
+			t.Run("Test Get Key Details", func(tt *testing.T) {
+				db := test.ServiceStorage(t)
+				require.NotEmpty(tt, db)
 
-		// store a valid key
-		pubKey, privKey, err := crypto.GenerateKeyByKeyType(crypto.Ed25519)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, privKey)
+				keyStoreService, _ := testKeyStore(tt, db)
+				w := httptest.NewRecorder()
 
-		privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
-		assert.NoError(tt, err)
+				// store a valid key
+				pubKey, privKey, err := crypto.GenerateKeyByKeyType(crypto.Ed25519)
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, privKey)
 
-		// good request
-		keyID := "did:test:me#key-2"
-		controller := "did:test:me"
-		storeKeyRequest := router.StoreKeyRequest{
-			ID:               keyID,
-			Type:             crypto.Ed25519,
-			Controller:       controller,
-			PrivateKeyBase58: base58.Encode(privKeyBytes),
-		}
-		requestValue := newRequestValue(tt, storeKeyRequest)
-		req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
-		c := newRequestContext(w, req)
-		keyStoreService.StoreKey(c)
-		assert.True(tt, util.Is2xxResponse(w.Code))
+				privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
+				assert.NoError(tt, err)
 
-		// get it back
-		w = httptest.NewRecorder()
-		getReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/keys/%s", keyID), nil)
-		c = newRequestContextWithParams(w, getReq, map[string]string{"id": keyID})
-		keyStoreService.GetKeyDetails(c)
-		assert.True(tt, util.Is2xxResponse(w.Code))
+				// good request
+				keyID := "did:test:me#key-2"
+				controller := "did:test:me"
+				storeKeyRequest := router.StoreKeyRequest{
+					ID:               keyID,
+					Type:             crypto.Ed25519,
+					Controller:       controller,
+					PrivateKeyBase58: base58.Encode(privKeyBytes),
+				}
+				requestValue := newRequestValue(tt, storeKeyRequest)
+				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/keys", requestValue)
+				c := newRequestContext(w, req)
+				keyStoreService.StoreKey(c)
+				assert.True(tt, util.Is2xxResponse(w.Code))
 
-		var resp router.GetKeyDetailsResponse
-		err = json.NewDecoder(w.Body).Decode(&resp)
-		assert.NoError(tt, err)
-		assert.Equal(tt, keyID, resp.ID)
-		assert.Equal(tt, controller, resp.Controller)
-		assert.Equal(tt, crypto.Ed25519, resp.Type)
+				// get it back
+				w = httptest.NewRecorder()
+				getReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/keys/%s", keyID), nil)
+				c = newRequestContextWithParams(w, getReq, map[string]string{"id": keyID})
+				keyStoreService.GetKeyDetails(c)
+				assert.True(tt, util.Is2xxResponse(w.Code))
 
-		gotPubKey, err := resp.PublicKeyJWK.ToPublicKey()
-		assert.NoError(tt, err)
-		wantPubKey, err := crypto.PubKeyToBytes(pubKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, wantPubKey, gotPubKey)
-	})
+				var resp router.GetKeyDetailsResponse
+				err = json.NewDecoder(w.Body).Decode(&resp)
+				assert.NoError(tt, err)
+				assert.Equal(tt, keyID, resp.ID)
+				assert.Equal(tt, controller, resp.Controller)
+				assert.Equal(tt, crypto.Ed25519, resp.Type)
+
+				gotPubKey, err := resp.PublicKeyJWK.ToPublicKey()
+				assert.NoError(tt, err)
+				wantPubKey, err := crypto.PubKeyToBytes(pubKey)
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, wantPubKey, gotPubKey)
+			})
+		})
+	}
 }

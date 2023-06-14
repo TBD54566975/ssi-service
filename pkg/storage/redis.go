@@ -351,8 +351,10 @@ func (b *RedisDB) Delete(ctx context.Context, namespace, key string) error {
 	}
 
 	res, err := b.db.GetDel(ctx, nameSpaceKey).Result()
-	if res == "" {
-		return errors.Wrapf(err, "key<%s> and namespace<%s> does not exist", key, namespace)
+
+	// if we delete something that doesn't exist, don't return any error
+	if res == "" && errors.Is(err, goredislib.Nil) {
+		return nil
 	}
 
 	return err
