@@ -8,7 +8,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
-	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -33,7 +33,6 @@ func TestDIDRouter(t *testing.T) {
 
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
-
 			// TODO: Fix pagesize issue on redis - https://github.com/TBD54566975/ssi-service/issues/538
 			if !strings.Contains(test.Name, "Redis") {
 				t.Run("List DIDs supports paging", func(tt *testing.T) {
@@ -48,26 +47,26 @@ func TestDIDRouter(t *testing.T) {
 					createDID(tt, didService)
 					createDID(tt, didService)
 
-		one := 1
-		listDIDsResponse1, err := didService.ListDIDsByMethod(context.Background(),
-			did.ListDIDsRequest{
-				Method: didsdk.KeyMethod,
-				PageRequest: &pagination.PageRequest{
-					PageSize: &one,
-				},
+					one := 1
+					listDIDsResponse1, err := didService.ListDIDsByMethod(context.Background(),
+						did.ListDIDsRequest{
+							Method: didsdk.KeyMethod,
+							PageRequest: &common.Page{
+								Size: one,
+							},
 						})
 
 					assert.NoError(tt, err)
 					assert.Len(tt, listDIDsResponse1.DIDs, 1)
 					assert.NotEmpty(tt, listDIDsResponse1.NextPageToken)
 
-		listDIDsResponse2, err := didService.ListDIDsByMethod(context.Background(),
-			did.ListDIDsRequest{
-				Method: didsdk.KeyMethod,
-				PageRequest: &pagination.PageRequest{
-					PageSize:  &one,
-					PageToken: &listDIDsResponse1.NextPageToken,
-				},
+					listDIDsResponse2, err := didService.ListDIDsByMethod(context.Background(),
+						did.ListDIDsRequest{
+							Method: didsdk.KeyMethod,
+							PageRequest: &common.Page{
+								Size:  one,
+								Token: listDIDsResponse1.NextPageToken,
+							},
 						})
 
 					assert.NoError(tt, err)

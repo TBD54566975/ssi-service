@@ -279,7 +279,7 @@ func (dr DIDRouter) ListDIDsByMethod(c *gin.Context) {
 	if pagination.ParsePaginationParams(c, &pageRequest) {
 		return
 	}
-	getDIDsRequest.PageRequest = &pageRequest
+	getDIDsRequest.PageRequest = pageRequest.ToServicePage()
 
 	listResp, err := dr.service.ListDIDsByMethod(c, getDIDsRequest)
 	if err != nil {
