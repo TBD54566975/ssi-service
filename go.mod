@@ -20,7 +20,7 @@ require (
 	github.com/google/tink/go v1.7.0
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.5.1
-	github.com/lestrrat-go/jwx v1.2.25
+	github.com/lestrrat-go/jwx v1.2.26
 	github.com/lestrrat-go/jwx/v2 v2.0.9
 	github.com/magefile/mage v1.15.0
 	github.com/mr-tron/base58 v1.2.0
@@ -33,7 +33,6 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
-	github.com/swaggo/swag/v2 v2.0.0-rc3
 	go.einride.tech/aip v0.60.0
 	go.etcd.io/bbolt v1.3.7
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.42.0
@@ -152,7 +151,6 @@ require (
 	github.com/spf13/viper v1.16.0 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	github.com/sv-tools/openapi v0.2.1 // indirect
 	github.com/swaggo/swag v1.16.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
@@ -175,7 +173,6 @@ require (
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.2.1 // indirect
 )
