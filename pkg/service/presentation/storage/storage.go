@@ -6,6 +6,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/submission"
 	"go.einride.tech/aip/filtering"
@@ -37,6 +38,11 @@ type StoredSubmission struct {
 	VerifiablePresentation credential.VerifiablePresentation `json:"vp"`
 }
 
+type StoredSubmissions struct {
+	Submissions   []StoredSubmission
+	NextPageToken string
+}
+
 func (s StoredSubmission) FilterVariablesMap() map[string]any {
 	return map[string]any{
 		"status": s.Status.String(),
@@ -46,7 +52,7 @@ func (s StoredSubmission) FilterVariablesMap() map[string]any {
 type SubmissionStorage interface {
 	StoreSubmission(ctx context.Context, schema StoredSubmission) error
 	GetSubmission(ctx context.Context, id string) (*StoredSubmission, error)
-	ListSubmissions(ctx context.Context, filter filtering.Filter) ([]StoredSubmission, error)
+	ListSubmissions(ctx context.Context, filter filtering.Filter, page common.Page) (*StoredSubmissions, error)
 	UpdateSubmission(ctx context.Context, id string, approved bool, reason string, submissionID string) (StoredSubmission, opstorage.StoredOperation, error)
 }
 

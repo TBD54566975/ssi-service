@@ -8,7 +8,6 @@ import (
 	didresolution "github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
-
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/did/resolution"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -202,18 +201,7 @@ func (s *Service) ListDIDsByMethod(ctx context.Context, request ListDIDsRequest)
 	if request.Deleted {
 		return handler.ListDeletedDIDs(ctx)
 	}
-	const allPages = -1
-
-	var page Page
-	page.Size = new(int)
-	*page.Size = allPages
-	if request.PageSize != nil {
-		page = Page{
-			Token: request.PageToken,
-			Size:  request.PageSize,
-		}
-	}
-	return handler.ListDIDs(ctx, &page)
+	return handler.ListDIDs(ctx, request.PageRequest)
 }
 
 func (s *Service) SoftDeleteDIDByMethod(ctx context.Context, request DeleteDIDRequest) error {

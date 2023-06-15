@@ -10,6 +10,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -151,30 +152,18 @@ func (ds *Storage) storedDIDs(gotDIDs map[string][]byte, outType StoredDID) []St
 	return out
 }
 
-type Page struct {
-	Token *string
-	Size  *int
-}
-
 type StoredDIDs struct {
 	DIDs          []StoredDID
 	NextPageToken string
 }
 
-func (ds *Storage) ListDIDsPage(ctx context.Context, method string, page *Page, outType StoredDID) (*StoredDIDs, error) {
+func (ds *Storage) ListDIDsPage(ctx context.Context, method string, page *common.Page, outType StoredDID) (*StoredDIDs, error) {
 	ns, err := getNamespaceForMethod(method)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting namespace")
 	}
 
-	token := ""
-	if page != nil && page.Token != nil {
-		token = *page.Token
-	}
-	size := -1
-	if page != nil && page.Size != nil {
-		size = *page.Size
-	}
+	token, size := page.ToStorageArgs()
 
 	gotDIDs, nextPageToken, err := ds.db.ReadPage(ctx, ns, token, size)
 	if err != nil {

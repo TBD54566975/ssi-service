@@ -269,13 +269,16 @@ func (s Service) GetSubmission(ctx context.Context, request model.GetSubmissionR
 func (s Service) ListSubmissions(ctx context.Context, request model.ListSubmissionRequest) (*model.ListSubmissionResponse, error) {
 	logrus.Debug("listing presentation submissions")
 
-	subs, err := s.storage.ListSubmissions(ctx, request.Filter)
+	subs, err := s.storage.ListSubmissions(ctx, request.Filter, *request.PageRequest.ToServicePage())
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching submissions from storage")
 	}
 
-	resp := &model.ListSubmissionResponse{Submissions: make([]model.Submission, 0, len(subs))}
-	for _, sub := range subs {
+	resp := &model.ListSubmissionResponse{
+		Submissions:   make([]model.Submission, 0, len(subs.Submissions)),
+		NextPageToken: subs.NextPageToken,
+	}
+	for _, sub := range subs.Submissions {
 		sub := sub // What's this?? see https://github.com/golang/go/wiki/CommonMistakes#using-reference-to-loop-iterator-variable
 		resp.Submissions = append(resp.Submissions, model.ServiceModel(&sub))
 	}

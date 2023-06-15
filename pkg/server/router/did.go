@@ -1,11 +1,8 @@
 package router
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net/http"
-	"net/url"
-	"reflect"
 	"strconv"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -14,7 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -23,11 +20,9 @@ import (
 )
 
 const (
-	MethodParam    = "method"
-	IDParam        = "id"
-	DeletedParam   = "deleted"
-	PageSizeParam  = "pageSize"
-	PageTokenParam = "pageToken"
+	MethodParam  = "method"
+	IDParam      = "id"
+	DeletedParam = "deleted"
 )
 
 // DIDRouter represents the dependencies required to instantiate a DID-HTTP service
@@ -240,11 +235,6 @@ type GetDIDsRequest struct {
 	Filter string `json:"filter,omitempty"`
 }
 
-type PageToken struct {
-	EncodedQuery  string
-	NextPageToken string
-}
-
 // ListDIDsByMethod godoc
 //
 //	@Summary		List DIDs
@@ -281,47 +271,15 @@ func (dr DIDRouter) ListDIDsByMethod(c *gin.Context) {
 	}
 	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
 	// TODO(gabe) differentiate between internal errors and not found DIDs
-	getDIDsRequest := did.ListDIDsRequest{Method: didsdk.Method(*method), Deleted: getIsDeleted}
-
-	pageSizeStr := framework.GetParam(c, PageSizeParam)
-
-	if pageSizeStr != nil {
-		pageSize, err := strconv.Atoi(*pageSizeStr)
-		if err != nil {
-			errMsg := fmt.Sprintf("list DIDs by method request encountered a problem with the %q query param", PageSizeParam)
-			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
-			return
-		}
-		getDIDsRequest.PageSize = &pageSize
+	getDIDsRequest := did.ListDIDsRequest{
+		Method:  didsdk.Method(*method),
+		Deleted: getIsDeleted,
 	}
-
-	queryPageToken := framework.GetParam(c, PageTokenParam)
-	if queryPageToken != nil {
-		errMsg := "token value cannot be decoded"
-		tokenData, err := base64.RawURLEncoding.DecodeString(*queryPageToken)
-		if err != nil {
-			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
-			return
-		}
-		var pageToken PageToken
-		if err := json.Unmarshal(tokenData, &pageToken); err != nil {
-			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
-			return
-		}
-		pageTokenValues, err := url.ParseQuery(pageToken.EncodedQuery)
-		if err != nil {
-			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
-			return
-		}
-
-		query := pageTokenQuery(c)
-		if !reflect.DeepEqual(pageTokenValues, query) {
-			logrus.Warnf("expected query from token to be equal to query from request. token: %v\nrequest%v", pageTokenValues, query)
-			framework.LoggingRespondErrMsg(c, "page token must be for the same query", http.StatusBadRequest)
-			return
-		}
-		getDIDsRequest.PageToken = &pageToken.NextPageToken
+	var pageRequest pagination.PageRequest
+	if pagination.ParsePaginationParams(c, &pageRequest) {
+		return
 	}
+	getDIDsRequest.PageRequest = pageRequest.ToServicePage()
 
 	listResp, err := dr.service.ListDIDsByMethod(c, getDIDsRequest)
 	if err != nil {
@@ -333,27 +291,10 @@ func (dr DIDRouter) ListDIDsByMethod(c *gin.Context) {
 	resp := ListDIDsByMethodResponse{
 		DIDs: listResp.DIDs,
 	}
-	if listResp.NextPageToken != "" {
-		tokenQuery := pageTokenQuery(c)
-		pageToken := PageToken{
-			EncodedQuery:  tokenQuery.Encode(),
-			NextPageToken: listResp.NextPageToken,
-		}
-		nextPageTokenData, err := json.Marshal(pageToken)
-		if err != nil {
-			framework.LoggingRespondErrWithMsg(c, err, "marshalling page token", http.StatusInternalServerError)
-			return
-		}
-		resp.NextPageToken = base64.RawURLEncoding.EncodeToString(nextPageTokenData)
+	if pagination.MaybeSetNextPageToken(c, listResp.NextPageToken, &resp.NextPageToken) {
+		return
 	}
 	framework.Respond(c, resp, http.StatusOK)
-}
-
-func pageTokenQuery(c *gin.Context) url.Values {
-	query := c.Request.URL.Query()
-	delete(query, PageTokenParam)
-	delete(query, PageSizeParam)
-	return query
 }
 
 type ResolveDIDResponse struct {

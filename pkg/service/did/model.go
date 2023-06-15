@@ -6,6 +6,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 )
 
 type GetSupportedMethodsResponse struct {
@@ -62,9 +63,7 @@ type ListDIDsRequest struct {
 	Method  didsdk.Method `json:"method" validate:"required"`
 	Deleted bool          `json:"deleted"`
 
-	// When nil, all DIDs will be returned.
-	PageSize  *int    `json:"pageSize,omitempty"`
-	PageToken *string `json:"pageToken,omitempty"`
+	PageRequest *common.Page
 }
 
 // ListDIDsResponse is the JSON-serializable response for getting all DIDs for a given method
