@@ -264,6 +264,9 @@ func (s Service) signCredentialJWT(ctx context.Context, issuerKID string, cred c
 	if gotKey.Controller != cred.Issuer.(string) {
 		return nil, sdkutil.LoggingNewErrorf("key controller<%s> does not match credential issuer<%s> for key<%s>", gotKey.Controller, cred.Issuer, issuerKID)
 	}
+	if gotKey.Revoked {
+		return nil, sdkutil.LoggingNewErrorf("cannot use revoked key<%s>", gotKey.ID)
+	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(issuerKID, gotKey.ID, gotKey.Key)
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating key access for signing credential with key<%s>", gotKey.ID)

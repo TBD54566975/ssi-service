@@ -94,6 +94,72 @@ func TestEncryptDecryptAllKeyTypes(t *testing.T) {
 }
 
 func TestStoreAndGetKey(t *testing.T) {
+	keyStore, err := createKeyStoreService(t)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, keyStore)
+
+	// store the key
+	_, privKey, err := crypto.GenerateEd25519Key()
+	assert.NoError(t, err)
+	err = keyStore.StoreKey(context.Background(), StoreKeyRequest{
+		ID:               "test-id",
+		Type:             crypto.Ed25519,
+		Controller:       "test-controller",
+		PrivateKeyBase58: base58.Encode(privKey),
+	})
+	assert.NoError(t, err)
+
+	// get it back
+	keyResponse, err := keyStore.GetKey(context.Background(), GetKeyRequest{ID: "test-id"})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, keyResponse)
+	assert.Equal(t, privKey, keyResponse.Key)
+
+	// make sure can create a signer properly
+	signer, err := jwx.NewJWXSigner("test-id", "kid", keyResponse.Key)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, signer)
+}
+
+func TestRevokeKey(t *testing.T) {
+	keyStore, err := createKeyStoreService(t)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, keyStore)
+
+	// store the key
+	_, privKey, err := crypto.GenerateEd25519Key()
+	assert.NoError(t, err)
+	keyID := "test-revocation-id"
+	err = keyStore.StoreKey(context.Background(), StoreKeyRequest{
+		ID:               keyID,
+		Type:             crypto.Ed25519,
+		Controller:       "test-revocation-controller",
+		PrivateKeyBase58: base58.Encode(privKey),
+	})
+	assert.NoError(t, err)
+
+	// get it back
+	keyResponse, err := keyStore.GetKey(context.Background(), GetKeyRequest{ID: keyID})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, keyResponse)
+	assert.Equal(t, privKey, keyResponse.Key)
+	assert.False(t, keyResponse.Revoked)
+	assert.Empty(t, keyResponse.RevokedAt)
+
+	// revoke the key
+	err = keyStore.RevokeKey(context.Background(), RevokeKeyRequest{ID: keyID})
+	assert.NoError(t, err)
+
+	// get the key after revocation
+	keyResponse, err = keyStore.GetKey(context.Background(), GetKeyRequest{ID: keyID})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, keyResponse)
+	assert.Equal(t, privKey, keyResponse.Key)
+	assert.True(t, keyResponse.Revoked)
+	assert.NotEmpty(t, keyResponse.RevokedAt)
+}
+
+func createKeyStoreService(t *testing.T) (*Service, error) {
 	file, err := os.CreateTemp("", "bolt")
 	require.NoError(t, err)
 	name := file.Name()
@@ -119,28 +185,5 @@ func TestStoreAndGetKey(t *testing.T) {
 			MasterKeyPassword: "test-password",
 		},
 		s)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, keyStore)
-
-	// store the key
-	_, privKey, err := crypto.GenerateEd25519Key()
-	assert.NoError(t, err)
-	err = keyStore.StoreKey(context.Background(), StoreKeyRequest{
-		ID:               "test-id",
-		Type:             crypto.Ed25519,
-		Controller:       "test-controller",
-		PrivateKeyBase58: base58.Encode(privKey),
-	})
-	assert.NoError(t, err)
-
-	// get it back
-	keyResponse, err := keyStore.GetKey(context.Background(), GetKeyRequest{ID: "test-id"})
-	assert.NoError(t, err)
-	assert.NotEmpty(t, keyResponse)
-	assert.Equal(t, privKey, keyResponse.Key)
-
-	// make sure can create a signer properly
-	signer, err := jwx.NewJWXSigner("test-id", "kid", keyResponse.Key)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, signer)
+	return keyStore, err
 }
