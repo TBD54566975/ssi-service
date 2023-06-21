@@ -1022,7 +1022,7 @@ func TestCredentialRouter(t *testing.T) {
 				assert.ErrorContains(tt, err, "has a different status purpose<revocation> value than the status credential<suspension>")
 			})
 
-			t.Run("Create Credential With Evidence", func(tt *testing.T) {
+			t.Run("Create Credential With Simple Evidence", func(tt *testing.T) {
 				issuer, issuerKID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
 				subject := "did:test:345"
 
@@ -1043,6 +1043,29 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NotEmpty(tt, createdCred.CredentialJWT)
 
 				assert.Equal(tt, createdCred.Credential.Evidence, []any{"hi", 123, true})
+			})
+
+			t.Run("Create Credential With Evidence", func(tt *testing.T) {
+				issuer, issuerKID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
+				subject := "did:test:345"
+
+				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+					Issuer:    issuer,
+					IssuerKID: issuerKID,
+					Subject:   subject,
+					SchemaID:  schemaID,
+					Data: map[string]any{
+						"email": "Satoshi@Nakamoto.btc",
+					},
+					Expiry:   time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+					Evidence: getEvidence(),
+				})
+
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, createdCred)
+				assert.NotEmpty(tt, createdCred.CredentialJWT)
+
+				assert.ElementsMatch(tt, createdCred.Credential.Evidence, getEvidence())
 			})
 		})
 	}
@@ -1098,8 +1121,8 @@ func getEmailSchema() map[string]any {
 	}
 }
 
-func getEvidence() map[string]any {
-	return map[string]any{
+func getEvidence() []any {
+	evidenceMap := map[string]any{
 		"id":               "https://example.edu/evidence/f2aeec97-fc0d-42bf-8ca7-0548192d4231",
 		"type":             []string{"DocumentVerification"},
 		"verifier":         "https://example.edu/issuers/14",
@@ -1108,4 +1131,12 @@ func getEvidence() map[string]any {
 		"documentPresence": "Physical",
 		"licenseNumber":    "123AB4567",
 	}
+
+	evidence := make([]any, 0)
+
+	for _, ev := range evidenceMap {
+		evidence = append(evidence, ev)
+	}
+
+	return evidence
 }
