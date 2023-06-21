@@ -28,7 +28,7 @@ type StoredCredential struct {
 	Key string `json:"key"`
 
 	// ID of the credential that identifies it within ssi service.
-	ServiceID string `json:"serviceId"`
+	LocalCredentialID string `json:"LocalCredentialId"`
 
 	// only one of these fields should be present
 	Credential    *credential.VerifiableCredential `json:"credential,omitempty"`
@@ -213,7 +213,7 @@ func (cs *Storage) StoreStatusListCredentialTx(ctx context.Context, tx storage.T
 
 	storedCredBytes, err := json.Marshal(storedCredential)
 	if err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.ServiceID)
+		return sdkutil.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.LocalCredentialID)
 	}
 
 	return tx.Write(ctx, slcMetadata.statusListCredentialWatchKey.Namespace, slcMetadata.statusListCredentialWatchKey.Key, storedCredBytes)
@@ -236,7 +236,7 @@ func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*Sto
 		if err = json.Unmarshal(credBytes, &cred); err != nil {
 			logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
 		}
-		if cred.ServiceID == id {
+		if cred.LocalCredentialID == id {
 			storedCreds = append(storedCreds, cred)
 		}
 	}
@@ -266,7 +266,7 @@ func (cs *Storage) getStoreCredentialWriteContext(request StoreCredentialRequest
 
 	storedCredBytes, err := json.Marshal(storedCredential)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.ServiceID)
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not store request: %s", storedCredential.LocalCredentialID)
 	}
 
 	wc := WriteContext{
@@ -303,17 +303,17 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 		schema = cred.CredentialSchema.ID
 	}
 	return &StoredCredential{
-		Key:           createPrefixKey(credID, issuer, subject, schema),
-		ServiceID:     credID,
-		Credential:    cred,
-		CredentialJWT: request.CredentialJWT,
-		Issuer:        issuer,
-		IssuerKID:     request.IssuerKID,
-		Subject:       subject,
-		Schema:        schema,
-		IssuanceDate:  cred.IssuanceDate,
-		Revoked:       request.Revoked,
-		Suspended:     request.Suspended,
+		Key:               createPrefixKey(credID, issuer, subject, schema),
+		LocalCredentialID: credID,
+		Credential:        cred,
+		CredentialJWT:     request.CredentialJWT,
+		Issuer:            issuer,
+		IssuerKID:         request.IssuerKID,
+		Subject:           subject,
+		Schema:            schema,
+		IssuanceDate:      cred.IssuanceDate,
+		Revoked:           request.Revoked,
+		Suspended:         request.Suspended,
 	}, nil
 }
 
