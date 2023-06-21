@@ -75,7 +75,6 @@ func NewCredentialContainerFromMap(credMap map[string]any) (*Container, error) {
 		return nil, errors.Wrap(err, "could not parse credential from map")
 	}
 	container := Container{
-		ID:         cred.ID,
 		Credential: cred,
 	}
 	if container.HasDataIntegrityCredential() {

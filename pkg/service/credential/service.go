@@ -625,7 +625,6 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 
 	// store the status list credential
 	statusListContainer := credint.Container{
-		// TODO: update this... maybe we don't even need the ID?
 		ID:            statusListCredentialID,
 		IssuerKID:     gotCred.IssuerKID,
 		Credential:    generatedStatusListCredential,
