@@ -24,6 +24,7 @@ type CreateCredentialRequest struct {
 	Expiry      string         `json:"expiry,omitempty"`
 	Revocable   bool           `json:"revocable,omitempty"`
 	Suspendable bool           `json:"suspendable,omitempty"`
+	Evidence    []any          `json:"evidence,omitempty"`
 	// TODO(gabe) support more capabilities like signature type, format, evidence, and more.
 }
 
@@ -98,4 +99,8 @@ func (csr CreateCredentialRequest) isStatusValid() bool {
 
 func (csr CreateCredentialRequest) hasStatus() bool {
 	return csr.Suspendable || csr.Revocable
+}
+
+func (csr CreateCredentialRequest) hasEvidence() bool {
+	return len(csr.Evidence) != 0
 }
