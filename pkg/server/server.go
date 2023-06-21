@@ -166,6 +166,8 @@ func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
 		gin.Recovery(),
 		gin.Logger(),
 		middleware.Errors(shutdown),
+		middleware.AuthMiddleware(),          // Add this line
+		middleware.AuthorizationMiddleware(), // Add this line
 	}
 	if cfg.JagerEnabled {
 		middlewares = append(middlewares, otelgin.Middleware(config.ServiceName))
