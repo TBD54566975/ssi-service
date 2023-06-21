@@ -80,14 +80,13 @@ func (s Service) createStatusListCredential(ctx context.Context, tx storage.Tx, 
 	}
 
 	statusListContainer := credint.Container{
-		ID:            generatedStatusListCredential.ID,
+		ID:            statusListID,
 		IssuerKID:     issuerKID,
 		Credential:    generatedStatusListCredential,
 		CredentialJWT: statusListCredJWT,
 	}
 
 	statusListStorageRequest := StoreCredentialRequest{
-		ID:        statusListID,
 		Container: statusListContainer,
 	}
 

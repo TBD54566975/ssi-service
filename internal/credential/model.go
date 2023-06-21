@@ -7,15 +7,14 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 )
 
 // Container acts as an abstraction over both possible credential representations
 // JWT representations are parsed upon container creation, while the original JWT is maintained
 type Container struct {
-	// Credential ID. This is the same value as the id within the secured credential. It is typically a URL that can be
-	// dereferenced. For example, `https://ssi-service.com/v1/credentials/48958871-6a6d-4a25-889f-88c9c6835780`.
+	// UUID assigned by the ssi-service. For example, 48958871-6a6d-4a25-889f-88c9c6835780. The `credential.id`
+	// value will be a URL that can be dereferenced, which includes this ID.
 	ID string `json:"id,omitempty"`
 
 	// The KID of the private key used to sign `credentialJwt`.
@@ -41,7 +40,7 @@ func (c Container) JWTString() string {
 }
 
 func (c Container) IsValid() bool {
-	return c.ID != "" && (c.HasDataIntegrityCredential() || c.HasJWTCredential())
+	return c.Credential != nil && c.Credential.ID != "" && (c.HasDataIntegrityCredential() || c.HasJWTCredential())
 }
 
 func (c Container) HasSignedCredential() bool {
@@ -63,7 +62,6 @@ func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
 		return nil, errors.Wrap(err, "could not parse credential from JWT")
 	}
 	return &Container{
-		ID:            cred.ID,
 		Credential:    cred,
 		CredentialJWT: keyaccess.JWTPtr(credentialJWT),
 	}, nil
