@@ -20,10 +20,10 @@ func AuthorizationMiddleware() gin.HandlerFunc {
 			c.Next()
 
 		default:
-			//Normally you would return a 403 here, but for the sake of the example we will just call next
-			//c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
-			//c.Abort()
-			//return
+			// Normally you would return a 403 here, but for the sake of the example we will just call next
+			// c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+			// c.Abort()
+			// return
 			c.Next()
 		}
 	}
