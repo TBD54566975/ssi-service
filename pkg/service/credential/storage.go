@@ -236,7 +236,6 @@ func (cs *Storage) GetStatusListCredential(ctx context.Context, id string) (*Sto
 		if err = json.Unmarshal(credBytes, &cred); err != nil {
 			logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
 		}
-		// TODO: use suffix
 		if cred.ServiceID == id {
 			storedCreds = append(storedCreds, cred)
 		}
