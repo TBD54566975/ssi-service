@@ -130,7 +130,7 @@ func TestDIDAPI(t *testing.T) {
 				w = httptest.NewRecorder()
 
 				// good options
-				options := did.CreateWebDIDOptions{DIDWebId: "did:web:example.com"}
+				options := did.CreateWebDIDOptions{DIDWebID: "did:web:example.com"}
 
 				// with body, bad key type
 				createDIDRequest = router.CreateDIDByMethodRequest{KeyType: "bad", Options: options}
@@ -256,7 +256,7 @@ func TestDIDAPI(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				// good options
-				options := did.CreateWebDIDOptions{DIDWebId: "did:web:example.com"}
+				options := did.CreateWebDIDOptions{DIDWebID: "did:web:example.com"}
 
 				params := map[string]string{
 					"method": "web",
@@ -297,7 +297,7 @@ func TestDIDAPI(t *testing.T) {
 					BodyString(`{"didDocument": {"id": "did:web:example.com"}}`)
 				defer gock.Off()
 
-				// Make sure it can't make another did:web of the same DIDWebId
+				// Make sure it can't make another did:web of the same DIDWebID
 				c = newRequestContextWithParams(w, req2, params)
 				didService.CreateDIDByMethod(c)
 				assert.Equal(tt, w.Code, 500)

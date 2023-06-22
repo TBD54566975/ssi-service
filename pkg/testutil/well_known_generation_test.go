@@ -45,7 +45,7 @@ func TestWellKnownGenerationTest(t *testing.T) {
 
 		createWellKnownDIDConfiguration(tt, didKey, gotKey, origin)
 
-		createOpts := did.CreateWebDIDOptions{DIDWebId: "did:web:tbd.website"}
+		createOpts := did.CreateWebDIDOptions{DIDWebID: "did:web:tbd.website"}
 		didWeb, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: "web", KeyType: "Ed25519", Options: createOpts})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didWeb)

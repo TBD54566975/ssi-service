@@ -36,7 +36,7 @@ var _ MethodHandler = (*webHandler)(nil)
 
 type CreateWebDIDOptions struct {
 	// e.g. did:web:example.com
-	DIDWebId string `json:"didWebId" validate:"required"`
+	DIDWebID string `json:"didWebId" validate:"required"`
 }
 
 func (c CreateWebDIDOptions) Method() did.Method {
@@ -62,20 +62,20 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "processing options")
 	}
 
-	didWeb := web.DIDWeb(opts.DIDWebId)
+	didWeb := web.DIDWeb(opts.DIDWebID)
 
 	err := didWeb.Validate(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not validate did:web")
 	}
 
-	exists, err := h.storage.DIDExists(ctx, opts.DIDWebId)
+	exists, err := h.storage.DIDExists(ctx, opts.DIDWebID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "error getting DID: %s", opts.DIDWebId)
+		return nil, errors.Wrapf(err, "error getting DID: %s", opts.DIDWebID)
 	}
 
 	if exists {
-		return nil, fmt.Errorf("did with id<%s> already exists", opts.DIDWebId)
+		return nil, fmt.Errorf("did with id<%s> already exists", opts.DIDWebID)
 	}
 
 	pubKey, privKey, err := crypto.GenerateKeyByKeyType(request.KeyType)

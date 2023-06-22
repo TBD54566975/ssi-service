@@ -292,7 +292,7 @@ func OperationAPI(rg *gin.RouterGroup, service svcframework.Service) (err error)
 
 	operationAPI := rg.Group(OperationPrefix)
 	operationAPI.GET("", operationRouter.ListOperations)
-	// In this case, it's used so that the operation id matches `presentations/submissions/{submission_id}` for the DIDWebId
+	// In this case, it's used so that the operation id matches `presentations/submissions/{submission_id}` for the DIDWebID
 	// path	`/v1/operations/cancel/presentations/submissions/{id}`
 	operationAPI.PUT("/cancel/*id", operationRouter.CancelOperation)
 	operationAPI.GET("/*id", operationRouter.GetOperation)

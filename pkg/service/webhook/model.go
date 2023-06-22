@@ -118,7 +118,7 @@ func (v Verb) isValid() bool {
 	}
 }
 
-// isValidURL checks if there were any errors during parsing and if the parsed DIDWebId has a non-empty Scheme and Host.
+// isValidURL checks if there were any errors during parsing and if the parsed DIDWebID has a non-empty Scheme and Host.
 // currently we support any scheme including http, https, ftp ...
 func isValidURL(urlStr string) bool {
 	parsedURL, err := url.Parse(urlStr)
