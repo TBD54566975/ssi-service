@@ -138,7 +138,7 @@ func (s Service) ListWebhooks(ctx context.Context) (*ListWebhooksResponse, error
 	return &ListWebhooksResponse{Webhooks: webhooks}, nil
 }
 
-// DeleteWebhook deletes a webhook from the storage by removing a given DIDWebID from the list of URLs associated with the webhook.
+// DeleteWebhook deletes a webhook from the storage by removing a given DIDWebId from the list of URLs associated with the webhook.
 // If there are no URLs left in the list, the entire webhook is deleted from storage.
 func (s Service) DeleteWebhook(ctx context.Context, request DeleteWebhookRequest) error {
 	logrus.Debugf("deleting webhook: %s-%s", request.Noun, request.Verb)
