@@ -991,10 +991,10 @@ definitions:
       evidence:
         additionalProperties:
           type: string
-        description: Optional. Corresponds to `evidence` in https://www.w3.org/TR/vc-data-model/#evidence.
+        description: Optional. Corresponds to `evidence` in https://www.w3.org/TR/vc-data-model-2.0/#evidence
         example:
-          ' {type': ' [''DocumentVerification''}]'
-          '[{id': ' ''https://example.edu/evidence/f2aeec97-fc0d-42bf-8ca7-0548192d4231''}'
+          ' {''type''': ' [''DocumentVerification''}]'
+          '[{''id''': ' ''https://example.edu/evidence/f2aeec97-fc0d-42bf-8ca7-0548192d4231''}'
         type: object
       expiry:
         description: Optional. Corresponds to `expirationDate` in https://www.w3.org/TR/vc-data-model/#expiration.

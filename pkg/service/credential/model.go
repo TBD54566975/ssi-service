@@ -1,6 +1,8 @@
 package credential
 
 import (
+	"fmt"
+
 	"github.com/tbd54566975/ssi-service/internal/credential"
 )
 
@@ -103,4 +105,22 @@ func (csr CreateCredentialRequest) hasStatus() bool {
 
 func (csr CreateCredentialRequest) hasEvidence() bool {
 	return len(csr.Evidence) != 0
+}
+
+func (csr *CreateCredentialRequest) validateEvidence() error {
+	for _, e := range csr.Evidence {
+		evidenceMap, ok := e.(map[string]any)
+		if !ok {
+			return fmt.Errorf("invalid evidence format")
+		}
+
+		_, idExists := evidenceMap["id"]
+		_, typeExists := evidenceMap["type"]
+
+		if !idExists || !typeExists {
+			return fmt.Errorf("evidence missing required 'id' or 'type' field")
+		}
+	}
+
+	return nil
 }

@@ -125,8 +125,8 @@ type CreateCredentialRequest struct {
 	// property set.
 	Suspendable bool `json:"suspendable,omitempty" example:"false"`
 
-	// Optional. Corresponds to `evidence` in https://www.w3.org/TR/vc-data-model/#evidence.
-	Evidence []any `json:"evidence" swaggertype:"object,string" example:"[{id: 'https://example.edu/evidence/f2aeec97-fc0d-42bf-8ca7-0548192d4231'}, {type: ['DocumentVerification'}]"`
+	// Optional. Corresponds to `evidence` in https://www.w3.org/TR/vc-data-model-2.0/#evidence
+	Evidence []any `json:"evidence" swaggertype:"object,string" example:"[{'id': 'https://example.edu/evidence/f2aeec97-fc0d-42bf-8ca7-0548192d4231'}, {'type': ['DocumentVerification'}]"`
 	// TODO(gabe) support more capabilities like signature type, format, and more.
 }
 
