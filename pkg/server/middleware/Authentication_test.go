@@ -3,7 +3,6 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -12,7 +11,7 @@ import (
 
 func TestAuthMiddleware(t *testing.T) {
 	// Set the AUTH_TOKEN environment variable for testing
-	os.Setenv("AUTH_TOKEN", "f52fbd32b2b3b86ff88ef6c490628285f482af15ddcb29541f94bcf526a3f6c7") // sha256 hash of "hunter2"
+	t.Setenv("AUTH_TOKEN", "f52fbd32b2b3b86ff88ef6c490628285f482af15ddcb29541f94bcf526a3f6c7") // sha256 hash of "hunter2"
 
 	// Create a new gin engine
 	r := gin.Default()
@@ -26,7 +25,7 @@ func TestAuthMiddleware(t *testing.T) {
 	})
 
 	// Create a request with the correct Authorization header
-	req, _ := http.NewRequest("GET", "/test", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Add("Authorization", "Bearer hunter2")
 
 	// Create a response recorder
@@ -39,7 +38,7 @@ func TestAuthMiddleware(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	// Create a request with an incorrect Authorization header
-	req, _ = http.NewRequest("GET", "/test", nil)
+	req, _ = http.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Add("Authorization", "Bearer nonsense")
 
 	// Reset the response recorder
@@ -54,7 +53,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 func TestNoAuthMiddleware(t *testing.T) {
 
-	os.Setenv("AUTH_TOKEN", "") // no auth token so things just work
+	t.Setenv("AUTH_TOKEN", "") // no auth token so things just work
 
 	// Create a new gin engine
 	r := gin.Default()
@@ -68,7 +67,7 @@ func TestNoAuthMiddleware(t *testing.T) {
 	})
 
 	// Create a request with the correct Authorization header
-	req, _ := http.NewRequest("GET", "/test", nil)
+	req, _ := http.NewRequest(http.MethodGet, "/test", nil)
 
 	// Create a response recorder
 	w := httptest.NewRecorder()
