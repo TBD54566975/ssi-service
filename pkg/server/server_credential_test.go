@@ -302,7 +302,8 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NotEmpty(tt, getCredsResp)
 				assert.Len(tt, getCredsResp.Credentials, 1)
 
-				assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].ID)
+				assert.Equal(tt, resp.ID, getCredsResp.Credentials[0].ID)
+				assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].Credential.ID)
 				assert.Equal(tt, resp.Credential.CredentialSchema.ID, getCredsResp.Credentials[0].Credential.CredentialSchema.ID)
 
 				// reset the http recorder
@@ -484,7 +485,8 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NotEmpty(tt, getCredsResp)
 				assert.Len(tt, getCredsResp.Credentials, 1)
 
-				assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].ID)
+				assert.Equal(tt, resp.ID, getCredsResp.Credentials[0].ID)
+				assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].Credential.ID)
 				assert.Equal(tt, resp.Credential.CredentialSchema.ID, getCredsResp.Credentials[0].Credential.CredentialSchema.ID)
 			})
 
@@ -542,7 +544,8 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NotEmpty(tt, getCredsResp)
 
 				assert.Len(tt, getCredsResp.Credentials, 1)
-				assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].ID)
+				assert.Equal(tt, resp.ID, getCredsResp.Credentials[0].ID)
+				assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].Credential.ID)
 			})
 
 			t.Run("Test Get Credential By Issuer", func(tt *testing.T) {
@@ -599,7 +602,8 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NotEmpty(tt, getCredsResp)
 
 				assert.Len(tt, getCredsResp.Credentials, 1)
-				assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].ID)
+				assert.Equal(tt, resp.ID, getCredsResp.Credentials[0].ID)
+				assert.Equal(tt, resp.Credential.ID, getCredsResp.Credentials[0].Credential.ID)
 			})
 
 			t.Run("Test Get Credential By Subject", func(tt *testing.T) {
@@ -657,7 +661,8 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NotEmpty(tt, listCredentialsResponse)
 
 				assert.Len(tt, listCredentialsResponse.Credentials, 1)
-				assert.Equal(tt, createCredentialResponse.Credential.ID, listCredentialsResponse.Credentials[0].ID)
+				assert.Equal(tt, createCredentialResponse.ID, listCredentialsResponse.Credentials[0].ID)
+				assert.Equal(tt, createCredentialResponse.Credential.ID, listCredentialsResponse.Credentials[0].Credential.ID)
 				assert.Equal(tt, createCredentialResponse.Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty], listCredentialsResponse.Credentials[0].Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
 			})
 
