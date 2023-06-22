@@ -6,6 +6,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+/*
+To use this middleware, you need to add it to your gin router in server.go:
+
+// setUpEngine creates the gin engine and sets up the middleware based on config
+func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
+	gin.ForceConsoleColor()
+	middlewares := gin.HandlersChain{
+		gin.Recovery(),
+		gin.Logger(),
+		middleware.Errors(shutdown),
+		middleware.AuthMiddleware(),
+		middleware.AuthorizationMiddleware(),
+	}
+
+
+*/
+
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := c.GetHeader("Authorization")
