@@ -13,7 +13,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -228,7 +227,7 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 	}
 
 	container := credint.Container{
-		ID:            cred.ID,
+		ID:            credentialID,
 		IssuerKID:     request.IssuerKID,
 		Credential:    cred,
 		CredentialJWT: credJWT,
@@ -237,7 +236,6 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 	}
 
 	credentialStorageRequest := StoreCredentialRequest{
-		ID:        credentialID,
 		Container: container,
 	}
 	if err = s.storage.StoreCredentialTx(ctx, tx, credentialStorageRequest); err != nil {
@@ -329,7 +327,7 @@ func (s Service) GetCredential(ctx context.Context, request GetCredentialRequest
 	}
 	response := GetCredentialResponse{
 		credint.Container{
-			ID:            gotCred.CredentialID,
+			ID:            gotCred.LocalCredentialID,
 			Credential:    gotCred.Credential,
 			CredentialJWT: gotCred.CredentialJWT,
 			Revoked:       gotCred.Revoked,
@@ -350,7 +348,7 @@ func (s Service) ListCredentials(ctx context.Context) (*ListCredentialsResponse,
 	creds := make([]credint.Container, 0, len(gotCreds))
 	for _, cred := range gotCreds {
 		container := credint.Container{
-			ID:            cred.CredentialID,
+			ID:            cred.LocalCredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
 			Revoked:       cred.Revoked,
@@ -374,7 +372,7 @@ func (s Service) ListCredentialsByIssuer(ctx context.Context, request ListCreden
 	creds := make([]credint.Container, 0, len(gotCreds))
 	for _, cred := range gotCreds {
 		container := credint.Container{
-			ID:            cred.CredentialID,
+			ID:            cred.LocalCredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
 			Revoked:       cred.Revoked,
@@ -398,7 +396,7 @@ func (s Service) ListCredentialsBySubject(ctx context.Context, request ListCrede
 	creds := make([]credint.Container, 0, len(gotCreds))
 	for _, cred := range gotCreds {
 		container := credint.Container{
-			ID:            cred.CredentialID,
+			ID:            cred.LocalCredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
 			Revoked:       cred.Revoked,
@@ -421,7 +419,7 @@ func (s Service) ListCredentialsBySchema(ctx context.Context, request ListCreden
 	creds := make([]credint.Container, 0, len(gotCreds))
 	for _, cred := range gotCreds {
 		container := credint.Container{
-			ID:            cred.CredentialID,
+			ID:            cred.LocalCredentialID,
 			Credential:    cred.Credential,
 			CredentialJWT: cred.CredentialJWT,
 			Revoked:       cred.Revoked,
@@ -462,7 +460,7 @@ func (s Service) GetCredentialStatusList(ctx context.Context, request GetCredent
 	}
 	response := GetCredentialStatusListResponse{
 		credint.Container{
-			ID:            gotCred.CredentialID,
+			ID:            gotCred.LocalCredentialID,
 			Credential:    gotCred.Credential,
 			CredentialJWT: gotCred.CredentialJWT,
 			Revoked:       false, // Credential Status List cannot be revoked
@@ -479,7 +477,7 @@ func (s Service) UpdateCredentialStatus(ctx context.Context, request UpdateCrede
 	}
 
 	if gotCred.Credential.CredentialStatus == nil {
-		return nil, sdkutil.LoggingNewErrorf("credential %q has no credentialStatus field", gotCred.CredentialID)
+		return nil, sdkutil.LoggingNewErrorf("credential %q has no credentialStatus field", gotCred.LocalCredentialID)
 	}
 
 	statusPurpose := gotCred.Credential.CredentialStatus.(map[string]any)["statusPurpose"].(string)
@@ -556,7 +554,7 @@ func (s Service) updateCredentialStatusBusinessLogic(ctx context.Context, tx sto
 func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCred *StoredCredential, request UpdateCredentialStatusRequest, slcMetadata StatusListCredentialMetadata) (*credint.Container, error) {
 	// store the credential with updated status
 	container := credint.Container{
-		ID:            gotCred.Key,
+		ID:            gotCred.LocalCredentialID,
 		IssuerKID:     gotCred.IssuerKID,
 		Credential:    gotCred.Credential,
 		CredentialJWT: gotCred.CredentialJWT,
@@ -565,7 +563,6 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 	}
 
 	storageRequest := StoreCredentialRequest{
-		ID:        request.ID,
 		Container: container,
 	}
 
@@ -603,7 +600,7 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 		}
 	}
 
-	// add current one since it has not been saved yet and wont be available in the creds array
+	// add current one since it has not been saved yet and won't be available in the creds array
 	if request.Revoked == true || request.Suspended == true {
 		revokedOrSuspendedStatusCreds = append(revokedOrSuspendedStatusCreds, *gotCred.Credential)
 	}
@@ -628,14 +625,13 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 
 	// store the status list credential
 	statusListContainer := credint.Container{
-		ID:            generatedStatusListCredential.ID,
+		ID:            statusListCredentialID,
 		IssuerKID:     gotCred.IssuerKID,
 		Credential:    generatedStatusListCredential,
 		CredentialJWT: statusListCredJWT,
 	}
 
 	storageRequest = StoreCredentialRequest{
-		ID:        statusListCredentialID,
 		Container: statusListContainer,
 	}
 

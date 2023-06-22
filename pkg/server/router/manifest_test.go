@@ -188,7 +188,7 @@ func TestManifestRouter(t *testing.T) {
 
 					// good application request
 					containers := []credmodel.Container{{
-						ID:            createdCred.ID,
+						ID:            createdCred.Credential.ID,
 						CredentialJWT: createdCred.CredentialJWT,
 					}}
 					applicationRequest := getValidApplicationRequest(m.ID, m.PresentationDefinition.ID, m.PresentationDefinition.InputDescriptors[0].ID, containers)
