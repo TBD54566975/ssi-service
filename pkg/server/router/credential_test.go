@@ -79,6 +79,7 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, createdCred)
 				assert.NotEmpty(tt, createdCred.CredentialJWT)
+				assert.Empty(tt, createdCred.Credential.Evidence)
 
 				cred := createdCred.Credential
 
@@ -1023,6 +1024,76 @@ func TestCredentialRouter(t *testing.T) {
 				assert.Error(tt, err)
 				assert.ErrorContains(tt, err, "has a different status purpose<revocation> value than the status credential<suspension>")
 			})
+
+			t.Run("Create Credential With Invalid Evidence", func(tt *testing.T) {
+				issuer, issuerKID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
+				subject := "did:test:345"
+
+				_, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+					Issuer:    issuer,
+					IssuerKID: issuerKID,
+					Subject:   subject,
+					SchemaID:  schemaID,
+					Data: map[string]any{
+						"email": "Satoshi@Nakamoto.btc",
+					},
+					Expiry:   time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+					Evidence: []any{"hi", 123, true},
+				})
+
+				assert.ErrorContains(tt, err, "invalid evidence format")
+			})
+
+			t.Run("Create Credential With Invalid Evidence No Id", func(tt *testing.T) {
+				issuer, issuerKID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
+				subject := "did:test:345"
+
+				evidenceMap := map[string]any{
+					"type":             []string{"DocumentVerification"},
+					"verifier":         "https://example.edu/issuers/14",
+					"evidenceDocument": "DriversLicense",
+					"subjectPresence":  "Physical",
+					"documentPresence": "Physical",
+					"licenseNumber":    "123AB4567",
+				}
+
+				_, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+					Issuer:    issuer,
+					IssuerKID: issuerKID,
+					Subject:   subject,
+					SchemaID:  schemaID,
+					Data: map[string]any{
+						"email": "Satoshi@Nakamoto.btc",
+					},
+					Expiry:   time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+					Evidence: []any{evidenceMap},
+				})
+
+				assert.ErrorContains(tt, err, "missing required 'id' or 'type'")
+			})
+
+			t.Run("Create Credential With Evidence", func(tt *testing.T) {
+				issuer, issuerKID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
+				subject := "did:test:345"
+
+				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+					Issuer:    issuer,
+					IssuerKID: issuerKID,
+					Subject:   subject,
+					SchemaID:  schemaID,
+					Data: map[string]any{
+						"email": "Satoshi@Nakamoto.btc",
+					},
+					Expiry:   time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+					Evidence: getEvidence(),
+				})
+
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, createdCred)
+				assert.NotEmpty(tt, createdCred.CredentialJWT)
+
+				assert.ElementsMatch(tt, createdCred.Credential.Evidence, getEvidence())
+			})
 		})
 	}
 }
@@ -1075,4 +1146,17 @@ func getEmailSchema() map[string]any {
 			},
 		},
 	}
+}
+
+func getEvidence() []any {
+	evidenceMap := map[string]any{
+		"id":               "https://example.edu/evidence/f2aeec97-fc0d-42bf-8ca7-0548192d4231",
+		"type":             []string{"DocumentVerification"},
+		"verifier":         "https://example.edu/issuers/14",
+		"evidenceDocument": "DriversLicense",
+		"subjectPresence":  "Physical",
+		"documentPresence": "Physical",
+		"licenseNumber":    "123AB4567",
+	}
+	return []any{evidenceMap}
 }

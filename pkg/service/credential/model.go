@@ -1,6 +1,8 @@
 package credential
 
 import (
+	"fmt"
+
 	"github.com/tbd54566975/ssi-service/internal/credential"
 )
 
@@ -24,6 +26,7 @@ type CreateCredentialRequest struct {
 	Expiry      string         `json:"expiry,omitempty"`
 	Revocable   bool           `json:"revocable,omitempty"`
 	Suspendable bool           `json:"suspendable,omitempty"`
+	Evidence    []any          `json:"evidence,omitempty"`
 	// TODO(gabe) support more capabilities like signature type, format, evidence, and more.
 }
 
@@ -98,4 +101,26 @@ func (csr CreateCredentialRequest) isStatusValid() bool {
 
 func (csr CreateCredentialRequest) hasStatus() bool {
 	return csr.Suspendable || csr.Revocable
+}
+
+func (csr CreateCredentialRequest) hasEvidence() bool {
+	return len(csr.Evidence) != 0
+}
+
+func (csr *CreateCredentialRequest) validateEvidence() error {
+	for _, e := range csr.Evidence {
+		evidenceMap, ok := e.(map[string]any)
+		if !ok {
+			return fmt.Errorf("invalid evidence format")
+		}
+
+		_, idExists := evidenceMap["id"]
+		_, typeExists := evidenceMap["type"]
+
+		if !idExists || !typeExists {
+			return fmt.Errorf("evidence missing required 'id' or 'type' field")
+		}
+	}
+
+	return nil
 }
