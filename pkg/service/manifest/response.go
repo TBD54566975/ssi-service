@@ -148,7 +148,7 @@ func (s Service) fulfillmentCredentialResponse(ctx context.Context, responseBuil
 			format = string(exchange.JWTVC)
 		}
 		descriptors = append(descriptors, exchange.SubmissionDescriptor{
-			ID:     c.ID,
+			ID:     c.Credential.ID,
 			Format: format,
 			Path:   fmt.Sprintf("$.verifiableCredentials[%d]", i),
 		})
@@ -167,7 +167,7 @@ func (s Service) fulfillmentCredentialResponse(ctx context.Context, responseBuil
 
 func (s Service) applyIssuanceTemplate(credentialRequest credential.CreateCredentialRequest, template issuance.CredentialTemplate,
 	applicationJSON map[string]any, credManifest manifest.CredentialManifest, submission exchange.PresentationSubmission) (*credential.CreateCredentialRequest, error) {
-	cred, err := getCredentialForInputDescriptor(applicationJSON, template.CredentialInputDescriptor, credManifest, submission)
+	credentialForInputDescriptor, err := getCredentialForInputDescriptor(applicationJSON, template.CredentialInputDescriptor, credManifest, submission)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (s Service) applyIssuanceTemplate(credentialRequest credential.CreateCreden
 		claimValue := v
 		if vs, ok := v.(string); ok {
 			if strings.HasPrefix(vs, "$") {
-				claimValue, err = jsonpath.JsonPathLookup(cred, vs)
+				claimValue, err = jsonpath.JsonPathLookup(credentialForInputDescriptor, vs)
 				if err != nil {
 					return nil, errors.Wrapf(err, "looking up json path \"%s\" for key=\"%s\"", vs, k)
 				}
