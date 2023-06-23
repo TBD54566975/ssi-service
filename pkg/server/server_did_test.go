@@ -353,6 +353,66 @@ func TestDIDAPI(t *testing.T) {
 
 			})
 
+			t.Run("Test Create Duplicate DID:Webs", func(tt *testing.T) {
+				db := test.ServiceStorage(t)
+				require.NotEmpty(tt, db)
+
+				_, keyStoreService := testKeyStore(tt, db)
+				didService := testDIDRouter(tt, db, keyStoreService, []string{"web"})
+
+				// reset recorder between calls
+				w := httptest.NewRecorder()
+
+				// good options
+				options := did.CreateWebDIDOptions{DIDWebID: "did:web:example.com"}
+
+				params := map[string]string{
+					"method": "web",
+				}
+
+				// with body, good key type with options
+				createDIDRequest := router.CreateDIDByMethodRequest{
+					KeyType: crypto.Ed25519,
+					Options: options,
+				}
+
+				requestReader := newRequestValue(tt, createDIDRequest)
+				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/web", requestReader)
+
+				gock.New("https://example.com").
+					Get("/.well-known/did.json").
+					Reply(200).
+					BodyString(`{"didDocument": {"id": "did:web:example.com"}}`)
+				defer gock.Off()
+
+				c := newRequestContextWithParams(w, req, params)
+				didService.CreateDIDByMethod(c)
+				assert.True(tt, util.Is2xxResponse(w.Code))
+
+				var resp router.CreateDIDByMethodResponse
+				err := json.NewDecoder(w.Body).Decode(&resp)
+				assert.NoError(tt, err)
+				assert.Contains(tt, resp.DID.ID, didsdk.WebMethod)
+
+				// reset recorder between calls
+				w = httptest.NewRecorder()
+
+				requestReader2 := newRequestValue(tt, createDIDRequest)
+				req2 := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/web", requestReader2)
+				gock.New("https://example.com").
+					Get("/.well-known/did.json").
+					Reply(200).
+					BodyString(`{"didDocument": {"id": "did:web:example.com"}}`)
+				defer gock.Off()
+
+				// Make sure it can't make another did:web of the same DIDWebID
+				c = newRequestContextWithParams(w, req2, params)
+				didService.CreateDIDByMethod(c)
+				assert.Equal(tt, w.Code, 500)
+
+				assert.Contains(tt, w.Body.String(), "already exists")
+			})
+
 			t.Run("Test Get DID By Method", func(tt *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)

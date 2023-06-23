@@ -547,8 +547,8 @@ definitions:
         type: string
       id:
         description: |-
-          Credential ID. This is the same value as the id within the secured credential. It is typically a URL that can be
-          dereferenced. For example, `https://ssi-service.com/v1/credentials/48958871-6a6d-4a25-889f-88c9c6835780`.
+          UUID assigned by the ssi-service. For example, 48958871-6a6d-4a25-889f-88c9c6835780. The `credential.id`
+          value will be a URL that can be dereferenced, which includes this ID.
         type: string
       issuerKid:
         description: The KID of the private key used to sign `credentialJwt`.
@@ -1015,6 +1015,14 @@ definitions:
         example:
           alumniOf: did_for_uni
         type: object
+      evidence:
+        additionalProperties:
+          type: string
+        description: Optional. Corresponds to `evidence` in https://www.w3.org/TR/vc-data-model-2.0/#evidence
+        example:
+          ' {''type''': ' [''DocumentVerification''}]'
+          '[{''id''': ' ''https://example.edu/evidence/f2aeec97-fc0d-42bf-8ca7-0548192d4231''}'
+        type: object
       expiry:
         description: Optional. Corresponds to `expirationDate` in https://www.w3.org/TR/vc-data-model/#expiration.
         example: "2029-01-01T19:23:24Z"
@@ -1069,8 +1077,8 @@ definitions:
         type: string
       id:
         description: |-
-          Credential ID. This is the same value as the id within the secured credential. It is typically a URL that can be
-          dereferenced. For example, `https://ssi-service.com/v1/credentials/48958871-6a6d-4a25-889f-88c9c6835780`.
+          UUID assigned by the ssi-service. For example, 48958871-6a6d-4a25-889f-88c9c6835780. The `credential.id`
+          value will be a URL that can be dereferenced, which includes this ID.
         type: string
       issuerKid:
         description: The KID of the private key used to sign `credentialJwt`.
@@ -1398,8 +1406,8 @@ definitions:
         type: string
       id:
         description: |-
-          Credential ID. This is the same value as the id within the secured credential. It is typically a URL that can be
-          dereferenced. For example, `https://ssi-service.com/v1/credentials/48958871-6a6d-4a25-889f-88c9c6835780`.
+          UUID assigned by the ssi-service. For example, 48958871-6a6d-4a25-889f-88c9c6835780. The `credential.id`
+          value will be a URL that can be dereferenced, which includes this ID.
         type: string
       issuerKid:
         description: The KID of the private key used to sign `credentialJwt`.

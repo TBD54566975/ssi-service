@@ -27,4 +27,5 @@ func TestResolveDIDWebIntegration(t *testing.T) {
 	didDocumentID, err := getJSONElement(resolvedOutput, "$.didDocument.id")
 	assert.NoError(t, err)
 	assert.Equal(t, "did:web:tbd.website", didDocumentID)
+
 }

@@ -1,6 +1,6 @@
 {
   "keyType":"Ed25519",
   "options": {
-    "didWebId": "did:web:tbd.website"
+    "didWebId": "did:web:example.com"
   }
 }
