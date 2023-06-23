@@ -9,7 +9,9 @@ import (
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/ion"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -243,6 +245,112 @@ func TestDIDAPI(t *testing.T) {
 				err := json.NewDecoder(w.Body).Decode(&resp)
 				assert.NoError(tt, err)
 				assert.Contains(tt, resp.DID.ID, didsdk.IONMethod)
+			})
+
+			t.Run("Test Update DID By Method: ION", func(tt *testing.T) {
+				db := test.ServiceStorage(t)
+				require.NotEmpty(tt, db)
+
+				_, keyStoreService := testKeyStore(tt, db)
+				didService := testDIDRouter(tt, db, keyStoreService, []string{"ion"})
+
+				params := map[string]string{
+					"method": "ion",
+				}
+				// reset recorder between calls
+				w := httptest.NewRecorder()
+
+				gock.New(testIONResolverURL).
+					Post("/operations").
+					Reply(200)
+				defer gock.Off()
+
+				// with body, good key type, no options
+				createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
+				requestReader := newRequestValue(tt, createDIDRequest)
+				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/ion", requestReader)
+
+				c := newRequestContextWithParams(w, req, params)
+				didService.CreateDIDByMethod(c)
+				assert.True(tt, util.Is2xxResponse(w.Code))
+
+				var createDIDResponse router.CreateDIDByMethodResponse
+				err := json.NewDecoder(w.Body).Decode(&createDIDResponse)
+				assert.NoError(tt, err)
+
+				updateDIDRequest := router.UpdateDIDByMethodRequest{
+					StateChange: router.StateChange{
+						PublicKeysToAdd: []ion.PublicKey{
+							{
+								ID:   "publicKeyModel1Id",
+								Type: "EcdsaSecp256k1VerificationKey2019",
+								PublicKeyJWK: jwx.PublicKeyJWK{
+									KTY: "EC",
+									CRV: "secp256k1",
+									X:   "tXSKB_rubXS7sCjXqupVJEzTcW3MsjmEvq1YpXn96Zg",
+									Y:   "dOicXqbjFxoGJ-K0-GJ1kHYJqic_D_OMuUwkQ7Ol6nk",
+								},
+								Purposes: []ion.PublicKeyPurpose{
+									ion.Authentication, ion.KeyAgreement,
+								},
+							},
+						},
+					},
+				}
+				w = httptest.NewRecorder()
+				params["id"] = createDIDResponse.DID.ID
+				requestReader = newRequestValue(tt, updateDIDRequest)
+				req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/ion/"+createDIDResponse.DID.ID, requestReader)
+
+				gock.New(testIONResolverURL).
+					Post("/operations").
+					Reply(200)
+				defer gock.Off()
+
+				c = newRequestContextWithParams(w, req, params)
+				didService.UpdateDIDByMethod(c)
+				assert.True(tt, util.Is2xxResponse(w.Code))
+
+				updateDIDRequest2 := router.UpdateDIDByMethodRequest{
+					StateChange: router.StateChange{
+						ServicesToAdd: []didsdk.Service{
+							{
+								ID:              "service1Id",
+								Type:            "service1Type",
+								ServiceEndpoint: "http://www.service1.com",
+							},
+						},
+					},
+				}
+				w = httptest.NewRecorder()
+				requestReader = newRequestValue(tt, updateDIDRequest2)
+				req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/ion/"+createDIDResponse.DID.ID, requestReader)
+
+				gock.New(testIONResolverURL).
+					Post("/operations").
+					Reply(200)
+				defer gock.Off()
+
+				c = newRequestContextWithParams(w, req, params)
+				didService.UpdateDIDByMethod(c)
+				assert.True(tt, util.Is2xxResponse(w.Code))
+
+				var updateDIDResponse router.UpdateDIDByMethodResponse
+				err = json.NewDecoder(w.Body).Decode(&updateDIDResponse)
+				assert.NoError(tt, err)
+				assert.Contains(tt, updateDIDResponse.DID.ID, didsdk.IONMethod)
+
+				assert.Equal(tt, "service1Id", updateDIDResponse.DID.Services[0].ID)
+				// Check that the correct updates were performed.
+				assert.Len(tt, updateDIDResponse.DID.VerificationMethod, 1+len(createDIDResponse.DID.VerificationMethod))
+				assert.Equal(tt, createDIDResponse.DID.VerificationMethod[0], updateDIDResponse.DID.VerificationMethod[0])
+				assert.Equal(tt, "publicKeyModel1Id", updateDIDResponse.DID.VerificationMethod[1].ID)
+				assert.Len(tt, updateDIDResponse.DID.Authentication, 1+len(createDIDResponse.DID.Authentication))
+				assert.Len(tt, updateDIDResponse.DID.AssertionMethod, 0+len(createDIDResponse.DID.AssertionMethod))
+				assert.Len(tt, updateDIDResponse.DID.KeyAgreement, 1+len(createDIDResponse.DID.KeyAgreement))
+				assert.Len(tt, updateDIDResponse.DID.CapabilityInvocation, 0+len(createDIDResponse.DID.CapabilityInvocation))
+				assert.Len(tt, updateDIDResponse.DID.CapabilityInvocation, 0+len(createDIDResponse.DID.CapabilityInvocation))
+
 			})
 
 			t.Run("Test Get DID By Method", func(tt *testing.T) {

@@ -198,6 +198,7 @@ func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, webh
 	didAPI := rg.Group(DIDsPrefix)
 	didAPI.GET("", didRouter.ListDIDMethods)
 	didAPI.PUT("/:method", middleware.Webhook(webhookService, webhook.DID, webhook.Create), didRouter.CreateDIDByMethod)
+	didAPI.PUT("/:method/:id", didRouter.UpdateDIDByMethod)
 	didAPI.GET("/:method", didRouter.ListDIDsByMethod)
 	didAPI.GET("/:method/:id", didRouter.GetDIDByMethod)
 	didAPI.DELETE("/:method/:id", didRouter.SoftDeleteDIDByMethod)

@@ -167,6 +167,18 @@ func (s *Service) CreateDIDByMethod(ctx context.Context, request CreateDIDReques
 	return handler.CreateDID(ctx, request)
 }
 
+func (s *Service) UpdateIONDID(ctx context.Context, request UpdateDIDRequest) (*UpdateDIDResponse, error) {
+	handler, err := s.getHandler(didsdk.IONMethod)
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", didsdk.IONMethod)
+	}
+	ionHandlerImpl, ok := handler.(*ionHandler)
+	if !ok {
+		return nil, errors.New("cannot assert that handler is an ionHandler")
+	}
+	return ionHandlerImpl.UpdateDID(ctx, request)
+}
+
 func (s *Service) GetDIDByMethod(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {
 	handler, err := s.getHandler(request.Method)
 	if err != nil {

@@ -69,7 +69,7 @@ func NewDIDStorage(db storage.ServiceStorage) (*Storage, error) {
 	return &Storage{db: db}, nil
 }
 
-func (ds *Storage) StoreDID(ctx context.Context, did StoredDID) error {
+func StoreDID(ctx context.Context, did StoredDID, tx storage.Tx) error {
 	couldNotStoreDIDErr := fmt.Sprintf("could not store DID: %s", did.GetID())
 	ns, err := getNamespaceForDID(did.GetID())
 	if err != nil {
@@ -79,7 +79,11 @@ func (ds *Storage) StoreDID(ctx context.Context, did StoredDID) error {
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, couldNotStoreDIDErr)
 	}
-	return ds.db.Write(ctx, ns, did.GetID(), didBytes)
+	return tx.Write(ctx, ns, did.GetID(), didBytes)
+}
+
+func (ds *Storage) StoreDID(ctx context.Context, did StoredDID) error {
+	return StoreDID(ctx, did, ds.db)
 }
 
 // GetDID attempts to get a DID from the database. It will return an error if it cannot.
