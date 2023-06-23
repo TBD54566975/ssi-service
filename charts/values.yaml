@@ -210,6 +210,9 @@ redis-ha:
   auth: true
   redisPassword: password
 
+  haproxy:
+    enabled: true
+
   exporter:
     enabled: true
     image: public.ecr.aws/bitnami/redis-exporter
