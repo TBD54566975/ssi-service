@@ -61,7 +61,7 @@ ssiService:
 
     [[services.storage_option]]
     id = "redis-address-option"
-    option = "ssi-service-redis-ha:6379"
+    option = "ssi-service-redis-ha-haproxy:6379"
 
     [[services.storage_option]]
     id = "storage-password-option"
