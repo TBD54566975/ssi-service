@@ -8,6 +8,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/benbjohnson/clock"
 	"github.com/goccy/go-json"
 	"github.com/google/tink/go/aead"
 	"github.com/google/tink/go/core/registry"
@@ -63,6 +64,7 @@ type Storage struct {
 	db        storage.ServiceStorage
 	encrypter Encrypter
 	decrypter Decrypter
+	Clock     clock.Clock
 }
 
 func NewKeyStoreStorage(db storage.ServiceStorage, e Encrypter, d Decrypter) (*Storage, error) {
@@ -70,6 +72,7 @@ func NewKeyStoreStorage(db storage.ServiceStorage, e Encrypter, d Decrypter) (*S
 		db:        db,
 		encrypter: e,
 		decrypter: d,
+		Clock:     clock.New(),
 	}
 
 	return s, nil
@@ -290,7 +293,7 @@ func (kss *Storage) RevokeKey(ctx context.Context, id string) error {
 	}
 
 	key.Revoked = true
-	key.RevokedAt = time.Now().UTC().Format(time.RFC3339)
+	key.RevokedAt = kss.Clock.Now().Format(time.RFC3339)
 	return kss.StoreKey(ctx, *key)
 }
 

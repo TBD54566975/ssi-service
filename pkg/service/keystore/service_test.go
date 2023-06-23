@@ -4,9 +4,11 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
+	"github.com/benbjohnson/clock"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -156,7 +158,7 @@ func TestRevokeKey(t *testing.T) {
 	assert.NotEmpty(t, keyResponse)
 	assert.Equal(t, privKey, keyResponse.Key)
 	assert.True(t, keyResponse.Revoked)
-	assert.NotEmpty(t, keyResponse.RevokedAt)
+	assert.Equal(t, "2023-06-23T00:00:00Z", keyResponse.RevokedAt)
 }
 
 func createKeyStoreService(t *testing.T) (*Service, error) {
@@ -185,5 +187,10 @@ func createKeyStoreService(t *testing.T) (*Service, error) {
 			MasterKeyPassword: "test-password",
 		},
 		s)
+
+	mockClock := clock.NewMock()
+	mockClock.Set(time.Date(2023, 06, 23, 0, 0, 0, 0, time.UTC))
+	keyStore.storage.Clock = mockClock
+
 	return keyStore, err
 }
