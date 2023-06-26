@@ -91,13 +91,13 @@ func (i ionStoredDID) IsSoftDeleted() bool {
 	return i.SoftDeleted
 }
 
-type UpdateDIDRequest struct {
+type UpdateIONDIDRequest struct {
 	DID ion.ION `json:"did"`
 
 	StateChange ion.StateChange `json:"stateChange"`
 }
 
-type UpdateDIDResponse struct {
+type UpdateIONDIDResponse struct {
 	DID did.Document `json:"did"`
 }
 
@@ -119,7 +119,11 @@ type updateState struct {
 	anchor    *anchor
 }
 
-func (h *ionHandler) UpdateDID(ctx context.Context, request UpdateDIDRequest) (*UpdateDIDResponse, error) {
+func (h *ionHandler) UpdateDID(ctx context.Context, request UpdateIONDIDRequest) (*UpdateIONDIDResponse, error) {
+	if err := request.StateChange.IsValid(); err != nil {
+		return nil, errors.Wrap(err, "validating StateChange")
+	}
+
 	updateStates, updatePrivateKey, err := h.readUpdateState(ctx, request.DID.String())
 	if err != nil {
 		return nil, err
@@ -199,7 +203,7 @@ func (h *ionHandler) UpdateDID(ctx context.Context, request UpdateDIDRequest) (*
 			if err != nil {
 				return nil, errors.Wrap(err, "creating long form DID")
 			}
-			if err := StoreDID(ctx, storedDID, tx); err != nil {
+			if err := StoreDID(ctx, tx, storedDID); err != nil {
 				return nil, errors.Wrap(err, "storing DID in storage")
 			}
 
@@ -254,7 +258,7 @@ func (h *ionHandler) UpdateDID(ctx context.Context, request UpdateDIDRequest) (*
 		}
 	}
 
-	return &UpdateDIDResponse{
+	return &UpdateIONDIDResponse{
 		DID: state.preAnchor.storedDID.DID,
 	}, nil
 }
@@ -311,7 +315,7 @@ func populatePurpose(methodSets []did.VerificationMethodSet, pubKeys map[string]
 	return nil
 }
 
-func didServices(storedDID ionStoredDID, request UpdateDIDRequest) []did.Service {
+func didServices(storedDID ionStoredDID, request UpdateIONDIDRequest) []did.Service {
 	newServices := make([]did.Service, 0, len(storedDID.DID.Services)+len(request.StateChange.ServicesToAdd))
 	serviceIDsToRemove := make(map[string]struct{}, len(request.StateChange.ServiceIDsToRemove))
 	for _, s := range request.StateChange.ServiceIDsToRemove {
@@ -327,7 +331,7 @@ func didServices(storedDID ionStoredDID, request UpdateDIDRequest) []did.Service
 	return newServices
 }
 
-func newPubKeys(storedDID []ion.PublicKey, request UpdateDIDRequest) []ion.PublicKey {
+func newPubKeys(storedDID []ion.PublicKey, request UpdateIONDIDRequest) []ion.PublicKey {
 	newServices := make([]ion.PublicKey, 0, len(storedDID)+len(request.StateChange.PublicKeysToAdd))
 	serviceIDsToRemove := make(map[string]struct{}, len(request.StateChange.PublicKeyIDsToRemove))
 	for _, s := range request.StateChange.PublicKeyIDsToRemove {

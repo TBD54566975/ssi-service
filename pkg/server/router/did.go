@@ -188,30 +188,30 @@ func (dr DIDRouter) UpdateDIDByMethod(c *gin.Context) {
 		return
 	}
 
-	createDIDRequest, err := toUpdateDIDRequest(*id, request)
+	updateDIDRequest, err := toUpdateIONDIDRequest(*id, request)
 	if err != nil {
 		errMsg := fmt.Sprintf("%s: could not update DID for method<%s>", invalidRequest, *method)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
 		return
 	}
-	createDIDResponse, err := dr.service.UpdateIONDID(c, *createDIDRequest)
+	updateIONDIDResponse, err := dr.service.UpdateIONDID(c, *updateDIDRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create DID for method<%s>", *method)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
 
-	resp := CreateDIDByMethodResponse{DID: createDIDResponse.DID}
+	resp := CreateDIDByMethodResponse{DID: updateIONDIDResponse.DID}
 	framework.Respond(c, resp, http.StatusCreated)
 
 }
 
-func toUpdateDIDRequest(id string, request UpdateDIDByMethodRequest) (*did.UpdateDIDRequest, error) {
+func toUpdateIONDIDRequest(id string, request UpdateDIDByMethodRequest) (*did.UpdateIONDIDRequest, error) {
 	didION := ion.ION(id)
 	if !didION.IsValid() {
 		return nil, errors.Errorf("invalid ion did %s", id)
 	}
-	return &did.UpdateDIDRequest{
+	return &did.UpdateIONDIDRequest{
 		DID: didION,
 		StateChange: ion.StateChange{
 			ServicesToAdd:        request.StateChange.ServicesToAdd,

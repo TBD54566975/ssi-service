@@ -167,7 +167,7 @@ func (s *Service) CreateDIDByMethod(ctx context.Context, request CreateDIDReques
 	return handler.CreateDID(ctx, request)
 }
 
-func (s *Service) UpdateIONDID(ctx context.Context, request UpdateDIDRequest) (*UpdateDIDResponse, error) {
+func (s *Service) UpdateIONDID(ctx context.Context, request UpdateIONDIDRequest) (*UpdateIONDIDResponse, error) {
 	handler, err := s.getHandler(didsdk.IONMethod)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", didsdk.IONMethod)
