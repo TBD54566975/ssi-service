@@ -407,7 +407,14 @@ func CreateSubmissionWithExternalCredential(params submissionParams) (string, er
 	logrus.Println("\n\nCreate our Submission with external credential:")
 
 	holderPrivateKey, holderDIDKey, err := key.GenerateDIDKey(crypto.Ed25519)
+	if err != nil {
+		return "", errors.Wrapf(err, "generating did key")
+	}
 	holderDID, err := holderDIDKey.Expand()
+	if err != nil {
+		return "", errors.Wrapf(err, "problem expanding did")
+	}
+
 	holderKID := holderDID.VerificationMethod[0].ID
 
 	params.HolderID = holderDID.ID
