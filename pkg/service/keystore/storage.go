@@ -104,27 +104,56 @@ const (
 	awsKMSScheme = "aws-kms"
 )
 
-func NewEncryption(db storage.ServiceStorage, tx storage.Tx, cfg config.KeyStoreServiceConfig) (Encrypter, Decrypter, error) {
+// EnsureServiceKeyExists makes sure that the service key that will be used for encryption exists. This function is
+// idempotent, so that multiple instances of ssi-service can call it on boot.
+func EnsureServiceKeyExists(config config.KeyStoreServiceConfig, provider storage.ServiceStorage) error {
+	if config.MasterKeyURI != "" {
+		return nil
+	}
+
+	watchKeys := []storage.WatchKey{{
+		Namespace: namespace,
+		Key:       skKey,
+	}}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	_, err := provider.Execute(ctx, func(ctx context.Context, tx storage.Tx) (any, error) {
+		// Create the key only if it doesn't already exist.
+		gotKey, err := getServiceKey(ctx, provider)
+		if gotKey == nil && err.Error() == keyNotFoundErrMsg {
+			serviceKey, serviceKeySalt, err := GenerateServiceKey(config.MasterKeyPassword)
+			if err != nil {
+				return nil, errors.Wrap(err, "generating service key")
+			}
+
+			key := ServiceKey{
+				Base58Key:  serviceKey,
+				Base58Salt: serviceKeySalt,
+			}
+			if err := storeServiceKey(ctx, tx, key); err != nil {
+				return nil, err
+			}
+			return nil, nil
+		}
+		return nil, err
+	}, watchKeys)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// newEncryption creates a pair of Encrypter and Decrypter. The service key must have been created before this function
+// is called. EnsureServiceKeyExists can be used to make sure the service key exists.
+func newEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) (Encrypter, Decrypter, error) {
 	if len(cfg.MasterKeyURI) != 0 {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 		return NewExternalEncrypter(ctx, cfg)
 	}
 
-	// First, generate a service key
-	serviceKey, serviceKeySalt, err := GenerateServiceKey(cfg.MasterKeyPassword)
-	if err != nil {
-		return nil, nil, sdkutil.LoggingErrorMsg(err, "generating service key")
-	}
-
-	key := ServiceKey{
-		Base58Key:  serviceKey,
-		Base58Salt: serviceKeySalt,
-	}
-	if err := storeServiceKey(ctx, tx, key); err != nil {
-		return nil, nil, err
-	}
 	return &encrypter{db}, &decrypter{db}, nil
 }
 

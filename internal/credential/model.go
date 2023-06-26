@@ -5,8 +5,10 @@ import (
 	"reflect"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/credential/parsing"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 )
 
@@ -57,7 +59,7 @@ func (c Container) HasJWTCredential() bool {
 
 // NewCredentialContainerFromJWT attempts to parse a VC-JWT credential from a string into a Container
 func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
-	_, _, cred, err := credential.ToCredential(credentialJWT)
+	_, _, cred, err := parsing.ToCredential(credentialJWT)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse credential from JWT")
 	}
@@ -70,7 +72,7 @@ func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
 // NewCredentialContainerFromMap attempts to parse a data integrity credential from a piece of JSON,
 // which is represented as a map in go, into a Container
 func NewCredentialContainerFromMap(credMap map[string]any) (*Container, error) {
-	_, _, cred, err := credential.ToCredential(credMap)
+	_, _, cred, err := parsing.ToCredential(credMap)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse credential from map")
 	}

@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/credential/parsing"
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
@@ -127,7 +127,7 @@ func TestSchemaAPI(t *testing.T) {
 				assert.Equal(tt, schema.CredentialSchema2023Type, resp.Type)
 
 				// decode the schema from the response and verify it
-				_, _, cred, err := credential.ToCredential(resp.CredentialSchema.String())
+				_, _, cred, err := parsing.ToCredential(resp.CredentialSchema.String())
 				assert.NoError(tt, err)
 				credSubjectBytes, err := json.Marshal(cred.CredentialSubject)
 				assert.NoError(tt, err)

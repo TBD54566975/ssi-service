@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/TBD54566975/ssi-sdk/credential/integrity"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/lestrrat-go/jwx/jws"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	didint "github.com/tbd54566975/ssi-service/internal/did"
@@ -36,7 +37,7 @@ type Service struct {
 	config     config.PresentationServiceConfig
 	resolver   resolution.Resolver
 	schema     *schema.Service
-	verifier   *credential.Verifier
+	verifier   *credential.Validator
 	reqStorage common.RequestStorage
 }
 
@@ -72,7 +73,7 @@ func NewPresentationService(config config.PresentationServiceConfig, s storage.S
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the operations")
 	}
-	verifier, err := credential.NewCredentialVerifier(resolver, schema)
+	verifier, err := credential.NewCredentialValidator(resolver, schema)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate verifier")
 	}
@@ -175,7 +176,7 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 		return nil, errors.Wrap(err, "provided value is not a valid presentation submission")
 	}
 
-	headers, _, vp, err := credsdk.ParseVerifiablePresentationFromJWT(request.SubmissionJWT.String())
+	headers, _, vp, err := integrity.ParseVerifiablePresentationFromJWT(request.SubmissionJWT.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing vp from jwt")
 	}
