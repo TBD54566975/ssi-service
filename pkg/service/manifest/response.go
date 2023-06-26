@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
+	"github.com/TBD54566975/ssi-sdk/credential/parsing"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
@@ -238,7 +238,7 @@ func getCredentialForInputDescriptor(applicationJSON map[string]any, templateInp
 }
 
 func toCredentialJSON(c any) (map[string]any, error) {
-	_, _, genericCredential, err := credsdk.ToCredential(c)
+	_, _, genericCredential, err := parsing.ToCredential(c)
 	if err != nil {
 		return nil, errors.Wrapf(err, "converting credential to json")
 	}
