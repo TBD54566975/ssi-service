@@ -12,7 +12,7 @@ When you're ready you may:
 
 | Requirement    | Tested Version | Installation Instructions                                                                         |
 |----------------|----------------|---------------------------------------------------------------------------------------------------|
-| Go             | 1.20.5         | [go.dev](https://go.dev/doc/tutorial/compile-install)                                             |
+| Go             | 1.20.5         | [go.dev](https://go.dev/doc/install)                                                              |
 | Mage           | 1.13.0-6       | [magefile.org](https://magefile.org/)                                                             |
 | golangci-lint  | 1.52.2         | [golangci-lint.run](https://golangci-lint.run/usage/install/#local-installation)                  |
 

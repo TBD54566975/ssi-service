@@ -18,6 +18,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
@@ -197,6 +198,69 @@ func TestCredentialRouter(t *testing.T) {
 				_, err = credService.GetCredential(context.Background(), credential.GetCredentialRequest{ID: cred.ID})
 				assert.Error(tt, err)
 				assert.Contains(tt, err.Error(), fmt.Sprintf("credential not found with id: %s", cred.ID))
+			})
+
+			t.Run("Credential Service Test Revoked Key", func(tt *testing.T) {
+				s := test.ServiceStorage(t)
+				assert.NotEmpty(tt, s)
+
+				// Initialize services
+				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+				keyStoreService := testKeyStoreService(tt, s)
+				didService := testDIDService(tt, s, keyStoreService)
+				schemaService := testSchemaService(tt, s, keyStoreService, didService)
+				credService, err := credential.NewCredentialService(serviceConfig, s, keyStoreService, didService.GetResolver(), schemaService)
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, credService)
+
+				// Create a DID
+				controllerDID, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, controllerDID)
+				didID := controllerDID.DID.ID
+
+				// Create a key controlled by the DID
+				keyID := "MyKeyId"
+				privateKey := "2dEPd7mA3aiuh2gky8tTPiCkyMwf8tBNUMZwRzeVxVJnJFGTbdLGUBcx51DCNyFWRjTG9bduvyLRStXSCDMFXULY"
+
+				err = keyStoreService.StoreKey(context.Background(), keystore.StoreKeyRequest{ID: keyID, Type: crypto.Ed25519, Controller: didID, PrivateKeyBase58: privateKey})
+				assert.NoError(tt, err)
+
+				// Create a crendential
+				subject := "did:test:42"
+				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+					Issuer:    didID,
+					IssuerKID: keyID,
+					Subject:   subject,
+					Data: map[string]any{
+						"firstName": "Satoshi",
+						"lastName":  "Nakamoto",
+					},
+					Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+				})
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, createdCred)
+				assert.NotEmpty(tt, createdCred.CredentialJWT)
+
+				// Revoke the key
+				err = keyStoreService.RevokeKey(context.Background(), keystore.RevokeKeyRequest{ID: keyID})
+				assert.NoError(tt, err)
+
+				// Create a crendential with the revoked key, it fails
+				subject = "did:test:43"
+				createdCred, err = credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
+					Issuer:    didID,
+					IssuerKID: keyID,
+					Subject:   subject,
+					Data: map[string]any{
+						"firstName": "John",
+						"lastName":  "Doe",
+					},
+					Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+				})
+				assert.Empty(tt, createdCred)
+				assert.Error(tt, err)
+				assert.ErrorContains(tt, err, "cannot use revoked key")
 			})
 
 			t.Run("Credential Status List Test", func(tt *testing.T) {

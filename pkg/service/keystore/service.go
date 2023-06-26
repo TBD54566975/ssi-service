@@ -124,7 +124,6 @@ func (s Service) GetKey(ctx context.Context, request GetKeyRequest) (*GetKeyResp
 	}, nil
 }
 
-// TODO(gabe): expose this endpoint https://github.com/TBD54566975/ssi-service/issues/451
 func (s Service) RevokeKey(ctx context.Context, request RevokeKeyRequest) error {
 	logrus.Debugf("revoking key: %+v", request)
 

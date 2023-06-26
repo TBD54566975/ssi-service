@@ -280,6 +280,7 @@ func KeyStoreAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) 
 	keyStoreAPI := rg.Group(KeyStorePrefix)
 	keyStoreAPI.PUT("", keyStoreRouter.StoreKey)
 	keyStoreAPI.GET("/:id", keyStoreRouter.GetKeyDetails)
+	keyStoreAPI.DELETE("/:id", keyStoreRouter.RevokeKey)
 	return
 }
 
