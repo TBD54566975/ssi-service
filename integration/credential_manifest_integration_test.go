@@ -3,7 +3,7 @@ package integration
 import (
 	"testing"
 
-	credsdk "github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/credential/parsing"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/stretchr/testify/assert"
@@ -370,7 +370,7 @@ func TestSubmitAndReviewApplicationIntegration(t *testing.T) {
 	vc, err := getJSONElement(reviewApplicationOutput, "$.verifiableCredentials[0]")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vc)
-	_, _, typedVC, err := credsdk.ToCredential(vc)
+	_, _, typedVC, err := parsing.ToCredential(vc)
 	assert.NoError(t, err)
 	assert.Equal(t, "Mister", typedVC.CredentialSubject["givenName"])
 	assert.Equal(t, "Tee", typedVC.CredentialSubject["familyName"])

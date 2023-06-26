@@ -81,7 +81,7 @@ func NewStorage(storageProvider Type, opts ...Option) (ServiceStorage, error) {
 	if impl == nil {
 		return impl, fmt.Errorf("unsupported storage provider: %s", storageProvider)
 	}
-	logrus.Infof("STORAGE OPTS: %+v", opts)
+	logrus.Infof("Storage options: %+v", opts)
 	err := impl.Init(opts...)
 	return impl, err
 }

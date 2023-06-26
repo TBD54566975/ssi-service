@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -26,7 +27,7 @@ import (
 type Service struct {
 	storage  *Storage
 	config   config.CredentialServiceConfig
-	verifier *credint.Verifier
+	verifier *credint.Validator
 
 	// external dependencies
 	keyStore *keystore.Service
@@ -69,7 +70,7 @@ func NewCredentialService(config config.CredentialServiceConfig, s storage.Servi
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the credential service")
 	}
-	verifier, err := credint.NewCredentialVerifier(didResolver, schema)
+	verifier, err := credint.NewCredentialValidator(didResolver, schema)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate verifier for the credential service")
 	}

@@ -11,6 +11,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/TBD54566975/ssi-sdk/credential/integrity"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
@@ -21,6 +22,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -768,7 +770,7 @@ func createSubmissionRequest(t *testing.T, definitionID, requesterDID string, vc
 	holderSigner jwx.Signer, holderDID key.DIDKey) router.CreateSubmissionRequest {
 	issuerSigner, didKey := getSigner(t)
 	vc.Issuer = didKey.String()
-	vcData, err := credential.SignVerifiableCredentialJWT(issuerSigner, vc)
+	vcData, err := integrity.SignVerifiableCredentialJWT(issuerSigner, vc)
 	require.NoError(t, err)
 	ps := exchange.PresentationSubmission{
 		ID:           uuid.NewString(),
@@ -791,7 +793,7 @@ func createSubmissionRequest(t *testing.T, definitionID, requesterDID string, vc
 		VerifiableCredential:   []any{keyaccess.JWT(vcData)},
 	}
 
-	signed, err := credential.SignVerifiablePresentationJWT(holderSigner, credential.JWTVVPParameters{Audience: []string{requesterDID}}, vp)
+	signed, err := integrity.SignVerifiablePresentationJWT(holderSigner, integrity.JWTVVPParameters{Audience: []string{requesterDID}}, vp)
 	require.NoError(t, err)
 
 	request := router.CreateSubmissionRequest{SubmissionJWT: keyaccess.JWT(signed)}
