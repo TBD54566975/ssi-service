@@ -15,7 +15,7 @@ var presentationExchangeContext = NewTestContext("PresentationExchange")
 
 func TestCreateParticipants(t *testing.T) {
 	if testing.Short() {
-		t.Skip("skipping integration testz")
+		t.Skip("skipping integration test")
 	}
 
 	didKeyOutput, err := CreateDIDKey()
@@ -139,6 +139,64 @@ func TestSubmissionFlow(t *testing.T) {
 		CredentialJWT: credentialJWT,
 		SubmissionID:  uuid.NewString(),
 	}, holderPrivateKey)
+	assert.NoError(t, err)
+
+	opID, err := getJSONElement(submissionOpOutput, "$.id")
+	assert.NoError(t, err)
+
+	operationOutput, err := get(endpoint + version + "operations/" + opID)
+	assert.NoError(t, err)
+	done, err := getJSONElement(operationOutput, "$.done")
+	assert.NoError(t, err)
+	assert.Equal(t, "false", done)
+
+	reviewOutput, err := ReviewSubmission(storage.StatusObjectID(opID))
+	assert.NoError(t, err)
+	status, err := getJSONElement(reviewOutput, "$.status")
+	assert.NoError(t, err)
+	assert.Equal(t, "approved", status)
+
+	reason, err := getJSONElement(reviewOutput, "$.reason")
+	assert.NoError(t, err)
+	assert.Equal(t, "because I want to", reason)
+
+	operationOutput, err = get(endpoint + version + "operations/" + opID)
+	assert.NoError(t, err)
+	done, err = getJSONElement(operationOutput, "$.done")
+	assert.NoError(t, err)
+	assert.Equal(t, "true", done)
+	opResponse, err := getJSONElement(operationOutput, "$.result.response")
+	assert.NoError(t, err)
+	s, _ := getJSONElement(reviewOutput, "$")
+	assert.Equal(t, s, opResponse)
+}
+
+func TestSubmissionFlowExternalCredential(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	definitionID, err := GetValue(presentationExchangeContext, "definitionID")
+	assert.NoError(t, err)
+
+	toBeCancelledOp, err := CreateSubmissionWithExternalCredential(submissionParams{
+		DefinitionID: definitionID.(string),
+		SubmissionID: uuid.NewString(),
+	})
+	assert.NoError(t, err)
+
+	cancelOpID, err := getJSONElement(toBeCancelledOp, "$.id")
+	assert.NoError(t, err)
+	cancelOutput, err := put(endpoint+version+"operations/cancel/"+cancelOpID, "{}")
+	assert.NoError(t, err)
+	cancelDone, err := getJSONElement(cancelOutput, "$.done")
+	assert.NoError(t, err)
+	assert.Equal(t, "true", cancelDone)
+
+	submissionOpOutput, err := CreateSubmissionWithExternalCredential(submissionParams{
+		DefinitionID: definitionID.(string),
+		SubmissionID: uuid.NewString(),
+	})
 	assert.NoError(t, err)
 
 	opID, err := getJSONElement(submissionOpOutput, "$.id")
