@@ -50,12 +50,16 @@ func (s Service) Config() config.KeyStoreServiceConfig {
 }
 
 func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	return NewKeyStoreServiceFactory(config, s)(s)
+	if err := EnsureServiceKeyExists(config, s); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "initializing keystore")
+	}
+	factory := NewKeyStoreServiceFactory(config, s)
+	return factory(s)
 }
 
 func NewKeyStoreServiceFactory(config config.KeyStoreServiceConfig, s storage.ServiceStorage) ServiceFactory {
 	return func(tx storage.Tx) (*Service, error) {
-		encrypter, decrypter, err := NewEncryption(s, tx, config)
+		encrypter, decrypter, err := newEncryption(s, config)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating new encryption")
 		}

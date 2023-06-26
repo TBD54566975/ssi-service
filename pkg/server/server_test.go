@@ -230,6 +230,7 @@ func testKeyStoreService(t *testing.T, db storage.ServiceStorage) (*keystore.Ser
 	}
 
 	// create a keystore service
+	require.NoError(t, keystore.EnsureServiceKeyExists(serviceConfig, db))
 	factory := keystore.NewKeyStoreServiceFactory(serviceConfig, db)
 	keystoreService, err := factory(db)
 	require.NoError(t, err)
