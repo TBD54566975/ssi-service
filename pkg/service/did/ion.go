@@ -15,7 +15,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
-
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 

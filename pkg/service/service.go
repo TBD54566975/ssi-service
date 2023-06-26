@@ -31,6 +31,7 @@ type SSIService struct {
 	Operation    *operation.Service
 	Webhook      *webhook.Service
 	storage      storage.ServiceStorage
+	BatchDID     *did.BatchService
 }
 
 // InstantiateSSIService creates a new instance of the SSIS which instantiates all services and their
@@ -89,9 +90,16 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the webhook service")
 	}
 
-	keyStoreService, err := keystore.NewKeyStoreService(config.KeyStoreConfig, storageProvider)
+	keyStoreServiceFactory := keystore.NewKeyStoreServiceFactory(config.KeyStoreConfig, storageProvider)
+
+	keyStoreService, err := keyStoreServiceFactory(storageProvider)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate KeyStore service")
+	}
+
+	batchDIDService, err := did.NewBatchDIDService(config.DIDConfig, storageProvider, keyStoreServiceFactory)
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate batch DID service")
 	}
 
 	didService, err := did.NewDIDService(config.DIDConfig, storageProvider, keyStoreService)
@@ -133,6 +141,7 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 	return &SSIService{
 		KeyStore:     keyStoreService,
 		DID:          didService,
+		BatchDID:     batchDIDService,
 		Schema:       schemaService,
 		Issuance:     issuanceService,
 		Credential:   credentialService,

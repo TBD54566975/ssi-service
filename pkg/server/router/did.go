@@ -11,10 +11,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
-
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 )
@@ -372,4 +371,91 @@ func (dr DIDRouter) ResolveDID(c *gin.Context) {
 
 	resp := ResolveDIDResponse{ResolutionMetadata: resolvedDID.ResolutionMetadata, DIDDocument: resolvedDID.DIDDocument, DIDDocumentMetadata: resolvedDID.DIDDocumentMetadata}
 	framework.Respond(c, resp, http.StatusOK)
+}
+
+type BatchCreateDIDsRequest struct {
+	// Required. The list of create credential requests. Cannot be more than {{.Services.DIDConfig.BatchCreateMaxItems}} items.
+	Requests []CreateDIDByMethodRequest `json:"requests" maxItems:"100" validate:"required,dive"`
+}
+
+func (r BatchCreateDIDsRequest) toServiceRequest(m didsdk.Method) (*did.BatchCreateDIDsRequest, error) {
+	var req did.BatchCreateDIDsRequest
+	for _, routerReq := range r.Requests {
+		serviceReq, err := toCreateDIDRequest(m, routerReq)
+		if err != nil {
+			return &req, err
+		}
+		req.Requests = append(req.Requests, *serviceReq)
+	}
+	return &req, nil
+}
+
+type BatchCreateDIDsResponse struct {
+	// The DID documents created.
+	DIDs []didsdk.Document `json:"dids"`
+}
+
+type BatchDIDRouter struct {
+	service *did.BatchService
+}
+
+func NewBatchDIDRouter(svc *did.BatchService) *BatchDIDRouter {
+	return &BatchDIDRouter{service: svc}
+}
+
+// BatchCreateDIDs godoc
+//
+//	@Summary		Batch Create DIDs
+//	@Description	Create a batch of verifiable credentials. The operation is atomic, meaning that all requests will
+//	@Description	succeed or fail. This is currently only supported for the DID method named `did:key`.
+//	@Tags			CredentialAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			method	path		string					true	"Method. Only `key` is supported."
+//	@Param			request	body		BatchCreateDIDsRequest	true	"The batch requests"
+//	@Success		201		{object}	BatchCreateDIDsResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/dids/{method}/batch [put]
+func (dr BatchDIDRouter) BatchCreateDIDs(c *gin.Context) {
+	method := framework.GetParam(c, MethodParam)
+	if method == nil {
+		errMsg := "create DID request missing method parameter"
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
+	}
+	if *method != "key" {
+		errMsg := "create DID request method parameter must be `key`"
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
+	}
+	invalidCreateDIDRequest := "invalid batch create DID request"
+	var batchRequest BatchCreateDIDsRequest
+	if err := framework.Decode(c.Request, &batchRequest); err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, invalidCreateDIDRequest, http.StatusBadRequest)
+		return
+	}
+
+	batchCreateMaxItems := dr.service.Config().BatchCreateMaxItems
+	if len(batchRequest.Requests) > batchCreateMaxItems {
+		framework.LoggingRespondErrMsg(c, fmt.Sprintf("max number of requests is %d", batchCreateMaxItems), http.StatusBadRequest)
+		return
+	}
+
+	req, err := batchRequest.toServiceRequest(didsdk.Method(*method))
+	if err != nil {
+		framework.LoggingRespondError(c, err, http.StatusBadRequest)
+		return
+	}
+	batchCreateDIDsResponse, err := dr.service.BatchCreateDIDs(c, *req)
+	if err != nil {
+		errMsg := "could not create credentials"
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+
+	var resp BatchCreateDIDsResponse
+	resp.DIDs = append(resp.DIDs, batchCreateDIDsResponse.DIDs...)
+
+	framework.Respond(c, resp, http.StatusCreated)
 }

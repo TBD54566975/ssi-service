@@ -55,6 +55,15 @@ func CreateDIDKey() (string, error) {
 	return output, nil
 }
 
+func BatchCreateDIDKeys() (string, error) {
+	output, err := put(endpoint+version+"dids/key/batch", getJSONFromFile("batch-create-did-key-input.json"))
+	if err != nil {
+		return "", errors.Wrapf(err, "did endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
 func CreateDIDWeb() (string, error) {
 	logrus.Println("\n\nCreate a did:web")
 
@@ -189,7 +198,7 @@ func BatchCreateVerifiableCredentials(credentialInput batchCredInputParams) (str
 		return "", err
 	}
 
-	output, err := put(endpoint+version+"credentials/batchCreate", credentialJSON)
+	output, err := put(endpoint+version+"credentials/batch", credentialJSON)
 	if err != nil {
 		return "", errors.Wrap(err, "error writing batch credentials")
 	}
@@ -228,7 +237,7 @@ func BatchCreate100VerifiableCredentials(credentialInput credInputParams) (strin
 		return "", err
 	}
 
-	output, err := put(endpoint+version+"credentials/batchCreate", string(batchCreateData))
+	output, err := put(endpoint+version+"credentials/batch", string(batchCreateData))
 	if err != nil {
 		return "", errors.Wrap(err, "error writing batch credentials")
 	}
@@ -441,6 +450,12 @@ func getJSONElement(jsonString string, jsonPath string) (string, error) {
 		elementStr = fmt.Sprintf("%v", element)
 	case string:
 		elementStr = fmt.Sprintf("%v", element)
+	case []any:
+		data, err := json.Marshal(element)
+		if err != nil {
+			return "", err
+		}
+		elementStr = compactJSONOutput(string(data))
 	case map[string]any:
 		data, err := json.Marshal(element)
 		if err != nil {

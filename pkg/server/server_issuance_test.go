@@ -400,8 +400,8 @@ func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, 
 }
 
 func setupAllThings(t *testing.T, s storage.ServiceStorage) (*did.CreateDIDResponse, *schema.CreateSchemaResponse, *model.CreateManifestResponse, *router.IssuanceRouter) {
-	_, keyStoreSvc := testKeyStore(t, s)
-	didSvc := testDIDService(t, s, keyStoreSvc)
+	_, keyStoreSvc, _ := testKeyStore(t, s)
+	didSvc, _ := testDIDService(t, s, keyStoreSvc, nil)
 	schemaSvc := testSchemaService(t, s, keyStoreSvc, didSvc)
 	credSvc := testCredentialService(t, s, keyStoreSvc, didSvc, schemaSvc)
 	_, manifestSvc := testManifest(t, s, keyStoreSvc, didSvc, credSvc)

@@ -25,7 +25,7 @@ func TestKeyStoreAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreRouter, _ := testKeyStore(tt, db)
+				keyStoreRouter, _, _ := testKeyStore(tt, db)
 				w := httptest.NewRecorder()
 
 				// bad key type
@@ -69,7 +69,7 @@ func TestKeyStoreAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService, _ := testKeyStore(tt, db)
+				keyStoreService, _, _ := testKeyStore(tt, db)
 				w := httptest.NewRecorder()
 
 				// store a valid key

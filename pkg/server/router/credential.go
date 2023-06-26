@@ -37,7 +37,7 @@ func NewCredentialRouter(s svcframework.Service) (*CredentialRouter, error) {
 }
 
 type BatchCreateCredentialsRequest struct {
-	// Required. The list of create credential requests. Cannot be more than 1000 items.
+	// Required. The list of create credential requests. Cannot be more than {{.Services.CredentialConfig.BatchCreateMaxItems}} items.
 	Requests []CreateCredentialRequest `json:"requests" maxItems:"1000" validate:"required,dive"`
 }
 
@@ -65,7 +65,7 @@ type BatchCreateCredentialsResponse struct {
 //	@Success		201		{object}	BatchCreateCredentialsResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
-//	@Router			/v1/credentials/batchCreate [put]
+//	@Router			/v1/credentials/batch [put]
 func (cr CredentialRouter) BatchCreateCredentials(c *gin.Context) {
 	invalidCreateCredentialRequest := "invalid batch create credential request"
 	var batchRequest BatchCreateCredentialsRequest

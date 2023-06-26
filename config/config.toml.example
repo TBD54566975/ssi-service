@@ -54,6 +54,7 @@ password = "default-password"
 name = "did"
 methods = ["key", "web"]
 local_resolution_methods = ["key", "web", "pkh", "peer"]
+batch_create_max_items = 100
 
 [services.schema]
 name = "schema"

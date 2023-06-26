@@ -35,8 +35,8 @@ func TestCredentialAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, db)
+				didService, _ := testDIDService(tt, db, keyStoreService, nil)
 				schemaService := testSchemaService(tt, db, keyStoreService, didService)
 				credRouter := testCredentialRouter(tt, db, keyStoreService, didService, schemaService)
 
@@ -74,7 +74,7 @@ func TestCredentialAPI(t *testing.T) {
 				}
 				tt.Run("Returns Many Credentials", func(ttt *testing.T) {
 					requestValue := newRequestValue(ttt, batchCreateCredentialsRequest)
-					req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/batchCreate", requestValue)
+					req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/batch", requestValue)
 					w := httptest.NewRecorder()
 					c := newRequestContext(w, req)
 					credRouter.BatchCreateCredentials(c)
@@ -112,7 +112,7 @@ func TestCredentialAPI(t *testing.T) {
 					})
 
 					requestValue := newRequestValue(ttt, batchCreateCredentialsRequest)
-					req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/batchCreate", requestValue)
+					req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/batch", requestValue)
 					w := httptest.NewRecorder()
 					c := newRequestContext(w, req)
 					credRouter.BatchCreateCredentials(c)
@@ -128,7 +128,7 @@ func TestCredentialAPI(t *testing.T) {
 					}
 
 					requestValue := newRequestValue(ttt, batchCreateCredentialsRequest)
-					req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/batchCreate", requestValue)
+					req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/batch", requestValue)
 					w := httptest.NewRecorder()
 					c := newRequestContext(w, req)
 					credRouter.BatchCreateCredentials(c)
@@ -140,8 +140,8 @@ func TestCredentialAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, db)
+				didService, _ := testDIDService(tt, db, keyStoreService, nil)
 				schemaService := testSchemaService(tt, db, keyStoreService, didService)
 				credRouter := testCredentialRouter(tt, db, keyStoreService, didService, schemaService)
 
@@ -225,8 +225,8 @@ func TestCredentialAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, db)
+				didService, _ := testDIDService(tt, db, keyStoreService, nil)
 				schemaService := testSchemaService(tt, db, keyStoreService, didService)
 				credRouter := testCredentialRouter(tt, db, keyStoreService, didService, schemaService)
 
@@ -332,8 +332,8 @@ func TestCredentialAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, db)
+				didService, _ := testDIDService(tt, db, keyStoreService, nil)
 				schemaService := testSchemaService(tt, db, keyStoreService, didService)
 				credRouter := testCredentialRouter(tt, db, keyStoreService, didService, schemaService)
 
@@ -408,8 +408,8 @@ func TestCredentialAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, db)
+				didService, _ := testDIDService(tt, db, keyStoreService, nil)
 				schemaService := testSchemaService(tt, db, keyStoreService, didService)
 				credRouter := testCredentialRouter(tt, db, keyStoreService, didService, schemaService)
 
@@ -494,8 +494,8 @@ func TestCredentialAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, db)
+				didService, _ := testDIDService(tt, db, keyStoreService, nil)
 				schemaService := testSchemaService(tt, db, keyStoreService, didService)
 				credRouter := testCredentialRouter(tt, db, keyStoreService, didService, schemaService)
 
@@ -552,8 +552,8 @@ func TestCredentialAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, db)
+				didService, _ := testDIDService(tt, db, keyStoreService, nil)
 				schemaService := testSchemaService(tt, db, keyStoreService, didService)
 				credRouter := testCredentialRouter(tt, db, keyStoreService, didService, schemaService)
 
@@ -610,8 +610,8 @@ func TestCredentialAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, db)
+				didService, _ := testDIDService(tt, db, keyStoreService, nil)
 				schemaService := testSchemaService(tt, db, keyStoreService, didService)
 				credRouter := testCredentialRouter(tt, db, keyStoreService, didService, schemaService)
 
@@ -670,8 +670,8 @@ func TestCredentialAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, db)
+				didService, _ := testDIDService(tt, db, keyStoreService, nil)
 				schemaService := testSchemaService(tt, db, keyStoreService, didService)
 				credRouter := testCredentialRouter(tt, db, keyStoreService, didService, schemaService)
 
@@ -742,8 +742,8 @@ func TestCredentialAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, db)
+				didService, _ := testDIDService(tt, db, keyStoreService, nil)
 				schemaService := testSchemaService(tt, db, keyStoreService, didService)
 				credRouter := testCredentialRouter(tt, db, keyStoreService, didService, schemaService)
 
@@ -814,8 +814,8 @@ func TestCredentialAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, db)
+				didService, _ := testDIDService(tt, db, keyStoreService, nil)
 				schemaService := testSchemaService(tt, db, keyStoreService, didService)
 				credRouter := testCredentialRouter(tt, db, keyStoreService, didService, schemaService)
 
@@ -994,8 +994,8 @@ func TestCredentialAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, db)
+				didService, _ := testDIDService(tt, db, keyStoreService, nil)
 				schemaService := testSchemaService(tt, db, keyStoreService, didService)
 				credRouter := testCredentialRouter(tt, db, keyStoreService, didService, schemaService)
 
@@ -1070,8 +1070,8 @@ func TestCredentialAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, db)
+				didService, _ := testDIDService(tt, db, keyStoreService, nil)
 				schemaService := testSchemaService(tt, db, keyStoreService, didService)
 				credRouter := testCredentialRouter(tt, db, keyStoreService, didService, schemaService)
 

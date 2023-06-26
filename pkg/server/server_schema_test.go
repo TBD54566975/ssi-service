@@ -27,8 +27,8 @@ func TestSchemaAPI(t *testing.T) {
 				bolt := test.ServiceStorage(t)
 				require.NotEmpty(tt, bolt)
 
-				keyStoreService := testKeyStoreService(tt, bolt)
-				didService := testDIDService(tt, bolt, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, bolt)
+				didService, _ := testDIDService(tt, bolt, keyStoreService, nil)
 				schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
 
 				simpleSchema := getTestSchema()
@@ -69,8 +69,8 @@ func TestSchemaAPI(t *testing.T) {
 				bolt := test.ServiceStorage(t)
 				require.NotEmpty(tt, bolt)
 
-				keyStoreService := testKeyStoreService(tt, bolt)
-				didService := testDIDService(tt, bolt, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, bolt)
+				didService, _ := testDIDService(tt, bolt, keyStoreService, nil)
 				schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
 
 				simpleSchema := getTestSchema()
@@ -146,8 +146,8 @@ func TestSchemaAPI(t *testing.T) {
 				bolt := test.ServiceStorage(t)
 				require.NotEmpty(tt, bolt)
 
-				keyStoreService := testKeyStoreService(tt, bolt)
-				didService := testDIDService(tt, bolt, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, bolt)
+				didService, _ := testDIDService(tt, bolt, keyStoreService, nil)
 				schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
 
 				// get schema that doesn't exist
@@ -238,8 +238,8 @@ func TestSchemaAPI(t *testing.T) {
 				bolt := test.ServiceStorage(t)
 				require.NotEmpty(tt, bolt)
 
-				keyStoreService := testKeyStoreService(tt, bolt)
-				didService := testDIDService(tt, bolt, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, bolt)
+				didService, _ := testDIDService(tt, bolt, keyStoreService, nil)
 				schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
 
 				w := httptest.NewRecorder()
