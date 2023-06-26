@@ -44,6 +44,7 @@ methods = ["key", "web"]
 local_resolution_methods = ["key", "web", "pkh", "peer"]
 universal_resolver_url = "https://dev.uniresolver.io/"
 universal_resolver_methods = ["ion"]
+batch_create_max_items = 100
 
 [services.schema]
 name = "schema"

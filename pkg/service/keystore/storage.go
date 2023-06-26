@@ -8,6 +8,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/benbjohnson/clock"
 	"github.com/goccy/go-json"
 	"github.com/google/tink/go/aead"
 	"github.com/google/tink/go/core/registry"
@@ -61,15 +62,22 @@ const (
 
 type Storage struct {
 	db        storage.ServiceStorage
+	tx        storage.Tx
 	encrypter Encrypter
 	decrypter Decrypter
+	Clock     clock.Clock
 }
 
-func NewKeyStoreStorage(db storage.ServiceStorage, e Encrypter, d Decrypter) (*Storage, error) {
+func NewKeyStoreStorage(db storage.ServiceStorage, e Encrypter, d Decrypter, writer storage.Tx) (*Storage, error) {
 	s := &Storage{
 		db:        db,
 		encrypter: e,
 		decrypter: d,
+		Clock:     clock.New(),
+		tx:        db,
+	}
+	if writer != nil {
+		s.tx = writer
 	}
 
 	return s, nil
@@ -96,7 +104,7 @@ const (
 	awsKMSScheme = "aws-kms"
 )
 
-func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) (Encrypter, Decrypter, error) {
+func NewEncryption(db storage.ServiceStorage, tx storage.Tx, cfg config.KeyStoreServiceConfig) (Encrypter, Decrypter, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -114,7 +122,7 @@ func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) 
 		Base58Key:  serviceKey,
 		Base58Salt: serviceKeySalt,
 	}
-	if err := storeServiceKey(ctx, db, key); err != nil {
+	if err := storeServiceKey(ctx, tx, key); err != nil {
 		return nil, nil, err
 	}
 	return &encrypter{db}, &decrypter{db}, nil
@@ -151,12 +159,12 @@ func NewExternalEncrypter(ctx context.Context, cfg config.KeyStoreServiceConfig)
 }
 
 // TODO(gabe): support more robust service key operations, including rotation, and caching
-func storeServiceKey(ctx context.Context, db storage.ServiceStorage, key ServiceKey) error {
+func storeServiceKey(ctx context.Context, tx storage.Tx, key ServiceKey) error {
 	keyBytes, err := json.Marshal(key)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could not marshal service key")
 	}
-	if err = db.Write(ctx, namespace, skKey, keyBytes); err != nil {
+	if err = tx.Write(ctx, namespace, skKey, keyBytes); err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could store marshal service key")
 	}
 	return nil
@@ -266,7 +274,7 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 		return sdkutil.LoggingErrorMsg(err, "marshalling JWK")
 	}
 
-	if err := kss.db.Write(ctx, namespace+publicNamespaceSuffix, id, publicBytes); err != nil {
+	if err := kss.tx.Write(ctx, namespace+publicNamespaceSuffix, id, publicBytes); err != nil {
 		return sdkutil.LoggingErrorMsgf(err, "writing public key")
 	}
 
@@ -276,7 +284,7 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 		return sdkutil.LoggingErrorMsgf(err, "could not encrypt key: %s", key.ID)
 	}
 
-	return kss.db.Write(ctx, namespace, id, encryptedKey)
+	return kss.tx.Write(ctx, namespace, id, encryptedKey)
 }
 
 // RevokeKey revokes a key by setting the revoked flag to true.
@@ -290,7 +298,7 @@ func (kss *Storage) RevokeKey(ctx context.Context, id string) error {
 	}
 
 	key.Revoked = true
-	key.RevokedAt = time.Now().UTC().Format(time.RFC3339)
+	key.RevokedAt = kss.Clock.Now().Format(time.RFC3339)
 	return kss.StoreKey(ctx, *key)
 }
 

@@ -32,8 +32,8 @@ func TestDIDAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				_, keyStoreService := testKeyStore(tt, db)
-				didService := testDIDRouter(tt, db, keyStoreService, []string{"key", "web", "ion"})
+				_, keyStoreService, _ := testKeyStore(tt, db)
+				didService, _ := testDIDRouter(tt, db, keyStoreService, []string{"key", "web", "ion"}, nil)
 
 				// get DID method
 				req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids", nil)
@@ -57,8 +57,8 @@ func TestDIDAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				_, keyStoreService := testKeyStore(tt, db)
-				didService := testDIDRouter(tt, db, keyStoreService, []string{"key"})
+				_, keyStoreService, _ := testKeyStore(tt, db)
+				didService, _ := testDIDRouter(tt, db, keyStoreService, []string{"key"}, nil)
 
 				// create DID by method - key - missing body
 				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", nil)
@@ -102,8 +102,8 @@ func TestDIDAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				_, keyStoreService := testKeyStore(tt, db)
-				didService := testDIDRouter(tt, db, keyStoreService, []string{"web"})
+				_, keyStoreService, _ := testKeyStore(tt, db)
+				didService, _ := testDIDRouter(tt, db, keyStoreService, []string{"web"}, nil)
 
 				// create DID by method - web - missing body
 				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/web", nil)
@@ -175,8 +175,8 @@ func TestDIDAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				_, keyStoreService := testKeyStore(tt, db)
-				didService := testDIDRouter(tt, db, keyStoreService, []string{"ion"})
+				_, keyStoreService, _ := testKeyStore(tt, db)
+				didService, _ := testDIDRouter(tt, db, keyStoreService, []string{"ion"}, nil)
 
 				// create DID by method - ion - missing body
 				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/ion", nil)
@@ -357,8 +357,8 @@ func TestDIDAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				_, keyStoreService := testKeyStore(tt, db)
-				didService := testDIDRouter(tt, db, keyStoreService, []string{"web"})
+				_, keyStoreService, _ := testKeyStore(tt, db)
+				didService, _ := testDIDRouter(tt, db, keyStoreService, []string{"web"}, nil)
 
 				// reset recorder between calls
 				w := httptest.NewRecorder()
@@ -417,8 +417,8 @@ func TestDIDAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				_, keyStore := testKeyStore(tt, db)
-				didService := testDIDRouter(tt, db, keyStore, []string{"key"})
+				_, keyStore, _ := testKeyStore(tt, db)
+				didService, _ := testDIDRouter(tt, db, keyStore, []string{"key"}, nil)
 
 				// get DID by method
 				req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/bad/worse", nil)
@@ -489,8 +489,8 @@ func TestDIDAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				_, keyStore := testKeyStore(tt, db)
-				didService := testDIDRouter(tt, db, keyStore, []string{"key"})
+				_, keyStore, _ := testKeyStore(tt, db)
+				didService, _ := testDIDRouter(tt, db, keyStore, []string{"key"}, nil)
 
 				// soft delete DID by method
 				req := httptest.NewRequest(http.MethodDelete, "https://ssi-service.com/v1/dids/bad/worse", nil)
@@ -613,8 +613,8 @@ func TestDIDAPI(t *testing.T) {
 			t.Run("List DIDs made up token fails", func(tt *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
-				_, keyStore := testKeyStore(tt, db)
-				didService := testDIDRouter(tt, db, keyStore, []string{"key", "web"})
+				_, keyStore, _ := testKeyStore(tt, db)
+				didService, _ := testDIDRouter(tt, db, keyStore, []string{"key", "web"}, nil)
 
 				w := httptest.NewRecorder()
 				badParams := url.Values{
@@ -632,8 +632,8 @@ func TestDIDAPI(t *testing.T) {
 				if !strings.Contains(test.Name, "Redis") {
 					db := test.ServiceStorage(t)
 					require.NotEmpty(tt, db)
-					_, keyStore := testKeyStore(tt, db)
-					didRouter := testDIDRouter(tt, db, keyStore, []string{"key", "web"})
+					_, keyStore, _ := testKeyStore(tt, db)
+					didRouter, _ := testDIDRouter(tt, db, keyStore, []string{"key", "web"}, nil)
 
 					createDIDWithRouter(tt, didRouter)
 					createDIDWithRouter(tt, didRouter)
@@ -673,8 +673,8 @@ func TestDIDAPI(t *testing.T) {
 				if !strings.Contains(test.Name, "Redis") {
 					db := test.ServiceStorage(t)
 					require.NotEmpty(tt, db)
-					_, keyStore := testKeyStore(tt, db)
-					didRouter := testDIDRouter(tt, db, keyStore, []string{"key", "web"})
+					_, keyStore, _ := testKeyStore(tt, db)
+					didRouter, _ := testDIDRouter(tt, db, keyStore, []string{"key", "web"}, nil)
 					createDIDWithRouter(tt, didRouter)
 					createDIDWithRouter(tt, didRouter)
 
@@ -709,8 +709,8 @@ func TestDIDAPI(t *testing.T) {
 			t.Run("Test Get DIDs By Method", func(tt *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
-				_, keyStore := testKeyStore(tt, db)
-				didService := testDIDRouter(tt, db, keyStore, []string{"key", "web"})
+				_, keyStore, _ := testKeyStore(tt, db)
+				didService, _ := testDIDRouter(tt, db, keyStore, []string{"key", "web"}, nil)
 
 				// get DIDs by method
 				req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/bad", nil)
@@ -795,8 +795,8 @@ func TestDIDAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				_, keyStore := testKeyStore(tt, db)
-				didService := testDIDRouter(tt, db, keyStore, []string{"key", "web"})
+				_, keyStore, _ := testKeyStore(tt, db)
+				didService, _ := testDIDRouter(tt, db, keyStore, []string{"key", "web"}, nil)
 
 				// bad resolution request
 				req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/resolver/bad", nil)
@@ -834,6 +834,81 @@ func TestDIDAPI(t *testing.T) {
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, resolutionResponse.DIDDocument)
 				assert.Equal(tt, "did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp", resolutionResponse.DIDDocument.ID)
+			})
+		})
+	}
+}
+
+func TestBatchCreateDIDs(t *testing.T) {
+	for _, test := range testutil.TestDatabases {
+		t.Run(test.Name, func(t *testing.T) {
+			db := test.ServiceStorage(t)
+			require.NotEmpty(t, db)
+			_, keyStoreService, factory := testKeyStore(t, db)
+
+			createDIDRequest := router.BatchCreateDIDsRequest{
+				Requests: []router.CreateDIDByMethodRequest{
+					{
+						KeyType: crypto.Ed25519,
+					},
+					{
+						KeyType: crypto.Ed25519,
+					},
+					{
+						KeyType: crypto.Ed25519,
+					},
+				},
+			}
+
+			_, batchDIDRouter := testDIDRouter(t, db, keyStoreService, []string{"key"}, factory)
+			t.Run(" Batch Create DID By Method: Key", func(tt *testing.T) {
+				w := httptest.NewRecorder()
+				requestReader := newRequestValue(tt, createDIDRequest)
+				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key", requestReader)
+				params := map[string]string{"method": "key"}
+				c := newRequestContextWithParams(w, req, params)
+
+				batchDIDRouter.BatchCreateDIDs(c)
+
+				assert.True(tt, util.Is2xxResponse(w.Code))
+				var resp router.BatchCreateDIDsResponse
+				err := json.NewDecoder(w.Body).Decode(&resp)
+				assert.NoError(tt, err)
+				assert.Len(tt, resp.DIDs, 3)
+			})
+
+			t.Run("Fails with malformed request", func(ttt *testing.T) {
+				createDIDRequest := createDIDRequest
+				// missing the data field
+				createDIDRequest.Requests = append(createDIDRequest.Requests, router.CreateDIDByMethodRequest{
+					KeyType: "bad",
+				})
+
+				requestValue := newRequestValue(ttt, createDIDRequest)
+				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key/batch", requestValue)
+				w := httptest.NewRecorder()
+				params := map[string]string{"method": "key"}
+				c := newRequestContextWithParams(w, req, params)
+				batchDIDRouter.BatchCreateDIDs(c)
+				assert.Equal(ttt, http.StatusInternalServerError, w.Code)
+				assert.Contains(ttt, w.Body.String(), "unsupported did:key type: bad")
+			})
+
+			t.Run("Fails with more than 1000 requests", func(ttt *testing.T) {
+				createDIDRequest := createDIDRequest
+				// missing the data field
+				for i := 0; i < 1000; i++ {
+					createDIDRequest.Requests = append(createDIDRequest.Requests, createDIDRequest.Requests[0])
+				}
+
+				requestValue := newRequestValue(ttt, createDIDRequest)
+				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/key/batch", requestValue)
+				w := httptest.NewRecorder()
+				params := map[string]string{"method": "key"}
+				c := newRequestContextWithParams(w, req, params)
+				batchDIDRouter.BatchCreateDIDs(c)
+				assert.Equal(ttt, http.StatusBadRequest, w.Code)
+				assert.Contains(ttt, w.Body.String(), "max number of requests is 100")
 			})
 		})
 	}

@@ -20,6 +20,8 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
+type ServiceFactory func(storage.Tx) (*Service, error)
+
 type Service struct {
 	storage *Storage
 	config  config.KeyStoreServiceConfig
@@ -48,25 +50,31 @@ func (s Service) Config() config.KeyStoreServiceConfig {
 }
 
 func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	encrypter, decrypter, err := NewEncryption(s, config)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating new encryption")
-	}
+	return NewKeyStoreServiceFactory(config, s)(s)
+}
 
-	// Next, instantiate the key storage
-	keyStoreStorage, err := NewKeyStoreStorage(s, encrypter, decrypter)
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "instantiating storage for the keystore service")
-	}
+func NewKeyStoreServiceFactory(config config.KeyStoreServiceConfig, s storage.ServiceStorage) ServiceFactory {
+	return func(tx storage.Tx) (*Service, error) {
+		encrypter, decrypter, err := NewEncryption(s, tx, config)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating new encryption")
+		}
 
-	service := Service{
-		storage: keyStoreStorage,
-		config:  config,
+		// Next, instantiate the key storage
+		keyStoreStorage, err := NewKeyStoreStorage(s, encrypter, decrypter, tx)
+		if err != nil {
+			return nil, sdkutil.LoggingErrorMsg(err, "instantiating storage for the keystore service")
+		}
+
+		service := Service{
+			storage: keyStoreStorage,
+			config:  config,
+		}
+		if !service.Status().IsReady() {
+			return nil, errors.New(service.Status().Message)
+		}
+		return &service, nil
 	}
-	if !service.Status().IsReady() {
-		return nil, errors.New(service.Status().Message)
-	}
-	return &service, nil
 }
 
 func (s Service) StoreKey(ctx context.Context, request StoreKeyRequest) error {
@@ -124,7 +132,6 @@ func (s Service) GetKey(ctx context.Context, request GetKeyRequest) (*GetKeyResp
 	}, nil
 }
 
-// TODO(gabe): expose this endpoint https://github.com/TBD54566975/ssi-service/issues/451
 func (s Service) RevokeKey(ctx context.Context, request RevokeKeyRequest) error {
 	logrus.Debugf("revoking key: %+v", request)
 

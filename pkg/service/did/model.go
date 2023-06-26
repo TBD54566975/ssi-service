@@ -39,6 +39,14 @@ type CreateDIDResponse struct {
 	DID didsdk.Document `json:"did"`
 }
 
+type BatchCreateDIDsRequest struct {
+	Requests []CreateDIDRequest `json:"requests"`
+}
+
+type BatchCreateDIDsResponse struct {
+	DIDs []didsdk.Document `json:"dids"`
+}
+
 type GetDIDRequest struct {
 	Method didsdk.Method `json:"method" validate:"required"`
 	ID     string        `json:"id" validate:"required"`

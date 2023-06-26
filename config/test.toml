@@ -52,6 +52,7 @@ local_resolution_methods = ["key", "web", "pkh", "peer"]
 universal_resolver_url = "http://uni-resolver-web:8080"
 universal_resolver_methods = ["ion"]
 ion_resolver_url = "https://ion.tbddev.org"
+batch_create_max_items = 100
 
 [services.schema]
 name = "schema"

@@ -94,7 +94,7 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	if err = KeyStoreAPI(v1, ssi.KeyStore); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate KeyStore API")
 	}
-	if err = DecentralizedIdentityAPI(v1, ssi.DID, ssi.Webhook); err != nil {
+	if err = DecentralizedIdentityAPI(v1, ssi.DID, ssi.BatchDID, ssi.Webhook); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate DID API")
 	}
 	if err = SchemaAPI(v1, ssi.Schema, ssi.Webhook); err != nil {
@@ -132,17 +132,8 @@ func writeSwaggerFile(cfg config.SSIServiceConfig) (*os.File, error) {
 		return nil, err
 	}
 
-	input := struct {
-		SwaggerInfoVersion     string
-		SwaggerInfoDescription string
-		SwaggerInfoHost        string
-	}{
-		SwaggerInfoVersion:     cfg.SVN,
-		SwaggerInfoDescription: cfg.Desc,
-		SwaggerInfoHost:        cfg.Server.APIHost,
-	}
 	var b bytes.Buffer
-	if err = t.Execute(&b, input); err != nil {
+	if err = t.Execute(&b, cfg); err != nil {
 		return nil, err
 	}
 	tmpFile, err := os.CreateTemp("", "swagger.yaml")
@@ -189,16 +180,18 @@ func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
 }
 
 // DecentralizedIdentityAPI registers all HTTP handlers for the DID Service
-func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, webhookService *webhook.Service) (err error) {
+func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, did *didsvc.BatchService, webhookService *webhook.Service) (err error) {
 	didRouter, err := router.NewDIDRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating DID router")
 	}
+	batchDIDRouter := router.NewBatchDIDRouter(did)
 
 	didAPI := rg.Group(DIDsPrefix)
 	didAPI.GET("", didRouter.ListDIDMethods)
 	didAPI.PUT("/:method", middleware.Webhook(webhookService, webhook.DID, webhook.Create), didRouter.CreateDIDByMethod)
 	didAPI.PUT("/:method/:id", didRouter.UpdateDIDByMethod)
+	didAPI.PUT("/:method/batch", middleware.Webhook(webhookService, webhook.DID, webhook.BatchCreate), batchDIDRouter.BatchCreateDIDs)
 	didAPI.GET("/:method", didRouter.ListDIDsByMethod)
 	didAPI.GET("/:method/:id", didRouter.GetDIDByMethod)
 	didAPI.DELETE("/:method/:id", didRouter.SoftDeleteDIDByMethod)
@@ -231,7 +224,7 @@ func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookSer
 	// Credentials
 	credentialAPI := rg.Group(CredentialsPrefix)
 	credentialAPI.PUT("", middleware.Webhook(webhookService, webhook.Credential, webhook.Create), credRouter.CreateCredential)
-	credentialAPI.PUT("/batchCreate", middleware.Webhook(webhookService, webhook.Credential, webhook.BatchCreate), credRouter.BatchCreateCredentials)
+	credentialAPI.PUT("/batch", middleware.Webhook(webhookService, webhook.Credential, webhook.BatchCreate), credRouter.BatchCreateCredentials)
 	credentialAPI.GET("", credRouter.ListCredentials)
 	credentialAPI.GET("/:id", credRouter.GetCredential)
 	credentialAPI.PUT(VerificationPath, credRouter.VerifyCredential)
@@ -281,6 +274,7 @@ func KeyStoreAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) 
 	keyStoreAPI := rg.Group(KeyStorePrefix)
 	keyStoreAPI.PUT("", keyStoreRouter.StoreKey)
 	keyStoreAPI.GET("/:id", keyStoreRouter.GetKeyDetails)
+	keyStoreAPI.DELETE("/:id", keyStoreRouter.RevokeKey)
 	return
 }
 
