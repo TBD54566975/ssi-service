@@ -12,6 +12,8 @@ import (
 	"time"
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/goccy/go-json"
 	"github.com/oliveagle/jsonpath"
@@ -372,6 +374,49 @@ func CreateSubmission(params submissionParams, holderPrivateKey gocrypto.Private
 	}
 
 	signer, err := keyaccess.NewJWKKeyAccess(params.HolderID, params.HolderKID, holderPrivateKey)
+	if err != nil {
+		return "", errors.Wrap(err, "creating signer")
+	}
+
+	var submission any
+	if err = json.Unmarshal([]byte(submissionJSON), &submission); err != nil {
+		return "", err
+	}
+
+	signed, err := signer.SignJSON(submission)
+	if err != nil {
+		logrus.Println("Failed signing: " + submissionJSON)
+		return "", errors.Wrap(err, "signing json")
+	}
+
+	submissionJSONWrapper, err := resolveTemplate(submissionJWTParams{SubmissionJWT: signed.String()},
+		"presentation-submission-input-jwt.json")
+	if err != nil {
+		return "", err
+	}
+
+	output, err := put(endpoint+version+"presentations/submissions", submissionJSONWrapper)
+	if err != nil {
+		return "", errors.Wrapf(err, "presentation submission endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
+func CreateSubmissionWithExternalCredential(params submissionParams) (string, error) {
+	logrus.Println("\n\nCreate our Submission with external credential:")
+
+	holderPrivateKey, holderDIDKey, err := key.GenerateDIDKey(crypto.Ed25519)
+	holderDID, err := holderDIDKey.Expand()
+	holderKID := holderDID.VerificationMethod[0].ID
+
+	params.HolderID = holderDID.ID
+	submissionJSON, err := resolveTemplate(params, "presentation-submission-external-credential-input.json")
+	if err != nil {
+		return "", err
+	}
+
+	signer, err := keyaccess.NewJWKKeyAccess(holderDID.ID, holderKID, holderPrivateKey)
 	if err != nil {
 		return "", errors.Wrap(err, "creating signer")
 	}
