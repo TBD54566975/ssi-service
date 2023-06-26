@@ -116,6 +116,16 @@ func (ds *Storage) GetDIDDefault(ctx context.Context, id string) (*DefaultStored
 	return outType, nil
 }
 
+// DIDExists returns true if DID exists, false if not
+func (ds *Storage) DIDExists(ctx context.Context, id string) (bool, error) {
+	ns, err := getNamespaceForDID(id)
+	if err != nil {
+		return false, sdkutil.LoggingErrorMsg(err, fmt.Sprintf("could not get namespace for did: %s", id))
+	}
+
+	return ds.db.Exists(ctx, ns, id)
+}
+
 // ListDIDs attempts to get all DIDs for a given method. It will return those it can even if it has trouble with some.
 // The out parameter must be a pointer to a struct for a type that implement the StoredDID interface.
 // The result is a slice of the type of the out parameter (an array of pointers to the type of the out parameter).)

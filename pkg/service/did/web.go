@@ -69,6 +69,15 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "could not validate did:web")
 	}
 
+	exists, err := h.storage.DIDExists(ctx, opts.DIDWebID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error getting DID: %s", opts.DIDWebID)
+	}
+
+	if exists {
+		return nil, fmt.Errorf("did with id<%s> already exists", opts.DIDWebID)
+	}
+
 	pubKey, privKey, err := crypto.GenerateKeyByKeyType(request.KeyType)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not generate key for did:web")

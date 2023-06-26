@@ -7,7 +7,6 @@ import (
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -125,6 +124,9 @@ type CreateCredentialRequest struct {
 	// Whether this credential can be suspended. When true, the created VC will have the "credentialStatus"
 	// property set.
 	Suspendable bool `json:"suspendable,omitempty" example:"false"`
+
+	// Optional. Corresponds to `evidence` in https://www.w3.org/TR/vc-data-model-2.0/#evidence
+	Evidence []any `json:"evidence" swaggertype:"object,string" example:"[{'id': 'https://example.edu/evidence/f2aeec97-fc0d-42bf-8ca7-0548192d4231'}, {'type': ['DocumentVerification'}]"`
 	// TODO(gabe) support more capabilities like signature type, format, and more.
 }
 
@@ -139,6 +141,7 @@ func (c CreateCredentialRequest) toServiceRequest() credential.CreateCredentialR
 		Expiry:      c.Expiry,
 		Revocable:   c.Revocable,
 		Suspendable: c.Suspendable,
+		Evidence:    c.Evidence,
 	}
 }
 
