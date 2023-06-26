@@ -5,7 +5,8 @@ import (
 	"fmt"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
-	"github.com/TBD54566975/ssi-sdk/credential/verification"
+	"github.com/TBD54566975/ssi-sdk/credential/integrity"
+	"github.com/TBD54566975/ssi-sdk/credential/validation"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
@@ -18,15 +19,15 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/schema"
 )
 
-type Verifier struct {
-	verifier       *verification.CredentialVerifier
+type Validator struct {
+	validator      *validation.CredentialValidator
 	didResolver    resolution.Resolver
 	schemaResolver schema.Resolution
 }
 
-// NewCredentialVerifier creates a new credential verifier which executes both signature and static verification checks.
+// NewCredentialValidator creates a new credential validator which executes both signature and static verification checks.
 // In the future the set of verification checks will be configurable.
-func NewCredentialVerifier(didResolver resolution.Resolver, schemaResolver schema.Resolution) (*Verifier, error) {
+func NewCredentialValidator(didResolver resolution.Resolver, schemaResolver schema.Resolution) (*Validator, error) {
 	if didResolver == nil {
 		return nil, errors.New("didResolver cannot be nil")
 	}
@@ -34,13 +35,13 @@ func NewCredentialVerifier(didResolver resolution.Resolver, schemaResolver schem
 		return nil, errors.New("schemaResolver cannot be nil")
 	}
 	// TODO(gabe): consider making this configurable
-	verifiers := verification.GetKnownVerifiers()
-	verifier, err := verification.NewCredentialVerifier(verifiers)
+	validators := validation.GetKnownVerifiers()
+	validator, err := validation.NewCredentialValidator(validators)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create static credential verifier")
+		return nil, errors.Wrap(err, "failed to create static credential validator")
 	}
-	return &Verifier{
-		verifier:       verifier,
+	return &Validator{
+		validator:      validator,
 		didResolver:    didResolver,
 		schemaResolver: schemaResolver,
 	}, nil
@@ -50,9 +51,9 @@ func NewCredentialVerifier(didResolver resolution.Resolver, schemaResolver schem
 
 // VerifyJWTCredential first parses and checks the signature on the given JWT credential. Next, it runs
 // a set of static verification checks on the credential as per the credential service's configuration.
-func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
+func (v Validator) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
 	// first, parse the token to see if it contains a valid verifiable credential
-	gotHeaders, _, cred, err := credsdk.ParseVerifiableCredentialFromJWT(token.String())
+	gotHeaders, _, cred, err := integrity.ParseVerifiableCredentialFromJWT(token.String())
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could not parse credential from JWT")
 	}
@@ -76,10 +77,10 @@ func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) 
 		return sdkutil.LoggingError(err)
 	}
 
-	// construct a signature verifier from the verification information
+	// construct a signature validator from the verification information
 	verifier, err := keyaccess.NewJWKKeyAccessVerifier(issuerDID, jwtKID, pubKey)
 	if err != nil {
-		return sdkutil.LoggingErrorMsg(err, "could not create verifier")
+		return sdkutil.LoggingErrorMsg(err, "could not create validator")
 	}
 
 	// verify the signature on the credential
@@ -87,12 +88,12 @@ func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) 
 		return sdkutil.LoggingErrorMsg(err, "could not verify credential's signature")
 	}
 
-	return v.staticVerificationChecks(ctx, *cred)
+	return v.staticValidationChecks(ctx, *cred)
 }
 
 // VerifyDataIntegrityCredential first checks the signature on the given data integrity credential. Next, it runs
 // a set of static verification checks on the credential as per the credential service's configuration.
-func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential credsdk.VerifiableCredential) error {
+func (v Validator) VerifyDataIntegrityCredential(ctx context.Context, credential credsdk.VerifiableCredential) error {
 	// resolve the issuer's key material
 	issuer, ok := credential.Issuer.(string)
 	if !ok {
@@ -113,10 +114,10 @@ func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential 
 		return sdkutil.LoggingError(err)
 	}
 
-	// construct a signature verifier from the verification information
+	// construct a signature validator from the verification information
 	verifier, err := keyaccess.NewDataIntegrityKeyAccess(issuer, verificationMethod, pubKey)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create verifier for kid %s", verificationMethod)
+		errMsg := fmt.Sprintf("could not create validator for kid %s", verificationMethod)
 		return sdkutil.LoggingErrorMsg(err, errMsg)
 	}
 
@@ -125,7 +126,7 @@ func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential 
 		return sdkutil.LoggingErrorMsg(err, "could not verify the credential's signature")
 	}
 
-	return v.staticVerificationChecks(ctx, credential)
+	return v.staticValidationChecks(ctx, credential)
 }
 
 func getKeyFromProof(proof crypto.Proof, key string) (any, error) {
@@ -140,7 +141,7 @@ func getKeyFromProof(proof crypto.Proof, key string) (any, error) {
 	return proofMap[key], nil
 }
 
-func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT) error {
+func (v Validator) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT) error {
 	// parse headers
 	headers, err := keyaccess.GetJWTHeaders([]byte(token))
 	if err != nil {
@@ -161,10 +162,10 @@ func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT
 		return sdkutil.LoggingError(err)
 	}
 
-	// construct a signature verifier from the verification information
+	// construct a signature validator from the verification information
 	verifier, err := keyaccess.NewJWKKeyAccessVerifier(did, kid, pubKey)
 	if err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not create verifier for kid %s", kid)
+		return sdkutil.LoggingErrorMsgf(err, "could not create validator for kid %s", kid)
 	}
 
 	// verify the signature on the credential
@@ -175,11 +176,11 @@ func (v Verifier) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT
 	return nil
 }
 
-// staticVerificationChecks runs a set of static verification checks on the credential as per the credential
+// staticValidationChecks runs a set of static validation checks on the credential as per the credential
 // service's configuration, such as checking the credential's schema, expiration, and object validity.
-func (v Verifier) staticVerificationChecks(ctx context.Context, credential credsdk.VerifiableCredential) error {
+func (v Validator) staticValidationChecks(ctx context.Context, credential credsdk.VerifiableCredential) error {
 	// if the credential has a schema, resolve it before it is to be used in verification
-	var verificationOpts []verification.Option
+	var validationOpts []validation.Option
 	if credential.CredentialSchema != nil {
 		schemaID := credential.CredentialSchema.ID
 		resolvedSchema, _, err := v.schemaResolver.Resolve(ctx, schemaID)
@@ -190,12 +191,12 @@ func (v Verifier) staticVerificationChecks(ctx context.Context, credential creds
 		if err != nil {
 			return errors.Wrapf(err, "for credential<%s> failed to marshal schema: %s", credential.ID, schemaID)
 		}
-		verificationOpts = append(verificationOpts, verification.WithSchema(string(schemaBytes)))
+		validationOpts = append(validationOpts, validation.WithSchema(string(schemaBytes)))
 	}
 
 	// run the configured static checks on the credential
-	if err := v.verifier.VerifyCredential(credential, verificationOpts...); err != nil {
-		return sdkutil.LoggingErrorMsg(err, "static credential verification failed")
+	if err := v.validator.ValidateCredential(credential, validationOpts...); err != nil {
+		return sdkutil.LoggingErrorMsg(err, "static credential validation failed")
 	}
 
 	return nil

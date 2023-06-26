@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/credential/integrity"
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/goccy/go-json"
@@ -122,7 +123,7 @@ func (ka JWKKeyAccess) SignVerifiableCredential(cred credential.VerifiableCreden
 		return nil, errors.New("cannot sign invalid credential")
 	}
 
-	tokenBytes, err := credential.SignVerifiableCredentialJWT(*ka.Signer, cred)
+	tokenBytes, err := integrity.SignVerifiableCredentialJWT(*ka.Signer, cred)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not sign cred")
 	}
@@ -133,7 +134,7 @@ func (ka JWKKeyAccess) VerifyVerifiableCredential(token JWT) (*credential.Verifi
 	if token == "" {
 		return nil, errors.New("token cannot be empty")
 	}
-	_, _, verifiableCredential, err := credential.VerifyVerifiableCredentialJWT(*ka.Verifier, token.String())
+	_, _, verifiableCredential, err := integrity.VerifyVerifiableCredentialJWT(*ka.Verifier, token.String())
 	return verifiableCredential, err
 }
 
@@ -144,7 +145,7 @@ func (ka JWKKeyAccess) SignVerifiablePresentation(audience string, presentation 
 	if err := presentation.IsValid(); err != nil {
 		return nil, errors.New("cannot sign invalid presentation")
 	}
-	tokenBytes, err := credential.SignVerifiablePresentationJWT(*ka.Signer, credential.JWTVVPParameters{Audience: []string{audience}}, presentation)
+	tokenBytes, err := integrity.SignVerifiablePresentationJWT(*ka.Signer, integrity.JWTVVPParameters{Audience: []string{audience}}, presentation)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not sign presentation")
 	}
@@ -155,7 +156,7 @@ func (ka JWKKeyAccess) VerifyVerifiablePresentation(ctx context.Context, resolve
 	if token == "" {
 		return nil, errors.New("token cannot be empty")
 	}
-	_, _, presentation, err := credential.VerifyVerifiablePresentationJWT(ctx, *ka.Verifier, resolver, token.String())
+	_, _, presentation, err := integrity.VerifyVerifiablePresentationJWT(ctx, *ka.Verifier, resolver, token.String())
 	return presentation, err
 }
 

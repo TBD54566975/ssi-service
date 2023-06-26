@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/credential/parsing"
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	schemalib "github.com/TBD54566975/ssi-sdk/schema"
@@ -256,7 +257,7 @@ func (s Service) Resolve(ctx context.Context, id string) (*schema.JSONSchema, sc
 	case schema.JSONSchema2023Type:
 		return gotSchemaResponse.Schema, schema.JSONSchema2023Type, nil
 	case schema.CredentialSchema2023Type:
-		_, _, cred, err := credential.ToCredential(gotSchemaResponse.CredentialSchema.String())
+		_, _, cred, err := parsing.ToCredential(gotSchemaResponse.CredentialSchema.String())
 		if err != nil {
 			return nil, "", sdkutil.LoggingErrorMsg(err, "converting credential schema from jwt to credential map")
 		}
