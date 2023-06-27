@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
-
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -90,7 +89,13 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the webhook service")
 	}
 
+	if err := keystore.EnsureServiceKeyExists(config.KeyStoreConfig, storageProvider); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "could not ensure the service key exists")
+	}
 	keyStoreServiceFactory := keystore.NewKeyStoreServiceFactory(config.KeyStoreConfig, storageProvider)
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the keystore service factory")
+	}
 
 	keyStoreService, err := keyStoreServiceFactory(storageProvider)
 	if err != nil {
