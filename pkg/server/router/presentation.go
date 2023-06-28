@@ -532,7 +532,7 @@ func (pr PresentationRouter) CreateRequest(c *gin.Context) {
 }
 
 func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequest) (*model.Request, error) {
-	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest, pr.service.Config().ExpirationDuration)
+	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest)
 	if err != nil {
 		return nil, err
 	}

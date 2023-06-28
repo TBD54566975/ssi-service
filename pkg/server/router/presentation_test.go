@@ -39,6 +39,12 @@ func TestPresentationDefinitionRouter(t *testing.T) {
 	})
 }
 
+var (
+	SampleExpirationTime = time.Date(2023, 10, 10, 10, 10, 10, 0, time.UTC)
+	In30Seconds          = time.Now().Add(30 * time.Second)
+	In100Seconds         = time.Now().Add(100 * time.Second)
+)
+
 func TestPresentationDefinitionService(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
@@ -116,7 +122,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 						Audience:   []string{"did:web:heman"},
 						IssuerDID:  authorDID.DID.ID,
 						IssuerKID:  authorDID.DID.VerificationMethod[0].ID,
-						Expiration: time.Date(2023, 10, 10, 10, 10, 10, 0, time.UTC),
+						Expiration: &SampleExpirationTime,
 					},
 					PresentationDefinitionID: pd.ID,
 				}
@@ -152,7 +158,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 							Audience:   []string{"did:web:heman"},
 							IssuerDID:  authorDID.DID.ID,
 							IssuerKID:  authorDID.DID.VerificationMethod[0].ID,
-							Expiration: time.Now().Add(30 * time.Second),
+							Expiration: &In30Seconds,
 						},
 						PresentationDefinitionID: pd.ID,
 					},
@@ -175,7 +181,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 						Request: common.Request{
 							IssuerDID:  authorDID.DID.ID,
 							IssuerKID:  authorDID.DID.VerificationMethod[0].ID,
-							Expiration: time.Now().Add(30 * time.Second),
+							Expiration: &In30Seconds,
 						},
 						PresentationDefinitionID: pd.ID,
 					},

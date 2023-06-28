@@ -647,7 +647,7 @@ func (mr ManifestRouter) CreateRequest(c *gin.Context) {
 }
 
 func (mr ManifestRouter) serviceRequestFromRequest(request CreateManifestRequestRequest) (*model.Request, error) {
-	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest, mr.service.Config().ExpirationDuration)
+	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -746,23 +746,18 @@ func (mr ManifestRouter) DeleteRequest(c *gin.Context) {
 	framework.Respond(c, nil, http.StatusNoContent)
 }
 
-func commonRequestToServiceRequest(request *CommonCreateRequestRequest, expirationDuration time.Duration) (*common.Request, error) {
-	var expiration time.Time
-	var err error
-
+func commonRequestToServiceRequest(request *CommonCreateRequestRequest) (*common.Request, error) {
+	req := &common.Request{
+		Audience:  request.Audience,
+		IssuerDID: request.IssuerDID,
+		IssuerKID: request.IssuerKID,
+	}
 	if request.Expiration != "" {
-		expiration, err = time.Parse(time.RFC3339, request.Expiration)
+		expiration, err := time.Parse(time.RFC3339, request.Expiration)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		expiration = time.Now().Add(expirationDuration)
-	}
-	req := &common.Request{
-		Audience:   request.Audience,
-		Expiration: expiration,
-		IssuerDID:  request.IssuerDID,
-		IssuerKID:  request.IssuerKID,
+		req.Expiration = &expiration
 	}
 	return req, nil
 }

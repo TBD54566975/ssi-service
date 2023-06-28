@@ -3,7 +3,6 @@ package router
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
@@ -238,7 +237,7 @@ func getValidManifestRequestRequest(issuerDID *did.CreateDIDResponse, kid string
 				Audience:   []string{"mario"},
 				IssuerDID:  issuerDID.DID.ID,
 				IssuerKID:  kid,
-				Expiration: time.Now().Add(100 * time.Second),
+				Expiration: &In100Seconds,
 			},
 			ManifestID: createdManifest.Manifest.ID,
 		},
