@@ -693,7 +693,6 @@ definitions:
         description: ID of the credential manifest used for this request.
         type: string
     required:
-    - expiration
     - issuerId
     - issuerKid
     - manifestId
@@ -729,7 +728,6 @@ definitions:
           This is an output only field.
         type: string
     required:
-    - expiration
     - issuerId
     - issuerKid
     - presentationDefinitionId
@@ -1194,7 +1192,7 @@ definitions:
       expiration:
         description: |-
           Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
-          Optional. When not specified, the request will be valid for a default duration.
+          Optional.
         type: string
       issuerId:
         description: |-
@@ -1262,7 +1260,7 @@ definitions:
       expiration:
         description: |-
           Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
-          Optional. When not specified, the request will be valid for a default duration.
+          Optional.
         type: string
       issuerId:
         description: |-
