@@ -41,7 +41,7 @@ func TestDIDRouter(t *testing.T) {
 					keyStoreService := testKeyStoreService(tt, db)
 					methods := []string{didsdk.KeyMethod.String()}
 					serviceConfig := config.DIDServiceConfig{Methods: methods, LocalResolutionMethods: methods}
-					didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
+					didService, err := did.NewDIDService(serviceConfig, db, keyStoreService, nil)
 					assert.NoError(tt, err)
 					assert.NotEmpty(tt, didService)
 					createDID(tt, didService)
@@ -83,7 +83,7 @@ func TestDIDRouter(t *testing.T) {
 				keyStoreService := testKeyStoreService(tt, db)
 				methods := []string{didsdk.KeyMethod.String()}
 				serviceConfig := config.DIDServiceConfig{Methods: methods, LocalResolutionMethods: methods}
-				didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
+				didService, err := did.NewDIDService(serviceConfig, db, keyStoreService, nil)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, didService)
 
@@ -170,7 +170,7 @@ func TestDIDRouter(t *testing.T) {
 				keyStoreService := testKeyStoreService(tt, db)
 				methods := []string{didsdk.KeyMethod.String(), didsdk.WebMethod.String()}
 				serviceConfig := config.DIDServiceConfig{Methods: methods, LocalResolutionMethods: methods}
-				didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
+				didService, err := did.NewDIDService(serviceConfig, db, keyStoreService, nil)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, didService)
 

@@ -20,7 +20,7 @@ func TestIONHandler(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Run("Test Create ION Handler", func(tt *testing.T) {
-				handler, err := NewIONHandler("", nil, nil)
+				handler, err := NewIONHandler("", nil, nil, nil, nil)
 				assert.Error(tt, err)
 				assert.Empty(tt, handler)
 				assert.Contains(tt, err.Error(), "baseURL cannot be empty")
@@ -29,22 +29,22 @@ func TestIONHandler(t *testing.T) {
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
-				handler, err = NewIONHandler("bad", nil, keystoreService)
+				handler, err = NewIONHandler("bad", nil, keystoreService, nil, nil)
 				assert.Error(tt, err)
 				assert.Empty(tt, handler)
 				assert.Contains(tt, err.Error(), "storage cannot be empty")
 
-				handler, err = NewIONHandler("bad", didStorage, nil)
+				handler, err = NewIONHandler("bad", didStorage, nil, nil, nil)
 				assert.Error(tt, err)
 				assert.Empty(tt, handler)
 				assert.Contains(tt, err.Error(), "keystore cannot be empty")
 
-				handler, err = NewIONHandler("bad", didStorage, keystoreService)
+				handler, err = NewIONHandler("bad", didStorage, keystoreService, nil, nil)
 				assert.Error(tt, err)
 				assert.Empty(tt, handler)
 				assert.Contains(tt, err.Error(), "invalid resolution URL")
 
-				handler, err = NewIONHandler("https://example.com", didStorage, keystoreService)
+				handler, err = NewIONHandler("https://example.com", didStorage, keystoreService, nil, nil)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, handler)
 
@@ -57,7 +57,7 @@ func TestIONHandler(t *testing.T) {
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
-				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService)
+				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, nil)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, handler)
 
@@ -86,7 +86,7 @@ func TestIONHandler(t *testing.T) {
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
-				handler, err := NewIONHandler("https://ion.tbddev.org", didStorage, keystoreService)
+				handler, err := NewIONHandler("https://ion.tbddev.org", didStorage, keystoreService, nil, nil)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, handler)
 
@@ -113,7 +113,7 @@ func TestIONHandler(t *testing.T) {
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
-				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService)
+				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, nil)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, handler)
 
@@ -151,7 +151,7 @@ func TestIONHandler(t *testing.T) {
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
-				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService)
+				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, nil)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, handler)
 
@@ -205,7 +205,7 @@ func TestIONHandler(t *testing.T) {
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
-				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService)
+				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, nil)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, handler)
 

@@ -6,7 +6,6 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/stretchr/testify/assert"
-
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 )
 
@@ -43,6 +42,23 @@ func TestCreateIssuerDIDIONIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerKID)
 	SetValue(didIONContext, "issuerKID", issuerKID)
+}
+
+func TestUpdateDIDIONIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+	didIONOutput, err := CreateDIDION()
+	assert.NoError(t, err)
+
+	issuerDID, err := getJSONElement(didIONOutput, "$.did.id")
+	assert.NoError(t, err)
+	assert.Contains(t, issuerDID, "did:ion")
+
+	// Because ION nodes do not allow updates immediately after creation of a DID, we expect the following error code.
+	_, err = UpdateDIDION(issuerDID)
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "queueing_multiple_operations_per_did_not_allowed")
 }
 
 func TestCreateAliceDIDKeyForDIDIONIntegration(t *testing.T) {

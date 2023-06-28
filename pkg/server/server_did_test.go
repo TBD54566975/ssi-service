@@ -251,8 +251,8 @@ func TestDIDAPI(t *testing.T) {
 				db := test.ServiceStorage(t)
 				require.NotEmpty(tt, db)
 
-				_, keyStoreService := testKeyStore(tt, db)
-				didService := testDIDRouter(tt, db, keyStoreService, []string{"ion"})
+				_, keyStoreService, keyStoreServiceFactory := testKeyStore(tt, db)
+				didService, _ := testDIDRouter(tt, db, keyStoreService, []string{"ion"}, keyStoreServiceFactory)
 
 				params := map[string]string{
 					"method": "ion",

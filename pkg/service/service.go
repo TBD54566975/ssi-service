@@ -107,7 +107,7 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate batch DID service")
 	}
 
-	didService, err := did.NewDIDService(config.DIDConfig, storageProvider, keyStoreService)
+	didService, err := did.NewDIDService(config.DIDConfig, storageProvider, keyStoreService, keyStoreServiceFactory)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the DID service")
 	}

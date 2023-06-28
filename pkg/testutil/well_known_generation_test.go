@@ -170,7 +170,7 @@ func testDIDService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.
 		LocalResolutionMethods: []string{"key"},
 	}
 	// create a did service
-	didService, err := did.NewDIDService(serviceConfig, db, keyStore)
+	didService, err := did.NewDIDService(serviceConfig, db, keyStore, nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, didService)
 	return didService
