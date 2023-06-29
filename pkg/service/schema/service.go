@@ -9,6 +9,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/parsing"
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	schemalib "github.com/TBD54566975/ssi-sdk/schema"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
@@ -180,7 +181,8 @@ func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.J
 
 // signCredentialSchema signs a credential schema with the issuer's key and kid as a  VC JWT
 func (s Service) signCredentialSchema(ctx context.Context, cred credential.VerifiableCredential, issuer, issuerKID string) (*keyaccess.JWT, error) {
-	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: issuerKID})
+	keyStoreID := did.FullyQualifiedVerificationMethodID(cred.IssuerID(), issuerKID)
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: keyStoreID})
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing credential schema<%s>", issuerKID)
 	}

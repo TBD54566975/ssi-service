@@ -18,7 +18,7 @@ import (
 func (s Service) createStatusListEntryForCredential(ctx context.Context, credID string, request CreateCredentialRequest,
 	tx storage.Tx, statusMetadata StatusListCredentialMetadata) (*statussdk.StatusList2021Entry, error) {
 	issuerID := request.Issuer
-	issuerKID := request.IssuerKID
+	issuerKID := request.FullyQualifiedVerificationMethodID
 	schemaID := request.SchemaID
 
 	statusPurpose := statussdk.StatusRevocation

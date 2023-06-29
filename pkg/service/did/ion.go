@@ -9,6 +9,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/ion"
+	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/google/uuid"
 	"github.com/mr-tron/base58"
@@ -51,12 +52,8 @@ type ionHandler struct {
 var _ MethodHandler = (*ionHandler)(nil)
 
 type CreateIONDIDOptions struct {
-	// TODO(gabe) for now we only allow adding service endpoints upon creation.
-	//  we do not allow adding external keys or other properties.
-	//  Related:
-	//  - https://github.com/TBD54566975/ssi-sdk/issues/336
-	//  - https://github.com/TBD54566975/ssi-sdk/issues/335
-	ServiceEndpoints []did.Service `json:"serviceEndpoints"`
+	ServiceEndpoints []did.Service   `json:"serviceEndpoints"`
+	PublicKeys       []ion.PublicKey `json:"publicKeys"`
 }
 
 func (c CreateIONDIDOptions) Method() did.Method {
@@ -120,6 +117,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 			Purposes: []ion.PublicKeyPurpose{ion.Authentication, ion.AssertionMethod},
 		},
 	}
+	pubKeys = append(pubKeys, opts.PublicKeys...)
 
 	// generate the did document's initial state
 	doc := ion.Document{PublicKeys: pubKeys, Services: opts.ServiceEndpoints}
@@ -129,42 +127,15 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	}
 
 	// submit the create operation to the ION service
-	if err = h.resolver.Anchor(ctx, createOp); err != nil {
+	var resolutionResult *resolution.Result
+	if resolutionResult, err = h.resolver.Anchor(ctx, createOp); err != nil {
 		return nil, errors.Wrap(err, "anchoring create operation")
-	}
-
-	// construct first document state
-	ldKeyType, err := did.KeyTypeToMultikeyLDType(request.KeyType)
-	if err != nil {
-		return nil, errors.Wrap(err, "converting key type to LD key type")
-	}
-
-	// TODO(gabe): move this to the SDK
-	didDoc := did.Document{
-		ID: ionDID.ID(),
-		VerificationMethod: []did.VerificationMethod{
-			{
-				ID:           keyID,
-				Type:         ldKeyType,
-				Controller:   ionDID.ID(),
-				PublicKeyJWK: pubKeyJWK,
-			},
-		},
-		Authentication:  []did.VerificationMethodSet{map[string]any{"id": keyID}},
-		AssertionMethod: []did.VerificationMethodSet{map[string]any{"id": keyID}},
-	}
-	for _, s := range opts.ServiceEndpoints {
-		didDoc.Services = append(didDoc.Services, did.Service{
-			ID:              s.ID,
-			Type:            s.Type,
-			ServiceEndpoint: s.ServiceEndpoint,
-		})
 	}
 
 	// store the did document
 	storedDID := ionStoredDID{
-		ID:          ionDID.ID(),
-		DID:         didDoc,
+		ID:          resolutionResult.Document.ID,
+		DID:         resolutionResult.Document,
 		SoftDeleted: false,
 		LongFormDID: ionDID.LongForm(),
 		Operations:  ionDID.Operations(),
@@ -177,7 +148,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	// 1. update key
 	// 2. recovery key
 	// 3. key(s) in the did docs
-	updateStoreRequest, err := keyToStoreRequest(ionDID.ID()+"#"+updateKeySuffix, ionDID.GetUpdatePrivateKey(), ionDID.ID())
+	updateStoreRequest, err := keyToStoreRequest(resolutionResult.Document.ID+"#"+updateKeySuffix, ionDID.GetUpdatePrivateKey(), resolutionResult.Document.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting update private key to store request")
 	}
@@ -185,7 +156,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "could not store did:ion update private key")
 	}
 
-	recoveryStoreRequest, err := keyToStoreRequest(ionDID.ID()+"#"+recoverKeySuffix, ionDID.GetRecoveryPrivateKey(), ionDID.ID())
+	recoveryStoreRequest, err := keyToStoreRequest(resolutionResult.Document.ID+"#"+recoverKeySuffix, ionDID.GetRecoveryPrivateKey(), resolutionResult.Document.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting recovery private key to store request")
 	}
@@ -193,7 +164,8 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "could not store did:ion recovery private key")
 	}
 
-	keyStoreRequest, err := keyToStoreRequest(keyID, *privKeyJWK, ionDID.ID())
+	keyStoreID := did.FullyQualifiedVerificationMethodID(resolutionResult.Document.ID, resolutionResult.Document.VerificationMethod[0].ID)
+	keyStoreRequest, err := keyToStoreRequest(keyStoreID, *privKeyJWK, resolutionResult.Document.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting private key to store request")
 	}
@@ -201,7 +173,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "could not store did:ion private key")
 	}
 
-	return &CreateDIDResponse{DID: didDoc}, nil
+	return &CreateDIDResponse{DID: storedDID.DID}, nil
 }
 
 func keyToStoreRequest(kid string, privateKeyJWK jwx.PrivateKeyJWK, controller string) (*keystore.StoreKeyRequest, error) {

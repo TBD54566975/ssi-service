@@ -6,6 +6,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
@@ -196,7 +197,7 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 	storageRequest := manifeststg.StoredManifest{
 		ID:        m.ID,
 		IssuerDID: m.Issuer.ID,
-		IssuerKID: request.IssuerKID,
+		IssuerKID: request.FullyQualifiedVerificationMethodID,
 		Manifest:  *m,
 	}
 
@@ -372,7 +373,8 @@ func (s Service) attemptAutomaticIssuance(ctx context.Context, request model.Sub
 		return nil, err
 	}
 
-	responseJWT, err := s.signCredentialResponse(ctx, gotManifest.IssuerKID, CredentialResponseContainer{
+	keyStoreID := did.FullyQualifiedVerificationMethodID(gotManifest.IssuerDID, gotManifest.IssuerKID)
+	responseJWT, err := s.signCredentialResponse(ctx, keyStoreID, CredentialResponseContainer{
 		Response:    *credResp,
 		Credentials: credint.ContainersToInterface(creds),
 	})
@@ -441,7 +443,8 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 	}
 
 	// sign the response before returning
-	responseJWT, err := s.signCredentialResponse(ctx, gotManifest.IssuerKID, responseContainer)
+	keyStoreID := did.FullyQualifiedVerificationMethodID(gotManifest.IssuerDID, gotManifest.IssuerKID)
+	responseJWT, err := s.signCredentialResponse(ctx, keyStoreID, responseContainer)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not sign credential response")
 	}

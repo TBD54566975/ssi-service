@@ -8,12 +8,12 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 	schemalib "github.com/TBD54566975/ssi-sdk/credential/schema"
 	statussdk "github.com/TBD54566975/ssi-sdk/credential/status"
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -232,14 +232,14 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not copy credential")
 	}
-	credJWT, err := s.signCredentialJWT(ctx, request.IssuerKID, *credCopy)
+	credJWT, err := s.signCredentialJWT(ctx, request.FullyQualifiedVerificationMethodID, *credCopy)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "signing credential")
 	}
 
 	container := credint.Container{
 		ID:            credentialID,
-		IssuerKID:     request.IssuerKID,
+		IssuerKID:     request.FullyQualifiedVerificationMethodID,
 		Credential:    cred,
 		CredentialJWT: credJWT,
 		Revoked:       false,
@@ -258,7 +258,8 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 
 // signCredentialJWT signs a credential and returns it as a vc-jwt
 func (s Service) signCredentialJWT(ctx context.Context, issuerKID string, cred credential.VerifiableCredential) (*keyaccess.JWT, error) {
-	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: issuerKID})
+	keyStoreID := did.FullyQualifiedVerificationMethodID(cred.IssuerID(), issuerKID)
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: keyStoreID})
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing credential<%s>", issuerKID)
 	}

@@ -15,9 +15,11 @@ type BatchCreateCredentialsResponse struct {
 }
 
 type CreateCredentialRequest struct {
-	Issuer    string `json:"issuer" validate:"required"`
-	IssuerKID string `json:"issuerKid" validate:"required"`
-	Subject   string `json:"subject" validate:"required"`
+	Issuer string `json:"issuer" validate:"required"`
+	// Fully qualified verification method ID to determine the private key used for signing this credential. For example
+	// `did:ion:EiDpQBo_nEfuLVeppgmPVQNEhtrnZLWFsB9ziZUuaKCJ3Q#83526c36-136c-423b-a57a-f190b83ae531`.
+	FullyQualifiedVerificationMethodID string `json:"issuerVerificationMethodId" validate:"required"`
+	Subject                            string `json:"subject" validate:"required"`
 	// A context is optional. If not present, we'll apply default, required context values.
 	Context string `json:"context,omitempty"`
 	// A schema ID is optional. If present, we'll attempt to look it up and validate the data against it.

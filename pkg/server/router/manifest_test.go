@@ -145,11 +145,11 @@ func TestManifestRouter(t *testing.T) {
 
 					// issue a credential against the schema to the subject, from the issuer
 					createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-						Issuer:    issuerDID.DID.ID,
-						IssuerKID: kid,
-						Subject:   applicantDID.ID,
-						SchemaID:  createdSchema.ID,
-						Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
+						Issuer:                             issuerDID.DID.ID,
+						FullyQualifiedVerificationMethodID: kid,
+						Subject:                            applicantDID.ID,
+						SchemaID:                           createdSchema.ID,
+						Data:                               map[string]any{"licenseType": "WA-DL-CLASS-A"},
 					})
 					assert.NoError(ttt, err)
 					assert.NotEmpty(ttt, createdCred)
@@ -247,8 +247,8 @@ func getValidManifestRequestRequest(issuerDID *did.CreateDIDResponse, kid string
 // getValidManifestRequest returns a valid manifest request, expecting a single JWT-VC EdDSA credential
 func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.CreateManifestRequest {
 	createManifestRequest := model.CreateManifestRequest{
-		IssuerDID: issuerDID,
-		IssuerKID: issuerKID,
+		IssuerDID:                          issuerDID,
+		FullyQualifiedVerificationMethodID: issuerKID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},

@@ -383,10 +383,10 @@ func TestManifestAPI(t *testing.T) {
 				createdCred, err := credentialService.CreateCredential(
 					context.Background(),
 					credential.CreateCredentialRequest{
-						Issuer:    issuerDID.DID.ID,
-						IssuerKID: kid,
-						Subject:   applicantDID.ID,
-						SchemaID:  licenseApplicationSchema.ID,
+						Issuer:                             issuerDID.DID.ID,
+						FullyQualifiedVerificationMethodID: kid,
+						Subject:                            applicantDID.ID,
+						SchemaID:                           licenseApplicationSchema.ID,
 						Data: map[string]any{
 							"licenseType": "Class D",
 							"firstName":   "Tester",
@@ -543,11 +543,11 @@ func TestManifestAPI(t *testing.T) {
 
 				// issue a credential against the schema to the subject, from the issuer
 				createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: kid,
-					Subject:   applicantDID.ID,
-					SchemaID:  licenseApplicationSchema.ID,
-					Data:      map[string]any{"licenseType": "Class D"},
+					Issuer:                             issuerDID.DID.ID,
+					FullyQualifiedVerificationMethodID: kid,
+					Subject:                            applicantDID.ID,
+					SchemaID:                           licenseApplicationSchema.ID,
+					Data:                               map[string]any{"licenseType": "Class D"},
 				})
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, createdCred)
@@ -703,11 +703,11 @@ func TestManifestAPI(t *testing.T) {
 
 				// issue a credential against the schema to the subject, from the issuer
 				createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: kid,
-					Subject:   applicantDID.ID,
-					SchemaID:  licenseApplicationSchema.ID,
-					Data:      map[string]any{"licenseType": "Class D"},
+					Issuer:                             issuerDID.DID.ID,
+					FullyQualifiedVerificationMethodID: kid,
+					Subject:                            applicantDID.ID,
+					SchemaID:                           licenseApplicationSchema.ID,
+					Data:                               map[string]any{"licenseType": "Class D"},
 				})
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, createdCred)
@@ -854,11 +854,11 @@ func TestManifestAPI(t *testing.T) {
 				assert.NotEmpty(tt, licenseSchema)
 				// issue a credential against the schema to the subject, from the issuer
 				createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: kid,
-					Subject:   applicantDID.ID,
-					SchemaID:  licenseApplicationSchema.ID,
-					Data:      map[string]any{"licenseType": "Class D"},
+					Issuer:                             issuerDID.DID.ID,
+					FullyQualifiedVerificationMethodID: kid,
+					Subject:                            applicantDID.ID,
+					SchemaID:                           licenseApplicationSchema.ID,
+					Data:                               map[string]any{"licenseType": "Class D"},
 				})
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, createdCred)
@@ -1026,11 +1026,11 @@ func TestManifestAPI(t *testing.T) {
 
 				// issue a credential against the schema to the subject, from the issuer
 				createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: kid,
-					Subject:   applicantDID.ID,
-					SchemaID:  createdSchema.ID,
-					Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
+					Issuer:                             issuerDID.DID.ID,
+					FullyQualifiedVerificationMethodID: kid,
+					Subject:                            applicantDID.ID,
+					SchemaID:                           createdSchema.ID,
+					Data:                               map[string]any{"licenseType": "WA-DL-CLASS-A"},
 				})
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, createdCred)

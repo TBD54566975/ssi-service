@@ -7,6 +7,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
@@ -79,15 +80,16 @@ type CreateManifestRequest struct {
 }
 
 func (c CreateManifestRequest) ToServiceRequest() model.CreateManifestRequest {
+	verificationMethodID := did.FullyQualifiedVerificationMethodID(c.IssuerDID, c.IssuerKID)
 	return model.CreateManifestRequest{
-		Name:                      c.Name,
-		Description:               c.Description,
-		IssuerDID:                 c.IssuerDID,
-		IssuerKID:                 c.IssuerKID,
-		IssuerName:                c.IssuerName,
-		OutputDescriptors:         c.OutputDescriptors,
-		ClaimFormat:               c.ClaimFormat,
-		PresentationDefinitionRef: c.PresentationDefinitionRef,
+		Name:                               c.Name,
+		Description:                        c.Description,
+		IssuerDID:                          c.IssuerDID,
+		FullyQualifiedVerificationMethodID: verificationMethodID,
+		IssuerName:                         c.IssuerName,
+		OutputDescriptors:                  c.OutputDescriptors,
+		ClaimFormat:                        c.ClaimFormat,
+		PresentationDefinitionRef:          c.PresentationDefinitionRef,
 	}
 }
 
