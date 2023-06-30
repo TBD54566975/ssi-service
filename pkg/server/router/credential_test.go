@@ -68,9 +68,9 @@ func TestCredentialRouter(t *testing.T) {
 				issuer := issuerDID.DID.ID
 				subject := "did:test:345"
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subject,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            subject,
 					Data: map[string]any{
 						"firstName": "Satoshi",
 						"lastName":  "Nakamoto",
@@ -133,10 +133,10 @@ func TestCredentialRouter(t *testing.T) {
 
 				// create another cred with the same issuer, different subject, different schema that doesn't exist
 				_, err = credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abcd:efghi",
-					SchemaID:  "https://test-schema.com",
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            "did:abcd:efghi",
+					SchemaID:                           "https://test-schema.com",
 					Data: map[string]any{
 						"email": "satoshi@nakamoto.com",
 					},
@@ -152,10 +152,10 @@ func TestCredentialRouter(t *testing.T) {
 
 				// create another cred with the same issuer, different subject, different schema that does exist
 				createdCredWithSchema, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abcd:efghi",
-					SchemaID:  createdSchema.ID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            "did:abcd:efghi",
+					SchemaID:                           createdSchema.ID,
 					Data: map[string]any{
 						"email": "satoshi@nakamoto.com",
 					},
@@ -220,7 +220,7 @@ func TestCredentialRouter(t *testing.T) {
 				didID := controllerDID.DID.ID
 
 				// Create a key controlled by the DID
-				keyID := "MyKeyId"
+				keyID := controllerDID.DID.VerificationMethod[0].ID
 				privateKey := "2dEPd7mA3aiuh2gky8tTPiCkyMwf8tBNUMZwRzeVxVJnJFGTbdLGUBcx51DCNyFWRjTG9bduvyLRStXSCDMFXULY"
 
 				err = keyStoreService.StoreKey(context.Background(), keystore.StoreKeyRequest{ID: keyID, Type: crypto.Ed25519, Controller: didID, PrivateKeyBase58: privateKey})
@@ -229,9 +229,9 @@ func TestCredentialRouter(t *testing.T) {
 				// Create a crendential
 				subject := "did:test:42"
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    didID,
-					IssuerKID: keyID,
-					Subject:   subject,
+					Issuer:                             didID,
+					FullyQualifiedVerificationMethodID: keyID,
+					Subject:                            subject,
 					Data: map[string]any{
 						"firstName": "Satoshi",
 						"lastName":  "Nakamoto",
@@ -249,9 +249,9 @@ func TestCredentialRouter(t *testing.T) {
 				// Create a crendential with the revoked key, it fails
 				subject = "did:test:43"
 				createdCred, err = credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    didID,
-					IssuerKID: keyID,
-					Subject:   subject,
+					Issuer:                             didID,
+					FullyQualifiedVerificationMethodID: keyID,
+					Subject:                            subject,
 					Data: map[string]any{
 						"firstName": "John",
 						"lastName":  "Doe",
@@ -293,10 +293,10 @@ func TestCredentialRouter(t *testing.T) {
 				subject := "did:test:345"
 
 				createdCredResp, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subject,
-					SchemaID:  createdSchema.ID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            subject,
+					SchemaID:                           createdSchema.ID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -316,10 +316,10 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NotEmpty(tt, credStatusMap["statusListIndex"])
 
 				createdCredRespTwo, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subject,
-					SchemaID:  createdSchema.ID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            subject,
+					SchemaID:                           createdSchema.ID,
 					Data: map[string]any{
 						"email": "Satoshi2@Nakamoto2.btc",
 					},
@@ -346,10 +346,10 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NotEmpty(tt, createdSchemaTwo)
 
 				createdCredRespThree, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subject,
-					SchemaID:  createdSchemaTwo.ID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            subject,
+					SchemaID:                           createdSchemaTwo.ID,
 					Data: map[string]any{
 						"email": "Satoshi2@Nakamoto2.btc",
 					},
@@ -398,9 +398,9 @@ func TestCredentialRouter(t *testing.T) {
 				subject := "did:test:345"
 
 				createdCredResp, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subject,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            subject,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -420,9 +420,9 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NotEmpty(tt, credStatusMap["statusListIndex"])
 
 				createdCredRespTwo, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subject,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            subject,
 					Data: map[string]any{
 						"email": "Satoshi2@Nakamoto2.btc",
 					},
@@ -450,10 +450,10 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NotEmpty(tt, createdSchema)
 
 				createdCredRespThree, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subject,
-					SchemaID:  createdSchema.ID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            subject,
+					SchemaID:                           createdSchema.ID,
 					Data: map[string]any{
 						"email": "Satoshi2@Nakamoto2.btc",
 					},
@@ -505,10 +505,10 @@ func TestCredentialRouter(t *testing.T) {
 				subject := "did:test:345"
 
 				nonRevokableCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subject,
-					SchemaID:  createdSchema.ID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            subject,
+					SchemaID:                           createdSchema.ID,
 					Data: map[string]any{
 						"email": "cant@revoke.me",
 					},
@@ -520,10 +520,10 @@ func TestCredentialRouter(t *testing.T) {
 				assert.ErrorContains(tt, err, "has no credentialStatus field")
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subject,
-					SchemaID:  createdSchema.ID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            subject,
+					SchemaID:                           createdSchema.ID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -625,10 +625,10 @@ func TestCredentialRouter(t *testing.T) {
 				subject := "did:test:345"
 
 				nonSuspendableCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subject,
-					SchemaID:  createdSchema.ID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            subject,
+					SchemaID:                           createdSchema.ID,
 					Data: map[string]any{
 						"email": "cant@revoke.me",
 					},
@@ -640,10 +640,10 @@ func TestCredentialRouter(t *testing.T) {
 				assert.ErrorContains(tt, err, "has no credentialStatus field")
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subject,
-					SchemaID:  createdSchema.ID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            subject,
+					SchemaID:                           createdSchema.ID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -744,10 +744,10 @@ func TestCredentialRouter(t *testing.T) {
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subject,
-					SchemaID:  createdSchema.ID,
+					Issuer:                             issuerDID.DID.ID,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            subject,
+					SchemaID:                           createdSchema.ID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -758,10 +758,10 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NotEmpty(tt, createdCred)
 
 				createdCredSuspendable, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subject,
-					SchemaID:  createdSchema.ID,
+					Issuer:                             issuerDID.DID.ID,
+					FullyQualifiedVerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:                            subject,
+					SchemaID:                           createdSchema.ID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -805,10 +805,10 @@ func TestCredentialRouter(t *testing.T) {
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerKID,
-					Subject:   subject,
-					SchemaID:  schemaID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerKID,
+					Subject:                            subject,
+					SchemaID:                           schemaID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -861,10 +861,10 @@ func TestCredentialRouter(t *testing.T) {
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerKID,
-					Subject:   subject,
-					SchemaID:  schemaID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerKID,
+					Subject:                            subject,
+					SchemaID:                           schemaID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -939,10 +939,10 @@ func TestCredentialRouter(t *testing.T) {
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerKID,
-					Subject:   subject,
-					SchemaID:  schemaID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerKID,
+					Subject:                            subject,
+					SchemaID:                           schemaID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -1022,10 +1022,10 @@ func TestCredentialRouter(t *testing.T) {
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerKID,
-					Subject:   subject,
-					SchemaID:  schemaID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerKID,
+					Subject:                            subject,
+					SchemaID:                           schemaID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -1044,10 +1044,10 @@ func TestCredentialRouter(t *testing.T) {
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerKID,
-					Subject:   subject,
-					SchemaID:  schemaID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerKID,
+					Subject:                            subject,
+					SchemaID:                           schemaID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -1069,10 +1069,10 @@ func TestCredentialRouter(t *testing.T) {
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerKID,
-					Subject:   subject,
-					SchemaID:  schemaID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerKID,
+					Subject:                            subject,
+					SchemaID:                           schemaID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -1094,10 +1094,10 @@ func TestCredentialRouter(t *testing.T) {
 				subject := "did:test:345"
 
 				_, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerKID,
-					Subject:   subject,
-					SchemaID:  schemaID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerKID,
+					Subject:                            subject,
+					SchemaID:                           schemaID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -1122,10 +1122,10 @@ func TestCredentialRouter(t *testing.T) {
 				}
 
 				_, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerKID,
-					Subject:   subject,
-					SchemaID:  schemaID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerKID,
+					Subject:                            subject,
+					SchemaID:                           schemaID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},
@@ -1141,10 +1141,10 @@ func TestCredentialRouter(t *testing.T) {
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-					Issuer:    issuer,
-					IssuerKID: issuerKID,
-					Subject:   subject,
-					SchemaID:  schemaID,
+					Issuer:                             issuer,
+					FullyQualifiedVerificationMethodID: issuerKID,
+					Subject:                            subject,
+					SchemaID:                           schemaID,
 					Data: map[string]any{
 						"email": "Satoshi@Nakamoto.btc",
 					},

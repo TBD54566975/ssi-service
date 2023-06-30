@@ -1,6 +1,7 @@
 package server
 
 import (
+	_ "embed"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -20,6 +21,9 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 )
+
+//go:embed testdata/basic_did_resolution.json
+var BasicDIDResolution []byte
 
 func TestDIDAPI(t *testing.T) {
 
@@ -192,7 +196,8 @@ func TestDIDAPI(t *testing.T) {
 
 				gock.New(testIONResolverURL).
 					Post("/operations").
-					Reply(200)
+					Reply(200).
+					BodyString(string(BasicDIDResolution))
 				defer gock.Off()
 
 				// with body, good key type, no options
@@ -232,7 +237,8 @@ func TestDIDAPI(t *testing.T) {
 
 				gock.New(testIONResolverURL).
 					Post("/operations").
-					Reply(200)
+					Reply(200).
+					BodyString(string(BasicDIDResolution))
 				defer gock.Off()
 
 				c = newRequestContextWithParams(w, req, params)

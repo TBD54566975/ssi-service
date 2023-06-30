@@ -2,11 +2,13 @@ package did
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
+	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/config"
@@ -15,6 +17,9 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
 	"gopkg.in/h2non/gock.v1"
 )
+
+//go:embed testdata/basic_did_resolution.json
+var BasicDIDResolution []byte
 
 func TestIONHandler(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
@@ -63,7 +68,8 @@ func TestIONHandler(t *testing.T) {
 
 				gock.New("https://test-ion-resolver.com").
 					Post("/operations").
-					Reply(200)
+					Reply(200).
+					BodyString(string(BasicDIDResolution))
 				defer gock.Off()
 
 				// create a did
@@ -78,7 +84,8 @@ func TestIONHandler(t *testing.T) {
 			t.Run("Test Create DID", func(tt *testing.T) {
 				gock.New("https://ion.tbddev.org").
 					Post("/operations").
-					Reply(200)
+					Reply(200).
+					BodyString(string(BasicDIDResolution))
 				defer gock.Off()
 
 				// create a handler
@@ -119,7 +126,8 @@ func TestIONHandler(t *testing.T) {
 
 				gock.New("https://test-ion-resolver.com").
 					Post("/operations").
-					Reply(200)
+					Reply(200).
+					BodyString(string(BasicDIDResolution))
 				defer gock.Off()
 
 				// create a did
@@ -157,7 +165,8 @@ func TestIONHandler(t *testing.T) {
 
 				gock.New("https://test-ion-resolver.com").
 					Post("/operations").
-					Reply(200)
+					Reply(200).
+					BodyString(string(BasicDIDResolution))
 				defer gock.Off()
 
 				// create a did
@@ -168,9 +177,12 @@ func TestIONHandler(t *testing.T) {
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, created)
 
+				createdDIDData, err := json.Marshal(created.DID)
+				assert.NoError(tt, err)
+
 				gock.New("https://test-ion-resolver.com").
 					Get("/identifiers/" + created.DID.ID).
-					Reply(200).BodyString(fmt.Sprintf(`{"didDocument": {"id": "%s"}}`, created.DID.ID))
+					Reply(200).BodyString(fmt.Sprintf(`{"didDocument": %s }`, createdDIDData))
 				defer gock.Off()
 
 				// get all DIDs
@@ -211,7 +223,8 @@ func TestIONHandler(t *testing.T) {
 
 				gock.New("https://test-ion-resolver.com").
 					Get("/identifiers/did:ion:test").
-					Reply(200).BodyString(`{"didDocument": {"id": "did:ion:test"}}`)
+					Reply(200).
+					BodyString(`{"didDocument": {"id": "did:ion:test"}}`)
 				defer gock.Off()
 
 				// get the did

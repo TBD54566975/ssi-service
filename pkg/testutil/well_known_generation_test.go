@@ -39,7 +39,7 @@ func TestWellKnownGenerationTest(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didKey)
 
-		gotKey, err := keyStoreService.GetKey(context.Background(), keystore.GetKeyRequest{ID: didKey.DID.ID})
+		gotKey, err := keyStoreService.GetKey(context.Background(), keystore.GetKeyRequest{ID: didKey.DID.VerificationMethod[0].ID})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, gotKey)
 
@@ -50,12 +50,11 @@ func TestWellKnownGenerationTest(t *testing.T) {
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, didWeb)
 
-		gotDidWebKey, err := keyStoreService.GetKey(context.Background(), keystore.GetKeyRequest{ID: didWeb.DID.ID})
+		gotDidWebKey, err := keyStoreService.GetKey(context.Background(), keystore.GetKeyRequest{ID: didWeb.DID.VerificationMethod[0].ID})
 		assert.NoError(tt, err)
 		assert.NotEmpty(tt, gotDidWebKey)
 
 		createWellKnownDIDConfiguration(tt, didWeb, gotDidWebKey, origin)
-
 	})
 }
 

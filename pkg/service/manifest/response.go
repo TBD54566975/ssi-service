@@ -29,10 +29,10 @@ const (
 	DenialResponse errresp.Type = "DenialResponse"
 )
 
-func (s Service) signCredentialResponse(ctx context.Context, issuerKID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
-	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: issuerKID})
+func (s Service) signCredentialResponse(ctx context.Context, keyStoreID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: keyStoreID})
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing response with key<%s>", issuerKID)
+		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing response with key<%s>", keyStoreID)
 	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {
@@ -101,10 +101,10 @@ func (s Service) fulfillmentCredentialResponse(ctx context.Context, responseBuil
 	creds := make([]cred.Container, 0, len(credManifest.OutputDescriptors))
 	for _, od := range credManifest.OutputDescriptors {
 		createCredentialRequest := credential.CreateCredentialRequest{
-			Issuer:    credManifest.Issuer.ID,
-			IssuerKID: issuerKID,
-			Subject:   applicantDID,
-			SchemaID:  od.Schema,
+			Issuer:                             credManifest.Issuer.ID,
+			FullyQualifiedVerificationMethodID: issuerKID,
+			Subject:                            applicantDID,
+			SchemaID:                           od.Schema,
 			// TODO(gabe) need to add in data here to match the request + schema
 			Data: make(map[string]any),
 		}

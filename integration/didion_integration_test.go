@@ -43,6 +43,27 @@ func TestCreateIssuerDIDIONIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerKID)
 	SetValue(didIONContext, "issuerKID", issuerKID)
+
+	verificationMethod1ID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[1].id")
+	assert.NoError(t, err)
+	assert.Equal(t, "#externalVerificationMethodId", verificationMethod1ID)
+
+	verificationMethod1KID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[1].publicKeyJwk.kid")
+	assert.NoError(t, err)
+	assert.Equal(t, "myExternalPublicKID", verificationMethod1KID)
+
+	keyAgreementKID, err := getJSONElement(didIONOutput, "$.did.keyAgreement[0]")
+	assert.NoError(t, err)
+	assert.Equal(t, "#externalVerificationMethodId", keyAgreementKID)
+
+	capabilityInvocationKID, err := getJSONElement(didIONOutput, "$.did.capabilityInvocation[0]")
+	assert.NoError(t, err)
+	assert.Equal(t, "#externalVerificationMethodId", capabilityInvocationKID)
+
+	capabilityDelegationKID, err := getJSONElement(didIONOutput, "$.did.capabilityDelegation[0]")
+	assert.NoError(t, err)
+	assert.Equal(t, "#externalVerificationMethodId", capabilityDelegationKID)
+
 }
 
 func TestCreateAliceDIDKeyForDIDIONIntegration(t *testing.T) {

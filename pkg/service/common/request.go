@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/pkg/errors"
@@ -65,7 +66,9 @@ func CreateStoredRequest(ctx context.Context, keyStore *keystore.Service, claimN
 	if err != nil {
 		return nil, errors.Wrap(err, "building jwt")
 	}
-	signedToken, err := keyStore.Sign(ctx, request.IssuerKID, token)
+
+	keyStoreID := did.FullyQualifiedVerificationMethodID(request.IssuerDID, request.IssuerKID)
+	signedToken, err := keyStore.Sign(ctx, keyStoreID, token)
 	if err != nil {
 		return nil, errors.Wrapf(err, "signing payload with KID %q", request.IssuerKID)
 	}

@@ -436,9 +436,9 @@ func setupAllThings(t *testing.T, s storage.ServiceStorage) (*did.CreateDIDRespo
 
 	sillyName := "some silly name"
 	manifest, err := manifestSvc.CreateManifest(context.Background(), model.CreateManifestRequest{
-		Name:      &sillyName,
-		IssuerDID: issuerResp.DID.ID,
-		IssuerKID: issuerResp.DID.VerificationMethod[0].ID,
+		Name:                               &sillyName,
+		IssuerDID:                          issuerResp.DID.ID,
+		FullyQualifiedVerificationMethodID: issuerResp.DID.VerificationMethod[0].ID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWT: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
