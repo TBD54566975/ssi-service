@@ -3,6 +3,7 @@ package schema
 import (
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/TBD54566975/ssi-sdk/util"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 )
@@ -13,17 +14,23 @@ type CreateSchemaRequest struct {
 	Schema      schema.JSONSchema `json:"schema" validate:"required"`
 
 	// If both are present the schema will be signed by the issuer's private key with the specified KID
-	Issuer    string `json:"issuer,omitempty"`
-	IssuerKID string `json:"issuerKid,omitempty"`
+	Issuer                             string `json:"issuer,omitempty"`
+	FullyQualifiedVerificationMethodID string `json:"fullyQualifiedVerificationMethodId,omitempty"`
 }
 
 // IsCredentialSchemaRequest returns true if the request is for a credential schema
 func (csr CreateSchemaRequest) IsCredentialSchemaRequest() bool {
-	return csr.Issuer != "" && csr.IssuerKID != ""
+	return csr.Issuer != "" && csr.FullyQualifiedVerificationMethodID != ""
 }
 
-func (csr CreateSchemaRequest) IsValid() bool {
-	return util.IsValidStruct(csr) == nil
+func (csr CreateSchemaRequest) IsValid() error {
+	if err := util.IsValidStruct(csr); err != nil {
+		return err
+	}
+	if csr.FullyQualifiedVerificationMethodID != "" && csr.Issuer != "" {
+		return common.ValidateVerificationMethodID(csr.FullyQualifiedVerificationMethodID, csr.Issuer)
+	}
+	return nil
 }
 
 type CreateSchemaResponse struct {

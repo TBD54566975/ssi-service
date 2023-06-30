@@ -35,13 +35,13 @@ type StoredCredential struct {
 	Credential    *credential.VerifiableCredential `json:"credential,omitempty"`
 	CredentialJWT *keyaccess.JWT                   `json:"token,omitempty"`
 
-	Issuer       string `json:"issuer"`
-	IssuerKID    string `json:"issuerKid"`
-	Subject      string `json:"subject"`
-	Schema       string `json:"schema"`
-	IssuanceDate string `json:"issuanceDate"`
-	Revoked      bool   `json:"revoked"`
-	Suspended    bool   `json:"suspended"`
+	Issuer                             string `json:"issuer"`
+	FullyQualifiedVerificationMethodID string `json:"fullyQualifiedVerificationMethodId"`
+	Subject                            string `json:"subject"`
+	Schema                             string `json:"schema"`
+	IssuanceDate                       string `json:"issuanceDate"`
+	Revoked                            bool   `json:"revoked"`
+	Suspended                          bool   `json:"suspended"`
 }
 
 type WriteContext struct {
@@ -304,17 +304,17 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 		schema = cred.CredentialSchema.ID
 	}
 	return &StoredCredential{
-		Key:               createPrefixKey(credID, issuer, subject, schema),
-		LocalCredentialID: credID,
-		Credential:        cred,
-		CredentialJWT:     request.CredentialJWT,
-		Issuer:            issuer,
-		IssuerKID:         request.IssuerKID,
-		Subject:           subject,
-		Schema:            schema,
-		IssuanceDate:      cred.IssuanceDate,
-		Revoked:           request.Revoked,
-		Suspended:         request.Suspended,
+		Key:                                createPrefixKey(credID, issuer, subject, schema),
+		LocalCredentialID:                  credID,
+		Credential:                         cred,
+		CredentialJWT:                      request.CredentialJWT,
+		Issuer:                             issuer,
+		FullyQualifiedVerificationMethodID: request.FullyQualifiedVerificationMethodID,
+		Subject:                            subject,
+		Schema:                             schema,
+		IssuanceDate:                       cred.IssuanceDate,
+		Revoked:                            request.Revoked,
+		Suspended:                          request.Suspended,
 	}, nil
 }
 

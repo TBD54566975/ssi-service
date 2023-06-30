@@ -87,7 +87,7 @@ func TestSchemaAPI(t *testing.T) {
 
 				c := newRequestContext(w, req)
 				schemaService.CreateSchema(c)
-				assert.Contains(tt, w.Body.String(), "issuerKid is a required field")
+				assert.Contains(tt, w.Body.String(), "verificationMethodId is a required field")
 
 				// reset the http recorder
 				w = httptest.NewRecorder()
@@ -99,15 +99,15 @@ func TestSchemaAPI(t *testing.T) {
 				})
 				require.NoError(t, err)
 				issuerID := issuerResp.DID.ID
-				issuerKID := issuerResp.DID.VerificationMethod[0].ID
+				verificationMethodID := issuerResp.DID.VerificationMethod[0].ID
 
 				// create the credential schema
 				schemaRequest := router.CreateSchemaRequest{
 					Name:   "test schema",
 					Schema: simpleSchema,
 					CredentialSchemaRequest: &router.CredentialSchemaRequest{
-						Issuer:    issuerID,
-						IssuerKID: issuerKID,
+						Issuer:               issuerID,
+						VerificationMethodID: verificationMethodID,
 					},
 				}
 				schemaRequestValue = newRequestValue(tt, schemaRequest)

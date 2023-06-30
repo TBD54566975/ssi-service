@@ -9,6 +9,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/credential/parsing"
+	"github.com/TBD54566975/ssi-sdk/did"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
@@ -49,17 +50,17 @@ func (s Service) signCredentialResponse(ctx context.Context, keyStoreID string, 
 
 // buildFulfillmentCredentialResponseFromTemplate builds a credential response from a template
 func (s Service) buildFulfillmentCredentialResponseFromTemplate(ctx context.Context,
-	applicantDID, manifestID, issuerKID string, credManifest manifest.CredentialManifest,
+	applicantDID, manifestID, fullyQualifiedVerificationMethodID string, credManifest manifest.CredentialManifest,
 	template issuance.Template, application manifest.CredentialApplication,
 	applicationJSON map[string]any) (*manifest.CredentialResponse, []cred.Container, error) {
-	if template.IsValid() {
-		return nil, nil, errors.New("issuance template is not valid")
+	if err := template.IsValid(); err != nil {
+		return nil, nil, errors.Wrap(err, "validating template")
 	}
 
 	templateMap := make(map[string]issuance.CredentialTemplate)
-	issuingKID := issuerKID
-	if template.IssuerKID != "" {
-		issuingKID = template.IssuerKID
+	qualifiedVerificationMethodID := fullyQualifiedVerificationMethodID
+	if template.VerificationMethodID != "" {
+		qualifiedVerificationMethodID = did.FullyQualifiedVerificationMethodID(template.Issuer, template.VerificationMethodID)
 	}
 	for _, templateCred := range template.Credentials {
 		templateCred := templateCred
@@ -74,11 +75,11 @@ func (s Service) buildFulfillmentCredentialResponseFromTemplate(ctx context.Cont
 		return nil, nil, sdkutil.LoggingErrorMsgf(err, "could not fulfill credential application<%s> from template", application.ID)
 	}
 
-	return s.fulfillmentCredentialResponse(ctx, responseBuilder, applicantDID, issuingKID, credManifest, &application, templateMap, applicationJSON, nil)
+	return s.fulfillmentCredentialResponse(ctx, responseBuilder, applicantDID, qualifiedVerificationMethodID, credManifest, &application, templateMap, applicationJSON, nil)
 }
 
 // buildFulfillmentCredentialResponseFromOverrides builds a credential response from overrides
-func (s Service) buildFulfillmentCredentialResponse(ctx context.Context, applicantDID, applicationID, manifestID, issuerKID string,
+func (s Service) buildFulfillmentCredentialResponse(ctx context.Context, applicantDID, applicationID, manifestID, fullyQualifiedVerificationMethodID string,
 	credManifest manifest.CredentialManifest, overrides map[string]model.CredentialOverride) (*manifest.CredentialResponse, []cred.Container, error) {
 
 	responseBuilder := manifest.NewCredentialResponseBuilder(manifestID)
@@ -89,12 +90,12 @@ func (s Service) buildFulfillmentCredentialResponse(ctx context.Context, applica
 		return nil, nil, sdkutil.LoggingErrorMsgf(err, "could not fulfill credential application<%s>", applicationID)
 	}
 
-	return s.fulfillmentCredentialResponse(ctx, responseBuilder, applicantDID, issuerKID, credManifest, nil, nil, nil, overrides)
+	return s.fulfillmentCredentialResponse(ctx, responseBuilder, applicantDID, fullyQualifiedVerificationMethodID, credManifest, nil, nil, nil, overrides)
 }
 
 // unifies both templated and override paths for building a credential response
 func (s Service) fulfillmentCredentialResponse(ctx context.Context, responseBuilder manifest.CredentialResponseBuilder,
-	applicantDID, issuerKID string, credManifest manifest.CredentialManifest, application *manifest.CredentialApplication,
+	applicantDID, fullyQualifiedVerificationMethodID string, credManifest manifest.CredentialManifest, application *manifest.CredentialApplication,
 	templateMap map[string]issuance.CredentialTemplate, applicationJSON map[string]any,
 	credentialOverrides map[string]model.CredentialOverride) (*manifest.CredentialResponse, []cred.Container, error) {
 
@@ -102,7 +103,7 @@ func (s Service) fulfillmentCredentialResponse(ctx context.Context, responseBuil
 	for _, od := range credManifest.OutputDescriptors {
 		createCredentialRequest := credential.CreateCredentialRequest{
 			Issuer:                             credManifest.Issuer.ID,
-			FullyQualifiedVerificationMethodID: issuerKID,
+			FullyQualifiedVerificationMethodID: fullyQualifiedVerificationMethodID,
 			Subject:                            applicantDID,
 			SchemaID:                           od.Schema,
 			// TODO(gabe) need to add in data here to match the request + schema

@@ -43,9 +43,9 @@ func TestIssuanceRouter(t *testing.T) {
 						name: "returns a template with ID",
 						request: router.CreateIssuanceTemplateRequest{
 							Template: issuance.Template{
-								CredentialManifest: manifest.Manifest.ID,
-								Issuer:             issuerResp.DID.ID,
-								IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
+								CredentialManifest:   manifest.Manifest.ID,
+								Issuer:               issuerResp.DID.ID,
+								VerificationMethodID: issuerResp.DID.VerificationMethod[0].ID,
 								Credentials: []issuance.CredentialTemplate{
 									{
 										ID:     "output_descriptor_1",
@@ -66,9 +66,9 @@ func TestIssuanceRouter(t *testing.T) {
 						name: "returns a template with ID when schema is empty",
 						request: router.CreateIssuanceTemplateRequest{
 							Template: issuance.Template{
-								CredentialManifest: manifest.Manifest.ID,
-								Issuer:             issuerResp.DID.ID,
-								IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
+								CredentialManifest:   manifest.Manifest.ID,
+								Issuer:               issuerResp.DID.ID,
+								VerificationMethodID: issuerResp.DID.VerificationMethod[0].ID,
 								Credentials: []issuance.CredentialTemplate{
 									{
 										ID:     "output_descriptor_1",
@@ -114,9 +114,9 @@ func TestIssuanceRouter(t *testing.T) {
 						name: "when missing output_descriptor_id",
 						request: router.CreateIssuanceTemplateRequest{
 							Template: issuance.Template{
-								CredentialManifest: manifest.Manifest.ID,
-								Issuer:             issuerResp.DID.ID,
-								IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
+								CredentialManifest:   manifest.Manifest.ID,
+								Issuer:               issuerResp.DID.ID,
+								VerificationMethodID: issuerResp.DID.VerificationMethod[0].ID,
 								Credentials: []issuance.CredentialTemplate{
 									{
 										ID:     "",
@@ -138,9 +138,9 @@ func TestIssuanceRouter(t *testing.T) {
 						name: "when both times are set",
 						request: router.CreateIssuanceTemplateRequest{
 							Template: issuance.Template{
-								CredentialManifest: manifest.Manifest.ID,
-								Issuer:             issuerResp.DID.ID,
-								IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
+								CredentialManifest:   manifest.Manifest.ID,
+								Issuer:               issuerResp.DID.ID,
+								VerificationMethodID: issuerResp.DID.VerificationMethod[0].ID,
 								Credentials: []issuance.CredentialTemplate{
 									{
 										ID:     "output_descriptor_1",
@@ -163,9 +163,9 @@ func TestIssuanceRouter(t *testing.T) {
 						name: "when credential schema does not exist",
 						request: router.CreateIssuanceTemplateRequest{
 							Template: issuance.Template{
-								CredentialManifest: manifest.Manifest.ID,
-								Issuer:             issuerResp.DID.ID,
-								IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
+								CredentialManifest:   manifest.Manifest.ID,
+								Issuer:               issuerResp.DID.ID,
+								VerificationMethodID: issuerResp.DID.VerificationMethod[0].ID,
 								Credentials: []issuance.CredentialTemplate{
 									{
 										ID:     "output_descriptor_1",
@@ -187,9 +187,9 @@ func TestIssuanceRouter(t *testing.T) {
 						name: "when credential manifest ID is does not exist",
 						request: router.CreateIssuanceTemplateRequest{
 							Template: issuance.Template{
-								CredentialManifest: "fake manifest id",
-								Issuer:             issuerResp.DID.ID,
-								IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
+								CredentialManifest:   "fake manifest id",
+								Issuer:               issuerResp.DID.ID,
+								VerificationMethodID: issuerResp.DID.VerificationMethod[0].ID,
 								Credentials: []issuance.CredentialTemplate{
 									{
 										ID:     "output_descriptor_1",
@@ -247,9 +247,9 @@ func TestIssuanceRouter(t *testing.T) {
 				issuerResp, createdSchema, manifest, r := setupAllThings(tt, test.ServiceStorage(t))
 
 				inputTemplate := issuance.Template{
-					CredentialManifest: manifest.Manifest.ID,
-					Issuer:             issuerResp.DID.ID,
-					IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
+					CredentialManifest:   manifest.Manifest.ID,
+					Issuer:               issuerResp.DID.ID,
+					VerificationMethodID: issuerResp.DID.VerificationMethod[0].ID,
 					Credentials: []issuance.CredentialTemplate{
 						{
 							ID:     "output_descriptor_1",
@@ -371,9 +371,9 @@ func createSimpleTemplate(t *testing.T, manifest *model.CreateManifestResponse, 
 	{
 		request := router.CreateIssuanceTemplateRequest{
 			Template: issuance.Template{
-				CredentialManifest: manifest.Manifest.ID,
-				Issuer:             issuerResp.DID.ID,
-				IssuerKID:          issuerResp.DID.VerificationMethod[0].ID,
+				CredentialManifest:   manifest.Manifest.ID,
+				Issuer:               issuerResp.DID.ID,
+				VerificationMethodID: issuerResp.DID.VerificationMethod[0].ID,
 				Credentials: []issuance.CredentialTemplate{
 					{
 						ID:     "output_descriptor_1",
@@ -431,7 +431,7 @@ func setupAllThings(t *testing.T, s storage.ServiceStorage) (*did.CreateDIDRespo
 		},
 	}
 	keyID := issuerResp.DID.VerificationMethod[0].ID
-	createdSchema, err := schemaSvc.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerResp.DID.ID, IssuerKID: keyID, Name: "license schema", Schema: licenseSchema})
+	createdSchema, err := schemaSvc.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerResp.DID.ID, FullyQualifiedVerificationMethodID: keyID, Name: "license schema", Schema: licenseSchema})
 	require.NoError(t, err)
 
 	sillyName := "some silly name"

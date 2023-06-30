@@ -25,17 +25,19 @@ type Request struct {
 	// DID of the issuer of this presentation definition.
 	IssuerDID string `json:"issuerId" validate:"required"`
 
-	// The privateKey associated with the KID used to sign the JWT.
-	IssuerKID string `json:"issuerKid" validate:"required"`
+	// The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+	// stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+	// The private key associated with the verificationMethod's publicKey will be used to sign the JWT.
+	VerificationMethodID string `json:"verificationMethodId" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
 }
 
 // ToServiceModel converts a storage model to a service model.
 func ToServiceModel(stored *StoredRequest) (*Request, error) {
 	request := &Request{
-		ID:        stored.ID,
-		Audience:  stored.Audience,
-		IssuerDID: stored.IssuerDID,
-		IssuerKID: stored.IssuerKID,
+		ID:                   stored.ID,
+		Audience:             stored.Audience,
+		IssuerDID:            stored.IssuerDID,
+		VerificationMethodID: stored.VerificationMethodID,
 	}
 	if stored.Expiration != "" {
 		expiration, err := time.Parse(time.RFC3339, stored.Expiration)
@@ -67,20 +69,20 @@ func CreateStoredRequest(ctx context.Context, keyStore *keystore.Service, claimN
 		return nil, errors.Wrap(err, "building jwt")
 	}
 
-	keyStoreID := did.FullyQualifiedVerificationMethodID(request.IssuerDID, request.IssuerKID)
+	keyStoreID := did.FullyQualifiedVerificationMethodID(request.IssuerDID, request.VerificationMethodID)
 	signedToken, err := keyStore.Sign(ctx, keyStoreID, token)
 	if err != nil {
-		return nil, errors.Wrapf(err, "signing payload with KID %q", request.IssuerKID)
+		return nil, errors.Wrapf(err, "signing payload with KID %q", request.VerificationMethodID)
 	}
 
 	stored := &StoredRequest{
-		ID:          requestID,
-		Audience:    request.Audience,
-		Expiration:  expirationString,
-		IssuerDID:   request.IssuerDID,
-		IssuerKID:   request.IssuerKID,
-		ReferenceID: id,
-		JWT:         signedToken.String(),
+		ID:                   requestID,
+		Audience:             request.Audience,
+		Expiration:           expirationString,
+		IssuerDID:            request.IssuerDID,
+		VerificationMethodID: request.VerificationMethodID,
+		ReferenceID:          id,
+		JWT:                  signedToken.String(),
 	}
 	return stored, nil
 }

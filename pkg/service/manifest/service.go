@@ -118,8 +118,8 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 	logrus.Debugf("creating manifest: %+v", request)
 
 	// validate the request
-	if err := sdkutil.IsValidStruct(request); err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "invalid create manifest request: %s", err.Error())
+	if err := request.IsValid(); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "invalid create manifest request")
 	}
 
 	// compose a valid manifest
@@ -195,10 +195,10 @@ func (s Service) CreateManifest(ctx context.Context, request model.CreateManifes
 
 	// store the manifest
 	storageRequest := manifeststg.StoredManifest{
-		ID:        m.ID,
-		IssuerDID: m.Issuer.ID,
-		IssuerKID: request.FullyQualifiedVerificationMethodID,
-		Manifest:  *m,
+		ID:                                 m.ID,
+		IssuerDID:                          m.Issuer.ID,
+		FullyQualifiedVerificationMethodID: request.FullyQualifiedVerificationMethodID,
+		Manifest:                           *m,
 	}
 
 	if err = s.storage.StoreManifest(ctx, storageRequest); err != nil {
@@ -367,13 +367,13 @@ func (s Service) attemptAutomaticIssuance(ctx context.Context, request model.Sub
 		logrus.Warnf("found issuance issuance templates for manifest<%s>, using first entry only", manifestID)
 	}
 
-	credResp, creds, err := s.buildFulfillmentCredentialResponseFromTemplate(ctx, applicantDID, manifestID, gotManifest.IssuerKID,
+	credResp, creds, err := s.buildFulfillmentCredentialResponseFromTemplate(ctx, applicantDID, manifestID, gotManifest.FullyQualifiedVerificationMethodID,
 		gotManifest.Manifest, issuanceTemplate, request.Application, request.ApplicationJSON)
 	if err != nil {
 		return nil, err
 	}
 
-	keyStoreID := did.FullyQualifiedVerificationMethodID(gotManifest.IssuerDID, gotManifest.IssuerKID)
+	keyStoreID := did.FullyQualifiedVerificationMethodID(gotManifest.IssuerDID, gotManifest.FullyQualifiedVerificationMethodID)
 	responseJWT, err := s.signCredentialResponse(ctx, keyStoreID, CredentialResponseContainer{
 		Response:    *credResp,
 		Credentials: credint.ContainersToInterface(creds),
@@ -422,7 +422,7 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 	var credentials []credint.Container
 	if request.Approved {
 		// build the credential response
-		approvalResponse, creds, err := s.buildFulfillmentCredentialResponse(ctx, applicantDID, applicationID, manifestID, gotManifest.IssuerKID, credManifest, request.CredentialOverrides)
+		approvalResponse, creds, err := s.buildFulfillmentCredentialResponse(ctx, applicantDID, applicationID, manifestID, gotManifest.FullyQualifiedVerificationMethodID, credManifest, request.CredentialOverrides)
 		if err != nil {
 			return nil, sdkutil.LoggingErrorMsg(err, "building credential response")
 		}
@@ -443,7 +443,7 @@ func (s Service) ReviewApplication(ctx context.Context, request model.ReviewAppl
 	}
 
 	// sign the response before returning
-	keyStoreID := did.FullyQualifiedVerificationMethodID(gotManifest.IssuerDID, gotManifest.IssuerKID)
+	keyStoreID := did.FullyQualifiedVerificationMethodID(gotManifest.IssuerDID, gotManifest.FullyQualifiedVerificationMethodID)
 	responseJWT, err := s.signCredentialResponse(ctx, keyStoreID, responseContainer)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not sign credential response")

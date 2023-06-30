@@ -119,10 +119,10 @@ func TestPresentationDefinitionService(t *testing.T) {
 				assert.NoError(t, err)
 				expectedReq := model.Request{
 					Request: common.Request{
-						Audience:   []string{"did:web:heman"},
-						IssuerDID:  authorDID.DID.ID,
-						IssuerKID:  authorDID.DID.VerificationMethod[0].ID,
-						Expiration: &SampleExpirationTime,
+						Audience:             []string{"did:web:heman"},
+						IssuerDID:            authorDID.DID.ID,
+						VerificationMethodID: authorDID.DID.VerificationMethod[0].ID,
+						Expiration:           &SampleExpirationTime,
 					},
 					PresentationDefinitionID: pd.ID,
 				}
@@ -141,7 +141,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 				assert.Equal(t, *pd, got.PresentationDefinition)
 				assert.Equal(t, expectedReq.Audience, req.Audience)
 				assert.Equal(t, expectedReq.IssuerDID, req.IssuerDID)
-				assert.Equal(t, expectedReq.IssuerKID, req.IssuerKID)
+				assert.Equal(t, expectedReq.VerificationMethodID, req.VerificationMethodID)
 				assert.Equal(t, expectedReq.PresentationDefinitionID, req.PresentationDefinitionID)
 				assert.Equal(t, expectedReq.Expiration, req.Expiration)
 			})
@@ -155,10 +155,10 @@ func TestPresentationDefinitionService(t *testing.T) {
 				req, err := service.CreateRequest(context.Background(), model.CreateRequestRequest{
 					PresentationRequest: model.Request{
 						Request: common.Request{
-							Audience:   []string{"did:web:heman"},
-							IssuerDID:  authorDID.DID.ID,
-							IssuerKID:  authorDID.DID.VerificationMethod[0].ID,
-							Expiration: &In30Seconds,
+							Audience:             []string{"did:web:heman"},
+							IssuerDID:            authorDID.DID.ID,
+							VerificationMethodID: authorDID.DID.VerificationMethod[0].ID,
+							Expiration:           &In30Seconds,
 						},
 						PresentationDefinitionID: pd.ID,
 					},
@@ -179,9 +179,9 @@ func TestPresentationDefinitionService(t *testing.T) {
 				req, err := service.CreateRequest(context.Background(), model.CreateRequestRequest{
 					PresentationRequest: model.Request{
 						Request: common.Request{
-							IssuerDID:  authorDID.DID.ID,
-							IssuerKID:  authorDID.DID.VerificationMethod[0].ID,
-							Expiration: &In30Seconds,
+							IssuerDID:            authorDID.DID.ID,
+							VerificationMethodID: authorDID.DID.VerificationMethod[0].ID,
+							Expiration:           &In30Seconds,
 						},
 						PresentationDefinitionID: pd.ID,
 					},
@@ -200,8 +200,8 @@ func TestPresentationDefinitionService(t *testing.T) {
 				_, err := service.CreateRequest(context.Background(), model.CreateRequestRequest{
 					PresentationRequest: model.Request{
 						Request: common.Request{
-							IssuerDID: "issuer id",
-							IssuerKID: "kid",
+							IssuerDID:            "issuer id",
+							VerificationMethodID: "kid",
 						},
 					},
 				})
@@ -222,7 +222,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 				_, err = service.CreateRequest(context.Background(), model.CreateRequestRequest{
 					PresentationRequest: model.Request{
 						Request: common.Request{
-							IssuerKID: "kid",
+							VerificationMethodID: "kid",
 						},
 						PresentationDefinitionID: "something",
 					},

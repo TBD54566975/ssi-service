@@ -39,10 +39,10 @@ func TestCreateIssuerDIDIONIntegration(t *testing.T) {
 	assert.Contains(t, issuerDID, "did:ion")
 	SetValue(didIONContext, "issuerDID", issuerDID)
 
-	issuerKID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[0].id")
+	verificationMethodID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[0].id")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
-	SetValue(didIONContext, "issuerKID", issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
+	SetValue(didIONContext, "verificationMethodID", verificationMethodID)
 
 	verificationMethod1ID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[1].id")
 	assert.NoError(t, err)
@@ -114,19 +114,19 @@ func TestDIDIONCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKID, err := GetValue(didIONContext, "issuerKID")
+	verificationMethodID, err := GetValue(didIONContext, "verificationMethodID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
 
 	schemaID, err := GetValue(didIONContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	vcOutput, err := CreateVerifiableCredential(credInputParams{
-		IssuerID:  issuerDID.(string),
-		IssuerKID: issuerKID.(string),
-		SchemaID:  schemaID.(string),
-		SubjectID: issuerDID.(string),
+		IssuerID:             issuerDID.(string),
+		VerificationMethodID: verificationMethodID.(string),
+		SchemaID:             schemaID.(string),
+		SubjectID:            issuerDID.(string),
 	})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vcOutput)
@@ -146,18 +146,18 @@ func TestDIDIONCreateCredentialManifestIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKID, err := GetValue(didIONContext, "issuerKID")
+	verificationMethodID, err := GetValue(didIONContext, "verificationMethodID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
 
 	schemaID, err := GetValue(didIONContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	cmOutput, err := CreateCredentialManifest(credManifestParams{
-		IssuerID:  issuerDID.(string),
-		IssuerKID: issuerKID.(string),
-		SchemaID:  schemaID.(string),
+		IssuerID:             issuerDID.(string),
+		VerificationMethodID: verificationMethodID.(string),
+		SchemaID:             schemaID.(string),
 	})
 	assert.NoError(t, err)
 
