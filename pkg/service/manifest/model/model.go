@@ -5,6 +5,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
 
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
@@ -23,6 +24,13 @@ type CreateManifestRequest struct {
 	OutputDescriptors                  []manifestsdk.OutputDescriptor `json:"outputDescriptors" validate:"required,dive"`
 	ClaimFormat                        *exchange.ClaimFormat          `json:"format" validate:"required,dive"`
 	PresentationDefinitionRef          *PresentationDefinitionRef     `json:"presentationDefinitionRef,omitempty" validate:"omitempty,dive"`
+}
+
+func (r CreateManifestRequest) IsValid() error {
+	if err := sdkutil.IsValidStruct(r); err != nil {
+		return err
+	}
+	return common.ValidateVerificationMethodID(r.FullyQualifiedVerificationMethodID, r.IssuerDID)
 }
 
 type CreateManifestResponse struct {

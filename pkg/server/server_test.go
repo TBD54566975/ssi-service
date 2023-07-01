@@ -139,10 +139,10 @@ func newRequestContextWithURLValues(w http.ResponseWriter, req *http.Request, pa
 	return c
 }
 
-func getValidCreateManifestRequest(issuerDID, issuerKID, schemaID string) router.CreateManifestRequest {
+func getValidCreateManifestRequest(issuerDID, verificationMethodID, schemaID string) router.CreateManifestRequest {
 	return router.CreateManifestRequest{
-		IssuerDID: issuerDID,
-		IssuerKID: issuerKID,
+		IssuerDID:            issuerDID,
+		VerificationMethodID: verificationMethodID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},

@@ -100,8 +100,10 @@ type CreateCredentialRequest struct {
 	// The issuer id.
 	Issuer string `json:"issuer" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
 
-	// The KID used to sign the credential.
-	IssuerKID string `json:"issuerKid" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
+	// The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+	// stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+	// The private key associated with the verificationMethod's publicKey will be used to sign the credential.
+	VerificationMethodID string `json:"verificationMethodId" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
 
 	// The subject id.
 	Subject string `json:"subject" validate:"required" example:"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
@@ -132,7 +134,7 @@ type CreateCredentialRequest struct {
 }
 
 func (c CreateCredentialRequest) toServiceRequest() credential.CreateCredentialRequest {
-	verificationMethodID := did.FullyQualifiedVerificationMethodID(c.Issuer, c.IssuerKID)
+	verificationMethodID := did.FullyQualifiedVerificationMethodID(c.Issuer, c.VerificationMethodID)
 	return credential.CreateCredentialRequest{
 		Issuer:                             c.Issuer,
 		FullyQualifiedVerificationMethodID: verificationMethodID,

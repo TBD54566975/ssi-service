@@ -3,7 +3,9 @@ package credential
 import (
 	"fmt"
 
+	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 )
 
 type BatchCreateCredentialsRequest struct {
@@ -109,7 +111,7 @@ func (csr CreateCredentialRequest) hasEvidence() bool {
 	return len(csr.Evidence) != 0
 }
 
-func (csr *CreateCredentialRequest) validateEvidence() error {
+func (csr CreateCredentialRequest) validateEvidence() error {
 	for _, e := range csr.Evidence {
 		evidenceMap, ok := e.(map[string]any)
 		if !ok {
@@ -125,4 +127,11 @@ func (csr *CreateCredentialRequest) validateEvidence() error {
 	}
 
 	return nil
+}
+
+func (csr CreateCredentialRequest) IsValid() error {
+	if err := util.IsValidStruct(csr); err != nil {
+		return err
+	}
+	return common.ValidateVerificationMethodID(csr.FullyQualifiedVerificationMethodID, csr.Issuer)
 }

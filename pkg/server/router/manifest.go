@@ -57,9 +57,11 @@ type CreateManifestRequest struct {
 	// Required.
 	IssuerDID string `json:"issuerDid" validate:"required"`
 
-	// The KID of the private key that will be used when signing issued credentials.
+	// The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+	// stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+	// The private key associated with the verificationMethod's publicKey will be used to sign the issued credentials.
 	// Required.
-	IssuerKID string `json:"issuerKid" validate:"required"`
+	VerificationMethodID string `json:"verificationMethodId" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
 
 	// Human-readable name the Issuer wishes to be recognized by.
 	// Optional.
@@ -80,7 +82,7 @@ type CreateManifestRequest struct {
 }
 
 func (c CreateManifestRequest) ToServiceRequest() model.CreateManifestRequest {
-	verificationMethodID := did.FullyQualifiedVerificationMethodID(c.IssuerDID, c.IssuerKID)
+	verificationMethodID := did.FullyQualifiedVerificationMethodID(c.IssuerDID, c.VerificationMethodID)
 	return model.CreateManifestRequest{
 		Name:                               c.Name,
 		Description:                        c.Description,
@@ -750,9 +752,9 @@ func (mr ManifestRouter) DeleteRequest(c *gin.Context) {
 
 func commonRequestToServiceRequest(request *CommonCreateRequestRequest) (*common.Request, error) {
 	req := &common.Request{
-		Audience:  request.Audience,
-		IssuerDID: request.IssuerDID,
-		IssuerKID: request.IssuerKID,
+		Audience:             request.Audience,
+		IssuerDID:            request.IssuerDID,
+		VerificationMethodID: request.VerificationMethodID,
 	}
 	if request.Expiration != "" {
 		expiration, err := time.Parse(time.RFC3339, request.Expiration)

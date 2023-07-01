@@ -88,6 +88,10 @@ func NewCredentialService(config config.CredentialServiceConfig, s storage.Servi
 }
 
 func (s Service) CreateCredential(ctx context.Context, request CreateCredentialRequest) (*CreateCredentialResponse, error) {
+	if err := request.IsValid(); err != nil {
+		return nil, errors.Wrap(err, "validating request")
+	}
+
 	watchKeys := make([]storage.WatchKey, 0)
 
 	var statusMetadata StatusListCredentialMetadata
@@ -238,12 +242,12 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 	}
 
 	container := credint.Container{
-		ID:            credentialID,
-		IssuerKID:     request.FullyQualifiedVerificationMethodID,
-		Credential:    cred,
-		CredentialJWT: credJWT,
-		Revoked:       false,
-		Suspended:     false,
+		ID:                                 credentialID,
+		FullyQualifiedVerificationMethodID: request.FullyQualifiedVerificationMethodID,
+		Credential:                         cred,
+		CredentialJWT:                      credJWT,
+		Revoked:                            false,
+		Suspended:                          false,
 	}
 
 	credentialStorageRequest := StoreCredentialRequest{
@@ -257,19 +261,19 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 }
 
 // signCredentialJWT signs a credential and returns it as a vc-jwt
-func (s Service) signCredentialJWT(ctx context.Context, issuerKID string, cred credential.VerifiableCredential) (*keyaccess.JWT, error) {
-	keyStoreID := did.FullyQualifiedVerificationMethodID(cred.IssuerID(), issuerKID)
+func (s Service) signCredentialJWT(ctx context.Context, verificationMethodID string, cred credential.VerifiableCredential) (*keyaccess.JWT, error) {
+	keyStoreID := did.FullyQualifiedVerificationMethodID(cred.IssuerID(), verificationMethodID)
 	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: keyStoreID})
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing credential<%s>", issuerKID)
+		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing credential<%s>", verificationMethodID)
 	}
 	if gotKey.Controller != cred.Issuer.(string) {
-		return nil, sdkutil.LoggingNewErrorf("key controller<%s> does not match credential issuer<%s> for key<%s>", gotKey.Controller, cred.Issuer, issuerKID)
+		return nil, sdkutil.LoggingNewErrorf("key controller<%s> does not match credential issuer<%s> for key<%s>", gotKey.Controller, cred.Issuer, verificationMethodID)
 	}
 	if gotKey.Revoked {
 		return nil, sdkutil.LoggingNewErrorf("cannot use revoked key<%s>", gotKey.ID)
 	}
-	keyAccess, err := keyaccess.NewJWKKeyAccess(issuerKID, gotKey.ID, gotKey.Key)
+	keyAccess, err := keyaccess.NewJWKKeyAccess(verificationMethodID, gotKey.ID, gotKey.Key)
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating key access for signing credential with key<%s>", gotKey.ID)
 	}
@@ -569,12 +573,12 @@ func (s Service) updateCredentialStatusBusinessLogic(ctx context.Context, tx sto
 func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCred *StoredCredential, request UpdateCredentialStatusRequest, slcMetadata StatusListCredentialMetadata) (*credint.Container, error) {
 	// store the credential with updated status
 	container := credint.Container{
-		ID:            gotCred.LocalCredentialID,
-		IssuerKID:     gotCred.IssuerKID,
-		Credential:    gotCred.Credential,
-		CredentialJWT: gotCred.CredentialJWT,
-		Revoked:       request.Revoked,
-		Suspended:     request.Suspended,
+		ID:                                 gotCred.LocalCredentialID,
+		FullyQualifiedVerificationMethodID: gotCred.FullyQualifiedVerificationMethodID,
+		Credential:                         gotCred.Credential,
+		CredentialJWT:                      gotCred.CredentialJWT,
+		Revoked:                            request.Revoked,
+		Suspended:                          request.Suspended,
 	}
 
 	storageRequest := StoreCredentialRequest{
@@ -633,17 +637,17 @@ func updateCredentialStatus(ctx context.Context, tx storage.Tx, s Service, gotCr
 
 	generatedStatusListCredential.CredentialSchema = gotCred.Credential.CredentialSchema
 
-	statusListCredJWT, err := s.signCredentialJWT(ctx, gotCred.IssuerKID, *generatedStatusListCredential)
+	statusListCredJWT, err := s.signCredentialJWT(ctx, gotCred.FullyQualifiedVerificationMethodID, *generatedStatusListCredential)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not sign status list credential")
 	}
 
 	// store the status list credential
 	statusListContainer := credint.Container{
-		ID:            statusListCredentialID,
-		IssuerKID:     gotCred.IssuerKID,
-		Credential:    generatedStatusListCredential,
-		CredentialJWT: statusListCredJWT,
+		ID:                                 statusListCredentialID,
+		FullyQualifiedVerificationMethodID: gotCred.FullyQualifiedVerificationMethodID,
+		Credential:                         generatedStatusListCredential,
+		CredentialJWT:                      statusListCredJWT,
 	}
 
 	storageRequest = StoreCredentialRequest{

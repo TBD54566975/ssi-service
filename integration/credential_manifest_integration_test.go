@@ -26,10 +26,10 @@ func TestCreateIssuerDIDKeyIntegration(t *testing.T) {
 	assert.Contains(t, issuerDID, "did:key")
 	SetValue(credentialManifestContext, "issuerDID", issuerDID)
 
-	issuerKID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
+	verificationMethodID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
-	SetValue(credentialManifestContext, "issuerKID", issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
+	SetValue(credentialManifestContext, "verificationMethodID", verificationMethodID)
 }
 
 func TestCreateAliceDIDKeyIntegration(t *testing.T) {
@@ -79,19 +79,19 @@ func TestCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKID, err := GetValue(credentialManifestContext, "issuerKID")
+	verificationMethodID, err := GetValue(credentialManifestContext, "verificationMethodID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
 
 	schemaID, err := GetValue(credentialManifestContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	vcOutput, err := CreateVerifiableCredential(credInputParams{
-		IssuerID:  issuerDID.(string),
-		IssuerKID: issuerKID.(string),
-		SchemaID:  schemaID.(string),
-		SubjectID: issuerDID.(string),
+		IssuerID:             issuerDID.(string),
+		VerificationMethodID: verificationMethodID.(string),
+		SchemaID:             schemaID.(string),
+		SubjectID:            issuerDID.(string),
 	})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vcOutput)
@@ -111,22 +111,22 @@ func TestBatchCreateCredentialsIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKID, err := GetValue(credentialManifestContext, "issuerKID")
+	verificationMethodID, err := GetValue(credentialManifestContext, "verificationMethodID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
 
 	schemaID, err := GetValue(credentialManifestContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	vcsOutput, err := BatchCreateVerifiableCredentials(batchCredInputParams{
-		IssuerID:   issuerDID.(string),
-		IssuerKID:  issuerKID.(string),
-		SchemaID:   schemaID.(string),
-		SubjectID0: issuerDID.(string),
-		SubjectID1: issuerDID.(string),
-		Revocable0: false,
-		Revocable1: true,
+		IssuerID:             issuerDID.(string),
+		VerificationMethodID: verificationMethodID.(string),
+		SchemaID:             schemaID.(string),
+		SubjectID0:           issuerDID.(string),
+		SubjectID1:           issuerDID.(string),
+		Revocable0:           false,
+		Revocable1:           true,
 	})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vcsOutput)
@@ -149,9 +149,9 @@ func TestBatchCreate100CredentialsIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKID, err := GetValue(credentialManifestContext, "issuerKID")
+	verificationMethodID, err := GetValue(credentialManifestContext, "verificationMethodID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
 
 	schemaID, err := GetValue(credentialManifestContext, "schemaID")
 	assert.NoError(t, err)
@@ -159,10 +159,10 @@ func TestBatchCreate100CredentialsIntegration(t *testing.T) {
 
 	// This test is simply about making sure we can create the maximum configured by default.
 	vcsOutput, err := BatchCreate100VerifiableCredentials(credInputParams{
-		IssuerID:  issuerDID.(string),
-		IssuerKID: issuerKID.(string),
-		SchemaID:  schemaID.(string),
-		SubjectID: issuerDID.(string),
+		IssuerID:             issuerDID.(string),
+		VerificationMethodID: verificationMethodID.(string),
+		SchemaID:             schemaID.(string),
+		SubjectID:            issuerDID.(string),
 	})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vcsOutput)
@@ -177,18 +177,18 @@ func TestCreateCredentialManifestIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKID, err := GetValue(credentialManifestContext, "issuerKID")
+	verificationMethodID, err := GetValue(credentialManifestContext, "verificationMethodID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
 
 	schemaID, err := GetValue(credentialManifestContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	cmOutput, err := CreateCredentialManifest(credManifestParams{
-		IssuerID:  issuerDID.(string),
-		IssuerKID: issuerKID.(string),
-		SchemaID:  schemaID.(string),
+		IssuerID:             issuerDID.(string),
+		VerificationMethodID: verificationMethodID.(string),
+		SchemaID:             schemaID.(string),
 	})
 	assert.NoError(t, err)
 
@@ -212,18 +212,18 @@ func TestCreateIssuanceTemplateIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKID, err := GetValue(credentialManifestContext, "issuerKID")
+	verificationMethodID, err := GetValue(credentialManifestContext, "verificationMethodID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
 
 	schemaID, err := GetValue(credentialManifestContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	cmOutput, err := CreateCredentialManifest(credManifestParams{
-		IssuerID:  issuerDID.(string),
-		IssuerKID: issuerKID.(string),
-		SchemaID:  schemaID.(string),
+		IssuerID:             issuerDID.(string),
+		VerificationMethodID: verificationMethodID.(string),
+		SchemaID:             schemaID.(string),
 	})
 	assert.NoError(t, err)
 
@@ -238,10 +238,10 @@ func TestCreateIssuanceTemplateIntegration(t *testing.T) {
 	SetValue(credentialManifestContext, "presentationDefinitionWithIssuanceTemplateID", presentationDefinitionID)
 
 	itOutput, err := CreateIssuanceTemplate(issuanceTemplateParams{
-		SchemaID:   schemaID.(string),
-		ManifestID: manifestID,
-		IssuerID:   issuerDID.(string),
-		IssuerKID:  issuerKID.(string),
+		SchemaID:             schemaID.(string),
+		ManifestID:           manifestID,
+		IssuerID:             issuerDID.(string),
+		VerificationMethodID: verificationMethodID.(string),
 	})
 	assert.NoError(t, err)
 

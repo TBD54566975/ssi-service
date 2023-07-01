@@ -19,15 +19,17 @@ type Container struct {
 	// value will be a URL that can be dereferenced, which includes this ID.
 	ID string `json:"id,omitempty"`
 
-	// The KID of the private key used to sign `credentialJwt`.
-	IssuerKID string `json:"issuerKid,omitempty"`
+	// Fully qualified verification method ID that can be used to verify the credential. For example
+	// `did:ion:EiDpQBo_nEfuLVeppgmPVQNEhtrnZLWFsB9ziZUuaKCJ3Q#83526c36-136c-423b-a57a-f190b83ae531`.
+	FullyQualifiedVerificationMethodID string `json:"fullyQualifiedVerificationMethodId,omitempty"`
 
 	// Verifiable Credential in the `application/vc+ld+json` format. The credential is secured with an external proof
 	// using JWS. In other words, the `proof` field is not present. See `credentialJwt` for the secured Verifiable
 	// Credential.
 	Credential *credential.VerifiableCredential `json:"credential,omitempty"`
 
-	// JWT representation of `credential`, secured with an external proof signed by `issuerKid`.
+	// JWT representation of `credential`, secured with an external proof. Verification can be done according to
+	// `fullyQualifiedVerificationMethodId`.
 	CredentialJWT *keyaccess.JWT `json:"credentialJwt,omitempty"`
 
 	// Whether this credential is currently revoked.

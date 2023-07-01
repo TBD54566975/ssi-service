@@ -1,7 +1,7 @@
 {
   "credentialManifest": "{{.ManifestID}}",
   "issuer": "{{.IssuerID}}",
-  "issuerKid": "{{.IssuerKID}}",
+  "verificationMethodId": "{{.VerificationMethodID}}",
   "credentials": [
     {
       "id": "kyc_credential",

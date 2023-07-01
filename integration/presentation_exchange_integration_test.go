@@ -26,10 +26,10 @@ func TestCreateParticipants(t *testing.T) {
 	assert.Contains(t, issuerDID, "did:key")
 	SetValue(presentationExchangeContext, "issuerDID", issuerDID)
 
-	issuerKID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
+	verificationMethodID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
-	SetValue(presentationExchangeContext, "issuerKID", issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
+	SetValue(presentationExchangeContext, "verificationMethodID", verificationMethodID)
 
 	holderPrivateKey, holderDIDKey, err := key.GenerateDIDKey(crypto.Ed25519)
 	assert.NoError(t, err)
@@ -102,13 +102,13 @@ func TestSubmissionFlow(t *testing.T) {
 	issuerDID, err := GetValue(presentationExchangeContext, "issuerDID")
 	assert.NoError(t, err)
 
-	issuerKID, err := GetValue(presentationExchangeContext, "issuerKID")
+	verificationMethodID, err := GetValue(presentationExchangeContext, "verificationMethodID")
 	assert.NoError(t, err)
 
 	credOutput, err := CreateSubmissionCredential(credInputParams{
-		IssuerID:  issuerDID.(string),
-		IssuerKID: issuerKID.(string),
-		SubjectID: holderDID.(string),
+		IssuerID:             issuerDID.(string),
+		VerificationMethodID: verificationMethodID.(string),
+		SubjectID:            holderDID.(string),
 	})
 	assert.NoError(t, err)
 

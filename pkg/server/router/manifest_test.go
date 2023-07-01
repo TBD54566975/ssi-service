@@ -56,7 +56,7 @@ func TestManifestRouter(t *testing.T) {
 
 				tt.Run("CreateManifest with presentation ID and value error", func(ttt *testing.T) {
 					defID := "an ID I know"
-					createManifestRequest := getValidManifestRequest("issuerDID", "issuerKID", "schemaID")
+					createManifestRequest := getValidManifestRequest("did:ion:hello", "did:ion:hello#123", "schemaID")
 					createManifestRequest.PresentationDefinitionRef.ID = &defID
 
 					_, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
@@ -67,7 +67,7 @@ func TestManifestRouter(t *testing.T) {
 
 				tt.Run("CreateManifest with bad presentation ID returns error", func(ttt *testing.T) {
 					defID := "a bad ID"
-					createManifestRequest := getValidManifestRequest("issuerDID", "issuerKID", "schemaID")
+					createManifestRequest := getValidManifestRequest("did:ion:hello", "did:ion:hello#123", "schemaID")
 					createManifestRequest.PresentationDefinitionRef = &model.PresentationDefinitionRef{
 						ID: &defID,
 					}
@@ -86,7 +86,7 @@ func TestManifestRouter(t *testing.T) {
 					assert.NoError(ttt, err)
 					assert.NotEmpty(ttt, resp)
 
-					createManifestRequest := getValidManifestRequest("issuerDID", "issuerKID", "schemaID")
+					createManifestRequest := getValidManifestRequest("did:ion:hello", "did:ion:hello#123", "schemaID")
 					createManifestRequest.PresentationDefinitionRef = &model.PresentationDefinitionRef{
 						ID: &resp.PresentationDefinition.ID,
 					}
@@ -139,7 +139,7 @@ func TestManifestRouter(t *testing.T) {
 						},
 					}
 					kid := issuerDID.DID.VerificationMethod[0].ID
-					createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema})
+					createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, FullyQualifiedVerificationMethodID: kid, Name: "license schema", Schema: licenseSchema})
 					assert.NoError(ttt, err)
 					assert.NotEmpty(ttt, createdSchema)
 
@@ -234,10 +234,10 @@ func getValidManifestRequestRequest(issuerDID *did.CreateDIDResponse, kid string
 	return model.CreateRequestRequest{
 		ManifestRequest: model.Request{
 			Request: common.Request{
-				Audience:   []string{"mario"},
-				IssuerDID:  issuerDID.DID.ID,
-				IssuerKID:  kid,
-				Expiration: &In100Seconds,
+				Audience:             []string{"mario"},
+				IssuerDID:            issuerDID.DID.ID,
+				VerificationMethodID: kid,
+				Expiration:           &In100Seconds,
 			},
 			ManifestID: createdManifest.Manifest.ID,
 		},
@@ -245,10 +245,10 @@ func getValidManifestRequestRequest(issuerDID *did.CreateDIDResponse, kid string
 }
 
 // getValidManifestRequest returns a valid manifest request, expecting a single JWT-VC EdDSA credential
-func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.CreateManifestRequest {
+func getValidManifestRequest(issuerDID, fullyQualifiedVerificationMethodID, schemaID string) model.CreateManifestRequest {
 	createManifestRequest := model.CreateManifestRequest{
 		IssuerDID:                          issuerDID,
-		FullyQualifiedVerificationMethodID: issuerKID,
+		FullyQualifiedVerificationMethodID: fullyQualifiedVerificationMethodID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},

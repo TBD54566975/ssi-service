@@ -10,13 +10,13 @@ import (
 )
 
 type StoredRequest struct {
-	ID          string   `json:"id"`
-	Audience    []string `json:"audience"`
-	Expiration  string   `json:"expiration"`
-	IssuerDID   string   `json:"issuerId"`
-	IssuerKID   string   `json:"issuerKid"`
-	ReferenceID string   `json:"referenceId"`
-	JWT         string   `json:"jwt"`
+	ID                   string   `json:"id"`
+	Audience             []string `json:"audience"`
+	Expiration           string   `json:"expiration"`
+	IssuerDID            string   `json:"issuerId"`
+	VerificationMethodID string   `json:"verificationMethodId"`
+	ReferenceID          string   `json:"referenceId"`
+	JWT                  string   `json:"jwt"`
 }
 
 type RequestStorage interface {

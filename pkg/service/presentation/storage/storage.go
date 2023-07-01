@@ -15,8 +15,6 @@ import (
 type StoredDefinition struct {
 	ID                     string                          `json:"id"`
 	PresentationDefinition exchange.PresentationDefinition `json:"presentationDefinition"`
-	Author                 string                          `json:"issuerID"`
-	AuthorKID              string                          `json:"issuerKid"`
 }
 
 type Storage interface {
@@ -28,7 +26,6 @@ type DefinitionStorage interface {
 	StoreDefinition(ctx context.Context, presentation StoredDefinition) error
 	GetDefinition(ctx context.Context, id string) (*StoredDefinition, error)
 	DeleteDefinition(ctx context.Context, id string) error
-	// TODO: Make this consistent across API boundaries https://github.com/TBD54566975/ssi-service/issues/449
 	ListDefinitions(ctx context.Context) ([]StoredDefinition, error)
 }
 

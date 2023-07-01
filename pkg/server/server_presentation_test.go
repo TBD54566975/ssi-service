@@ -711,8 +711,8 @@ func TestPresentationAPI(t *testing.T) {
 func createPresentationRequest(t *testing.T, pRouter *router.PresentationRouter, definitionID string, issuerDID didsdk.Document) router.CreateRequestResponse {
 	request := router.CreateRequestRequest{
 		CommonCreateRequestRequest: &router.CommonCreateRequestRequest{
-			IssuerDID: issuerDID.ID,
-			IssuerKID: issuerDID.VerificationMethod[0].ID,
+			IssuerDID:            issuerDID.ID,
+			VerificationMethodID: issuerDID.VerificationMethod[0].ID,
 		},
 		PresentationDefinitionID: definitionID,
 	}

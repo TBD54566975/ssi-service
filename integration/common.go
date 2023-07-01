@@ -131,12 +131,12 @@ func CreateKYCSchema() (string, error) {
 }
 
 type credInputParams struct {
-	IssuerID    string
-	IssuerKID   string
-	SchemaID    string
-	SubjectID   string
-	Revocable   bool
-	Suspendable bool
+	IssuerID             string
+	VerificationMethodID string
+	SchemaID             string
+	SubjectID            string
+	Revocable            bool
+	Suspendable          bool
 }
 
 func CreateVerifiableCredential(credentialInput credInputParams) (string, error) {
@@ -181,15 +181,15 @@ func CreateVerifiableCredential(credentialInput credInputParams) (string, error)
 }
 
 type batchCredInputParams struct {
-	IssuerID     string
-	IssuerKID    string
-	SchemaID     string
-	SubjectID0   string
-	Revocable0   bool
-	Suspendable0 bool
-	SubjectID1   string
-	Revocable1   bool
-	Suspendable1 bool
+	IssuerID             string
+	VerificationMethodID string
+	SchemaID             string
+	SubjectID0           string
+	Revocable0           bool
+	Suspendable0         bool
+	SubjectID1           string
+	Revocable1           bool
+	Suspendable1         bool
 }
 
 func BatchCreateVerifiableCredentials(credentialInput batchCredInputParams) (string, error) {
@@ -214,12 +214,12 @@ func BatchCreate100VerifiableCredentials(credentialInput credInputParams) (strin
 	creds := make([]any, 0)
 	for i := 0; i < 100; i++ {
 		credentialInput, err := resolveTemplate(credInputParams{
-			IssuerID:    credentialInput.IssuerID,
-			IssuerKID:   credentialInput.IssuerKID,
-			SchemaID:    credentialInput.SchemaID,
-			SubjectID:   credentialInput.SubjectID,
-			Revocable:   true,
-			Suspendable: false,
+			IssuerID:             credentialInput.IssuerID,
+			VerificationMethodID: credentialInput.VerificationMethodID,
+			SchemaID:             credentialInput.SchemaID,
+			SubjectID:            credentialInput.SubjectID,
+			Revocable:            true,
+			Suspendable:          false,
 		}, "credential-input.json")
 		if err != nil {
 			return "", err
@@ -278,9 +278,9 @@ func resolveTemplate(input any, fileName string) (string, error) {
 }
 
 type credManifestParams struct {
-	IssuerID  string
-	IssuerKID string
-	SchemaID  string
+	IssuerID             string
+	VerificationMethodID string
+	SchemaID             string
 }
 
 func CreateCredentialManifest(credManifest credManifestParams) (string, error) {
@@ -628,10 +628,10 @@ func ReviewApplication(params reviewApplicationParams) (string, error) {
 }
 
 type issuanceTemplateParams struct {
-	SchemaID   string
-	ManifestID string
-	IssuerID   string
-	IssuerKID  string
+	SchemaID             string
+	ManifestID           string
+	IssuerID             string
+	VerificationMethodID string
 }
 
 func CreateIssuanceTemplate(params issuanceTemplateParams) (string, error) {
