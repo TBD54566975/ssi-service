@@ -253,7 +253,6 @@ func (b *RedisDB) ReadAll(ctx context.Context, namespace string) (map[string][]b
 	return readAll(ctx, keys, b)
 }
 
-// TODO: This potentially could dangerous as it might run out of memory as we populate result
 func readAll(ctx context.Context, keys []string, b *RedisDB) (map[string][]byte, error) {
 	result := make(map[string][]byte, len(keys))
 
@@ -272,10 +271,21 @@ func readAll(ctx context.Context, keys []string, b *RedisDB) (map[string][]byte,
 
 	// result needs to take the namespace out of the key
 	namespaceDashIndex := strings.Index(keys[0], NamespaceKeySeparator)
-	for i, val := range values {
-		byteValue := []byte(fmt.Sprintf("%v", val))
-		key := keys[i][namespaceDashIndex+1:]
-		result[key] = byteValue
+
+	// Create a channel to process the keys and values in a separate goroutine
+	ch := make(chan [2][]byte)
+	go func() {
+		defer close(ch)
+		for i, val := range values {
+			byteValue := []byte(fmt.Sprintf("%v", val))
+			key := keys[i][namespaceDashIndex+1:]
+			ch <- [2][]byte{[]byte(key), byteValue}
+		}
+	}()
+
+	// Range over the channel to process each key-value pair individually
+	for pair := range ch {
+		result[string(pair[0])] = pair[1]
 	}
 
 	return result, nil
