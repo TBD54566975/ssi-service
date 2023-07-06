@@ -302,7 +302,6 @@ func (b *RedisDB) ReadAllKeys(ctx context.Context, namespace string) ([]string, 
 
 // NOTE: When passing pageSize == -1, **all** items are returns. Exercise caution regarding memory limits. Always
 // prefer to set the pageSize.
-// TODO: Remove all calls that set pageSize to -1. https://github.com/TBD54566975/ssi-service/issues/525
 func readAllKeys(ctx context.Context, namespace string, b *RedisDB, pageSize int, cursor uint64) ([]string, string, error) {
 
 	var allKeys []string
@@ -314,15 +313,21 @@ func readAllKeys(ctx context.Context, namespace string, b *RedisDB, pageSize int
 	if pageSize != -1 {
 		scanCount = min(RedisScanBatchSize, pageSize)
 	}
-	for pageSize == -1 || (len(allKeys) < pageSize) {
+	// Scan keys starting at cursor until the end or until we have enough keys
+	for {
 		keys, nextCursor, err = b.db.Scan(ctx, cursor, namespace+"*", int64(scanCount)).Result()
 		if err != nil {
 			return nil, "", errors.Wrap(err, "scan error")
 		}
-
-		allKeys = append(allKeys, keys...)
-
-		if nextCursor == 0 {
+		// Append keys one by one to ensure we don't exceed the page size
+		for _, key := range keys {
+			if pageSize != -1 && len(allKeys) >= pageSize {
+				break
+			}
+			allKeys = append(allKeys, key)
+		}
+		// If we have enough keys or we reached the end, break
+		if nextCursor == 0 || (pageSize != -1 && len(allKeys) >= pageSize) {
 			break
 		}
 
