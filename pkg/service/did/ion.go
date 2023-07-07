@@ -57,14 +57,6 @@ type CreateIONDIDOptions struct {
 	// Services to add to the DID document that will be created.
 	ServiceEndpoints []did.Service `json:"serviceEndpoints"`
 
-	// List of public keys to add to the DID document. Each element must follow the schema described in step 3 of https://identity.foundation/sidetree/spec/#add-public-keys.
-	// Each element will be used to add public keys to the DID document in the same way in which the `add-public-keys`
-	// patch action adds keys (see https://identity.foundation/sidetree/spec/#add-public-keys).
-	//
-	// It is recommended to us `jwsPublicKeys` instead of this method, which guarantees that the caller has control
-	// of the private key associated with the public keys that's being added.
-	PublicKeys []ion.PublicKey `json:"publicKeys"`
-
 	// List of JSON Web Signatures serialized using compact serialization. The payload must be a JSON object that
 	// represents a publicKey object. Such object must follow the schema described in step 3 of
 	// https://identity.foundation/sidetree/spec/#add-public-keys. The payload must be signed
@@ -168,7 +160,6 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 			Purposes: []ion.PublicKeyPurpose{ion.Authentication, ion.AssertionMethod},
 		},
 	}
-	pubKeys = append(pubKeys, opts.PublicKeys...)
 	pubKeys = append(pubKeys, publicKeysFromJWS...)
 
 	// generate the did document's initial state

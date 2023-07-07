@@ -576,17 +576,6 @@ definitions:
         items:
           type: string
         type: array
-      publicKeys:
-        description: |-
-          List of public keys to add to the DID document. Each element must follow the schema described in step 3 of https://identity.foundation/sidetree/spec/#add-public-keys.
-          Each elements will be used to add public keys to the DID document in the same way in which the `add-public-keys`
-          patch action adds keys (see https://identity.foundation/sidetree/spec/#add-public-keys).
-
-          It is recommended to us `jwsPublicKeys` instead of this method, which guarantees that the caller has control
-          of the private key associated with the public keys that's being added.
-        items:
-          $ref: '#/definitions/ion.PublicKey'
-        type: array
       serviceEndpoints:
         description: Services to add to the DID document that will be created.
         items:
@@ -850,33 +839,6 @@ definitions:
     - urls
     - verb
     type: object
-  ion.PublicKey:
-    properties:
-      id:
-        type: string
-      publicKeyJwk:
-        $ref: '#/definitions/jwx.PublicKeyJWK'
-      purposes:
-        items:
-          $ref: '#/definitions/ion.PublicKeyPurpose'
-        type: array
-      type:
-        type: string
-    type: object
-  ion.PublicKeyPurpose:
-    enum:
-    - authentication
-    - assertionMethod
-    - capabilityInvocation
-    - capabilityDelegation
-    - keyAgreement
-    type: string
-    x-enum-varnames:
-    - Authentication
-    - AssertionMethod
-    - CapabilityInvocation
-    - CapabilityDelegation
-    - KeyAgreement
   jwx.PublicKeyJWK:
     properties:
       alg:
