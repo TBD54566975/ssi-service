@@ -563,6 +563,36 @@ definitions:
         description: Whether this credential is currently suspended.
         type: boolean
     type: object
+  github_com_tbd54566975_ssi-service_pkg_service_did.CreateIONDIDOptions:
+    properties:
+      jwsPublicKeys:
+        description: |-
+          List of JSON Web Signatures serialized using compact serialization. The payload must be a JSON object that
+          represents a publicKey object. Such object must follow the schema described in step 3 of
+          https://identity.foundation/sidetree/spec/#add-public-keys. The payload must be signed
+          with the private key associated with the `publicKeyJwk` that will be added in the DID document.
+          The input will be parsed and verified, and the payload will be used to add public keys to the DID document in the
+          same way in which the `add-public-keys` patch action adds keys (see https://identity.foundation/sidetree/spec/#add-public-keys).
+        items:
+          type: string
+        type: array
+      publicKeys:
+        description: |-
+          List of public keys to add to the DID document. Each element must follow the schema described in step 3 of https://identity.foundation/sidetree/spec/#add-public-keys.
+          Each elements will be used to add public keys to the DID document in the same way in which the `add-public-keys`
+          patch action adds keys (see https://identity.foundation/sidetree/spec/#add-public-keys).
+
+          It is recommended to us `jwsPublicKeys` instead of this method, which guarantees that the caller has control
+          of the private key associated with the public keys that's being added.
+        items:
+          $ref: '#/definitions/ion.PublicKey'
+        type: array
+      serviceEndpoints:
+        description: Services to add to the DID document that will be created.
+        items:
+          $ref: '#/definitions/github_com_TBD54566975_ssi-sdk_did.Service'
+        type: array
+    type: object
   github_com_tbd54566975_ssi-service_pkg_service_framework.Status:
     properties:
       message:
@@ -820,6 +850,33 @@ definitions:
     - urls
     - verb
     type: object
+  ion.PublicKey:
+    properties:
+      id:
+        type: string
+      publicKeyJwk:
+        $ref: '#/definitions/jwx.PublicKeyJWK'
+      purposes:
+        items:
+          $ref: '#/definitions/ion.PublicKeyPurpose'
+        type: array
+      type:
+        type: string
+    type: object
+  ion.PublicKeyPurpose:
+    enum:
+    - authentication
+    - assertionMethod
+    - capabilityInvocation
+    - capabilityDelegation
+    - keyAgreement
+    type: string
+    x-enum-varnames:
+    - Authentication
+    - AssertionMethod
+    - CapabilityInvocation
+    - CapabilityDelegation
+    - KeyAgreement
   jwx.PublicKeyJWK:
     properties:
       alg:
@@ -2464,7 +2521,12 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          allOf:
+          - $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          - properties:
+              options:
+                $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_did.CreateIONDIDOptions'
+            type: object
       produces:
       - application/json
       responses:

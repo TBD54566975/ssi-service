@@ -64,6 +64,28 @@ func TestCreateIssuerDIDIONIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "#externalVerificationMethodId", capabilityDelegationKID)
 
+	// The jwsPublicKeys entry represents the following:
+	//{
+	// "id": "test-id",
+	// "type": "JsonWebKey2020",
+	// "publicKeyJwk": {
+	//   "kty": "OKP",
+	//   "crv": "Ed25519",
+	//   "x": "ghzv2q5WwYO3Y6ZH-MQJvBkd45zbTSyJ6gU1q3yk01E",
+	//   "alg": "EdDSA",
+	//   "kid": "test-kid"
+	// },
+	// "purposes": [
+	//   "authentication"
+	// ]
+	//}
+	verificationMethod2ID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[2].id")
+	assert.NoError(t, err)
+	assert.Equal(t, "#test-id", verificationMethod2ID)
+
+	verificationMethod2KID, err := getJSONElement(didIONOutput, "$.did.verificationMethod[2].publicKeyJwk.kid")
+	assert.NoError(t, err)
+	assert.Equal(t, "test-kid", verificationMethod2KID)
 }
 
 func TestCreateAliceDIDKeyForDIDIONIntegration(t *testing.T) {

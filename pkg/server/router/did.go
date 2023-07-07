@@ -82,8 +82,8 @@ type CreateDIDByMethodResponse struct {
 //	@Tags			DecentralizedIdentityAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			method	path		string						true	"Method"
-//	@Param			request	body		CreateDIDByMethodRequest	true	"request body"
+//	@Param			method	path		string														true	"Method"
+//	@Param			request	body		CreateDIDByMethodRequest{options=did.CreateIONDIDOptions}	true	"request body"
 //	@Success		201		{object}	CreateDIDByMethodResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"

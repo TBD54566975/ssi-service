@@ -11,7 +11,9 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did/ion"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/TBD54566975/ssi-sdk/util"
+	"github.com/goccy/go-json"
 	"github.com/google/uuid"
+	"github.com/lestrrat-go/jwx/v2/jws"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -52,8 +54,24 @@ type ionHandler struct {
 var _ MethodHandler = (*ionHandler)(nil)
 
 type CreateIONDIDOptions struct {
-	ServiceEndpoints []did.Service   `json:"serviceEndpoints"`
-	PublicKeys       []ion.PublicKey `json:"publicKeys"`
+	// Services to add to the DID document that will be created.
+	ServiceEndpoints []did.Service `json:"serviceEndpoints"`
+
+	// List of public keys to add to the DID document. Each element must follow the schema described in step 3 of https://identity.foundation/sidetree/spec/#add-public-keys.
+	// Each element will be used to add public keys to the DID document in the same way in which the `add-public-keys`
+	// patch action adds keys (see https://identity.foundation/sidetree/spec/#add-public-keys).
+	//
+	// It is recommended to us `jwsPublicKeys` instead of this method, which guarantees that the caller has control
+	// of the private key associated with the public keys that's being added.
+	PublicKeys []ion.PublicKey `json:"publicKeys"`
+
+	// List of JSON Web Signatures serialized using compact serialization. The payload must be a JSON object that
+	// represents a publicKey object. Such object must follow the schema described in step 3 of
+	// https://identity.foundation/sidetree/spec/#add-public-keys. The payload must be signed
+	// with the private key associated with the `publicKeyJwk` that will be added in the DID document.
+	// The input will be parsed and verified, and the payload will be used to add public keys to the DID document in the
+	// same way in which the `add-public-keys` patch action adds keys (see https://identity.foundation/sidetree/spec/#add-public-keys).
+	JWSPublicKeys []string `json:"jwsPublicKeys"`
 }
 
 func (c CreateIONDIDOptions) Method() did.Method {
@@ -88,6 +106,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	// process options
 	var opts CreateIONDIDOptions
 	var ok bool
+	var publicKeysFromJWS []ion.PublicKey
 	if request.Options != nil {
 		opts, ok = request.Options.(CreateIONDIDOptions)
 		if !ok || request.Options.Method() != did.IONMethod {
@@ -95,6 +114,38 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		}
 		if err := util.IsValidStruct(opts); err != nil {
 			return nil, errors.Wrap(err, "processing options")
+		}
+
+		publicKeysFromJWS = make([]ion.PublicKey, 0, len(opts.JWSPublicKeys))
+		for _, jwsString := range opts.JWSPublicKeys {
+			m, err := jws.ParseString(jwsString)
+			if err != nil {
+				return nil, errors.Wrapf(err, "parsing JWS string <%s>", jwsString)
+			}
+
+			headers, err := jwx.GetJWSHeaders([]byte(jwsString))
+			if err != nil {
+				return nil, errors.Wrapf(err, "getting JWS headers from <%s>", jwsString)
+			}
+
+			var publicKey ion.PublicKey
+			if err := json.Unmarshal(m.Payload(), &publicKey); err != nil {
+				return nil, errors.Wrap(err, "unmarshalling payload")
+			}
+			if err := util.IsValidStruct(publicKey); err != nil {
+				return nil, errors.Wrap(err, "invalid publicKey in payload")
+			}
+
+			goPublicKey, err := publicKey.PublicKeyJWK.ToPublicKey()
+			if err != nil {
+				return nil, errors.Wrap(err, "converting JWK to go crypto public key")
+			}
+
+			if _, err := jws.Verify([]byte(jwsString), jws.WithKey(headers.Algorithm(), goPublicKey)); err != nil {
+				return nil, errors.Wrapf(err, "verifying JWS for <%s>", jwsString)
+			}
+
+			publicKeysFromJWS = append(publicKeysFromJWS, publicKey)
 		}
 	}
 
@@ -118,6 +169,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		},
 	}
 	pubKeys = append(pubKeys, opts.PublicKeys...)
+	pubKeys = append(pubKeys, publicKeysFromJWS...)
 
 	// generate the did document's initial state
 	doc := ion.Document{PublicKeys: pubKeys, Services: opts.ServiceEndpoints}
