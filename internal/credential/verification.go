@@ -52,11 +52,11 @@ func NewCredentialValidator(didResolver resolution.Resolver, schemaResolver sche
 func (v Validator) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
 	_, err := integrity.VerifyJWTCredential(ctx, token.String(), v.didResolver)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "verifying JWT credential")
 	}
 	_, _, cred, err := integrity.ParseVerifiableCredentialFromJWT(token.String())
 	if err != nil {
-		return err
+		return errors.Wrap(err, "parsing vc from jwt")
 	}
 	return v.staticValidationChecks(ctx, *cred)
 }
