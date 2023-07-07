@@ -189,6 +189,9 @@ func (s Service) signCredentialSchema(ctx context.Context, cred credential.Verif
 	if gotKey.Controller != issuer {
 		return nil, sdkutil.LoggingNewErrorf("key controller<%s> does not match credential issuer<%s> for key<%s>", gotKey.Controller, issuer, fullyQualifiedVerificationMethodID)
 	}
+	if gotKey.Revoked {
+		return nil, sdkutil.LoggingNewErrorf("cannot use revoked key<%s>", gotKey.ID)
+	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(fullyQualifiedVerificationMethodID, gotKey.ID, gotKey.Key)
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating key access for signing credential schema with key<%s>", gotKey.ID)
