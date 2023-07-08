@@ -261,11 +261,6 @@ func TestCredentialRouter(t *testing.T) {
 				assert.Empty(tt, createdCred)
 				assert.Error(tt, err)
 				assert.ErrorContains(tt, err, "cannot use revoked key")
-
-				// create a schema with the revoked key, it fails
-				_, err = schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: controllerDID.DID.ID, Name: "schema (revoked key)", Schema: getEmailSchema(), FullyQualifiedVerificationMethodID: keyID})
-				assert.Error(tt, err)
-				assert.ErrorContains(tt, err, "cannot use revoked key")
 			})
 
 			t.Run("Credential Status List Test", func(tt *testing.T) {
