@@ -47,47 +47,17 @@ func NewCredentialValidator(didResolver resolution.Resolver, schemaResolver sche
 	}, nil
 }
 
-// TODO(gabe) consider moving this verification logic to the sdk https://github.com/TBD54566975/ssi-service/issues/122
-
 // VerifyJWTCredential first parses and checks the signature on the given JWT credential. Next, it runs
 // a set of static verification checks on the credential as per the credential service's configuration.
 func (v Validator) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
-	// first, parse the token to see if it contains a valid verifiable credential
-	gotHeaders, _, cred, err := integrity.ParseVerifiableCredentialFromJWT(token.String())
+	_, err := integrity.VerifyJWTCredential(ctx, token.String(), v.didResolver)
 	if err != nil {
-		return sdkutil.LoggingErrorMsg(err, "could not parse credential from JWT")
+		return errors.Wrap(err, "verifying JWT credential")
 	}
-
-	kid, ok := gotHeaders.Get(jws.KeyIDKey)
-	if !ok {
-		return sdkutil.LoggingNewError("could not find key ID in JWT headers")
-	}
-	jwtKID, ok := kid.(string)
-	if !ok {
-		return sdkutil.LoggingNewErrorf("could not convert key ID to string: %v", kid)
-	}
-
-	// resolve the issuer's key material
-	issuerDID, ok := cred.Issuer.(string)
-	if !ok {
-		return sdkutil.LoggingNewErrorf("could not convert issuer to string: %v", cred.Issuer)
-	}
-	pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, issuerDID, jwtKID)
+	_, _, cred, err := integrity.ParseVerifiableCredentialFromJWT(token.String())
 	if err != nil {
-		return sdkutil.LoggingError(err)
+		return errors.Wrap(err, "parsing vc from jwt")
 	}
-
-	// construct a signature validator from the verification information
-	verifier, err := keyaccess.NewJWKKeyAccessVerifier(issuerDID, jwtKID, pubKey)
-	if err != nil {
-		return sdkutil.LoggingErrorMsg(err, "could not create validator")
-	}
-
-	// verify the signature on the credential
-	if err = verifier.Verify(token); err != nil {
-		return sdkutil.LoggingErrorMsg(err, "could not verify credential's signature")
-	}
-
 	return v.staticValidationChecks(ctx, *cred)
 }
 
