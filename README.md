@@ -49,7 +49,7 @@ service.
 
 SSI-service can store keys that are used to digitally sign credentials (and other data). All such keys are encrypted at
 the application before being stored using a MasterKey (a.k.a. a Key Encryption Key or KEK). The MasterKey can be
-generated automatically during boot time based on a password, or we can use the MasterKey housed in an external Key 
+generated automatically during boot time, or we can use the MasterKey housed in an external Key 
 Management System (KMS) like GCP KMS or AWS KMS.
 
 For production deployments, using external KMS is strongly recommended.
@@ -61,9 +61,8 @@ To use an external KMS:
 3. Set the `kms_credentials_path` field of the `[services.keystore]` section to point to your credentials file, according to [this section](https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#credentials).
 4. Win!
 
-To use a password based MasterKey (NOT RECOMMENDED FOR ANY PRODUCTION ENVIRONMENT):
+To use a randomly generated encryption key (NOT RECOMMENDED FOR ANY PRODUCTION ENVIRONMENT):
 1. Make sure that `master_key_uri` and `kms_credentials_path` of the `[services.keystore]` section are not set.
-2. Set the `password` field of the `[services.keystore]` section to your desired password.
 
 Note that at this time, we do not currently support rotating the master key.
 

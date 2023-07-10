@@ -18,20 +18,13 @@ import (
 )
 
 func TestGenerateServiceKey(t *testing.T) {
-	emptySKPassword := ""
-	_, _, err := GenerateServiceKey(emptySKPassword)
-	assert.Error(t, err)
-
-	skPassword := "test-password"
-	key, salt, err := GenerateServiceKey(skPassword)
+	key, err := GenerateServiceKey()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, key)
-	assert.NotEmpty(t, salt)
 }
 
 func TestEncryptDecryptAllKeyTypes(t *testing.T) {
-	skPassword := "test-password"
-	serviceKeyEncoded, _, err := GenerateServiceKey(skPassword)
+	serviceKeyEncoded, err := GenerateServiceKey()
 	assert.NoError(t, err)
 	serviceKey, err := base58.Decode(serviceKeyEncoded)
 	assert.NoError(t, err)
@@ -184,7 +177,6 @@ func createKeyStoreService(t *testing.T) (*Service, error) {
 			BaseServiceConfig: &config.BaseServiceConfig{
 				Name: "test-keyStore",
 			},
-			MasterKeyPassword: "test-password",
 		},
 		s)
 
