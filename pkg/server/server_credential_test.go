@@ -811,7 +811,7 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NoError(ttt, err)
 				assert.NotEmpty(ttt, verifyResp)
 				assert.False(ttt, verifyResp.Verified)
-				assert.Contains(ttt, verifyResp.Reason, "could not parse credential from JWT")
+				assert.Contains(ttt, verifyResp.Reason, "parsing JWT: parsing credential token: invalid JWT")
 			})
 
 			tt.Run("Test Create Revocable Credential", func(ttt *testing.T) {
