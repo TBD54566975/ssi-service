@@ -55,6 +55,7 @@ type ServiceKey struct {
 
 const (
 	namespace             = "keystore"
+	serviceNamespace      = "keystore:service-internal"
 	publicNamespaceSuffix = ":public-keys"
 	skKey                 = "ssi-service-key"
 	keyNotFoundErrMsg     = "key not found"
@@ -193,14 +194,14 @@ func storeServiceKey(ctx context.Context, tx storage.Tx, key ServiceKey) error {
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could not marshal service key")
 	}
-	if err = tx.Write(ctx, namespace, skKey, keyBytes); err != nil {
+	if err = tx.Write(ctx, serviceNamespace, skKey, keyBytes); err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could store marshal service key")
 	}
 	return nil
 }
 
 func getServiceKey(ctx context.Context, db storage.ServiceStorage) ([]byte, error) {
-	storedKeyBytes, err := db.Read(ctx, namespace, skKey)
+	storedKeyBytes, err := db.Read(ctx, serviceNamespace, skKey)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not get service key")
 	}
