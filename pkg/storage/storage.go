@@ -131,3 +131,8 @@ func Join(parts ...string) string {
 	const separator = ":"
 	return strings.Join(parts, separator)
 }
+
+// MakeNamespace takes a set of possible namespace values and combines them as a convention
+func MakeNamespace(ns ...string) string {
+	return strings.Join(ns, "-")
+}
