@@ -33,21 +33,6 @@ func (s DIDConfigurationService) Status() svcframework.Status {
 
 var _ svcframework.Service = (*DIDConfigurationService)(nil)
 
-type DIDConfiguration struct {
-	Context    any                 `json:"@context" validate:"required"`
-	LinkedDIDs []credint.Container `json:"linked_dids" validate:"required"`
-}
-
-type CreateDIDConfigurationResponse struct {
-	DIDConfiguration  DIDConfiguration `json:"didConfiguration"`
-	WellKnownLocation string           `json:"wellKnownLocation"`
-}
-
-const (
-	DIDConfigurationContext        = "https://identity.foundation/.well-known/did-configuration/v1"
-	DIDConfigurationLocationSuffix = "/.well-known/did-configuration.json"
-)
-
 func (s DIDConfigurationService) CreateDIDConfiguration(ctx context.Context, req *CreateDIDConfigurationRequest) (*CreateDIDConfigurationResponse, error) {
 	builder := credential.NewVerifiableCredentialBuilder()
 	if err := builder.SetIssuer(req.IssuerDID); err != nil {
@@ -115,13 +100,4 @@ func (s DIDConfigurationService) CreateDIDConfiguration(ctx context.Context, req
 		WellKnownLocation: req.Origin + DIDConfigurationLocationSuffix,
 	}
 	return &response, nil
-}
-
-type CreateDIDConfigurationRequest struct {
-	IssuerDID            string
-	VerificationMethodID string
-	Origin               string
-
-	ExpirationDate string
-	IssuanceDate   string
 }
