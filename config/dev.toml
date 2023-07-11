@@ -36,7 +36,6 @@ option = "bolt.db"
 # per-service configuration
 [services.keystore]
 name = "keystore"
-password = "default-password"
 
 [services.did]
 name = "did"
