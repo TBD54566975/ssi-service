@@ -46,8 +46,10 @@ github.com/BurntSushi/toml v1.3.2/go.mod h1:CxXYINrC8qIiEnFrOxCa7Jy5BFHlXnUU2pbi
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc=
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=
-github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230711160634-93517cd161d0 h1:EPKAyGMU9KR0UgXu9dZJO54ka85qDysrg0rAO1CFA3c=
-github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230711160634-93517cd161d0/go.mod h1:lup1EqGAT730/c7dRF9Q8OvgsjWJewq4K2dFAyBV1vk=
+github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230707203029-1bbf9c13be59 h1:O7GtPvUMsbJYFGx+In7ai1Sxm7gQaF7fenwlovpYbvs=
+github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230707203029-1bbf9c13be59/go.mod h1:yPkVO9MCC/kRu+lut3jllhnCV0gEqSubaaSVT7xLSOs=
+github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230711190054-bce640c9bf25 h1:wW+49kQxN/BYcMkbDjQA9mkrUC9cYUV6HOFLP+JIx+E=
+github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230711190054-bce640c9bf25/go.mod h1:lup1EqGAT730/c7dRF9Q8OvgsjWJewq4K2dFAyBV1vk=
 github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a/go.mod h1:SGnFV6hVsYE877CKEZ6tDNTjaSXYUk6QqoIK6PrAtcc=
 github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 h1:uvdUDbHQHO85qeSydJtItA4T55Pw6BtAejd0APRJOCE=
 github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302/go.mod h1:SGnFV6hVsYE877CKEZ6tDNTjaSXYUk6QqoIK6PrAtcc=
