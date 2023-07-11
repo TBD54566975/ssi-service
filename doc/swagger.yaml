@@ -881,6 +881,7 @@ definitions:
       spec_version:
         type: string
     required:
+    - applicant
     - format
     - id
     - manifest_id
