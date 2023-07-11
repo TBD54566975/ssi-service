@@ -15,7 +15,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
-	"github.com/tbd54566975/ssi-service/pkg/service/well-known"
+	wellknown "github.com/tbd54566975/ssi-service/pkg/service/well-known"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
