@@ -47,6 +47,25 @@ func init() {
 	})
 }
 
+type didConfigurationResourceParams struct {
+	IssuerDID            string
+	VerificationMethodID string
+}
+
+func CreateDIDConfigurationResource(params didConfigurationResourceParams) (string, error) {
+	logrus.Println("\n\nCreate did configuration resource")
+	didConfiguration, err := resolveTemplate(params, "did-configuration-input.json")
+	if err != nil {
+		return "", err
+	}
+	output, err := put(endpoint+version+"did-configurations", didConfiguration)
+	if err != nil {
+		return "", errors.Wrapf(err, "did configuration endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
 func CreateDIDKey() (string, error) {
 	logrus.Println("\n\nCreate a did for the issuer:")
 	output, err := put(endpoint+version+"dids/key", getJSONFromFile("did-input.json"))
