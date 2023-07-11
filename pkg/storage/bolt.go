@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"strings"
 	"time"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
@@ -407,9 +406,4 @@ func updateTx(tx *bolt.Tx, namespace string, key string, updater Updater) ([]byt
 		return nil, errors.Wrap(err, "writing to db")
 	}
 	return data, nil
-}
-
-// MakeNamespace takes a set of possible namespace values and combines them as a convention
-func MakeNamespace(ns ...string) string {
-	return strings.Join(ns, "-")
 }
