@@ -524,7 +524,7 @@ func (cs *Storage) GetStatusListCredentialsByIssuerSchemaPurpose(ctx context.Con
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
 	}
 
-	query := "sc:" + schema + "-sp:" + string(statusPurpose)
+	query := "sc:" + schema + keySeparator + "sp:" + string(statusPurpose)
 	var issuerSchemaKeys []string
 	for _, k := range keys {
 		if strings.Contains(k, issuer) && strings.HasSuffix(k, query) {
@@ -671,13 +671,15 @@ func (cs *Storage) GetStatusListCredentialKeyData(ctx context.Context, issuer st
 	return &storedStatusListCreds[0], nil
 }
 
+const keySeparator = ":"
+
 func getStatusListKey(issuer, schema, statusPurpose string) string {
-	return strings.Join([]string{"is:" + issuer, "sc:" + schema, "sp:" + statusPurpose}, "-")
+	return strings.Join([]string{"is:" + issuer, "sc:" + schema, "sp:" + statusPurpose}, keySeparator)
 }
 
 // unique key for a credential
 func createPrefixKey(id, issuer, subject, schema string) string {
-	return strings.Join([]string{id, "is:" + issuer, "su:" + subject, "sc:" + schema}, "-")
+	return strings.Join([]string{id, "is:" + issuer, "su:" + subject, "sc:" + schema}, keySeparator)
 }
 
 func randomUniqueNum(count int) []int {
