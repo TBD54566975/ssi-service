@@ -226,7 +226,6 @@ func testKeyStore(t *testing.T, bolt storage.ServiceStorage) (*router.KeyStoreRo
 func testKeyStoreService(t *testing.T, db storage.ServiceStorage) (*keystore.Service, keystore.ServiceFactory) {
 	serviceConfig := config.KeyStoreServiceConfig{
 		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-keystore"},
-		MasterKeyPassword: "test-password",
 	}
 
 	// create a keystore service

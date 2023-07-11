@@ -38,7 +38,6 @@ func TestKeyStoreRouter(t *testing.T) {
 
 				serviceConfig := config.KeyStoreServiceConfig{
 					BaseServiceConfig: &config.BaseServiceConfig{Name: "keystore"},
-					MasterKeyPassword: "test-password",
 				}
 				keyStoreService, err := keystore.NewKeyStoreService(serviceConfig, db)
 				assert.NoError(tt, err)
