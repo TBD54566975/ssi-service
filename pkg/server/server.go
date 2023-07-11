@@ -365,13 +365,14 @@ func WebhookAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 }
 
 func DIDConfigurationAPI(rg *gin.RouterGroup, service svcframework.Service) error {
-	webhookRouter, err := router.NewDIDConfigurationsRouter(service)
+	didConfigurationsRouter, err := router.NewDIDConfigurationsRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating webhook router")
 	}
 
 	webhookAPI := rg.Group(DIDConfigurationsPrefix)
-	webhookAPI.PUT("", webhookRouter.CreateDIDConfiguration)
+	webhookAPI.PUT("", didConfigurationsRouter.CreateDIDConfiguration)
+	webhookAPI.PUT(VerificationPath, didConfigurationsRouter.VerifyDIDConfiguration)
 
 	return nil
 }

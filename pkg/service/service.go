@@ -145,7 +145,7 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the operation service")
 	}
 
-	didConfigurationService := wellknown.NewDIDConfigurationService(keyStoreService)
+	didConfigurationService, _ := wellknown.NewDIDConfigurationService(keyStoreService, didResolver, schemaService)
 	return &SSIService{
 		KeyStore:         keyStoreService,
 		DID:              didService,
