@@ -33,8 +33,6 @@ func (s DIDConfigurationService) Status() svcframework.Status {
 
 var _ svcframework.Service = (*DIDConfigurationService)(nil)
 
-type DomainLinkageCredential struct{}
-
 type DIDConfiguration struct {
 	Context    any                 `json:"@context" validate:"required"`
 	LinkedDIDs []credint.Container `json:"linked_dids" validate:"required"`
