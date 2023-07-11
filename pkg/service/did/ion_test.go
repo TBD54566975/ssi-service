@@ -286,7 +286,6 @@ func TestIONHandler(t *testing.T) {
 func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Service {
 	serviceConfig := config.KeyStoreServiceConfig{
 		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-keystore"},
-		MasterKeyPassword: "test-password",
 	}
 
 	// create a keystore service

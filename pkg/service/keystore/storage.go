@@ -123,14 +123,13 @@ func EnsureServiceKeyExists(config config.KeyStoreServiceConfig, provider storag
 		// Create the key only if it doesn't already exist.
 		gotKey, err := getServiceKey(ctx, provider)
 		if gotKey == nil && err.Error() == keyNotFoundErrMsg {
-			serviceKey, serviceKeySalt, err := GenerateServiceKey(config.MasterKeyPassword)
+			serviceKey, err := GenerateServiceKey()
 			if err != nil {
 				return nil, errors.Wrap(err, "generating service key")
 			}
 
 			key := ServiceKey{
-				Base58Key:  serviceKey,
-				Base58Salt: serviceKeySalt,
+				Base58Key: serviceKey,
 			}
 			if err := storeServiceKey(ctx, tx, key); err != nil {
 				return nil, err
