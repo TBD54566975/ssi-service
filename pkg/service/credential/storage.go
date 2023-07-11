@@ -13,7 +13,6 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -477,7 +476,7 @@ func (cs *Storage) GetCredentialsBySchema(ctx context.Context, schema string) ([
 	}
 
 	// see if the prefix keys contains the schema value
-	query := "sc:" + schema
+	query := storage.Join("sc", schema)
 	var schemaKeys []string
 	for _, k := range keys {
 		if strings.HasSuffix(k, query) {
@@ -524,7 +523,7 @@ func (cs *Storage) GetStatusListCredentialsByIssuerSchemaPurpose(ctx context.Con
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
 	}
 
-	query := "sc:" + schema + keySeparator + "sp:" + string(statusPurpose)
+	query := storage.Join("sc", schema, "sp", string(statusPurpose))
 	var issuerSchemaKeys []string
 	for _, k := range keys {
 		if strings.Contains(k, issuer) && strings.HasSuffix(k, query) {
@@ -567,7 +566,7 @@ func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer s
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
 	}
 
-	query := "sc:" + schema
+	query := storage.Join("sc", schema)
 	var issuerSchemaKeys []string
 	for _, k := range keys {
 		if strings.Contains(k, issuer) && strings.HasSuffix(k, query) {
@@ -671,15 +670,13 @@ func (cs *Storage) GetStatusListCredentialKeyData(ctx context.Context, issuer st
 	return &storedStatusListCreds[0], nil
 }
 
-const keySeparator = ":"
-
 func getStatusListKey(issuer, schema, statusPurpose string) string {
-	return strings.Join([]string{"is:" + issuer, "sc:" + schema, "sp:" + statusPurpose}, keySeparator)
+	return storage.Join("is", issuer, "sc", schema, "sp", statusPurpose)
 }
 
 // unique key for a credential
 func createPrefixKey(id, issuer, subject, schema string) string {
-	return strings.Join([]string{id, "is:" + issuer, "su:" + subject, "sc:" + schema}, keySeparator)
+	return storage.Join(id, "is", issuer, "su", subject, "sc", schema)
 }
 
 func randomUniqueNum(count int) []int {

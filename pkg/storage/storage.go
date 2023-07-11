@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -123,4 +124,10 @@ func GetStorage(storageType Type) ServiceStorage {
 	}
 	// Not pointer:
 	return reflect.New(reflect.TypeOf(tmp)).Elem().Interface().(ServiceStorage)
+}
+
+// Join combines all parts using `:` as the separator.
+func Join(parts ...string) string {
+	const separator = ":"
+	return strings.Join(parts, separator)
 }
