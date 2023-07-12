@@ -313,6 +313,7 @@ func getValidApplicationRequest(manifestID, presDefID, submissionDescriptorID st
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: manifestsdk.SpecVersion,
+		Applicant:   "did:example:123",
 		ManifestID:  manifestID,
 		Format: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
