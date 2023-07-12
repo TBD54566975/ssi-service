@@ -17,6 +17,9 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	presmodel "github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
@@ -198,36 +201,49 @@ func TestManifestRouter(t *testing.T) {
 					signed, err := signer.SignJSON(applicationRequest)
 					assert.NoError(ttt, err)
 
-					submitApplicationRequest := SubmitApplicationRequest{ApplicationJWT: *signed}
-					sar, err := submitApplicationRequest.toServiceRequest()
-					assert.NoError(ttt, err)
-					createdApplicationResponseOp, err := manifestService.ProcessApplicationSubmission(context.Background(), *sar)
-					assert.NoError(ttt, err)
-					assert.False(ttt, createdApplicationResponseOp.Done)
-
-					createdApplicationResponse, err := manifestService.ReviewApplication(context.Background(), model.ReviewApplicationRequest{
-						ID:       storage.StatusObjectID(createdApplicationResponseOp.ID),
-						Approved: true,
-						Reason:   "ApprovalMan is here",
-						CredentialOverrides: map[string]model.CredentialOverride{
-							"id1": {
-								Data: map[string]any{"licenseType": "Class D"},
-							},
-							"id2": {
-								Data: map[string]any{"licenseType": "Class D"},
-							},
-						},
-					})
+					// submit and review application, the key is valid
+					createdApplicationResponse, err := submitAndReviewApplication(signed, ttt, manifestService)
 					assert.NoError(ttt, err)
 					assert.NotEmpty(ttt, createdManifest)
 					assert.NotEmpty(ttt, createdApplicationResponse.Response.ID)
 					assert.NotEmpty(ttt, createdApplicationResponse.Response.Fulfillment)
 					assert.Empty(ttt, createdApplicationResponse.Response.Denial)
 					assert.Equal(ttt, len(createManifestRequest.OutputDescriptors), len(createdApplicationResponse.Credentials))
+
+					// attempt to submit and review application again, this time with the revoked key
+					err = keyStoreService.RevokeKey(context.Background(), keystore.RevokeKeyRequest{ID: kid})
+					assert.NoError(ttt, err)
+					_, err = submitAndReviewApplication(signed, ttt, manifestService)
+					assert.Error(tt, err)
+					assert.ErrorContains(tt, err, "cannot use revoked key")
 				})
 			})
 		})
 	}
+}
+
+func submitAndReviewApplication(signed *keyaccess.JWT, ttt *testing.T, manifestService *manifest.Service) (*model.SubmitApplicationResponse, error) {
+	submitApplicationRequest := SubmitApplicationRequest{ApplicationJWT: *signed}
+	sar, err := submitApplicationRequest.toServiceRequest()
+	assert.NoError(ttt, err)
+	createdApplicationResponseOp, err := manifestService.ProcessApplicationSubmission(context.Background(), *sar)
+	assert.NoError(ttt, err)
+	assert.False(ttt, createdApplicationResponseOp.Done)
+
+	createdApplicationResponse, err := manifestService.ReviewApplication(context.Background(), model.ReviewApplicationRequest{
+		ID:       storage.StatusObjectID(createdApplicationResponseOp.ID),
+		Approved: true,
+		Reason:   "ApprovalMan is here",
+		CredentialOverrides: map[string]model.CredentialOverride{
+			"id1": {
+				Data: map[string]any{"licenseType": "Class D"},
+			},
+			"id2": {
+				Data: map[string]any{"licenseType": "Class D"},
+			},
+		},
+	})
+	return createdApplicationResponse, err
 }
 
 func getValidManifestRequestRequest(issuerDID *did.CreateDIDResponse, kid string, createdManifest *model.CreateManifestResponse) model.CreateRequestRequest {
