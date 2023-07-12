@@ -7,6 +7,8 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/internal/util"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 )
@@ -80,6 +82,44 @@ func TestCreatePresentationDefinition(t *testing.T) {
 	definitionID, err := getJSONElement(definition, "$.presentation_definition.id")
 	assert.NoError(t, err)
 	SetValue(presentationExchangeContext, "definitionID", definitionID)
+}
+
+func TestCreatePresentationRequest(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	verifierDID, err := GetValue(presentationExchangeContext, "verifierDID")
+	assert.NoError(t, err)
+
+	verifierKID, err := GetValue(presentationExchangeContext, "verifierKID")
+	assert.NoError(t, err)
+
+	definitionID, err := GetValue(presentationExchangeContext, "definitionID")
+	assert.NoError(t, err)
+
+	pRequest, err := CreatePresentationRequest(presentationRequestParams{
+		DefinitionID:         definitionID.(string),
+		IssuerID:             verifierDID.(string),
+		VerificationMethodID: verifierKID.(string),
+	})
+	assert.NoError(t, err)
+
+	callbackURL, err := getJSONElement(pRequest, "$.presentationRequest.callbackUrl")
+	assert.NoError(t, err)
+	assert.Equal(t, "my_callback_url", callbackURL)
+
+	requestJWT, err := getJSONElement(pRequest, "$.presentationRequest.presentationRequestJwt")
+	assert.NoError(t, err)
+
+	_, token, err := util.ParseJWT(keyaccess.JWT(requestJWT))
+	assert.NoError(t, err)
+
+	tokenCallbackURL, found := token.Get("callbackUrl")
+	assert.True(t, found)
+	assert.Equal(t, "my_callback_url", tokenCallbackURL)
+
+	assert.Contains(t, token.Audience(), "my_audience")
 }
 
 func TestSubmissionFlow(t *testing.T) {

@@ -100,6 +100,7 @@ func TestManifestAPI(t *testing.T) {
 				err = json.NewDecoder(w.Body).Decode(&reqResp)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, reqResp.Request)
+				assert.Equal(tt, "my_callback_url", reqResp.Request.CallbackURL)
 
 				// verify the manifest
 				verificationResponse, err := manifestService.VerifyManifest(context.Background(), manifestsvc.VerifyManifestRequest{ManifestJWT: reqResp.Request.CredentialManifestJWT})
@@ -1120,6 +1121,7 @@ func getValidManifestRequestRequest(issuerDID *did.CreateDIDResponse, kid string
 			Audience:             []string{"mario"},
 			IssuerDID:            issuerDID.DID.ID,
 			VerificationMethodID: kid,
+			CallbackURL:          "my_callback_url",
 		},
 		CredentialManifestID: credentialManifest.ID,
 	}
