@@ -602,7 +602,7 @@ func (mr ManifestRouter) ReviewApplication(c *gin.Context) {
 }
 
 type CreateManifestRequestRequest struct {
-	*CommonCreateRequestRequest
+	*CommonCreateRequestRequest `validate:"required,dive"`
 
 	// ID of the credential manifest to use for this request.
 	CredentialManifestID string `json:"credentialManifestId" validate:"required"`
@@ -755,6 +755,7 @@ func commonRequestToServiceRequest(request *CommonCreateRequestRequest) (*common
 		Audience:             request.Audience,
 		IssuerDID:            request.IssuerDID,
 		VerificationMethodID: request.VerificationMethodID,
+		CallbackURL:          request.CallbackURL,
 	}
 	if request.Expiration != "" {
 		expiration, err := time.Parse(time.RFC3339, request.Expiration)

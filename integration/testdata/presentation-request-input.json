@@ -1,0 +1,7 @@
+{
+  "presentationDefinitionId": "{{.DefinitionID}}",
+  "audience": ["my_audience"],
+  "issuerId": "{{.IssuerID}}",
+  "verificationMethodId": "{{.VerificationMethodID}}",
+  "callbackUrl": "my_callback_url"
+}
