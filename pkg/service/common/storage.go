@@ -17,7 +17,7 @@ type StoredRequest struct {
 	VerificationMethodID string   `json:"verificationMethodId"`
 	ReferenceID          string   `json:"referenceId"`
 	JWT                  string   `json:"jwt"`
-	CallbackURL          string   `json:"callbackURL"`
+	CallbackURL          string   `json:"callbackUrl"`
 }
 
 type RequestStorage interface {
