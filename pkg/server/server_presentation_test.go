@@ -135,6 +135,28 @@ func TestPresentationAPI(t *testing.T) {
 				assert.Empty(tt, resp.Requests)
 			})
 
+			t.Run("Get presentation requests returns created request", func(tt *testing.T) {
+				s := test.ServiceStorage(t)
+				pRouter, didService := setupPresentationRouter(tt, s)
+				issuerDID := createDID(tt, didService)
+				def := createPresentationDefinition(tt, pRouter)
+				req1 := createPresentationRequest(tt, pRouter, def.PresentationDefinition.ID, issuerDID.DID)
+
+				req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/requests/"+req1.Request.ID, nil)
+				w := httptest.NewRecorder()
+				params := map[string]string{
+					"id": req1.Request.ID,
+				}
+				c := newRequestContextWithParams(w, req, params)
+				pRouter.GetRequest(c)
+				assert.True(tt, util.Is2xxResponse(w.Code))
+
+				var resp router.GetRequestResponse
+				assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
+				assert.Equal(tt, req1.Request, resp.Request)
+				assert.Equal(tt, "my_callback_url", resp.Request.CallbackURL)
+			})
+
 			t.Run("List presentation requests returns many requests", func(tt *testing.T) {
 				s := test.ServiceStorage(t)
 				pRouter, didService := setupPresentationRouter(tt, s)
@@ -156,6 +178,7 @@ func TestPresentationAPI(t *testing.T) {
 					*req1.Request,
 					*req2.Request,
 				})
+				assert.Equal(tt, "my_callback_url", resp.Requests[0].CallbackURL)
 			})
 
 			t.Run("List definitions returns empty", func(tt *testing.T) {
@@ -713,6 +736,7 @@ func createPresentationRequest(t *testing.T, pRouter *router.PresentationRouter,
 		CommonCreateRequestRequest: &router.CommonCreateRequestRequest{
 			IssuerDID:            issuerDID.ID,
 			VerificationMethodID: issuerDID.VerificationMethod[0].ID,
+			CallbackURL:          "my_callback_url",
 		},
 		PresentationDefinitionID: definitionID,
 	}

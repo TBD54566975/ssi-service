@@ -181,8 +181,8 @@ type Request struct {
 	// ID of the credential manifest used for this request.
 	ManifestID string `json:"manifestId" validate:"required"`
 
-	// CredentialManifestJWT is a JWT token with a "presentation_definition" claim within it. The
-	// value of the field named "presentation_definition.id" matches PresentationDefinitionID.
+	// CredentialManifestJWT is a JWT token with a "presentation_definition" claim and an optional "callbackUrl" claim
+	// within it. The value of the field named "presentation_definition.id" matches PresentationDefinitionID.
 	// This is an output only field.
 	CredentialManifestJWT keyaccess.JWT `json:"credentialManifestJwt"`
 }

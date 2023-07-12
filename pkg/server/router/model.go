@@ -17,4 +17,8 @@ type CommonCreateRequestRequest struct {
 	// The private key associated with the verificationMethod's publicKey will be used to sign an envelope that contains
 	// the created presentation definition.
 	VerificationMethodID string `json:"verificationMethodId" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
+
+	// The URL that the presenter should be submitting the presentation submission to.
+	// Optional.
+	CallbackURL string `json:"callbackUrl" example:"https://example.com"`
 }

@@ -211,7 +211,7 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 
 	if request.hasEvidence() {
 		if err := request.validateEvidence(); err != nil {
-			return nil, sdkutil.LoggingErrorMsg(err, "could validate evidence")
+			return nil, sdkutil.LoggingErrorMsg(err, "validating evidence")
 		}
 
 		if err := builder.SetEvidence(request.Evidence); err != nil {
