@@ -204,6 +204,9 @@ func (s Service) Sign(ctx context.Context, keyID string, data any) (*keyaccess.J
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "getting key with keyID<%s>", keyID)
 	}
+	if gotKey.Revoked {
+		return nil, sdkutil.LoggingNewErrorf("cannot use revoked key<%s>", gotKey.ID)
+	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "creating key access for keyID<%s>", keyID)

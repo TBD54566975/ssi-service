@@ -152,6 +152,11 @@ func TestRevokeKey(t *testing.T) {
 	assert.Equal(t, privKey, keyResponse.Key)
 	assert.True(t, keyResponse.Revoked)
 	assert.Equal(t, "2023-06-23T00:00:00Z", keyResponse.RevokedAt)
+
+	// attempt to "Sign()" with the revoked key, ensure it is prohibited
+	_, err = keyStore.Sign(context.Background(), keyID, "sampleDataAsString")
+	assert.Error(t, err)
+	assert.ErrorContains(t, err, "cannot use revoked key")
 }
 
 func createKeyStoreService(t *testing.T) (*Service, error) {
