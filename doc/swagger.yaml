@@ -1053,13 +1053,12 @@ definitions:
           alumniOf: did_for_uni
         type: object
       evidence:
-        additionalProperties:
-          type: string
         description: Optional. Corresponds to `evidence` in https://www.w3.org/TR/vc-data-model-2.0/#evidence
         example:
-          ' {''type''': ' [''DocumentVerification''}]'
-          '[{''id''': ' ''https://example.edu/evidence/f2aeec97-fc0d-42bf-8ca7-0548192d4231''}'
-        type: object
+        - '[{"id":"https://example.edu/evidence/f2aeec97-fc0d-42bf-8ca7-0548192d4231"'
+        - '"type":["DocumentVerification"]}]'
+        items: {}
+        type: array
       expiry:
         description: Optional. Corresponds to `expirationDate` in https://www.w3.org/TR/vc-data-model/#expiration.
         example: "2029-01-01T19:23:24Z"
