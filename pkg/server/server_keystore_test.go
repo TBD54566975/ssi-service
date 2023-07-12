@@ -22,7 +22,7 @@ func TestKeyStoreAPI(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Run("Test Store Key", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				keyStoreRouter, _, _ := testKeyStore(tt, db)
@@ -66,7 +66,7 @@ func TestKeyStoreAPI(t *testing.T) {
 			})
 
 			t.Run("Test Get Key Details", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				keyStoreService, _, _ := testKeyStore(tt, db)

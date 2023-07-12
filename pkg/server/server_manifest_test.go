@@ -37,7 +37,7 @@ func TestManifestAPI(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Run("Test Create Manifest", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				keyStoreService, _ := testKeyStoreService(tt, db)
@@ -110,7 +110,7 @@ func TestManifestAPI(t *testing.T) {
 			})
 
 			t.Run("Test Get Manifest By ID", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				keyStoreService, _ := testKeyStoreService(tt, db)
@@ -180,7 +180,7 @@ func TestManifestAPI(t *testing.T) {
 			})
 
 			t.Run("Test Get Manifests", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				keyStoreService, _ := testKeyStoreService(tt, db)
@@ -268,7 +268,7 @@ func TestManifestAPI(t *testing.T) {
 			})
 
 			t.Run("Test Delete Manifest", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				keyStoreService, _ := testKeyStoreService(tt, db)
@@ -337,7 +337,7 @@ func TestManifestAPI(t *testing.T) {
 			})
 
 			t.Run("Submit Application With Issuance Template", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				keyStoreService, _ := testKeyStoreService(tt, db)
@@ -490,7 +490,7 @@ func TestManifestAPI(t *testing.T) {
 			})
 
 			t.Run("Test Submit Application with multiple outputs and overrides", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				keyStoreService, _ := testKeyStoreService(tt, db)
@@ -655,7 +655,7 @@ func TestManifestAPI(t *testing.T) {
 			})
 
 			t.Run("Test Denied Application", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				keyStoreService, _ := testKeyStoreService(tt, db)
@@ -804,7 +804,7 @@ func TestManifestAPI(t *testing.T) {
 			})
 
 			t.Run("Test Get Application By ID and Get Applications", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				keyStoreService, _ := testKeyStoreService(tt, db)
@@ -989,7 +989,7 @@ func TestManifestAPI(t *testing.T) {
 			})
 
 			t.Run("Test Delete Application", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				keyStoreService, _ := testKeyStoreService(tt, db)

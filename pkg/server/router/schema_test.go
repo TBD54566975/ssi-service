@@ -37,7 +37,7 @@ func TestSchemaRouter(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 
 			t.Run("Schema Service Test", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, db)
 
 				serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
@@ -117,7 +117,7 @@ func TestSchemaSigning(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Run("Unsigned Schema Test", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, db)
 
 				serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
@@ -142,7 +142,7 @@ func TestSchemaSigning(t *testing.T) {
 		})
 
 		t.Run("Signing schema with revoked key test", func(tt *testing.T) {
-			db := test.ServiceStorage(t)
+			db := test.ServiceStorage(tt)
 			assert.NotEmpty(tt, db)
 
 			serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}

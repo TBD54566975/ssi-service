@@ -30,7 +30,7 @@ func TestWebhookRouter(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Run("Webhook Service Test", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				serviceConfig := config.WebhookServiceConfig{WebhookTimeout: "10s"}
