@@ -851,6 +851,30 @@ definitions:
     - urls
     - verb
     type: object
+  github_com_tbd54566975_ssi-service_pkg_service_well-known.VerifyDIDConfigurationRequest:
+    properties:
+      origin:
+        description: |-
+          Represents an origin to fetch the DID Configuration Resource from. Must be serialized as described in https://html.spec.whatwg.org/multipage/browsers.html#origin.
+          The `scheme` MUST be `https`.
+        example: https://example.com
+        type: string
+    required:
+    - origin
+    type: object
+  github_com_tbd54566975_ssi-service_pkg_service_well-known.VerifyDIDConfigurationResponse:
+    properties:
+      didConfiguration:
+        description: The configuration that was fetched from the origin's well known
+          location.
+        type: string
+      reason:
+        description: When Verified == false, the reason why it wasn't verified.
+        type: string
+      verified:
+        description: Whether the DIDConfiguration was verified.
+        type: boolean
+    type: object
   jwx.PublicKeyJWK:
     properties:
       alg:
@@ -1149,6 +1173,59 @@ definitions:
     properties:
       did:
         $ref: '#/definitions/did.Document'
+    type: object
+  pkg_server_router.CreateDIDConfigurationRequest:
+    properties:
+      expirationDate:
+        description: Will be used to set the `DomainLinkageCredential.credentialSubject.expirationDate`.
+          Required.
+        example: "2051-10-05T14:48:00.000Z"
+        type: string
+      issuanceDate:
+        description: |-
+          Will be used to set the `DomainLinkageCredential.credentialSubject.issuanceDate`. If left empty, then the current
+          time will be used.
+          Optional.
+        example: "2021-10-05T14:48:00.000Z"
+        type: string
+      issuerDid:
+        description: |-
+          DID that identifies who the issuer of the credential(s) will be.
+          Required.
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
+        type: string
+      origin:
+        description: |-
+          Serialization of an origin as described in https://html.spec.whatwg.org/multipage/browsers.html#origin. Represents
+          the origin that the IssuerDID controls, which will be included in the `DomainLinkageCredential.credentialSubject.origin`
+          value.
+          Required.
+        example: https://www.tbd.website/
+        type: string
+      verificationMethodId:
+        description: |-
+          The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+          stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+          The private key associated with the verificationMethod's publicKey will be used to sign the domain linkage credential.
+          Required.
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
+        type: string
+    required:
+    - expirationDate
+    - issuerDid
+    - origin
+    - verificationMethodId
+    type: object
+  pkg_server_router.CreateDIDConfigurationResponse:
+    properties:
+      didConfiguration:
+        allOf:
+        - $ref: '#/definitions/pkg_server_router.DIDConfiguration'
+        description: The DID Configuration Resource according to https://identity.foundation/.well-known/resources/did-configuration/#did-configuration-resource
+      wellKnownLocation:
+        description: The location in which the `didConfiguration` value should be
+          hosted.
+        type: string
     type: object
   pkg_server_router.CreateIssuanceTemplateRequest:
     properties:
@@ -1452,6 +1529,16 @@ definitions:
     properties:
       webhook:
         $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_webhook.Webhook'
+    type: object
+  pkg_server_router.DIDConfiguration:
+    properties:
+      '@context': {}
+      linked_dids:
+        items: {}
+        type: array
+    required:
+    - '@context'
+    - linked_dids
     type: object
   pkg_server_router.GetApplicationResponse:
     properties:
@@ -2106,7 +2193,6 @@ definitions:
     - Second
     - Minute
     - Hour
-host: '{{.Server.APIHost}}'
 info:
   contact:
     email: tbd-developer@squareup.com
@@ -2428,6 +2514,68 @@ paths:
       summary: Verify Credential
       tags:
       - CredentialAPI
+  /v1/did-configurations:
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Creates a DID Configuration Resource which conforms to https://identity.foundation/.well-known/resources/did-configuration/#did-configuration-resource
+        The `didConfiguration` can be hosted at the `wellKnownLocation` specified in the response.
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.CreateDIDConfigurationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pkg_server_router.CreateDIDConfigurationResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create DIDConfiguration
+      tags:
+      - DIDConfigurationAPI
+  /v1/did-configurations/verification:
+    put:
+      consumes:
+      - application/json
+      description: Verifies a DID Configuration Resource according to https://identity.foundation/.well-known/resources/did-configuration/#did-configuration-resource-verification
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_well-known.VerifyDIDConfigurationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_well-known.VerifyDIDConfigurationResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Verifies a DID Configuration Resource
+      tags:
+      - DIDConfigurationAPI
   /v1/dids:
     get:
       consumes:
