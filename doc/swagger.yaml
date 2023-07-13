@@ -851,6 +851,30 @@ definitions:
     - urls
     - verb
     type: object
+  github_com_tbd54566975_ssi-service_pkg_service_well-known.VerifyDIDConfigurationRequest:
+    properties:
+      origin:
+        description: |-
+          Represents an origin to fetch the DID Configuration Resource from. Must be serialized as described in https://html.spec.whatwg.org/multipage/browsers.html#origin.
+          The `scheme` MUST be `https`.
+        example: https://example.com
+        type: string
+    required:
+    - origin
+    type: object
+  github_com_tbd54566975_ssi-service_pkg_service_well-known.VerifyDIDConfigurationResponse:
+    properties:
+      didConfiguration:
+        description: The configuration that was fetched from the origin's well known
+          location.
+        type: string
+      reason:
+        description: When Verified == false, the reason why it wasn't verified.
+        type: string
+      verified:
+        description: Whether the DIDConfiguration was verified.
+        type: boolean
+    type: object
   jwx.PublicKeyJWK:
     properties:
       alg:
@@ -2520,6 +2544,36 @@ paths:
           schema:
             type: string
       summary: Create DIDConfiguration
+      tags:
+      - DIDConfigurationAPI
+  /v1/did-configurations/verification:
+    put:
+      consumes:
+      - application/json
+      description: Verifies a DID Configuration Resource according to https://identity.foundation/.well-known/resources/did-configuration/#did-configuration-resource-verification
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_well-known.VerifyDIDConfigurationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_well-known.VerifyDIDConfigurationResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Verifies a DID Configuration Resource
       tags:
       - DIDConfigurationAPI
   /v1/dids:

@@ -61,6 +61,20 @@ func (v Validator) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT)
 	return v.staticValidationChecks(ctx, *cred)
 }
 
+func (v Validator) Verify(ctx context.Context, credential Container) error {
+	if credential.HasJWTCredential() {
+		err := v.VerifyJWTCredential(ctx, *credential.CredentialJWT)
+		if err != nil {
+			return err
+		}
+	} else {
+		if err := v.VerifyDataIntegrityCredential(ctx, *credential.Credential); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // VerifyDataIntegrityCredential first checks the signature on the given data integrity credential. Next, it runs
 // a set of static verification checks on the credential as per the credential service's configuration.
 func (v Validator) VerifyDataIntegrityCredential(ctx context.Context, credential credsdk.VerifiableCredential) error {

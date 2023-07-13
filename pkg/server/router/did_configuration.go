@@ -11,7 +11,7 @@ import (
 )
 
 type DIDConfigurationRouter struct {
-	service *wellknown.DIDConfigurationService
+	Service *wellknown.DIDConfigurationService
 }
 
 type CreateDIDConfigurationRequest struct {
@@ -54,6 +54,7 @@ type DIDConfiguration struct {
 	Context    any   `json:"@context" validate:"required"`
 	LinkedDIDs []any `json:"linked_dids" validate:"required"`
 }
+
 type CreateDIDConfigurationResponse struct {
 	// The location in which the `didConfiguration` value should be hosted.
 	WellKnownLocation string `json:"wellKnownLocation"`
@@ -90,7 +91,7 @@ func (wr DIDConfigurationRouter) CreateDIDConfiguration(c *gin.Context) {
 
 	req := request.toServiceRequest()
 
-	createDIDConfigurationResponse, err := wr.service.CreateDIDConfiguration(c, req)
+	createDIDConfigurationResponse, err := wr.Service.CreateDIDConfiguration(c, req)
 	if err != nil {
 		errMsg := "could not create did configuration"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
@@ -108,6 +109,39 @@ func (wr DIDConfigurationRouter) CreateDIDConfiguration(c *gin.Context) {
 	return
 }
 
+// VerifyDIDConfiguration godoc
+//
+//	@Summary		Verifies a DID Configuration Resource
+//	@Description	Verifies a DID Configuration Resource according to https://identity.foundation/.well-known/resources/did-configuration/#did-configuration-resource-verification
+//	@Tags			DIDConfigurationAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		wellknown.VerifyDIDConfigurationRequest	true	"request body"
+//	@Success		201		{object}	wellknown.VerifyDIDConfigurationResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/did-configurations/verification [put]
+func (wr DIDConfigurationRouter) VerifyDIDConfiguration(c *gin.Context) {
+	var request wellknown.VerifyDIDConfigurationRequest
+	invalidRequest := "invalid verify did configuration resource request"
+	if err := framework.Decode(c.Request, &request); err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, invalidRequest, http.StatusBadRequest)
+		return
+	}
+
+	if err := framework.ValidateRequest(request); err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, invalidRequest, http.StatusBadRequest)
+		return
+	}
+
+	response, err := wr.Service.VerifyDIDConfiguration(c, &request)
+	if err != nil {
+		errMsg := "could not verify did configuration"
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+	framework.Respond(c, response, http.StatusCreated)
+}
 func NewDIDConfigurationsRouter(svc svcframework.Service) (*DIDConfigurationRouter, error) {
-	return &DIDConfigurationRouter{service: svc.(*wellknown.DIDConfigurationService)}, nil
+	return &DIDConfigurationRouter{Service: svc.(*wellknown.DIDConfigurationService)}, nil
 }
