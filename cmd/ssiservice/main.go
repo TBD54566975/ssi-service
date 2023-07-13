@@ -35,7 +35,6 @@ import (
 //	@contact.email	tbd-developer@squareup.com
 //	@license.name	Apache 2.0
 //	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
-//	@host			{{.Server.APIHost}}
 //	@version		{{.SVN}}
 func main() {
 	logrus.Info("Starting up...")

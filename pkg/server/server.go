@@ -28,27 +28,28 @@ import (
 // gin-swagger middleware
 
 const (
-	HealthPrefix           = "/health"
-	ReadinessPrefix        = "/readiness"
-	SwaggerPrefix          = "/swagger/*any"
-	V1Prefix               = "/v1"
-	OperationPrefix        = "/operations"
-	DIDsPrefix             = "/dids"
-	ResolverPrefix         = "/resolver"
-	SchemasPrefix          = "/schemas"
-	CredentialsPrefix      = "/credentials"
-	StatusPrefix           = "/status"
-	PresentationsPrefix    = "/presentations"
-	DefinitionsPrefix      = "/definitions"
-	SubmissionsPrefix      = "/submissions"
-	IssuanceTemplatePrefix = "/issuancetemplates"
-	RequestsPrefix         = "/requests"
-	ManifestsPrefix        = "/manifests"
-	ApplicationsPrefix     = "/applications"
-	ResponsesPrefix        = "/responses"
-	KeyStorePrefix         = "/keys"
-	VerificationPath       = "/verification"
-	WebhookPrefix          = "/webhooks"
+	HealthPrefix            = "/health"
+	ReadinessPrefix         = "/readiness"
+	SwaggerPrefix           = "/swagger/*any"
+	V1Prefix                = "/v1"
+	OperationPrefix         = "/operations"
+	DIDsPrefix              = "/dids"
+	ResolverPrefix          = "/resolver"
+	SchemasPrefix           = "/schemas"
+	CredentialsPrefix       = "/credentials"
+	StatusPrefix            = "/status"
+	PresentationsPrefix     = "/presentations"
+	DefinitionsPrefix       = "/definitions"
+	SubmissionsPrefix       = "/submissions"
+	IssuanceTemplatePrefix  = "/issuancetemplates"
+	RequestsPrefix          = "/requests"
+	ManifestsPrefix         = "/manifests"
+	ApplicationsPrefix      = "/applications"
+	ResponsesPrefix         = "/responses"
+	KeyStorePrefix          = "/keys"
+	VerificationPath        = "/verification"
+	WebhookPrefix           = "/webhooks"
+	DIDConfigurationsPrefix = "/did-configurations"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -117,6 +118,9 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	}
 	if err = WebhookAPI(v1, ssi.Webhook); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Webhook API")
+	}
+	if err = DIDConfigurationAPI(v1, ssi.DIDConfiguration); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate DIDConfiguration API")
 	}
 
 	return &SSIServer{
@@ -358,4 +362,16 @@ func WebhookAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 	webhookAPI.GET("nouns", webhookRouter.GetSupportedNouns)
 	webhookAPI.GET("verbs", webhookRouter.GetSupportedVerbs)
 	return
+}
+
+func DIDConfigurationAPI(rg *gin.RouterGroup, service svcframework.Service) error {
+	webhookRouter, err := router.NewDIDConfigurationsRouter(service)
+	if err != nil {
+		return sdkutil.LoggingErrorMsg(err, "creating webhook router")
+	}
+
+	webhookAPI := rg.Group(DIDConfigurationsPrefix)
+	webhookAPI.PUT("", webhookRouter.CreateDIDConfiguration)
+
+	return nil
 }

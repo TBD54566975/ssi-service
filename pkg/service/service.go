@@ -15,22 +15,24 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
+	wellknown "github.com/tbd54566975/ssi-service/pkg/service/well-known"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 // SSIService represents all services and their dependencies independent of transport
 type SSIService struct {
-	KeyStore     *keystore.Service
-	DID          *did.Service
-	Schema       *schema.Service
-	Issuance     *issuance.Service
-	Credential   *credential.Service
-	Manifest     *manifest.Service
-	Presentation *presentation.Service
-	Operation    *operation.Service
-	Webhook      *webhook.Service
-	storage      storage.ServiceStorage
-	BatchDID     *did.BatchService
+	KeyStore         *keystore.Service
+	DID              *did.Service
+	Schema           *schema.Service
+	Issuance         *issuance.Service
+	Credential       *credential.Service
+	Manifest         *manifest.Service
+	Presentation     *presentation.Service
+	Operation        *operation.Service
+	Webhook          *webhook.Service
+	storage          storage.ServiceStorage
+	BatchDID         *did.BatchService
+	DIDConfiguration *wellknown.DIDConfigurationService
 }
 
 // InstantiateSSIService creates a new instance of the SSIS which instantiates all services and their
@@ -143,18 +145,20 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the operation service")
 	}
 
+	didConfigurationService := wellknown.NewDIDConfigurationService(keyStoreService)
 	return &SSIService{
-		KeyStore:     keyStoreService,
-		DID:          didService,
-		BatchDID:     batchDIDService,
-		Schema:       schemaService,
-		Issuance:     issuanceService,
-		Credential:   credentialService,
-		Manifest:     manifestService,
-		Presentation: presentationService,
-		Operation:    operationService,
-		Webhook:      webhookService,
-		storage:      storageProvider,
+		KeyStore:         keyStoreService,
+		DID:              didService,
+		BatchDID:         batchDIDService,
+		Schema:           schemaService,
+		Issuance:         issuanceService,
+		Credential:       credentialService,
+		Manifest:         manifestService,
+		Presentation:     presentationService,
+		Operation:        operationService,
+		Webhook:          webhookService,
+		DIDConfiguration: didConfigurationService,
+		storage:          storageProvider,
 	}, nil
 }
 
