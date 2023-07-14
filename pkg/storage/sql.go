@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 
+	// We include the postresql driver in our implementation, so users can pick "postgres" via configuration.
 	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
