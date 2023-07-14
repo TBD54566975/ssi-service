@@ -31,7 +31,7 @@ func TestDIDAPI(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 
 			t.Run("Test Get DID Methods", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStoreService, _ := testKeyStore(tt, db)
@@ -56,7 +56,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Create DID By Method: Key", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStoreService, _ := testKeyStore(tt, db)
@@ -101,7 +101,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Create DID By Method: Web", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStoreService, _ := testKeyStore(tt, db)
@@ -174,7 +174,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Create DID By Method: ION", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStoreService, _ := testKeyStore(tt, db)
@@ -252,7 +252,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Create Duplicate DID:Webs", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStoreService, _ := testKeyStore(tt, db)
@@ -312,7 +312,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Get DID By Method", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStore, _ := testKeyStore(tt, db)
@@ -384,7 +384,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Soft Delete DID By Method", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStore, _ := testKeyStore(tt, db)
@@ -509,7 +509,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("List DIDs made up token fails", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 				_, keyStore, _ := testKeyStore(tt, db)
 				didService, _ := testDIDRouter(tt, db, keyStore, []string{"key", "web"}, nil)
@@ -528,7 +528,7 @@ func TestDIDAPI(t *testing.T) {
 
 			t.Run("List DIDs pagination", func(tt *testing.T) {
 				if !strings.Contains(test.Name, "Redis") {
-					db := test.ServiceStorage(t)
+					db := test.ServiceStorage(tt)
 					require.NotEmpty(tt, db)
 					_, keyStore, _ := testKeyStore(tt, db)
 					didRouter, _ := testDIDRouter(tt, db, keyStore, []string{"key", "web"}, nil)
@@ -569,7 +569,7 @@ func TestDIDAPI(t *testing.T) {
 
 			t.Run("List DIDs pagination change query between calls returns error", func(tt *testing.T) {
 				if !strings.Contains(test.Name, "Redis") {
-					db := test.ServiceStorage(t)
+					db := test.ServiceStorage(tt)
 					require.NotEmpty(tt, db)
 					_, keyStore, _ := testKeyStore(tt, db)
 					didRouter, _ := testDIDRouter(tt, db, keyStore, []string{"key", "web"}, nil)
@@ -605,7 +605,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Get DIDs By Method", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 				_, keyStore, _ := testKeyStore(tt, db)
 				didService, _ := testDIDRouter(tt, db, keyStore, []string{"key", "web"}, nil)
@@ -690,7 +690,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Resolve DIDs", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStore, _ := testKeyStore(tt, db)

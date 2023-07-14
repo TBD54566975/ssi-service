@@ -46,7 +46,7 @@ func TestManifestRouter(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Run("Manifest Service Test", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, db)
 
 				keyStoreService := testKeyStoreService(tt, db)
@@ -93,10 +93,10 @@ func TestManifestRouter(t *testing.T) {
 					createManifestRequest.PresentationDefinitionRef = &model.PresentationDefinitionRef{
 						ID: &resp.PresentationDefinition.ID,
 					}
-					manifest, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
+					createdManifest, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
 
 					assert.NoError(ttt, err)
-					assert.Equal(ttt, resp.PresentationDefinition, *manifest.Manifest.PresentationDefinition)
+					assert.Equal(ttt, resp.PresentationDefinition, *createdManifest.Manifest.PresentationDefinition)
 				})
 
 				tt.Run("multiple behaviors", func(ttt *testing.T) {

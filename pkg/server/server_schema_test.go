@@ -24,7 +24,7 @@ func TestSchemaAPI(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Run("Test Create JsonSchema2023 Schema", func(tt *testing.T) {
-				bolt := test.ServiceStorage(t)
+				bolt := test.ServiceStorage(tt)
 				require.NotEmpty(tt, bolt)
 
 				keyStoreService, _ := testKeyStoreService(tt, bolt)
@@ -66,7 +66,7 @@ func TestSchemaAPI(t *testing.T) {
 			})
 
 			t.Run("Test Create CredentialSchema2023 Schema", func(tt *testing.T) {
-				bolt := test.ServiceStorage(t)
+				bolt := test.ServiceStorage(tt)
 				require.NotEmpty(tt, bolt)
 
 				keyStoreService, _ := testKeyStoreService(tt, bolt)
@@ -143,7 +143,7 @@ func TestSchemaAPI(t *testing.T) {
 			})
 
 			t.Run("Test Get Schema and Get Schemas", func(tt *testing.T) {
-				bolt := test.ServiceStorage(t)
+				bolt := test.ServiceStorage(tt)
 				require.NotEmpty(tt, bolt)
 
 				keyStoreService, _ := testKeyStoreService(tt, bolt)
@@ -235,7 +235,7 @@ func TestSchemaAPI(t *testing.T) {
 			})
 
 			t.Run("Test Delete Schema", func(tt *testing.T) {
-				bolt := test.ServiceStorage(t)
+				bolt := test.ServiceStorage(tt)
 				require.NotEmpty(tt, bolt)
 
 				keyStoreService, _ := testKeyStoreService(tt, bolt)

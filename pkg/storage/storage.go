@@ -23,8 +23,9 @@ type Tx interface {
 }
 
 const (
-	Bolt  Type = "bolt"
-	Redis Type = "redis"
+	Bolt        Type = "bolt"
+	DatabaseSQL Type = "database_sql"
+	Redis       Type = "redis"
 
 	// Common options
 

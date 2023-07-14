@@ -10,6 +10,7 @@ require (
 	github.com/benbjohnson/clock v1.3.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.2
 	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/fergusstrange/embedded-postgres v1.23.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-playground/locales v0.14.1
@@ -117,6 +118,7 @@ require (
 	github.com/lestrrat-go/httprc v1.0.4 // indirect
 	github.com/lestrrat-go/iter v1.0.2 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
@@ -155,6 +157,7 @@ require (
 	github.com/swaggo/swag v1.16.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
+	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yuin/gopher-lua v1.1.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect
