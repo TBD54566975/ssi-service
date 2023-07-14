@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 
+	_ "github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
