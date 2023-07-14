@@ -35,6 +35,9 @@ func (s Service) signCredentialResponse(ctx context.Context, keyStoreID string, 
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing response with key<%s>", keyStoreID)
 	}
+	if gotKey.Revoked {
+		return nil, sdkutil.LoggingNewErrorf("cannot use revoked key<%s>", gotKey.ID)
+	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "creating key access for signing response with key<%s>", gotKey.ID)

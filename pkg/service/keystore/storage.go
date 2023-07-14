@@ -55,9 +55,15 @@ type ServiceKey struct {
 
 const (
 	namespace             = "keystore"
-	publicNamespaceSuffix = ":public-keys"
+	serviceInternalSuffix = "service-internal"
+	publicNamespaceSuffix = "public-keys"
 	skKey                 = "ssi-service-key"
 	keyNotFoundErrMsg     = "key not found"
+)
+
+var (
+	serviceNamespace   = storage.Join(namespace, serviceInternalSuffix)
+	publicKeyNamespace = storage.Join(namespace, publicNamespaceSuffix)
 )
 
 type Storage struct {
@@ -123,14 +129,13 @@ func EnsureServiceKeyExists(config config.KeyStoreServiceConfig, provider storag
 		// Create the key only if it doesn't already exist.
 		gotKey, err := getServiceKey(ctx, provider)
 		if gotKey == nil && err.Error() == keyNotFoundErrMsg {
-			serviceKey, serviceKeySalt, err := GenerateServiceKey(config.MasterKeyPassword)
+			serviceKey, err := GenerateServiceKey()
 			if err != nil {
 				return nil, errors.Wrap(err, "generating service key")
 			}
 
 			key := ServiceKey{
-				Base58Key:  serviceKey,
-				Base58Salt: serviceKeySalt,
+				Base58Key: serviceKey,
 			}
 			if err := storeServiceKey(ctx, tx, key); err != nil {
 				return nil, err
@@ -193,14 +198,14 @@ func storeServiceKey(ctx context.Context, tx storage.Tx, key ServiceKey) error {
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could not marshal service key")
 	}
-	if err = tx.Write(ctx, namespace, skKey, keyBytes); err != nil {
+	if err = tx.Write(ctx, serviceNamespace, skKey, keyBytes); err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could store marshal service key")
 	}
 	return nil
 }
 
 func getServiceKey(ctx context.Context, db storage.ServiceStorage) ([]byte, error) {
-	storedKeyBytes, err := db.Read(ctx, namespace, skKey)
+	storedKeyBytes, err := db.Read(ctx, serviceNamespace, skKey)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not get service key")
 	}
@@ -303,7 +308,7 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 		return sdkutil.LoggingErrorMsg(err, "marshalling JWK")
 	}
 
-	if err := kss.tx.Write(ctx, namespace+publicNamespaceSuffix, id, publicBytes); err != nil {
+	if err := kss.tx.Write(ctx, publicKeyNamespace, id, publicBytes); err != nil {
 		return sdkutil.LoggingErrorMsgf(err, "writing public key")
 	}
 
@@ -359,7 +364,7 @@ func (kss *Storage) GetKeyDetails(ctx context.Context, id string) (*KeyDetails, 
 		return nil, sdkutil.LoggingErrorMsgf(err, "reading details for private key %q", id)
 	}
 
-	storedPublicKeyBytes, err := kss.db.Read(ctx, namespace+publicNamespaceSuffix, id)
+	storedPublicKeyBytes, err := kss.db.Read(ctx, publicKeyNamespace, id)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "reading details for public key %q", id)
 	}

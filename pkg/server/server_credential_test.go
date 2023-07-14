@@ -214,8 +214,6 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NoError(ttt, err)
 
 				assert.NotEmpty(ttt, resp.CredentialJWT)
-				println("HEREHERE")
-				println(*resp.CredentialJWT)
 				assert.NoError(ttt, err)
 				assert.Equal(ttt, resp.Credential.Issuer, issuerDID.DID.ID)
 				after, found := strings.CutPrefix(resp.Credential.ID, "https://ssi-service.com/v1/credentials/")

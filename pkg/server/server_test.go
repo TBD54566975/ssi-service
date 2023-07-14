@@ -188,6 +188,7 @@ func getValidApplicationRequest(manifestID, presDefID, submissionDescriptorID st
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: manifestsdk.SpecVersion,
+		Applicant:   "did:example:123",
 		ManifestID:  manifestID,
 		Format: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
@@ -226,7 +227,6 @@ func testKeyStore(t *testing.T, bolt storage.ServiceStorage) (*router.KeyStoreRo
 func testKeyStoreService(t *testing.T, db storage.ServiceStorage) (*keystore.Service, keystore.ServiceFactory) {
 	serviceConfig := config.KeyStoreServiceConfig{
 		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-keystore"},
-		MasterKeyPassword: "test-password",
 	}
 
 	// create a keystore service

@@ -8,6 +8,7 @@
     }
   },
   "manifest_id":"{{.ManifestID}}",
+  "applicant": "did:example:123",
   "presentation_submission":{
     "id":"psid",
     "definition_id":"{{.DefinitionID}}",

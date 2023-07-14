@@ -47,6 +47,25 @@ func init() {
 	})
 }
 
+type didConfigurationResourceParams struct {
+	IssuerDID            string
+	VerificationMethodID string
+}
+
+func CreateDIDConfigurationResource(params didConfigurationResourceParams) (string, error) {
+	logrus.Println("\n\nCreate did configuration resource")
+	didConfiguration, err := resolveTemplate(params, "did-configuration-input.json")
+	if err != nil {
+		return "", err
+	}
+	output, err := put(endpoint+version+"did-configurations", didConfiguration)
+	if err != nil {
+		return "", errors.Wrapf(err, "did configuration endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
 func CreateDIDKey() (string, error) {
 	logrus.Println("\n\nCreate a did for the issuer:")
 	output, err := put(endpoint+version+"dids/key", getJSONFromFile("did-input.json"))
@@ -322,6 +341,26 @@ func CreateCredentialApplicationJWT(credApplication credApplicationParams, crede
 	}
 
 	return signed.String(), nil
+}
+
+type presentationRequestParams struct {
+	DefinitionID         string
+	IssuerID             string
+	VerificationMethodID string
+}
+
+func CreatePresentationRequest(params presentationRequestParams) (string, error) {
+	logrus.Println("\n\nCreate our Presentation Request:")
+	pRequestJSON, err := resolveTemplate(params, "presentation-request-input.json")
+	if err != nil {
+		return "", err
+	}
+	output, err := put(endpoint+version+"presentations/requests", pRequestJSON)
+	if err != nil {
+		return "", errors.Wrapf(err, "presentation request endpoint with output: %s", output)
+	}
+
+	return output, nil
 }
 
 type definitionParams struct {

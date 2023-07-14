@@ -168,23 +168,15 @@ func (s Service) GetKeyDetails(ctx context.Context, request GetKeyDetailsRequest
 	}, nil
 }
 
-// GenerateServiceKey using argon2 for key derivation generate a service key and corresponding salt,
-// base58 encoding both values.
-func GenerateServiceKey(skPassword string) (key, salt string, err error) {
-	saltBytes, err := util.GenerateSalt(util.Argon2SaltSize)
+// GenerateServiceKey creates a random key that's 32 bytes encoded using base58.
+func GenerateServiceKey() (key string, err error) {
+	keyBytes, err := util.GenerateSalt(chacha20poly1305.KeySize)
 	if err != nil {
-		err = errors.Wrap(err, "generating salt for service key")
-		return "", "", sdkutil.LoggingError(err)
-	}
-
-	keyBytes, err := util.Argon2KeyGen(skPassword, saltBytes, chacha20poly1305.KeySize)
-	if err != nil {
-		err = errors.Wrap(err, "generating key for service key")
-		return "", "", sdkutil.LoggingError(err)
+		err = errors.Wrap(err, "generating bytes for service key")
+		return "", sdkutil.LoggingError(err)
 	}
 
 	key = base58.Encode(keyBytes)
-	salt = base58.Encode(saltBytes)
 	return
 }
 
@@ -211,6 +203,9 @@ func (s Service) Sign(ctx context.Context, keyID string, data any) (*keyaccess.J
 	gotKey, err := s.GetKey(ctx, GetKeyRequest{ID: keyID})
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "getting key with keyID<%s>", keyID)
+	}
+	if gotKey.Revoked {
+		return nil, sdkutil.LoggingNewErrorf("cannot use revoked key<%s>", gotKey.ID)
 	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {

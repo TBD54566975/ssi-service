@@ -73,5 +73,5 @@ func (whs *Storage) DeleteWebhook(ctx context.Context, noun, verb string) error 
 }
 
 func getWebhookKey(noun, verb string) string {
-	return noun + ":" + verb
+	return storage.Join(noun, verb)
 }

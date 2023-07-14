@@ -29,6 +29,10 @@ type Request struct {
 	// stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
 	// The private key associated with the verificationMethod's publicKey will be used to sign the JWT.
 	VerificationMethodID string `json:"verificationMethodId" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
+
+	// The URL that the presenter should be submitting the presentation submission to.
+	// Optional.
+	CallbackURL string `json:"callbackUrl,omitempty" example:"https://example.com"`
 }
 
 // ToServiceModel converts a storage model to a service model.
@@ -38,6 +42,7 @@ func ToServiceModel(stored *StoredRequest) (*Request, error) {
 		Audience:             stored.Audience,
 		IssuerDID:            stored.IssuerDID,
 		VerificationMethodID: stored.VerificationMethodID,
+		CallbackURL:          stored.CallbackURL,
 	}
 	if stored.Expiration != "" {
 		expiration, err := time.Parse(time.RFC3339, stored.Expiration)
@@ -64,6 +69,9 @@ func CreateStoredRequest(ctx context.Context, keyStore *keystore.Service, claimN
 		builder.Expiration(*request.Expiration)
 		expirationString = request.Expiration.Format(time.RFC3339)
 	}
+	if request.CallbackURL != "" {
+		builder.Claim("callbackUrl", request.CallbackURL)
+	}
 	token, err := builder.Build()
 	if err != nil {
 		return nil, errors.Wrap(err, "building jwt")
@@ -83,6 +91,7 @@ func CreateStoredRequest(ctx context.Context, keyStore *keystore.Service, claimN
 		VerificationMethodID: request.VerificationMethodID,
 		ReferenceID:          id,
 		JWT:                  signedToken.String(),
+		CallbackURL:          request.CallbackURL,
 	}
 	return stored, nil
 }
