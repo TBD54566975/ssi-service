@@ -44,7 +44,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Credential Service Test", func(tt *testing.T) {
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, s)
 
 				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
@@ -201,7 +201,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Credential Service Test Revoked Key", func(tt *testing.T) {
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, s)
 
 				// Initialize services
@@ -264,7 +264,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Credential Status List Test", func(tt *testing.T) {
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, s)
 
 				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "v1/credentials"}}
@@ -373,7 +373,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Credential Status List Test No Schemas", func(tt *testing.T) {
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, s)
 
 				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "/v1/credentials"}}
@@ -477,7 +477,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Credential Status List Test Update Revoked Status", func(tt *testing.T) {
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, s)
 
 				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234/v1/credentials"}}
@@ -597,7 +597,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Credential Status List Test Update Suspended Status", func(tt *testing.T) {
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, s)
 
 				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234/v1/credentials"}}
@@ -717,7 +717,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Create Multiple Suspendable Credential Different IssuerDID SchemaID StatusPurpose Triples", func(tt *testing.T) {
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, s)
 
 				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234/v1/credentials"}}
@@ -801,7 +801,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Create Suspendable Credential", func(tt *testing.T) {
-				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
+				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(tt))
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
@@ -857,7 +857,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Update Suspendable Credential To Suspended", func(tt *testing.T) {
-				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
+				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(tt))
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
@@ -935,7 +935,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Update Suspendable Credential To Suspended then Unsuspended", func(tt *testing.T) {
-				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
+				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(tt))
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
@@ -1018,7 +1018,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Create Suspendable and Revocable Credential Should Be Error", func(tt *testing.T) {
-				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
+				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(tt))
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
@@ -1040,7 +1040,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Update Suspendable and Revocable Credential Should Be Error", func(tt *testing.T) {
-				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
+				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(tt))
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
@@ -1065,7 +1065,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Update Suspended On Revoked Credential Should Be Error", func(tt *testing.T) {
-				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
+				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(tt))
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
@@ -1090,7 +1090,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Create Credential With Invalid Evidence", func(tt *testing.T) {
-				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
+				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(tt))
 				subject := "did:test:345"
 
 				_, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
@@ -1109,7 +1109,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Create Credential With Invalid Evidence No Id", func(tt *testing.T) {
-				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
+				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(tt))
 				subject := "did:test:345"
 
 				evidenceMap := map[string]any{
@@ -1137,7 +1137,7 @@ func TestCredentialRouter(t *testing.T) {
 			})
 
 			t.Run("Create Credential With Evidence", func(tt *testing.T) {
-				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(t))
+				issuer, verificationMethodID, schemaID, credService := createCredServicePrereqs(tt, test.ServiceStorage(tt))
 				subject := "did:test:345"
 
 				createdCred, err := credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{

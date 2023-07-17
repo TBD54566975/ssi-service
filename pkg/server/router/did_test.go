@@ -36,7 +36,7 @@ func TestDIDRouter(t *testing.T) {
 			// TODO: Fix pagesize issue on redis - https://github.com/TBD54566975/ssi-service/issues/538
 			if !strings.Contains(test.Name, "Redis") {
 				t.Run("List DIDs supports paging", func(tt *testing.T) {
-					db := test.ServiceStorage(t)
+					db := test.ServiceStorage(tt)
 					assert.NotEmpty(tt, db)
 					keyStoreService := testKeyStoreService(tt, db)
 					methods := []string{didsdk.KeyMethod.String()}
@@ -77,7 +77,7 @@ func TestDIDRouter(t *testing.T) {
 			}
 
 			t.Run("DID Service Test", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, db)
 
 				keyStoreService := testKeyStoreService(tt, db)
@@ -164,7 +164,7 @@ func TestDIDRouter(t *testing.T) {
 			})
 
 			t.Run("DID Web Service Test", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, db)
 
 				keyStoreService := testKeyStoreService(tt, db)

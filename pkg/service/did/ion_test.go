@@ -32,7 +32,7 @@ func TestIONHandler(t *testing.T) {
 				assert.Empty(tt, handler)
 				assert.Contains(tt, err.Error(), "baseURL cannot be empty")
 
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
@@ -60,7 +60,7 @@ func TestIONHandler(t *testing.T) {
 
 			t.Run("Create DID", func(tt *testing.T) {
 				// create a handler
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
@@ -132,7 +132,7 @@ func TestIONHandler(t *testing.T) {
 				defer gock.Off()
 
 				// create a handler
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
@@ -159,7 +159,7 @@ func TestIONHandler(t *testing.T) {
 
 			t.Run("Get DID from storage", func(tt *testing.T) {
 				// create a handler
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
@@ -198,7 +198,7 @@ func TestIONHandler(t *testing.T) {
 
 			t.Run("Get DIDs from storage", func(tt *testing.T) {
 				// create a handler
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
@@ -256,7 +256,7 @@ func TestIONHandler(t *testing.T) {
 
 			t.Run("Get DID from resolver", func(tt *testing.T) {
 				// create a handler
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				keystoreService := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
