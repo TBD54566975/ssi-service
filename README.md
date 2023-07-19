@@ -26,7 +26,7 @@ Decentralized Web Platform architecture which you can learn more about in our
 
 ## Use Cases (more to come!)
 ### Business: Issuing Verifiable Credentials <br />
-[Follow Tutorial](https://developer.tbd.website/docs/tutorials/issue-verifiable-credential-manually)
+[Follow Tutorial](https://developer.tbd.website/blog/issue-verifiable-credential-manually)
 
 Steps to issue an Employment Status Credential:
 1. Spin up and host the SSI-Service
