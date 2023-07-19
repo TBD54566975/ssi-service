@@ -9,6 +9,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"go.einride.tech/aip/filtering"
 
 	opstorage "github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
@@ -61,10 +62,11 @@ func (ps *Storage) UpdateSubmission(ctx context.Context, id string, approved boo
 	return s, op, nil
 }
 
-func (ps *Storage) ListSubmissions(ctx context.Context, filter filtering.Filter) ([]prestorage.StoredSubmission, error) {
-	allData, err := ps.db.ReadAll(ctx, opsubmission.Namespace)
+func (ps *Storage) ListSubmissions(ctx context.Context, filter filtering.Filter, page common.Page) (*prestorage.StoredSubmissions, error) {
+	token, size := page.ToStorageArgs()
+	allData, nextPageToken, err := ps.db.ReadPage(ctx, opsubmission.Namespace, token, size)
 	if err != nil {
-		return nil, errors.Wrap(err, "reading all data")
+		return nil, errors.Wrap(err, "reading page")
 	}
 
 	shouldInclude, err := storage.NewIncludeFunc(filter)
@@ -87,7 +89,10 @@ func (ps *Storage) ListSubmissions(ctx context.Context, filter filtering.Filter)
 			storedSubmissions = append(storedSubmissions, ss)
 		}
 	}
-	return storedSubmissions, nil
+	return &prestorage.StoredSubmissions{
+		Submissions:   storedSubmissions,
+		NextPageToken: nextPageToken,
+	}, nil
 }
 
 func NewPresentationStorage(db storage.ServiceStorage) (prestorage.Storage, error) {

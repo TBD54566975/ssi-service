@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/credential/parsing"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 
@@ -14,19 +15,21 @@ import (
 // Container acts as an abstraction over both possible credential representations
 // JWT representations are parsed upon container creation, while the original JWT is maintained
 type Container struct {
-	// Credential ID. This is the same value as the id within the secured credential. It is typically a URL that can be
-	// dereferenced. For example, `https://ssi-service.com/v1/credentials/48958871-6a6d-4a25-889f-88c9c6835780`.
+	// UUID assigned by the ssi-service. For example, 48958871-6a6d-4a25-889f-88c9c6835780. The `credential.id`
+	// value will be a URL that can be dereferenced, which includes this ID.
 	ID string `json:"id,omitempty"`
 
-	// The KID of the private key used to sign `credentialJwt`.
-	IssuerKID string `json:"issuerKid,omitempty"`
+	// Fully qualified verification method ID that can be used to verify the credential. For example
+	// `did:ion:EiDpQBo_nEfuLVeppgmPVQNEhtrnZLWFsB9ziZUuaKCJ3Q#83526c36-136c-423b-a57a-f190b83ae531`.
+	FullyQualifiedVerificationMethodID string `json:"fullyQualifiedVerificationMethodId,omitempty"`
 
 	// Verifiable Credential in the `application/vc+ld+json` format. The credential is secured with an external proof
 	// using JWS. In other words, the `proof` field is not present. See `credentialJwt` for the secured Verifiable
 	// Credential.
 	Credential *credential.VerifiableCredential `json:"credential,omitempty"`
 
-	// JWT representation of `credential`, secured with an external proof signed by `issuerKid`.
+	// JWT representation of `credential`, secured with an external proof. Verification can be done according to
+	// `fullyQualifiedVerificationMethodId`.
 	CredentialJWT *keyaccess.JWT `json:"credentialJwt,omitempty"`
 
 	// Whether this credential is currently revoked.
@@ -41,7 +44,7 @@ func (c Container) JWTString() string {
 }
 
 func (c Container) IsValid() bool {
-	return c.ID != "" && (c.HasDataIntegrityCredential() || c.HasJWTCredential())
+	return c.Credential != nil && c.Credential.ID != "" && (c.HasDataIntegrityCredential() || c.HasJWTCredential())
 }
 
 func (c Container) HasSignedCredential() bool {
@@ -58,12 +61,11 @@ func (c Container) HasJWTCredential() bool {
 
 // NewCredentialContainerFromJWT attempts to parse a VC-JWT credential from a string into a Container
 func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
-	_, _, cred, err := credential.ToCredential(credentialJWT)
+	_, _, cred, err := parsing.ToCredential(credentialJWT)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse credential from JWT")
 	}
 	return &Container{
-		ID:            cred.ID,
 		Credential:    cred,
 		CredentialJWT: keyaccess.JWTPtr(credentialJWT),
 	}, nil
@@ -72,12 +74,11 @@ func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
 // NewCredentialContainerFromMap attempts to parse a data integrity credential from a piece of JSON,
 // which is represented as a map in go, into a Container
 func NewCredentialContainerFromMap(credMap map[string]any) (*Container, error) {
-	_, _, cred, err := credential.ToCredential(credMap)
+	_, _, cred, err := parsing.ToCredential(credMap)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse credential from map")
 	}
 	container := Container{
-		ID:         cred.ID,
 		Credential: cred,
 	}
 	if container.HasDataIntegrityCredential() {

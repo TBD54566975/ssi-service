@@ -4,12 +4,13 @@ go 1.20
 
 require (
 	github.com/BurntSushi/toml v1.3.2
-	github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230601154259-07707db2c404
-	github.com/alicebob/miniredis/v2 v2.30.3
+	github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230711190054-bce640c9bf25
+	github.com/alicebob/miniredis/v2 v2.30.4
 	github.com/ardanlabs/conf v1.5.0
 	github.com/benbjohnson/clock v1.3.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.2
 	github.com/cenkalti/backoff/v4 v4.2.1
+	github.com/fergusstrange/embedded-postgres v1.23.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-playground/locales v0.14.1
@@ -20,8 +21,9 @@ require (
 	github.com/google/tink/go v1.7.0
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.5.1
-	github.com/lestrrat-go/jwx v1.2.25
-	github.com/lestrrat-go/jwx/v2 v2.0.9
+	github.com/lestrrat-go/jwx v1.2.26
+	github.com/lestrrat-go/jwx/v2 v2.0.11
+	github.com/lib/pq v1.10.9
 	github.com/magefile/mage v1.15.0
 	github.com/mr-tron/base58 v1.2.0
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
@@ -33,7 +35,6 @@ require (
 	github.com/stretchr/testify v1.8.4
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
-	github.com/swaggo/swag/v2 v2.0.0-rc3
 	go.einride.tech/aip v0.60.0
 	go.etcd.io/bbolt v1.3.7
 	go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin v0.42.0
@@ -42,9 +43,9 @@ require (
 	go.opentelemetry.io/otel/exporters/jaeger v1.16.0
 	go.opentelemetry.io/otel/sdk v1.16.0
 	go.opentelemetry.io/otel/trace v1.16.0
-	golang.org/x/crypto v0.9.0
-	golang.org/x/term v0.8.0
-	google.golang.org/api v0.126.0
+	golang.org/x/crypto v0.11.0
+	golang.org/x/term v0.10.0
+	google.golang.org/api v0.131.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/h2non/gock.v1 v1.1.2
 )
@@ -52,14 +53,14 @@ require (
 replace github.com/dgraph-io/ristretto => github.com/ory/ristretto v0.1.1-0.20211108053508-297c39e6640f
 
 require (
-	cloud.google.com/go/compute v1.20.0 // indirect
+	cloud.google.com/go/compute v1.20.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 // indirect
 	github.com/antlr/antlr4/runtime/Go/antlr/v4 v4.0.0-20230305170008-8188dc5388df // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
 	github.com/aws/aws-sdk-go v1.44.277 // indirect
-	github.com/bits-and-blooms/bitset v1.7.0 // indirect
+	github.com/bits-and-blooms/bitset v1.8.0 // indirect
 	github.com/btcsuite/btcd/btcec/v2 v2.3.2 // indirect
 	github.com/bytedance/sonic v1.9.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
@@ -91,8 +92,8 @@ require (
 	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/s2a-go v0.1.4 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
-	github.com/googleapis/gax-go/v2 v2.10.0 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.2.5 // indirect
+	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gowebpki/jcs v1.0.0 // indirect
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
@@ -131,7 +132,7 @@ require (
 	github.com/multiformats/go-base36 v0.2.0 // indirect
 	github.com/multiformats/go-multibase v0.2.0 // indirect
 	github.com/multiformats/go-multicodec v0.9.0 // indirect
-	github.com/multiformats/go-multihash v0.2.2 // indirect
+	github.com/multiformats/go-multihash v0.2.3 // indirect
 	github.com/multiformats/go-varint v0.0.7 // indirect
 	github.com/ory/go-acc v0.2.9-0.20230103102148-6b1c9a70dbbe // indirect
 	github.com/ory/go-convenience v0.1.0 // indirect
@@ -143,6 +144,7 @@ require (
 	github.com/pquerna/cachecontrol v0.2.0 // indirect
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.0.5 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.0 // indirect
+	github.com/segmentio/asm v1.2.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/afero v1.9.5 // indirect
 	github.com/spf13/cast v1.5.1 // indirect
@@ -152,30 +154,29 @@ require (
 	github.com/spf13/viper v1.16.0 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
-	github.com/sv-tools/openapi v0.2.1 // indirect
 	github.com/swaggo/swag v1.16.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
+	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/yuin/gopher-lua v1.1.0 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/otel/metric v1.16.0 // indirect
 	golang.org/x/arch v0.3.0 // indirect
 	golang.org/x/exp v0.0.0-20230522175609-2e198f4a06a1 // indirect
 	golang.org/x/mod v0.10.0 // indirect
-	golang.org/x/net v0.10.0 // indirect
-	golang.org/x/oauth2 v0.8.0 // indirect
-	golang.org/x/sys v0.8.0 // indirect
-	golang.org/x/text v0.9.0 // indirect
+	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/oauth2 v0.10.0 // indirect
+	golang.org/x/sys v0.10.0 // indirect
+	golang.org/x/text v0.11.0 // indirect
 	golang.org/x/tools v0.9.3 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20230530153820-e85fd2cbaebc // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230530153820-e85fd2cbaebc // indirect
-	google.golang.org/grpc v1.55.0 // indirect
-	google.golang.org/protobuf v1.30.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20230629202037-9506855d4529 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230706204954-ccb25ca9f130 // indirect
+	google.golang.org/grpc v1.56.2 // indirect
+	google.golang.org/protobuf v1.31.0 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	lukechampine.com/blake3 v1.2.1 // indirect
 )

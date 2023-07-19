@@ -10,7 +10,7 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
@@ -97,7 +97,7 @@ func (h *keyHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 	return &GetDIDResponse{DID: gotDID.DID}, nil
 }
 
-func (h *keyHandler) ListDIDs(ctx context.Context, page *Page) (*ListDIDsResponse, error) {
+func (h *keyHandler) ListDIDs(ctx context.Context, page *common.Page) (*ListDIDsResponse, error) {
 	gotDIDs, err := h.storage.ListDIDsPage(ctx, did.KeyMethod.String(), page, new(DefaultStoredDID))
 	if err != nil {
 		return nil, errors.Wrap(err, "listing did:web DIDs page")

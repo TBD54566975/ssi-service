@@ -5,12 +5,14 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/TBD54566975/ssi-sdk/credential/integrity"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"go.einride.tech/aip/filtering"
+
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -226,7 +228,7 @@ type CreateSubmissionRequest struct {
 }
 
 func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequest, error) {
-	_, _, vp, err := credential.ParseVerifiablePresentationFromJWT(r.SubmissionJWT.String())
+	_, _, vp, err := integrity.ParseVerifiablePresentationFromJWT(r.SubmissionJWT.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing presentation from jwt")
 	}
@@ -341,6 +343,9 @@ func (l listSubmissionRequest) GetFilter() string {
 
 type ListSubmissionResponse struct {
 	Submissions []model.Submission `json:"submissions,omitempty"`
+
+	// Pagination token to retrieve the next page of results. If the value is "", it means no further results for the request.
+	NextPageToken string `json:"nextPageToken"`
 }
 
 // ListSubmissions godoc
@@ -350,10 +355,12 @@ type ListSubmissionResponse struct {
 //	@Tags			PresentationSubmissionAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			filter	query		string	false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=status="pending"`"
-//	@Success		200		{object}	ListSubmissionResponse
-//	@Failure		400		{string}	string	"Bad request"
-//	@Failure		500		{string}	string	"Internal server error"
+//	@Param			filter		query		string	false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=status="pending"`"
+//	@Param			pageSize	query		number	false	"Hint to the server of the maximum elements to return. More may be returned. When not set, the server will return all elements."
+//	@Param			pageToken	query		string	false	"Used to indicate to the server to return a specific page of the list results. Must match a previous requests' `nextPageToken`."
+//	@Success		200			{object}	ListSubmissionResponse
+//	@Failure		400			{string}	string	"Bad request"
+//	@Failure		500			{string}	string	"Internal server error"
 //	@Router			/v1/presentations/submissions [get]
 func (pr PresentationRouter) ListSubmissions(c *gin.Context) {
 	filterParam := framework.GetQueryValue(c, FilterParam)
@@ -397,13 +404,25 @@ func (pr PresentationRouter) ListSubmissions(c *gin.Context) {
 		return
 	}
 
-	resp, err := pr.service.ListSubmissions(c, model.ListSubmissionRequest{Filter: filter})
+	var pageRequest pagination.PageRequest
+	if pagination.ParsePaginationParams(c, &pageRequest) {
+		return
+	}
+
+	listResp, err := pr.service.ListSubmissions(c, model.ListSubmissionRequest{
+		Filter:      filter,
+		PageRequest: &pageRequest,
+	})
 	if err != nil {
 		errMsg := "failed listing submissions"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
-	framework.Respond(c, ListSubmissionResponse{Submissions: resp.Submissions}, http.StatusOK)
+	resp := ListSubmissionResponse{Submissions: listResp.Submissions}
+	if pagination.MaybeSetNextPageToken(c, listResp.NextPageToken, &resp.NextPageToken) {
+		return
+	}
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 type ReviewSubmissionRequest struct {
@@ -461,7 +480,7 @@ func (pr PresentationRouter) ReviewSubmission(c *gin.Context) {
 }
 
 type CreateRequestRequest struct {
-	*CommonCreateRequestRequest
+	*CommonCreateRequestRequest `validate:"required,dive"`
 	// ID of the presentation definition to use for this request.
 	PresentationDefinitionID string `json:"presentationDefinitionId" validate:"required"`
 }
@@ -513,7 +532,7 @@ func (pr PresentationRouter) CreateRequest(c *gin.Context) {
 }
 
 func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequest) (*model.Request, error) {
-	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest, pr.service.Config().ExpirationDuration)
+	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -538,13 +557,13 @@ func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequ
 func (pr PresentationRouter) GetRequest(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
-		framework.LoggingRespondErrMsg(c, "cannot get issuance template without an ID", http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, "cannot get presentation request without an ID", http.StatusBadRequest)
 		return
 	}
 
 	request, err := pr.service.GetRequest(c, &model.GetRequestRequest{ID: *id})
 	if err != nil {
-		framework.LoggingRespondErrWithMsg(c, err, "getting issuance template", http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, "getting presentation request", http.StatusInternalServerError)
 		return
 	}
 	framework.Respond(c, GetRequestResponse{Request: request}, http.StatusOK)

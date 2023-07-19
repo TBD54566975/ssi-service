@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	schemalib "github.com/TBD54566975/ssi-sdk/credential/schema"
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 
@@ -50,16 +51,20 @@ type CredentialSchemaRequest struct {
 	// Issuer represents the DID of the issuer for the schema if it's signed. Required if intending to sign the
 	// schema as a credential using CredentialSchema2023.
 	Issuer string `json:"issuer,omitempty" validate:"required"`
-	// IssuerKID represents the KID of the issuer's private key to sign the schema. Required if intending to sign the
-	// schema as a credential using CredentialSchema2023.
-	IssuerKID string `json:"issuerKid,omitempty" validate:"required"`
+
+	// The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+	// stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+	// The private key associated with the verificationMethod's publicKey will be used to sign the schema as a
+	// credential using CredentialSchema2023.
+	// Required if intending to sign the schema as a credential using CredentialSchema2023.
+	VerificationMethodID string `json:"verificationMethodId" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
 }
 
 func (csr *CredentialSchemaRequest) IsValid() bool {
 	if csr == nil {
 		return false
 	}
-	return csr.Issuer != "" && csr.IssuerKID != ""
+	return csr.Issuer != "" && csr.VerificationMethodID != ""
 }
 
 type CreateSchemaResponse struct {
@@ -118,7 +123,7 @@ func (sr SchemaRouter) CreateSchema(c *gin.Context) {
 		}
 		// if we have a valid credential schema request, set the issuer and kid properties
 		req.Issuer = request.Issuer
-		req.IssuerKID = request.IssuerKID
+		req.FullyQualifiedVerificationMethodID = did.FullyQualifiedVerificationMethodID(request.Issuer, request.VerificationMethodID)
 	}
 
 	createSchemaResponse, err := sr.service.CreateSchema(c, req)

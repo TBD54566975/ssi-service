@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 )
@@ -22,8 +23,9 @@ type Tx interface {
 }
 
 const (
-	Bolt  Type = "bolt"
-	Redis Type = "redis"
+	Bolt        Type = "bolt"
+	DatabaseSQL Type = "database_sql"
+	Redis       Type = "redis"
 
 	// Common options
 
@@ -81,7 +83,7 @@ func NewStorage(storageProvider Type, opts ...Option) (ServiceStorage, error) {
 	if impl == nil {
 		return impl, fmt.Errorf("unsupported storage provider: %s", storageProvider)
 	}
-	logrus.Infof("STORAGE OPTS: %+v", opts)
+	logrus.Infof("Storage options: %+v", opts)
 	err := impl.Init(opts...)
 	return impl, err
 }
@@ -123,4 +125,15 @@ func GetStorage(storageType Type) ServiceStorage {
 	}
 	// Not pointer:
 	return reflect.New(reflect.TypeOf(tmp)).Elem().Interface().(ServiceStorage)
+}
+
+// Join combines all parts using `:` as the separator.
+func Join(parts ...string) string {
+	const separator = ":"
+	return strings.Join(parts, separator)
+}
+
+// MakeNamespace takes a set of possible namespace values and combines them as a convention
+func MakeNamespace(ns ...string) string {
+	return strings.Join(ns, "-")
 }

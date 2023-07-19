@@ -9,12 +9,15 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/ion"
+	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/TBD54566975/ssi-sdk/util"
+	"github.com/goccy/go-json"
 	"github.com/google/uuid"
+	"github.com/lestrrat-go/jwx/v2/jws"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
 
@@ -51,12 +54,16 @@ type ionHandler struct {
 var _ MethodHandler = (*ionHandler)(nil)
 
 type CreateIONDIDOptions struct {
-	// TODO(gabe) for now we only allow adding service endpoints upon creation.
-	//  we do not allow adding external keys or other properties.
-	//  Related:
-	//  - https://github.com/TBD54566975/ssi-sdk/issues/336
-	//  - https://github.com/TBD54566975/ssi-sdk/issues/335
+	// Services to add to the DID document that will be created.
 	ServiceEndpoints []did.Service `json:"serviceEndpoints"`
+
+	// List of JSON Web Signatures serialized using compact serialization. The payload must be a JSON object that
+	// represents a publicKey object. Such object must follow the schema described in step 3 of
+	// https://identity.foundation/sidetree/spec/#add-public-keys. The payload must be signed
+	// with the private key associated with the `publicKeyJwk` that will be added in the DID document.
+	// The input will be parsed and verified, and the payload will be used to add public keys to the DID document in the
+	// same way in which the `add-public-keys` patch action adds keys (see https://identity.foundation/sidetree/spec/#add-public-keys).
+	JWSPublicKeys []string `json:"jwsPublicKeys"`
 }
 
 func (c CreateIONDIDOptions) Method() did.Method {
@@ -91,6 +98,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	// process options
 	var opts CreateIONDIDOptions
 	var ok bool
+	var publicKeysFromJWS []ion.PublicKey
 	if request.Options != nil {
 		opts, ok = request.Options.(CreateIONDIDOptions)
 		if !ok || request.Options.Method() != did.IONMethod {
@@ -98,6 +106,38 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		}
 		if err := util.IsValidStruct(opts); err != nil {
 			return nil, errors.Wrap(err, "processing options")
+		}
+
+		publicKeysFromJWS = make([]ion.PublicKey, 0, len(opts.JWSPublicKeys))
+		for _, jwsString := range opts.JWSPublicKeys {
+			m, err := jws.ParseString(jwsString)
+			if err != nil {
+				return nil, errors.Wrapf(err, "parsing JWS string <%s>", jwsString)
+			}
+
+			headers, err := jwx.GetJWSHeaders([]byte(jwsString))
+			if err != nil {
+				return nil, errors.Wrapf(err, "getting JWS headers from <%s>", jwsString)
+			}
+
+			var publicKey ion.PublicKey
+			if err := json.Unmarshal(m.Payload(), &publicKey); err != nil {
+				return nil, errors.Wrap(err, "unmarshalling payload")
+			}
+			if err := util.IsValidStruct(publicKey); err != nil {
+				return nil, errors.Wrap(err, "invalid publicKey in payload")
+			}
+
+			goPublicKey, err := publicKey.PublicKeyJWK.ToPublicKey()
+			if err != nil {
+				return nil, errors.Wrap(err, "converting JWK to go crypto public key")
+			}
+
+			if _, err := jws.Verify([]byte(jwsString), jws.WithKey(headers.Algorithm(), goPublicKey)); err != nil {
+				return nil, errors.Wrapf(err, "verifying JWS for <%s>", jwsString)
+			}
+
+			publicKeysFromJWS = append(publicKeysFromJWS, publicKey)
 		}
 	}
 
@@ -120,6 +160,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 			Purposes: []ion.PublicKeyPurpose{ion.Authentication, ion.AssertionMethod},
 		},
 	}
+	pubKeys = append(pubKeys, publicKeysFromJWS...)
 
 	// generate the did document's initial state
 	doc := ion.Document{PublicKeys: pubKeys, Services: opts.ServiceEndpoints}
@@ -129,42 +170,15 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	}
 
 	// submit the create operation to the ION service
-	if err = h.resolver.Anchor(ctx, createOp); err != nil {
+	var resolutionResult *resolution.Result
+	if resolutionResult, err = h.resolver.Anchor(ctx, createOp); err != nil {
 		return nil, errors.Wrap(err, "anchoring create operation")
-	}
-
-	// construct first document state
-	ldKeyType, err := did.KeyTypeToMultikeyLDType(request.KeyType)
-	if err != nil {
-		return nil, errors.Wrap(err, "converting key type to LD key type")
-	}
-
-	// TODO(gabe): move this to the SDK
-	didDoc := did.Document{
-		ID: ionDID.ID(),
-		VerificationMethod: []did.VerificationMethod{
-			{
-				ID:           keyID,
-				Type:         ldKeyType,
-				Controller:   ionDID.ID(),
-				PublicKeyJWK: pubKeyJWK,
-			},
-		},
-		Authentication:  []did.VerificationMethodSet{map[string]any{"id": keyID}},
-		AssertionMethod: []did.VerificationMethodSet{map[string]any{"id": keyID}},
-	}
-	for _, s := range opts.ServiceEndpoints {
-		didDoc.Services = append(didDoc.Services, did.Service{
-			ID:              s.ID,
-			Type:            s.Type,
-			ServiceEndpoint: s.ServiceEndpoint,
-		})
 	}
 
 	// store the did document
 	storedDID := ionStoredDID{
-		ID:          ionDID.ID(),
-		DID:         didDoc,
+		ID:          resolutionResult.Document.ID,
+		DID:         resolutionResult.Document,
 		SoftDeleted: false,
 		LongFormDID: ionDID.LongForm(),
 		Operations:  ionDID.Operations(),
@@ -177,7 +191,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	// 1. update key
 	// 2. recovery key
 	// 3. key(s) in the did docs
-	updateStoreRequest, err := keyToStoreRequest(ionDID.ID()+"#"+updateKeySuffix, ionDID.GetUpdatePrivateKey(), ionDID.ID())
+	updateStoreRequest, err := keyToStoreRequest(resolutionResult.Document.ID+"#"+updateKeySuffix, ionDID.GetUpdatePrivateKey(), resolutionResult.Document.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting update private key to store request")
 	}
@@ -185,7 +199,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "could not store did:ion update private key")
 	}
 
-	recoveryStoreRequest, err := keyToStoreRequest(ionDID.ID()+"#"+recoverKeySuffix, ionDID.GetRecoveryPrivateKey(), ionDID.ID())
+	recoveryStoreRequest, err := keyToStoreRequest(resolutionResult.Document.ID+"#"+recoverKeySuffix, ionDID.GetRecoveryPrivateKey(), resolutionResult.Document.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting recovery private key to store request")
 	}
@@ -193,7 +207,8 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "could not store did:ion recovery private key")
 	}
 
-	keyStoreRequest, err := keyToStoreRequest(keyID, *privKeyJWK, ionDID.ID())
+	keyStoreID := did.FullyQualifiedVerificationMethodID(resolutionResult.Document.ID, resolutionResult.Document.VerificationMethod[0].ID)
+	keyStoreRequest, err := keyToStoreRequest(keyStoreID, *privKeyJWK, resolutionResult.Document.ID)
 	if err != nil {
 		return nil, errors.Wrap(err, "converting private key to store request")
 	}
@@ -201,7 +216,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "could not store did:ion private key")
 	}
 
-	return &CreateDIDResponse{DID: didDoc}, nil
+	return &CreateDIDResponse{DID: storedDID.DID}, nil
 }
 
 func keyToStoreRequest(kid string, privateKeyJWK jwx.PrivateKeyJWK, controller string) (*keystore.StoreKeyRequest, error) {
@@ -250,7 +265,7 @@ func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 }
 
 // ListDIDs returns all DIDs we have in storage for ION, it is not feasible to get all DIDs from the network
-func (h *ionHandler) ListDIDs(ctx context.Context, page *Page) (*ListDIDsResponse, error) {
+func (h *ionHandler) ListDIDs(ctx context.Context, page *common.Page) (*ListDIDsResponse, error) {
 	gotDIDs, err := h.storage.ListDIDsPage(ctx, did.IONMethod.String(), page, new(ionStoredDID))
 	if err != nil {
 		return nil, errors.Wrap(err, "error getting did:ion DIDs")

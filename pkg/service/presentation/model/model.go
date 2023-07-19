@@ -5,6 +5,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"go.einride.tech/aip/filtering"
 
@@ -65,7 +66,8 @@ type DeleteSubmissionRequest struct {
 }
 
 type ListSubmissionRequest struct {
-	Filter filtering.Filter
+	Filter      filtering.Filter
+	PageRequest *pagination.PageRequest
 }
 
 type Submission struct {
@@ -94,7 +96,8 @@ func (r Submission) GetSubmission() *exchange.PresentationSubmission {
 }
 
 type ListSubmissionResponse struct {
-	Submissions []Submission `json:"submissions"`
+	Submissions   []Submission `json:"submissions"`
+	NextPageToken string
 }
 
 type ListDefinitionsResponse struct {
@@ -152,8 +155,8 @@ type Request struct {
 	// ID of the presentation definition used for this request.
 	PresentationDefinitionID string `json:"presentationDefinitionId" validate:"required"`
 
-	// PresentationDefinitionJWT is a JWT token with a "presentation_definition" claim within it. The
-	// value of the field named "presentation_definition.id" matches PresentationDefinitionID.
+	// PresentationDefinitionJWT is a JWT token with a "presentation_definition" claim and an optional "callbackUrl" claim
+	// within it. The value of the field named "presentation_definition.id" matches PresentationDefinitionID.
 	// This is an output only field.
 	PresentationDefinitionJWT keyaccess.JWT `json:"presentationRequestJwt"`
 }

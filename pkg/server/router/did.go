@@ -1,11 +1,8 @@
 package router
 
 import (
-	"encoding/base64"
 	"fmt"
 	"net/http"
-	"net/url"
-	"reflect"
 	"strconv"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -14,20 +11,17 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
-
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 )
 
 const (
-	MethodParam    = "method"
-	IDParam        = "id"
-	DeletedParam   = "deleted"
-	PageSizeParam  = "pageSize"
-	PageTokenParam = "pageToken"
+	MethodParam  = "method"
+	IDParam      = "id"
+	DeletedParam = "deleted"
 )
 
 // DIDRouter represents the dependencies required to instantiate a DID-HTTP service
@@ -88,8 +82,8 @@ type CreateDIDByMethodResponse struct {
 //	@Tags			DecentralizedIdentityAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			method	path		string						true	"Method"
-//	@Param			request	body		CreateDIDByMethodRequest	true	"request body"
+//	@Param			method	path		string														true	"Method"
+//	@Param			request	body		CreateDIDByMethodRequest{options=did.CreateIONDIDOptions}	true	"request body"
 //	@Success		201		{object}	CreateDIDByMethodResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
@@ -240,11 +234,6 @@ type GetDIDsRequest struct {
 	Filter string `json:"filter,omitempty"`
 }
 
-type PageToken struct {
-	EncodedQuery  string
-	NextPageToken string
-}
-
 // ListDIDsByMethod godoc
 //
 //	@Summary		List DIDs
@@ -281,47 +270,15 @@ func (dr DIDRouter) ListDIDsByMethod(c *gin.Context) {
 	}
 	// TODO(gabe) check if the method is supported, to tell whether this is a bad req or internal error
 	// TODO(gabe) differentiate between internal errors and not found DIDs
-	getDIDsRequest := did.ListDIDsRequest{Method: didsdk.Method(*method), Deleted: getIsDeleted}
-
-	pageSizeStr := framework.GetParam(c, PageSizeParam)
-
-	if pageSizeStr != nil {
-		pageSize, err := strconv.Atoi(*pageSizeStr)
-		if err != nil {
-			errMsg := fmt.Sprintf("list DIDs by method request encountered a problem with the %q query param", PageSizeParam)
-			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
-			return
-		}
-		getDIDsRequest.PageSize = &pageSize
+	getDIDsRequest := did.ListDIDsRequest{
+		Method:  didsdk.Method(*method),
+		Deleted: getIsDeleted,
 	}
-
-	queryPageToken := framework.GetParam(c, PageTokenParam)
-	if queryPageToken != nil {
-		errMsg := "token value cannot be decoded"
-		tokenData, err := base64.RawURLEncoding.DecodeString(*queryPageToken)
-		if err != nil {
-			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
-			return
-		}
-		var pageToken PageToken
-		if err := json.Unmarshal(tokenData, &pageToken); err != nil {
-			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
-			return
-		}
-		pageTokenValues, err := url.ParseQuery(pageToken.EncodedQuery)
-		if err != nil {
-			framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
-			return
-		}
-
-		query := pageTokenQuery(c)
-		if !reflect.DeepEqual(pageTokenValues, query) {
-			logrus.Warnf("expected query from token to be equal to query from request. token: %v\nrequest%v", pageTokenValues, query)
-			framework.LoggingRespondErrMsg(c, "page token must be for the same query", http.StatusBadRequest)
-			return
-		}
-		getDIDsRequest.PageToken = &pageToken.NextPageToken
+	var pageRequest pagination.PageRequest
+	if pagination.ParsePaginationParams(c, &pageRequest) {
+		return
 	}
+	getDIDsRequest.PageRequest = pageRequest.ToServicePage()
 
 	listResp, err := dr.service.ListDIDsByMethod(c, getDIDsRequest)
 	if err != nil {
@@ -333,27 +290,10 @@ func (dr DIDRouter) ListDIDsByMethod(c *gin.Context) {
 	resp := ListDIDsByMethodResponse{
 		DIDs: listResp.DIDs,
 	}
-	if listResp.NextPageToken != "" {
-		tokenQuery := pageTokenQuery(c)
-		pageToken := PageToken{
-			EncodedQuery:  tokenQuery.Encode(),
-			NextPageToken: listResp.NextPageToken,
-		}
-		nextPageTokenData, err := json.Marshal(pageToken)
-		if err != nil {
-			framework.LoggingRespondErrWithMsg(c, err, "marshalling page token", http.StatusInternalServerError)
-			return
-		}
-		resp.NextPageToken = base64.RawURLEncoding.EncodeToString(nextPageTokenData)
+	if pagination.MaybeSetNextPageToken(c, listResp.NextPageToken, &resp.NextPageToken) {
+		return
 	}
 	framework.Respond(c, resp, http.StatusOK)
-}
-
-func pageTokenQuery(c *gin.Context) url.Values {
-	query := c.Request.URL.Query()
-	delete(query, PageTokenParam)
-	delete(query, PageSizeParam)
-	return query
 }
 
 type ResolveDIDResponse struct {
@@ -431,4 +371,91 @@ func (dr DIDRouter) ResolveDID(c *gin.Context) {
 
 	resp := ResolveDIDResponse{ResolutionMetadata: resolvedDID.ResolutionMetadata, DIDDocument: resolvedDID.DIDDocument, DIDDocumentMetadata: resolvedDID.DIDDocumentMetadata}
 	framework.Respond(c, resp, http.StatusOK)
+}
+
+type BatchCreateDIDsRequest struct {
+	// Required. The list of create credential requests. Cannot be more than {{.Services.DIDConfig.BatchCreateMaxItems}} items.
+	Requests []CreateDIDByMethodRequest `json:"requests" maxItems:"100" validate:"required,dive"`
+}
+
+func (r BatchCreateDIDsRequest) toServiceRequest(m didsdk.Method) (*did.BatchCreateDIDsRequest, error) {
+	var req did.BatchCreateDIDsRequest
+	for _, routerReq := range r.Requests {
+		serviceReq, err := toCreateDIDRequest(m, routerReq)
+		if err != nil {
+			return &req, err
+		}
+		req.Requests = append(req.Requests, *serviceReq)
+	}
+	return &req, nil
+}
+
+type BatchCreateDIDsResponse struct {
+	// The DID documents created.
+	DIDs []didsdk.Document `json:"dids"`
+}
+
+type BatchDIDRouter struct {
+	service *did.BatchService
+}
+
+func NewBatchDIDRouter(svc *did.BatchService) *BatchDIDRouter {
+	return &BatchDIDRouter{service: svc}
+}
+
+// BatchCreateDIDs godoc
+//
+//	@Summary		Batch Create DIDs
+//	@Description	Create a batch of verifiable credentials. The operation is atomic, meaning that all requests will
+//	@Description	succeed or fail. This is currently only supported for the DID method named `did:key`.
+//	@Tags			CredentialAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			method	path		string					true	"Method. Only `key` is supported."
+//	@Param			request	body		BatchCreateDIDsRequest	true	"The batch requests"
+//	@Success		201		{object}	BatchCreateDIDsResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/dids/{method}/batch [put]
+func (dr BatchDIDRouter) BatchCreateDIDs(c *gin.Context) {
+	method := framework.GetParam(c, MethodParam)
+	if method == nil {
+		errMsg := "create DID request missing method parameter"
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
+	}
+	if *method != "key" {
+		errMsg := "create DID request method parameter must be `key`"
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
+	}
+	invalidCreateDIDRequest := "invalid batch create DID request"
+	var batchRequest BatchCreateDIDsRequest
+	if err := framework.Decode(c.Request, &batchRequest); err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, invalidCreateDIDRequest, http.StatusBadRequest)
+		return
+	}
+
+	batchCreateMaxItems := dr.service.Config().BatchCreateMaxItems
+	if len(batchRequest.Requests) > batchCreateMaxItems {
+		framework.LoggingRespondErrMsg(c, fmt.Sprintf("max number of requests is %d", batchCreateMaxItems), http.StatusBadRequest)
+		return
+	}
+
+	req, err := batchRequest.toServiceRequest(didsdk.Method(*method))
+	if err != nil {
+		framework.LoggingRespondError(c, err, http.StatusBadRequest)
+		return
+	}
+	batchCreateDIDsResponse, err := dr.service.BatchCreateDIDs(c, *req)
+	if err != nil {
+		errMsg := "could not create credentials"
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+
+	var resp BatchCreateDIDsResponse
+	resp.DIDs = append(resp.DIDs, batchCreateDIDsResponse.DIDs...)
+
+	framework.Respond(c, resp, http.StatusCreated)
 }

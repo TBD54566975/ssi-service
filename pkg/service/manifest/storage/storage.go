@@ -25,10 +25,10 @@ const (
 )
 
 type StoredManifest struct {
-	ID        string                      `json:"id"`
-	IssuerDID string                      `json:"issuerDid"`
-	IssuerKID string                      `json:"issuerKid"`
-	Manifest  manifest.CredentialManifest `json:"manifest"`
+	ID                                 string                      `json:"id"`
+	IssuerDID                          string                      `json:"issuerDid"`
+	FullyQualifiedVerificationMethodID string                      `json:"fullyQualifiedVerificationMethodId"`
+	Manifest                           manifest.CredentialManifest `json:"manifest"`
 }
 
 type StoredApplication struct {

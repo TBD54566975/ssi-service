@@ -8,6 +8,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/benbjohnson/clock"
 	"github.com/goccy/go-json"
 	"github.com/google/tink/go/aead"
 	"github.com/google/tink/go/core/registry"
@@ -54,22 +55,35 @@ type ServiceKey struct {
 
 const (
 	namespace             = "keystore"
-	publicNamespaceSuffix = ":public-keys"
+	serviceInternalSuffix = "service-internal"
+	publicNamespaceSuffix = "public-keys"
 	skKey                 = "ssi-service-key"
 	keyNotFoundErrMsg     = "key not found"
 )
 
+var (
+	serviceNamespace   = storage.Join(namespace, serviceInternalSuffix)
+	publicKeyNamespace = storage.Join(namespace, publicNamespaceSuffix)
+)
+
 type Storage struct {
 	db        storage.ServiceStorage
+	tx        storage.Tx
 	encrypter Encrypter
 	decrypter Decrypter
+	Clock     clock.Clock
 }
 
-func NewKeyStoreStorage(db storage.ServiceStorage, e Encrypter, d Decrypter) (*Storage, error) {
+func NewKeyStoreStorage(db storage.ServiceStorage, e Encrypter, d Decrypter, writer storage.Tx) (*Storage, error) {
 	s := &Storage{
 		db:        db,
 		encrypter: e,
 		decrypter: d,
+		Clock:     clock.New(),
+		tx:        db,
+	}
+	if writer != nil {
+		s.tx = writer
 	}
 
 	return s, nil
@@ -96,27 +110,55 @@ const (
 	awsKMSScheme = "aws-kms"
 )
 
-func NewEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) (Encrypter, Decrypter, error) {
+// EnsureServiceKeyExists makes sure that the service key that will be used for encryption exists. This function is
+// idempotent, so that multiple instances of ssi-service can call it on boot.
+func EnsureServiceKeyExists(config config.KeyStoreServiceConfig, provider storage.ServiceStorage) error {
+	if config.MasterKeyURI != "" {
+		return nil
+	}
+
+	watchKeys := []storage.WatchKey{{
+		Namespace: namespace,
+		Key:       skKey,
+	}}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	_, err := provider.Execute(ctx, func(ctx context.Context, tx storage.Tx) (any, error) {
+		// Create the key only if it doesn't already exist.
+		gotKey, err := getServiceKey(ctx, provider)
+		if gotKey == nil && err.Error() == keyNotFoundErrMsg {
+			serviceKey, err := GenerateServiceKey()
+			if err != nil {
+				return nil, errors.Wrap(err, "generating service key")
+			}
+
+			key := ServiceKey{
+				Base58Key: serviceKey,
+			}
+			if err := storeServiceKey(ctx, tx, key); err != nil {
+				return nil, err
+			}
+			return nil, nil
+		}
+		return nil, err
+	}, watchKeys)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// newEncryption creates a pair of Encrypter and Decrypter. The service key must have been created before this function
+// is called. EnsureServiceKeyExists can be used to make sure the service key exists.
+func newEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) (Encrypter, Decrypter, error) {
 	if len(cfg.MasterKeyURI) != 0 {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 		return NewExternalEncrypter(ctx, cfg)
 	}
 
-	// First, generate a service key
-	serviceKey, serviceKeySalt, err := GenerateServiceKey(cfg.MasterKeyPassword)
-	if err != nil {
-		return nil, nil, sdkutil.LoggingErrorMsg(err, "generating service key")
-	}
-
-	key := ServiceKey{
-		Base58Key:  serviceKey,
-		Base58Salt: serviceKeySalt,
-	}
-	if err := storeServiceKey(ctx, db, key); err != nil {
-		return nil, nil, err
-	}
 	return &encrypter{db}, &decrypter{db}, nil
 }
 
@@ -151,19 +193,19 @@ func NewExternalEncrypter(ctx context.Context, cfg config.KeyStoreServiceConfig)
 }
 
 // TODO(gabe): support more robust service key operations, including rotation, and caching
-func storeServiceKey(ctx context.Context, db storage.ServiceStorage, key ServiceKey) error {
+func storeServiceKey(ctx context.Context, tx storage.Tx, key ServiceKey) error {
 	keyBytes, err := json.Marshal(key)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could not marshal service key")
 	}
-	if err = db.Write(ctx, namespace, skKey, keyBytes); err != nil {
+	if err = tx.Write(ctx, serviceNamespace, skKey, keyBytes); err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could store marshal service key")
 	}
 	return nil
 }
 
 func getServiceKey(ctx context.Context, db storage.ServiceStorage) ([]byte, error) {
-	storedKeyBytes, err := db.Read(ctx, namespace, skKey)
+	storedKeyBytes, err := db.Read(ctx, serviceNamespace, skKey)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not get service key")
 	}
@@ -266,7 +308,7 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 		return sdkutil.LoggingErrorMsg(err, "marshalling JWK")
 	}
 
-	if err := kss.db.Write(ctx, namespace+publicNamespaceSuffix, id, publicBytes); err != nil {
+	if err := kss.tx.Write(ctx, publicKeyNamespace, id, publicBytes); err != nil {
 		return sdkutil.LoggingErrorMsgf(err, "writing public key")
 	}
 
@@ -276,7 +318,7 @@ func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {
 		return sdkutil.LoggingErrorMsgf(err, "could not encrypt key: %s", key.ID)
 	}
 
-	return kss.db.Write(ctx, namespace, id, encryptedKey)
+	return kss.tx.Write(ctx, namespace, id, encryptedKey)
 }
 
 // RevokeKey revokes a key by setting the revoked flag to true.
@@ -290,7 +332,7 @@ func (kss *Storage) RevokeKey(ctx context.Context, id string) error {
 	}
 
 	key.Revoked = true
-	key.RevokedAt = time.Now().UTC().Format(time.RFC3339)
+	key.RevokedAt = kss.Clock.Now().Format(time.RFC3339)
 	return kss.StoreKey(ctx, *key)
 }
 
@@ -322,7 +364,7 @@ func (kss *Storage) GetKeyDetails(ctx context.Context, id string) (*KeyDetails, 
 		return nil, sdkutil.LoggingErrorMsgf(err, "reading details for private key %q", id)
 	}
 
-	storedPublicKeyBytes, err := kss.db.Read(ctx, namespace+publicNamespaceSuffix, id)
+	storedPublicKeyBytes, err := kss.db.Read(ctx, publicKeyNamespace, id)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "reading details for public key %q", id)
 	}

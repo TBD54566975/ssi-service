@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/google/uuid"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/pkg/errors"
@@ -19,59 +20,78 @@ type Request struct {
 	Audience []string `json:"audience,omitempty"`
 
 	// Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
-	Expiration time.Time `json:"expiration" validate:"required"`
+	Expiration *time.Time `json:"expiration,omitempty"`
 
 	// DID of the issuer of this presentation definition.
 	IssuerDID string `json:"issuerId" validate:"required"`
 
-	// The privateKey associated with the KID used to sign the JWT.
-	IssuerKID string `json:"issuerKid" validate:"required"`
+	// The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+	// stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+	// The private key associated with the verificationMethod's publicKey will be used to sign the JWT.
+	VerificationMethodID string `json:"verificationMethodId" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
+
+	// The URL that the presenter should be submitting the presentation submission to.
+	// Optional.
+	CallbackURL string `json:"callbackUrl,omitempty" example:"https://example.com"`
 }
 
 // ToServiceModel converts a storage model to a service model.
 func ToServiceModel(stored *StoredRequest) (*Request, error) {
-	expiration, err := time.Parse(time.RFC3339, stored.Expiration)
-	if err != nil {
-		return nil, errors.Wrap(err, "parsing expiration time")
+	request := &Request{
+		ID:                   stored.ID,
+		Audience:             stored.Audience,
+		IssuerDID:            stored.IssuerDID,
+		VerificationMethodID: stored.VerificationMethodID,
+		CallbackURL:          stored.CallbackURL,
 	}
-
-	return &Request{
-		ID:         stored.ID,
-		Audience:   stored.Audience,
-		Expiration: expiration,
-		IssuerDID:  stored.IssuerDID,
-		IssuerKID:  stored.IssuerKID,
-	}, nil
+	if stored.Expiration != "" {
+		expiration, err := time.Parse(time.RFC3339, stored.Expiration)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing expiration time")
+		}
+		request.Expiration = &expiration
+	}
+	return request, nil
 }
 
 // CreateStoredRequest creates a StoredRequest with the associated signed JWT populated. In addition to the fields
 // present in request, the JWT will also include a claim with claimName and claimValue.
 func CreateStoredRequest(ctx context.Context, keyStore *keystore.Service, claimName string, claimValue any, request Request, id string) (*StoredRequest, error) {
 	requestID := uuid.NewString()
-	token, err := jwt.NewBuilder().
+	builder := jwt.NewBuilder().
 		Claim(claimName, claimValue).
 		Audience(request.Audience).
-		Expiration(request.Expiration).
 		Issuer(request.IssuerDID).
 		NotBefore(time.Now()).
-		JwtID(requestID).
-		Build()
+		JwtID(requestID)
+	var expirationString string
+	if request.Expiration != nil {
+		builder.Expiration(*request.Expiration)
+		expirationString = request.Expiration.Format(time.RFC3339)
+	}
+	if request.CallbackURL != "" {
+		builder.Claim("callbackUrl", request.CallbackURL)
+	}
+	token, err := builder.Build()
 	if err != nil {
 		return nil, errors.Wrap(err, "building jwt")
 	}
-	signedToken, err := keyStore.Sign(ctx, request.IssuerKID, token)
+
+	keyStoreID := did.FullyQualifiedVerificationMethodID(request.IssuerDID, request.VerificationMethodID)
+	signedToken, err := keyStore.Sign(ctx, keyStoreID, token)
 	if err != nil {
-		return nil, errors.Wrapf(err, "signing payload with KID %q", request.IssuerKID)
+		return nil, errors.Wrapf(err, "signing payload with KID %q", request.VerificationMethodID)
 	}
 
 	stored := &StoredRequest{
-		ID:          requestID,
-		Audience:    request.Audience,
-		Expiration:  request.Expiration.Format(time.RFC3339),
-		IssuerDID:   request.IssuerDID,
-		IssuerKID:   request.IssuerKID,
-		ReferenceID: id,
-		JWT:         signedToken.String(),
+		ID:                   requestID,
+		Audience:             request.Audience,
+		Expiration:           expirationString,
+		IssuerDID:            request.IssuerDID,
+		VerificationMethodID: request.VerificationMethodID,
+		ReferenceID:          id,
+		JWT:                  signedToken.String(),
+		CallbackURL:          request.CallbackURL,
 	}
 	return stored, nil
 }

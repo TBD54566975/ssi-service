@@ -542,16 +542,19 @@ definitions:
           using JWS. In other words, the `proof` field is not present. See `credentialJwt` for the secured Verifiable
           Credential.
       credentialJwt:
-        description: JWT representation of `credential`, secured with an external
-          proof signed by `issuerKid`.
+        description: |-
+          JWT representation of `credential`, secured with an external proof. Verification can be done according to
+          `fullyQualifiedVerificationMethodId`.
+        type: string
+      fullyQualifiedVerificationMethodId:
+        description: |-
+          Fully qualified verification method ID that can be used to verify the credential. For example
+          `did:ion:EiDpQBo_nEfuLVeppgmPVQNEhtrnZLWFsB9ziZUuaKCJ3Q#83526c36-136c-423b-a57a-f190b83ae531`.
         type: string
       id:
         description: |-
-          Credential ID. This is the same value as the id within the secured credential. It is typically a URL that can be
-          dereferenced. For example, `https://ssi-service.com/v1/credentials/48958871-6a6d-4a25-889f-88c9c6835780`.
-        type: string
-      issuerKid:
-        description: The KID of the private key used to sign `credentialJwt`.
+          UUID assigned by the ssi-service. For example, 48958871-6a6d-4a25-889f-88c9c6835780. The `credential.id`
+          value will be a URL that can be dereferenced, which includes this ID.
         type: string
       revoked:
         description: Whether this credential is currently revoked.
@@ -559,6 +562,25 @@ definitions:
       suspended:
         description: Whether this credential is currently suspended.
         type: boolean
+    type: object
+  github_com_tbd54566975_ssi-service_pkg_service_did.CreateIONDIDOptions:
+    properties:
+      jwsPublicKeys:
+        description: |-
+          List of JSON Web Signatures serialized using compact serialization. The payload must be a JSON object that
+          represents a publicKey object. Such object must follow the schema described in step 3 of
+          https://identity.foundation/sidetree/spec/#add-public-keys. The payload must be signed
+          with the private key associated with the `publicKeyJwk` that will be added in the DID document.
+          The input will be parsed and verified, and the payload will be used to add public keys to the DID document in the
+          same way in which the `add-public-keys` patch action adds keys (see https://identity.foundation/sidetree/spec/#add-public-keys).
+        items:
+          type: string
+        type: array
+      serviceEndpoints:
+        description: Services to add to the DID document that will be created.
+        items:
+          $ref: '#/definitions/github_com_TBD54566975_ssi-sdk_did.Service'
+        type: array
     type: object
   github_com_tbd54566975_ssi-service_pkg_service_framework.Status:
     properties:
@@ -629,15 +651,19 @@ definitions:
         description: ID of this template.
         type: string
       issuer:
-        description: ID of the issuer that will be issuance the credentials.
+        description: ID of the issuer that will be issuing the credentials.
         type: string
-      issuerKid:
-        description: ID of the key that will be used to sign the credentials.
+      verificationMethodId:
+        description: |-
+          The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+          stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+          The private key associated with the verificationMethod's publicKey will be used to sign the credentials.
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
         type: string
     required:
     - credentialManifest
     - issuer
-    - issuerKid
+    - verificationMethodId
     type: object
   github_com_tbd54566975_ssi-service_pkg_service_issuance.TimeLike:
     properties:
@@ -669,10 +695,16 @@ definitions:
         items:
           type: string
         type: array
+      callbackUrl:
+        description: |-
+          The URL that the presenter should be submitting the presentation submission to.
+          Optional.
+        example: https://example.com
+        type: string
       credentialManifestJwt:
         description: |-
-          CredentialManifestJWT is a JWT token with a "presentation_definition" claim within it. The
-          value of the field named "presentation_definition.id" matches PresentationDefinitionID.
+          CredentialManifestJWT is a JWT token with a "presentation_definition" claim and an optional "callbackUrl" claim
+          within it. The value of the field named "presentation_definition.id" matches PresentationDefinitionID.
           This is an output only field.
         type: string
       expiration:
@@ -686,17 +718,20 @@ definitions:
       issuerId:
         description: DID of the issuer of this presentation definition.
         type: string
-      issuerKid:
-        description: The privateKey associated with the KID used to sign the JWT.
-        type: string
       manifestId:
         description: ID of the credential manifest used for this request.
         type: string
+      verificationMethodId:
+        description: |-
+          The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+          stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+          The private key associated with the verificationMethod's publicKey will be used to sign the JWT.
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
+        type: string
     required:
-    - expiration
     - issuerId
-    - issuerKid
     - manifestId
+    - verificationMethodId
     type: object
   github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Request:
     properties:
@@ -705,6 +740,12 @@ definitions:
         items:
           type: string
         type: array
+      callbackUrl:
+        description: |-
+          The URL that the presenter should be submitting the presentation submission to.
+          Optional.
+        example: https://example.com
+        type: string
       expiration:
         description: Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
         type: string
@@ -716,23 +757,26 @@ definitions:
       issuerId:
         description: DID of the issuer of this presentation definition.
         type: string
-      issuerKid:
-        description: The privateKey associated with the KID used to sign the JWT.
-        type: string
       presentationDefinitionId:
         description: ID of the presentation definition used for this request.
         type: string
       presentationRequestJwt:
         description: |-
-          PresentationDefinitionJWT is a JWT token with a "presentation_definition" claim within it. The
-          value of the field named "presentation_definition.id" matches PresentationDefinitionID.
+          PresentationDefinitionJWT is a JWT token with a "presentation_definition" claim and an optional "callbackUrl" claim
+          within it. The value of the field named "presentation_definition.id" matches PresentationDefinitionID.
           This is an output only field.
         type: string
+      verificationMethodId:
+        description: |-
+          The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+          stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+          The private key associated with the verificationMethod's publicKey will be used to sign the JWT.
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
+        type: string
     required:
-    - expiration
     - issuerId
-    - issuerKid
     - presentationDefinitionId
+    - verificationMethodId
     type: object
   github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Submission:
     properties:
@@ -807,6 +851,30 @@ definitions:
     - urls
     - verb
     type: object
+  github_com_tbd54566975_ssi-service_pkg_service_well-known.VerifyDIDConfigurationRequest:
+    properties:
+      origin:
+        description: |-
+          Represents an origin to fetch the DID Configuration Resource from. Must be serialized as described in https://html.spec.whatwg.org/multipage/browsers.html#origin.
+          The `scheme` MUST be `https`.
+        example: https://example.com
+        type: string
+    required:
+    - origin
+    type: object
+  github_com_tbd54566975_ssi-service_pkg_service_well-known.VerifyDIDConfigurationResponse:
+    properties:
+      didConfiguration:
+        description: The configuration that was fetched from the origin's well known
+          location.
+        type: string
+      reason:
+        description: When Verified == false, the reason why it wasn't verified.
+        type: string
+      verified:
+        description: Whether the DIDConfiguration was verified.
+        type: boolean
+    type: object
   jwx.PublicKeyJWK:
     properties:
       alg:
@@ -849,6 +917,7 @@ definitions:
       spec_version:
         type: string
     required:
+    - applicant
     - format
     - id
     - manifest_id
@@ -958,7 +1027,7 @@ definitions:
     properties:
       requests:
         description: Required. The list of create credential requests. Cannot be more
-          than 1000 items.
+          than {{.Services.CredentialConfig.BatchCreateMaxItems}} items.
         items:
           $ref: '#/definitions/pkg_server_router.CreateCredentialRequest'
         type: array
@@ -971,6 +1040,25 @@ definitions:
         description: The credentials created.
         items:
           $ref: '#/definitions/github_com_tbd54566975_ssi-service_internal_credential.Container'
+        type: array
+    type: object
+  pkg_server_router.BatchCreateDIDsRequest:
+    properties:
+      requests:
+        description: Required. The list of create credential requests. Cannot be more
+          than {{.Services.DIDConfig.BatchCreateMaxItems}} items.
+        items:
+          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+        type: array
+    required:
+    - requests
+    type: object
+  pkg_server_router.BatchCreateDIDsResponse:
+    properties:
+      dids:
+        description: The DID documents created.
+        items:
+          $ref: '#/definitions/did.Document'
         type: array
     type: object
   pkg_server_router.CreateCredentialRequest:
@@ -988,6 +1076,13 @@ definitions:
         example:
           alumniOf: did_for_uni
         type: object
+      evidence:
+        description: Optional. Corresponds to `evidence` in https://www.w3.org/TR/vc-data-model-2.0/#evidence
+        example:
+        - '[{"id":"https://example.edu/evidence/f2aeec97-fc0d-42bf-8ca7-0548192d4231"'
+        - '"type":["DocumentVerification"]}]'
+        items: {}
+        type: array
       expiry:
         description: Optional. Corresponds to `expirationDate` in https://www.w3.org/TR/vc-data-model/#expiration.
         example: "2029-01-01T19:23:24Z"
@@ -995,10 +1090,6 @@ definitions:
       issuer:
         description: The issuer id.
         example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
-        type: string
-      issuerKid:
-        description: The KID used to sign the credential.
-        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
         type: string
       revocable:
         description: |-
@@ -1021,11 +1112,18 @@ definitions:
           property set.
         example: false
         type: boolean
+      verificationMethodId:
+        description: |-
+          The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+          stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+          The private key associated with the verificationMethod's publicKey will be used to sign the credential.
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
+        type: string
     required:
     - data
     - issuer
-    - issuerKid
     - subject
+    - verificationMethodId
     type: object
   pkg_server_router.CreateCredentialResponse:
     properties:
@@ -1037,16 +1135,19 @@ definitions:
           using JWS. In other words, the `proof` field is not present. See `credentialJwt` for the secured Verifiable
           Credential.
       credentialJwt:
-        description: JWT representation of `credential`, secured with an external
-          proof signed by `issuerKid`.
+        description: |-
+          JWT representation of `credential`, secured with an external proof. Verification can be done according to
+          `fullyQualifiedVerificationMethodId`.
+        type: string
+      fullyQualifiedVerificationMethodId:
+        description: |-
+          Fully qualified verification method ID that can be used to verify the credential. For example
+          `did:ion:EiDpQBo_nEfuLVeppgmPVQNEhtrnZLWFsB9ziZUuaKCJ3Q#83526c36-136c-423b-a57a-f190b83ae531`.
         type: string
       id:
         description: |-
-          Credential ID. This is the same value as the id within the secured credential. It is typically a URL that can be
-          dereferenced. For example, `https://ssi-service.com/v1/credentials/48958871-6a6d-4a25-889f-88c9c6835780`.
-        type: string
-      issuerKid:
-        description: The KID of the private key used to sign `credentialJwt`.
+          UUID assigned by the ssi-service. For example, 48958871-6a6d-4a25-889f-88c9c6835780. The `credential.id`
+          value will be a URL that can be dereferenced, which includes this ID.
         type: string
       revoked:
         description: Whether this credential is currently revoked.
@@ -1073,6 +1174,59 @@ definitions:
       did:
         $ref: '#/definitions/did.Document'
     type: object
+  pkg_server_router.CreateDIDConfigurationRequest:
+    properties:
+      expirationDate:
+        description: Will be used to set the `DomainLinkageCredential.credentialSubject.expirationDate`.
+          Required.
+        example: "2051-10-05T14:48:00.000Z"
+        type: string
+      issuanceDate:
+        description: |-
+          Will be used to set the `DomainLinkageCredential.credentialSubject.issuanceDate`. If left empty, then the current
+          time will be used.
+          Optional.
+        example: "2021-10-05T14:48:00.000Z"
+        type: string
+      issuerDid:
+        description: |-
+          DID that identifies who the issuer of the credential(s) will be.
+          Required.
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
+        type: string
+      origin:
+        description: |-
+          Serialization of an origin as described in https://html.spec.whatwg.org/multipage/browsers.html#origin. Represents
+          the origin that the IssuerDID controls, which will be included in the `DomainLinkageCredential.credentialSubject.origin`
+          value.
+          Required.
+        example: https://www.tbd.website/
+        type: string
+      verificationMethodId:
+        description: |-
+          The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+          stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+          The private key associated with the verificationMethod's publicKey will be used to sign the domain linkage credential.
+          Required.
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
+        type: string
+    required:
+    - expirationDate
+    - issuerDid
+    - origin
+    - verificationMethodId
+    type: object
+  pkg_server_router.CreateDIDConfigurationResponse:
+    properties:
+      didConfiguration:
+        allOf:
+        - $ref: '#/definitions/pkg_server_router.DIDConfiguration'
+        description: The DID Configuration Resource according to https://identity.foundation/.well-known/resources/did-configuration/#did-configuration-resource
+      wellKnownLocation:
+        description: The location in which the `didConfiguration` value should be
+          hosted.
+        type: string
+    type: object
   pkg_server_router.CreateIssuanceTemplateRequest:
     properties:
       credentialManifest:
@@ -1088,15 +1242,19 @@ definitions:
         description: ID of this template.
         type: string
       issuer:
-        description: ID of the issuer that will be issuance the credentials.
+        description: ID of the issuer that will be issuing the credentials.
         type: string
-      issuerKid:
-        description: ID of the key that will be used to sign the credentials.
+      verificationMethodId:
+        description: |-
+          The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+          stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+          The private key associated with the verificationMethod's publicKey will be used to sign the credentials.
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
         type: string
     required:
     - credentialManifest
     - issuer
-    - issuerKid
+    - verificationMethodId
     type: object
   pkg_server_router.CreateManifestRequest:
     properties:
@@ -1115,11 +1273,6 @@ definitions:
       issuerDid:
         description: |-
           DID that identifies who the issuer of the credential(s) will be.
-          Required.
-        type: string
-      issuerKid:
-        description: |-
-          The KID of the private key that will be used when signing issued credentials.
           Required.
         type: string
       issuerName:
@@ -1146,11 +1299,19 @@ definitions:
         description: id of the presentation definition created with PresentationDefinitionAPI.
           Must be empty if `value` is present.
         type: string
+      verificationMethodId:
+        description: |-
+          The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+          stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+          The private key associated with the verificationMethod's publicKey will be used to sign the issued credentials.
+          Required.
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
+        type: string
     required:
     - format
     - issuerDid
-    - issuerKid
     - outputDescriptors
+    - verificationMethodId
     type: object
   pkg_server_router.CreateManifestRequestRequest:
     properties:
@@ -1161,28 +1322,36 @@ definitions:
         items:
           type: string
         type: array
+      callbackUrl:
+        description: |-
+          The URL that the presenter should be submitting the presentation submission to.
+          Optional.
+        example: https://example.com
+        type: string
       credentialManifestId:
         description: ID of the credential manifest to use for this request.
         type: string
       expiration:
         description: |-
           Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
-          Optional. When not specified, the request will be valid for a default duration.
+          Optional.
         type: string
       issuerId:
-        description: |-
-          DID of the issuer of this presentation definition. The DID must have been previously created with the DID API,
-          or the PrivateKey must have been added independently.
+        description: DID of the issuer of this presentation definition. The DID must
+          have been previously created with the DID API.
         type: string
-      issuerKid:
+      verificationMethodId:
         description: |-
-          The privateKey associated with the KID will be used to sign an envelope that contains
+          The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+          stored in ssi-service. The verificationMethod must be part of the did document associated with `issuerId`.
+          The private key associated with the verificationMethod's publicKey will be used to sign an envelope that contains
           the created presentation definition.
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
         type: string
     required:
     - credentialManifestId
     - issuerId
-    - issuerKid
+    - verificationMethodId
     type: object
   pkg_server_router.CreateManifestRequestResponse:
     properties:
@@ -1232,28 +1401,36 @@ definitions:
         items:
           type: string
         type: array
+      callbackUrl:
+        description: |-
+          The URL that the presenter should be submitting the presentation submission to.
+          Optional.
+        example: https://example.com
+        type: string
       expiration:
         description: |-
           Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
-          Optional. When not specified, the request will be valid for a default duration.
+          Optional.
         type: string
       issuerId:
-        description: |-
-          DID of the issuer of this presentation definition. The DID must have been previously created with the DID API,
-          or the PrivateKey must have been added independently.
-        type: string
-      issuerKid:
-        description: |-
-          The privateKey associated with the KID will be used to sign an envelope that contains
-          the created presentation definition.
+        description: DID of the issuer of this presentation definition. The DID must
+          have been previously created with the DID API.
         type: string
       presentationDefinitionId:
         description: ID of the presentation definition to use for this request.
         type: string
+      verificationMethodId:
+        description: |-
+          The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+          stored in ssi-service. The verificationMethod must be part of the did document associated with `issuerId`.
+          The private key associated with the verificationMethod's publicKey will be used to sign an envelope that contains
+          the created presentation definition.
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
+        type: string
     required:
     - issuerId
-    - issuerKid
     - presentationDefinitionId
+    - verificationMethodId
     type: object
   pkg_server_router.CreateRequestResponse:
     properties:
@@ -1270,11 +1447,6 @@ definitions:
           Issuer represents the DID of the issuer for the schema if it's signed. Required if intending to sign the
           schema as a credential using CredentialSchema2023.
         type: string
-      issuerKid:
-        description: |-
-          IssuerKID represents the KID of the issuer's private key to sign the schema. Required if intending to sign the
-          schema as a credential using CredentialSchema2023.
-        type: string
       name:
         description: Name is a human-readable name for a schema
         type: string
@@ -1287,11 +1459,20 @@ definitions:
           The schema must be against draft 2020-12, 2019-09, or 7.
           Must include a string field `$schema` that must be one of `https://json-schema.org/draft/2020-12/schema`,
           `https://json-schema.org/draft/2019-09/schema`, or `https://json-schema.org/draft-07/schema`.
+      verificationMethodId:
+        description: |-
+          The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+          stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+          The private key associated with the verificationMethod's publicKey will be used to sign the schema as a
+          credential using CredentialSchema2023.
+          Required if intending to sign the schema as a credential using CredentialSchema2023.
+        example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
+        type: string
     required:
     - issuer
-    - issuerKid
     - name
     - schema
+    - verificationMethodId
     type: object
   pkg_server_router.CreateSchemaResponse:
     properties:
@@ -1349,6 +1530,16 @@ definitions:
       webhook:
         $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_webhook.Webhook'
     type: object
+  pkg_server_router.DIDConfiguration:
+    properties:
+      '@context': {}
+      linked_dids:
+        items: {}
+        type: array
+    required:
+    - '@context'
+    - linked_dids
+    type: object
   pkg_server_router.GetApplicationResponse:
     properties:
       application:
@@ -1366,16 +1557,19 @@ definitions:
           using JWS. In other words, the `proof` field is not present. See `credentialJwt` for the secured Verifiable
           Credential.
       credentialJwt:
-        description: JWT representation of `credential`, secured with an external
-          proof signed by `issuerKid`.
+        description: |-
+          JWT representation of `credential`, secured with an external proof. Verification can be done according to
+          `fullyQualifiedVerificationMethodId`.
+        type: string
+      fullyQualifiedVerificationMethodId:
+        description: |-
+          Fully qualified verification method ID that can be used to verify the credential. For example
+          `did:ion:EiDpQBo_nEfuLVeppgmPVQNEhtrnZLWFsB9ziZUuaKCJ3Q#83526c36-136c-423b-a57a-f190b83ae531`.
         type: string
       id:
         description: |-
-          Credential ID. This is the same value as the id within the secured credential. It is typically a URL that can be
-          dereferenced. For example, `https://ssi-service.com/v1/credentials/48958871-6a6d-4a25-889f-88c9c6835780`.
-        type: string
-      issuerKid:
-        description: The KID of the private key used to sign `credentialJwt`.
+          UUID assigned by the ssi-service. For example, 48958871-6a6d-4a25-889f-88c9c6835780. The `credential.id`
+          value will be a URL that can be dereferenced, which includes this ID.
         type: string
       revoked:
         description: Whether this credential is currently revoked.
@@ -1611,6 +1805,10 @@ definitions:
     type: object
   pkg_server_router.ListSubmissionResponse:
     properties:
+      nextPageToken:
+        description: Pagination token to retrieve the next page of results. If the
+          value is "", it means no further results for the request.
+        type: string
       submissions:
         items:
           $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_presentation_model.Submission'
@@ -1995,18 +2193,17 @@ definitions:
     - Second
     - Minute
     - Hour
-host: '{{.SwaggerInfoHost}}'
 info:
   contact:
     email: tbd-developer@squareup.com
     name: TBD
     url: https://github.com/TBD54566975/ssi-service/issues
-  description: '{{.SwaggerInfoDescription}}'
+  description: '{{.Desc}}'
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: SSI Service API
-  version: '{{.SwaggerInfoVersion}}'
+  version: '{{.SVN}}'
 paths:
   /health:
     get:
@@ -2223,7 +2420,7 @@ paths:
       summary: Update Credential Status
       tags:
       - CredentialAPI
-  /v1/credentials/batchCreate:
+  /v1/credentials/batch:
     put:
       consumes:
       - application/json
@@ -2317,6 +2514,68 @@ paths:
       summary: Verify Credential
       tags:
       - CredentialAPI
+  /v1/did-configurations:
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Creates a DID Configuration Resource which conforms to https://identity.foundation/.well-known/resources/did-configuration/#did-configuration-resource
+        The `didConfiguration` can be hosted at the `wellKnownLocation` specified in the response.
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.CreateDIDConfigurationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pkg_server_router.CreateDIDConfigurationResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Create DIDConfiguration
+      tags:
+      - DIDConfigurationAPI
+  /v1/did-configurations/verification:
+    put:
+      consumes:
+      - application/json
+      description: Verifies a DID Configuration Resource according to https://identity.foundation/.well-known/resources/did-configuration/#did-configuration-resource-verification
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_well-known.VerifyDIDConfigurationRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_well-known.VerifyDIDConfigurationResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Verifies a DID Configuration Resource
+      tags:
+      - DIDConfigurationAPI
   /v1/dids:
     get:
       consumes:
@@ -2396,7 +2655,12 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          allOf:
+          - $ref: '#/definitions/pkg_server_router.CreateDIDByMethodRequest'
+          - properties:
+              options:
+                $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_did.CreateIONDIDOptions'
+            type: object
       produces:
       - application/json
       responses:
@@ -2488,6 +2752,43 @@ paths:
       summary: Get DID
       tags:
       - DecentralizedIdentityAPI
+  /v1/dids/{method}/batch:
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Create a batch of verifiable credentials. The operation is atomic, meaning that all requests will
+        succeed or fail. This is currently only supported for the DID method named `did:key`.
+      parameters:
+      - description: Method. Only `key` is supported.
+        in: path
+        name: method
+        required: true
+        type: string
+      - description: The batch requests
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.BatchCreateDIDsRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pkg_server_router.BatchCreateDIDsResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Batch Create DIDs
+      tags:
+      - CredentialAPI
   /v1/dids/resolver/{id}:
     get:
       consumes:
@@ -3416,6 +3717,16 @@ paths:
           For example: `?filter=status='
         in: query
         name: filter
+        type: string
+      - description: Hint to the server of the maximum elements to return. More may
+          be returned. When not set, the server will return all elements.
+        in: query
+        name: pageSize
+        type: number
+      - description: Used to indicate to the server to return a specific page of the
+          list results. Must match a previous requests' `nextPageToken`.
+        in: query
+        name: pageToken
         type: string
       produces:
       - application/json

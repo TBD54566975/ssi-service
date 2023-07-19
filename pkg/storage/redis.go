@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -21,11 +20,10 @@ func init() {
 }
 
 const (
-	NamespaceKeySeparator           = ":"
-	Pong                            = "PONG"
-	RedisScanBatchSize              = 1000
-	MaxElapsedTime                  = 6 * time.Second
-	RedisAddressOption    OptionKey = "redis-address-option"
+	Pong                         = "PONG"
+	RedisScanBatchSize           = 1000
+	MaxElapsedTime               = 6 * time.Second
+	RedisAddressOption OptionKey = "redis-address-option"
 )
 
 type RedisDB struct {
@@ -46,7 +44,7 @@ func (b *RedisDB) ReadPage(ctx context.Context, namespace string, pageToken stri
 	if err != nil {
 		return nil, "", err
 	}
-	results, err := readAll(ctx, keys, b)
+	results, err := readAll(ctx, namespace, keys, b)
 	if err != nil {
 		return nil, "", err
 	}
@@ -241,7 +239,7 @@ func (b *RedisDB) ReadPrefix(ctx context.Context, namespace, prefix string) (map
 		return nil, errors.Wrap(err, "read all keys")
 	}
 
-	return readAll(ctx, keys, b)
+	return readAll(ctx, namespace, keys, b)
 }
 
 func (b *RedisDB) ReadAll(ctx context.Context, namespace string) (map[string][]byte, error) {
@@ -250,11 +248,11 @@ func (b *RedisDB) ReadAll(ctx context.Context, namespace string) (map[string][]b
 		return nil, errors.Wrap(err, "read all keys")
 	}
 
-	return readAll(ctx, keys, b)
+	return readAll(ctx, namespace, keys, b)
 }
 
 // TODO: This potentially could dangerous as it might run out of memory as we populate result
-func readAll(ctx context.Context, keys []string, b *RedisDB) (map[string][]byte, error) {
+func readAll(ctx context.Context, namespace string, keys []string, b *RedisDB) (map[string][]byte, error) {
 	result := make(map[string][]byte, len(keys))
 
 	if len(keys) == 0 {
@@ -271,10 +269,10 @@ func readAll(ctx context.Context, keys []string, b *RedisDB) (map[string][]byte,
 	}
 
 	// result needs to take the namespace out of the key
-	namespaceDashIndex := strings.Index(keys[0], NamespaceKeySeparator)
+	keyStart := len(namespace) + 1
 	for i, val := range values {
 		byteValue := []byte(fmt.Sprintf("%v", val))
-		key := keys[i][namespaceDashIndex+1:]
+		key := keys[i][keyStart:]
 		result[key] = byteValue
 	}
 
@@ -291,9 +289,9 @@ func (b *RedisDB) ReadAllKeys(ctx context.Context, namespace string) ([]string, 
 		return make([]string, 0), nil
 	}
 
-	namespaceDashIndex := strings.Index(keys[0], NamespaceKeySeparator)
+	keyStart := len(namespace) + 1
 	for i, key := range keys {
-		keyWithoutNamespace := key[namespaceDashIndex+1:]
+		keyWithoutNamespace := key[keyStart:]
 		keys[i] = keyWithoutNamespace
 	}
 
@@ -351,8 +349,10 @@ func (b *RedisDB) Delete(ctx context.Context, namespace, key string) error {
 	}
 
 	res, err := b.db.GetDel(ctx, nameSpaceKey).Result()
-	if res == "" {
-		return errors.Wrapf(err, "key<%s> and namespace<%s> does not exist", key, namespace)
+
+	// if we delete something that doesn't exist, don't return any error
+	if res == "" && errors.Is(err, goredislib.Nil) {
+		return nil
 	}
 
 	return err
@@ -431,7 +431,7 @@ func txWithUpdater(ctx context.Context, namespace, key string, updater Updater, 
 }
 
 func getRedisKey(namespace, key string) string {
-	return namespace + NamespaceKeySeparator + key
+	return Join(namespace, key)
 }
 
 func namespaceExists(ctx context.Context, namespace string, b *RedisDB) bool {

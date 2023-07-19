@@ -1,6 +1,6 @@
 {
   "issuerDid":"{{.IssuerID}}",
-  "issuerKid": "{{.IssuerKID}}",
+  "verificationMethodId": "{{.VerificationMethodID}}",
   "issuerName":"Issuer Name Lol",
   "format":{
     "jwt":{

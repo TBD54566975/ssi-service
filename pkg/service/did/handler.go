@@ -7,6 +7,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 )
 
 // MethodHandler describes the functionality of *all* possible DID service, regardless of method
@@ -24,7 +25,7 @@ type MethodHandler interface {
 	GetDID(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error)
 
 	// ListDIDs returns all non-deleted DIDs for the given page. When page is nil, all non-deleted DIDs will be returned.
-	ListDIDs(ctx context.Context, page *Page) (*ListDIDsResponse, error)
+	ListDIDs(ctx context.Context, page *common.Page) (*ListDIDsResponse, error)
 
 	// ListDeletedDIDs returns all soft-deleted DIDs.
 	ListDeletedDIDs(ctx context.Context) (*ListDIDsResponse, error)

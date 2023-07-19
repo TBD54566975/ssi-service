@@ -9,6 +9,7 @@ import (
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
+	"github.com/tbd54566975/ssi-service/pkg/testutil"
 )
 
 func TestWebhookRouter(t *testing.T) {
@@ -26,17 +27,21 @@ func TestWebhookRouter(t *testing.T) {
 		assert.Contains(tt, err.Error(), "could not create webhook router with service type: test")
 	})
 
-	t.Run("Webhook Service Test", func(tt *testing.T) {
-		db := setupTestDB(tt)
-		require.NotEmpty(tt, db)
+	for _, test := range testutil.TestDatabases {
+		t.Run(test.Name, func(t *testing.T) {
+			t.Run("Webhook Service Test", func(tt *testing.T) {
+				db := test.ServiceStorage(tt)
+				require.NotEmpty(tt, db)
 
-		serviceConfig := config.WebhookServiceConfig{WebhookTimeout: "10s"}
-		webhookService, err := webhook.NewWebhookService(serviceConfig, db)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, webhookService)
+				serviceConfig := config.WebhookServiceConfig{WebhookTimeout: "10s"}
+				webhookService, err := webhook.NewWebhookService(serviceConfig, db)
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, webhookService)
 
-		// check type and status
-		assert.Equal(tt, framework.Webhook, webhookService.Type())
-		assert.Equal(tt, framework.StatusReady, webhookService.Status().Status)
-	})
+				// check type and status
+				assert.Equal(tt, framework.Webhook, webhookService.Type())
+				assert.Equal(tt, framework.StatusReady, webhookService.Status().Status)
+			})
+		})
+	}
 }

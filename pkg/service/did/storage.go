@@ -10,6 +10,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -59,13 +60,28 @@ func (d DefaultStoredDID) IsSoftDeleted() bool {
 
 type Storage struct {
 	db storage.ServiceStorage
+	tx storage.Tx
 }
 
 func NewDIDStorage(db storage.ServiceStorage) (*Storage, error) {
-	if db == nil {
-		return nil, errors.New("db reference is nil")
+	return NewDIDStorageFactory(db)(db)
+}
+
+type StorageFactory func(tx storage.Tx) (*Storage, error)
+
+func NewDIDStorageFactory(db storage.ServiceStorage) StorageFactory {
+	return func(tx storage.Tx) (*Storage, error) {
+		if db == nil {
+			return nil, errors.New("db reference is nil")
+		}
+		if tx == nil {
+			return nil, errors.New("tx reference is nil")
+		}
+		return &Storage{
+			db: db,
+			tx: tx,
+		}, nil
 	}
-	return &Storage{db: db}, nil
 }
 
 func (ds *Storage) StoreDID(ctx context.Context, did StoredDID) error {
@@ -78,7 +94,7 @@ func (ds *Storage) StoreDID(ctx context.Context, did StoredDID) error {
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, couldNotStoreDIDErr)
 	}
-	return ds.db.Write(ctx, ns, did.GetID(), didBytes)
+	return ds.tx.Write(ctx, ns, did.GetID(), didBytes)
 }
 
 // GetDID attempts to get a DID from the database. It will return an error if it cannot.
@@ -101,7 +117,7 @@ func (ds *Storage) GetDID(ctx context.Context, id string, out StoredDID) error {
 		return sdkutil.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
 	if err = json.Unmarshal(docBytes, out); err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not ummarshal stored DID: %s", id)
+		return sdkutil.LoggingErrorMsgf(err, "could not unmarshal stored DID: %s", id)
 	}
 	return nil
 }
@@ -113,6 +129,16 @@ func (ds *Storage) GetDIDDefault(ctx context.Context, id string) (*DefaultStored
 		return nil, err
 	}
 	return outType, nil
+}
+
+// DIDExists returns true if DID exists, false if not
+func (ds *Storage) DIDExists(ctx context.Context, id string) (bool, error) {
+	ns, err := getNamespaceForDID(id)
+	if err != nil {
+		return false, sdkutil.LoggingErrorMsg(err, fmt.Sprintf("could not get namespace for did: %s", id))
+	}
+
+	return ds.db.Exists(ctx, ns, id)
 }
 
 // ListDIDs attempts to get all DIDs for a given method. It will return those it can even if it has trouble with some.
@@ -151,30 +177,18 @@ func (ds *Storage) storedDIDs(gotDIDs map[string][]byte, outType StoredDID) []St
 	return out
 }
 
-type Page struct {
-	Token *string
-	Size  *int
-}
-
 type StoredDIDs struct {
 	DIDs          []StoredDID
 	NextPageToken string
 }
 
-func (ds *Storage) ListDIDsPage(ctx context.Context, method string, page *Page, outType StoredDID) (*StoredDIDs, error) {
+func (ds *Storage) ListDIDsPage(ctx context.Context, method string, page *common.Page, outType StoredDID) (*StoredDIDs, error) {
 	ns, err := getNamespaceForMethod(method)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting namespace")
 	}
 
-	token := ""
-	if page != nil && page.Token != nil {
-		token = *page.Token
-	}
-	size := -1
-	if page != nil && page.Size != nil {
-		size = *page.Size
-	}
+	token, size := page.ToStorageArgs()
 
 	gotDIDs, nextPageToken, err := ds.db.ReadPage(ctx, ns, token, size)
 	if err != nil {
