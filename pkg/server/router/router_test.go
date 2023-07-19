@@ -21,7 +21,7 @@ func (s *testService) Status() framework.Status {
 func (s *testService) Config() config.ServicesConfig {
 	return config.ServicesConfig{
 		StorageProvider:  "bolt",
-		KeyStoreConfig:   config.KeyStoreServiceConfig{MasterKeyPassword: "test-password"},
+		KeyStoreConfig:   config.KeyStoreServiceConfig{},
 		DIDConfig:        config.DIDServiceConfig{Methods: []string{string(didsdk.KeyMethod)}},
 		SchemaConfig:     config.SchemaServiceConfig{},
 		CredentialConfig: config.CredentialServiceConfig{},

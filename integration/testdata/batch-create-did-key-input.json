@@ -1,0 +1,25 @@
+{
+  "requests": [
+    {
+      "keyType": "Ed25519"
+    },
+    {
+      "keyType": "X25519"
+    },
+    {
+      "keyType": "secp256k1"
+    },
+    {
+      "keyType": "P-256"
+    },
+    {
+      "keyType": "P-384"
+    },
+    {
+      "keyType": "P-521"
+    },
+    {
+      "keyType": "RSA"
+    }
+  ]
+}

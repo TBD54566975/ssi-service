@@ -5,8 +5,10 @@ import (
 	"reflect"
 
 	"github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/credential/parsing"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 )
 
@@ -17,15 +19,17 @@ type Container struct {
 	// value will be a URL that can be dereferenced, which includes this ID.
 	ID string `json:"id,omitempty"`
 
-	// The KID of the private key used to sign `credentialJwt`.
-	IssuerKID string `json:"issuerKid,omitempty"`
+	// Fully qualified verification method ID that can be used to verify the credential. For example
+	// `did:ion:EiDpQBo_nEfuLVeppgmPVQNEhtrnZLWFsB9ziZUuaKCJ3Q#83526c36-136c-423b-a57a-f190b83ae531`.
+	FullyQualifiedVerificationMethodID string `json:"fullyQualifiedVerificationMethodId,omitempty"`
 
 	// Verifiable Credential in the `application/vc+ld+json` format. The credential is secured with an external proof
 	// using JWS. In other words, the `proof` field is not present. See `credentialJwt` for the secured Verifiable
 	// Credential.
 	Credential *credential.VerifiableCredential `json:"credential,omitempty"`
 
-	// JWT representation of `credential`, secured with an external proof signed by `issuerKid`.
+	// JWT representation of `credential`, secured with an external proof. Verification can be done according to
+	// `fullyQualifiedVerificationMethodId`.
 	CredentialJWT *keyaccess.JWT `json:"credentialJwt,omitempty"`
 
 	// Whether this credential is currently revoked.
@@ -57,7 +61,7 @@ func (c Container) HasJWTCredential() bool {
 
 // NewCredentialContainerFromJWT attempts to parse a VC-JWT credential from a string into a Container
 func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
-	_, _, cred, err := credential.ToCredential(credentialJWT)
+	_, _, cred, err := parsing.ToCredential(credentialJWT)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse credential from JWT")
 	}
@@ -70,7 +74,7 @@ func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
 // NewCredentialContainerFromMap attempts to parse a data integrity credential from a piece of JSON,
 // which is represented as a map in go, into a Container
 func NewCredentialContainerFromMap(credMap map[string]any) (*Container, error) {
-	_, _, cred, err := credential.ToCredential(credMap)
+	_, _, cred, err := parsing.ToCredential(credMap)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not parse credential from map")
 	}

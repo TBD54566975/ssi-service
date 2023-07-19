@@ -139,10 +139,10 @@ func newRequestContextWithURLValues(w http.ResponseWriter, req *http.Request, pa
 	return c
 }
 
-func getValidCreateManifestRequest(issuerDID, issuerKID, schemaID string) router.CreateManifestRequest {
+func getValidCreateManifestRequest(issuerDID, verificationMethodID, schemaID string) router.CreateManifestRequest {
 	return router.CreateManifestRequest{
-		IssuerDID: issuerDID,
-		IssuerKID: issuerKID,
+		IssuerDID:            issuerDID,
+		VerificationMethodID: verificationMethodID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
@@ -188,6 +188,7 @@ func getValidApplicationRequest(manifestID, presDefID, submissionDescriptorID st
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: manifestsdk.SpecVersion,
+		Applicant:   "did:example:123",
 		ManifestID:  manifestID,
 		Format: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
@@ -212,28 +213,29 @@ func getValidApplicationRequest(manifestID, presDefID, submissionDescriptorID st
 	}
 }
 
-func testKeyStore(t *testing.T, bolt storage.ServiceStorage) (*router.KeyStoreRouter, *keystore.Service) {
-	keyStoreService := testKeyStoreService(t, bolt)
+func testKeyStore(t *testing.T, bolt storage.ServiceStorage) (*router.KeyStoreRouter, *keystore.Service, keystore.ServiceFactory) {
+	keyStoreService, keyStoreServiceFactory := testKeyStoreService(t, bolt)
 
 	// create router for service
 	keyStoreRouter, err := router.NewKeyStoreRouter(keyStoreService)
 	require.NoError(t, err)
 	require.NotEmpty(t, keyStoreRouter)
 
-	return keyStoreRouter, keyStoreService
+	return keyStoreRouter, keyStoreService, keyStoreServiceFactory
 }
 
-func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Service {
+func testKeyStoreService(t *testing.T, db storage.ServiceStorage) (*keystore.Service, keystore.ServiceFactory) {
 	serviceConfig := config.KeyStoreServiceConfig{
 		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-keystore"},
-		MasterKeyPassword: "test-password",
 	}
 
 	// create a keystore service
-	keystoreService, err := keystore.NewKeyStoreService(serviceConfig, db)
+	require.NoError(t, keystore.EnsureServiceKeyExists(serviceConfig, db))
+	factory := keystore.NewKeyStoreServiceFactory(serviceConfig, db)
+	keystoreService, err := factory(db)
 	require.NoError(t, err)
 	require.NotEmpty(t, keystoreService)
-	return keystoreService
+	return keystoreService, factory
 }
 
 func testIssuanceService(t *testing.T, db storage.ServiceStorage) *issuance.Service {
@@ -247,7 +249,7 @@ func testIssuanceService(t *testing.T, db storage.ServiceStorage) *issuance.Serv
 	return s
 }
 
-func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, methods ...string) *did.Service {
+func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, factory keystore.ServiceFactory, methods ...string) (*did.Service, *did.BatchService) {
 	if methods == nil {
 		methods = []string{"key"}
 	}
@@ -256,23 +258,29 @@ func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystor
 		Methods:                methods,
 		LocalResolutionMethods: []string{"key", "web", "peer", "pkh"},
 		IONResolverURL:         testIONResolverURL,
+		BatchCreateMaxItems:    100,
 	}
 
 	// create a did service
 	didService, err := did.NewDIDService(serviceConfig, bolt, keyStore)
 	require.NoError(t, err)
 	require.NotEmpty(t, didService)
-	return didService
+
+	batchDIDService, err := did.NewBatchDIDService(serviceConfig, bolt, factory)
+	require.NoError(t, err)
+	return didService, batchDIDService
 }
 
-func testDIDRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, methods []string) *router.DIDRouter {
-	didService := testDIDService(t, bolt, keyStore, methods...)
+func testDIDRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, methods []string, factory keystore.ServiceFactory) (*router.DIDRouter, *router.BatchDIDRouter) {
+	didService, batchDIDService := testDIDService(t, bolt, keyStore, factory, methods...)
 
 	// create router for service
 	didRouter, err := router.NewDIDRouter(didService)
 	require.NoError(t, err)
 	require.NotEmpty(t, didRouter)
-	return didRouter
+
+	batchDIDRouter := router.NewBatchDIDRouter(batchDIDService)
+	return didRouter, batchDIDRouter
 }
 
 func testSchemaService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, did *did.Service) *schema.Service {

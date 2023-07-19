@@ -2,22 +2,33 @@ package storage
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/binary"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strconv"
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
+	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func getDBImplementations(t *testing.T) []ServiceStorage {
-	boltDB := setupBoltDB(t)
-	redisDB := setupRedisDB(t)
-
 	dbImpls := make([]ServiceStorage, 0)
-	dbImpls = append(dbImpls, boltDB, redisDB)
+
+	boltDB := setupBoltDB(t)
+	dbImpls = append(dbImpls, boltDB)
+
+	redisDB := setupRedisDB(t)
+	dbImpls = append(dbImpls, redisDB)
+
+	postgresDB := setupPostgresDB(t)
+	dbImpls = append(dbImpls, postgresDB)
+
 	return dbImpls
 }
 
@@ -35,6 +46,41 @@ func setupBoltDB(t *testing.T) *BoltDB {
 		_ = os.Remove(dbName)
 	})
 	return db.(*BoltDB)
+}
+
+func setupPostgresDB(t *testing.T) *SQLDB {
+	homeDir, err := os.UserHomeDir()
+	require.NoError(t, err)
+
+	scalar := make([]byte, 32)
+	_, err = rand.Read(scalar)
+	require.NoError(t, err)
+
+	randomDir := strconv.Itoa(int(binary.BigEndian.Uint32(scalar)))
+	postgres := embeddedpostgres.NewDatabase(embeddedpostgres.DefaultConfig().
+		BinariesPath(filepath.Join(homeDir, ".embedded-postgres-go", "tmpBin")).
+		DataPath(filepath.Join(os.TempDir(), ".embedded-postgres-go", "data", randomDir)).
+		RuntimePath(filepath.Join(os.TempDir(), ".embedded-postgres-go", "runtime", randomDir)))
+	err = postgres.Start()
+	require.NoError(t, err)
+
+	t.Cleanup(func() {
+		_ = postgres.Stop()
+	})
+
+	options := []Option{
+		{
+			ID:     SQLConnectionString,
+			Option: "host=localhost port=5432 user=postgres password=postgres dbname=postgres sslmode=disable",
+		},
+		{
+			ID:     SQLDriverName,
+			Option: "postgres",
+		},
+	}
+	s, err := NewStorage(DatabaseSQL, options...)
+	require.NoError(t, err)
+	return s.(*SQLDB)
 }
 
 func setupRedisDB(t *testing.T) *RedisDB {
@@ -129,6 +175,7 @@ func TestDB(t *testing.T) {
 
 		// delete a namespace that doesn't exist
 		err = db.DeleteNamespace(context.Background(), "bad")
+		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "could not delete namespace<bad>")
 
 		// delete namespace

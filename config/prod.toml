@@ -38,7 +38,6 @@ option = "password"
 # per-service configuration
 [services.keystore]
 name = "keystore"
-password = "default-password"
 # master_key_uri = "gcp-kms://projects/*/locations/*/keyRings/*/cryptoKeys/*"
 # kms_credentials_path = "credentials.json"
 
@@ -49,6 +48,7 @@ local_resolution_methods = ["key", "web", "pkh", "peer"]
 universal_resolver_url = "http://uni-resolver-web:8080"
 universal_resolver_methods = ["ion"]
 ion_resolver_url = "https://ion.tbddev.org"
+batch_create_max_items = 100
 
 [services.schema]
 name = "schema"
@@ -65,7 +65,6 @@ name = "manifest"
 
 [services.presentation]
 name = "presentation"
-expiration_duration = "30m"
 
 [services.webhook]
 name = "webhook"

@@ -20,6 +20,8 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
+type ServiceFactory func(storage.Tx) (*Service, error)
+
 type Service struct {
 	storage *Storage
 	config  config.KeyStoreServiceConfig
@@ -48,25 +50,35 @@ func (s Service) Config() config.KeyStoreServiceConfig {
 }
 
 func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	encrypter, decrypter, err := NewEncryption(s, config)
-	if err != nil {
-		return nil, errors.Wrap(err, "creating new encryption")
+	if err := EnsureServiceKeyExists(config, s); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "initializing keystore")
 	}
+	factory := NewKeyStoreServiceFactory(config, s)
+	return factory(s)
+}
 
-	// Next, instantiate the key storage
-	keyStoreStorage, err := NewKeyStoreStorage(s, encrypter, decrypter)
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "instantiating storage for the keystore service")
-	}
+func NewKeyStoreServiceFactory(config config.KeyStoreServiceConfig, s storage.ServiceStorage) ServiceFactory {
+	return func(tx storage.Tx) (*Service, error) {
+		encrypter, decrypter, err := newEncryption(s, config)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating new encryption")
+		}
 
-	service := Service{
-		storage: keyStoreStorage,
-		config:  config,
+		// Next, instantiate the key storage
+		keyStoreStorage, err := NewKeyStoreStorage(s, encrypter, decrypter, tx)
+		if err != nil {
+			return nil, sdkutil.LoggingErrorMsg(err, "instantiating storage for the keystore service")
+		}
+
+		service := Service{
+			storage: keyStoreStorage,
+			config:  config,
+		}
+		if !service.Status().IsReady() {
+			return nil, errors.New(service.Status().Message)
+		}
+		return &service, nil
 	}
-	if !service.Status().IsReady() {
-		return nil, errors.New(service.Status().Message)
-	}
-	return &service, nil
 }
 
 func (s Service) StoreKey(ctx context.Context, request StoreKeyRequest) error {
@@ -124,7 +136,6 @@ func (s Service) GetKey(ctx context.Context, request GetKeyRequest) (*GetKeyResp
 	}, nil
 }
 
-// TODO(gabe): expose this endpoint https://github.com/TBD54566975/ssi-service/issues/451
 func (s Service) RevokeKey(ctx context.Context, request RevokeKeyRequest) error {
 	logrus.Debugf("revoking key: %+v", request)
 
@@ -157,23 +168,15 @@ func (s Service) GetKeyDetails(ctx context.Context, request GetKeyDetailsRequest
 	}, nil
 }
 
-// GenerateServiceKey using argon2 for key derivation generate a service key and corresponding salt,
-// base58 encoding both values.
-func GenerateServiceKey(skPassword string) (key, salt string, err error) {
-	saltBytes, err := util.GenerateSalt(util.Argon2SaltSize)
+// GenerateServiceKey creates a random key that's 32 bytes encoded using base58.
+func GenerateServiceKey() (key string, err error) {
+	keyBytes, err := util.GenerateSalt(chacha20poly1305.KeySize)
 	if err != nil {
-		err = errors.Wrap(err, "generating salt for service key")
-		return "", "", sdkutil.LoggingError(err)
-	}
-
-	keyBytes, err := util.Argon2KeyGen(skPassword, saltBytes, chacha20poly1305.KeySize)
-	if err != nil {
-		err = errors.Wrap(err, "generating key for service key")
-		return "", "", sdkutil.LoggingError(err)
+		err = errors.Wrap(err, "generating bytes for service key")
+		return "", sdkutil.LoggingError(err)
 	}
 
 	key = base58.Encode(keyBytes)
-	salt = base58.Encode(saltBytes)
 	return
 }
 
@@ -200,6 +203,9 @@ func (s Service) Sign(ctx context.Context, keyID string, data any) (*keyaccess.J
 	gotKey, err := s.GetKey(ctx, GetKeyRequest{ID: keyID})
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "getting key with keyID<%s>", keyID)
+	}
+	if gotKey.Revoked {
+		return nil, sdkutil.LoggingNewErrorf("cannot use revoked key<%s>", gotKey.ID)
 	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {

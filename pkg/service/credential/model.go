@@ -3,7 +3,9 @@ package credential
 import (
 	"fmt"
 
+	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 )
 
 type BatchCreateCredentialsRequest struct {
@@ -15,9 +17,11 @@ type BatchCreateCredentialsResponse struct {
 }
 
 type CreateCredentialRequest struct {
-	Issuer    string `json:"issuer" validate:"required"`
-	IssuerKID string `json:"issuerKid" validate:"required"`
-	Subject   string `json:"subject" validate:"required"`
+	Issuer string `json:"issuer" validate:"required"`
+	// Fully qualified verification method ID to determine the private key used for signing this credential. For example
+	// `did:ion:EiDpQBo_nEfuLVeppgmPVQNEhtrnZLWFsB9ziZUuaKCJ3Q#83526c36-136c-423b-a57a-f190b83ae531`.
+	FullyQualifiedVerificationMethodID string `json:"issuerVerificationMethodId" validate:"required"`
+	Subject                            string `json:"subject" validate:"required"`
 	// A context is optional. If not present, we'll apply default, required context values.
 	Context string `json:"context,omitempty"`
 	// A schema ID is optional. If present, we'll attempt to look it up and validate the data against it.
@@ -107,7 +111,7 @@ func (csr CreateCredentialRequest) hasEvidence() bool {
 	return len(csr.Evidence) != 0
 }
 
-func (csr *CreateCredentialRequest) validateEvidence() error {
+func (csr CreateCredentialRequest) validateEvidence() error {
 	for _, e := range csr.Evidence {
 		evidenceMap, ok := e.(map[string]any)
 		if !ok {
@@ -123,4 +127,11 @@ func (csr *CreateCredentialRequest) validateEvidence() error {
 	}
 
 	return nil
+}
+
+func (csr CreateCredentialRequest) IsValid() error {
+	if err := util.IsValidStruct(csr); err != nil {
+		return err
+	}
+	return common.ValidateVerificationMethodID(csr.FullyQualifiedVerificationMethodID, csr.Issuer)
 }

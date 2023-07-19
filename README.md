@@ -1,5 +1,5 @@
 [![godoc ssi-service](https://img.shields.io/badge/godoc-ssi--service-blue)](https://github.com/TBD54566975/ssi-service)
-[![go version 1.20.5](https://img.shields.io/badge/go_version-1.20.5-brightgreen)](https://go.dev/)
+[![go version 1.20.6](https://img.shields.io/badge/go_version-1.20.6-brightgreen)](https://go.dev/)
 [![license Apache 2](https://img.shields.io/badge/license-Apache%202-black)](https://github.com/TBD54566975/ssi-service/blob/main/LICENSE)
 [![issues](https://img.shields.io/github/issues/TBD54566975/ssi-service)](https://github.com/TBD54566975/ssi-service/issues)
 ![push](https://github.com/TBD54566975/ssi-service/workflows/ssi-service-ci/badge.svg?branch=main&event=push)
@@ -26,7 +26,7 @@ Decentralized Web Platform architecture which you can learn more about in our
 
 ## Use Cases (more to come!)
 ### Business: Issuing Verifiable Credentials <br />
-[Follow Tutorial](https://developer.tbd.website/docs/tutorials/issue-verifiable-credential-manually)
+[Follow Tutorial](https://developer.tbd.website/blog/issue-verifiable-credential-manually)
 
 Steps to issue an Employment Status Credential:
 1. Spin up and host the SSI-Service
@@ -49,7 +49,7 @@ service.
 
 SSI-service can store keys that are used to digitally sign credentials (and other data). All such keys are encrypted at
 the application before being stored using a MasterKey (a.k.a. a Key Encryption Key or KEK). The MasterKey can be
-generated automatically during boot time based on a password, or we can use the MasterKey housed in an external Key 
+generated automatically during boot time, or we can use the MasterKey housed in an external Key 
 Management System (KMS) like GCP KMS or AWS KMS.
 
 For production deployments, using external KMS is strongly recommended.
@@ -61,9 +61,8 @@ To use an external KMS:
 3. Set the `kms_credentials_path` field of the `[services.keystore]` section to point to your credentials file, according to [this section](https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#credentials).
 4. Win!
 
-To use a password based MasterKey (NOT RECOMMENDED FOR ANY PRODUCTION ENVIRONMENT):
+To use a randomly generated encryption key (NOT RECOMMENDED FOR ANY PRODUCTION ENVIRONMENT):
 1. Make sure that `master_key_uri` and `kms_credentials_path` of the `[services.keystore]` section are not set.
-2. Set the `password` field of the `[services.keystore]` section to your desired password.
 
 Note that at this time, we do not currently support rotating the master key.
 

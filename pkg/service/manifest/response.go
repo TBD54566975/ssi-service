@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
-	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
+	"github.com/TBD54566975/ssi-sdk/credential/parsing"
+	"github.com/TBD54566975/ssi-sdk/did"
 	errresp "github.com/TBD54566975/ssi-sdk/error"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
@@ -29,10 +30,13 @@ const (
 	DenialResponse errresp.Type = "DenialResponse"
 )
 
-func (s Service) signCredentialResponse(ctx context.Context, issuerKID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
-	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: issuerKID})
+func (s Service) signCredentialResponse(ctx context.Context, keyStoreID string, r CredentialResponseContainer) (*keyaccess.JWT, error) {
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: keyStoreID})
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing response with key<%s>", issuerKID)
+		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing response with key<%s>", keyStoreID)
+	}
+	if gotKey.Revoked {
+		return nil, sdkutil.LoggingNewErrorf("cannot use revoked key<%s>", gotKey.ID)
 	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {
@@ -49,17 +53,17 @@ func (s Service) signCredentialResponse(ctx context.Context, issuerKID string, r
 
 // buildFulfillmentCredentialResponseFromTemplate builds a credential response from a template
 func (s Service) buildFulfillmentCredentialResponseFromTemplate(ctx context.Context,
-	applicantDID, manifestID, issuerKID string, credManifest manifest.CredentialManifest,
+	applicantDID, manifestID, fullyQualifiedVerificationMethodID string, credManifest manifest.CredentialManifest,
 	template issuance.Template, application manifest.CredentialApplication,
 	applicationJSON map[string]any) (*manifest.CredentialResponse, []cred.Container, error) {
-	if template.IsValid() {
-		return nil, nil, errors.New("issuance template is not valid")
+	if err := template.IsValid(); err != nil {
+		return nil, nil, errors.Wrap(err, "validating template")
 	}
 
 	templateMap := make(map[string]issuance.CredentialTemplate)
-	issuingKID := issuerKID
-	if template.IssuerKID != "" {
-		issuingKID = template.IssuerKID
+	qualifiedVerificationMethodID := fullyQualifiedVerificationMethodID
+	if template.VerificationMethodID != "" {
+		qualifiedVerificationMethodID = did.FullyQualifiedVerificationMethodID(template.Issuer, template.VerificationMethodID)
 	}
 	for _, templateCred := range template.Credentials {
 		templateCred := templateCred
@@ -74,11 +78,11 @@ func (s Service) buildFulfillmentCredentialResponseFromTemplate(ctx context.Cont
 		return nil, nil, sdkutil.LoggingErrorMsgf(err, "could not fulfill credential application<%s> from template", application.ID)
 	}
 
-	return s.fulfillmentCredentialResponse(ctx, responseBuilder, applicantDID, issuingKID, credManifest, &application, templateMap, applicationJSON, nil)
+	return s.fulfillmentCredentialResponse(ctx, responseBuilder, applicantDID, qualifiedVerificationMethodID, credManifest, &application, templateMap, applicationJSON, nil)
 }
 
 // buildFulfillmentCredentialResponseFromOverrides builds a credential response from overrides
-func (s Service) buildFulfillmentCredentialResponse(ctx context.Context, applicantDID, applicationID, manifestID, issuerKID string,
+func (s Service) buildFulfillmentCredentialResponse(ctx context.Context, applicantDID, applicationID, manifestID, fullyQualifiedVerificationMethodID string,
 	credManifest manifest.CredentialManifest, overrides map[string]model.CredentialOverride) (*manifest.CredentialResponse, []cred.Container, error) {
 
 	responseBuilder := manifest.NewCredentialResponseBuilder(manifestID)
@@ -89,22 +93,22 @@ func (s Service) buildFulfillmentCredentialResponse(ctx context.Context, applica
 		return nil, nil, sdkutil.LoggingErrorMsgf(err, "could not fulfill credential application<%s>", applicationID)
 	}
 
-	return s.fulfillmentCredentialResponse(ctx, responseBuilder, applicantDID, issuerKID, credManifest, nil, nil, nil, overrides)
+	return s.fulfillmentCredentialResponse(ctx, responseBuilder, applicantDID, fullyQualifiedVerificationMethodID, credManifest, nil, nil, nil, overrides)
 }
 
 // unifies both templated and override paths for building a credential response
 func (s Service) fulfillmentCredentialResponse(ctx context.Context, responseBuilder manifest.CredentialResponseBuilder,
-	applicantDID, issuerKID string, credManifest manifest.CredentialManifest, application *manifest.CredentialApplication,
+	applicantDID, fullyQualifiedVerificationMethodID string, credManifest manifest.CredentialManifest, application *manifest.CredentialApplication,
 	templateMap map[string]issuance.CredentialTemplate, applicationJSON map[string]any,
 	credentialOverrides map[string]model.CredentialOverride) (*manifest.CredentialResponse, []cred.Container, error) {
 
 	creds := make([]cred.Container, 0, len(credManifest.OutputDescriptors))
 	for _, od := range credManifest.OutputDescriptors {
 		createCredentialRequest := credential.CreateCredentialRequest{
-			Issuer:    credManifest.Issuer.ID,
-			IssuerKID: issuerKID,
-			Subject:   applicantDID,
-			SchemaID:  od.Schema,
+			Issuer:                             credManifest.Issuer.ID,
+			FullyQualifiedVerificationMethodID: fullyQualifiedVerificationMethodID,
+			Subject:                            applicantDID,
+			SchemaID:                           od.Schema,
 			// TODO(gabe) need to add in data here to match the request + schema
 			Data: make(map[string]any),
 		}
@@ -238,7 +242,7 @@ func getCredentialForInputDescriptor(applicationJSON map[string]any, templateInp
 }
 
 func toCredentialJSON(c any) (map[string]any, error) {
-	_, _, genericCredential, err := credsdk.ToCredential(c)
+	_, _, genericCredential, err := parsing.ToCredential(c)
 	if err != nil {
 		return nil, errors.Wrapf(err, "converting credential to json")
 	}

@@ -1,0 +1,7 @@
+{
+  "issuerDid": "{{.IssuerDID}}",
+  "verificationMethodId": "{{.VerificationMethodID}}",
+  "origin": "https://www.tbd.website",
+  "issuanceDate": "2021-10-05T14:48:00.000Z",
+  "expirationDate": "2051-10-05T14:48:00.000Z"
+}

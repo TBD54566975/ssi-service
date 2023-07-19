@@ -18,7 +18,7 @@ import (
 func (s Service) createStatusListEntryForCredential(ctx context.Context, credID string, request CreateCredentialRequest,
 	tx storage.Tx, statusMetadata StatusListCredentialMetadata) (*statussdk.StatusList2021Entry, error) {
 	issuerID := request.Issuer
-	issuerKID := request.IssuerKID
+	fullyQualifiedVerificationMethodID := request.FullyQualifiedVerificationMethodID
 	schemaID := request.SchemaID
 
 	statusPurpose := statussdk.StatusRevocation
@@ -37,7 +37,7 @@ func (s Service) createStatusListEntryForCredential(ctx context.Context, credID 
 
 	if statusListCredential == nil {
 		// creates status list credential with random index
-		randomIndex, statusCred, err = s.createStatusListCredential(ctx, tx, statusPurpose, issuerID, issuerKID, statusMetadata)
+		randomIndex, statusCred, err = s.createStatusListCredential(ctx, tx, statusPurpose, issuerID, fullyQualifiedVerificationMethodID, statusMetadata)
 		if err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(err, "problem with getting status list credential")
 		}
@@ -65,7 +65,7 @@ func (s Service) createStatusListEntryForCredential(ctx context.Context, credID 
 	}, nil
 }
 
-func (s Service) createStatusListCredential(ctx context.Context, tx storage.Tx, statusPurpose statussdk.StatusPurpose, issuerID, issuerKID string, slcMetadata StatusListCredentialMetadata) (int, *credential.VerifiableCredential, error) {
+func (s Service) createStatusListCredential(ctx context.Context, tx storage.Tx, statusPurpose statussdk.StatusPurpose, issuerID, fullyQualifiedVerificationMethodID string, slcMetadata StatusListCredentialMetadata) (int, *credential.VerifiableCredential, error) {
 	statusListID := uuid.NewString()
 	statusListURI := fmt.Sprintf("%s/status/%s", s.config.ServiceEndpoint, statusListID)
 
@@ -74,16 +74,16 @@ func (s Service) createStatusListCredential(ctx context.Context, tx storage.Tx, 
 		return -1, nil, sdkutil.LoggingErrorMsg(err, "could not generate status list")
 	}
 
-	statusListCredJWT, err := s.signCredentialJWT(ctx, issuerKID, *generatedStatusListCredential)
+	statusListCredJWT, err := s.signCredentialJWT(ctx, fullyQualifiedVerificationMethodID, *generatedStatusListCredential)
 	if err != nil {
 		return -1, nil, sdkutil.LoggingErrorMsg(err, "could not sign status list credential")
 	}
 
 	statusListContainer := credint.Container{
-		ID:            statusListID,
-		IssuerKID:     issuerKID,
-		Credential:    generatedStatusListCredential,
-		CredentialJWT: statusListCredJWT,
+		ID:                                 statusListID,
+		FullyQualifiedVerificationMethodID: fullyQualifiedVerificationMethodID,
+		Credential:                         generatedStatusListCredential,
+		CredentialJWT:                      statusListCredJWT,
 	}
 
 	statusListStorageRequest := StoreCredentialRequest{

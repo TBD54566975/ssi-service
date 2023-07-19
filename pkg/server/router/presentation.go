@@ -5,13 +5,14 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
+	"github.com/TBD54566975/ssi-sdk/credential/integrity"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	"go.einride.tech/aip/filtering"
+
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -227,7 +228,7 @@ type CreateSubmissionRequest struct {
 }
 
 func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequest, error) {
-	_, _, vp, err := credential.ParseVerifiablePresentationFromJWT(r.SubmissionJWT.String())
+	_, _, vp, err := integrity.ParseVerifiablePresentationFromJWT(r.SubmissionJWT.String())
 	if err != nil {
 		return nil, errors.Wrap(err, "parsing presentation from jwt")
 	}
@@ -479,7 +480,7 @@ func (pr PresentationRouter) ReviewSubmission(c *gin.Context) {
 }
 
 type CreateRequestRequest struct {
-	*CommonCreateRequestRequest
+	*CommonCreateRequestRequest `validate:"required,dive"`
 	// ID of the presentation definition to use for this request.
 	PresentationDefinitionID string `json:"presentationDefinitionId" validate:"required"`
 }
@@ -531,7 +532,7 @@ func (pr PresentationRouter) CreateRequest(c *gin.Context) {
 }
 
 func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequest) (*model.Request, error) {
-	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest, pr.service.Config().ExpirationDuration)
+	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -556,13 +557,13 @@ func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequ
 func (pr PresentationRouter) GetRequest(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
-		framework.LoggingRespondErrMsg(c, "cannot get issuance template without an ID", http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, "cannot get presentation request without an ID", http.StatusBadRequest)
 		return
 	}
 
 	request, err := pr.service.GetRequest(c, &model.GetRequestRequest{ID: *id})
 	if err != nil {
-		framework.LoggingRespondErrWithMsg(c, err, "getting issuance template", http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, "getting presentation request", http.StatusInternalServerError)
 		return
 	}
 	framework.Respond(c, GetRequestResponse{Request: request}, http.StatusOK)

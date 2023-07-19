@@ -29,9 +29,8 @@ const (
 	EnvironmentTest Environment = "test"
 	EnvironmentProd Environment = "prod"
 
-	ConfigPath       EnvironmentVariable = "CONFIG_PATH"
-	KeystorePassword EnvironmentVariable = "KEYSTORE_PASSWORD"
-	DBPassword       EnvironmentVariable = "DB_PASSWORD"
+	ConfigPath EnvironmentVariable = "CONFIG_PATH"
+	DBPassword EnvironmentVariable = "DB_PASSWORD"
 )
 
 type (
@@ -94,13 +93,9 @@ type BaseServiceConfig struct {
 
 type KeyStoreServiceConfig struct {
 	*BaseServiceConfig
-	// Master key password. Used by a KDF whose key is used by a symmetric cypher for key encryption.
-	// The password is salted before usage.
-	// Note that this field is only used when MasterKeyURI is empty.
-	MasterKeyPassword string `toml:"password"`
 
 	// The URI for the master key. We use tink for envelope encryption as described in https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#key-management-with-tink
-	// When left empty, then MasterKeyPassword is used.
+	// When left empty, then a random key is generated and used.
 	MasterKeyURI string `toml:"master_key_uri"`
 
 	// Path for credentials. Required when using an external KMS. More info at https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#credentials
@@ -121,6 +116,8 @@ type DIDServiceConfig struct {
 	UniversalResolverURL     string   `toml:"universal_resolver_url"`
 	UniversalResolverMethods []string `toml:"universal_resolver_methods"`
 	IONResolverURL           string   `toml:"ion_resolver_url"`
+	// BatchCreateMaxItems set's the maximum amount that can be.
+	BatchCreateMaxItems int `toml:"batch_create_max_items" conf:"default:100"`
 }
 
 func (d *DIDServiceConfig) IsEmpty() bool {
@@ -169,7 +166,6 @@ func (o *OperationServiceConfig) IsEmpty() bool {
 
 type PresentationServiceConfig struct {
 	*BaseServiceConfig
-	ExpirationDuration time.Duration `toml:"expiration_duration" conf:"default:30m"`
 }
 
 func (p *PresentationServiceConfig) IsEmpty() bool {
@@ -181,7 +177,6 @@ func (p *PresentationServiceConfig) IsEmpty() bool {
 
 type ManifestServiceConfig struct {
 	*BaseServiceConfig
-	ExpirationDuration time.Duration `toml:"expiration_duration" conf:"default:30m"`
 }
 
 func (m *ManifestServiceConfig) IsEmpty() bool {
@@ -288,7 +283,6 @@ func getDefaultServicesConfig() ServicesConfig {
 		ServiceEndpoint: DefaultServiceEndpoint,
 		KeyStoreConfig: KeyStoreServiceConfig{
 			BaseServiceConfig: &BaseServiceConfig{Name: "keystore", ServiceEndpoint: DefaultServiceEndpoint + "/v1/keys"},
-			MasterKeyPassword: "default-password",
 		},
 		DIDConfig: DIDServiceConfig{
 			BaseServiceConfig:      &BaseServiceConfig{Name: "did", ServiceEndpoint: DefaultServiceEndpoint + "/v1/dids"},
@@ -394,11 +388,6 @@ func applyEnvVariables(config *SSIServiceConfig) error {
 			return nil
 		}
 		return errors.Wrap(err, "dotenv parsing")
-	}
-
-	keystorePassword, present := os.LookupEnv(KeystorePassword.String())
-	if present {
-		config.Services.KeyStoreConfig.MasterKeyPassword = keystorePassword
 	}
 
 	dbPassword, present := os.LookupEnv(DBPassword.String())

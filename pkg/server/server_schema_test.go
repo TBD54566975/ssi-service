@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/credential/parsing"
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/goccy/go-json"
@@ -24,11 +24,11 @@ func TestSchemaAPI(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Run("Test Create JsonSchema2023 Schema", func(tt *testing.T) {
-				bolt := test.ServiceStorage(t)
+				bolt := test.ServiceStorage(tt)
 				require.NotEmpty(tt, bolt)
 
-				keyStoreService := testKeyStoreService(tt, bolt)
-				didService := testDIDService(tt, bolt, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, bolt)
+				didService, _ := testDIDService(tt, bolt, keyStoreService, nil)
 				schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
 
 				simpleSchema := getTestSchema()
@@ -66,11 +66,11 @@ func TestSchemaAPI(t *testing.T) {
 			})
 
 			t.Run("Test Create CredentialSchema2023 Schema", func(tt *testing.T) {
-				bolt := test.ServiceStorage(t)
+				bolt := test.ServiceStorage(tt)
 				require.NotEmpty(tt, bolt)
 
-				keyStoreService := testKeyStoreService(tt, bolt)
-				didService := testDIDService(tt, bolt, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, bolt)
+				didService, _ := testDIDService(tt, bolt, keyStoreService, nil)
 				schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
 
 				simpleSchema := getTestSchema()
@@ -87,7 +87,7 @@ func TestSchemaAPI(t *testing.T) {
 
 				c := newRequestContext(w, req)
 				schemaService.CreateSchema(c)
-				assert.Contains(tt, w.Body.String(), "issuerKid is a required field")
+				assert.Contains(tt, w.Body.String(), "verificationMethodId is a required field")
 
 				// reset the http recorder
 				w = httptest.NewRecorder()
@@ -99,15 +99,15 @@ func TestSchemaAPI(t *testing.T) {
 				})
 				require.NoError(t, err)
 				issuerID := issuerResp.DID.ID
-				issuerKID := issuerResp.DID.VerificationMethod[0].ID
+				verificationMethodID := issuerResp.DID.VerificationMethod[0].ID
 
 				// create the credential schema
 				schemaRequest := router.CreateSchemaRequest{
 					Name:   "test schema",
 					Schema: simpleSchema,
 					CredentialSchemaRequest: &router.CredentialSchemaRequest{
-						Issuer:    issuerID,
-						IssuerKID: issuerKID,
+						Issuer:               issuerID,
+						VerificationMethodID: verificationMethodID,
 					},
 				}
 				schemaRequestValue = newRequestValue(tt, schemaRequest)
@@ -127,7 +127,7 @@ func TestSchemaAPI(t *testing.T) {
 				assert.Equal(tt, schema.CredentialSchema2023Type, resp.Type)
 
 				// decode the schema from the response and verify it
-				_, _, cred, err := credential.ToCredential(resp.CredentialSchema.String())
+				_, _, cred, err := parsing.ToCredential(resp.CredentialSchema.String())
 				assert.NoError(tt, err)
 				credSubjectBytes, err := json.Marshal(cred.CredentialSubject)
 				assert.NoError(tt, err)
@@ -143,11 +143,11 @@ func TestSchemaAPI(t *testing.T) {
 			})
 
 			t.Run("Test Get Schema and Get Schemas", func(tt *testing.T) {
-				bolt := test.ServiceStorage(t)
+				bolt := test.ServiceStorage(tt)
 				require.NotEmpty(tt, bolt)
 
-				keyStoreService := testKeyStoreService(tt, bolt)
-				didService := testDIDService(tt, bolt, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, bolt)
+				didService, _ := testDIDService(tt, bolt, keyStoreService, nil)
 				schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
 
 				// get schema that doesn't exist
@@ -235,11 +235,11 @@ func TestSchemaAPI(t *testing.T) {
 			})
 
 			t.Run("Test Delete Schema", func(tt *testing.T) {
-				bolt := test.ServiceStorage(t)
+				bolt := test.ServiceStorage(tt)
 				require.NotEmpty(tt, bolt)
 
-				keyStoreService := testKeyStoreService(tt, bolt)
-				didService := testDIDService(tt, bolt, keyStoreService)
+				keyStoreService, _ := testKeyStoreService(tt, bolt)
+				didService, _ := testDIDService(tt, bolt, keyStoreService, nil)
 				schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
 
 				w := httptest.NewRecorder()

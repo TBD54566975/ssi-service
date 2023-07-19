@@ -33,12 +33,11 @@ func TestKeyStoreRouter(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Run("Key Store Service Test", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, db)
 
 				serviceConfig := config.KeyStoreServiceConfig{
 					BaseServiceConfig: &config.BaseServiceConfig{Name: "keystore"},
-					MasterKeyPassword: "test-password",
 				}
 				keyStoreService, err := keystore.NewKeyStoreService(serviceConfig, db)
 				assert.NoError(tt, err)

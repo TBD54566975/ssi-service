@@ -24,10 +24,10 @@ func TestRevocationCreateIssuerDIDKeyIntegration(t *testing.T) {
 	assert.Contains(t, issuerDID, "did:key")
 	SetValue(credentialRevocationContext, "issuerDID", issuerDID)
 
-	issuerKID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
+	verificationMethodID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
-	SetValue(credentialRevocationContext, "issuerKID", issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
+	SetValue(credentialRevocationContext, "verificationMethodID", verificationMethodID)
 }
 
 func TestRevocationCreateSchemaIntegration(t *testing.T) {
@@ -53,20 +53,20 @@ func TestRevocationCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKID, err := GetValue(credentialRevocationContext, "issuerKID")
+	verificationMethodID, err := GetValue(credentialRevocationContext, "verificationMethodID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
 
 	schemaID, err := GetValue(credentialRevocationContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	vcOutput, err := CreateVerifiableCredential(credInputParams{
-		IssuerID:  issuerDID.(string),
-		IssuerKID: issuerKID.(string),
-		SchemaID:  schemaID.(string),
-		SubjectID: issuerDID.(string),
-		Revocable: true,
+		IssuerID:             issuerDID.(string),
+		VerificationMethodID: verificationMethodID.(string),
+		SchemaID:             schemaID.(string),
+		SubjectID:            issuerDID.(string),
+		Revocable:            true,
 	})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vcOutput)

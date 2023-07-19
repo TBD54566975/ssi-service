@@ -1,0 +1,53 @@
+{
+  "didDocument": {
+    "@context": [
+      "https://www.w3.org/ns/did/v1",
+      {
+        "@base": "did:ion:EiCImroVD18aylCsdNn6y4CUHks8TwzqY08E-aSyTeZuqg"
+      }
+    ],
+    "assertionMethod": [
+      "#b26f6e6b-8bd1-46ee-b02d-fd421db54714",
+      "#externalPublicKey1"
+    ],
+    "authentication": [
+      "#b26f6e6b-8bd1-46ee-b02d-fd421db54714",
+      "#externalPublicKey1"
+    ],
+    "capabilityDelegation": [
+      "#externalPublicKey1"
+    ],
+    "capabilityInvocation": [
+      "#externalPublicKey1"
+    ],
+    "id": "did:ion:EiCImroVD18aylCsdNn6y4CUHks8TwzqY08E-aSyTeZuqg",
+    "keyAgreement": [
+      "#externalPublicKey1"
+    ],
+    "verificationMethod": [
+      {
+        "controller": "did:ion:EiCImroVD18aylCsdNn6y4CUHks8TwzqY08E-aSyTeZuqg",
+        "id": "#b26f6e6b-8bd1-46ee-b02d-fd421db54714",
+        "publicKeyJwk": {
+          "alg": "EdDSA",
+          "crv": "Ed25519",
+          "kid": "1fb94235-376f-4a7e-a1e5-b5d036449764",
+          "kty": "OKP",
+          "x": "5jfCRhiHE2PNxDY8rzDylKdN9aO7dPE-QQBrNxYz1YU"
+        },
+        "type": "Ed25519"
+      },
+      {
+        "controller": "did:ion:EiCImroVD18aylCsdNn6y4CUHks8TwzqY08E-aSyTeZuqg",
+        "id": "#externalPublicKey1",
+        "publicKeyJwk": {
+          "crv": "Ed25519",
+          "kid": "#myOwnKID",
+          "kty": "OKP",
+          "x": "CV-aGlld3nVdgnhoZK0D36Wk-9aIMlZjZOK2XhPMnkQ"
+        },
+        "type": "JsonWebKey2020"
+      }
+    ]
+  }
+}
