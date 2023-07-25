@@ -72,6 +72,10 @@ type ServicesConfig struct {
 	StorageOptions  []storage.Option `toml:"storage_option"`
 	ServiceEndpoint string           `toml:"service_endpoint"`
 
+	// Application level encryption configuration. Defines how values are encrypted before they are stored in the
+	// configured KV store.
+	AppLevelEncryptionConfiguration EncryptionConfig `toml:"storage_encryption,omitempty"`
+
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
 	KeyStoreConfig        KeyStoreServiceConfig     `toml:"keystore,omitempty"`
 	DIDConfig             DIDServiceConfig          `toml:"did,omitempty"`
@@ -94,12 +98,32 @@ type BaseServiceConfig struct {
 type KeyStoreServiceConfig struct {
 	*BaseServiceConfig
 
-	// The URI for the master key. We use tink for envelope encryption as described in https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#key-management-with-tink
-	// When left empty, then a random key is generated and used.
+	// Configuration describing the encryption of the private keys that are under ssi-service's custody.
+	EncryptionConfig
+}
+
+type EncryptionConfig struct {
+	DisableEncryption bool `toml:"disable_encryption"`
+
+	// The URI for a master key. We use tink for envelope encryption as described in https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#key-management-with-tink
+	// When left empty and DisableEncryption is off, then a random key is generated and used. This random key is persisted unencrypted in the
+	// configured storage. Production deployments should never leave this field empty.
 	MasterKeyURI string `toml:"master_key_uri"`
 
-	// Path for credentials. Required when using an external KMS. More info at https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#credentials
+	// Path for credentials. Required when MasterKeyURI is set. More info at https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#credentials
 	KMSCredentialsPath string `toml:"kms_credentials_path"`
+}
+
+func (e EncryptionConfig) GetMasterKeyURI() string {
+	return e.MasterKeyURI
+}
+
+func (e EncryptionConfig) GetKMSCredentialsPath() string {
+	return e.KMSCredentialsPath
+}
+
+func (e EncryptionConfig) EncryptionEnabled() bool {
+	return !e.DisableEncryption
 }
 
 func (k *KeyStoreServiceConfig) IsEmpty() bool {
@@ -107,6 +131,18 @@ func (k *KeyStoreServiceConfig) IsEmpty() bool {
 		return true
 	}
 	return reflect.DeepEqual(k, &KeyStoreServiceConfig{})
+}
+
+func (k *KeyStoreServiceConfig) GetMasterKeyURI() string {
+	return k.MasterKeyURI
+}
+
+func (k *KeyStoreServiceConfig) GetKMSCredentialsPath() string {
+	return k.KMSCredentialsPath
+}
+
+func (k *KeyStoreServiceConfig) EncryptionEnabled() bool {
+	return !k.DisableEncryption
 }
 
 type DIDServiceConfig struct {

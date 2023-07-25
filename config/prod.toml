@@ -20,7 +20,12 @@ log_location = "log"
 log_level = "info"
 
 enable_schema_caching = true
-enable_allow_all_cors = true
+enable_allow_all_cors = false
+
+[services.storage_encryption]
+# master_key_uri = "gcp-kms://projects/*/locations/*/keyRings/*/cryptoKeys/*"
+# kms_credentials_path = "credentials.json"
+disable_encryption = false
 
 # Storage Configuration
 [services]
@@ -38,6 +43,7 @@ option = "password"
 # per-service configuration
 [services.keystore]
 name = "keystore"
+disable_encryption = false
 # master_key_uri = "gcp-kms://projects/*/locations/*/keyRings/*/cryptoKeys/*"
 # kms_credentials_path = "credentials.json"
 

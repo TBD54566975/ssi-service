@@ -246,7 +246,7 @@ func (ms *Storage) StoreReviewApplication(ctx context.Context, applicationID str
 	if approved {
 		m["status"] = opsubmission.StatusApproved
 	}
-	if _, err := ms.db.Update(ctx, credential.ApplicationNamespace, applicationID, m); err != nil {
+	if _, err := storage.Update(ctx, ms.db, credential.ApplicationNamespace, applicationID, m); err != nil {
 		return nil, nil, errors.Wrap(err, "updating application")
 	}
 
@@ -254,7 +254,7 @@ func (ms *Storage) StoreReviewApplication(ctx context.Context, applicationID str
 		return nil, nil, errors.Wrap(err, "storing credential response")
 	}
 
-	responseData, operationData, err := ms.db.UpdateValueAndOperation(ctx, responseNamespace, response.ID,
+	responseData, operationData, err := storage.UpdateValueAndOperation(ctx, ms.db, responseNamespace, response.ID,
 		storage.NewUpdater(m), namespace.FromID(opID), opID,
 		opsubmission.OperationUpdater{UpdaterWithMap: storage.NewUpdater(map[string]any{"done": true})})
 	if err != nil {

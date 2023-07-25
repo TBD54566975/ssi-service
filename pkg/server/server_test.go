@@ -11,7 +11,6 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/gin-gonic/gin"
-
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
@@ -230,8 +229,9 @@ func testKeyStoreService(t *testing.T, db storage.ServiceStorage) (*keystore.Ser
 	}
 
 	// create a keystore service
-	require.NoError(t, keystore.EnsureServiceKeyExists(serviceConfig, db))
-	factory := keystore.NewKeyStoreServiceFactory(serviceConfig, db)
+	encrypter, decrypter, err := keystore.NewServiceEncryption(db, serviceConfig.EncryptionConfig, keystore.ServiceKeyEncryptionKey)
+	require.NoError(t, err)
+	factory := keystore.NewKeyStoreServiceFactory(serviceConfig, db, encrypter, decrypter)
 	keystoreService, err := factory(db)
 	require.NoError(t, err)
 	require.NotEmpty(t, keystoreService)

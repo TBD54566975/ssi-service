@@ -2,7 +2,6 @@ package keystore
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -10,19 +9,9 @@ import (
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/benbjohnson/clock"
 	"github.com/goccy/go-json"
-	"github.com/google/tink/go/aead"
-	"github.com/google/tink/go/core/registry"
-	"github.com/google/tink/go/integration/awskms"
-	"github.com/google/tink/go/integration/gcpkms"
-	"github.com/google/tink/go/keyset"
-	"github.com/google/tink/go/tink"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
-	"google.golang.org/api/option"
-
-	"github.com/tbd54566975/ssi-service/config"
-
-	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/pkg/encryption"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -57,24 +46,26 @@ const (
 	namespace             = "keystore"
 	serviceInternalSuffix = "service-internal"
 	publicNamespaceSuffix = "public-keys"
-	skKey                 = "ssi-service-key"
 	keyNotFoundErrMsg     = "key not found"
+
+	ServiceKeyEncryptionKey  = "ssi-service-key-encryption-key"
+	ServiceDataEncryptionKey = "ssi-service-data-key"
 )
 
 var (
-	serviceNamespace   = storage.Join(namespace, serviceInternalSuffix)
-	publicKeyNamespace = storage.Join(namespace, publicNamespaceSuffix)
+	serviceInternalNamespace = storage.Join(namespace, serviceInternalSuffix)
+	publicKeyNamespace       = storage.Join(namespace, publicNamespaceSuffix)
 )
 
 type Storage struct {
 	db        storage.ServiceStorage
 	tx        storage.Tx
-	encrypter Encrypter
-	decrypter Decrypter
+	encrypter encryption.Encrypter
+	decrypter encryption.Decrypter
 	Clock     clock.Clock
 }
 
-func NewKeyStoreStorage(db storage.ServiceStorage, e Encrypter, d Decrypter, writer storage.Tx) (*Storage, error) {
+func NewKeyStoreStorage(db storage.ServiceStorage, e encryption.Encrypter, d encryption.Decrypter, writer storage.Tx) (*Storage, error) {
 	s := &Storage{
 		db:        db,
 		encrypter: e,
@@ -89,37 +80,16 @@ func NewKeyStoreStorage(db storage.ServiceStorage, e Encrypter, d Decrypter, wri
 	return s, nil
 }
 
-type wrappedEncrypter struct {
-	tink.AEAD
-}
-
-func (w wrappedEncrypter) Encrypt(_ context.Context, plaintext, contextData []byte) ([]byte, error) {
-	return w.AEAD.Encrypt(plaintext, contextData)
-}
-
-type wrappedDecrypter struct {
-	tink.AEAD
-}
-
-func (w wrappedDecrypter) Decrypt(_ context.Context, ciphertext, contextInfo []byte) ([]byte, error) {
-	return w.AEAD.Decrypt(ciphertext, contextInfo)
-}
-
-const (
-	gcpKMSScheme = "gcp-kms"
-	awsKMSScheme = "aws-kms"
-)
-
-// EnsureServiceKeyExists makes sure that the service key that will be used for encryption exists. This function is
+// ensureEncryptionKeyExists makes sure that the service key that will be used for encryption exists. This function is
 // idempotent, so that multiple instances of ssi-service can call it on boot.
-func EnsureServiceKeyExists(config config.KeyStoreServiceConfig, provider storage.ServiceStorage) error {
-	if config.MasterKeyURI != "" {
+func ensureEncryptionKeyExists(config encryption.ExternalEncryptionConfig, provider storage.ServiceStorage, namespace, encryptionKeyKey string) error {
+	if config.GetMasterKeyURI() != "" {
 		return nil
 	}
 
 	watchKeys := []storage.WatchKey{{
 		Namespace: namespace,
-		Key:       skKey,
+		Key:       encryptionKeyKey,
 	}}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -127,7 +97,7 @@ func EnsureServiceKeyExists(config config.KeyStoreServiceConfig, provider storag
 
 	_, err := provider.Execute(ctx, func(ctx context.Context, tx storage.Tx) (any, error) {
 		// Create the key only if it doesn't already exist.
-		gotKey, err := getServiceKey(ctx, provider)
+		gotKey, err := getServiceKey(ctx, provider, namespace, encryptionKeyKey)
 		if gotKey == nil && err.Error() == keyNotFoundErrMsg {
 			serviceKey, err := GenerateServiceKey()
 			if err != nil {
@@ -137,7 +107,7 @@ func EnsureServiceKeyExists(config config.KeyStoreServiceConfig, provider storag
 			key := ServiceKey{
 				Base58Key: serviceKey,
 			}
-			if err := storeServiceKey(ctx, tx, key); err != nil {
+			if err := storeServiceKey(ctx, tx, key, namespace, encryptionKeyKey); err != nil {
 				return nil, err
 			}
 			return nil, nil
@@ -150,62 +120,41 @@ func EnsureServiceKeyExists(config config.KeyStoreServiceConfig, provider storag
 	return nil
 }
 
-// newEncryption creates a pair of Encrypter and Decrypter. The service key must have been created before this function
-// is called. EnsureServiceKeyExists can be used to make sure the service key exists.
-func newEncryption(db storage.ServiceStorage, cfg config.KeyStoreServiceConfig) (Encrypter, Decrypter, error) {
-	if len(cfg.MasterKeyURI) != 0 {
+// NewServiceEncryption creates a pair of Encrypter and Decrypter with the given configuration.
+func NewServiceEncryption(db storage.ServiceStorage, cfg encryption.ExternalEncryptionConfig, key string) (encryption.Encrypter, encryption.Decrypter, error) {
+	if !cfg.EncryptionEnabled() {
+		return encryption.NoopEncrypter, encryption.NoopDecrypter, nil
+	}
+
+	if len(cfg.GetMasterKeyURI()) != 0 {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		return NewExternalEncrypter(ctx, cfg)
+		return encryption.NewExternalEncrypter(ctx, cfg)
 	}
 
-	return &encrypter{db}, &decrypter{db}, nil
-}
-
-func NewExternalEncrypter(ctx context.Context, cfg config.KeyStoreServiceConfig) (Encrypter, Decrypter, error) {
-	var client registry.KMSClient
-	var err error
-	switch {
-	case strings.HasPrefix(cfg.MasterKeyURI, gcpKMSScheme):
-		client, err = gcpkms.NewClientWithOptions(ctx, cfg.MasterKeyURI, option.WithCredentialsFile(cfg.KMSCredentialsPath))
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "creating gcp kms client")
-		}
-	case strings.HasPrefix(cfg.MasterKeyURI, awsKMSScheme):
-		client, err = awskms.NewClientWithCredentials(cfg.MasterKeyURI, cfg.KMSCredentialsPath)
-		if err != nil {
-			return nil, nil, errors.Wrap(err, "creating aws kms client")
-		}
-	default:
-		return nil, nil, errors.Errorf("master_key_uri value %q is not supported", cfg.MasterKeyURI)
+	if err := ensureEncryptionKeyExists(cfg, db, serviceInternalNamespace, key); err != nil {
+		return nil, nil, errors.Wrap(err, "ensuring that the encryption key exists")
 	}
-	registry.RegisterKMSClient(client)
-	dek := aead.AES256GCMKeyTemplate()
-	kh, err := keyset.NewHandle(aead.KMSEnvelopeAEADKeyTemplate(cfg.MasterKeyURI, dek))
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating keyset handle")
-	}
-	a, err := aead.New(kh)
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "creating aead from key handl")
-	}
-	return wrappedEncrypter{a}, wrappedDecrypter{a}, nil
+	encSuite := encryption.NewXChaCha20Poly1305EncrypterWithKeyResolver(func(ctx context.Context) ([]byte, error) {
+		return getServiceKey(ctx, db, serviceInternalNamespace, key)
+	})
+	return encSuite, encSuite, nil
 }
 
 // TODO(gabe): support more robust service key operations, including rotation, and caching
-func storeServiceKey(ctx context.Context, tx storage.Tx, key ServiceKey) error {
+func storeServiceKey(ctx context.Context, tx storage.Tx, key ServiceKey, namespace string, skKey string) error {
 	keyBytes, err := json.Marshal(key)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could not marshal service key")
 	}
-	if err = tx.Write(ctx, serviceNamespace, skKey, keyBytes); err != nil {
+	if err = tx.Write(ctx, namespace, skKey, keyBytes); err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could store marshal service key")
 	}
 	return nil
 }
 
-func getServiceKey(ctx context.Context, db storage.ServiceStorage) ([]byte, error) {
-	storedKeyBytes, err := db.Read(ctx, serviceNamespace, skKey)
+func getServiceKey(ctx context.Context, db storage.ServiceStorage, namespace, skKey string) ([]byte, error) {
+	storedKeyBytes, err := db.Read(ctx, namespace, skKey)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not get service key")
 	}
@@ -224,56 +173,6 @@ func getServiceKey(ctx context.Context, db storage.ServiceStorage) ([]byte, erro
 	}
 
 	return keyBytes, nil
-}
-
-// Encrypter the interface for any encrypter implementation.
-type Encrypter interface {
-	Encrypt(ctx context.Context, plaintext, contextData []byte) ([]byte, error)
-}
-
-// Decrypter is the interface for any decrypter. May be AEAD or Hybrid.
-type Decrypter interface {
-	// Decrypt decrypts ciphertext. The second parameter may be treated as associated data for AEAD (as abstracted in
-	// https://datatracker.ietf.org/doc/html/rfc5116), or as contextInfofor HPKE (https://www.rfc-editor.org/rfc/rfc9180.html)
-	Decrypt(ctx context.Context, ciphertext, contextInfo []byte) ([]byte, error)
-}
-
-type encrypter struct {
-	db storage.ServiceStorage
-}
-
-func (e encrypter) Encrypt(ctx context.Context, plaintext, _ []byte) ([]byte, error) {
-	// get service key
-	serviceKey, err := getServiceKey(ctx, e.db)
-	if err != nil {
-		return nil, err
-	}
-	// encrypt key before storing
-	encryptedKey, err := util.XChaCha20Poly1305Encrypt(serviceKey, plaintext)
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not encrypt key")
-	}
-	return encryptedKey, nil
-}
-
-type decrypter struct {
-	db storage.ServiceStorage
-}
-
-func (d decrypter) Decrypt(ctx context.Context, ciphertext, _ []byte) ([]byte, error) {
-	// get service key
-	serviceKey, err := getServiceKey(ctx, d.db)
-	if err != nil {
-		return nil, err
-	}
-
-	// decrypt key before unmarshaling
-	decryptedKey, err := util.XChaCha20Poly1305Decrypt(serviceKey, ciphertext)
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not decrypt key")
-	}
-
-	return decryptedKey, nil
 }
 
 func (kss *Storage) StoreKey(ctx context.Context, key StoredKey) error {

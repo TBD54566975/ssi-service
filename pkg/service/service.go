@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -81,20 +82,27 @@ func validateServiceConfig(config config.ServicesConfig) error {
 
 // instantiateServices begins all instantiates and their dependencies
 func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
-	storageProvider, err := storage.NewStorage(storage.Type(config.StorageProvider), config.StorageOptions...)
+	unencryptedStorageProvider, err := storage.NewStorage(storage.Type(config.StorageProvider), config.StorageOptions...)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not instantiate storage provider: %s", config.StorageProvider)
 	}
+
+	storageEncrypter, storageDecrypter, err := keystore.NewServiceEncryption(unencryptedStorageProvider, config.AppLevelEncryptionConfiguration, keystore.ServiceDataEncryptionKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating app level encrypter")
+	}
+	storageProvider := storage.NewEncryptedWrapper(unencryptedStorageProvider, storageEncrypter, storageDecrypter)
 
 	webhookService, err := webhook.NewWebhookService(config.WebhookConfig, storageProvider)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the webhook service")
 	}
 
-	if err := keystore.EnsureServiceKeyExists(config.KeyStoreConfig, storageProvider); err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not ensure the service key exists")
+	keyEncrypter, keyDecrypter, err := keystore.NewServiceEncryption(unencryptedStorageProvider, config.KeyStoreConfig.EncryptionConfig, keystore.ServiceKeyEncryptionKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating keystore encrypter")
 	}
-	keyStoreServiceFactory := keystore.NewKeyStoreServiceFactory(config.KeyStoreConfig, storageProvider)
+	keyStoreServiceFactory := keystore.NewKeyStoreServiceFactory(config.KeyStoreConfig, storageProvider, keyEncrypter, keyDecrypter)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the keystore service factory")
 	}
