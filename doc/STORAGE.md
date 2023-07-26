@@ -75,7 +75,8 @@ which introduces the SQL based implementation.
 ## Encryption
 
 SSI Service supports application level encryption of values before sending them to the configured KV store. Please note
-that keys (i.e. the key of the KV store) are not currently encrypted. A MasterKey is used (a.k.a. a Data Encryption Key or DEK).
+that keys (i.e. the key of the KV store) are not currently encrypted. See the [Privacy Considerations](#privacy-considerations) for more information.
+A MasterKey is used (a.k.a. a Data Encryption Key or DEK) to encrypt all data before it's sent to the configured storage.
 The MasterKey can be stored in the configured storage system or in an external Key Management System (KMS) like GCP KMS or AWS KMS.
 When storing locally, the key will be automatically generated if it doesn't exist already.
 
@@ -112,3 +113,12 @@ Disabling app level encryption is also possible using the following options in y
 # encryption
 disable_encryption = true
 ```
+
+### Privacy Considerations
+
+From the perspective of SSI-Service, all keys are stored in plaintext (this doesn't preclude configuring encryption at rest
+in your deployment of the storage configuration). Making all keys readable by any actor may have an impact in your organization's
+use cases around privacy. You should consider whether this is acceptable. Notably, a DID that was created by SSI Service
+is stored as a key. This can fit some definition of PII, as it could be correlated to identify and individual.
+
+Encrypting keys is being considered in https://github.com/TBD54566975/ssi-service/issues/603.
