@@ -82,14 +82,14 @@ func NewKeyStoreStorage(db storage.ServiceStorage, e encryption.Encrypter, d enc
 
 // ensureEncryptionKeyExists makes sure that the service key that will be used for encryption exists. This function is
 // idempotent, so that multiple instances of ssi-service can call it on boot.
-func ensureEncryptionKeyExists(config encryption.ExternalEncryptionConfig, provider storage.ServiceStorage, namespace, encryptionKeyKey string) error {
+func ensureEncryptionKeyExists(config encryption.ExternalEncryptionConfig, provider storage.ServiceStorage, namespace, encryptionMaterialKey string) error {
 	if config.GetMasterKeyURI() != "" {
 		return nil
 	}
 
 	watchKeys := []storage.WatchKey{{
 		Namespace: namespace,
-		Key:       encryptionKeyKey,
+		Key:       encryptionMaterialKey,
 	}}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -97,7 +97,7 @@ func ensureEncryptionKeyExists(config encryption.ExternalEncryptionConfig, provi
 
 	_, err := provider.Execute(ctx, func(ctx context.Context, tx storage.Tx) (any, error) {
 		// Create the key only if it doesn't already exist.
-		gotKey, err := getServiceKey(ctx, provider, namespace, encryptionKeyKey)
+		gotKey, err := getServiceKey(ctx, provider, namespace, encryptionMaterialKey)
 		if gotKey == nil && err.Error() == keyNotFoundErrMsg {
 			serviceKey, err := GenerateServiceKey()
 			if err != nil {
@@ -107,7 +107,7 @@ func ensureEncryptionKeyExists(config encryption.ExternalEncryptionConfig, provi
 			key := ServiceKey{
 				Base58Key: serviceKey,
 			}
-			if err := storeServiceKey(ctx, tx, key, namespace, encryptionKeyKey); err != nil {
+			if err := storeServiceKey(ctx, tx, key, namespace, encryptionMaterialKey); err != nil {
 				return nil, err
 			}
 			return nil, nil
