@@ -1,0 +1,6 @@
+[server]
+env = "prod" # either 'dev', 'test', or 'prod'
+
+[services.keystore]
+name = "keystore"
+disable_encryption = true

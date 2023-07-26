@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -247,7 +248,10 @@ func (p *WebhookServiceConfig) IsEmpty() bool {
 
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
 // Before loading, defaults are applied on certain properties, which are overwritten if specified in the TOML file.
-func LoadConfig(path string) (*SSIServiceConfig, error) {
+func LoadConfig(path string, fs fs.FS) (*SSIServiceConfig, error) {
+	if fs == nil {
+		fs = os.DirFS(".")
+	}
 	loadDefaultConfig, err := checkValidConfigPath(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "validate config path")
@@ -262,7 +266,7 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 	if loadDefaultConfig {
 		defaultServicesConfig := getDefaultServicesConfig()
 		config.Services = defaultServicesConfig
-	} else if err = loadTOMLConfig(path, &config); err != nil {
+	} else if err = loadTOMLConfig(path, &config, fs); err != nil {
 		return nil, errors.Wrap(err, "load toml config")
 	}
 
@@ -270,7 +274,23 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 		return nil, errors.Wrap(err, "apply env variables")
 	}
 
+	if err = validateConfig(&config); err != nil {
+		return nil, errors.Wrap(err, "validating config values")
+	}
+
 	return &config, nil
+}
+
+func validateConfig(s *SSIServiceConfig) error {
+	if s.Server.Environment == EnvironmentProd {
+		if s.Services.KeyStoreConfig.DisableEncryption {
+			return errors.New("prod environment cannot disable key encryption")
+		}
+		if s.Services.AppLevelEncryptionConfiguration.DisableEncryption {
+			logrus.Warn("prod environment detected without app level encryption. This is strongly discouraged.")
+		}
+	}
+	return nil
 }
 
 func checkValidConfigPath(path string) (bool, error) {
@@ -350,9 +370,13 @@ func getDefaultServicesConfig() ServicesConfig {
 	}
 }
 
-func loadTOMLConfig(path string, config *SSIServiceConfig) error {
+func loadTOMLConfig(path string, config *SSIServiceConfig, fs fs.FS) error {
 	// load from TOML file
-	if _, err := toml.DecodeFile(path, &config); err != nil {
+	file, err := fs.Open(path)
+	if err != nil {
+		return errors.Wrapf(err, "opening path %s", path)
+	}
+	if _, err := toml.NewDecoder(file).Decode(&config); err != nil {
 		return errors.Wrapf(err, "could not load config: %s", path)
 	}
 

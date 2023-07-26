@@ -52,7 +52,7 @@ func run() error {
 		logrus.Infof("loading config from env var path: %s", envConfigPath)
 		configPath = envConfigPath
 	}
-	cfg, err := config.LoadConfig(configPath)
+	cfg, err := config.LoadConfig(configPath, os.DirFS("."))
 	if err != nil {
 		logrus.Fatalf("could not instantiate config: %s", err.Error())
 	}

@@ -48,7 +48,7 @@ func TestMain(t *testing.M) {
 
 func TestHealthCheckAPI(t *testing.T) {
 	shutdown := make(chan os.Signal, 1)
-	serviceConfig, err := config.LoadConfig("")
+	serviceConfig, err := config.LoadConfig("", nil)
 	assert.NoError(t, err)
 	server, err := NewSSIServer(shutdown, *serviceConfig)
 	assert.NoError(t, err)
@@ -76,7 +76,7 @@ func TestReadinessAPI(t *testing.T) {
 	})
 
 	shutdown := make(chan os.Signal, 1)
-	serviceConfig, err := config.LoadConfig("")
+	serviceConfig, err := config.LoadConfig("", nil)
 	assert.NoError(t, err)
 	serviceConfig.Services.StorageOptions = []storage.Option{
 		{
