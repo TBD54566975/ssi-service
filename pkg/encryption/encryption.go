@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	util2 "github.com/TBD54566975/ssi-sdk/util"
+	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/google/tink/go/aead"
 	"github.com/google/tink/go/core/registry"
 	"github.com/google/tink/go/integration/awskms"
@@ -52,7 +52,7 @@ func (k XChaCha20Poly1305Encrypter) Encrypt(ctx context.Context, plaintext, _ []
 	}
 	encryptedKey, err := util.XChaCha20Poly1305Encrypt(key, plaintext)
 	if err != nil {
-		return nil, util2.LoggingErrorMsgf(err, "could not encrypt key")
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not encrypt key")
 	}
 	return encryptedKey, nil
 }
@@ -69,7 +69,7 @@ func (k XChaCha20Poly1305Encrypter) Decrypt(ctx context.Context, ciphertext, _ [
 	// decrypt key before unmarshaling
 	decryptedKey, err := util.XChaCha20Poly1305Decrypt(key, ciphertext)
 	if err != nil {
-		return nil, util2.LoggingErrorMsgf(err, "could not decrypt key")
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not decrypt key")
 	}
 
 	return decryptedKey, nil
