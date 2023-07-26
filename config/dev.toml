@@ -29,6 +29,10 @@ service_endpoint = "http://localhost:3000"
 # example bolt config with filepath option
 storage = "bolt"
 
+[services.storage_encryption]
+# encryption
+disable_encryption = true
+
 [[services.storage_option]]
 id = "boltdb-filepath-option"
 option = "bolt.db"

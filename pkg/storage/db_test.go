@@ -15,6 +15,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tbd54566975/ssi-service/pkg/encryption"
 )
 
 func getDBImplementations(t *testing.T) []ServiceStorage {
@@ -28,6 +29,13 @@ func getDBImplementations(t *testing.T) []ServiceStorage {
 
 	postgresDB := setupPostgresDB(t)
 	dbImpls = append(dbImpls, postgresDB)
+
+	key := make([]byte, 32)
+	dbImpls = append(dbImpls, NewEncryptedWrapper(
+		boltDB,
+		encryption.NewXChaCha20Poly1305EncrypterWithKey(key),
+		encryption.NewXChaCha20Poly1305EncrypterWithKey(key),
+	))
 
 	return dbImpls
 }
@@ -498,7 +506,7 @@ func TestDB_Update(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				data, err = db.Update(context.Background(), namespace, tt.args.key, tt.args.values)
+				data, err = Update(context.Background(), db, namespace, tt.args.key, tt.args.values)
 				if !tt.expectedError(t, err) {
 					return
 				}
@@ -518,6 +526,19 @@ type testOpUpdater struct {
 
 func (f testOpUpdater) SetUpdatedResponse(bytes []byte) {
 	f.UpdaterWithMap.Values["response"] = bytes
+}
+
+func TestDB_Execute(t *testing.T) {
+	for _, dbImpl := range getDBImplementations(t) {
+		db := dbImpl
+		_, err := db.Execute(context.Background(), func(ctx context.Context, tx Tx) (any, error) {
+			return nil, tx.Write(ctx, "hello", "my_key", []byte(`some bytes`))
+		}, nil)
+		assert.NoError(t, err)
+		result, err := db.Read(context.Background(), "hello", "my_key")
+		assert.NoError(t, err)
+		assert.Equal(t, []byte(`some bytes`), result)
+	}
 }
 
 func TestDB_UpdatedSubmissionAndOperationTxFn(t *testing.T) {
@@ -609,7 +630,7 @@ func TestDB_UpdatedSubmissionAndOperationTxFn(t *testing.T) {
 		}
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
-				gotFirstData, gotOpData, err := db.UpdateValueAndOperation(context.Background(), tt.args.namespace, tt.args.key, tt.args.updater, tt.args.opNamespace, tt.args.opKey, testOpUpdater{
+				gotFirstData, gotOpData, err := UpdateValueAndOperation(context.Background(), db, tt.args.namespace, tt.args.key, tt.args.updater, tt.args.opNamespace, tt.args.opKey, testOpUpdater{
 					NewUpdater(map[string]any{
 						"done": true,
 					}),

@@ -48,7 +48,7 @@ func TestSimpleWebhook(t *testing.T) {
 	defer testServer.Close()
 
 	shutdown := make(chan os.Signal, 1)
-	serviceConfig, err := config.LoadConfig("")
+	serviceConfig, err := config.LoadConfig("", nil)
 	assert.NoError(t, err)
 
 	serviceConfig.Server.APIHost = "0.0.0.0:" + freePort()
