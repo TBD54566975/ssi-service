@@ -76,6 +76,12 @@ func NewKeyStoreStorage(db storage.ServiceStorage, e encryption.Encrypter, d enc
 	if writer != nil {
 		s.tx = writer
 	}
+	if s.encrypter == nil {
+		s.encrypter = encryption.NoopEncrypter
+	}
+	if s.decrypter == nil {
+		s.decrypter = encryption.NoopDecrypter
+	}
 
 	return s, nil
 }
@@ -123,7 +129,7 @@ func ensureEncryptionKeyExists(config encryption.ExternalEncryptionConfig, provi
 // NewServiceEncryption creates a pair of Encrypter and Decrypter with the given configuration.
 func NewServiceEncryption(db storage.ServiceStorage, cfg encryption.ExternalEncryptionConfig, key string) (encryption.Encrypter, encryption.Decrypter, error) {
 	if !cfg.EncryptionEnabled() {
-		return encryption.NoopEncrypter, encryption.NoopDecrypter, nil
+		return nil, nil, nil
 	}
 
 	if len(cfg.GetMasterKeyURI()) != 0 {

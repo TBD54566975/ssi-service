@@ -91,7 +91,10 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "creating app level encrypter")
 	}
-	storageProvider := storage.NewEncryptedWrapper(unencryptedStorageProvider, storageEncrypter, storageDecrypter)
+	storageProvider := unencryptedStorageProvider
+	if storageEncrypter != nil && storageDecrypter != nil {
+		storageProvider = storage.NewEncryptedWrapper(unencryptedStorageProvider, storageEncrypter, storageDecrypter)
+	}
 
 	webhookService, err := webhook.NewWebhookService(config.WebhookConfig, storageProvider)
 	if err != nil {
