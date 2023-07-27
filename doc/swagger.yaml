@@ -1935,9 +1935,9 @@ definitions:
     properties:
       applicationJwt:
         description: |-
-          Contains the following properties:
-          Application  manifestsdk.CredentialApplication `json:"credential_application" validate:"required"`
-          Credentials  []interface{}                     `json:"vcs" validate:"required"`
+          A JWT signed by the applicant. The payload MUST contain the following properties:
+          - `credential_application`: an object of type manifest.CredentialApplication (specified in https://identity.foundation/credential-manifest/#credential-application).
+          - `vcs`: an array of Verifiable Credentials.
         type: string
     required:
     - applicationJwt
@@ -3121,8 +3121,9 @@ paths:
     put:
       consumes:
       - application/json
-      description: Submit a credential application in response to a credential manifest.
-        The request body is expected to
+      description: |-
+        Submit a credential application in response to a credential manifest. The request body is expected to
+        be a valid JWT signed by the applicant's DID, containing two top level properties: `credential_application` and `vcs`.
       parameters:
       - description: request body
         in: body
