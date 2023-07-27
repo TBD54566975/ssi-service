@@ -243,9 +243,9 @@ func (mr ManifestRouter) DeleteManifest(c *gin.Context) {
 }
 
 type SubmitApplicationRequest struct {
-	// Contains the following properties:
-	// Application  manifestsdk.CredentialApplication `json:"credential_application" validate:"required"`
-	// Credentials  []interface{}                     `json:"vcs" validate:"required"`
+	// A JWT signed by the applicant. The payload MUST contain the following properties:
+	// - `credential_application`: an object of type manifest.CredentialApplication (specified in https://identity.foundation/credential-manifest/#credential-application).
+	// - `vcs`: an array of Verifiable Credentials.
 	ApplicationJWT keyaccess.JWT `json:"applicationJwt" validate:"required"`
 }
 
@@ -317,9 +317,7 @@ type SubmitApplicationResponse struct {
 //
 //	@Summary		Submit application
 //	@Description	Submit a credential application in response to a credential manifest. The request body is expected to
-//
-// be a valid JWT signed by the applicant's DID, containing two top level properties: credential_application and vcs.
-//
+//	@Description	be a valid JWT signed by the applicant's DID, containing two top level properties: `credential_application` and `vcs`.
 //	@Tags			ApplicationAPI
 //	@Accept			json
 //	@Produce		json
