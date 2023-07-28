@@ -18,7 +18,7 @@ For the purposes of our example, let's assume that the did created was `did:key:
 
 ### 1. Create a DIDConfiguration
 
-`PUT` to `/v1/did-configurations`
+Make a `PUT` request to `/v1/did-configurations`:
 
 ```json
 {
