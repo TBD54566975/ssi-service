@@ -2,7 +2,7 @@
 
 ## Background
 
-A [DID Configuration Resource](https://identity.foundation/.well-known/resources/did-configuration/) provides proof of a bi-directional relationship between the controller of an origin and a DID via cryptographically verifiable signatures that are linked to a DID's key material.
+A [DID Configuration Resource](https://identity.foundation/.well-known/resources/did-configuration/) provides proof of a bi-directional relationship between the controller of a web domain and a DID via cryptographically verifiable signature, associated with a DID's key material.
 
 ## Steps
 
