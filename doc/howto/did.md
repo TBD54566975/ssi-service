@@ -41,21 +41,12 @@ For now let's keep things simple and create a new `did:key` with the key type [`
 
 **Create DID Key Request**
 
-`PUT` to `/v1/dids/key`
-
-```json
-{
-  "keyType": "Ed25519"
-}
-```
-
-A sample CURL command is as follows:
+Make a `PUT` request to `/v1/dids/key`. A sample CURL command is as follows:
 
 ```bash
 curl -X PUT localhost:3000/v1/dids/key -d '{"keyType": "Ed25519"}'
 ```
 
-```
 If successful, you should see a response such as...
 
 ```json
