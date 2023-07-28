@@ -164,8 +164,6 @@ func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.J
 
 	// set subject value as the schema
 	subject := credential.CredentialSubject(jsonSchema)
-	// TODO(gabe) remove this after https://github.com/TBD54566975/ssi-sdk/pull/404 is merged
-	subject[credential.VerifiableCredentialIDProperty] = schemaURI
 	if err := builder.SetCredentialSubject(subject); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not set subject: %+v", subject)
 	}
