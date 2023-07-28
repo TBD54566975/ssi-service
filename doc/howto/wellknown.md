@@ -75,7 +75,7 @@ This next step is for you to do outside of the service. You have to ensure that 
 
 Once you've done the steps above, you can also use SSI Service to verify that the DID configuration is correct!
 
-`PUT` to `/v1/did-configurations/verification`
+Make a `PUT` request to `/v1/did-configurations/verification`:
 
 ```json
 {
