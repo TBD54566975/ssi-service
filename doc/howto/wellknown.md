@@ -91,7 +91,7 @@ curl -X PUT 'localhost:3000/v1/did-configurations/verification' -d '{
 }'
 ```
 
-The result will look similar to the response below
+The result will look similar to the response below:
 
 ```json
 {
