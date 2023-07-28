@@ -30,7 +30,8 @@ Make a `PUT` request to `/v1/did-configurations`:
 }
 ```
 
-Or if you like curling
+Or if you like CURLing:
+
 ```shell
 curl -X PUT 'localhost:3000/v1/did-configurations' -d '{
   "expirationDate": "2051-10-05T14:48:00.000Z",
