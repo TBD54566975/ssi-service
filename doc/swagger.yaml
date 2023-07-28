@@ -2788,7 +2788,7 @@ paths:
             type: string
       summary: Batch Create DIDs
       tags:
-      - CredentialAPI
+      - DecentralizedIdentityAPI
   /v1/dids/resolver/{id}:
     get:
       consumes:

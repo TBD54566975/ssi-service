@@ -33,7 +33,7 @@ Upon a successful request you should see a response such as:
 }
 ```
 
-## Creating A DID
+## Creating a DID
 
 You can create a DID by sending a `PUT` request to the `/v1/dids/{method}` endpoint. The request body needs two pieces of information: a method and a key type. The method must be supported by the service, and the key type must be supported by the method. You can find out more specifics about what each method supports [by looking at the SDK](https://github.com/TBD54566975/ssi-sdk/tree/main/did). Certain methods may support additional properties in an optional `options` fields.
 
@@ -41,12 +41,10 @@ For now let's keep things simple and create a new `did:key` with the key type [`
 
 **Create DID Key Request**
 
-`PUT` to `/v1/dids/key`
+Make a `PUT` request to `/v1/dids/key`. A sample CURL command is as follows:
 
-```json
-{
-  "keyType": "Ed25519"
-}
+```bash
+curl -X PUT localhost:3000/v1/dids/key -d '{"keyType": "Ed25519"}'
 ```
 
 If successful, you should see a response such as...
@@ -117,6 +115,3 @@ You can get a specific DID's document by making a `GET` request to the method's 
 ## DIDs Outside the Service
 
 The [universal resolver](https://github.com/decentralized-identity/universal-resolver) is a project at the [Decentralized Identity Foundation](https://identity.foundation/) aiming to enable the resolution of _any_ DID Document. The service, when run with [Docker Compose, runs a select number of these drivers (and more can be configured). It's possible to leverage the resolution of DIDs not supported by the service by making `GET` requests to `/v1/dids/resolver/{did}`.
-
-
-
