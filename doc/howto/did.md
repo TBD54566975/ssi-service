@@ -47,13 +47,6 @@ Make a `PUT` request to `/v1/dids/key`. A sample CURL command is as follows:
 curl -X PUT localhost:3000/v1/dids/key -d '{"keyType": "Ed25519"}'
 ```
 
-Or if you like curling:
-```shell
-curl -X PUT 'localhost:3000/v1/dids/key' -d '{
-  "keyType": "Ed25519"
-}'
-```
-
 If successful, you should see a response such as...
 
 ```json
