@@ -6,7 +6,7 @@ A [DID Configuration Resource](https://identity.foundation/.well-known/resources
 
 ## Steps
 
-You can use a DID Configuration Resource to tell that world that you are the same person who control your website and a DID. SSI Service does all the heavy lifting to make it easy to create such resource, linking DID that were created within the service and and your website of choice. The steps for doing so are outlined below.
+You can use a DID Configuration Resource to advertise that the same entity which controls a given website also controls a DID. The SSI Service does all the heavy lifting to make it easy to create such a resource, linking DIDs that created within the service to a website you control. The steps for doing so are outlined below.
 
 ### Prerequisites
 
