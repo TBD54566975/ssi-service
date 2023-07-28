@@ -30,13 +30,12 @@ import (
 // main godoc
 //
 //	@title			SSI Service API
-//	@description	{{.Desc}}
+//	@description	The Self Sovereign Identity Service: Managing DIDs, Verifiable Credentials, and more!
 //	@contact.name	TBD
 //	@contact.url	https://github.com/TBD54566975/ssi-service/issues
 //	@contact.email	tbd-developer@squareup.com
 //	@license.name	Apache 2.0
 //	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
-//	@version		{{.SVN}}
 func main() {
 	logrus.Info("Starting up...")
 
