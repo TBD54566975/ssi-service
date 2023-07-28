@@ -71,7 +71,7 @@ This next step is up to you. You have to ensure that the value of `wellKnownLoca
 }
 ```
 
-### 3. Verify your setup
+### 3. Verify the DID Configuration
 
 Once you've done the steps above, you can also use SSI Service to verify that the DID configuration is correct!
 
