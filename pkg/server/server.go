@@ -69,7 +69,7 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	engine.GET(HealthPrefix, router.Health)
 	engine.GET(ReadinessPrefix, router.Readiness(ssi.GetServices()))
 	engine.StaticFile("swagger.yaml", "./doc/swagger.yaml")
-	engine.GET("/swagger/*any", ginswagger.WrapHandler(swaggerfiles.Handler, ginswagger.URL("/swagger.yaml")))
+	engine.GET(SwaggerPrefix, ginswagger.WrapHandler(swaggerfiles.Handler, ginswagger.URL("/swagger.yaml")))
 
 	// register all v1 routers
 	v1 := engine.Group(V1Prefix)

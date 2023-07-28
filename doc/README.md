@@ -19,8 +19,6 @@ resource for developers and users of the SSI Service.
 All feature proposal documents for the SSI Service follow a common format and are known as SSI Improvement Proposals or
 SIPs. SIPs [have their own documentation which can be found here](https://github.com/TBD54566975/ssi-service/blob/main/doc/sip/README.md)
 
-
-
 ## Configuration
 
 There are a few ways to configure the service. There are a few choices you can make, including which database to use,
