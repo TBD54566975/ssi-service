@@ -2,11 +2,11 @@
 
 ## Background
 
-A [DID Configuration Resource](https://identity.foundation/.well-known/resources/did-configuration/) provides proof of a bi-directional relationship between the controller of an origin and a DID via cryptographically verifiable signatures that are linked to a DID's key material.
+A [DID Configuration Resource](https://identity.foundation/.well-known/resources/did-configuration/) provides proof of a bi-directional relationship between the controller of a web domain and a DID via cryptographically verifiable signature, associated with a DID's key material.
 
 ## Steps
 
-You can use a DID Configuration Resource to tell that world that you are the same person who control your website and a DID. SSI Service does all the heavy lifting to make it easy to create such resource, linking DID that were created within the service and and your website of choice. The steps for doing so are outlined below.
+You can use a DID Configuration Resource to advertise that the same entity which controls a given website also controls a DID. The SSI Service does all the heavy lifting to make it easy to create such a resource, linking DIDs that created within the service to a website you control. The steps for doing so are outlined below.
 
 ### Prerequisites
 
@@ -18,7 +18,7 @@ For the purposes of our example, let's assume that the did created was `did:key:
 
 ### 1. Create a DIDConfiguration
 
-`PUT` to `/v1/did-configurations`
+Make a `PUT` request to `/v1/did-configurations`:
 
 ```json
 {
@@ -30,7 +30,8 @@ For the purposes of our example, let's assume that the did created was `did:key:
 }
 ```
 
-Or if you like curling
+Or if you like CURLing:
+
 ```shell
 curl -X PUT 'localhost:3000/v1/did-configurations' -d '{
   "expirationDate": "2051-10-05T14:48:00.000Z",
@@ -41,7 +42,7 @@ curl -X PUT 'localhost:3000/v1/did-configurations' -d '{
 }'
 ```
 
-If successful, you should see a response such as...
+Upon success you will see a response such as...
 
 ```json
 {
@@ -55,11 +56,11 @@ If successful, you should see a response such as...
 }
 ```
 
-This contains two properties. `wellKnownLocation` describes where you should be hosting content. The content that you host is the value of the property `didConfiguration`.
+This contains two properties: `wellKnownLocation` which describes where you should be hosting the content and `didConfiguration`  which is content that you will host.
 
 ### 2. Host the created DID Configuration
 
-This next step is up to you. You have to ensure that the value of `wellKnownLocation` resolves to a json file. The contents of the file should be the value of `didConfiguration`. In our example, we would have to make sure that the URL https://www.tbd.website/.well-known/did-configuration.json returns the JSON object described below. 
+This next step is for you to do outside of the service. You have to ensure that the value of `wellKnownLocation` resolves to a JSON file. The contents of the file should be the value of `didConfiguration`. In our example, we would have to make sure that the URL `https://www.tbd.website/.well-known/did-configuration.json` returns the JSON object described below. 
 
 ```json
 {
@@ -70,11 +71,11 @@ This next step is up to you. You have to ensure that the value of `wellKnownLoca
 }
 ```
 
-### 3. Verify your setup
+### 3. Verify the DID Configuration
 
 Once you've done the steps above, you can also use SSI Service to verify that the DID configuration is correct!
 
-`PUT` to `/v1/did-configurations/verification`
+Make a `PUT` request to `/v1/did-configurations/verification`:
 
 ```json
 {
@@ -82,7 +83,7 @@ Once you've done the steps above, you can also use SSI Service to verify that th
 }
 ```
 
-... or in curl
+... or using CURL
 
 ```shell
 curl -X PUT 'localhost:3000/v1/did-configurations/verification' -d '{
@@ -90,7 +91,7 @@ curl -X PUT 'localhost:3000/v1/did-configurations/verification' -d '{
 }'
 ```
 
-The result will look similar to the response below
+The result will look similar to the response below:
 
 ```json
 {
