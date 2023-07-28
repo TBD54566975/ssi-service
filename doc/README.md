@@ -52,6 +52,6 @@ the SSI Service to get up to speed with its functionality.
 | [Revoke/Suspend a Credential](https://github.com/TBD54566975/ssi-service/blob/main/doc/howto/status.md)                                      | Get started with credential status functionality       |
 | [[TODO] Requesting and Verifying Credentials with Presentation Exchange](https://github.com/TBD54566975/ssi-service/issues/606)              | Get started with Presentation Exchange functionality   |
 | [[TODO] Accepting Applications for and Issuing Credentials using Credential Manifest](https://github.com/TBD54566975/ssi-service/issues/606) | Get started with Credential Manifest functionality     |
-| [[TODO] Creating a Well Known File for your DID](https://github.com/TBD54566975/ssi-service/issues/606)                                      | Get started with DID Well Known functionality          |
+| [Link your DID with a Website](./howto/wellknown.md)                                                                                         | Get started with DID Well Known functionality          |
 
 
