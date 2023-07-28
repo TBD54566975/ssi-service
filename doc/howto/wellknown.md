@@ -60,7 +60,7 @@ This contains two properties: `wellKnownLocation` which describes where you shou
 
 ### 2. Host the created DID Configuration
 
-This next step is up to you. You have to ensure that the value of `wellKnownLocation` resolves to a json file. The contents of the file should be the value of `didConfiguration`. In our example, we would have to make sure that the URL https://www.tbd.website/.well-known/did-configuration.json returns the JSON object described below. 
+This next step is for you to do outside of the service. You have to ensure that the value of `wellKnownLocation` resolves to a JSON file. The contents of the file should be the value of `didConfiguration`. In our example, we would have to make sure that the URL `https://www.tbd.website/.well-known/did-configuration.json` returns the JSON object described below. 
 
 ```json
 {
