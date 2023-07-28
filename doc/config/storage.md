@@ -68,7 +68,7 @@ For a working example, see this [dev.toml file](https://github.com/TBD54566975/s
 
 ## Implementing a New Storage Provider
 
-You need to implement the [ServiceStorage interface](../pkg/storage/storage.go), similar to how [Redis](../pkg/storage/redis.go)
+You need to implement the [ServiceStorage interface](../../pkg/storage/storage.go), similar to how [Redis](../../pkg/storage/redis.go)
 is implemented. For an example, see [this PR](https://github.com/TBD54566975/ssi-service/pull/590/files#diff-606358579107e7ad1221525001aed8c776a141d4cc5aab9ef7a3ddbcec10d9f9)
 which introduces the SQL based implementation.
 
