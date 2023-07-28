@@ -49,6 +49,13 @@ For now let's keep things simple and create a new `did:key` with the key type [`
 }
 ```
 
+Or if you like curling:
+```shell
+curl -X PUT 'localhost:3000/v1/dids/key' -d '{
+  "keyType": "Ed25519"
+}'
+```
+
 If successful, you should see a response such as...
 
 ```json
