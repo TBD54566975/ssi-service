@@ -194,11 +194,11 @@ func TestDIDAPI(t *testing.T) {
 				// reset recorder between calls
 				w = httptest.NewRecorder()
 
+				defer gock.Off()
 				gock.New(testIONResolverURL).
 					Post("/operations").
 					Reply(200).
 					BodyString(string(BasicDIDResolution))
-				defer gock.Off()
 
 				// with body, good key type, no options
 				createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
