@@ -56,7 +56,7 @@ Upon success you will see a response such as...
 }
 ```
 
-This contains two properties. `wellKnownLocation` describes where you should be hosting content. The content that you host is the value of the property `didConfiguration`.
+This contains two properties: `wellKnownLocation` which describes where you should be hosting the content and `didConfiguration`  which is content that you will host.
 
 ### 2. Host the created DID Configuration
 
