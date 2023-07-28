@@ -199,13 +199,13 @@ func TestDIDRouter(t *testing.T) {
 				createOpts := did.CreateWebDIDOptions{DIDWebID: "did:web:example.com"}
 				_, err = didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.WebMethod, KeyType: "bad", Options: createOpts})
 				assert.Error(tt, err)
-				assert.Contains(tt, err.Error(), "could not generate key for did:web")
+				assert.Contains(tt, err.Error(), "key type <bad> not supported")
 
 				gock.Off()
 				gock.New("https://example.com").
 					Get("/.well-known/did.json").
 					Reply(200).
-					BodyString("")
+					JSON("{}")
 				// good key type
 				createDIDResponse, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.WebMethod, KeyType: crypto.Ed25519, Options: createOpts})
 				assert.NoError(tt, err)
@@ -226,7 +226,7 @@ func TestDIDRouter(t *testing.T) {
 				gock.New("https://tbd.website").
 					Get("/.well-known/did.json").
 					Reply(200).
-					BodyString("")
+					JSON("{}")
 				// create a second DID
 				createOpts = did.CreateWebDIDOptions{DIDWebID: "did:web:tbd.website"}
 				createDIDResponse2, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.WebMethod, KeyType: crypto.Ed25519, Options: createOpts})

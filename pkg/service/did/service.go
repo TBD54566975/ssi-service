@@ -142,9 +142,9 @@ func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, er
 		return nil, err
 	}
 	return &ResolveDIDResponse{
-		ResolutionMetadata:  &resolved.Metadata,
+		ResolutionMetadata:  resolved.Metadata,
 		DIDDocument:         &resolved.Document,
-		DIDDocumentMetadata: &resolved.DocumentMetadata,
+		DIDDocumentMetadata: resolved.DocumentMetadata,
 	}, nil
 }
 

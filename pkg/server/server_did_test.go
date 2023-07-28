@@ -160,7 +160,7 @@ func TestDIDAPI(t *testing.T) {
 				gock.New("https://example.com").
 					Get("/.well-known/did.json").
 					Reply(200).
-					BodyString(`{"didDocument": {"id": "did:web:example.com"}}`)
+					JSON(`{"didDocument": {"id": "did:web:example.com"}}`)
 				defer gock.Off()
 
 				c = newRequestContextWithParams(w, req, params)
@@ -280,7 +280,7 @@ func TestDIDAPI(t *testing.T) {
 				gock.New("https://example.com").
 					Get("/.well-known/did.json").
 					Reply(200).
-					BodyString(`{"didDocument": {"id": "did:web:example.com"}}`)
+					JSON(`{"didDocument": {"id": "did:web:example.com"}}`)
 				defer gock.Off()
 
 				c := newRequestContextWithParams(w, req, params)
@@ -300,7 +300,7 @@ func TestDIDAPI(t *testing.T) {
 				gock.New("https://example.com").
 					Get("/.well-known/did.json").
 					Reply(200).
-					BodyString(`{"didDocument": {"id": "did:web:example.com"}}`)
+					JSON(`{"didDocument": {"id": "did:web:example.com"}}`)
 				defer gock.Off()
 
 				// Make sure it can't make another did:web of the same DIDWebID

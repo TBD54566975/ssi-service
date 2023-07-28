@@ -49,6 +49,9 @@ func (h *webHandler) GetMethod() did.Method {
 func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
 	logrus.Debugf("creating DID: %+v", request)
 
+	if !crypto.IsSupportedKeyType(request.KeyType) {
+		return nil, errors.Errorf("key type <%s> not supported", request.KeyType)
+	}
 	// process options
 	if request.Options == nil {
 		return nil, errors.New("options cannot be empty")
