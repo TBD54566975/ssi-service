@@ -49,6 +49,13 @@ For now let's keep things simple and create a new `did:key` with the key type [`
 }
 ```
 
+A sample CURL command is as follows:
+
+```bash
+curl -X PUT localhost:3000/v1/dids/key -d '{"keyType": "Ed25519"}'
+```
+
+```
 If successful, you should see a response such as...
 
 ```json
@@ -117,6 +124,4 @@ You can get a specific DID's document by making a `GET` request to the method's 
 ## DIDs Outside the Service
 
 The [universal resolver](https://github.com/decentralized-identity/universal-resolver) is a project at the [Decentralized Identity Foundation](https://identity.foundation/) aiming to enable the resolution of _any_ DID Document. The service, when run with [Docker Compose, runs a select number of these drivers (and more can be configured). It's possible to leverage the resolution of DIDs not supported by the service by making `GET` requests to `/v1/dids/resolver/{did}`.
-
-
 
