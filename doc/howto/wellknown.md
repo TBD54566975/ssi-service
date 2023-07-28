@@ -83,7 +83,7 @@ Make a `PUT` request to `/v1/did-configurations/verification`:
 }
 ```
 
-... or in curl
+... or using CURL
 
 ```shell
 curl -X PUT 'localhost:3000/v1/did-configurations/verification' -d '{
