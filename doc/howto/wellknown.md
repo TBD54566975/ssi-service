@@ -42,7 +42,7 @@ curl -X PUT 'localhost:3000/v1/did-configurations' -d '{
 }'
 ```
 
-If successful, you should see a response such as...
+Upon success you will see a response such as...
 
 ```json
 {
