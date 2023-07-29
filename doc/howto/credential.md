@@ -83,7 +83,7 @@ curl -X PUT localhost:3000/v1/credentials -d '{
 }'
 ```
 
-Upon success we'll see a response such as:
+Upon success we see a response such as:
 
 ```json
 {
