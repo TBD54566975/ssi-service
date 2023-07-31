@@ -10,14 +10,13 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/chacha20poly1305"
-
-	"github.com/tbd54566975/ssi-service/internal/keyaccess"
-
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/pkg/encryption"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
+	"golang.org/x/crypto/chacha20poly1305"
 )
 
 type ServiceFactory func(storage.Tx) (*Service, error)
@@ -50,20 +49,17 @@ func (s Service) Config() config.KeyStoreServiceConfig {
 }
 
 func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	if err := EnsureServiceKeyExists(config, s); err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "initializing keystore")
+	encrypter, decrypter, err := NewServiceEncryption(s, config.EncryptionConfig, ServiceKeyEncryptionKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating new encryption")
 	}
-	factory := NewKeyStoreServiceFactory(config, s)
+
+	factory := NewKeyStoreServiceFactory(config, s, encrypter, decrypter)
 	return factory(s)
 }
 
-func NewKeyStoreServiceFactory(config config.KeyStoreServiceConfig, s storage.ServiceStorage) ServiceFactory {
+func NewKeyStoreServiceFactory(config config.KeyStoreServiceConfig, s storage.ServiceStorage, encrypter encryption.Encrypter, decrypter encryption.Decrypter) ServiceFactory {
 	return func(tx storage.Tx) (*Service, error) {
-		encrypter, decrypter, err := newEncryption(s, config)
-		if err != nil {
-			return nil, errors.Wrap(err, "creating new encryption")
-		}
-
 		// Next, instantiate the key storage
 		keyStoreStorage, err := NewKeyStoreStorage(s, encrypter, decrypter, tx)
 		if err != nil {
@@ -168,42 +164,16 @@ func (s Service) GetKeyDetails(ctx context.Context, request GetKeyDetailsRequest
 	}, nil
 }
 
-// GenerateServiceKey using argon2 for key derivation generate a service key and corresponding salt,
-// base58 encoding both values.
-func GenerateServiceKey(skPassword string) (key, salt string, err error) {
-	saltBytes, err := util.GenerateSalt(util.Argon2SaltSize)
+// GenerateServiceKey creates a random key that's 32 bytes encoded using base58.
+func GenerateServiceKey() (key string, err error) {
+	keyBytes, err := util.GenerateSalt(chacha20poly1305.KeySize)
 	if err != nil {
-		err = errors.Wrap(err, "generating salt for service key")
-		return "", "", sdkutil.LoggingError(err)
-	}
-
-	keyBytes, err := util.Argon2KeyGen(skPassword, saltBytes, chacha20poly1305.KeySize)
-	if err != nil {
-		err = errors.Wrap(err, "generating key for service key")
-		return "", "", sdkutil.LoggingError(err)
+		err = errors.Wrap(err, "generating bytes for service key")
+		return "", sdkutil.LoggingError(err)
 	}
 
 	key = base58.Encode(keyBytes)
-	salt = base58.Encode(saltBytes)
 	return
-}
-
-// EncryptKey encrypts another key with the service key using xchacha20-poly1305
-func EncryptKey(serviceKey, key []byte) ([]byte, error) {
-	encryptedKey, err := util.XChaCha20Poly1305Encrypt(serviceKey, key)
-	if err != nil {
-		return nil, errors.Wrap(err, "encrypting key with service key")
-	}
-	return encryptedKey, nil
-}
-
-// DecryptKey encrypts another key with the service key using xchacha20-poly1305
-func DecryptKey(serviceKey, encryptedKey []byte) ([]byte, error) {
-	decryptedKey, err := util.XChaCha20Poly1305Decrypt(serviceKey, encryptedKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "decrypting key with service key")
-	}
-	return decryptedKey, nil
 }
 
 // Sign fetches the key in the store, and uses it to sign data. Data should be json or json-serializable.
@@ -211,6 +181,9 @@ func (s Service) Sign(ctx context.Context, keyID string, data any) (*keyaccess.J
 	gotKey, err := s.GetKey(ctx, GetKeyRequest{ID: keyID})
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "getting key with keyID<%s>", keyID)
+	}
+	if gotKey.Revoked {
+		return nil, sdkutil.LoggingNewErrorf("cannot use revoked key<%s>", gotKey.ID)
 	}
 	keyAccess, err := keyaccess.NewJWKKeyAccess(gotKey.Controller, gotKey.ID, gotKey.Key)
 	if err != nil {

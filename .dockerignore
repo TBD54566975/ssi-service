@@ -1,0 +1,11 @@
+bin
+build
+log/*.log
+sips
+
+bolt.db
+coverage.out
+**/*.md
+**/*_test.go
+**/*.png
+

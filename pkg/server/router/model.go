@@ -6,14 +6,19 @@ type CommonCreateRequestRequest struct {
 	Audience []string `json:"audience"`
 
 	// Expiration as defined in https://www.rfc-editor.org/rfc/rfc7519.html#section-4.1.4
-	// Optional. When not specified, the request will be valid for a default duration.
+	// Optional.
 	Expiration string `json:"expiration"`
 
-	// DID of the issuer of this presentation definition. The DID must have been previously created with the DID API,
-	// or the PrivateKey must have been added independently.
+	// DID of the issuer of this presentation definition. The DID must have been previously created with the DID API.
 	IssuerDID string `json:"issuerId" validate:"required"`
 
-	// The privateKey associated with the KID will be used to sign an envelope that contains
+	// The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+	// stored in ssi-service. The verificationMethod must be part of the did document associated with `issuerId`.
+	// The private key associated with the verificationMethod's publicKey will be used to sign an envelope that contains
 	// the created presentation definition.
-	IssuerKID string `json:"issuerKid" validate:"required"`
+	VerificationMethodID string `json:"verificationMethodId" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
+
+	// The URL that the presenter should be submitting the presentation submission to.
+	// Optional.
+	CallbackURL string `json:"callbackUrl" example:"https://example.com"`
 }

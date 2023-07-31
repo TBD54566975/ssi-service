@@ -13,7 +13,6 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -35,13 +34,13 @@ type StoredCredential struct {
 	Credential    *credential.VerifiableCredential `json:"credential,omitempty"`
 	CredentialJWT *keyaccess.JWT                   `json:"token,omitempty"`
 
-	Issuer       string `json:"issuer"`
-	IssuerKID    string `json:"issuerKid"`
-	Subject      string `json:"subject"`
-	Schema       string `json:"schema"`
-	IssuanceDate string `json:"issuanceDate"`
-	Revoked      bool   `json:"revoked"`
-	Suspended    bool   `json:"suspended"`
+	Issuer                             string `json:"issuer"`
+	FullyQualifiedVerificationMethodID string `json:"fullyQualifiedVerificationMethodId"`
+	Subject                            string `json:"subject"`
+	Schema                             string `json:"schema"`
+	IssuanceDate                       string `json:"issuanceDate"`
+	Revoked                            bool   `json:"revoked"`
+	Suspended                          bool   `json:"suspended"`
 }
 
 type WriteContext struct {
@@ -304,17 +303,17 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 		schema = cred.CredentialSchema.ID
 	}
 	return &StoredCredential{
-		Key:               createPrefixKey(credID, issuer, subject, schema),
-		LocalCredentialID: credID,
-		Credential:        cred,
-		CredentialJWT:     request.CredentialJWT,
-		Issuer:            issuer,
-		IssuerKID:         request.IssuerKID,
-		Subject:           subject,
-		Schema:            schema,
-		IssuanceDate:      cred.IssuanceDate,
-		Revoked:           request.Revoked,
-		Suspended:         request.Suspended,
+		Key:                                createPrefixKey(credID, issuer, subject, schema),
+		LocalCredentialID:                  credID,
+		Credential:                         cred,
+		CredentialJWT:                      request.CredentialJWT,
+		Issuer:                             issuer,
+		FullyQualifiedVerificationMethodID: request.FullyQualifiedVerificationMethodID,
+		Subject:                            subject,
+		Schema:                             schema,
+		IssuanceDate:                       cred.IssuanceDate,
+		Revoked:                            request.Revoked,
+		Suspended:                          request.Suspended,
 	}, nil
 }
 
@@ -477,7 +476,7 @@ func (cs *Storage) GetCredentialsBySchema(ctx context.Context, schema string) ([
 	}
 
 	// see if the prefix keys contains the schema value
-	query := "sc:" + schema
+	query := storage.Join("sc", schema)
 	var schemaKeys []string
 	for _, k := range keys {
 		if strings.HasSuffix(k, query) {
@@ -524,7 +523,7 @@ func (cs *Storage) GetStatusListCredentialsByIssuerSchemaPurpose(ctx context.Con
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
 	}
 
-	query := "sc:" + schema + "-sp:" + string(statusPurpose)
+	query := storage.Join("sc", schema, "sp", string(statusPurpose))
 	var issuerSchemaKeys []string
 	for _, k := range keys {
 		if strings.Contains(k, issuer) && strings.HasSuffix(k, query) {
@@ -567,7 +566,7 @@ func (cs *Storage) getCredentialsByIssuerAndSchema(ctx context.Context, issuer s
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
 	}
 
-	query := "sc:" + schema
+	query := storage.Join("sc", schema)
 	var issuerSchemaKeys []string
 	for _, k := range keys {
 		if strings.Contains(k, issuer) && strings.HasSuffix(k, query) {
@@ -672,12 +671,12 @@ func (cs *Storage) GetStatusListCredentialKeyData(ctx context.Context, issuer st
 }
 
 func getStatusListKey(issuer, schema, statusPurpose string) string {
-	return strings.Join([]string{"is:" + issuer, "sc:" + schema, "sp:" + statusPurpose}, "-")
+	return storage.Join("is", issuer, "sc", schema, "sp", statusPurpose)
 }
 
 // unique key for a credential
 func createPrefixKey(id, issuer, subject, schema string) string {
-	return strings.Join([]string{id, "is:" + issuer, "su:" + subject, "sc:" + schema}, "-")
+	return storage.Join(id, "is", issuer, "su", subject, "sc", schema)
 }
 
 func randomUniqueNum(count int) []int {

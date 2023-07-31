@@ -8,15 +8,16 @@ type (
 const (
 	// List of all service
 
-	DID          Type = "did"
-	Schema       Type = "schema"
-	Issuance     Type = "issuance"
-	Credential   Type = "credential"
-	KeyStore     Type = "keystore"
-	Manifest     Type = "manifest"
-	Presentation Type = "presentation"
-	Operation    Type = "operation"
-	Webhook      Type = "webhook"
+	DID              Type = "did"
+	Schema           Type = "schema"
+	Issuance         Type = "issuance"
+	Credential       Type = "credential"
+	KeyStore         Type = "keystore"
+	Manifest         Type = "manifest"
+	Presentation     Type = "presentation"
+	Operation        Type = "operation"
+	Webhook          Type = "webhook"
+	DIDConfiguration Type = "did_configuration"
 
 	StatusReady    StatusState = "ready"
 	StatusNotReady StatusState = "not_ready"

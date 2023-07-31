@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+	"github.com/pkg/errors"
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -15,22 +16,24 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
+	wellknown "github.com/tbd54566975/ssi-service/pkg/service/well-known"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
 // SSIService represents all services and their dependencies independent of transport
 type SSIService struct {
-	KeyStore     *keystore.Service
-	DID          *did.Service
-	Schema       *schema.Service
-	Issuance     *issuance.Service
-	Credential   *credential.Service
-	Manifest     *manifest.Service
-	Presentation *presentation.Service
-	Operation    *operation.Service
-	Webhook      *webhook.Service
-	storage      storage.ServiceStorage
-	BatchDID     *did.BatchService
+	KeyStore         *keystore.Service
+	DID              *did.Service
+	Schema           *schema.Service
+	Issuance         *issuance.Service
+	Credential       *credential.Service
+	Manifest         *manifest.Service
+	Presentation     *presentation.Service
+	Operation        *operation.Service
+	Webhook          *webhook.Service
+	storage          storage.ServiceStorage
+	BatchDID         *did.BatchService
+	DIDConfiguration *wellknown.DIDConfigurationService
 }
 
 // InstantiateSSIService creates a new instance of the SSIS which instantiates all services and their
@@ -79,9 +82,18 @@ func validateServiceConfig(config config.ServicesConfig) error {
 
 // instantiateServices begins all instantiates and their dependencies
 func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
-	storageProvider, err := storage.NewStorage(storage.Type(config.StorageProvider), config.StorageOptions...)
+	unencryptedStorageProvider, err := storage.NewStorage(storage.Type(config.StorageProvider), config.StorageOptions...)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not instantiate storage provider: %s", config.StorageProvider)
+	}
+
+	storageEncrypter, storageDecrypter, err := keystore.NewServiceEncryption(unencryptedStorageProvider, config.AppLevelEncryptionConfiguration, keystore.ServiceDataEncryptionKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating app level encrypter")
+	}
+	storageProvider := unencryptedStorageProvider
+	if storageEncrypter != nil && storageDecrypter != nil {
+		storageProvider = storage.NewEncryptedWrapper(unencryptedStorageProvider, storageEncrypter, storageDecrypter)
 	}
 
 	webhookService, err := webhook.NewWebhookService(config.WebhookConfig, storageProvider)
@@ -89,10 +101,11 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the webhook service")
 	}
 
-	if err := keystore.EnsureServiceKeyExists(config.KeyStoreConfig, storageProvider); err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not ensure the service key exists")
+	keyEncrypter, keyDecrypter, err := keystore.NewServiceEncryption(unencryptedStorageProvider, config.KeyStoreConfig.EncryptionConfig, keystore.ServiceKeyEncryptionKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating keystore encrypter")
 	}
-	keyStoreServiceFactory := keystore.NewKeyStoreServiceFactory(config.KeyStoreConfig, storageProvider)
+	keyStoreServiceFactory := keystore.NewKeyStoreServiceFactory(config.KeyStoreConfig, storageProvider, keyEncrypter, keyDecrypter)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the keystore service factory")
 	}
@@ -143,18 +156,20 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the operation service")
 	}
 
+	didConfigurationService, _ := wellknown.NewDIDConfigurationService(keyStoreService, didResolver, schemaService)
 	return &SSIService{
-		KeyStore:     keyStoreService,
-		DID:          didService,
-		BatchDID:     batchDIDService,
-		Schema:       schemaService,
-		Issuance:     issuanceService,
-		Credential:   credentialService,
-		Manifest:     manifestService,
-		Presentation: presentationService,
-		Operation:    operationService,
-		Webhook:      webhookService,
-		storage:      storageProvider,
+		KeyStore:         keyStoreService,
+		DID:              didService,
+		BatchDID:         batchDIDService,
+		Schema:           schemaService,
+		Issuance:         issuanceService,
+		Credential:       credentialService,
+		Manifest:         manifestService,
+		Presentation:     presentationService,
+		Operation:        operationService,
+		Webhook:          webhookService,
+		DIDConfiguration: didConfigurationService,
+		storage:          storageProvider,
 	}, nil
 }
 

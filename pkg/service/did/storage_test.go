@@ -14,7 +14,7 @@ func TestStorage(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 
 			t.Run("Create bad DID - no namespace", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(tt))
 				assert.NoError(tt, err)
 
 				// create a did
@@ -33,7 +33,7 @@ func TestStorage(t *testing.T) {
 			})
 
 			t.Run("Get bad DID - namespace does not exist", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(tt))
 				assert.NoError(tt, err)
 
 				// store
@@ -44,7 +44,7 @@ func TestStorage(t *testing.T) {
 			})
 
 			t.Run("Get bad DID - does not exist", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(tt))
 				assert.NoError(tt, err)
 
 				// store
@@ -55,7 +55,7 @@ func TestStorage(t *testing.T) {
 			})
 
 			t.Run("Create and Get DID", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(tt))
 				assert.NoError(tt, err)
 
 				// create a did
@@ -84,7 +84,7 @@ func TestStorage(t *testing.T) {
 			})
 
 			t.Run("Create and Get DID of a custom type", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(tt))
 				assert.NoError(tt, err)
 
 				// create a did
@@ -110,7 +110,7 @@ func TestStorage(t *testing.T) {
 			})
 
 			t.Run("Create and Get Multiple DIDs", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(tt))
 				assert.NoError(tt, err)
 
 				// create two dids
@@ -153,7 +153,7 @@ func TestStorage(t *testing.T) {
 			})
 
 			t.Run("Soft delete DID", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				ds, err := NewDIDStorage(test.ServiceStorage(tt))
 				assert.NoError(tt, err)
 
 				// create two dids

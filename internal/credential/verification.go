@@ -8,6 +8,8 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/integrity"
 	"github.com/TBD54566975/ssi-sdk/credential/validation"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
+	"github.com/TBD54566975/ssi-sdk/cryptosuite/jws2020"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
@@ -47,48 +49,32 @@ func NewCredentialValidator(didResolver resolution.Resolver, schemaResolver sche
 	}, nil
 }
 
-// TODO(gabe) consider moving this verification logic to the sdk https://github.com/TBD54566975/ssi-service/issues/122
-
 // VerifyJWTCredential first parses and checks the signature on the given JWT credential. Next, it runs
 // a set of static verification checks on the credential as per the credential service's configuration.
 func (v Validator) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
-	// first, parse the token to see if it contains a valid verifiable credential
-	gotHeaders, _, cred, err := integrity.ParseVerifiableCredentialFromJWT(token.String())
+	_, err := integrity.VerifyJWTCredential(ctx, token.String(), v.didResolver)
 	if err != nil {
-		return sdkutil.LoggingErrorMsg(err, "could not parse credential from JWT")
+		return errors.Wrap(err, "verifying JWT credential")
 	}
-
-	kid, ok := gotHeaders.Get(jws.KeyIDKey)
-	if !ok {
-		return sdkutil.LoggingNewError("could not find key ID in JWT headers")
-	}
-	jwtKID, ok := kid.(string)
-	if !ok {
-		return sdkutil.LoggingNewErrorf("could not convert key ID to string: %v", kid)
-	}
-
-	// resolve the issuer's key material
-	issuerDID, ok := cred.Issuer.(string)
-	if !ok {
-		return sdkutil.LoggingNewErrorf("could not convert issuer to string: %v", cred.Issuer)
-	}
-	pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, issuerDID, jwtKID)
+	_, _, cred, err := integrity.ParseVerifiableCredentialFromJWT(token.String())
 	if err != nil {
-		return sdkutil.LoggingError(err)
+		return errors.Wrap(err, "parsing vc from jwt")
 	}
-
-	// construct a signature validator from the verification information
-	verifier, err := keyaccess.NewJWKKeyAccessVerifier(issuerDID, jwtKID, pubKey)
-	if err != nil {
-		return sdkutil.LoggingErrorMsg(err, "could not create validator")
-	}
-
-	// verify the signature on the credential
-	if err = verifier.Verify(token); err != nil {
-		return sdkutil.LoggingErrorMsg(err, "could not verify credential's signature")
-	}
-
 	return v.staticValidationChecks(ctx, *cred)
+}
+
+func (v Validator) Verify(ctx context.Context, credential Container) error {
+	if credential.HasJWTCredential() {
+		err := v.VerifyJWTCredential(ctx, *credential.CredentialJWT)
+		if err != nil {
+			return err
+		}
+	} else {
+		if err := v.VerifyDataIntegrityCredential(ctx, *credential.Credential); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // VerifyDataIntegrityCredential first checks the signature on the given data integrity credential. Next, it runs
@@ -115,14 +101,19 @@ func (v Validator) VerifyDataIntegrityCredential(ctx context.Context, credential
 	}
 
 	// construct a signature validator from the verification information
-	verifier, err := keyaccess.NewDataIntegrityKeyAccess(issuer, verificationMethod, pubKey)
+	publicKeyJWK, err := jwx.PublicKeyToPublicKeyJWK(verificationMethod, pubKey)
+	if err != nil {
+		return sdkutil.LoggingErrorMsgf(err, "could not convert private key to JWK: %s", verificationMethod)
+	}
+	verifier, err := jws2020.NewJSONWebKeyVerifier(issuer, *publicKeyJWK)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create validator for kid %s", verificationMethod)
 		return sdkutil.LoggingErrorMsg(err, errMsg)
 	}
 
+	cryptoSuite := jws2020.GetJSONWebSignature2020Suite()
 	// verify the signature on the credential
-	if err = verifier.Verify(&credential); err != nil {
+	if err = cryptoSuite.Verify(verifier, &credential); err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could not verify the credential's signature")
 	}
 

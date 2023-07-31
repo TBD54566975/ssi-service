@@ -11,7 +11,6 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/gin-gonic/gin"
-
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
@@ -49,7 +48,7 @@ func TestMain(t *testing.M) {
 
 func TestHealthCheckAPI(t *testing.T) {
 	shutdown := make(chan os.Signal, 1)
-	serviceConfig, err := config.LoadConfig("")
+	serviceConfig, err := config.LoadConfig("", nil)
 	assert.NoError(t, err)
 	server, err := NewSSIServer(shutdown, *serviceConfig)
 	assert.NoError(t, err)
@@ -77,7 +76,7 @@ func TestReadinessAPI(t *testing.T) {
 	})
 
 	shutdown := make(chan os.Signal, 1)
-	serviceConfig, err := config.LoadConfig("")
+	serviceConfig, err := config.LoadConfig("", nil)
 	assert.NoError(t, err)
 	serviceConfig.Services.StorageOptions = []storage.Option{
 		{
@@ -139,10 +138,10 @@ func newRequestContextWithURLValues(w http.ResponseWriter, req *http.Request, pa
 	return c
 }
 
-func getValidCreateManifestRequest(issuerDID, issuerKID, schemaID string) router.CreateManifestRequest {
+func getValidCreateManifestRequest(issuerDID, verificationMethodID, schemaID string) router.CreateManifestRequest {
 	return router.CreateManifestRequest{
-		IssuerDID: issuerDID,
-		IssuerKID: issuerKID,
+		IssuerDID:            issuerDID,
+		VerificationMethodID: verificationMethodID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
@@ -188,6 +187,7 @@ func getValidApplicationRequest(manifestID, presDefID, submissionDescriptorID st
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: manifestsdk.SpecVersion,
+		Applicant:   "did:example:123",
 		ManifestID:  manifestID,
 		Format: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
@@ -226,12 +226,12 @@ func testKeyStore(t *testing.T, bolt storage.ServiceStorage) (*router.KeyStoreRo
 func testKeyStoreService(t *testing.T, db storage.ServiceStorage) (*keystore.Service, keystore.ServiceFactory) {
 	serviceConfig := config.KeyStoreServiceConfig{
 		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-keystore"},
-		MasterKeyPassword: "test-password",
 	}
 
 	// create a keystore service
-	require.NoError(t, keystore.EnsureServiceKeyExists(serviceConfig, db))
-	factory := keystore.NewKeyStoreServiceFactory(serviceConfig, db)
+	encrypter, decrypter, err := keystore.NewServiceEncryption(db, serviceConfig.EncryptionConfig, keystore.ServiceKeyEncryptionKey)
+	require.NoError(t, err)
+	factory := keystore.NewKeyStoreServiceFactory(serviceConfig, db, encrypter, decrypter)
 	keystoreService, err := factory(db)
 	require.NoError(t, err)
 	require.NotEmpty(t, keystoreService)

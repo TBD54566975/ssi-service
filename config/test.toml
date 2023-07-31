@@ -25,6 +25,11 @@ log_level = "warn"
 enable_schema_caching = true
 enable_allow_all_cors = true
 
+[services.storage_encryption]
+# master_key_uri = "gcp-kms://projects/*/locations/*/keyRings/*/cryptoKeys/*"
+# kms_credentials_path = "credentials.json"
+disable_encryption = false
+
 # Storage Configuration
 [services]
 service_endpoint = "http://localhost:8080"
@@ -41,9 +46,9 @@ option = "password"
 # per-service configuration
 [services.keystore]
 name = "keystore"
-password = "default-password"
 # master_key_uri = "gcp-kms://projects/*/locations/*/keyRings/*/cryptoKeys/*"
 # kms_credentials_path = "credentials.json"
+disable_encryption = false
 
 [services.did]
 name = "did"
@@ -69,7 +74,6 @@ name = "manifest"
 
 [services.presentation]
 name = "presentation"
-expiration_duration = "30m"
 
 [services.webhook]
 name = "webhook"

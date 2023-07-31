@@ -48,7 +48,7 @@ func TestSimpleWebhook(t *testing.T) {
 	defer testServer.Close()
 
 	shutdown := make(chan os.Signal, 1)
-	serviceConfig, err := config.LoadConfig("")
+	serviceConfig, err := config.LoadConfig("", nil)
 	assert.NoError(t, err)
 
 	serviceConfig.Server.APIHost = "0.0.0.0:" + freePort()
@@ -143,7 +143,7 @@ func TestWebhookAPI(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Run("CreateWebhook returns error when missing request", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				webhookRouter := testWebhookRouter(tt, db)
@@ -162,7 +162,7 @@ func TestWebhookAPI(t *testing.T) {
 			})
 
 			t.Run("CreateWebhook returns error when verb is not supported", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				webhookRouter := testWebhookRouter(tt, db)
@@ -183,7 +183,7 @@ func TestWebhookAPI(t *testing.T) {
 			})
 
 			t.Run("CreateWebhook returns error when url is not supported", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				webhookRouter := testWebhookRouter(tt, db)
@@ -204,7 +204,7 @@ func TestWebhookAPI(t *testing.T) {
 			})
 
 			t.Run("CreateWebhook returns error when url is is missing scheme", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				webhookRouter := testWebhookRouter(tt, db)
@@ -225,7 +225,7 @@ func TestWebhookAPI(t *testing.T) {
 			})
 
 			t.Run("CreateWebhook returns valid response", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				webhookRouter := testWebhookRouter(tt, db)
@@ -246,7 +246,7 @@ func TestWebhookAPI(t *testing.T) {
 			})
 
 			t.Run("Test Happy Path Delete Webhook", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				webhookRouter := testWebhookRouter(tt, db)
@@ -309,7 +309,7 @@ func TestWebhookAPI(t *testing.T) {
 			})
 
 			t.Run("GetWebhook Throws Error When Webhook None Exist", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				webhookService := testWebhookService(tt, db)
@@ -320,7 +320,7 @@ func TestWebhookAPI(t *testing.T) {
 			})
 
 			t.Run("GetWebhook Returns Webhook That Does Exist", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				webhookService := testWebhookService(tt, db)
@@ -347,7 +347,7 @@ func TestWebhookAPI(t *testing.T) {
 			})
 
 			t.Run("Test Get Webhooks", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				webhookService := testWebhookService(tt, db)
@@ -383,7 +383,7 @@ func TestWebhookAPI(t *testing.T) {
 			})
 
 			t.Run("Test Delete Webhook", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				webhookService := testWebhookService(tt, db)

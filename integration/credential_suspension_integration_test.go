@@ -25,10 +25,10 @@ func TestSuspensionCreateIssuerDIDKeyIntegration(t *testing.T) {
 	assert.Contains(t, issuerDID, "did:key")
 	SetValue(credentialSuspensionContext, "issuerDID", issuerDID)
 
-	issuerKID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
+	verificationMethodID, err := getJSONElement(didKeyOutput, "$.did.verificationMethod[0].id")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
-	SetValue(credentialSuspensionContext, "issuerKID", issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
+	SetValue(credentialSuspensionContext, "verificationMethodID", verificationMethodID)
 }
 
 func TestSuspensionCreateSchemaIntegration(t *testing.T) {
@@ -54,20 +54,20 @@ func TestSuspensionCreateVerifiableCredentialIntegration(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotEmpty(t, issuerDID)
 
-	issuerKID, err := GetValue(credentialSuspensionContext, "issuerKID")
+	verificationMethodID, err := GetValue(credentialSuspensionContext, "verificationMethodID")
 	assert.NoError(t, err)
-	assert.NotEmpty(t, issuerKID)
+	assert.NotEmpty(t, verificationMethodID)
 
 	schemaID, err := GetValue(credentialSuspensionContext, "schemaID")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, schemaID)
 
 	vcOutput, err := CreateVerifiableCredential(credInputParams{
-		IssuerID:    issuerDID.(string),
-		IssuerKID:   issuerKID.(string),
-		SchemaID:    schemaID.(string),
-		SubjectID:   issuerDID.(string),
-		Suspendable: true,
+		IssuerID:             issuerDID.(string),
+		VerificationMethodID: verificationMethodID.(string),
+		SchemaID:             schemaID.(string),
+		SubjectID:            issuerDID.(string),
+		Suspendable:          true,
 	})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, vcOutput)

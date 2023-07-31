@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
@@ -99,8 +100,10 @@ type CreateCredentialRequest struct {
 	// The issuer id.
 	Issuer string `json:"issuer" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
 
-	// The KID used to sign the credential.
-	IssuerKID string `json:"issuerKid" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
+	// The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+	// stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+	// The private key associated with the verificationMethod's publicKey will be used to sign the credential.
+	VerificationMethodID string `json:"verificationMethodId" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
 
 	// The subject id.
 	Subject string `json:"subject" validate:"required" example:"did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"`
@@ -126,22 +129,23 @@ type CreateCredentialRequest struct {
 	Suspendable bool `json:"suspendable,omitempty" example:"false"`
 
 	// Optional. Corresponds to `evidence` in https://www.w3.org/TR/vc-data-model-2.0/#evidence
-	Evidence []any `json:"evidence" swaggertype:"object,string" example:"[{'id': 'https://example.edu/evidence/f2aeec97-fc0d-42bf-8ca7-0548192d4231'}, {'type': ['DocumentVerification'}]"`
+	Evidence []any `json:"evidence" example:"[{\"id\":\"https://example.edu/evidence/f2aeec97-fc0d-42bf-8ca7-0548192d4231\",\"type\":[\"DocumentVerification\"]}]"`
 	// TODO(gabe) support more capabilities like signature type, format, and more.
 }
 
 func (c CreateCredentialRequest) toServiceRequest() credential.CreateCredentialRequest {
+	verificationMethodID := did.FullyQualifiedVerificationMethodID(c.Issuer, c.VerificationMethodID)
 	return credential.CreateCredentialRequest{
-		Issuer:      c.Issuer,
-		IssuerKID:   c.IssuerKID,
-		Subject:     c.Subject,
-		Context:     c.Context,
-		SchemaID:    c.SchemaID,
-		Data:        c.Data,
-		Expiry:      c.Expiry,
-		Revocable:   c.Revocable,
-		Suspendable: c.Suspendable,
-		Evidence:    c.Evidence,
+		Issuer:                             c.Issuer,
+		FullyQualifiedVerificationMethodID: verificationMethodID,
+		Subject:                            c.Subject,
+		Context:                            c.Context,
+		SchemaID:                           c.SchemaID,
+		Data:                               c.Data,
+		Expiry:                             c.Expiry,
+		Revocable:                          c.Revocable,
+		Suspendable:                        c.Suspendable,
+		Evidence:                           c.Evidence,
 	}
 }
 

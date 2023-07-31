@@ -51,9 +51,9 @@ func TestCredentialAPI(t *testing.T) {
 				batchCreateCredentialsRequest := router.BatchCreateCredentialsRequest{
 					Requests: []router.CreateCredentialRequest{
 						{
-							Issuer:    issuerDID.DID.ID,
-							IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-							Subject:   "did:abc:456",
+							Issuer:               issuerDID.DID.ID,
+							VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+							Subject:              "did:abc:456",
 							Data: map[string]any{
 								"firstName": "Jack",
 								"lastName":  "Dorsey",
@@ -61,9 +61,9 @@ func TestCredentialAPI(t *testing.T) {
 							Expiry: time.Now().Add(24 * time.Hour).Format(time.RFC3339),
 						},
 						{
-							Issuer:    issuerDID.DID.ID,
-							IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-							Subject:   "did:abc:789",
+							Issuer:               issuerDID.DID.ID,
+							VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+							Subject:              "did:abc:789",
 							Data: map[string]any{
 								"firstName": "Lemony",
 								"lastName":  "Snickets",
@@ -106,10 +106,10 @@ func TestCredentialAPI(t *testing.T) {
 					batchCreateCredentialsRequest := batchCreateCredentialsRequest
 					// missing the data field
 					batchCreateCredentialsRequest.Requests = append(batchCreateCredentialsRequest.Requests, router.CreateCredentialRequest{
-						Issuer:    issuerDID.DID.ID,
-						IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-						Subject:   "did:abc:456",
-						Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+						Issuer:               issuerDID.DID.ID,
+						VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+						Subject:              "did:abc:456",
+						Expiry:               time.Now().Add(24 * time.Hour).Format(time.RFC3339),
 					})
 
 					requestValue := newRequestValue(ttt, batchCreateCredentialsRequest)
@@ -156,10 +156,10 @@ func TestCredentialAPI(t *testing.T) {
 
 				// missing required field: data
 				badCredRequest := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
-					Expiry:    time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
+					Expiry:               time.Now().Add(24 * time.Hour).Format(time.RFC3339),
 				}
 				badRequestValue := newRequestValue(ttt, badCredRequest)
 				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials", badRequestValue)
@@ -174,9 +174,9 @@ func TestCredentialAPI(t *testing.T) {
 
 				// missing known issuer request
 				missingIssuerRequest := router.CreateCredentialRequest{
-					Issuer:    "did:abc:123",
-					IssuerKID: "did:abc:123#key-1",
-					Subject:   "did:abc:456",
+					Issuer:               "did:abc:123",
+					VerificationMethodID: "did:abc:123#key-1",
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -194,9 +194,9 @@ func TestCredentialAPI(t *testing.T) {
 
 				// good request
 				createCredRequest := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -214,8 +214,6 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NoError(ttt, err)
 
 				assert.NotEmpty(ttt, resp.CredentialJWT)
-				println("HEREHERE")
-				println(*resp.CredentialJWT)
 				assert.NoError(ttt, err)
 				assert.Equal(ttt, resp.Credential.Issuer, issuerDID.DID.ID)
 				after, found := strings.CutPrefix(resp.Credential.ID, "https://ssi-service.com/v1/credentials/")
@@ -270,10 +268,10 @@ func TestCredentialAPI(t *testing.T) {
 				w := httptest.NewRecorder()
 
 				createCredRequest := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
-					SchemaID:  createdSchema.ID,
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
+					SchemaID:             createdSchema.ID,
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -315,10 +313,10 @@ func TestCredentialAPI(t *testing.T) {
 
 				// create cred with unknown schema
 				missingSchemaCred := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
-					SchemaID:  "bad",
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
+					SchemaID:             "bad",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -369,9 +367,9 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NotEmpty(ttt, issuerDID)
 
 				createCredRequest := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -453,10 +451,10 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NotEmpty(ttt, createdSchema)
 
 				createCredRequest := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
-					SchemaID:  createdSchema.ID,
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
+					SchemaID:             createdSchema.ID,
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -513,9 +511,9 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NotEmpty(ttt, issuerDID)
 
 				createCredRequest := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -571,9 +569,9 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NotEmpty(ttt, issuerDID)
 
 				createCredRequest := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -630,9 +628,9 @@ func TestCredentialAPI(t *testing.T) {
 
 				subjectID := "did:abc:456"
 				createCredRequest := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   subjectID,
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              subjectID,
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -687,9 +685,9 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NotEmpty(ttt, issuerDID)
 
 				createCredRequest := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -760,9 +758,9 @@ func TestCredentialAPI(t *testing.T) {
 
 				// good request
 				createCredRequest := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -811,7 +809,7 @@ func TestCredentialAPI(t *testing.T) {
 				assert.NoError(ttt, err)
 				assert.NotEmpty(ttt, verifyResp)
 				assert.False(ttt, verifyResp.Verified)
-				assert.Contains(ttt, verifyResp.Reason, "could not parse credential from JWT")
+				assert.Contains(ttt, verifyResp.Reason, "parsing JWT: parsing credential token: invalid JWT")
 			})
 
 			tt.Run("Test Create Revocable Credential", func(ttt *testing.T) {
@@ -841,9 +839,9 @@ func TestCredentialAPI(t *testing.T) {
 
 				// good request One
 				createCredRequest := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -867,9 +865,9 @@ func TestCredentialAPI(t *testing.T) {
 
 				// good revocable request One
 				createRevocableCredRequestOne := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -899,9 +897,9 @@ func TestCredentialAPI(t *testing.T) {
 
 				// good revocable request Two
 				createRevocableCredRequestTwo := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -931,9 +929,9 @@ func TestCredentialAPI(t *testing.T) {
 
 				// good revocable request Three
 				createRevocableCredRequestThree := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -963,9 +961,9 @@ func TestCredentialAPI(t *testing.T) {
 
 				// good revocable request Four (different issuer / schema)
 				createRevocableCredRequestFour := router.CreateCredentialRequest{
-					Issuer:    issuerDIDTwo.DID.ID,
-					IssuerKID: issuerDIDTwo.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
+					Issuer:               issuerDIDTwo.DID.ID,
+					VerificationMethodID: issuerDIDTwo.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -1014,9 +1012,9 @@ func TestCredentialAPI(t *testing.T) {
 
 				// good request number one
 				createCredRequest := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",
@@ -1090,9 +1088,9 @@ func TestCredentialAPI(t *testing.T) {
 
 				// good request number one
 				createCredRequest := router.CreateCredentialRequest{
-					Issuer:    issuerDID.DID.ID,
-					IssuerKID: issuerDID.DID.VerificationMethod[0].ID,
-					Subject:   "did:abc:456",
+					Issuer:               issuerDID.DID.ID,
+					VerificationMethodID: issuerDID.DID.VerificationMethod[0].ID,
+					Subject:              "did:abc:456",
 					Data: map[string]any{
 						"firstName": "Jack",
 						"lastName":  "Dorsey",

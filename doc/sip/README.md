@@ -4,7 +4,7 @@
 
 All feature proposal documents for the SSI Service follow a common format and are known as SSI Improvement Proposals or
 SIPs. Features must list a DRI (Directly Responsible Individual) and follow the [template here](sips/sip_template.md).
-Discussion is encouraged on GitHub issues and pull requests and optionally on our forums.
+Discussion is encouraged on GitHub issues and pull requests.
 
 ## SIP Status
 
@@ -27,8 +27,9 @@ the [template](sips/sip_template.md), add it to the table below, and open up a p
 
 # SIPs
 
+
 | SIP                          | Description                                       | DRI                                              | Status   | Date of Status     |
-|------------------------------|---------------------------------------------------|--------------------------------------------------|----------|--------------------|
+| ---------------------------- | ------------------------------------------------- | ------------------------------------------------ | -------- | ------------------ |
 | [SIP-1](sips/sip1/README.md) | SIP Purpose and Guidelines                        | [Gabe Cohen](https://github.com/decentralgabe)   | Accepted | August 24, 2022    |
 | [SIP-2](sips/sip2/README.md) | Credential Issuance Flow                          | [Neal Roessler](https://github.com/nitro-neal)   | Accepted | September 13, 2022 |
 | [SIP-3](sips/sip3/README.md) | Key Access: Signing & Verification                | [Gabe Cohen](https://github.com/decentralgabe)   | Accepted | September 20, 2022 |

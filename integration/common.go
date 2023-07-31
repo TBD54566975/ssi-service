@@ -12,6 +12,8 @@ import (
 	"time"
 
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/cenkalti/backoff/v4"
 	"github.com/goccy/go-json"
 	"github.com/oliveagle/jsonpath"
@@ -43,6 +45,25 @@ func init() {
 		DisableQuote: true,
 		ForceColors:  true,
 	})
+}
+
+type didConfigurationResourceParams struct {
+	IssuerDID            string
+	VerificationMethodID string
+}
+
+func CreateDIDConfigurationResource(params didConfigurationResourceParams) (string, error) {
+	logrus.Println("\n\nCreate did configuration resource")
+	didConfiguration, err := resolveTemplate(params, "did-configuration-input.json")
+	if err != nil {
+		return "", err
+	}
+	output, err := put(endpoint+version+"did-configurations", didConfiguration)
+	if err != nil {
+		return "", errors.Wrapf(err, "did configuration endpoint with output: %s", output)
+	}
+
+	return output, nil
 }
 
 func CreateDIDKey() (string, error) {
@@ -138,12 +159,12 @@ func CreateKYCSchema() (string, error) {
 }
 
 type credInputParams struct {
-	IssuerID    string
-	IssuerKID   string
-	SchemaID    string
-	SubjectID   string
-	Revocable   bool
-	Suspendable bool
+	IssuerID             string
+	VerificationMethodID string
+	SchemaID             string
+	SubjectID            string
+	Revocable            bool
+	Suspendable          bool
 }
 
 func CreateVerifiableCredential(credentialInput credInputParams) (string, error) {
@@ -188,15 +209,15 @@ func CreateVerifiableCredential(credentialInput credInputParams) (string, error)
 }
 
 type batchCredInputParams struct {
-	IssuerID     string
-	IssuerKID    string
-	SchemaID     string
-	SubjectID0   string
-	Revocable0   bool
-	Suspendable0 bool
-	SubjectID1   string
-	Revocable1   bool
-	Suspendable1 bool
+	IssuerID             string
+	VerificationMethodID string
+	SchemaID             string
+	SubjectID0           string
+	Revocable0           bool
+	Suspendable0         bool
+	SubjectID1           string
+	Revocable1           bool
+	Suspendable1         bool
 }
 
 func BatchCreateVerifiableCredentials(credentialInput batchCredInputParams) (string, error) {
@@ -221,12 +242,12 @@ func BatchCreate100VerifiableCredentials(credentialInput credInputParams) (strin
 	creds := make([]any, 0)
 	for i := 0; i < 100; i++ {
 		credentialInput, err := resolveTemplate(credInputParams{
-			IssuerID:    credentialInput.IssuerID,
-			IssuerKID:   credentialInput.IssuerKID,
-			SchemaID:    credentialInput.SchemaID,
-			SubjectID:   credentialInput.SubjectID,
-			Revocable:   true,
-			Suspendable: false,
+			IssuerID:             credentialInput.IssuerID,
+			VerificationMethodID: credentialInput.VerificationMethodID,
+			SchemaID:             credentialInput.SchemaID,
+			SubjectID:            credentialInput.SubjectID,
+			Revocable:            true,
+			Suspendable:          false,
 		}, "credential-input.json")
 		if err != nil {
 			return "", err
@@ -285,9 +306,9 @@ func resolveTemplate(input any, fileName string) (string, error) {
 }
 
 type credManifestParams struct {
-	IssuerID  string
-	IssuerKID string
-	SchemaID  string
+	IssuerID             string
+	VerificationMethodID string
+	SchemaID             string
 }
 
 func CreateCredentialManifest(credManifest credManifestParams) (string, error) {
@@ -329,6 +350,26 @@ func CreateCredentialApplicationJWT(credApplication credApplicationParams, crede
 	}
 
 	return signed.String(), nil
+}
+
+type presentationRequestParams struct {
+	DefinitionID         string
+	IssuerID             string
+	VerificationMethodID string
+}
+
+func CreatePresentationRequest(params presentationRequestParams) (string, error) {
+	logrus.Println("\n\nCreate our Presentation Request:")
+	pRequestJSON, err := resolveTemplate(params, "presentation-request-input.json")
+	if err != nil {
+		return "", err
+	}
+	output, err := put(endpoint+version+"presentations/requests", pRequestJSON)
+	if err != nil {
+		return "", errors.Wrapf(err, "presentation request endpoint with output: %s", output)
+	}
+
+	return output, nil
 }
 
 type definitionParams struct {
@@ -381,6 +422,56 @@ func CreateSubmission(params submissionParams, holderPrivateKey gocrypto.Private
 	}
 
 	signer, err := keyaccess.NewJWKKeyAccess(params.HolderID, params.HolderKID, holderPrivateKey)
+	if err != nil {
+		return "", errors.Wrap(err, "creating signer")
+	}
+
+	var submission any
+	if err = json.Unmarshal([]byte(submissionJSON), &submission); err != nil {
+		return "", err
+	}
+
+	signed, err := signer.SignJSON(submission)
+	if err != nil {
+		logrus.Println("Failed signing: " + submissionJSON)
+		return "", errors.Wrap(err, "signing json")
+	}
+
+	submissionJSONWrapper, err := resolveTemplate(submissionJWTParams{SubmissionJWT: signed.String()},
+		"presentation-submission-input-jwt.json")
+	if err != nil {
+		return "", err
+	}
+
+	output, err := put(endpoint+version+"presentations/submissions", submissionJSONWrapper)
+	if err != nil {
+		return "", errors.Wrapf(err, "presentation submission endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
+func CreateSubmissionWithExternalCredential(params submissionParams) (string, error) {
+	logrus.Println("\n\nCreate our Submission with external credential:")
+
+	holderPrivateKey, holderDIDKey, err := key.GenerateDIDKey(crypto.Ed25519)
+	if err != nil {
+		return "", errors.Wrapf(err, "generating did key")
+	}
+	holderDID, err := holderDIDKey.Expand()
+	if err != nil {
+		return "", errors.Wrapf(err, "problem expanding did")
+	}
+
+	holderKID := holderDID.VerificationMethod[0].ID
+
+	params.HolderID = holderDID.ID
+	submissionJSON, err := resolveTemplate(params, "presentation-submission-external-credential-input.json")
+	if err != nil {
+		return "", err
+	}
+
+	signer, err := keyaccess.NewJWKKeyAccess(holderDID.ID, holderKID, holderPrivateKey)
 	if err != nil {
 		return "", errors.Wrap(err, "creating signer")
 	}
@@ -585,10 +676,10 @@ func ReviewApplication(params reviewApplicationParams) (string, error) {
 }
 
 type issuanceTemplateParams struct {
-	SchemaID   string
-	ManifestID string
-	IssuerID   string
-	IssuerKID  string
+	SchemaID             string
+	ManifestID           string
+	IssuerID             string
+	VerificationMethodID string
 }
 
 func CreateIssuanceTemplate(params issuanceTemplateParams) (string, error) {

@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
@@ -83,8 +84,8 @@ type CreateDIDByMethodResponse struct {
 //	@Tags			DecentralizedIdentityAPI
 //	@Accept			json
 //	@Produce		json
-//	@Param			method	path		string						true	"Method"
-//	@Param			request	body		CreateDIDByMethodRequest	true	"request body"
+//	@Param			method	path		string														true	"Method"
+//	@Param			request	body		CreateDIDByMethodRequest{options=did.CreateIONDIDOptions}	true	"request body"
 //	@Success		201		{object}	CreateDIDByMethodResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
@@ -503,7 +504,7 @@ func NewBatchDIDRouter(svc *did.BatchService) *BatchDIDRouter {
 //	@Summary		Batch Create DIDs
 //	@Description	Create a batch of verifiable credentials. The operation is atomic, meaning that all requests will
 //	@Description	succeed or fail. This is currently only supported for the DID method named `did:key`.
-//	@Tags			CredentialAPI
+//	@Tags			DecentralizedIdentityAPI
 //	@Accept			json
 //	@Produce		json
 //	@Param			method	path		string					true	"Method. Only `key` is supported."

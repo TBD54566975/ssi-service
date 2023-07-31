@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -29,9 +30,8 @@ const (
 	EnvironmentTest Environment = "test"
 	EnvironmentProd Environment = "prod"
 
-	ConfigPath       EnvironmentVariable = "CONFIG_PATH"
-	KeystorePassword EnvironmentVariable = "KEYSTORE_PASSWORD"
-	DBPassword       EnvironmentVariable = "DB_PASSWORD"
+	ConfigPath EnvironmentVariable = "CONFIG_PATH"
+	DBPassword EnvironmentVariable = "DB_PASSWORD"
 )
 
 type (
@@ -73,6 +73,10 @@ type ServicesConfig struct {
 	StorageOptions  []storage.Option `toml:"storage_option"`
 	ServiceEndpoint string           `toml:"service_endpoint"`
 
+	// Application level encryption configuration. Defines how values are encrypted before they are stored in the
+	// configured KV store.
+	AppLevelEncryptionConfiguration EncryptionConfig `toml:"storage_encryption,omitempty"`
+
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
 	KeyStoreConfig        KeyStoreServiceConfig     `toml:"keystore,omitempty"`
 	DIDConfig             DIDServiceConfig          `toml:"did,omitempty"`
@@ -94,17 +98,33 @@ type BaseServiceConfig struct {
 
 type KeyStoreServiceConfig struct {
 	*BaseServiceConfig
-	// Master key password. Used by a KDF whose key is used by a symmetric cypher for key encryption.
-	// The password is salted before usage.
-	// Note that this field is only used when MasterKeyURI is empty.
-	MasterKeyPassword string `toml:"password"`
 
-	// The URI for the master key. We use tink for envelope encryption as described in https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#key-management-with-tink
-	// When left empty, then MasterKeyPassword is used.
+	// Configuration describing the encryption of the private keys that are under ssi-service's custody.
+	EncryptionConfig
+}
+
+type EncryptionConfig struct {
+	DisableEncryption bool `toml:"disable_encryption"`
+
+	// The URI for a master key. We use tink for envelope encryption as described in https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#key-management-with-tink
+	// When left empty and DisableEncryption is off, then a random key is generated and used. This random key is persisted unencrypted in the
+	// configured storage. Production deployments should never leave this field empty.
 	MasterKeyURI string `toml:"master_key_uri"`
 
-	// Path for credentials. Required when using an external KMS. More info at https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#credentials
+	// Path for credentials. Required when MasterKeyURI is set. More info at https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#credentials
 	KMSCredentialsPath string `toml:"kms_credentials_path"`
+}
+
+func (e EncryptionConfig) GetMasterKeyURI() string {
+	return e.MasterKeyURI
+}
+
+func (e EncryptionConfig) GetKMSCredentialsPath() string {
+	return e.KMSCredentialsPath
+}
+
+func (e EncryptionConfig) EncryptionEnabled() bool {
+	return !e.DisableEncryption
 }
 
 func (k *KeyStoreServiceConfig) IsEmpty() bool {
@@ -112,6 +132,18 @@ func (k *KeyStoreServiceConfig) IsEmpty() bool {
 		return true
 	}
 	return reflect.DeepEqual(k, &KeyStoreServiceConfig{})
+}
+
+func (k *KeyStoreServiceConfig) GetMasterKeyURI() string {
+	return k.MasterKeyURI
+}
+
+func (k *KeyStoreServiceConfig) GetKMSCredentialsPath() string {
+	return k.KMSCredentialsPath
+}
+
+func (k *KeyStoreServiceConfig) EncryptionEnabled() bool {
+	return !k.DisableEncryption
 }
 
 type DIDServiceConfig struct {
@@ -171,7 +203,6 @@ func (o *OperationServiceConfig) IsEmpty() bool {
 
 type PresentationServiceConfig struct {
 	*BaseServiceConfig
-	ExpirationDuration time.Duration `toml:"expiration_duration" conf:"default:30m"`
 }
 
 func (p *PresentationServiceConfig) IsEmpty() bool {
@@ -183,7 +214,6 @@ func (p *PresentationServiceConfig) IsEmpty() bool {
 
 type ManifestServiceConfig struct {
 	*BaseServiceConfig
-	ExpirationDuration time.Duration `toml:"expiration_duration" conf:"default:30m"`
 }
 
 func (m *ManifestServiceConfig) IsEmpty() bool {
@@ -218,7 +248,10 @@ func (p *WebhookServiceConfig) IsEmpty() bool {
 
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
 // Before loading, defaults are applied on certain properties, which are overwritten if specified in the TOML file.
-func LoadConfig(path string) (*SSIServiceConfig, error) {
+func LoadConfig(path string, fs fs.FS) (*SSIServiceConfig, error) {
+	if fs == nil {
+		fs = os.DirFS(".")
+	}
 	loadDefaultConfig, err := checkValidConfigPath(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "validate config path")
@@ -233,7 +266,7 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 	if loadDefaultConfig {
 		defaultServicesConfig := getDefaultServicesConfig()
 		config.Services = defaultServicesConfig
-	} else if err = loadTOMLConfig(path, &config); err != nil {
+	} else if err = loadTOMLConfig(path, &config, fs); err != nil {
 		return nil, errors.Wrap(err, "load toml config")
 	}
 
@@ -241,7 +274,23 @@ func LoadConfig(path string) (*SSIServiceConfig, error) {
 		return nil, errors.Wrap(err, "apply env variables")
 	}
 
+	if err = validateConfig(&config); err != nil {
+		return nil, errors.Wrap(err, "validating config values")
+	}
+
 	return &config, nil
+}
+
+func validateConfig(s *SSIServiceConfig) error {
+	if s.Server.Environment == EnvironmentProd {
+		if s.Services.KeyStoreConfig.DisableEncryption {
+			return errors.New("prod environment cannot disable key encryption")
+		}
+		if s.Services.AppLevelEncryptionConfiguration.DisableEncryption {
+			logrus.Warn("prod environment detected without app level encryption. This is strongly discouraged.")
+		}
+	}
+	return nil
 }
 
 func checkValidConfigPath(path string) (bool, error) {
@@ -290,7 +339,6 @@ func getDefaultServicesConfig() ServicesConfig {
 		ServiceEndpoint: DefaultServiceEndpoint,
 		KeyStoreConfig: KeyStoreServiceConfig{
 			BaseServiceConfig: &BaseServiceConfig{Name: "keystore", ServiceEndpoint: DefaultServiceEndpoint + "/v1/keys"},
-			MasterKeyPassword: "default-password",
 		},
 		DIDConfig: DIDServiceConfig{
 			BaseServiceConfig:      &BaseServiceConfig{Name: "did", ServiceEndpoint: DefaultServiceEndpoint + "/v1/dids"},
@@ -322,9 +370,13 @@ func getDefaultServicesConfig() ServicesConfig {
 	}
 }
 
-func loadTOMLConfig(path string, config *SSIServiceConfig) error {
+func loadTOMLConfig(path string, config *SSIServiceConfig, fs fs.FS) error {
 	// load from TOML file
-	if _, err := toml.DecodeFile(path, &config); err != nil {
+	file, err := fs.Open(path)
+	if err != nil {
+		return errors.Wrapf(err, "opening path %s", path)
+	}
+	if _, err := toml.NewDecoder(file).Decode(&config); err != nil {
 		return errors.Wrapf(err, "could not load config: %s", path)
 	}
 
@@ -396,11 +448,6 @@ func applyEnvVariables(config *SSIServiceConfig) error {
 			return nil
 		}
 		return errors.Wrap(err, "dotenv parsing")
-	}
-
-	keystorePassword, present := os.LookupEnv(KeystorePassword.String())
-	if present {
-		config.Services.KeyStoreConfig.MasterKeyPassword = keystorePassword
 	}
 
 	dbPassword, present := os.LookupEnv(DBPassword.String())

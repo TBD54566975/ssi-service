@@ -1,3 +1,9 @@
 {
-  "keyType":"Ed25519"
+  "keyType":"Ed25519",
+  "options": {
+    "serviceEndpoints": [],
+    "jwsPublicKeys": [
+      "eyJhbGciOiJFZERTQSJ9.eyJpZCI6InRlc3QtaWQiLCJ0eXBlIjoiSnNvbldlYktleTIwMjAiLCJwdWJsaWNLZXlKd2siOnsia3R5IjoiT0tQIiwiY3J2IjoiRWQyNTUxOSIsIngiOiJnaHp2MnE1V3dZTzNZNlpILU1RSnZCa2Q0NXpiVFN5SjZnVTFxM3lrMDFFIiwiYWxnIjoiRWREU0EiLCJraWQiOiJ0ZXN0LWtpZCJ9LCJwdXJwb3NlcyI6WyJhdXRoZW50aWNhdGlvbiJdfQ.Q27mR09J2Uq8zdgEQ-oM5clsSJOEso_XMxbTeD_o3s33rWAy3yVwgm1ZfziRPnLUsEO4hsGsZZtr3FEFwl91Bw"
+    ]
+  }
 }

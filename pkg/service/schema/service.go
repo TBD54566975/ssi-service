@@ -9,6 +9,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/parsing"
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	schemalib "github.com/TBD54566975/ssi-sdk/schema"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
@@ -86,8 +87,8 @@ func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorag
 func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) (*CreateSchemaResponse, error) {
 	logrus.Debugf("creating schema: %+v", request)
 
-	if !request.IsValid() {
-		return nil, sdkutil.LoggingNewErrorf("invalid create schema request: %+v", request)
+	if err := request.IsValid(); err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "validating schema request: %+v", request)
 	}
 
 	// validate the schema
@@ -127,7 +128,7 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 	storedSchema := StoredSchema{ID: schemaID}
 	if request.IsCredentialSchemaRequest() {
 		jsonSchema[schema.JSONSchemaIDProperty] = schemaID
-		credSchema, err := s.createCredentialSchema(ctx, jsonSchema, schemaURI, request.Issuer, request.IssuerKID)
+		credSchema, err := s.createCredentialSchema(ctx, jsonSchema, schemaURI, request.Issuer, request.FullyQualifiedVerificationMethodID)
 		if err != nil {
 			return nil, sdkutil.LoggingErrorMsg(err, "could not create credential schema")
 		}
@@ -152,7 +153,7 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 }
 
 // createCredentialSchema creates a credential schema, and signs it with the issuer's key and kid
-func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.JSONSchema, schemaURI, issuer, issuerKID string) (*keyaccess.JWT, error) {
+func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.JSONSchema, schemaURI, issuer, fullyQualifiedVerificationMethodID string) (*keyaccess.JWT, error) {
 	builder := credential.NewVerifiableCredentialBuilder()
 	if err := builder.SetID(schemaURI); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "building credential when setting id: %s", schemaURI)
@@ -163,8 +164,6 @@ func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.J
 
 	// set subject value as the schema
 	subject := credential.CredentialSubject(jsonSchema)
-	// TODO(gabe) remove this after https://github.com/TBD54566975/ssi-sdk/pull/404 is merged
-	subject[credential.VerifiableCredentialIDProperty] = schemaURI
 	if err := builder.SetCredentialSubject(subject); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not set subject: %+v", subject)
 	}
@@ -175,19 +174,23 @@ func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.J
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not build credential schema")
 	}
-	return s.signCredentialSchema(ctx, *cred, issuer, issuerKID)
+	return s.signCredentialSchema(ctx, *cred, issuer, fullyQualifiedVerificationMethodID)
 }
 
 // signCredentialSchema signs a credential schema with the issuer's key and kid as a  VC JWT
-func (s Service) signCredentialSchema(ctx context.Context, cred credential.VerifiableCredential, issuer, issuerKID string) (*keyaccess.JWT, error) {
-	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: issuerKID})
+func (s Service) signCredentialSchema(ctx context.Context, cred credential.VerifiableCredential, issuer, fullyQualifiedVerificationMethodID string) (*keyaccess.JWT, error) {
+	keyStoreID := did.FullyQualifiedVerificationMethodID(cred.IssuerID(), fullyQualifiedVerificationMethodID)
+	gotKey, err := s.keyStore.GetKey(ctx, keystore.GetKeyRequest{ID: keyStoreID})
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing credential schema<%s>", issuerKID)
+		return nil, sdkutil.LoggingErrorMsgf(err, "getting key for signing credential schema<%s>", fullyQualifiedVerificationMethodID)
 	}
 	if gotKey.Controller != issuer {
-		return nil, sdkutil.LoggingNewErrorf("key controller<%s> does not match credential issuer<%s> for key<%s>", gotKey.Controller, issuer, issuerKID)
+		return nil, sdkutil.LoggingNewErrorf("key controller<%s> does not match credential issuer<%s> for key<%s>", gotKey.Controller, issuer, fullyQualifiedVerificationMethodID)
 	}
-	keyAccess, err := keyaccess.NewJWKKeyAccess(issuerKID, gotKey.ID, gotKey.Key)
+	if gotKey.Revoked {
+		return nil, sdkutil.LoggingNewErrorf("cannot use revoked key<%s>", gotKey.ID)
+	}
+	keyAccess, err := keyaccess.NewJWKKeyAccess(fullyQualifiedVerificationMethodID, gotKey.ID, gotKey.Key)
 	if err != nil {
 		return nil, errors.Wrapf(err, "creating key access for signing credential schema with key<%s>", gotKey.ID)
 	}

@@ -3,7 +3,6 @@ package router
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
@@ -18,6 +17,9 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/storage"
 	presmodel "github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
@@ -44,7 +46,7 @@ func TestManifestRouter(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Run("Manifest Service Test", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, db)
 
 				keyStoreService := testKeyStoreService(tt, db)
@@ -57,7 +59,7 @@ func TestManifestRouter(t *testing.T) {
 
 				tt.Run("CreateManifest with presentation ID and value error", func(ttt *testing.T) {
 					defID := "an ID I know"
-					createManifestRequest := getValidManifestRequest("issuerDID", "issuerKID", "schemaID")
+					createManifestRequest := getValidManifestRequest("did:ion:hello", "did:ion:hello#123", "schemaID")
 					createManifestRequest.PresentationDefinitionRef.ID = &defID
 
 					_, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
@@ -68,7 +70,7 @@ func TestManifestRouter(t *testing.T) {
 
 				tt.Run("CreateManifest with bad presentation ID returns error", func(ttt *testing.T) {
 					defID := "a bad ID"
-					createManifestRequest := getValidManifestRequest("issuerDID", "issuerKID", "schemaID")
+					createManifestRequest := getValidManifestRequest("did:ion:hello", "did:ion:hello#123", "schemaID")
 					createManifestRequest.PresentationDefinitionRef = &model.PresentationDefinitionRef{
 						ID: &defID,
 					}
@@ -87,14 +89,14 @@ func TestManifestRouter(t *testing.T) {
 					assert.NoError(ttt, err)
 					assert.NotEmpty(ttt, resp)
 
-					createManifestRequest := getValidManifestRequest("issuerDID", "issuerKID", "schemaID")
+					createManifestRequest := getValidManifestRequest("did:ion:hello", "did:ion:hello#123", "schemaID")
 					createManifestRequest.PresentationDefinitionRef = &model.PresentationDefinitionRef{
 						ID: &resp.PresentationDefinition.ID,
 					}
-					manifest, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
+					createdManifest, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
 
 					assert.NoError(ttt, err)
-					assert.Equal(ttt, resp.PresentationDefinition, *manifest.Manifest.PresentationDefinition)
+					assert.Equal(ttt, resp.PresentationDefinition, *createdManifest.Manifest.PresentationDefinition)
 				})
 
 				tt.Run("multiple behaviors", func(ttt *testing.T) {
@@ -140,17 +142,17 @@ func TestManifestRouter(t *testing.T) {
 						},
 					}
 					kid := issuerDID.DID.VerificationMethod[0].ID
-					createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, IssuerKID: kid, Name: "license schema", Schema: licenseSchema})
+					createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, FullyQualifiedVerificationMethodID: kid, Name: "license schema", Schema: licenseSchema})
 					assert.NoError(ttt, err)
 					assert.NotEmpty(ttt, createdSchema)
 
 					// issue a credential against the schema to the subject, from the issuer
 					createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
-						Issuer:    issuerDID.DID.ID,
-						IssuerKID: kid,
-						Subject:   applicantDID.ID,
-						SchemaID:  createdSchema.ID,
-						Data:      map[string]any{"licenseType": "WA-DL-CLASS-A"},
+						Issuer:                             issuerDID.DID.ID,
+						FullyQualifiedVerificationMethodID: kid,
+						Subject:                            applicantDID.ID,
+						SchemaID:                           createdSchema.ID,
+						Data:                               map[string]any{"licenseType": "WA-DL-CLASS-A"},
 					})
 					assert.NoError(ttt, err)
 					assert.NotEmpty(ttt, createdCred)
@@ -199,46 +201,59 @@ func TestManifestRouter(t *testing.T) {
 					signed, err := signer.SignJSON(applicationRequest)
 					assert.NoError(ttt, err)
 
-					submitApplicationRequest := SubmitApplicationRequest{ApplicationJWT: *signed}
-					sar, err := submitApplicationRequest.toServiceRequest()
-					assert.NoError(ttt, err)
-					createdApplicationResponseOp, err := manifestService.ProcessApplicationSubmission(context.Background(), *sar)
-					assert.NoError(ttt, err)
-					assert.False(ttt, createdApplicationResponseOp.Done)
-
-					createdApplicationResponse, err := manifestService.ReviewApplication(context.Background(), model.ReviewApplicationRequest{
-						ID:       storage.StatusObjectID(createdApplicationResponseOp.ID),
-						Approved: true,
-						Reason:   "ApprovalMan is here",
-						CredentialOverrides: map[string]model.CredentialOverride{
-							"id1": {
-								Data: map[string]any{"licenseType": "Class D"},
-							},
-							"id2": {
-								Data: map[string]any{"licenseType": "Class D"},
-							},
-						},
-					})
+					// submit and review application, the key is valid
+					createdApplicationResponse, err := submitAndReviewApplication(signed, ttt, manifestService)
 					assert.NoError(ttt, err)
 					assert.NotEmpty(ttt, createdManifest)
 					assert.NotEmpty(ttt, createdApplicationResponse.Response.ID)
 					assert.NotEmpty(ttt, createdApplicationResponse.Response.Fulfillment)
 					assert.Empty(ttt, createdApplicationResponse.Response.Denial)
 					assert.Equal(ttt, len(createManifestRequest.OutputDescriptors), len(createdApplicationResponse.Credentials))
+
+					// attempt to submit and review application again, this time with the revoked key
+					err = keyStoreService.RevokeKey(context.Background(), keystore.RevokeKeyRequest{ID: kid})
+					assert.NoError(ttt, err)
+					_, err = submitAndReviewApplication(signed, ttt, manifestService)
+					assert.Error(tt, err)
+					assert.ErrorContains(tt, err, "cannot use revoked key")
 				})
 			})
 		})
 	}
 }
 
+func submitAndReviewApplication(signed *keyaccess.JWT, ttt *testing.T, manifestService *manifest.Service) (*model.SubmitApplicationResponse, error) {
+	submitApplicationRequest := SubmitApplicationRequest{ApplicationJWT: *signed}
+	sar, err := submitApplicationRequest.toServiceRequest()
+	assert.NoError(ttt, err)
+	createdApplicationResponseOp, err := manifestService.ProcessApplicationSubmission(context.Background(), *sar)
+	assert.NoError(ttt, err)
+	assert.False(ttt, createdApplicationResponseOp.Done)
+
+	createdApplicationResponse, err := manifestService.ReviewApplication(context.Background(), model.ReviewApplicationRequest{
+		ID:       storage.StatusObjectID(createdApplicationResponseOp.ID),
+		Approved: true,
+		Reason:   "ApprovalMan is here",
+		CredentialOverrides: map[string]model.CredentialOverride{
+			"id1": {
+				Data: map[string]any{"licenseType": "Class D"},
+			},
+			"id2": {
+				Data: map[string]any{"licenseType": "Class D"},
+			},
+		},
+	})
+	return createdApplicationResponse, err
+}
+
 func getValidManifestRequestRequest(issuerDID *did.CreateDIDResponse, kid string, createdManifest *model.CreateManifestResponse) model.CreateRequestRequest {
 	return model.CreateRequestRequest{
 		ManifestRequest: model.Request{
 			Request: common.Request{
-				Audience:   []string{"mario"},
-				IssuerDID:  issuerDID.DID.ID,
-				IssuerKID:  kid,
-				Expiration: time.Now().Add(100 * time.Second),
+				Audience:             []string{"mario"},
+				IssuerDID:            issuerDID.DID.ID,
+				VerificationMethodID: kid,
+				Expiration:           &In100Seconds,
 			},
 			ManifestID: createdManifest.Manifest.ID,
 		},
@@ -246,10 +261,10 @@ func getValidManifestRequestRequest(issuerDID *did.CreateDIDResponse, kid string
 }
 
 // getValidManifestRequest returns a valid manifest request, expecting a single JWT-VC EdDSA credential
-func getValidManifestRequest(issuerDID, issuerKID, schemaID string) model.CreateManifestRequest {
+func getValidManifestRequest(issuerDID, fullyQualifiedVerificationMethodID, schemaID string) model.CreateManifestRequest {
 	createManifestRequest := model.CreateManifestRequest{
-		IssuerDID: issuerDID,
-		IssuerKID: issuerKID,
+		IssuerDID:                          issuerDID,
+		FullyQualifiedVerificationMethodID: fullyQualifiedVerificationMethodID,
 		ClaimFormat: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},
 		},
@@ -298,6 +313,7 @@ func getValidApplicationRequest(manifestID, presDefID, submissionDescriptorID st
 	createApplication := manifestsdk.CredentialApplication{
 		ID:          uuid.New().String(),
 		SpecVersion: manifestsdk.SpecVersion,
+		Applicant:   "did:example:123",
 		ManifestID:  manifestID,
 		Format: &exchange.ClaimFormat{
 			JWTVC: &exchange.JWTType{Alg: []crypto.SignatureAlgorithm{crypto.EdDSA}},

@@ -480,7 +480,7 @@ func (pr PresentationRouter) ReviewSubmission(c *gin.Context) {
 }
 
 type CreateRequestRequest struct {
-	*CommonCreateRequestRequest
+	*CommonCreateRequestRequest `validate:"required,dive"`
 	// ID of the presentation definition to use for this request.
 	PresentationDefinitionID string `json:"presentationDefinitionId" validate:"required"`
 }
@@ -532,7 +532,7 @@ func (pr PresentationRouter) CreateRequest(c *gin.Context) {
 }
 
 func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequest) (*model.Request, error) {
-	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest, pr.service.Config().ExpirationDuration)
+	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -557,13 +557,13 @@ func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequ
 func (pr PresentationRouter) GetRequest(c *gin.Context) {
 	id := framework.GetParam(c, IDParam)
 	if id == nil {
-		framework.LoggingRespondErrMsg(c, "cannot get issuance template without an ID", http.StatusBadRequest)
+		framework.LoggingRespondErrMsg(c, "cannot get presentation request without an ID", http.StatusBadRequest)
 		return
 	}
 
 	request, err := pr.service.GetRequest(c, &model.GetRequestRequest{ID: *id})
 	if err != nil {
-		framework.LoggingRespondErrWithMsg(c, err, "getting issuance template", http.StatusInternalServerError)
+		framework.LoggingRespondErrWithMsg(c, err, "getting presentation request", http.StatusInternalServerError)
 		return
 	}
 	framework.Respond(c, GetRequestResponse{Request: request}, http.StatusOK)

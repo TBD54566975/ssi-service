@@ -7,6 +7,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
+	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
@@ -56,9 +57,11 @@ type CreateManifestRequest struct {
 	// Required.
 	IssuerDID string `json:"issuerDid" validate:"required"`
 
-	// The KID of the private key that will be used when signing issued credentials.
+	// The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+	// stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+	// The private key associated with the verificationMethod's publicKey will be used to sign the issued credentials.
 	// Required.
-	IssuerKID string `json:"issuerKid" validate:"required"`
+	VerificationMethodID string `json:"verificationMethodId" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
 
 	// Human-readable name the Issuer wishes to be recognized by.
 	// Optional.
@@ -79,15 +82,16 @@ type CreateManifestRequest struct {
 }
 
 func (c CreateManifestRequest) ToServiceRequest() model.CreateManifestRequest {
+	verificationMethodID := did.FullyQualifiedVerificationMethodID(c.IssuerDID, c.VerificationMethodID)
 	return model.CreateManifestRequest{
-		Name:                      c.Name,
-		Description:               c.Description,
-		IssuerDID:                 c.IssuerDID,
-		IssuerKID:                 c.IssuerKID,
-		IssuerName:                c.IssuerName,
-		OutputDescriptors:         c.OutputDescriptors,
-		ClaimFormat:               c.ClaimFormat,
-		PresentationDefinitionRef: c.PresentationDefinitionRef,
+		Name:                               c.Name,
+		Description:                        c.Description,
+		IssuerDID:                          c.IssuerDID,
+		FullyQualifiedVerificationMethodID: verificationMethodID,
+		IssuerName:                         c.IssuerName,
+		OutputDescriptors:                  c.OutputDescriptors,
+		ClaimFormat:                        c.ClaimFormat,
+		PresentationDefinitionRef:          c.PresentationDefinitionRef,
 	}
 }
 
@@ -239,9 +243,9 @@ func (mr ManifestRouter) DeleteManifest(c *gin.Context) {
 }
 
 type SubmitApplicationRequest struct {
-	// Contains the following properties:
-	// Application  manifestsdk.CredentialApplication `json:"credential_application" validate:"required"`
-	// Credentials  []interface{}                     `json:"vcs" validate:"required"`
+	// A JWT signed by the applicant. The payload MUST contain the following properties:
+	// - `credential_application`: an object of type manifest.CredentialApplication (specified in https://identity.foundation/credential-manifest/#credential-application).
+	// - `vcs`: an array of Verifiable Credentials.
 	ApplicationJWT keyaccess.JWT `json:"applicationJwt" validate:"required"`
 }
 
@@ -313,9 +317,7 @@ type SubmitApplicationResponse struct {
 //
 //	@Summary		Submit application
 //	@Description	Submit a credential application in response to a credential manifest. The request body is expected to
-//
-// be a valid JWT signed by the applicant's DID, containing two top level properties: credential_application and vcs.
-//
+//	@Description	be a valid JWT signed by the applicant's DID, containing two top level properties: `credential_application` and `vcs`.
 //	@Tags			ApplicationAPI
 //	@Accept			json
 //	@Produce		json
@@ -598,7 +600,7 @@ func (mr ManifestRouter) ReviewApplication(c *gin.Context) {
 }
 
 type CreateManifestRequestRequest struct {
-	*CommonCreateRequestRequest
+	*CommonCreateRequestRequest `validate:"required,dive"`
 
 	// ID of the credential manifest to use for this request.
 	CredentialManifestID string `json:"credentialManifestId" validate:"required"`
@@ -647,7 +649,7 @@ func (mr ManifestRouter) CreateRequest(c *gin.Context) {
 }
 
 func (mr ManifestRouter) serviceRequestFromRequest(request CreateManifestRequestRequest) (*model.Request, error) {
-	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest, mr.service.Config().ExpirationDuration)
+	req, err := commonRequestToServiceRequest(request.CommonCreateRequestRequest)
 	if err != nil {
 		return nil, err
 	}
@@ -746,23 +748,19 @@ func (mr ManifestRouter) DeleteRequest(c *gin.Context) {
 	framework.Respond(c, nil, http.StatusNoContent)
 }
 
-func commonRequestToServiceRequest(request *CommonCreateRequestRequest, expirationDuration time.Duration) (*common.Request, error) {
-	var expiration time.Time
-	var err error
-
+func commonRequestToServiceRequest(request *CommonCreateRequestRequest) (*common.Request, error) {
+	req := &common.Request{
+		Audience:             request.Audience,
+		IssuerDID:            request.IssuerDID,
+		VerificationMethodID: request.VerificationMethodID,
+		CallbackURL:          request.CallbackURL,
+	}
 	if request.Expiration != "" {
-		expiration, err = time.Parse(time.RFC3339, request.Expiration)
+		expiration, err := time.Parse(time.RFC3339, request.Expiration)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		expiration = time.Now().Add(expirationDuration)
-	}
-	req := &common.Request{
-		Audience:   request.Audience,
-		Expiration: expiration,
-		IssuerDID:  request.IssuerDID,
-		IssuerKID:  request.IssuerKID,
+		req.Expiration = &expiration
 	}
 	return req, nil
 }

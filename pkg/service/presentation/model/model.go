@@ -155,8 +155,8 @@ type Request struct {
 	// ID of the presentation definition used for this request.
 	PresentationDefinitionID string `json:"presentationDefinitionId" validate:"required"`
 
-	// PresentationDefinitionJWT is a JWT token with a "presentation_definition" claim within it. The
-	// value of the field named "presentation_definition.id" matches PresentationDefinitionID.
+	// PresentationDefinitionJWT is a JWT token with a "presentation_definition" claim and an optional "callbackUrl" claim
+	// within it. The value of the field named "presentation_definition.id" matches PresentationDefinitionID.
 	// This is an output only field.
 	PresentationDefinitionJWT keyaccess.JWT `json:"presentationRequestJwt"`
 }

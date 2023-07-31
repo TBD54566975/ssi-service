@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/util"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"go.einride.tech/aip/filtering"
 )
 
@@ -57,11 +58,13 @@ type Template struct {
 	// ID of the credential manifest that this template corresponds to.
 	CredentialManifest string `json:"credentialManifest" validate:"required"`
 
-	// ID of the issuer that will be issuance the credentials.
+	// ID of the issuer that will be issuing the credentials.
 	Issuer string `json:"issuer" validate:"required"`
 
-	// ID of the key that will be used to sign the credentials.
-	IssuerKID string `json:"issuerKid" validate:"required"`
+	// The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
+	// stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
+	// The private key associated with the verificationMethod's publicKey will be used to sign the credentials.
+	VerificationMethodID string `json:"verificationMethodId" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
 
 	// Info required to create a credential from a credential application.
 	Credentials []CredentialTemplate `json:"credentials"`
@@ -74,8 +77,14 @@ func (it *Template) IsEmpty() bool {
 	return reflect.DeepEqual(*it, Template{})
 }
 
-func (it *Template) IsValid() bool {
-	return util.IsValidStruct(it) == nil
+func (it *Template) IsValid() error {
+	if err := util.IsValidStruct(*it); err != nil {
+		return err
+	}
+	if it.VerificationMethodID != "" && it.Issuer != "" {
+		return common.ValidateVerificationMethodID(it.VerificationMethodID, it.Issuer)
+	}
+	return nil
 }
 
 type GetIssuanceTemplateResponse struct {

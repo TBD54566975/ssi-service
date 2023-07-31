@@ -25,7 +25,7 @@ func TestOperationsAPI(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 			t.Run("Marks operation as done after reviewing submission", func(tt *testing.T) {
-				s := test.ServiceStorage(t)
+				s := test.ServiceStorage(tt)
 				pRouter, didService := setupPresentationRouter(tt, s)
 				authorDID := createDID(tt, didService)
 				opRouter := setupOperationsRouter(tt, s)
@@ -57,7 +57,7 @@ func TestOperationsAPI(t *testing.T) {
 
 			t.Run("GetOperation", func(tt *testing.T) {
 				tt.Run("Returns operation after submission", func(ttt *testing.T) {
-					s := test.ServiceStorage(t)
+					s := test.ServiceStorage(ttt)
 					pRouter, didService := setupPresentationRouter(ttt, s)
 					authorDID := createDID(ttt, didService)
 					opRouter := setupOperationsRouter(ttt, s)
@@ -84,7 +84,7 @@ func TestOperationsAPI(t *testing.T) {
 				})
 
 				tt.Run("Returns error when id doesn't exist", func(ttt *testing.T) {
-					s := test.ServiceStorage(t)
+					s := test.ServiceStorage(ttt)
 					opRouter := setupOperationsRouter(ttt, s)
 
 					req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/operations/some_fake_id", nil)
@@ -98,7 +98,7 @@ func TestOperationsAPI(t *testing.T) {
 
 			t.Run("ListOperations", func(tt *testing.T) {
 				tt.Run("Returns empty when no operations stored", func(ttt *testing.T) {
-					s := test.ServiceStorage(t)
+					s := test.ServiceStorage(ttt)
 					opRouter := setupOperationsRouter(ttt, s)
 
 					query := url.QueryEscape("presentations/submissions")
@@ -115,7 +115,7 @@ func TestOperationsAPI(t *testing.T) {
 				})
 
 				tt.Run("Returns one operation for every submission", func(ttt *testing.T) {
-					s := test.ServiceStorage(t)
+					s := test.ServiceStorage(ttt)
 					pRouter, didService := setupPresentationRouter(ttt, s)
 					authorDID := createDID(ttt, didService)
 					opRouter := setupOperationsRouter(ttt, s)
@@ -150,7 +150,7 @@ func TestOperationsAPI(t *testing.T) {
 				})
 
 				tt.Run("Returns operation when filtering to include", func(ttt *testing.T) {
-					s := test.ServiceStorage(t)
+					s := test.ServiceStorage(ttt)
 					pRouter, didService := setupPresentationRouter(ttt, s)
 					authorDID := createDID(ttt, didService)
 					opRouter := setupOperationsRouter(ttt, s)
@@ -178,7 +178,7 @@ func TestOperationsAPI(t *testing.T) {
 				if !strings.Contains(test.Name, "Redis") {
 					tt.Run("Returns zero operations when filtering to exclude", func(ttt *testing.T) {
 
-						s := test.ServiceStorage(t)
+						s := test.ServiceStorage(ttt)
 						pRouter, didService := setupPresentationRouter(ttt, s)
 						authorDID := createDID(ttt, didService)
 						opRouter := setupOperationsRouter(ttt, s)
@@ -207,7 +207,7 @@ func TestOperationsAPI(t *testing.T) {
 				if !strings.Contains(test.Name, "Redis") {
 					tt.Run("Returns zero operations when wrong parent is specified", func(ttt *testing.T) {
 
-						s := test.ServiceStorage(t)
+						s := test.ServiceStorage(ttt)
 						pRouter, didService := setupPresentationRouter(ttt, s)
 						authorDID := createDID(ttt, didService)
 						opRouter := setupOperationsRouter(ttt, s)
@@ -234,7 +234,7 @@ func TestOperationsAPI(t *testing.T) {
 
 			t.Run("CancelOperation", func(tt *testing.T) {
 				tt.Run("Marks an operation as done", func(ttt *testing.T) {
-					s := test.ServiceStorage(t)
+					s := test.ServiceStorage(ttt)
 					pRouter, didService := setupPresentationRouter(ttt, s)
 					authorDID := createDID(ttt, didService)
 					opRouter := setupOperationsRouter(ttt, s)
@@ -259,7 +259,7 @@ func TestOperationsAPI(t *testing.T) {
 				})
 
 				tt.Run("Returns error when operation is done already", func(ttt *testing.T) {
-					s := test.ServiceStorage(t)
+					s := test.ServiceStorage(ttt)
 					pRouter, didService := setupPresentationRouter(ttt, s)
 					authorDID := createDID(ttt, didService)
 					opRouter := setupOperationsRouter(ttt, s)

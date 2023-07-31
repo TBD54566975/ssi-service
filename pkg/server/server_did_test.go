@@ -1,6 +1,7 @@
 package server
 
 import (
+	_ "embed"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -23,13 +24,16 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 )
 
+//go:embed testdata/basic_did_resolution.json
+var BasicDIDResolution []byte
+
 func TestDIDAPI(t *testing.T) {
 
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 
 			t.Run("Test Get DID Methods", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStoreService, _ := testKeyStore(tt, db)
@@ -54,7 +58,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Create DID By Method: Key", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStoreService, _ := testKeyStore(tt, db)
@@ -99,7 +103,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Create DID By Method: Web", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStoreService, _ := testKeyStore(tt, db)
@@ -158,7 +162,7 @@ func TestDIDAPI(t *testing.T) {
 				gock.New("https://example.com").
 					Get("/.well-known/did.json").
 					Reply(200).
-					BodyString(`{"didDocument": {"id": "did:web:example.com"}}`)
+					BodyString(`Something here that's not a DID'`)
 				defer gock.Off()
 
 				c = newRequestContextWithParams(w, req, params)
@@ -172,7 +176,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Create DID By Method: ION", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStoreService, _ := testKeyStore(tt, db)
@@ -192,10 +196,11 @@ func TestDIDAPI(t *testing.T) {
 				// reset recorder between calls
 				w = httptest.NewRecorder()
 
+				defer gock.Off()
 				gock.New(testIONResolverURL).
 					Post("/operations").
-					Reply(200)
-				defer gock.Off()
+					Reply(200).
+					BodyString(string(BasicDIDResolution))
 
 				// with body, good key type, no options
 				createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
@@ -234,7 +239,8 @@ func TestDIDAPI(t *testing.T) {
 
 				gock.New(testIONResolverURL).
 					Post("/operations").
-					Reply(200)
+					Reply(200).
+					BodyString(string(BasicDIDResolution))
 				defer gock.Off()
 
 				c = newRequestContextWithParams(w, req, params)
@@ -354,7 +360,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Create Duplicate DID:Webs", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStoreService, _ := testKeyStore(tt, db)
@@ -381,8 +387,7 @@ func TestDIDAPI(t *testing.T) {
 
 				gock.New("https://example.com").
 					Get("/.well-known/did.json").
-					Reply(200).
-					BodyString(`{"didDocument": {"id": "did:web:example.com"}}`)
+					Reply(404)
 				defer gock.Off()
 
 				c := newRequestContextWithParams(w, req, params)
@@ -401,8 +406,7 @@ func TestDIDAPI(t *testing.T) {
 				req2 := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/web", requestReader2)
 				gock.New("https://example.com").
 					Get("/.well-known/did.json").
-					Reply(200).
-					BodyString(`{"didDocument": {"id": "did:web:example.com"}}`)
+					Reply(404)
 				defer gock.Off()
 
 				// Make sure it can't make another did:web of the same DIDWebID
@@ -414,7 +418,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Get DID By Method", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStore, _ := testKeyStore(tt, db)
@@ -486,7 +490,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Soft Delete DID By Method", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStore, _ := testKeyStore(tt, db)
@@ -611,7 +615,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("List DIDs made up token fails", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 				_, keyStore, _ := testKeyStore(tt, db)
 				didService, _ := testDIDRouter(tt, db, keyStore, []string{"key", "web"}, nil)
@@ -630,7 +634,7 @@ func TestDIDAPI(t *testing.T) {
 
 			t.Run("List DIDs pagination", func(tt *testing.T) {
 				if !strings.Contains(test.Name, "Redis") {
-					db := test.ServiceStorage(t)
+					db := test.ServiceStorage(tt)
 					require.NotEmpty(tt, db)
 					_, keyStore, _ := testKeyStore(tt, db)
 					didRouter, _ := testDIDRouter(tt, db, keyStore, []string{"key", "web"}, nil)
@@ -671,7 +675,7 @@ func TestDIDAPI(t *testing.T) {
 
 			t.Run("List DIDs pagination change query between calls returns error", func(tt *testing.T) {
 				if !strings.Contains(test.Name, "Redis") {
-					db := test.ServiceStorage(t)
+					db := test.ServiceStorage(tt)
 					require.NotEmpty(tt, db)
 					_, keyStore, _ := testKeyStore(tt, db)
 					didRouter, _ := testDIDRouter(tt, db, keyStore, []string{"key", "web"}, nil)
@@ -707,7 +711,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Get DIDs By Method", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 				_, keyStore, _ := testKeyStore(tt, db)
 				didService, _ := testDIDRouter(tt, db, keyStore, []string{"key", "web"}, nil)
@@ -792,7 +796,7 @@ func TestDIDAPI(t *testing.T) {
 			})
 
 			t.Run("Test Resolve DIDs", func(tt *testing.T) {
-				db := test.ServiceStorage(t)
+				db := test.ServiceStorage(tt)
 				require.NotEmpty(tt, db)
 
 				_, keyStore, _ := testKeyStore(tt, db)
