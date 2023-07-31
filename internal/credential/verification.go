@@ -8,6 +8,8 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/integrity"
 	"github.com/TBD54566975/ssi-sdk/credential/validation"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
+	"github.com/TBD54566975/ssi-sdk/cryptosuite/jws2020"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
@@ -99,14 +101,19 @@ func (v Validator) VerifyDataIntegrityCredential(ctx context.Context, credential
 	}
 
 	// construct a signature validator from the verification information
-	verifier, err := keyaccess.NewDataIntegrityKeyAccess(issuer, verificationMethod, pubKey)
+	publicKeyJWK, err := jwx.PublicKeyToPublicKeyJWK(verificationMethod, pubKey)
+	if err != nil {
+		return sdkutil.LoggingErrorMsgf(err, "could not convert private key to JWK: %s", verificationMethod)
+	}
+	verifier, err := jws2020.NewJSONWebKeyVerifier(issuer, *publicKeyJWK)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not create validator for kid %s", verificationMethod)
 		return sdkutil.LoggingErrorMsg(err, errMsg)
 	}
 
+	cryptoSuite := jws2020.GetJSONWebSignature2020Suite()
 	// verify the signature on the credential
-	if err = verifier.Verify(&credential); err != nil {
+	if err = cryptoSuite.Verify(verifier, &credential); err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could not verify the credential's signature")
 	}
 
