@@ -2128,24 +2128,36 @@ definitions:
   resolution.DocumentMetadata:
     properties:
       canonicalId:
+        description: See `canonicalId` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: string
       created:
+        description: See `created` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: string
       deactivated:
+        description: See `deactivated` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: boolean
       equivalentId:
+        description: See `equivalentId` in https://www.w3.org/TR/did-core/#did-document-metadata
         items:
           type: string
         type: array
       method:
-        $ref: '#/definitions/resolution.Method'
+        allOf:
+        - $ref: '#/definitions/resolution.Method'
+        description: |-
+          Optional information that is specific to the DID Method of the DID Document resolved. Populated only
+          for sidetree based did methods (e.g. ION), as described in https://identity.foundation/sidetree/spec/#did-resolver-output
       nextUpdate:
+        description: See `nextUpdate` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: string
       nextVersionId:
+        description: See `nextVersionId` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: string
       updated:
+        description: See `updated` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: string
       versionId:
+        description: See `versionId` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: string
     type: object
   resolution.Error:
@@ -2169,10 +2181,13 @@ definitions:
   resolution.Method:
     properties:
       published:
+        description: The `method` property in https://identity.foundation/sidetree/spec/#did-resolver-output
         type: boolean
       recoveryCommitment:
+        description: The `recoveryCommitment` property in https://identity.foundation/sidetree/spec/#did-resolver-output
         type: string
       updateCommitment:
+        description: The `updateCommitment` property in https://identity.foundation/sidetree/spec/#did-resolver-output
         type: string
     type: object
   schema.JSONSchema:
