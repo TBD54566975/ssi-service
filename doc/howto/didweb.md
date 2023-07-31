@@ -4,7 +4,7 @@
 
 A [did:web Method Specification)](https://w3c-ccg.github.io/did-method-web/) describes a DID method that uses the web domain's existing reputation.
 
-It relies on the controller of an existing domain to host a custom file with the contents of the DID Document they want to expose. SSI Services facilitates creationg of a `did:web`
+It relies on the controller of an existing domain to host a custom file with the contents of the DID Document they want to expose. SSI Services facilitates creation of a `did:web`.
 
 ## Steps
 
