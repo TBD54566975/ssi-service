@@ -204,8 +204,7 @@ func TestDIDRouter(t *testing.T) {
 				gock.Off()
 				gock.New("https://example.com").
 					Get("/.well-known/did.json").
-					Reply(200).
-					JSON("{}")
+					Reply(404)
 				// good key type
 				createDIDResponse, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.WebMethod, KeyType: crypto.Ed25519, Options: createOpts})
 				assert.NoError(tt, err)
@@ -225,8 +224,7 @@ func TestDIDRouter(t *testing.T) {
 				gock.Off()
 				gock.New("https://tbd.website").
 					Get("/.well-known/did.json").
-					Reply(200).
-					JSON("{}")
+					Reply(404)
 				// create a second DID
 				createOpts = did.CreateWebDIDOptions{DIDWebID: "did:web:tbd.website"}
 				createDIDResponse2, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.WebMethod, KeyType: crypto.Ed25519, Options: createOpts})

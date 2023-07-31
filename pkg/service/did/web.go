@@ -67,8 +67,8 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	didWeb := web.DIDWeb(opts.DIDWebID)
 
 	err := didWeb.Validate(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not validate if did:web exists externally")
+	if err == nil {
+		return nil, fmt.Errorf("%s exists externally", didWeb.String())
 	}
 
 	exists, err := h.storage.DIDExists(ctx, opts.DIDWebID)
