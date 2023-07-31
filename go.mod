@@ -45,7 +45,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.16.0
 	golang.org/x/crypto v0.11.0
 	golang.org/x/term v0.10.0
-	google.golang.org/api v0.132.0
+	google.golang.org/api v0.134.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
 	gopkg.in/h2non/gock.v1 v1.1.2
 )
