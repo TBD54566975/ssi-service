@@ -2134,7 +2134,11 @@ definitions:
       deactivated:
         type: boolean
       equivalentId:
-        type: string
+        items:
+          type: string
+        type: array
+      method:
+        $ref: '#/definitions/resolution.Method'
       nextUpdate:
         type: string
       nextVersionId:
@@ -2161,6 +2165,15 @@ definitions:
         type: string
       error:
         $ref: '#/definitions/resolution.Error'
+    type: object
+  resolution.Method:
+    properties:
+      published:
+        type: boolean
+      recoveryCommitment:
+        type: string
+      updateCommitment:
+        type: string
     type: object
   schema.JSONSchema:
     additionalProperties: {}
