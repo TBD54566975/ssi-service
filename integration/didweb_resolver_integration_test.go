@@ -12,7 +12,7 @@ func TestResolveDIDWebIntegration(t *testing.T) {
 	}
 
 	// A .well-known file exists at https://tbd.website/.well-known/did.json
-	didWebOutput, err := put(endpoint+version+"dids/web", `{ "keyType":"Ed25519", "options": {"didWebId":"did:web:tbd.website"}}`)
+	didWebOutput, err := put(endpoint+version+"dids/web", `{ "keyType":"Ed25519", "options": {"didWebId":"did:web:i-made-up-this.website"}}`)
 	assert.NoError(t, err)
 
 	did, err := getJSONElement(didWebOutput, "$.did.id")
@@ -20,12 +20,11 @@ func TestResolveDIDWebIntegration(t *testing.T) {
 	resolvedOutput, err := ResolveDID(did)
 	assert.NoError(t, err)
 
-	didError, err := getJSONElement(resolvedOutput, "$.didResolutionMetadata.Error")
-	assert.NoError(t, err)
-	assert.Equal(t, "<nil>", didError)
+	_, err = getJSONElement(resolvedOutput, "$.didResolutionMetadata.Error")
+	assert.ErrorContains(t, err, "key error: Error not found in object")
 
 	didDocumentID, err := getJSONElement(resolvedOutput, "$.didDocument.id")
 	assert.NoError(t, err)
-	assert.Equal(t, "did:web:tbd.website", didDocumentID)
+	assert.Equal(t, "did:web:i-made-up-this.website", didDocumentID)
 
 }
