@@ -18,7 +18,7 @@ Out of the box we have support for exposing two [credential statuses](status.md)
 
 ## Creating a Verifiable Credential
 
-Creating a credential using the SSI Service currently requires four pieces of data: an `issuer` DID, a `verificationMethodId` which must be contained within the issuer's DID Document, a `subject` DID (the DID who the claims are about), and `data` which is an arbitrary JSON object for the claims that you wish to be in the credential (in the `credentialSubject` property).
+Creating a credential using the SSI Service currently requires four pieces of data: an `issuer` DID, a `verificationMethodId` which must be contained within the issuer's DID Document, a `subject` DID (the DID who the claims are about), and `data` which is an arbitrary JSON object for the claims that you wish to be in the credential (in the `credentialSubject` property). As noted in the [How To on DIDs](did.md), all DIDs managed by the SSI Service are _fully custodial_. This means that all keys referenced in those DIDs are stored by the SSI Service, which is necessary for the service to author any content on behalf of those DIDs. The cryptographic keys associated with the DID are encrypted at rest using a KEK (Key Encryption Key) which can optionally be used with a cloud HSM.
 
 There are additional optional properties that let you specify `evidence`, an `expiry`, and whether you want to make the credential `revocable` or `suspendable`. Let's keep things simple and issue our first credential which will attest to a person's first and last name.
 
@@ -83,7 +83,7 @@ curl -X PUT localhost:3000/v1/credentials -d '{
 }'
 ```
 
-Upon success we'll see a response such as:
+Upon success we see a response such as:
 
 ```json
 {
@@ -120,4 +120,3 @@ You can get a single credential by making a `GET` request to `/v1/credentials/{i
 ## Other Credential Operations
 
 To learn about verifying credentials [read more here](verification.md). You can also learn more about [credential status here](status.md).
-
