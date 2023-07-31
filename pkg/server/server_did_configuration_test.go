@@ -20,6 +20,340 @@ import (
 	"gopkg.in/h2non/gock.v1"
 )
 
+const w3cCredentialContext = `{
+  "@context": {
+    "@version": 1.1,
+    "@protected": true,
+
+    "id": "@id",
+    "type": "@type",
+
+    "VerifiableCredential": {
+      "@id": "https://www.w3.org/2018/credentials#VerifiableCredential",
+      "@context": {
+        "@version": 1.1,
+        "@protected": true,
+
+        "id": "@id",
+        "type": "@type",
+
+        "cred": "https://www.w3.org/2018/credentials#",
+        "sec": "https://w3id.org/security#",
+        "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+        "credentialSchema": {
+          "@id": "cred:credentialSchema",
+          "@type": "@id",
+          "@context": {
+            "@version": 1.1,
+            "@protected": true,
+
+            "id": "@id",
+            "type": "@type",
+
+            "cred": "https://www.w3.org/2018/credentials#",
+
+            "JsonSchemaValidator2018": "cred:JsonSchemaValidator2018"
+          }
+        },
+        "credentialStatus": {"@id": "cred:credentialStatus", "@type": "@id"},
+        "credentialSubject": {"@id": "cred:credentialSubject", "@type": "@id"},
+        "evidence": {"@id": "cred:evidence", "@type": "@id"},
+        "expirationDate": {"@id": "cred:expirationDate", "@type": "xsd:dateTime"},
+        "holder": {"@id": "cred:holder", "@type": "@id"},
+        "issued": {"@id": "cred:issued", "@type": "xsd:dateTime"},
+        "issuer": {"@id": "cred:issuer", "@type": "@id"},
+        "issuanceDate": {"@id": "cred:issuanceDate", "@type": "xsd:dateTime"},
+        "proof": {"@id": "sec:proof", "@type": "@id", "@container": "@graph"},
+        "refreshService": {
+          "@id": "cred:refreshService",
+          "@type": "@id",
+          "@context": {
+            "@version": 1.1,
+            "@protected": true,
+
+            "id": "@id",
+            "type": "@type",
+
+            "cred": "https://www.w3.org/2018/credentials#",
+
+            "ManualRefreshService2018": "cred:ManualRefreshService2018"
+          }
+        },
+        "termsOfUse": {"@id": "cred:termsOfUse", "@type": "@id"},
+        "validFrom": {"@id": "cred:validFrom", "@type": "xsd:dateTime"},
+        "validUntil": {"@id": "cred:validUntil", "@type": "xsd:dateTime"}
+      }
+    },
+
+    "VerifiablePresentation": {
+      "@id": "https://www.w3.org/2018/credentials#VerifiablePresentation",
+      "@context": {
+        "@version": 1.1,
+        "@protected": true,
+
+        "id": "@id",
+        "type": "@type",
+
+        "cred": "https://www.w3.org/2018/credentials#",
+        "sec": "https://w3id.org/security#",
+
+        "holder": {"@id": "cred:holder", "@type": "@id"},
+        "proof": {"@id": "sec:proof", "@type": "@id", "@container": "@graph"},
+        "verifiableCredential": {"@id": "cred:verifiableCredential", "@type": "@id", "@container": "@graph"}
+      }
+    },
+
+    "EcdsaSecp256k1Signature2019": {
+      "@id": "https://w3id.org/security#EcdsaSecp256k1Signature2019",
+      "@context": {
+        "@version": 1.1,
+        "@protected": true,
+
+        "id": "@id",
+        "type": "@type",
+
+        "sec": "https://w3id.org/security#",
+        "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+        "challenge": "sec:challenge",
+        "created": {"@id": "http://purl.org/dc/terms/created", "@type": "xsd:dateTime"},
+        "domain": "sec:domain",
+        "expires": {"@id": "sec:expiration", "@type": "xsd:dateTime"},
+        "jws": "sec:jws",
+        "nonce": "sec:nonce",
+        "proofPurpose": {
+          "@id": "sec:proofPurpose",
+          "@type": "@vocab",
+          "@context": {
+            "@version": 1.1,
+            "@protected": true,
+
+            "id": "@id",
+            "type": "@type",
+
+            "sec": "https://w3id.org/security#",
+
+            "assertionMethod": {"@id": "sec:assertionMethod", "@type": "@id", "@container": "@set"},
+            "authentication": {"@id": "sec:authenticationMethod", "@type": "@id", "@container": "@set"}
+          }
+        },
+        "proofValue": "sec:proofValue",
+        "verificationMethod": {"@id": "sec:verificationMethod", "@type": "@id"}
+      }
+    },
+
+    "EcdsaSecp256r1Signature2019": {
+      "@id": "https://w3id.org/security#EcdsaSecp256r1Signature2019",
+      "@context": {
+        "@version": 1.1,
+        "@protected": true,
+
+        "id": "@id",
+        "type": "@type",
+
+        "sec": "https://w3id.org/security#",
+        "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+        "challenge": "sec:challenge",
+        "created": {"@id": "http://purl.org/dc/terms/created", "@type": "xsd:dateTime"},
+        "domain": "sec:domain",
+        "expires": {"@id": "sec:expiration", "@type": "xsd:dateTime"},
+        "jws": "sec:jws",
+        "nonce": "sec:nonce",
+        "proofPurpose": {
+          "@id": "sec:proofPurpose",
+          "@type": "@vocab",
+          "@context": {
+            "@version": 1.1,
+            "@protected": true,
+
+            "id": "@id",
+            "type": "@type",
+
+            "sec": "https://w3id.org/security#",
+
+            "assertionMethod": {"@id": "sec:assertionMethod", "@type": "@id", "@container": "@set"},
+            "authentication": {"@id": "sec:authenticationMethod", "@type": "@id", "@container": "@set"}
+          }
+        },
+        "proofValue": "sec:proofValue",
+        "verificationMethod": {"@id": "sec:verificationMethod", "@type": "@id"}
+      }
+    },
+
+    "Ed25519Signature2018": {
+      "@id": "https://w3id.org/security#Ed25519Signature2018",
+      "@context": {
+        "@version": 1.1,
+        "@protected": true,
+
+        "id": "@id",
+        "type": "@type",
+
+        "sec": "https://w3id.org/security#",
+        "xsd": "http://www.w3.org/2001/XMLSchema#",
+
+        "challenge": "sec:challenge",
+        "created": {"@id": "http://purl.org/dc/terms/created", "@type": "xsd:dateTime"},
+        "domain": "sec:domain",
+        "expires": {"@id": "sec:expiration", "@type": "xsd:dateTime"},
+        "jws": "sec:jws",
+        "nonce": "sec:nonce",
+        "proofPurpose": {
+          "@id": "sec:proofPurpose",
+          "@type": "@vocab",
+          "@context": {
+            "@version": 1.1,
+            "@protected": true,
+
+            "id": "@id",
+            "type": "@type",
+
+            "sec": "https://w3id.org/security#",
+
+            "assertionMethod": {"@id": "sec:assertionMethod", "@type": "@id", "@container": "@set"},
+            "authentication": {"@id": "sec:authenticationMethod", "@type": "@id", "@container": "@set"}
+          }
+        },
+        "proofValue": "sec:proofValue",
+        "verificationMethod": {"@id": "sec:verificationMethod", "@type": "@id"}
+      }
+    },
+
+    "RsaSignature2018": {
+      "@id": "https://w3id.org/security#RsaSignature2018",
+      "@context": {
+        "@version": 1.1,
+        "@protected": true,
+
+        "challenge": "sec:challenge",
+        "created": {"@id": "http://purl.org/dc/terms/created", "@type": "xsd:dateTime"},
+        "domain": "sec:domain",
+        "expires": {"@id": "sec:expiration", "@type": "xsd:dateTime"},
+        "jws": "sec:jws",
+        "nonce": "sec:nonce",
+        "proofPurpose": {
+          "@id": "sec:proofPurpose",
+          "@type": "@vocab",
+          "@context": {
+            "@version": 1.1,
+            "@protected": true,
+
+            "id": "@id",
+            "type": "@type",
+
+            "sec": "https://w3id.org/security#",
+
+            "assertionMethod": {"@id": "sec:assertionMethod", "@type": "@id", "@container": "@set"},
+            "authentication": {"@id": "sec:authenticationMethod", "@type": "@id", "@container": "@set"}
+          }
+        },
+        "proofValue": "sec:proofValue",
+        "verificationMethod": {"@id": "sec:verificationMethod", "@type": "@id"}
+      }
+    },
+
+    "proof": {"@id": "https://w3id.org/security#proof", "@type": "@id", "@container": "@graph"}
+  }
+}`
+
+const wellKnownDIDContext = `{
+  "@context": [
+    {
+      "@version": 1.1,
+      "@protected": true,
+      "LinkedDomains": "https://identity.foundation/.well-known/resources/did-configuration/#LinkedDomains",
+      "DomainLinkageCredential": "https://identity.foundation/.well-known/resources/did-configuration/#DomainLinkageCredential",
+      "origin": "https://identity.foundation/.well-known/resources/did-configuration/#origin",
+      "linked_dids": "https://identity.foundation/.well-known/resources/did-configuration/#linked_dids"
+    }
+  ]
+}`
+
+const vcJWS2020Context = `{
+  "@context": {
+    "privateKeyJwk": {
+      "@id": "https://w3id.org/security#privateKeyJwk",
+      "@type": "@json"
+    },
+    "JsonWebKey2020": {
+      "@id": "https://w3id.org/security#JsonWebKey2020",
+      "@context": {
+        "@protected": true,
+        "id": "@id",
+        "type": "@type",
+        "publicKeyJwk": {
+          "@id": "https://w3id.org/security#publicKeyJwk",
+          "@type": "@json"
+        }
+      }
+    },
+    "JsonWebSignature2020": {
+      "@id": "https://w3id.org/security#JsonWebSignature2020",
+      "@context": {
+        "@protected": true,
+
+        "id": "@id",
+        "type": "@type",
+
+        "challenge": "https://w3id.org/security#challenge",
+        "created": {
+          "@id": "http://purl.org/dc/terms/created",
+          "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+        },
+        "domain": "https://w3id.org/security#domain",
+        "expires": {
+          "@id": "https://w3id.org/security#expiration",
+          "@type": "http://www.w3.org/2001/XMLSchema#dateTime"
+        },
+        "jws": "https://w3id.org/security#jws",
+        "nonce": "https://w3id.org/security#nonce",
+        "proofPurpose": {
+          "@id": "https://w3id.org/security#proofPurpose",
+          "@type": "@vocab",
+          "@context": {
+            "@protected": true,
+
+            "id": "@id",
+            "type": "@type",
+
+            "assertionMethod": {
+              "@id": "https://w3id.org/security#assertionMethod",
+              "@type": "@id",
+              "@container": "@set"
+            },
+            "authentication": {
+              "@id": "https://w3id.org/security#authenticationMethod",
+              "@type": "@id",
+              "@container": "@set"
+            },
+            "capabilityInvocation": {
+              "@id": "https://w3id.org/security#capabilityInvocationMethod",
+              "@type": "@id",
+              "@container": "@set"
+            },
+            "capabilityDelegation": {
+              "@id": "https://w3id.org/security#capabilityDelegationMethod",
+              "@type": "@id",
+              "@container": "@set"
+            },
+            "keyAgreement": {
+              "@id": "https://w3id.org/security#keyAgreementMethod",
+              "@type": "@id",
+              "@container": "@set"
+            }
+          }
+        },
+        "verificationMethod": {
+          "@id": "https://w3id.org/security#verificationMethod",
+          "@type": "@id"
+        }
+      }
+    }
+  }
+}`
+
 func TestDIDConfigurationAPI(t *testing.T) {
 	t.Run("Create DID Configuration", func(t *testing.T) {
 		for _, test := range testutil.TestDatabases {
@@ -79,22 +413,58 @@ func TestDIDConfigurationAPI(t *testing.T) {
 
 				didConfigurationService := setupDIDConfigurationRouter(t, keyStoreService, didService.GetResolver(), schemaService)
 
-				t.Run("passes for TBD", func(t *testing.T) {
+				t.Run("passes for complex did configuration resource", func(t *testing.T) {
 					defer gock.Off()
+					client := didConfigurationService.Service.HTTPClient
+					gock.InterceptClient(client)
+					defer gock.RestoreClient(client)
 
-					gock.InterceptClient(didConfigurationService.Service.HTTPClient)
-					gock.New("https://www.tbd.website").
+					// mock all the contexts needed for json-ld canonicalization
+					gock.New("https://www.w3.org").
+						Get("/2018/credentials/v1").
+						Reply(200).
+						BodyString(w3cCredentialContext)
+					gock.New("https://identity.foundation").Get("/.well-known/did-configuration/v1").Reply(200).BodyString(wellKnownDIDContext)
+					gock.New("https://www.w3.org").
+						Get("/2018/credentials/v1").
+						Reply(200).
+						BodyString(w3cCredentialContext)
+					gock.New("https://identity.foundation").Get("/.well-known/did-configuration/v1").Reply(200).BodyString(wellKnownDIDContext)
+					gock.New("https://w3id.org").Get("/security/suites/jws-2020/v1").Reply(200).BodyString(vcJWS2020Context)
+
+					gock.New("https://identity.foundation").
 						Get("/.well-known/did-configuration.json").
 						Reply(200).
 						BodyString(`{
-    "@context": "https://identity.foundation/.well-known/did-configuration/v1",
-    "linked_dids": [
-      "eyJhbGciOiJFZERTQSIsImtpZCI6ImRpZDprZXk6ejZNa2hDcWNza2haU0V4NEZHbU5XNXNNcVVoZzJyZnc2YnMyWkNCZXBzTkZjQ3Y1I3o2TWtoQ3Fjc2toWlNFeDRGR21OVzVzTXFVaGcycmZ3NmJzMlpDQmVwc05GY0N2NSIsInR5cCI6IkpXVCJ9.eyJleHAiOjI1ODAxMzAwODAsImlhdCI6MTYzMzQ0NTI4MCwiaXNzIjoiZGlkOmtleTp6Nk1raENxY3NraFpTRXg0RkdtTlc1c01xVWhnMnJmdzZiczJaQ0JlcHNORmNDdjUiLCJuYmYiOjE2MzM0NDUyODAsIm5vbmNlIjoiOTU5MTczMDktYWJmMC00OWI0LTkzYTktMjQyYTg4NmFhYTBmIiwic3ViIjoiZGlkOmtleTp6Nk1raENxY3NraFpTRXg0RkdtTlc1c01xVWhnMnJmdzZiczJaQ0JlcHNORmNDdjUiLCJ2YyI6eyJAY29udGV4dCI6WyJodHRwczovL3d3dy53My5vcmcvMjAxOC9jcmVkZW50aWFscy92MSIsImh0dHBzOi8vaWRlbnRpdHkuZm91bmRhdGlvbi8ud2VsbC1rbm93bi9kaWQtY29uZmlndXJhdGlvbi92MSJdLCJjcmVkZW50aWFsU3ViamVjdCI6eyJvcmlnaW4iOiJodHRwczovL3d3dy50YmQud2Vic2l0ZSJ9LCJ0eXBlIjpbIlZlcmlmaWFibGVDcmVkZW50aWFsIiwiRG9tYWluTGlua2FnZUNyZWRlbnRpYWwiXX19.OV56DeG2bp4Hd-kulCUgZCk4PgY51sEzw4REZeUfiS4Cqa9LnbK0fkiJ2jPAZoBzTSDq75Hxc2qX5Ey0JVCoBw"
-    ]
-  }`)
+  "@context": "https://identity.foundation/.well-known/did-configuration/v1",
+  "linked_dids": [
+    {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "https://identity.foundation/.well-known/did-configuration/v1"
+      ],
+      "issuer": "did:key:z6MkoTHsgNNrby8JzCNQ1iRLyW5QQ6R8Xuu6AA8igGrMVPUM",
+      "issuanceDate": "2020-12-04T14:08:28-06:00",
+      "expirationDate": "2025-12-04T14:08:28-06:00",
+      "type": ["VerifiableCredential", "DomainLinkageCredential"],
+      "credentialSubject": {
+        "id": "did:key:z6MkoTHsgNNrby8JzCNQ1iRLyW5QQ6R8Xuu6AA8igGrMVPUM",
+        "origin": "https://identity.foundation"
+      },
+      "proof": {
+        "type": "Ed25519Signature2018",
+        "created": "2020-12-04T20:08:28.540Z",
+        "jws": "eyJhbGciOiJFZERTQSIsImI2NCI6ZmFsc2UsImNyaXQiOlsiYjY0Il19..D0eDhglCMEjxDV9f_SNxsuU-r3ZB9GR4vaM9TYbyV7yzs1WfdUyYO8rFZdedHbwQafYy8YOpJ1iJlkSmB4JaDQ",
+        "proofPurpose": "assertionMethod",
+        "verificationMethod": "did:key:z6MkoTHsgNNrby8JzCNQ1iRLyW5QQ6R8Xuu6AA8igGrMVPUM#z6MkoTHsgNNrby8JzCNQ1iRLyW5QQ6R8Xuu6AA8igGrMVPUM"
+      }
+    },
+    "eyJhbGciOiJFZERTQSIsImtpZCI6ImRpZDprZXk6ejZNa29USHNnTk5yYnk4SnpDTlExaVJMeVc1UVE2UjhYdXU2QUE4aWdHck1WUFVNI3o2TWtvVEhzZ05OcmJ5OEp6Q05RMWlSTHlXNVFRNlI4WHV1NkFBOGlnR3JNVlBVTSJ9.eyJleHAiOjE3NjQ4NzkxMzksImlzcyI6ImRpZDprZXk6ejZNa29USHNnTk5yYnk4SnpDTlExaVJMeVc1UVE2UjhYdXU2QUE4aWdHck1WUFVNIiwibmJmIjoxNjA3MTEyNzM5LCJzdWIiOiJkaWQ6a2V5Ono2TWtvVEhzZ05OcmJ5OEp6Q05RMWlSTHlXNVFRNlI4WHV1NkFBOGlnR3JNVlBVTSIsInZjIjp7IkBjb250ZXh0IjpbImh0dHBzOi8vd3d3LnczLm9yZy8yMDE4L2NyZWRlbnRpYWxzL3YxIiwiaHR0cHM6Ly9pZGVudGl0eS5mb3VuZGF0aW9uLy53ZWxsLWtub3duL2RpZC1jb25maWd1cmF0aW9uL3YxIl0sImNyZWRlbnRpYWxTdWJqZWN0Ijp7ImlkIjoiZGlkOmtleTp6Nk1rb1RIc2dOTnJieThKekNOUTFpUkx5VzVRUTZSOFh1dTZBQThpZ0dyTVZQVU0iLCJvcmlnaW4iOiJpZGVudGl0eS5mb3VuZGF0aW9uIn0sImV4cGlyYXRpb25EYXRlIjoiMjAyNS0xMi0wNFQxNDoxMjoxOS0wNjowMCIsImlzc3VhbmNlRGF0ZSI6IjIwMjAtMTItMDRUMTQ6MTI6MTktMDY6MDAiLCJpc3N1ZXIiOiJkaWQ6a2V5Ono2TWtvVEhzZ05OcmJ5OEp6Q05RMWlSTHlXNVFRNlI4WHV1NkFBOGlnR3JNVlBVTSIsInR5cGUiOlsiVmVyaWZpYWJsZUNyZWRlbnRpYWwiLCJEb21haW5MaW5rYWdlQ3JlZGVudGlhbCJdfX0.aUFNReA4R5rcX_oYm3sPXqWtso_gjPHnWZsB6pWcGv6m3K8-4JIAvFov3ZTM8HxPOrOL17Qf4vBFdY9oK0HeCQ"
+  ]
+}`)
 
 					request := wellknown.VerifyDIDConfigurationRequest{
-						Origin: "https://www.tbd.website/",
+						Origin: "https://identity.foundation",
 					}
 					value := newRequestValue(t, request)
 					req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/did-configurations/verification", value)
