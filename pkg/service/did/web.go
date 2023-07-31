@@ -49,6 +49,9 @@ func (h *webHandler) GetMethod() did.Method {
 func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
 	logrus.Debugf("creating DID: %+v", request)
 
+	if !crypto.IsSupportedKeyType(request.KeyType) {
+		return nil, errors.Errorf("key type <%s> not supported", request.KeyType)
+	}
 	// process options
 	if request.Options == nil {
 		return nil, errors.New("options cannot be empty")
@@ -64,8 +67,8 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	didWeb := web.DIDWeb(opts.DIDWebID)
 
 	err := didWeb.Validate(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not validate if did:web exists externally")
+	if err == nil {
+		return nil, fmt.Errorf("%s exists externally", didWeb.String())
 	}
 
 	exists, err := h.storage.DIDExists(ctx, opts.DIDWebID)

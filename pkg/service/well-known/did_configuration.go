@@ -67,12 +67,12 @@ func (s DIDConfigurationService) VerifyDIDConfiguration(ctx context.Context, req
 	}
 
 	httpResponse, err := s.HTTPClient.Do(httpReq)
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(httpResponse.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "performing http request")
 	}
+	defer func() {
+		_ = httpResponse.Body.Close()
+	}()
 
 	if !util.Is2xxResponse(httpResponse.StatusCode) {
 		return nil, errors.Errorf("expected 2xx code, got %d", httpResponse.StatusCode)
@@ -112,7 +112,8 @@ func (s DIDConfigurationService) VerifyDIDConfiguration(ctx context.Context, req
 
 		// 3. The credentialSubject.origin property MUST be present, and its value MUST match the origin the resource was requested from.
 		credentialSubjectOrigin := domainLinkageCredential.Credential.CredentialSubject["origin"].(string)
-		if !strings.HasPrefix(httpReq.URL.String(), credentialSubjectOrigin) {
+		requestedURL := httpReq.URL.String()
+		if !originMatches(requestedURL, credentialSubjectOrigin) {
 			response.Reason = fmt.Sprintf("The credentialSubject.origin property MUST be present, and its value MUST match the origin the resource was requested from")
 			return &response, nil
 		}
@@ -130,6 +131,11 @@ func (s DIDConfigurationService) VerifyDIDConfiguration(ctx context.Context, req
 	response.Verified = true
 	return &response, nil
 }
+
+func originMatches(requestedURL string, credentialSubjectOrigin string) bool {
+	return strings.Contains(requestedURL, credentialSubjectOrigin)
+}
+
 func (s DIDConfigurationService) CreateDIDConfiguration(ctx context.Context, req *CreateDIDConfigurationRequest) (*CreateDIDConfigurationResponse, error) {
 	builder := credential.NewVerifiableCredentialBuilder()
 	if err := builder.SetIssuer(req.IssuerDID); err != nil {

@@ -160,7 +160,7 @@ func TestDIDAPI(t *testing.T) {
 				gock.New("https://example.com").
 					Get("/.well-known/did.json").
 					Reply(200).
-					BodyString(`{"didDocument": {"id": "did:web:example.com"}}`)
+					BodyString(`Something here that's not a DID'`)
 				defer gock.Off()
 
 				c = newRequestContextWithParams(w, req, params)
@@ -194,11 +194,11 @@ func TestDIDAPI(t *testing.T) {
 				// reset recorder between calls
 				w = httptest.NewRecorder()
 
+				defer gock.Off()
 				gock.New(testIONResolverURL).
 					Post("/operations").
 					Reply(200).
 					BodyString(string(BasicDIDResolution))
-				defer gock.Off()
 
 				// with body, good key type, no options
 				createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
@@ -279,8 +279,7 @@ func TestDIDAPI(t *testing.T) {
 
 				gock.New("https://example.com").
 					Get("/.well-known/did.json").
-					Reply(200).
-					BodyString(`{"didDocument": {"id": "did:web:example.com"}}`)
+					Reply(404)
 				defer gock.Off()
 
 				c := newRequestContextWithParams(w, req, params)
@@ -299,8 +298,7 @@ func TestDIDAPI(t *testing.T) {
 				req2 := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/web", requestReader2)
 				gock.New("https://example.com").
 					Get("/.well-known/did.json").
-					Reply(200).
-					BodyString(`{"didDocument": {"id": "did:web:example.com"}}`)
+					Reply(404)
 				defer gock.Off()
 
 				// Make sure it can't make another did:web of the same DIDWebID
