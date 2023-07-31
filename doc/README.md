@@ -53,6 +53,6 @@ the SSI Service to get up to speed with its functionality.
 | [[TODO] Requesting and Verifying Credentials with Presentation Exchange](https://github.com/TBD54566975/ssi-service/issues/606)              | Get started with Presentation Exchange functionality   |
 | [[TODO] Accepting Applications for and Issuing Credentials using Credential Manifest](https://github.com/TBD54566975/ssi-service/issues/606) | Get started with Credential Manifest functionality     |
 | [Link your DID with a Website](./howto/wellknown.md)                                                                                         | Get started with DID Well Known functionality          |
-| [Creating a DID web](./howto/didweb.md)                                                                                                      | Get started with did:web                               |
+| [Creating a DID Web Identifier](./howto/didweb.md)                                                                                                      | Get started with did:web                               |
 
 

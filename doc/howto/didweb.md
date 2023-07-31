@@ -2,24 +2,24 @@
 
 ## Background
 
-A [did:web Method Specification)](https://w3c-ccg.github.io/did-method-web/) describes a DID method that uses the web domain's existing reputation.
+The [did:web Method Specification)](https://w3c-ccg.github.io/did-method-web/) describes a DID method that uses an existing web domain to host and establish trust for a DID Document.
 
-It relies on the controller of an existing domain to host a custom file with the contents of the DID Document they want to expose. SSI Services facilitates creation of a `did:web`.
+It relies on the controller of an existing domain to host a custom file with the contents of the DID Document they want to expose. The SSI Service facilitates creation of a `did:web`, which you then must update on the domain you control.
 
 ## Steps
 
 ### Prerequisites
 
 * You control an existing domain  (e.g. like https://www.tbd.website).
-* You are able to host files in a path within that origin.(e.g. you can host the file returned by https://www.tbd.website/.well-known/did.json)
+* You are able to host files in a path within that origin (e.g. you can host the file returned by https://www.tbd.website/.well-known/did.json).
 
 ## 1. Create a `did:web` DID
 
-Make a `PUT` request to `/v1/dids/web`:
+Make a `PUT` request to `/v1/dids/web`, with a request body as follows:
 
 ```json
 {
-  "keyType":"Ed25519",
+  "keyType": "Ed25519",
   "options": {
     "didWebId": "did:web:tbd.website"
   }
@@ -30,14 +30,14 @@ Or if you like CURLing:
 
 ```shell
 curl -X PUT 'localhost:3000/v1/dids/web' -d '{
-  "keyType":"Ed25519",
+  "keyType": "Ed25519",
   "options": {
     "didWebId": "did:web:tbd.website"
   }
 }'
 ```
 
-If successful, the contents of the response should look like the contents below...
+Upon success, the contents of the response should look as follows...
 
 ```json
 {
@@ -72,7 +72,7 @@ If successful, the contents of the response should look like the contents below.
 }
 ```
 
-This response is a and object containing a `did` property, whose value is a DID Document. Such value is what needs to be hosted.
+This response is an object containing a `did` property, whose value is a DID Document. This value is what needs to be hosted on your domain.
 
 ### 2. Host the created DID Document
 
