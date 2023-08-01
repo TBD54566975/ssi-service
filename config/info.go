@@ -1,6 +1,7 @@
 package config
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -55,6 +56,9 @@ func (si *ServiceInfo) Version() string {
 }
 
 func (si *ServiceInfo) SetAPIBase(url string) {
+	if strings.LastIndexAny(url, "/") == len(url)-1 {
+		url = url[:len(url)-1]
+	}
 	si.apiBase = url
 }
 
@@ -63,7 +67,10 @@ func (si *ServiceInfo) GetAPIBase() string {
 }
 
 func (si *ServiceInfo) SetServicePath(service framework.Type, path string) {
-	si.servicePaths[service] = si.apiBase + "/" + si.apiVersion + path
+	if strings.IndexAny(path, "/") == 0 {
+		path = path[1:]
+	}
+	si.servicePaths[service] = strings.Join([]string{si.apiBase, si.apiVersion, path}, "/")
 }
 
 func (si *ServiceInfo) GetServicePath(service framework.Type) string {
