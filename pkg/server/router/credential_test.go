@@ -14,6 +14,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -25,6 +26,9 @@ import (
 )
 
 func TestCredentialRouter(t *testing.T) {
+
+	config.GetServiceInfo().SetAPIBase("http://localhost:1234")
+	config.GetServiceInfo().SetServicePath(framework.Credential, "/credentials")
 
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
@@ -47,7 +51,7 @@ func TestCredentialRouter(t *testing.T) {
 				s := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, s)
 
-				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+				serviceConfig := config.CredentialServiceConfig{BatchCreateMaxItems: 100}
 				keyStoreService := testKeyStoreService(tt, s)
 				didService := testDIDService(tt, s, keyStoreService)
 				schemaService := testSchemaService(tt, s, keyStoreService, didService)
@@ -205,7 +209,7 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NotEmpty(tt, s)
 
 				// Initialize services
-				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential"}}
+				serviceConfig := config.CredentialServiceConfig{BatchCreateMaxItems: 100}
 				keyStoreService := testKeyStoreService(tt, s)
 				didService := testDIDService(tt, s, keyStoreService)
 				schemaService := testSchemaService(tt, s, keyStoreService, didService)
@@ -246,7 +250,7 @@ func TestCredentialRouter(t *testing.T) {
 				err = keyStoreService.RevokeKey(context.Background(), keystore.RevokeKeyRequest{ID: keyID})
 				assert.NoError(tt, err)
 
-				// Create a crendential with the revoked key, it fails
+				// Create a credential with the revoked key, it fails
 				subject = "did:test:43"
 				createdCred, err = credService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
 					Issuer:                             didID,
@@ -267,7 +271,7 @@ func TestCredentialRouter(t *testing.T) {
 				s := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, s)
 
-				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "v1/credentials"}}
+				serviceConfig := config.CredentialServiceConfig{BatchCreateMaxItems: 100}
 				keyStoreService := testKeyStoreService(tt, s)
 				didService := testDIDService(tt, s, keyStoreService)
 				schemaService := testSchemaService(tt, s, keyStoreService, didService)
@@ -376,7 +380,7 @@ func TestCredentialRouter(t *testing.T) {
 				s := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, s)
 
-				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "/v1/credentials"}}
+				serviceConfig := config.CredentialServiceConfig{BatchCreateMaxItems: 100}
 				keyStoreService := testKeyStoreService(tt, s)
 				didService := testDIDService(tt, s, keyStoreService)
 				schemaService := testSchemaService(tt, s, keyStoreService, didService)
@@ -480,7 +484,7 @@ func TestCredentialRouter(t *testing.T) {
 				s := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, s)
 
-				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234/v1/credentials"}}
+				serviceConfig := config.CredentialServiceConfig{BatchCreateMaxItems: 100}
 				keyStoreService := testKeyStoreService(tt, s)
 				didService := testDIDService(tt, s, keyStoreService)
 				schemaService := testSchemaService(tt, s, keyStoreService, didService)
@@ -600,7 +604,7 @@ func TestCredentialRouter(t *testing.T) {
 				s := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, s)
 
-				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234/v1/credentials"}}
+				serviceConfig := config.CredentialServiceConfig{BatchCreateMaxItems: 100}
 				keyStoreService := testKeyStoreService(tt, s)
 				didService := testDIDService(tt, s, keyStoreService)
 				schemaService := testSchemaService(tt, s, keyStoreService, didService)
@@ -720,7 +724,7 @@ func TestCredentialRouter(t *testing.T) {
 				s := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, s)
 
-				serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234/v1/credentials"}}
+				serviceConfig := config.CredentialServiceConfig{BatchCreateMaxItems: 100}
 				keyStoreService := testKeyStoreService(tt, s)
 				didService := testDIDService(tt, s, keyStoreService)
 				schemaService := testSchemaService(tt, s, keyStoreService, didService)
@@ -1169,7 +1173,7 @@ func idFromURI(cred string) string {
 func createCredServicePrereqs(tt *testing.T, s storage.ServiceStorage) (issuer, verificationMethodID, schemaID string, credSvc credential.Service) {
 	require.NotEmpty(tt, s)
 
-	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "http://localhost:1234/v1/credentials"}}
+	serviceConfig := config.CredentialServiceConfig{BatchCreateMaxItems: 100}
 	keyStoreService := testKeyStoreService(tt, s)
 	didService := testDIDService(tt, s, keyStoreService)
 	schemaService := testSchemaService(tt, s, keyStoreService, didService)

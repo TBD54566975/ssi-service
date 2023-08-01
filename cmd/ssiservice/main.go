@@ -88,9 +88,9 @@ func run() error {
 		}
 	}
 
-	expvar.NewString("build").Set(cfg.Version.SVN)
+	expvar.NewString("build").Set(config.ServiceVersion)
 
-	logrus.Infof("main: Started : Service initializing : env [%s] : version %q", cfg.Server.Environment, cfg.Version.SVN)
+	logrus.Infof("main: Started : Service initializing : env [%s] : version %q", cfg.Server.Environment, config.ServiceVersion)
 	defer logrus.Info("main: Completed")
 
 	out, err := conf.String(cfg)
@@ -171,7 +171,7 @@ func newTracerProvider(cfg *config.SSIServiceConfig) (*sdktrace.TracerProvider, 
 		sdktrace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceNameKey.String(config.ServiceName),
-			semconv.ServiceVersionKey.String(cfg.Version.SVN),
+			semconv.ServiceVersionKey.String(config.ServiceVersion),
 		)),
 	)
 	otel.SetTracerProvider(tp)

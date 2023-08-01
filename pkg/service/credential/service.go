@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -65,7 +66,8 @@ func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
 
-func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver resolution.Resolver, schema *schema.Service) (*Service, error) {
+func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service,
+	didResolver resolution.Resolver, schema *schema.Service) (*Service, error) {
 	credentialStorage, err := NewCredentialStorage(s)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the credential service")
@@ -142,7 +144,7 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 
 	builder := credential.NewVerifiableCredentialBuilder()
 	credentialID := uuid.NewString()
-	credentialURI := s.Config().ServiceEndpoint + "/" + credentialID
+	credentialURI := config.GetServiceInfo().GetServicePath(framework.Credential) + "/" + credentialID
 	if err := builder.SetID(credentialURI); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not build credential when setting id: %s", credentialURI)
 	}

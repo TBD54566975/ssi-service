@@ -130,7 +130,7 @@ func newTracerProvider(cfg authorizationserver.AuthConfig) (*sdktrace.TracerProv
 		sdktrace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceNameKey.String(config.ServiceName),
-			semconv.ServiceVersionKey.String(cfg.Version.SVN),
+			semconv.ServiceVersionKey.String(config.ServiceVersion),
 		)),
 	)
 	return tp, nil

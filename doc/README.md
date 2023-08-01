@@ -48,7 +48,7 @@ the SSI Service to get up to speed with its functionality.
 | [Creating a DID](https://github.com/TBD54566975/ssi-service/blob/main/doc/howto/credential.md)                                               | Get started with DID functionality                     |
 | [Creating a Schema](https://github.com/TBD54566975/ssi-service/blob/main/doc/howto/schema.md)                                                | Get started with schema functionality                  |
 | [Issuing a Credential](https://github.com/TBD54566975/ssi-service/blob/main/doc/howto/credential.md)                                         | Get started with credential issuance functionality     |
-| [Verify a Credential](https://github.com/TBD54566975/ssi-service/blob/main/doc/howto/verification.md)                                        | Get started with credential verification functionality |
+| [Verify a Credential](https://github.com/TBD54566975/ssi-service/blob/main/doc/howto/verification.md)                                         | Get started with credential verification functionality  |
 | [Revoke/Suspend a Credential](https://github.com/TBD54566975/ssi-service/blob/main/doc/howto/status.md)                                      | Get started with credential status functionality       |
 | [[TODO] Requesting and Verifying Credentials with Presentation Exchange](https://github.com/TBD54566975/ssi-service/issues/606)              | Get started with Presentation Exchange functionality   |
 | [[TODO] Accepting Applications for and Issuing Credentials using Credential Manifest](https://github.com/TBD54566975/ssi-service/issues/606) | Get started with Credential Manifest functionality     |
