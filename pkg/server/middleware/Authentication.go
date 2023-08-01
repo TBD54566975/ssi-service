@@ -1,7 +1,10 @@
 package middleware
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -17,25 +20,37 @@ func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
 		gin.Logger(),
 		middleware.Errors(shutdown),
 		middleware.AuthMiddleware(),
-		middleware.AuthorizationMiddleware(),
 	}
-
-
 */
 
 func AuthMiddleware() gin.HandlerFunc {
+	authToken := os.Getenv("AUTH_TOKEN")
+
 	return func(c *gin.Context) {
 		token := c.GetHeader("Authorization")
-		// This is a dummy check here. You should do your actual JWT token verification.
-		if token == "IF YOU SET IT TO THIS VALUE IT WILL FAIL" {
+
+		// If AUTH_TOKEN is not set, skip the authentication
+		if authToken == "" {
+			c.Next()
+			return
+		}
+
+		// Remove "Bearer " from the token
+		if len(token) > 7 && token[:7] == "Bearer " {
+			token = token[7:]
+		}
+
+		// Generate SHA256 hash of the token from the header
+		hash := sha256.Sum256([]byte(token))
+		hashedToken := hex.EncodeToString(hash[:])
+
+		// Check if the hashed token from the header matches the AUTH token
+		if hashedToken != authToken {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization is required"})
 			c.Abort()
 			return
 		}
-		// Assuming that the token is valid and we got the user info from the JWT token.
-		// You should replace it with actual user info.
-		user := "user"
-		c.Set("user", user)
+
 		c.Next()
 	}
 }
