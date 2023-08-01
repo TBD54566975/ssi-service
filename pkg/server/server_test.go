@@ -11,7 +11,6 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/gin-gonic/gin"
-
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
@@ -49,7 +48,7 @@ func TestMain(t *testing.M) {
 
 func TestHealthCheckAPI(t *testing.T) {
 	shutdown := make(chan os.Signal, 1)
-	serviceConfig, err := config.LoadConfig("")
+	serviceConfig, err := config.LoadConfig("", nil)
 	assert.NoError(t, err)
 	server, err := NewSSIServer(shutdown, *serviceConfig)
 	assert.NoError(t, err)
@@ -77,7 +76,7 @@ func TestReadinessAPI(t *testing.T) {
 	})
 
 	shutdown := make(chan os.Signal, 1)
-	serviceConfig, err := config.LoadConfig("")
+	serviceConfig, err := config.LoadConfig("", nil)
 	assert.NoError(t, err)
 	serviceConfig.Services.StorageOptions = []storage.Option{
 		{
@@ -230,8 +229,9 @@ func testKeyStoreService(t *testing.T, db storage.ServiceStorage) (*keystore.Ser
 	}
 
 	// create a keystore service
-	require.NoError(t, keystore.EnsureServiceKeyExists(serviceConfig, db))
-	factory := keystore.NewKeyStoreServiceFactory(serviceConfig, db)
+	encrypter, decrypter, err := keystore.NewServiceEncryption(db, serviceConfig.EncryptionConfig, keystore.ServiceKeyEncryptionKey)
+	require.NoError(t, err)
+	factory := keystore.NewKeyStoreServiceFactory(serviceConfig, db, encrypter, decrypter)
 	keystoreService, err := factory(db)
 	require.NoError(t, err)
 	require.NotEmpty(t, keystoreService)

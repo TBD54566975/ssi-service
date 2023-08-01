@@ -3,14 +3,10 @@
 package server
 
 import (
-	"bytes"
-	"context"
 	"os"
-	"text/template"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	swaggerfiles "github.com/swaggo/files"
 	ginswagger "github.com/swaggo/gin-swagger"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
@@ -72,23 +68,8 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	// service-level routers
 	engine.GET(HealthPrefix, router.Health)
 	engine.GET(ReadinessPrefix, router.Readiness(ssi.GetServices()))
-
-	tmpFile, err := writeSwaggerFile(cfg)
-	if err != nil {
-		logrus.WithError(err).Warnf("unable to write swagger file, skipping handler")
-	} else {
-		httpServer.RegisterPreShutdownHook(func(_ context.Context) error {
-			logrus.Infof("removing temp file %q", tmpFile.Name())
-			err := os.Remove(tmpFile.Name())
-			if err != nil {
-				logrus.WithError(err).Warnf("unable to delete %q during shutdown", tmpFile.Name())
-			}
-			return nil
-		})
-
-		engine.StaticFile("swagger.yaml", tmpFile.Name())
-		engine.GET(SwaggerPrefix, ginswagger.WrapHandler(swaggerfiles.Handler, ginswagger.URL("/swagger.yaml")))
-	}
+	engine.StaticFile("swagger.yaml", "./doc/swagger.yaml")
+	engine.GET(SwaggerPrefix, ginswagger.WrapHandler(swaggerfiles.Handler, ginswagger.URL("/swagger.yaml")))
 
 	// register all v1 routers
 	v1 := engine.Group(V1Prefix)
@@ -128,30 +109,6 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 		SSIService:   ssi,
 		ServerConfig: &cfg.Server,
 	}, nil
-}
-
-func writeSwaggerFile(cfg config.SSIServiceConfig) (*os.File, error) {
-	t, err := template.ParseFiles("./doc/swagger.yaml")
-	if err != nil {
-		return nil, err
-	}
-
-	var b bytes.Buffer
-	if err = t.Execute(&b, cfg); err != nil {
-		return nil, err
-	}
-	tmpFile, err := os.CreateTemp("", "swagger.yaml")
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err = tmpFile.Write(b.Bytes()); err != nil {
-		return nil, err
-	}
-	if err := tmpFile.Close(); err != nil {
-		return nil, err
-	}
-	return tmpFile, nil
 }
 
 // setUpEngine creates the gin engine and sets up the middleware based on config

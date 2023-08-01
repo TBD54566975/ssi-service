@@ -35,8 +35,9 @@ func (ps *Storage) UpdateSubmission(ctx context.Context, id string, approved boo
 	if approved {
 		m["status"] = opsubmission.StatusApproved
 	}
-	submissionData, operationData, err := ps.db.UpdateValueAndOperation(
+	submissionData, operationData, err := storage.UpdateValueAndOperation(
 		ctx,
+		ps.db,
 		opsubmission.Namespace,
 		id,
 		storage.NewUpdater(m),

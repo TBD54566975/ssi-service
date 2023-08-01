@@ -30,8 +30,9 @@ func (s Storage) CancelOperation(ctx context.Context, id string) (*opstorage.Sto
 	var err error
 	switch {
 	case strings.HasPrefix(id, submission.ParentResource):
-		_, opData, err = s.db.UpdateValueAndOperation(
+		_, opData, err = storage.UpdateValueAndOperation(
 			ctx,
+			s.db,
 			submission.Namespace, opstorage.StatusObjectID(id), storage.NewUpdater(map[string]any{
 				"status": submission.StatusCancelled,
 				"reason": cancelledReason,
@@ -42,8 +43,9 @@ func (s Storage) CancelOperation(ctx context.Context, id string) (*opstorage.Sto
 				}),
 			})
 	case strings.HasPrefix(id, credential.ParentResource):
-		_, opData, err = s.db.UpdateValueAndOperation(
+		_, opData, err = storage.UpdateValueAndOperation(
 			ctx,
+			s.db,
 			credential.ApplicationNamespace, opstorage.StatusObjectID(id), storage.NewUpdater(map[string]any{
 				"status": credential.StatusCancelled,
 				"reason": cancelledReason,

@@ -1935,9 +1935,9 @@ definitions:
     properties:
       applicationJwt:
         description: |-
-          Contains the following properties:
-          Application  manifestsdk.CredentialApplication `json:"credential_application" validate:"required"`
-          Credentials  []interface{}                     `json:"vcs" validate:"required"`
+          A JWT signed by the applicant. The payload MUST contain the following properties:
+          - `credential_application`: an object of type manifest.CredentialApplication (specified in https://identity.foundation/credential-manifest/#credential-application).
+          - `vcs`: an array of Verifiable Credentials.
         type: string
     required:
     - applicationJwt
@@ -2128,20 +2128,36 @@ definitions:
   resolution.DocumentMetadata:
     properties:
       canonicalId:
+        description: See `canonicalId` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: string
       created:
+        description: See `created` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: string
       deactivated:
+        description: See `deactivated` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: boolean
       equivalentId:
-        type: string
+        description: See `equivalentId` in https://www.w3.org/TR/did-core/#did-document-metadata
+        items:
+          type: string
+        type: array
+      method:
+        allOf:
+        - $ref: '#/definitions/resolution.Method'
+        description: |-
+          Optional information that is specific to the DID Method of the DID Document resolved. Populated only
+          for sidetree based did methods (e.g. ION), as described in https://identity.foundation/sidetree/spec/#did-resolver-output
       nextUpdate:
+        description: See `nextUpdate` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: string
       nextVersionId:
+        description: See `nextVersionId` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: string
       updated:
+        description: See `updated` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: string
       versionId:
+        description: See `versionId` in https://www.w3.org/TR/did-core/#did-document-metadata
         type: string
     type: object
   resolution.Error:
@@ -2161,6 +2177,18 @@ definitions:
         type: string
       error:
         $ref: '#/definitions/resolution.Error'
+    type: object
+  resolution.Method:
+    properties:
+      published:
+        description: The `method` property in https://identity.foundation/sidetree/spec/#did-resolver-output
+        type: boolean
+      recoveryCommitment:
+        description: The `recoveryCommitment` property in https://identity.foundation/sidetree/spec/#did-resolver-output
+        type: string
+      updateCommitment:
+        description: The `updateCommitment` property in https://identity.foundation/sidetree/spec/#did-resolver-output
+        type: string
     type: object
   schema.JSONSchema:
     additionalProperties: {}
@@ -2198,12 +2226,12 @@ info:
     email: tbd-developer@squareup.com
     name: TBD
     url: https://github.com/TBD54566975/ssi-service/issues
-  description: '{{.Desc}}'
+  description: 'The Self Sovereign Identity Service: Managing DIDs, Verifiable Credentials,
+    and more!'
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: SSI Service API
-  version: '{{.SVN}}'
 paths:
   /health:
     get:
@@ -2788,7 +2816,7 @@ paths:
             type: string
       summary: Batch Create DIDs
       tags:
-      - CredentialAPI
+      - DecentralizedIdentityAPI
   /v1/dids/resolver/{id}:
     get:
       consumes:
@@ -3121,8 +3149,9 @@ paths:
     put:
       consumes:
       - application/json
-      description: Submit a credential application in response to a credential manifest.
-        The request body is expected to
+      description: |-
+        Submit a credential application in response to a credential manifest. The request body is expected to
+        be a valid JWT signed by the applicant's DID, containing two top level properties: `credential_application` and `vcs`.
       parameters:
       - description: request body
         in: body
