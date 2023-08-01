@@ -50,6 +50,7 @@ func init() {
 
 	config.GetServiceInfo().SetAPIBase(endpoint)
 	config.GetServiceInfo().SetServicePath(framework.Credential, "/credentials")
+	config.GetServiceInfo().SetServicePath(framework.Schema, "/schemas")
 }
 
 type didConfigurationResourceParams struct {
