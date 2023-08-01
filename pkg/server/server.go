@@ -64,7 +64,7 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	}
 
 	// make sure to set the api base in our service info
-	config.GetServiceInfo().SetAPIBase(cfg.Server.APIHost)
+	config.GetServiceInfo().SetAPIBase(cfg.Services.ServiceEndpoint)
 
 	// service-level routers
 	engine.GET(HealthPrefix, router.Health)

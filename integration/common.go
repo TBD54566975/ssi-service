@@ -20,15 +20,17 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/tbd54566975/ssi-service/config"
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
+	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 )
 
 const (
 	// Note: for local testing change this to port 3000
-	endpoint       = "http://localhost:8080/"
+	endpoint       = "http://localhost:8080"
 	version        = "v1/"
 	MaxElapsedTime = 120 * time.Second
 )
@@ -45,6 +47,9 @@ func init() {
 		DisableQuote: true,
 		ForceColors:  true,
 	})
+
+	config.GetServiceInfo().SetAPIBase(endpoint)
+	config.GetServiceInfo().SetServicePath(framework.Credential, "/credentials")
 }
 
 type didConfigurationResourceParams struct {
