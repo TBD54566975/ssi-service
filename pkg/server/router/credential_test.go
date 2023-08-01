@@ -27,8 +27,8 @@ import (
 
 func TestCredentialRouter(t *testing.T) {
 
-	config.GetServiceInfo().SetAPIBase("http://localhost:1234")
-	config.GetServiceInfo().SetServicePath(framework.Credential, "/credentials")
+	config.SetAPIBase("http://localhost:1234")
+	config.SetServicePath(framework.Credential, "/credentials")
 
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {

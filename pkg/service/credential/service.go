@@ -144,7 +144,7 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 
 	builder := credential.NewVerifiableCredentialBuilder()
 	credentialID := uuid.NewString()
-	credentialURI := config.GetServiceInfo().GetServicePath(framework.Credential) + "/" + credentialID
+	credentialURI := config.GetServicePath(framework.Credential) + "/" + credentialID
 	if err := builder.SetID(credentialURI); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not build credential when setting id: %s", credentialURI)
 	}

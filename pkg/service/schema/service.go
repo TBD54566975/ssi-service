@@ -116,7 +116,7 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 	// if the schema is a credential schema, the credential's id is a fully qualified URI
 	// if the schema is a JSON schema, the schema's id is a fully qualified URI
 	schemaID := uuid.NewString()
-	schemaURI := strings.Join([]string{config.GetServiceInfo().GetServicePath(framework.Schema), schemaID}, "/")
+	schemaURI := strings.Join([]string{config.GetServicePath(framework.Schema), schemaID}, "/")
 
 	// create schema for storage
 	storedSchema := StoredSchema{ID: schemaID}

@@ -64,7 +64,7 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	}
 
 	// make sure to set the api base in our service info
-	config.GetServiceInfo().SetAPIBase(cfg.Services.ServiceEndpoint)
+	config.SetAPIBase(cfg.Services.ServiceEndpoint)
 
 	// service-level routers
 	engine.GET(HealthPrefix, router.Health)
@@ -149,7 +149,7 @@ func KeyStoreAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) 
 	}
 
 	// make sure the keystore service is configured to use the correct path
-	config.GetServiceInfo().SetServicePath(svcframework.KeyStore, KeyStorePrefix)
+	config.SetServicePath(svcframework.KeyStore, KeyStorePrefix)
 	keyStoreAPI := rg.Group(KeyStorePrefix)
 	keyStoreAPI.PUT("", keyStoreRouter.StoreKey)
 	keyStoreAPI.GET("/:id", keyStoreRouter.GetKeyDetails)
@@ -166,7 +166,7 @@ func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, did 
 	batchDIDRouter := router.NewBatchDIDRouter(did)
 
 	// make sure the DID service is configured to use the correct path
-	config.GetServiceInfo().SetServicePath(svcframework.DID, DIDsPrefix)
+	config.SetServicePath(svcframework.DID, DIDsPrefix)
 	didAPI := rg.Group(DIDsPrefix)
 	didAPI.GET("", didRouter.ListDIDMethods)
 	didAPI.PUT("/:method", middleware.Webhook(webhookService, webhook.DID, webhook.Create), didRouter.CreateDIDByMethod)
@@ -186,7 +186,7 @@ func SchemaAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService
 	}
 
 	// make sure the schema service is configured to use the correct path
-	config.GetServiceInfo().SetServicePath(svcframework.Schema, SchemasPrefix)
+	config.SetServicePath(svcframework.Schema, SchemasPrefix)
 	schemaAPI := rg.Group(SchemasPrefix)
 	schemaAPI.PUT("", middleware.Webhook(webhookService, webhook.Schema, webhook.Create), schemaRouter.CreateSchema)
 	schemaAPI.GET("/:id", schemaRouter.GetSchema)
@@ -203,7 +203,7 @@ func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookSer
 	}
 
 	// make sure the credential service is configured to use the correct path
-	config.GetServiceInfo().SetServicePath(svcframework.Credential, CredentialsPrefix)
+	config.SetServicePath(svcframework.Credential, CredentialsPrefix)
 
 	// Credentials
 	credentialAPI := rg.Group(CredentialsPrefix)
@@ -229,7 +229,7 @@ func PresentationAPI(rg *gin.RouterGroup, service svcframework.Service, webhookS
 	}
 
 	// make sure the presentation service is configured to use the correct path
-	config.GetServiceInfo().SetServicePath(svcframework.Presentation, PresentationsPrefix)
+	config.SetServicePath(svcframework.Presentation, PresentationsPrefix)
 
 	presDefAPI := rg.Group(PresentationsPrefix + DefinitionsPrefix)
 	presDefAPI.PUT("", presRouter.CreateDefinition)
@@ -259,7 +259,7 @@ func OperationAPI(rg *gin.RouterGroup, service svcframework.Service) (err error)
 	}
 
 	// make sure the operation service is configured to use the correct path
-	config.GetServiceInfo().SetServicePath(svcframework.Operation, OperationPrefix)
+	config.SetServicePath(svcframework.Operation, OperationPrefix)
 
 	operationAPI := rg.Group(OperationPrefix)
 	operationAPI.GET("", operationRouter.ListOperations)
@@ -278,7 +278,7 @@ func ManifestAPI(rg *gin.RouterGroup, service svcframework.Service, webhookServi
 	}
 
 	// make sure the manifest service is configured to use the correct path
-	config.GetServiceInfo().SetServicePath(svcframework.Manifest, ManifestsPrefix)
+	config.SetServicePath(svcframework.Manifest, ManifestsPrefix)
 
 	manifestAPI := rg.Group(ManifestsPrefix)
 	manifestAPI.PUT("", middleware.Webhook(webhookService, webhook.Manifest, webhook.Create), manifestRouter.CreateManifest)
@@ -314,7 +314,7 @@ func IssuanceAPI(rg *gin.RouterGroup, service svcframework.Service) error {
 	}
 
 	// make sure the issuance service is configured to use the correct path
-	config.GetServiceInfo().SetServicePath(svcframework.Issuance, IssuanceTemplatePrefix)
+	config.SetServicePath(svcframework.Issuance, IssuanceTemplatePrefix)
 
 	issuanceAPI := rg.Group(IssuanceTemplatePrefix)
 	issuanceAPI.PUT("", issuanceRouter.CreateIssuanceTemplate)
@@ -332,7 +332,7 @@ func WebhookAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 	}
 
 	// make sure the webhook service is configured to use the correct path
-	config.GetServiceInfo().SetServicePath(svcframework.Webhook, WebhookPrefix)
+	config.SetServicePath(svcframework.Webhook, WebhookPrefix)
 
 	webhookAPI := rg.Group(WebhookPrefix)
 	webhookAPI.PUT("", webhookRouter.CreateWebhook)
@@ -353,7 +353,7 @@ func DIDConfigurationAPI(rg *gin.RouterGroup, service svcframework.Service) erro
 	}
 
 	// make sure the did configuration service is configured to use the correct path
-	config.GetServiceInfo().SetServicePath(svcframework.DIDConfiguration, DIDConfigurationsPrefix)
+	config.SetServicePath(svcframework.DIDConfiguration, DIDConfigurationsPrefix)
 
 	webhookAPI := rg.Group(DIDConfigurationsPrefix)
 	webhookAPI.PUT("", didConfigurationsRouter.CreateDIDConfiguration)

@@ -48,9 +48,9 @@ func init() {
 		ForceColors:  true,
 	})
 
-	config.GetServiceInfo().SetAPIBase(endpoint)
-	config.GetServiceInfo().SetServicePath(framework.Credential, "/credentials")
-	config.GetServiceInfo().SetServicePath(framework.Schema, "/schemas")
+	config.SetAPIBase(endpoint)
+	config.SetServicePath(framework.Credential, "/credentials")
+	config.SetServicePath(framework.Schema, "/schemas")
 }
 
 type didConfigurationResourceParams struct {

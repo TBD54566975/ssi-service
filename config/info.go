@@ -10,31 +10,32 @@ import (
 const (
 	ServiceName    = "ssi-service"
 	ServiceVersion = "0.0.3"
+	APIVersion     = "v1"
 )
 
 var (
-	serviceInfo ServiceInfo
-	once        sync.Once
+	si   *serviceInfo
+	once sync.Once
 )
 
-// GetServiceInfo provides ServiceInfo as a singleton
-func GetServiceInfo() ServiceInfo {
+// getServiceInfo provides serviceInfo as a singleton
+func getServiceInfo() *serviceInfo {
 	once.Do(func() {
-		serviceInfo = ServiceInfo{
+		si = &serviceInfo{
 			name: ServiceName,
 			description: "The Self Sovereign Identity Service is a RESTful web service that facilitates all things relating" +
 				" to DIDs, VCs, and related standards-based interactions.",
 			version:      ServiceVersion,
-			apiVersion:   "v1",
+			apiVersion:   APIVersion,
 			servicePaths: make(map[framework.Type]string),
 		}
 	})
 
-	return serviceInfo
+	return si
 }
 
-// ServiceInfo is intended to be a (mostly) read-only singleton object for static service info
-type ServiceInfo struct {
+// serviceInfo is intended to be a (mostly) read-only singleton object for static service info
+type serviceInfo struct {
 	name         string
 	description  string
 	version      string
@@ -43,37 +44,38 @@ type ServiceInfo struct {
 	servicePaths map[framework.Type]string
 }
 
-func (si *ServiceInfo) Name() string {
-	return si.name
+func Name() string {
+	return getServiceInfo().name
 }
 
-func (si *ServiceInfo) Description() string {
-	return si.description
+func Description() string {
+	return getServiceInfo().description
 }
 
-func (si *ServiceInfo) Version() string {
-	return si.version
+func (si *serviceInfo) Version() string {
+	return getServiceInfo().version
 }
 
-func (si *ServiceInfo) SetAPIBase(url string) {
+func SetAPIBase(url string) {
 	if strings.LastIndexAny(url, "/") == len(url)-1 {
 		url = url[:len(url)-1]
 	}
-	si.apiBase = url
+	getServiceInfo().apiBase = url
 }
 
-func (si *ServiceInfo) GetAPIBase() string {
-	return si.apiBase
+func GetAPIBase() string {
+	return getServiceInfo().apiBase
 }
 
-func (si *ServiceInfo) SetServicePath(service framework.Type, path string) {
+func SetServicePath(service framework.Type, path string) {
 	// normalize path
 	if strings.IndexAny(path, "/") == 0 {
 		path = path[1:]
 	}
-	si.servicePaths[service] = strings.Join([]string{si.apiBase, si.apiVersion, path}, "/")
+	base := getServiceInfo().apiBase
+	getServiceInfo().servicePaths[service] = strings.Join([]string{base, APIVersion, path}, "/")
 }
 
-func (si *ServiceInfo) GetServicePath(service framework.Type) string {
-	return si.servicePaths[service]
+func GetServicePath(service framework.Type) string {
+	return getServiceInfo().servicePaths[service]
 }

@@ -45,7 +45,7 @@ const (
 
 func TestMain(t *testing.M) {
 	testutil.EnableSchemaCaching()
-	config.GetServiceInfo().SetAPIBase(testServerURL)
+	config.SetAPIBase(testServerURL)
 	os.Exit(t.Run())
 }
 
@@ -310,7 +310,7 @@ func testCredentialRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *k
 	credentialService := testCredentialService(t, bolt, keyStore, did, schema)
 
 	// set endpoint in service info
-	config.GetServiceInfo().SetServicePath(svcframework.Credential, CredentialsPrefix)
+	config.SetServicePath(svcframework.Credential, CredentialsPrefix)
 
 	// create router for service
 	credentialRouter, err := router.NewCredentialRouter(credentialService)
