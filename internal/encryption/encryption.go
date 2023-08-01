@@ -12,8 +12,9 @@ import (
 	"github.com/google/tink/go/keyset"
 	"github.com/google/tink/go/tink"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/ssi-service/internal/util"
 	"google.golang.org/api/option"
+
+	"github.com/tbd54566975/ssi-service/internal/util"
 )
 
 // Encrypter the interface for any encrypter implementation.
@@ -24,7 +25,7 @@ type Encrypter interface {
 // Decrypter is the interface for any decrypter. May be AEAD or Hybrid.
 type Decrypter interface {
 	// Decrypt decrypts ciphertext. The second parameter may be treated as associated data for AEAD (as abstracted in
-	// https://datatracker.ietf.org/doc/html/rfc5116), or as contextInfofor HPKE (https://www.rfc-editor.org/rfc/rfc9180.html)
+	// https://datatracker.ietf.org/doc/html/rfc5116), or as contextInfo for HPKE (https://www.rfc-editor.org/rfc/rfc9180.html)
 	Decrypt(ctx context.Context, ciphertext, contextInfo []byte) ([]byte, error)
 }
 

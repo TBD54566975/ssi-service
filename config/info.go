@@ -13,14 +13,14 @@ const (
 )
 
 var (
-	serviceInfo *ServiceInfo
+	serviceInfo ServiceInfo
 	once        sync.Once
 )
 
 // GetServiceInfo provides ServiceInfo as a singleton
-func GetServiceInfo() *ServiceInfo {
+func GetServiceInfo() ServiceInfo {
 	once.Do(func() {
-		serviceInfo = &ServiceInfo{
+		serviceInfo = ServiceInfo{
 			name: ServiceName,
 			description: "The Self Sovereign Identity Service is a RESTful web service that facilitates all things relating" +
 				" to DIDs, VCs, and related standards-based interactions.",
