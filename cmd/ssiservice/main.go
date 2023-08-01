@@ -31,6 +31,7 @@ import (
 //
 //	@title			SSI Service API
 //	@description	The Self Sovereign Identity Service: Managing DIDs, Verifiable Credentials, and more!
+//	@version		0.0.3
 //	@contact.name	TBD
 //	@contact.url	https://github.com/TBD54566975/ssi-service/issues
 //	@contact.email	tbd-developer@squareup.com
