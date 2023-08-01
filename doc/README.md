@@ -13,7 +13,6 @@ resource for developers and users of the SSI Service.
 | [Versioning](https://github.com/TBD54566975/ssi-service/blob/main/doc/service/versioning.md) | Describes versioning practices for the service    |
 | [Webhooks](https://github.com/TBD54566975/ssi-service/blob/main/doc/service/webhook.md)      | Describes how to use webhooks in the service      |
 | [Features](https://github.com/TBD54566975/ssi-service/blob/main/doc/service/features.md)     | Features currently supported by the service       |
-| [Authorization](https://github.com/TBD54566975/ssi-service/blob/main/doc/service/authorization.md)     | How to setup token authentication and extend for authorization      |
 
 
 ## Service Improvement Proposals (SIPs)
@@ -30,8 +29,8 @@ which DID methods to enable, and which port to listen on. Read the docs below fo
 |------------------------------------------------------------------------------------------------------------|----------------------------------------|
 | [TOML Config Files](https://github.com/TBD54566975/ssi-service/blob/main/doc/config/toml.md)                   | Describes how to use TOML config files |
 | [Using a Cloud Key Management Service](https://github.com/TBD54566975/ssi-service/blob/main/doc/config/kms.md) | Describes how to configure a KMS       |
-| [Storage](https://github.com/TBD54566975/ssi-service/blob/main/doc/service/storage.md)       | Describes alternatives for storage by the service |
-| [Authentication](https://github.com/TBD54566975/ssi-service/blob/main/doc/service/authorization.md)       | Describes how to setup out of the box token authentication |
+| [Storage](https://github.com/TBD54566975/ssi-service/blob/main/doc/config/storage.md)       | Describes alternatives for storage by the service |
+| [Authorization](https://github.com/TBD54566975/ssi-service/blob/main/doc/config/auth.md)     | How to setup token authentication and extend for authorization      |
 
 ## API Documentation
 

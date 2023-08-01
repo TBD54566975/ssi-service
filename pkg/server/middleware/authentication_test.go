@@ -52,8 +52,8 @@ func TestAuthMiddleware(t *testing.T) {
 }
 
 func TestNoAuthMiddleware(t *testing.T) {
-
-	t.Setenv("AUTH_TOKEN", "") // no auth token so things just work
+	// no auth token so things just work
+	t.Setenv("AUTH_TOKEN", "")
 
 	// Create a new gin engine
 	r := gin.Default()
@@ -77,5 +77,4 @@ func TestNoAuthMiddleware(t *testing.T) {
 
 	// Assert that the status code is 200 OK
 	assert.Equal(t, http.StatusOK, w.Code)
-
 }
