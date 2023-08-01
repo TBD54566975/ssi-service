@@ -26,10 +26,6 @@ import (
 )
 
 func TestCredentialRouter(t *testing.T) {
-
-	config.SetAPIBase("http://localhost:1234")
-	config.SetServicePath(framework.Credential, "/credentials")
-
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 
@@ -547,7 +543,7 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NoError(tt, err)
 
 				assert.Contains(tt, statusEntry.ID, fmt.Sprintf("%s/status", createdCred.Credential.ID))
-				assert.Contains(tt, statusEntry.StatusListCredential, "http://localhost:1234/v1/credentials/status")
+				assert.Contains(tt, statusEntry.StatusListCredential, "https://ssi-service.com/v1/credentials/status")
 				assert.NotEmpty(tt, statusEntry.StatusListIndex)
 
 				credStatus, err := credService.GetCredentialStatus(context.Background(), credential.GetCredentialStatusRequest{ID: createdCred.ID})
@@ -667,7 +663,7 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NoError(tt, err)
 
 				assert.Contains(tt, statusEntry.ID, fmt.Sprintf("%s/status", createdCred.Credential.ID))
-				assert.Contains(tt, statusEntry.StatusListCredential, "http://localhost:1234/v1/credentials/status")
+				assert.Contains(tt, statusEntry.StatusListCredential, "https://ssi-service.com/v1/credentials/status")
 				assert.NotEmpty(tt, statusEntry.StatusListIndex)
 
 				credStatus, err := credService.GetCredentialStatus(context.Background(), credential.GetCredentialStatusRequest{ID: createdCred.ID})
@@ -832,7 +828,7 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NoError(tt, err)
 
 				assert.Contains(tt, statusEntry.ID, fmt.Sprintf("%s/status", createdCred.Credential.ID))
-				assert.Contains(tt, statusEntry.StatusListCredential, "http://localhost:1234/v1/credentials/status")
+				assert.Contains(tt, statusEntry.StatusListCredential, "https://ssi-service.com/v1/credentials/status")
 				assert.NotEmpty(tt, statusEntry.StatusListIndex)
 
 				credStatus, err := credService.GetCredentialStatus(context.Background(), credential.GetCredentialStatusRequest{ID: createdCred.ID})
@@ -888,7 +884,7 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NoError(tt, err)
 
 				assert.Contains(tt, statusEntry.ID, fmt.Sprintf("%s/status", createdCred.Credential.ID))
-				assert.Contains(tt, statusEntry.StatusListCredential, "http://localhost:1234/v1/credentials/status")
+				assert.Contains(tt, statusEntry.StatusListCredential, "https://ssi-service.com/v1/credentials/status")
 				assert.NotEmpty(tt, statusEntry.StatusListIndex)
 
 				credStatus, err := credService.GetCredentialStatus(context.Background(), credential.GetCredentialStatusRequest{ID: createdCred.ID})
@@ -966,7 +962,7 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NoError(tt, err)
 
 				assert.Contains(tt, statusEntry.ID, fmt.Sprintf("%s/status", createdCred.Credential.ID))
-				assert.Contains(tt, statusEntry.StatusListCredential, "http://localhost:1234/v1/credentials/status")
+				assert.Contains(tt, statusEntry.StatusListCredential, "https://ssi-service.com/v1/credentials/status")
 				assert.NotEmpty(tt, statusEntry.StatusListIndex)
 
 				credStatus, err := credService.GetCredentialStatus(context.Background(), credential.GetCredentialStatusRequest{ID: createdCred.ID})

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
@@ -19,8 +20,14 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
+const (
+	testServerURL = "https://ssi-service.com"
+)
+
 func TestMain(t *testing.M) {
 	testutil.EnableSchemaCaching()
+	config.SetAPIBase(testServerURL)
+	config.SetServicePath(framework.Credential, "/credentials")
 	os.Exit(t.Run())
 }
 
