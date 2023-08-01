@@ -67,6 +67,7 @@ func (si *ServiceInfo) GetAPIBase() string {
 }
 
 func (si *ServiceInfo) SetServicePath(service framework.Type, path string) {
+	// normalize path
 	if strings.IndexAny(path, "/") == 0 {
 		path = path[1:]
 	}
