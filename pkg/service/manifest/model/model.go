@@ -6,6 +6,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
 
 	cred "github.com/tbd54566975/ssi-service/internal/credential"
@@ -188,7 +189,7 @@ type Request struct {
 }
 
 type PresentationDefinitionRef struct {
-	// id of the presentation definition created with PresentationDefinitionAPI. Must be empty if `value` is present.
+	// id of the presentation definition created with the PresentationDefinitions API. Must be empty if `value` is present.
 	ID *string `json:"presentationDefinitionId"`
 
 	// value of the presentation definition to use. Must be empty if `id` is present.

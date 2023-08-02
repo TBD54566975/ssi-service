@@ -19,9 +19,9 @@ const (
 
 // Health godoc
 //
-//	@Summary		Health Check
+//	@Summary		Service health check
 //	@Description	Health is a simple handler that always responds with a 200 OK
-//	@Tags			HealthCheck
+//	@Tags			ServiceInfo
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	GetHealthCheckResponse

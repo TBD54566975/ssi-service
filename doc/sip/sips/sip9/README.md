@@ -77,7 +77,7 @@ The updates needed in SSI Service are listed below.
 - Updating the [Create DID Document](https://developer.tbd.website/docs/apis/ssi-service/#tag/DecentralizedIdentityAPI/paths/~1v1~1dids~1%7Bmethod%7D/put) endpoint so callers can communicate that they want to create a non-custodial DID document.
 - Storing keys in the DB that point to external key material.
 - Change the response type of the [Create Credential](https://developer.tbd.website/docs/apis/ssi-service/#tag/CredentialAPI/paths/~1v1~1credentials/put) endpoint to return an `Operation` object. This object communicates that SSI Service needs to receive a signed credential payload in order for the credential to be fully issued.
-- Change the response type of the [Create Presentation Request](https://developer.tbd.website/docs/apis/ssi-service/#tag/PresentationDefinitionAPI) endpoint to return an `Operation` object similar to the point above.
+- Change the response type of the [Create Presentation Request](https://developer.tbd.website/docs/apis/ssi-service/#tag/PresentationDefinitions) endpoint to return an `Operation` object similar to the point above.
 - Do that for manifest and for schema.
     - Note that the concept of Credential Application that can be *Reviewed* already exists in our API. This proposed design would be a step before Review is possible.
 - The `GET` endpoint `v1/signjobs`that returns all pending `SignJob` objects for a given DID.
