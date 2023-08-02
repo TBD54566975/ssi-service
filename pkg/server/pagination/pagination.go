@@ -25,12 +25,12 @@ const (
 	PageTokenParam = "pageToken"
 )
 
-// ParsePaginationParams reads the PageSizeParam and PageTokenParam from the URL parameters and populates the passed in
+// ParsePaginationQueryValues reads the PageSizeParam and PageTokenParam from the URL parameters and populates the passed in
 // pageRequest. The value encoded in PageTokenParam is assumed to be the base64url encoding of a PageToken. It is an
 // error for the query params to be different from the query params encoded in the PageToken. Any error during the
 // execution is responded to using the passed in gin.Context. The return value corresponds to whether there was an
 // error within the function.
-func ParsePaginationParams(c *gin.Context, pageRequest *PageRequest) bool {
+func ParsePaginationQueryValues(c *gin.Context, pageRequest *PageRequest) bool {
 	pageSizeStr := framework.GetQueryValue(c, PageSizeParam)
 
 	if pageSizeStr != nil {

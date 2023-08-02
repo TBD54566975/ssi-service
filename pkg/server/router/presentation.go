@@ -405,7 +405,7 @@ func (pr PresentationRouter) ListSubmissions(c *gin.Context) {
 	}
 
 	var pageRequest pagination.PageRequest
-	if pagination.ParsePaginationParams(c, &pageRequest) {
+	if pagination.ParsePaginationQueryValues(c, &pageRequest) {
 		return
 	}
 
