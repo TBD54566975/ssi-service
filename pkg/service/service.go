@@ -5,6 +5,7 @@ import (
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -59,21 +60,6 @@ func validateServiceConfig(config config.ServicesConfig) error {
 	if config.DIDConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.DID)
 	}
-	if config.IssuanceServiceConfig.IsEmpty() {
-		return fmt.Errorf("%s no config provided", framework.Issuance)
-	}
-	if config.SchemaConfig.IsEmpty() {
-		return fmt.Errorf("%s no config provided", framework.Schema)
-	}
-	if config.CredentialConfig.IsEmpty() {
-		return fmt.Errorf("%s no config provided", framework.Credential)
-	}
-	if config.ManifestConfig.IsEmpty() {
-		return fmt.Errorf("%s no config provided", framework.Manifest)
-	}
-	if config.PresentationConfig.IsEmpty() {
-		return fmt.Errorf("%s no config provided", framework.Presentation)
-	}
 	if config.WebhookConfig.IsEmpty() {
 		return fmt.Errorf("%s no config provided", framework.Webhook)
 	}
@@ -126,12 +112,12 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 	}
 	didResolver := didService.GetResolver()
 
-	schemaService, err := schema.NewSchemaService(config.SchemaConfig, storageProvider, keyStoreService, didResolver)
+	schemaService, err := schema.NewSchemaService(storageProvider, keyStoreService, didResolver)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the schema service")
 	}
 
-	issuanceService, err := issuance.NewIssuanceService(config.IssuanceServiceConfig, storageProvider)
+	issuanceService, err := issuance.NewIssuanceService(storageProvider)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the issuance service")
 	}
@@ -141,12 +127,12 @@ func instantiateServices(config config.ServicesConfig) (*SSIService, error) {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the credential service")
 	}
 
-	presentationService, err := presentation.NewPresentationService(config.PresentationConfig, storageProvider, didResolver, schemaService, keyStoreService)
+	presentationService, err := presentation.NewPresentationService(storageProvider, didResolver, schemaService, keyStoreService)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the presentation service")
 	}
 
-	manifestService, err := manifest.NewManifestService(config.ManifestConfig, storageProvider, keyStoreService, didResolver, credentialService, presentationService)
+	manifestService, err := manifest.NewManifestService(storageProvider, keyStoreService, didResolver, credentialService, presentationService)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate the manifest service")
 	}

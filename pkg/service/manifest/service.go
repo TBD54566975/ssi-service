@@ -14,7 +14,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/tbd54566975/ssi-service/config"
+
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
@@ -38,7 +38,6 @@ type Service struct {
 	storage                 *manifeststg.Storage
 	opsStorage              *operation.Storage
 	issuanceTemplateStorage *issuance.Storage
-	config                  config.ManifestServiceConfig
 
 	// external dependencies
 	keyStore        *keystore.Service
@@ -77,11 +76,7 @@ func (s Service) Status() framework.Status {
 	return framework.Status{Status: framework.StatusReady}
 }
 
-func (s Service) Config() config.ManifestServiceConfig {
-	return s.config
-}
-
-func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver resolution.Resolver, credential *credential.Service, presentationSvc *presentation.Service) (*Service, error) {
+func NewManifestService(s storage.ServiceStorage, keyStore *keystore.Service, didResolver resolution.Resolver, credential *credential.Service, presentationSvc *presentation.Service) (*Service, error) {
 	manifestStorage, err := manifeststg.NewManifestStorage(s)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the manifest service")
@@ -99,7 +94,6 @@ func NewManifestService(config config.ManifestServiceConfig, s storage.ServiceSt
 		storage:                 manifestStorage,
 		opsStorage:              opsStorage,
 		issuanceTemplateStorage: issuanceStorage,
-		config:                  config,
 		keyStore:                keyStore,
 		didResolver:             didResolver,
 		credential:              credential,

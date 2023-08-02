@@ -2293,6 +2293,7 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   title: SSI Service API
+  version: 0.0.3
 paths:
   /health:
     get:

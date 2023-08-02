@@ -13,11 +13,12 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/h2non/gock.v1"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
-	"gopkg.in/h2non/gock.v1"
 )
 
 //go:embed testdata/basic_did_resolution.json
@@ -284,12 +285,10 @@ func TestIONHandler(t *testing.T) {
 }
 
 func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Service {
-	serviceConfig := config.KeyStoreServiceConfig{
-		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-keystore"},
-	}
+	serviceConfig := new(config.KeyStoreServiceConfig)
 
 	// create a keystore service
-	keystoreService, err := keystore.NewKeyStoreService(serviceConfig, db)
+	keystoreService, err := keystore.NewKeyStoreService(*serviceConfig, db)
 	require.NoError(t, err)
 	require.NotEmpty(t, keystoreService)
 	return keystoreService

@@ -15,7 +15,8 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tbd54566975/ssi-service/pkg/encryption"
+
+	"github.com/tbd54566975/ssi-service/internal/encryption"
 )
 
 func getDBImplementations(t *testing.T) []ServiceStorage {

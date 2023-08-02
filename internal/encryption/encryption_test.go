@@ -9,8 +9,9 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
-	"github.com/tbd54566975/ssi-service/internal/util"
 	"golang.org/x/crypto/chacha20poly1305"
+
+	"github.com/tbd54566975/ssi-service/internal/util"
 )
 
 func createServiceKey() (key string, err error) {

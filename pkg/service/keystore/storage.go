@@ -11,7 +11,8 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
-	"github.com/tbd54566975/ssi-service/pkg/encryption"
+
+	"github.com/tbd54566975/ssi-service/internal/encryption"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
