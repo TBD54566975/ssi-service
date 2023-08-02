@@ -28,7 +28,6 @@ import (
 
 type Service struct {
 	storage *Storage
-	config  config.SchemaServiceConfig
 
 	// external dependencies
 	keyStore *keystore.Service
@@ -59,11 +58,7 @@ func (s Service) Status() framework.Status {
 	return framework.Status{Status: framework.StatusReady}
 }
 
-func (s Service) Config() config.SchemaServiceConfig {
-	return s.config
-}
-
-func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service,
+func NewSchemaService(s storage.ServiceStorage, keyStore *keystore.Service,
 	resolver resolution.Resolver) (*Service, error) {
 	schemaStorage, err := NewSchemaStorage(s)
 	if err != nil {
@@ -71,7 +66,6 @@ func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorag
 	}
 	service := Service{
 		storage:  schemaStorage,
-		config:   config,
 		keyStore: keyStore,
 		resolver: resolver,
 	}
@@ -122,7 +116,7 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 	// if the schema is a credential schema, the credential's id is a fully qualified URI
 	// if the schema is a JSON schema, the schema's id is a fully qualified URI
 	schemaID := uuid.NewString()
-	schemaURI := strings.Join([]string{s.Config().ServiceEndpoint, schemaID}, "/")
+	schemaURI := strings.Join([]string{config.GetServicePath(framework.Schema), schemaID}, "/")
 
 	// create schema for storage
 	storedSchema := StoredSchema{ID: schemaID}

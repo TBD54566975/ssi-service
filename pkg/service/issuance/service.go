@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
-	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	manifeststg "github.com/tbd54566975/ssi-service/pkg/service/manifest/storage"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -14,13 +13,12 @@ import (
 )
 
 type Service struct {
-	config          config.IssuanceServiceConfig
 	storage         Storage
 	manifestStorage manifeststg.Storage
 	schemaStorage   schema.Storage
 }
 
-func NewIssuanceService(config config.IssuanceServiceConfig, s storage.ServiceStorage) (*Service, error) {
+func NewIssuanceService(s storage.ServiceStorage) (*Service, error) {
 	issuanceStorage, err := NewIssuanceStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating issuance storage")
@@ -35,7 +33,6 @@ func NewIssuanceService(config config.IssuanceServiceConfig, s storage.ServiceSt
 	}
 	return &Service{
 		storage:         *issuanceStorage,
-		config:          config,
 		manifestStorage: *manifestStorage,
 		schemaStorage:   *schemaStorage,
 	}, nil

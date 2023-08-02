@@ -25,7 +25,7 @@ var (
 func TestMain(m *testing.M) {
 	store = storage.NewMemoryStore()
 
-	// Create an httptest server with the metadataHandler
+	// Create a httptest server with the metadataHandler
 	authServer, err := NewServer(make(chan os.Signal, 1), &AuthConfig{
 		CredentialIssuerFile: "../../config/credential_issuer_metadata.example.json",
 	}, store)

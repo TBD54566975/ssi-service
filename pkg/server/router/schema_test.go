@@ -9,7 +9,6 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
@@ -40,10 +39,9 @@ func TestSchemaRouter(t *testing.T) {
 				db := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, db)
 
-				serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 				keyStoreService := testKeyStoreService(tt, db)
 				didService := testDIDService(tt, db, keyStoreService)
-				schemaService, err := schema.NewSchemaService(serviceConfig, db, keyStoreService, didService.GetResolver())
+				schemaService, err := schema.NewSchemaService(db, keyStoreService, didService.GetResolver())
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, schemaService)
 
@@ -120,10 +118,9 @@ func TestSchemaSigning(t *testing.T) {
 				db := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, db)
 
-				serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 				keyStoreService := testKeyStoreService(tt, db)
 				didService := testDIDService(tt, db, keyStoreService)
-				schemaService, err := schema.NewSchemaService(serviceConfig, db, keyStoreService, didService.GetResolver())
+				schemaService, err := schema.NewSchemaService(db, keyStoreService, didService.GetResolver())
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, schemaService)
 
@@ -145,10 +142,9 @@ func TestSchemaSigning(t *testing.T) {
 			db := test.ServiceStorage(tt)
 			assert.NotEmpty(tt, db)
 
-			serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 			keyStoreService := testKeyStoreService(tt, db)
 			didService := testDIDService(tt, db, keyStoreService)
-			schemaService, err := schema.NewSchemaService(serviceConfig, db, keyStoreService, didService.GetResolver())
+			schemaService, err := schema.NewSchemaService(db, keyStoreService, didService.GetResolver())
 			assert.NoError(tt, err)
 			assert.NotEmpty(tt, schemaService)
 
