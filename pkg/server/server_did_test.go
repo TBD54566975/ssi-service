@@ -180,7 +180,7 @@ func TestDIDAPI(t *testing.T) {
 				require.NotEmpty(tt, db)
 
 				_, keyStoreService, _ := testKeyStore(tt, db)
-				didService, _ := testDIDRouter(tt, db, keyStoreService, []string{"ion"}, nil)
+				didRouter, _ := testDIDRouter(tt, db, keyStoreService, []string{"ion"}, nil)
 
 				// create DID by method - ion - missing body
 				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/ion", nil)
@@ -190,7 +190,7 @@ func TestDIDAPI(t *testing.T) {
 				}
 
 				c := newRequestContextWithParams(w, req, params)
-				didService.CreateDIDByMethod(c)
+				didRouter.CreateDIDByMethod(c)
 				assert.Contains(tt, w.Body.String(), "invalid create DID request")
 
 				// reset recorder between calls
@@ -208,7 +208,7 @@ func TestDIDAPI(t *testing.T) {
 				req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/ion", requestReader)
 
 				c = newRequestContextWithParams(w, req, params)
-				didService.CreateDIDByMethod(c)
+				didRouter.CreateDIDByMethod(c)
 				assert.True(tt, util.Is2xxResponse(w.Code))
 
 				// reset recorder between calls
@@ -223,7 +223,7 @@ func TestDIDAPI(t *testing.T) {
 				req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/ion", requestReader)
 
 				c = newRequestContextWithParams(w, req, params)
-				didService.CreateDIDByMethod(c)
+				didRouter.CreateDIDByMethod(c)
 				assert.Contains(tt, w.Body.String(), "could not create DID for method<ion> with key type: bad")
 
 				// reset recorder between calls
@@ -241,16 +241,31 @@ func TestDIDAPI(t *testing.T) {
 					Post("/operations").
 					Reply(200).
 					BodyString(string(BasicDIDResolution))
-				defer gock.Off()
 
 				c = newRequestContextWithParams(w, req, params)
-				didService.CreateDIDByMethod(c)
+				didRouter.CreateDIDByMethod(c)
 				assert.True(tt, util.Is2xxResponse(w.Code))
 
 				var resp router.CreateDIDByMethodResponse
 				err := json.NewDecoder(w.Body).Decode(&resp)
 				assert.NoError(tt, err)
 				assert.Contains(tt, resp.DID.ID, didsdk.IONMethod)
+
+				gock.Off()
+				// good params
+				req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/ion/"+resp.DID.ID, nil)
+				goodParams := map[string]string{
+					"method": "ion",
+					"id":     resp.DID.ID,
+				}
+				c = newRequestContextWithParams(w, req, goodParams)
+				didRouter.GetDIDByMethod(c)
+				assert.True(tt, util.Is2xxResponse(w.Code))
+
+				var getDIDResp router.GetDIDByMethodResponse
+				err = json.NewDecoder(w.Body).Decode(&getDIDResp)
+				assert.NoError(tt, err)
+				assert.Equal(tt, resp.DID.ID, getDIDResp.DID.ID)
 			})
 
 			t.Run("Test Update DID By Method: ION", func(tt *testing.T) {
@@ -268,7 +283,8 @@ func TestDIDAPI(t *testing.T) {
 
 				gock.New(testIONResolverURL).
 					Post("/operations").
-					Reply(200)
+					Reply(200).
+					JSON(string(BasicDIDResolution))
 				defer gock.Off()
 
 				// with body, good key type, no options
@@ -288,7 +304,7 @@ func TestDIDAPI(t *testing.T) {
 					StateChange: router.StateChange{
 						PublicKeysToAdd: []ion.PublicKey{
 							{
-								ID:   "publicKeyModel1Id",
+								ID:   "testPublicKeyModel1Id",
 								Type: "EcdsaSecp256k1VerificationKey2019",
 								PublicKeyJWK: jwx.PublicKeyJWK{
 									KTY: "EC",
@@ -310,7 +326,8 @@ func TestDIDAPI(t *testing.T) {
 
 				gock.New(testIONResolverURL).
 					Post("/operations").
-					Reply(200)
+					Reply(200).
+					JSON("{}")
 				defer gock.Off()
 
 				c = newRequestContextWithParams(w, req, params)
@@ -321,8 +338,8 @@ func TestDIDAPI(t *testing.T) {
 					StateChange: router.StateChange{
 						ServicesToAdd: []didsdk.Service{
 							{
-								ID:              "service1Id",
-								Type:            "service1Type",
+								ID:              "testService1Id",
+								Type:            "testService1Type",
 								ServiceEndpoint: "http://www.service1.com",
 							},
 						},
@@ -334,7 +351,8 @@ func TestDIDAPI(t *testing.T) {
 
 				gock.New(testIONResolverURL).
 					Post("/operations").
-					Reply(200)
+					Reply(200).
+					JSON("{}")
 				defer gock.Off()
 
 				c = newRequestContextWithParams(w, req, params)
@@ -346,11 +364,11 @@ func TestDIDAPI(t *testing.T) {
 				assert.NoError(tt, err)
 				assert.Contains(tt, updateDIDResponse.DID.ID, didsdk.IONMethod)
 
-				assert.Equal(tt, "service1Id", updateDIDResponse.DID.Services[0].ID)
+				assert.Equal(tt, "#testService1Id", updateDIDResponse.DID.Services[0].ID)
 				// Check that the correct updates were performed.
 				assert.Len(tt, updateDIDResponse.DID.VerificationMethod, 1+len(createDIDResponse.DID.VerificationMethod))
-				assert.Equal(tt, createDIDResponse.DID.VerificationMethod[0], updateDIDResponse.DID.VerificationMethod[0])
-				assert.Equal(tt, "publicKeyModel1Id", updateDIDResponse.DID.VerificationMethod[1].ID)
+				assert.Equal(tt, createDIDResponse.DID.VerificationMethod[0].ID, updateDIDResponse.DID.VerificationMethod[0].ID)
+				assert.Equal(tt, "#testPublicKeyModel1Id", updateDIDResponse.DID.VerificationMethod[1].ID)
 				assert.Len(tt, updateDIDResponse.DID.Authentication, 1+len(createDIDResponse.DID.Authentication))
 				assert.Len(tt, updateDIDResponse.DID.AssertionMethod, 0+len(createDIDResponse.DID.AssertionMethod))
 				assert.Len(tt, updateDIDResponse.DID.KeyAgreement, 1+len(createDIDResponse.DID.KeyAgreement))

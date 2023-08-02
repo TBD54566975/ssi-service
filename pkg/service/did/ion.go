@@ -7,10 +7,8 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
-	"github.com/TBD54566975/ssi-sdk/cryptosuite"
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/ion"
-	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
@@ -118,7 +116,7 @@ type UpdateIONDIDResponse struct {
 type PreAnchor struct {
 	UpdateOperation        *ion.UpdateRequest
 	NextUpdatePublicJWK    *jwx.PublicKeyJWK
-	StoredDID              *ionStoredDID
+	UpdatedDID             *ionStoredDID
 	NextUpdatePrivateJWKID string
 }
 
@@ -156,7 +154,8 @@ func (h *ionHandler) UpdateDID(ctx context.Context, request UpdateIONDIDRequest)
 
 	if state.Status == PreAnchorStatus {
 		state.Anchor = new(Anchor)
-		if err := h.resolver.Anchor(ctx, state.PreAnchor.UpdateOperation); err != nil {
+		_, err := h.resolver.Anchor(ctx, state.PreAnchor.UpdateOperation)
+		if err != nil {
 			// Signature errors are OK, as they mean that the update operation has already been applied. It means we haven't updated our updateKey to the latest one.
 			state.Anchor.Err = err.Error()
 			if isPreviouslyAnchoredError(err) {
@@ -182,7 +181,7 @@ func (h *ionHandler) UpdateDID(ctx context.Context, request UpdateIONDIDRequest)
 	}
 
 	return &UpdateIONDIDResponse{
-		DID: state.PreAnchor.StoredDID.DID,
+		DID: state.PreAnchor.UpdatedDID.DID,
 	}, nil
 }
 
@@ -220,7 +219,7 @@ func (h *ionHandler) applyUpdate(id string) func(ctx context.Context, tx storage
 			if err != nil {
 				return nil, errors.Wrap(err, "creating did storage")
 			}
-			if err := didStorage.StoreDID(ctx, state.PreAnchor.StoredDID); err != nil {
+			if err := didStorage.StoreDID(ctx, state.PreAnchor.UpdatedDID); err != nil {
 				return nil, errors.Wrap(err, "storing DID in storage")
 			}
 
@@ -289,35 +288,23 @@ func (h *ionHandler) prepareUpdate(request UpdateIONDIDRequest) func(ctx context
 			if err := h.storage.GetDID(ctx, request.DID.String(), storedDID); err != nil {
 				return nil, errors.Wrap(err, "getting ion did from storage")
 			}
-			storedDID.Operations = append(storedDID.Operations, updateOp)
 
-			newServices := didServices(*storedDID, request)
-			storedDID.DID.Services = newServices
-
-			currentPublicKeys, _ := collectPublicKeys(storedDID.DID)
-			newPublicKeys := newPubKeys(currentPublicKeys, request)
-			didDoc, err := addPublicKeysPatch(storedDID.DID, newPublicKeys)
+			updatedLongForm, updatedDIDDoc, err := updateLongForm(request.DID.String(), storedDID.LongFormDID, updateOp)
 			if err != nil {
 				return nil, err
 			}
-			storedDID.DID = *didDoc
 
-			doc := ion.Document{
-				PublicKeys: newPublicKeys,
-				Services:   newServices,
-			}
-			recoveryPubKeyJWK, err := h.recoveryPublicKey(ctx, request.DID.String())
-			if err != nil {
-				return nil, err
-			}
-			storedDID.LongFormDID, err = ion.CreateLongFormDID(*recoveryPubKeyJWK, *nextUpdateKey, doc)
-			if err != nil {
-				return nil, errors.Wrap(err, "creating long form DID")
+			updatedDID := &ionStoredDID{
+				ID:          storedDID.ID,
+				DID:         *updatedDIDDoc,
+				SoftDeleted: storedDID.SoftDeleted,
+				LongFormDID: updatedLongForm,
+				Operations:  append(storedDID.Operations, updateOp),
 			}
 
 			state.PreAnchor = &PreAnchor{
 				UpdateOperation:        updateOp,
-				StoredDID:              storedDID,
+				UpdatedDID:             updatedDID,
 				NextUpdatePrivateJWKID: storeRequestForUpdateKey.ID,
 				NextUpdatePublicJWK:    nextUpdateKey,
 			}
@@ -331,117 +318,43 @@ func (h *ionHandler) prepareUpdate(request UpdateIONDIDRequest) func(ctx context
 	}
 }
 
+func updateLongForm(shortFormDID string, longFormDID string, updateOp *ion.UpdateRequest) (string, *did.Document, error) {
+	_, initialState, err := ion.DecodeLongFormDID(longFormDID)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "invalid long form DID")
+	}
+
+	delta := ion.Delta{
+		Patches:          append(initialState.Delta.Patches, updateOp.Delta.GetPatches()...),
+		UpdateCommitment: updateOp.Delta.UpdateCommitment,
+	}
+	suffixData := initialState.SuffixData
+	createRequest := ion.CreateRequest{
+		Type:       ion.Create,
+		SuffixData: suffixData,
+		Delta:      delta,
+	}
+	updatedInitialState := ion.InitialState{
+		Delta:      createRequest.Delta,
+		SuffixData: createRequest.SuffixData,
+	}
+	initialStateBytesCanonical, err := ion.CanonicalizeAny(updatedInitialState)
+	if err != nil {
+		return "", nil, errors.Wrap(err, "canonicalizing long form DID suffix data")
+	}
+	encoded := ion.Encode(initialStateBytesCanonical)
+	newLongFormDID := shortFormDID + ":" + encoded
+
+	didDoc, err := ion.PatchesToDIDDocument(shortFormDID, newLongFormDID, createRequest.Delta.GetPatches())
+	if err != nil {
+		return "", nil, errors.Wrap(err, "patching the updated did")
+	}
+	return newLongFormDID, didDoc, nil
+}
+
 func isPreviouslyAnchoredError(_ error) bool {
 	// TODO: figure out how to determine this error from the body of the response.
 	return false
-}
-
-func collectPublicKeys(doc did.Document) ([]ion.PublicKey, error) {
-	pubKeys := make(map[string]*ion.PublicKey)
-	for _, vm := range doc.VerificationMethod {
-		if _, ok := pubKeys[vm.ID]; !ok {
-			pubKeys[vm.ID] = &ion.PublicKey{
-				ID:           vm.ID,
-				Type:         vm.Type.String(),
-				PublicKeyJWK: *vm.PublicKeyJWK,
-			}
-		}
-	}
-	if err := populatePurpose(doc.Authentication, pubKeys, ion.Authentication); err != nil {
-		return nil, err
-	}
-	if err := populatePurpose(doc.AssertionMethod, pubKeys, ion.AssertionMethod); err != nil {
-		return nil, err
-	}
-	if err := populatePurpose(doc.KeyAgreement, pubKeys, ion.KeyAgreement); err != nil {
-		return nil, err
-	}
-	if err := populatePurpose(doc.CapabilityInvocation, pubKeys, ion.CapabilityInvocation); err != nil {
-		return nil, err
-	}
-	if err := populatePurpose(doc.CapabilityDelegation, pubKeys, ion.CapabilityDelegation); err != nil {
-		return nil, err
-	}
-	pubKeysSlice := make([]ion.PublicKey, 0, len(pubKeys))
-	for _, v := range pubKeys {
-		pubKeysSlice = append(pubKeysSlice, *v)
-	}
-	return pubKeysSlice, nil
-}
-
-func populatePurpose(methodSets []did.VerificationMethodSet, pubKeys map[string]*ion.PublicKey, purpose ion.PublicKeyPurpose) error {
-	for _, vm := range methodSets {
-		id, ok := vm.(string)
-		if !ok {
-			return errors.New("could not cast to string")
-		}
-		if _, ok := pubKeys[id]; !ok {
-			return errors.Errorf("no verification method found for id <%s>", id)
-		}
-		pubKeys[id].Purposes = append(pubKeys[id].Purposes, purpose)
-	}
-	return nil
-}
-
-func didServices(storedDID ionStoredDID, request UpdateIONDIDRequest) []did.Service {
-	newServices := make([]did.Service, 0, len(storedDID.DID.Services)+len(request.StateChange.ServicesToAdd))
-	serviceIDsToRemove := make(map[string]struct{}, len(request.StateChange.ServiceIDsToRemove))
-	for _, s := range request.StateChange.ServiceIDsToRemove {
-		serviceIDsToRemove[s] = struct{}{}
-	}
-	for _, s := range storedDID.DID.Services {
-		if _, ok := serviceIDsToRemove[s.ID]; ok {
-			continue
-		}
-		newServices = append(newServices, s)
-	}
-	newServices = append(newServices, request.StateChange.ServicesToAdd...)
-	return newServices
-}
-
-func newPubKeys(storedDID []ion.PublicKey, request UpdateIONDIDRequest) []ion.PublicKey {
-	newServices := make([]ion.PublicKey, 0, len(storedDID)+len(request.StateChange.PublicKeysToAdd))
-	serviceIDsToRemove := make(map[string]struct{}, len(request.StateChange.PublicKeyIDsToRemove))
-	for _, s := range request.StateChange.PublicKeyIDsToRemove {
-		serviceIDsToRemove[s] = struct{}{}
-	}
-	for _, s := range storedDID {
-		if _, ok := serviceIDsToRemove[s.ID]; ok {
-			continue
-		}
-		newServices = append(newServices, s)
-	}
-	newServices = append(newServices, request.StateChange.PublicKeysToAdd...)
-	return newServices
-}
-
-func addPublicKeysPatch(doc did.Document, publicKeys []ion.PublicKey) (*did.Document, error) {
-	for _, key := range publicKeys {
-		currKey := key
-		doc.VerificationMethod = append(doc.VerificationMethod, did.VerificationMethod{
-			ID:           currKey.ID,
-			Type:         cryptosuite.LDKeyType(currKey.Type),
-			Controller:   doc.ID,
-			PublicKeyJWK: &currKey.PublicKeyJWK,
-		})
-		for _, purpose := range currKey.Purposes {
-			switch purpose {
-			case ion.Authentication:
-				doc.Authentication = append(doc.Authentication, currKey.ID)
-			case ion.AssertionMethod:
-				doc.AssertionMethod = append(doc.AssertionMethod, currKey.ID)
-			case ion.KeyAgreement:
-				doc.KeyAgreement = append(doc.KeyAgreement, currKey.ID)
-			case ion.CapabilityInvocation:
-				doc.CapabilityInvocation = append(doc.CapabilityInvocation, currKey.ID)
-			case ion.CapabilityDelegation:
-				doc.CapabilityDelegation = append(doc.CapabilityDelegation, currKey.ID)
-			default:
-				return nil, fmt.Errorf("unknown key purpose: %s:%s", currKey.ID, purpose)
-			}
-		}
-	}
-	return &doc, nil
 }
 
 func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*CreateDIDResponse, error) {
@@ -520,15 +433,24 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	}
 
 	// submit the create operation to the ION service
-	var resolutionResult *resolution.Result
-	if resolutionResult, err = h.resolver.Anchor(ctx, createOp); err != nil {
+	if _, err = h.resolver.Anchor(ctx, createOp); err != nil {
 		return nil, errors.Wrap(err, "anchoring create operation")
+	}
+
+	_, initialState, err := ion.DecodeLongFormDID(ionDID.LongForm())
+	if err != nil {
+		return nil, errors.Wrap(err, "invalid long form DID")
+	}
+	// TODO: remove the first parameter once it is removed in the SDK (https://github.com/TBD54566975/ssi-sdk/issues/438)
+	didDoc, err := ion.PatchesToDIDDocument("unused", ionDID.ID(), initialState.Delta.Patches)
+	if err != nil {
+		return nil, errors.Wrap(err, "patching the did document locally")
 	}
 
 	// store the did document
 	storedDID := ionStoredDID{
-		ID:          resolutionResult.Document.ID,
-		DID:         resolutionResult.Document,
+		ID:          ionDID.ID(),
+		DID:         *didDoc,
 		SoftDeleted: false,
 		LongFormDID: ionDID.LongForm(),
 		Operations:  ionDID.Operations(),
@@ -537,12 +459,12 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "storing ion did document")
 	}
 
-	// TODO: should use the resolutionResult.Document.ID
 	if err := h.storeKeys(ctx, ionDID); err != nil {
 		return nil, err
 	}
 
-	keyStoreRequest, err := keyToStoreRequest(keyID, *privKeyJWK, resolutionResult.Document.ID)
+	// 3. key(s) in the did docs
+	keyStoreRequest, err := keyToStoreRequest(did.FullyQualifiedVerificationMethodID(ionDID.ID(), didDoc.VerificationMethod[0].ID), *privKeyJWK, ionDID.ID())
 	if err != nil {
 		return nil, errors.Wrap(err, "converting private key to store request")
 	}
@@ -550,14 +472,13 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "could not store did:ion private key")
 	}
 
-	return &CreateDIDResponse{DID: resolutionResult.Document}, nil
+	return &CreateDIDResponse{DID: *didDoc}, nil
 }
 
 func (h *ionHandler) storeKeys(ctx context.Context, ionDID *ion.DID) error {
 	// store associated keys
 	// 1. update key
 	// 2. recovery key
-	// 3. key(s) in the did docs
 	updateStoreRequest, err := keyToStoreRequest(updateKeyID(ionDID.ID()), ionDID.GetUpdatePrivateKey(), ionDID.ID())
 	if err != nil {
 		return errors.Wrap(err, "converting update private key to store request")
@@ -680,11 +601,11 @@ func (h *ionHandler) readUpdatePrivateKey(ctx context.Context, did string) (*jwx
 	getKeyRequest := keystore.GetKeyRequest{ID: keyID}
 	key, err := h.keyStore.GetKey(ctx, getKeyRequest)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching private key")
+		return nil, errors.Wrap(err, "fetching update private key")
 	}
 	_, privateJWK, err := jwx.PrivateKeyToPrivateKeyJWK(keyID, key.Key)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting private key")
+		return nil, errors.Wrap(err, "getting update private key")
 	}
 	return privateJWK, err
 }
@@ -707,21 +628,6 @@ func (h *ionHandler) nextUpdateKey() (*jwx.PublicKeyJWK, *jwx.PrivateKeyJWK, err
 		return nil, nil, errors.Wrap(err, "converting next update key pair to JWK")
 	}
 	return nextUpdatePubKeyJWK, nextUpdatePrivateKeyJWK, nil
-}
-
-func (h *ionHandler) recoveryPublicKey(ctx context.Context, did string) (*jwx.PublicKeyJWK, error) {
-	keyID := recoveryKeyID(did)
-	getKeyRequest := keystore.GetKeyRequest{ID: keyID}
-	key, err := h.keyStore.GetKey(ctx, getKeyRequest)
-	if err != nil {
-		return nil, errors.Wrap(err, "fetching private key")
-	}
-	publicJWK, _, err := jwx.PrivateKeyToPrivateKeyJWK(keyID, key.Key)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting private key")
-	}
-	return publicJWK, nil
-
 }
 
 type UpdateRequestStatus string
