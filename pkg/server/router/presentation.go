@@ -450,6 +450,7 @@ type ReviewSubmissionResponse struct {
 //	@Tags			PresentationSubmissions
 //	@Accept			json
 //	@Produce		json
+//	@Param			id		path		string					true	"ID"
 //	@Param			request	body		ReviewSubmissionRequest	true	"request body"
 //	@Success		200		{object}	ReviewSubmissionResponse
 //	@Failure		400		{string}	string	"Bad request"

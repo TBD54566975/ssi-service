@@ -97,9 +97,10 @@ type ListWebhookResponse struct {
 //	@Tags			Webhooks
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path		string	true	"ID"
-//	@Success		200	{object}	ListWebhookResponse
-//	@Failure		400	{string}	string	"Bad request"
+//	@Param			noun	path		string	true	"noun"
+//	@Param			verb	path		string	true	"verb"
+//	@Success		200		{object}	ListWebhookResponse
+//	@Failure		400		{string}	string	"Bad request"
 //	@Router			/v1/webhooks/{noun}/{verb} [get]
 func (wr WebhookRouter) GetWebhook(c *gin.Context) {
 	noun := framework.GetParam(c, "noun")
@@ -171,10 +172,12 @@ type DeleteWebhookRequest struct {
 //	@Tags			Webhooks
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path		string	true	"ID"
-//	@Success		204	{string}	string	"No Content"
-//	@Failure		400	{string}	string	"Bad request"
-//	@Failure		500	{string}	string	"Internal server error"
+//	@Param			noun	path		string	true	"noun"
+//	@Param			verb	path		string	true	"verb"
+//	@Param			url		path		string	true	"url"
+//	@Success		204		{string}	string	"No Content"
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/webhooks/{noun}/{verb}/{url} [delete]
 func (wr WebhookRouter) DeleteWebhook(c *gin.Context) {
 	var request DeleteWebhookRequest

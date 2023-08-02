@@ -346,6 +346,7 @@ type UpdateCredentialStatusResponse struct {
 //	@Tags			Credentials
 //	@Accept			json
 //	@Produce		json
+//	@Param			id		path		string							true	"ID"
 //	@Param			request	body		UpdateCredentialStatusRequest	true	"request body"
 //	@Success		201		{object}	UpdateCredentialStatusResponse
 //	@Failure		400		{string}	string	"Bad request"
@@ -468,7 +469,7 @@ type ListCredentialsResponse struct {
 //	@Tags			Credentials
 //	@Accept			json
 //	@Produce		json
-//	@Param			issuer	query		string	false	"The issuer id"	example(did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp)
+//	@Param			issuer	query		string	false	"The issuer id, e.g. did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"
 //	@Param			schema	query		string	false	"The credentialSchema.id value to filter by"
 //	@Param			subject	query		string	false	"The credentialSubject.id value to filter by"
 //	@Success		200		{object}	ListCredentialsResponse

@@ -569,6 +569,7 @@ func (r ReviewApplicationRequest) toServiceRequest(id string) model.ReviewApplic
 //	@Tags			ManifestApplications
 //	@Accept			json
 //	@Produce		json
+//	@Param			id		path		string						true	"ID"
 //	@Param			request	body		ReviewApplicationRequest	true	"request body"
 //	@Success		201		{object}	SubmitApplicationResponse	"Credential Response"
 //	@Failure		400		{string}	string						"Bad request"

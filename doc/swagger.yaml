@@ -2274,8 +2274,7 @@ paths:
         Checks for the presence of an optional query parameter and calls the associated filtered get method.
         Only one optional parameter is allowed to be specified.
       parameters:
-      - description: The issuer id
-        example: did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp
+      - description: The issuer id, e.g. did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp
         in: query
         name: issuer
         type: string
@@ -2423,8 +2422,13 @@ paths:
     put:
       consumes:
       - application/json
-      description: Update a credential's status
+      description: Update a Verifiable Credential's status
       parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
       - description: request body
         in: body
         name: request
@@ -2446,7 +2450,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Update Credential Status
+      summary: Update a Verifiable Credential's status
       tags:
       - Credentials
   /v1/credentials/batch:
@@ -2513,7 +2517,7 @@ paths:
       consumes:
       - application/json
       description: |-
-        Verify a given credential by its id. The system does the following levels of verification:
+        Verify a given Verifiable Credential by its ID. The system does the following levels of verification:
         1. Makes sure the credential has a valid signature
         2. Makes sure the credential has is not expired
         3. Makes sure the credential complies with the VC Data Model
@@ -2540,7 +2544,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Verify Credential
+      summary: Verify a Verifiable Credential
       tags:
       - Credentials
   /v1/did-configurations:
@@ -2750,7 +2754,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Get DID by method
+      description: Gets a DID Document by its DID ID
       parameters:
       - description: request body
         in: body
@@ -2779,7 +2783,7 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get DID
+      summary: Get a DID
       tags:
       - DecentralizedIdentifiers
   /v1/dids/{method}/batch:
@@ -3103,7 +3107,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Delete Credential Manifests
+      summary: Delete a Credential Manifests
       tags:
       - Manifests
     get:
@@ -3127,7 +3131,7 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get Credential Manifests
+      summary: Get a Credential Manifest
       tags:
       - Manifests
   /v1/manifests/applications:
@@ -3243,6 +3247,11 @@ paths:
         Reviewing a Credential Application either fulfills or denies the credential(s) issuance according
         to the spec https://identity.foundation/credential-manifest/#credential-application.
       parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
       - description: request body
         in: body
         name: request
@@ -3848,6 +3857,11 @@ paths:
         Reviews a pending Presentation Submission. After this method is called, the operation with
         `id==presentations/submissions/{submission_id}` will be updated with the result of this invocation.
       parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
       - description: request body
         in: body
         name: request
@@ -4027,9 +4041,14 @@ paths:
       - application/json
       description: Get a webhook by its ID
       parameters:
-      - description: ID
+      - description: noun
         in: path
-        name: id
+        name: noun
+        required: true
+        type: string
+      - description: verb
+        in: path
+        name: verb
         required: true
         type: string
       produces:
@@ -4052,9 +4071,19 @@ paths:
       - application/json
       description: Delete a webhook by its ID
       parameters:
-      - description: ID
+      - description: noun
         in: path
-        name: id
+        name: noun
+        required: true
+        type: string
+      - description: verb
+        in: path
+        name: verb
+        required: true
+        type: string
+      - description: url
+        in: path
+        name: url
         required: true
         type: string
       produces:
