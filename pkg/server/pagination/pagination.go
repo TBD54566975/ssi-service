@@ -31,7 +31,7 @@ const (
 // execution is responded to using the passed in gin.Context. The return value corresponds to whether there was an
 // error within the function.
 func ParsePaginationParams(c *gin.Context, pageRequest *PageRequest) bool {
-	pageSizeStr := framework.GetParam(c, PageSizeParam)
+	pageSizeStr := framework.GetQueryValue(c, PageSizeParam)
 
 	if pageSizeStr != nil {
 		pageSize, err := strconv.Atoi(*pageSizeStr)
@@ -48,7 +48,7 @@ func ParsePaginationParams(c *gin.Context, pageRequest *PageRequest) bool {
 		pageRequest.PageSize = &pageSize
 	}
 
-	queryPageToken := framework.GetParam(c, PageTokenParam)
+	queryPageToken := framework.GetQueryValue(c, PageTokenParam)
 	if queryPageToken != nil {
 		errMsg := "token value cannot be decoded"
 		tokenData, err := base64.RawURLEncoding.DecodeString(*queryPageToken)
