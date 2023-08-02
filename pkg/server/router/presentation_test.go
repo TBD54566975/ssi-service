@@ -14,7 +14,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -66,7 +65,7 @@ func TestPresentationDefinitionService(t *testing.T) {
 			ka, err := keyaccess.NewJWKKeyAccessVerifier(authorDID.DID.ID, authorDID.DID.ID, pubKey)
 			require.NoError(t, err)
 
-			service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s, didService.GetResolver(), schemaService, keyStoreService)
+			service, err := presentation.NewPresentationService(s, didService.GetResolver(), schemaService, keyStoreService)
 			require.NoError(t, err)
 
 			t.Run("Create returns the created definition", func(t *testing.T) {

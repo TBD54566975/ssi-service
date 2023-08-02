@@ -12,6 +12,7 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
@@ -111,13 +112,8 @@ func createKeyStoreService(t *testing.T) (*Service, error) {
 		_ = os.Remove(s.URI())
 	})
 
-	keyStore, err := NewKeyStoreService(
-		config.KeyStoreServiceConfig{
-			BaseServiceConfig: &config.BaseServiceConfig{
-				Name: "test-keyStore",
-			},
-		},
-		s)
+	serviceConfig := new(config.KeyStoreServiceConfig)
+	keyStore, err := NewKeyStoreService(*serviceConfig, s)
 
 	mockClock := clock.NewMock()
 	mockClock.Set(time.Date(2023, 06, 23, 0, 0, 0, 0, time.UTC))

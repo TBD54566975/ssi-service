@@ -7,6 +7,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/mr-tron/base58"
 	"github.com/stretchr/testify/assert"
+
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -36,10 +37,8 @@ func TestKeyStoreRouter(t *testing.T) {
 				db := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, db)
 
-				serviceConfig := config.KeyStoreServiceConfig{
-					BaseServiceConfig: &config.BaseServiceConfig{Name: "keystore"},
-				}
-				keyStoreService, err := keystore.NewKeyStoreService(serviceConfig, db)
+				serviceConfig := new(config.KeyStoreServiceConfig)
+				keyStoreService, err := keystore.NewKeyStoreService(*serviceConfig, db)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, keyStoreService)
 

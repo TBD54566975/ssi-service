@@ -21,8 +21,6 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 )
 
-// gin-swagger middleware
-
 const (
 	HealthPrefix            = "/health"
 	ReadinessPrefix         = "/readiness"
@@ -64,6 +62,9 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate ssi service")
 	}
+
+	// make sure to set the api base in our service info
+	config.SetAPIBase(cfg.Services.ServiceEndpoint)
 
 	// service-level routers
 	engine.GET(HealthPrefix, router.Health)
@@ -118,7 +119,6 @@ func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
 		gin.Recovery(),
 		gin.Logger(),
 		middleware.Errors(shutdown),
-		middleware.AuthMiddleware(),
 	}
 	if cfg.JagerEnabled {
 		middlewares = append(middlewares, otelgin.Middleware(config.ServiceName))
@@ -141,6 +141,22 @@ func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
 	return engine
 }
 
+// KeyStoreAPI registers all HTTP handlers for the Key Store Service
+func KeyStoreAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
+	keyStoreRouter, err := router.NewKeyStoreRouter(service)
+	if err != nil {
+		return sdkutil.LoggingErrorMsg(err, "creating key store router")
+	}
+
+	// make sure the keystore service is configured to use the correct path
+	config.SetServicePath(svcframework.KeyStore, KeyStorePrefix)
+	keyStoreAPI := rg.Group(KeyStorePrefix)
+	keyStoreAPI.PUT("", keyStoreRouter.StoreKey)
+	keyStoreAPI.GET("/:id", keyStoreRouter.GetKeyDetails)
+	keyStoreAPI.DELETE("/:id", keyStoreRouter.RevokeKey)
+	return
+}
+
 // DecentralizedIdentityAPI registers all HTTP handlers for the DID Service
 func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, did *didsvc.BatchService, webhookService *webhook.Service) (err error) {
 	didRouter, err := router.NewDIDRouter(service)
@@ -149,6 +165,8 @@ func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, did 
 	}
 	batchDIDRouter := router.NewBatchDIDRouter(did)
 
+	// make sure the DID service is configured to use the correct path
+	config.SetServicePath(svcframework.DID, DIDsPrefix)
 	didAPI := rg.Group(DIDsPrefix)
 	didAPI.GET("", didRouter.ListDIDMethods)
 	didAPI.PUT("/:method", middleware.Webhook(webhookService, webhook.DID, webhook.Create), didRouter.CreateDIDByMethod)
@@ -167,6 +185,8 @@ func SchemaAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService
 		return sdkutil.LoggingErrorMsg(err, "creating schema router")
 	}
 
+	// make sure the schema service is configured to use the correct path
+	config.SetServicePath(svcframework.Schema, SchemasPrefix)
 	schemaAPI := rg.Group(SchemasPrefix)
 	schemaAPI.PUT("", middleware.Webhook(webhookService, webhook.Schema, webhook.Create), schemaRouter.CreateSchema)
 	schemaAPI.GET("/:id", schemaRouter.GetSchema)
@@ -181,6 +201,9 @@ func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookSer
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating credential router")
 	}
+
+	// make sure the credential service is configured to use the correct path
+	config.SetServicePath(svcframework.Credential, CredentialsPrefix)
 
 	// Credentials
 	credentialAPI := rg.Group(CredentialsPrefix)
@@ -205,6 +228,9 @@ func PresentationAPI(rg *gin.RouterGroup, service svcframework.Service, webhookS
 		return sdkutil.LoggingErrorMsg(err, "creating credential router")
 	}
 
+	// make sure the presentation service is configured to use the correct path
+	config.SetServicePath(svcframework.Presentation, PresentationsPrefix)
+
 	presDefAPI := rg.Group(PresentationsPrefix + DefinitionsPrefix)
 	presDefAPI.PUT("", presRouter.CreateDefinition)
 	presDefAPI.GET("/:id", presRouter.GetDefinition)
@@ -225,26 +251,15 @@ func PresentationAPI(rg *gin.RouterGroup, service svcframework.Service, webhookS
 	return
 }
 
-// KeyStoreAPI registers all HTTP handlers for the Key Store Service
-func KeyStoreAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
-	keyStoreRouter, err := router.NewKeyStoreRouter(service)
-	if err != nil {
-		return sdkutil.LoggingErrorMsg(err, "creating key store router")
-	}
-
-	keyStoreAPI := rg.Group(KeyStorePrefix)
-	keyStoreAPI.PUT("", keyStoreRouter.StoreKey)
-	keyStoreAPI.GET("/:id", keyStoreRouter.GetKeyDetails)
-	keyStoreAPI.DELETE("/:id", keyStoreRouter.RevokeKey)
-	return
-}
-
 // OperationAPI registers all HTTP handlers for the Operations Service
 func OperationAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 	operationRouter, err := router.NewOperationRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating operation router")
 	}
+
+	// make sure the operation service is configured to use the correct path
+	config.SetServicePath(svcframework.Operation, OperationPrefix)
 
 	operationAPI := rg.Group(OperationPrefix)
 	operationAPI.GET("", operationRouter.ListOperations)
@@ -261,6 +276,9 @@ func ManifestAPI(rg *gin.RouterGroup, service svcframework.Service, webhookServi
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating manifest router")
 	}
+
+	// make sure the manifest service is configured to use the correct path
+	config.SetServicePath(svcframework.Manifest, ManifestsPrefix)
 
 	manifestAPI := rg.Group(ManifestsPrefix)
 	manifestAPI.PUT("", middleware.Webhook(webhookService, webhook.Manifest, webhook.Create), manifestRouter.CreateManifest)
@@ -295,6 +313,9 @@ func IssuanceAPI(rg *gin.RouterGroup, service svcframework.Service) error {
 		return sdkutil.LoggingErrorMsg(err, "creating issuing router")
 	}
 
+	// make sure the issuance service is configured to use the correct path
+	config.SetServicePath(svcframework.Issuance, IssuanceTemplatePrefix)
+
 	issuanceAPI := rg.Group(IssuanceTemplatePrefix)
 	issuanceAPI.PUT("", issuanceRouter.CreateIssuanceTemplate)
 	issuanceAPI.GET("", issuanceRouter.ListIssuanceTemplates)
@@ -309,6 +330,9 @@ func WebhookAPI(rg *gin.RouterGroup, service svcframework.Service) (err error) {
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating webhook router")
 	}
+
+	// make sure the webhook service is configured to use the correct path
+	config.SetServicePath(svcframework.Webhook, WebhookPrefix)
 
 	webhookAPI := rg.Group(WebhookPrefix)
 	webhookAPI.PUT("", webhookRouter.CreateWebhook)
@@ -327,6 +351,9 @@ func DIDConfigurationAPI(rg *gin.RouterGroup, service svcframework.Service) erro
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating webhook router")
 	}
+
+	// make sure the did configuration service is configured to use the correct path
+	config.SetServicePath(svcframework.DIDConfiguration, DIDConfigurationsPrefix)
 
 	webhookAPI := rg.Group(DIDConfigurationsPrefix)
 	webhookAPI.PUT("", didConfigurationsRouter.CreateDIDConfiguration)

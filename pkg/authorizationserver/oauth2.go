@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/TBD54566975/ssi-sdk/oidc/issuance"
-	"github.com/ardanlabs/conf"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/ory/fosite"
@@ -125,14 +124,13 @@ func loadIssuerMetadata(config *AuthConfig) (*issuance.IssuerMetadata, error) {
 	}
 
 	var im issuance.IssuerMetadata
-	if err := json.Unmarshal(jsonData, &im); err != nil {
+	if err = json.Unmarshal(jsonData, &im); err != nil {
 		return nil, err
 	}
 	return &im, nil
 }
 
 type AuthConfig struct {
-	conf.Version
 	Server               config.ServerConfig
 	CredentialIssuerFile string `toml:"credential_issuer_file" conf:"default:config/credential_issuer_metadata.example.json"`
 }

@@ -11,7 +11,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 )
 
@@ -67,7 +69,7 @@ func (s Service) createStatusListEntryForCredential(ctx context.Context, credID 
 
 func (s Service) createStatusListCredential(ctx context.Context, tx storage.Tx, statusPurpose statussdk.StatusPurpose, issuerID, fullyQualifiedVerificationMethodID string, slcMetadata StatusListCredentialMetadata) (int, *credential.VerifiableCredential, error) {
 	statusListID := uuid.NewString()
-	statusListURI := fmt.Sprintf("%s/status/%s", s.config.ServiceEndpoint, statusListID)
+	statusListURI := fmt.Sprintf("%s/status/%s", config.GetServicePath(framework.Credential), statusListID)
 
 	generatedStatusListCredential, err := statussdk.GenerateStatusList2021Credential(statusListURI, issuerID, statusPurpose, []credential.VerifiableCredential{})
 	if err != nil {

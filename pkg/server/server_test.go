@@ -35,10 +35,12 @@ import (
 
 const (
 	testIONResolverURL = "https://test-ion-resolver.com"
+	testServerURL      = "https://ssi-service.com"
 )
 
 func TestMain(t *testing.M) {
 	testutil.EnableSchemaCaching()
+	config.SetAPIBase(testServerURL)
 	os.Exit(t.Run())
 }
 
@@ -210,14 +212,12 @@ func testKeyStore(t *testing.T, bolt storage.ServiceStorage) (*router.KeyStoreRo
 }
 
 func testKeyStoreService(t *testing.T, db storage.ServiceStorage) (*keystore.Service, keystore.ServiceFactory) {
-	serviceConfig := config.KeyStoreServiceConfig{
-		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-keystore"},
-	}
+	serviceConfig := new(config.KeyStoreServiceConfig)
 
 	// create a keystore service
 	encrypter, decrypter, err := keystore.NewServiceEncryption(db, serviceConfig.EncryptionConfig, keystore.ServiceKeyEncryptionKey)
 	require.NoError(t, err)
-	factory := keystore.NewKeyStoreServiceFactory(serviceConfig, db, encrypter, decrypter)
+	factory := keystore.NewKeyStoreServiceFactory(*serviceConfig, db, encrypter, decrypter)
 	keystoreService, err := factory(db)
 	require.NoError(t, err)
 	require.NotEmpty(t, keystoreService)
@@ -225,11 +225,7 @@ func testKeyStoreService(t *testing.T, db storage.ServiceStorage) (*keystore.Ser
 }
 
 func testIssuanceService(t *testing.T, db storage.ServiceStorage) *issuance.Service {
-	cfg := config.IssuanceServiceConfig{
-		BaseServiceConfig: &config.BaseServiceConfig{Name: "test-issuing"},
-	}
-
-	s, err := issuance.NewIssuanceService(cfg, db)
+	s, err := issuance.NewIssuanceService(db)
 	require.NoError(t, err)
 	require.NotEmpty(t, s)
 	return s
@@ -240,7 +236,6 @@ func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystor
 		methods = []string{"key"}
 	}
 	serviceConfig := config.DIDServiceConfig{
-		BaseServiceConfig:      &config.BaseServiceConfig{Name: "test-did"},
 		Methods:                methods,
 		LocalResolutionMethods: []string{"key", "web", "peer", "pkh"},
 		IONResolverURL:         testIONResolverURL,
@@ -270,7 +265,7 @@ func testDIDRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore
 }
 
 func testSchemaService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, did *did.Service) *schema.Service {
-	schemaService, err := schema.NewSchemaService(config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-schema"}}, bolt, keyStore, did.GetResolver())
+	schemaService, err := schema.NewSchemaService(bolt, keyStore, did.GetResolver())
 	require.NoError(t, err)
 	require.NotEmpty(t, schemaService)
 	return schemaService
@@ -287,7 +282,7 @@ func testSchemaRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keyst
 }
 
 func testCredentialService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
-	serviceConfig := config.CredentialServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "credential", ServiceEndpoint: "https://ssi-service.com/v1/credentials"}, BatchCreateMaxItems: 1000}
+	serviceConfig := config.CredentialServiceConfig{BatchCreateMaxItems: 1000}
 
 	// create a credential service
 	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver(), schema)
@@ -299,6 +294,9 @@ func testCredentialService(t *testing.T, db storage.ServiceStorage, keyStore *ke
 func testCredentialRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *router.CredentialRouter {
 	credentialService := testCredentialService(t, bolt, keyStore, did, schema)
 
+	// set endpoint in service info
+	config.SetServicePath(svcframework.Credential, CredentialsPrefix)
+
 	// create router for service
 	credentialRouter, err := router.NewCredentialRouter(credentialService)
 	require.NoError(t, err)
@@ -308,9 +306,8 @@ func testCredentialRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *k
 }
 
 func testManifest(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, credential *credential.Service) (*router.ManifestRouter, *manifest.Service) {
-	serviceConfig := config.ManifestServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "manifest"}}
 	// create a manifest service
-	manifestService, err := manifest.NewManifestService(serviceConfig, db, keyStore, did.GetResolver(), credential, nil)
+	manifestService, err := manifest.NewManifestService(db, keyStore, did.GetResolver(), credential, nil)
 	require.NoError(t, err)
 	require.NotEmpty(t, manifestService)
 
@@ -323,10 +320,7 @@ func testManifest(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Se
 }
 
 func testWebhookService(t *testing.T, bolt storage.ServiceStorage) *webhook.Service {
-	serviceConfig := config.WebhookServiceConfig{
-		BaseServiceConfig: &config.BaseServiceConfig{Name: "webhook"},
-		WebhookTimeout:    "10s",
-	}
+	serviceConfig := config.WebhookServiceConfig{WebhookTimeout: "10s"}
 
 	// create a webhook service
 	webhookService, err := webhook.NewWebhookService(serviceConfig, bolt)

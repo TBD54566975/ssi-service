@@ -1,8 +1,3 @@
-title = "SSI Service Config"
-
-svn = "0.0.1"
-desc = "Default configuration to be used while running the service as a single go process."
-
 # http service configuration
 [server]
 env = "dev" # either 'dev' or 'prod'
@@ -45,33 +40,17 @@ service_endpoint = "http://localhost:8080"
 
 # per-service configuration
 [services.keystore]
-name = "keystore"
 password = "default-password"
 # master_key_uri = "gcp-kms://projects/*/locations/*/keyRings/*/cryptoKeys/*"
 # kms_credentials_path = "credentials.json"
 
 [services.did]
-name = "did"
 methods = ["key", "web"]
 local_resolution_methods = ["key", "web", "pkh", "peer"]
 batch_create_max_items = 100
 
-[services.schema]
-name = "schema"
-
 [services.credential]
-name = "credential"
 batch_create_max_items = 100
 
-[services.issuance]
-name = "issuance"
-
-[services.manifest]
-name = "manifest"
-
-[services.presentation]
-name = "presentation"
-
 [services.webhook]
-name = "webhook"
 webhook_timeout = "10s"

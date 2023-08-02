@@ -25,7 +25,6 @@ import (
 
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
 
-	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
@@ -757,7 +756,7 @@ func setupPresentationRouter(t *testing.T, s storage.ServiceStorage) (*router.Pr
 	didService, _ := testDIDService(t, s, keyStoreService, nil)
 	schemaService := testSchemaService(t, s, keyStoreService, didService)
 
-	service, err := presentation.NewPresentationService(config.PresentationServiceConfig{}, s, didService.GetResolver(), schemaService, keyStoreService)
+	service, err := presentation.NewPresentationService(s, didService.GetResolver(), schemaService, keyStoreService)
 	assert.NoError(t, err)
 
 	pRouter, err := router.NewPresentationRouter(service)

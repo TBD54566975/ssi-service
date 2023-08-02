@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -34,7 +33,6 @@ type Service struct {
 	storage    presentationstorage.Storage
 	keystore   *keystore.Service
 	opsStorage *operation.Storage
-	config     config.PresentationServiceConfig
 	resolver   resolution.Resolver
 	schema     *schema.Service
 	verifier   *credential.Validator
@@ -59,11 +57,7 @@ func (s Service) Status() framework.Status {
 	return framework.Status{Status: framework.StatusReady}
 }
 
-func (s Service) Config() config.PresentationServiceConfig {
-	return s.config
-}
-
-func NewPresentationService(config config.PresentationServiceConfig, s storage.ServiceStorage,
+func NewPresentationService(s storage.ServiceStorage,
 	resolver resolution.Resolver, schema *schema.Service, keystore *keystore.Service) (*Service, error) {
 	presentationStorage, err := NewPresentationStorage(s)
 	if err != nil {
@@ -82,7 +76,6 @@ func NewPresentationService(config config.PresentationServiceConfig, s storage.S
 		storage:    presentationStorage,
 		keystore:   keystore,
 		opsStorage: opsStorage,
-		config:     config,
 		resolver:   resolver,
 		schema:     schema,
 		verifier:   verifier,
