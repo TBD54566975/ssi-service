@@ -1991,6 +1991,23 @@ definitions:
         description: Whether the credential was verified.
         type: boolean
     type: object
+  pkg_server_router.VerifyPresentationRequest:
+    properties:
+      presentationJwt:
+        description: A JWT that encodes a verifiable presentation.
+        type: string
+    required:
+    - presentationJwt
+    type: object
+  pkg_server_router.VerifyPresentationResponse:
+    properties:
+      reason:
+        description: The reason why this presentation couldn't be verified.
+        type: string
+      verified:
+        description: Whether the presentation was verified.
+        type: boolean
+    type: object
   rendering.ColorResource:
     properties:
       color:
@@ -2517,10 +2534,10 @@ paths:
       consumes:
       - application/json
       description: |-
-        Verify a given Verifiable Credential by its ID. The system does the following levels of verification:
+        Verifies a given verifiable credential. The system does the following levels of verification:
         1. Makes sure the credential has a valid signature
         2. Makes sure the credential has is not expired
-        3. Makes sure the credential complies with the VC Data Model
+        3. Makes sure the credential complies with the VC Data Model v1.1
         4. If the credential has a schema, makes sure its data complies with the schema
       parameters:
       - description: request body
@@ -3886,6 +3903,45 @@ paths:
       summary: Review a pending Presentation Submission
       tags:
       - PresentationSubmissions
+  /v1/presentations/verification:
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Verifies a given presentation. The system does the following levels of verification:
+        1. Makes sure the presentation has a valid signature
+        2. Makes sure the presentation is not expired
+        3. Makes sure the presentation complies with the VC Data Model v1.1
+        4. For each credential in the presentation, makes sure:
+        a. Makes sure the credential has a valid signature
+        b. Makes sure the credential is not expired
+        c. Makes sure the credential complies with the VC Data Model
+        d. If the credential has a schema, makes sure its data complies with the schema
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.VerifyPresentationRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.VerifyPresentationResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Verifies a Verifiable Presentation
+      tags:
+      - Presentations
   /v1/schemas:
     get:
       consumes:
