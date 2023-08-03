@@ -315,7 +315,6 @@ type VerifyCredentialResponse struct {
 // 3. Makes sure the credential complies with the VC Data Model
 // 4. If the credential has a schema, makes sure its data complies with the schema
 // LATER: Makes sure the credential has not been revoked, other checks.
-// Note: https://github.com/TBD54566975/ssi-sdk/issues/213
 func (s Service) VerifyCredential(ctx context.Context, request VerifyCredentialRequest) (*VerifyCredentialResponse, error) {
 	logrus.Debugf("verifying credential: %+v", request)
 

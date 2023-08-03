@@ -96,12 +96,26 @@ type VerifyPresentationResponse struct {
 	Reason   string `json:"reason,omitempty"`
 }
 
+// VerifyPresentation does a series of verification on a presentation:
+//  1. Makes sure the presentation has a valid signature
+//  2. Makes sure the presentation is not expired
+//  3. Makes sure the presentation complies with the VC Data Model v1.1
+//  4. For each verification in the presentation, makes sure:
+//     a. Makes sure the verification has a valid signature
+//     b. Makes sure the verification is not expired
+//     c. Makes sure the verification complies with the VC Data Model
 func (s Service) VerifyPresentation(ctx context.Context, request VerifyPresentationRequest) (*VerifyPresentationResponse, error) {
 	logrus.Debugf("verifying presentation: %+v", request)
 
 	if err := sdkutil.IsValidStruct(request); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "invalid verify presentation request")
 	}
+
+	if err := s.verifier.VerifyJWTPresentation(ctx, *request.PresentationJWT); err != nil {
+		return &VerifyPresentationResponse{Verified: false, Reason: err.Error()}, nil
+	}
+
+	return &VerifyPresentationResponse{Verified: true}, nil
 }
 
 // CreatePresentationDefinition houses the main service logic for presentation definition creation. It validates the input, and
