@@ -127,7 +127,7 @@ func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential 
 func (v Verifier) VerifyJWTPresentation(ctx context.Context, token keyaccess.JWT) error {
 	headers, jwt, vp, err := integrity.ParseVerifiablePresentationFromJWT(token.String())
 	if err != nil {
-		return errors.Wrap(err, "verifying JWT credential")
+		return errors.Wrap(err, "parsing JWT presentation")
 	}
 
 	// get key to verify the presentation with
