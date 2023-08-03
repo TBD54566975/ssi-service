@@ -34,14 +34,14 @@ type DIDConfigurationService struct {
 
 func NewDIDConfigurationService(keyStoreService *keystore.Service, didResolver resolution.Resolver, schema *schema.Service) (*DIDConfigurationService, error) {
 	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
-	validator, err := verification.NewVerifiableDataVerifier(didResolver, schema)
+	verifier, err := verification.NewVerifiableDataVerifier(didResolver, schema)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate validator for the credential service")
+		return nil, errors.Wrap(err, "could not instantiate verifier for the credential service")
 	}
 
 	return &DIDConfigurationService{
 		keyStoreService: keyStoreService,
-		validator:       validator,
+		validator:       verifier,
 		HTTPClient:      client,
 	}, nil
 }

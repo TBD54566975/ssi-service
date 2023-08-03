@@ -67,7 +67,7 @@ func NewPresentationService(s storage.ServiceStorage,
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the operations")
 	}
-	validator, err := verification.NewVerifiableDataVerifier(resolver, schema)
+	verifier, err := verification.NewVerifiableDataVerifier(resolver, schema)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate verifier")
 	}
@@ -78,7 +78,7 @@ func NewPresentationService(s storage.ServiceStorage,
 		opsStorage: opsStorage,
 		resolver:   resolver,
 		schema:     schema,
-		verifier:   validator,
+		verifier:   verifier,
 		reqStorage: requestStorage,
 	}
 	if !service.Status().IsReady() {
@@ -230,16 +230,16 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 
 	for _, cred := range request.Credentials {
 		if !cred.IsValid() {
-			return nil, errors.Errorf("invalid verification %+v", cred)
+			return nil, errors.Errorf("invalid credential %+v", cred)
 		}
 		if cred.CredentialJWT != nil {
 			if err = s.verifier.VerifyJWTCredential(ctx, *cred.CredentialJWT); err != nil {
-				return nil, errors.Wrapf(err, "verifying jwt verification %s", cred.CredentialJWT)
+				return nil, errors.Wrapf(err, "verifying jwt credential %s", cred.CredentialJWT)
 			}
 		} else {
 			if cred.HasDataIntegrityCredential() {
 				if err = s.verifier.VerifyDataIntegrityCredential(ctx, *cred.Credential); err != nil {
-					return nil, errors.Wrapf(err, "verifying data integrity verification %+v", cred.Credential)
+					return nil, errors.Wrapf(err, "verifying data integrity credential %+v", cred.Credential)
 				}
 			}
 		}
