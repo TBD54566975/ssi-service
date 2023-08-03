@@ -19,6 +19,7 @@ import (
 
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/internal/verification"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -26,14 +27,14 @@ import (
 
 type DIDConfigurationService struct {
 	keyStoreService *keystore.Service
-	validator       *credint.Validator
+	validator       *verification.Verifier
 
 	HTTPClient *http.Client
 }
 
 func NewDIDConfigurationService(keyStoreService *keystore.Service, didResolver resolution.Resolver, schema *schema.Service) (*DIDConfigurationService, error) {
 	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
-	validator, err := credint.NewVerifiableDataValidator(didResolver, schema)
+	validator, err := verification.NewVerifiableDataVerifier(didResolver, schema)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate validator for the credential service")
 	}

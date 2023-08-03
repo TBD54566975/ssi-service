@@ -19,6 +19,7 @@ import (
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/internal/verification"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -28,7 +29,7 @@ import (
 type Service struct {
 	storage  *Storage
 	config   config.CredentialServiceConfig
-	verifier *credint.Validator
+	verifier *verification.Verifier
 
 	// external dependencies
 	keyStore *keystore.Service
@@ -72,7 +73,7 @@ func NewCredentialService(config config.CredentialServiceConfig, s storage.Servi
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the credential service")
 	}
-	verifier, err := credint.NewVerifiableDataValidator(didResolver, schema)
+	verifier, err := verification.NewVerifiableDataVerifier(didResolver, schema)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate verifier for the credential service")
 	}

@@ -1,4 +1,4 @@
-package credential
+package verification
 
 import (
 	"context"
@@ -17,20 +17,21 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 
+	"github.com/tbd54566975/ssi-service/internal/credential"
 	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/schema"
 )
 
-type Validator struct {
+type Verifier struct {
 	validator      *validation.CredentialValidator
 	didResolver    resolution.Resolver
 	schemaResolver schema.Resolution
 }
 
-// NewVerifiableDataValidator creates a new validator for both verifiable credentials and verifiable presentations. The validator
+// NewVerifiableDataVerifier creates a new verifier for both verifiable credentials and verifiable presentations. The verifier
 // executes both signature and static verification checks. In the future the set of verification checks will be configurable.
-func NewVerifiableDataValidator(didResolver resolution.Resolver, schemaResolver schema.Resolution) (*Validator, error) {
+func NewVerifiableDataVerifier(didResolver resolution.Resolver, schemaResolver schema.Resolution) (*Verifier, error) {
 	if didResolver == nil {
 		return nil, errors.New("didResolver cannot be nil")
 	}
@@ -43,14 +44,14 @@ func NewVerifiableDataValidator(didResolver resolution.Resolver, schemaResolver 
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create static validator")
 	}
-	return &Validator{
+	return &Verifier{
 		validator:      validator,
 		didResolver:    didResolver,
 		schemaResolver: schemaResolver,
 	}, nil
 }
 
-func (v Validator) Verify(ctx context.Context, credential Container) error {
+func (v Verifier) Verify(ctx context.Context, credential credential.Container) error {
 	if credential.HasJWTCredential() {
 		err := v.VerifyJWTCredential(ctx, *credential.CredentialJWT)
 		if err != nil {
@@ -66,7 +67,7 @@ func (v Validator) Verify(ctx context.Context, credential Container) error {
 
 // VerifyJWTCredential first parses and checks the signature on the given JWT verification. Next, it runs
 // a set of static verification checks on the verification as per the service's configuration.
-func (v Validator) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
+func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
 	_, err := integrity.VerifyJWTCredential(ctx, token.String(), v.didResolver)
 	if err != nil {
 		return errors.Wrap(err, "verifying JWT credential")
@@ -80,7 +81,7 @@ func (v Validator) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT)
 
 // VerifyDataIntegrityCredential first checks the signature on the given data integrity verification. Next, it runs
 // a set of static verification checks on the verification as per the service's configuration.
-func (v Validator) VerifyDataIntegrityCredential(ctx context.Context, credential credsdk.VerifiableCredential) error {
+func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential credsdk.VerifiableCredential) error {
 	// resolve the issuer's key material
 	issuer, ok := credential.Issuer.(string)
 	if !ok {
@@ -123,7 +124,7 @@ func (v Validator) VerifyDataIntegrityCredential(ctx context.Context, credential
 
 // VerifyJWTPresentation first parses and checks the signature on the given JWT presentation. Next, it runs
 // a set of static verification checks on the presentation's credentials as per the service's configuration.
-func (v Validator) VerifyJWTPresentation(ctx context.Context, token keyaccess.JWT) error {
+func (v Verifier) VerifyJWTPresentation(ctx context.Context, token keyaccess.JWT) error {
 	headers, jwt, vp, err := integrity.ParseVerifiablePresentationFromJWT(token.String())
 	if err != nil {
 		return errors.Wrap(err, "verifying JWT credential")
@@ -181,7 +182,7 @@ func getKeyFromProof(proof crypto.Proof, key string) (any, error) {
 
 // staticValidationChecks runs a set of static validation checks on the verification as per the verification
 // service's configuration, such as checking the verification's schema, expiration, and object validity.
-func (v Validator) staticValidationChecks(ctx context.Context, credential credsdk.VerifiableCredential) error {
+func (v Verifier) staticValidationChecks(ctx context.Context, credential credsdk.VerifiableCredential) error {
 	// if the verification has a schema, resolve it before it is to be used in verification
 	var validationOpts []validation.Option
 	if credential.CredentialSchema != nil {

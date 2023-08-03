@@ -12,9 +12,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"github.com/tbd54566975/ssi-service/internal/credential"
 	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/internal/verification"
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
@@ -35,7 +35,7 @@ type Service struct {
 	opsStorage *operation.Storage
 	resolver   resolution.Resolver
 	schema     *schema.Service
-	validator  *credential.Validator
+	verifier   *verification.Verifier
 	reqStorage common.RequestStorage
 }
 
@@ -67,9 +67,9 @@ func NewPresentationService(s storage.ServiceStorage,
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the operations")
 	}
-	validator, err := credential.NewVerifiableDataValidator(resolver, schema)
+	validator, err := verification.NewVerifiableDataVerifier(resolver, schema)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate validator")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate verifier")
 	}
 	requestStorage := common.NewRequestStorage(s, presentationRequestNamespace)
 	service := Service{
@@ -78,7 +78,7 @@ func NewPresentationService(s storage.ServiceStorage,
 		opsStorage: opsStorage,
 		resolver:   resolver,
 		schema:     schema,
-		validator:  validator,
+		verifier:   validator,
 		reqStorage: requestStorage,
 	}
 	if !service.Status().IsReady() {
@@ -219,12 +219,12 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 			return nil, errors.Errorf("invalid verification %+v", cred)
 		}
 		if cred.CredentialJWT != nil {
-			if err = s.validator.VerifyJWTCredential(ctx, *cred.CredentialJWT); err != nil {
+			if err = s.verifier.VerifyJWTCredential(ctx, *cred.CredentialJWT); err != nil {
 				return nil, errors.Wrapf(err, "verifying jwt verification %s", cred.CredentialJWT)
 			}
 		} else {
 			if cred.HasDataIntegrityCredential() {
-				if err = s.validator.VerifyDataIntegrityCredential(ctx, *cred.Credential); err != nil {
+				if err = s.verifier.VerifyDataIntegrityCredential(ctx, *cred.Credential); err != nil {
 					return nil, errors.Wrapf(err, "verifying data integrity verification %+v", cred.Credential)
 				}
 			}
