@@ -277,7 +277,7 @@ func (dr DIDRouter) ListDIDsByMethod(c *gin.Context) {
 		Deleted: getIsDeleted,
 	}
 	var pageRequest pagination.PageRequest
-	if pagination.ParsePaginationParams(c, &pageRequest) {
+	if pagination.ParsePaginationQueryValues(c, &pageRequest) {
 		return
 	}
 	getDIDsRequest.PageRequest = pageRequest.ToServicePage()
