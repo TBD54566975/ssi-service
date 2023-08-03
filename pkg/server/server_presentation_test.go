@@ -57,7 +57,6 @@ func TestPresentationAPI(t *testing.T) {
 
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(tt *testing.T) {
-
 			tt.Run("Verify a Verifiable Presentation", func(ttt *testing.T) {
 				db := test.ServiceStorage(ttt)
 				presRouter, _ := setupPresentationRouter(ttt, db)
@@ -109,46 +108,43 @@ func TestPresentationAPI(t *testing.T) {
 					Holder: holderDID.String(),
 				}
 
-				// invalid verifiable presentation with no credentials
-				{
+				ttt.Run("Invalid Verifiable Presentation with no credentials", func(tttt *testing.T) {
 					// use the sdk to create a vp
 					emptyPresentation, err := integrity.SignVerifiablePresentationJWT(holderSigner, integrity.JWTVVPParameters{Audience: []string{holderSigner.ID}}, testPresentation)
-					assert.NoError(tt, err)
+					assert.NoError(tttt, err)
 
 					badPresentation := string(emptyPresentation[:10])
-					value := newRequestValue(t, router.VerifyPresentationRequest{PresentationJWT: keyaccess.JWTPtr(badPresentation)})
+					value := newRequestValue(tttt, router.VerifyPresentationRequest{PresentationJWT: keyaccess.JWTPtr(badPresentation)})
 					req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/presentations/verification"), value)
 					w := httptest.NewRecorder()
 					c := newRequestContext(w, req)
 					presRouter.VerifyPresentation(c)
-					assert.True(ttt, util.Is2xxResponse(w.Code))
+					assert.True(tttt, util.Is2xxResponse(w.Code))
 
 					var resp router.VerifyPresentationResponse
-					assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-					assert.False(ttt, resp.Verified)
-					assert.Equal(ttt, resp.Reason, "parsing JWT presentation: parsing vp token: invalid JWT")
-				}
+					assert.NoError(tttt, json.NewDecoder(w.Body).Decode(&resp))
+					assert.False(tttt, resp.Verified)
+					assert.Equal(tttt, resp.Reason, "parsing JWT presentation: parsing vp token: invalid JWT")
+				})
 
-				// valid verifiable presentation with no credentials
-				{
+				ttt.Run("Valid Verifiable Presentation with no credentials", func(tttt *testing.T) {
 					// use the sdk to create a vp
 					emptyPresentation, err := integrity.SignVerifiablePresentationJWT(holderSigner, integrity.JWTVVPParameters{Audience: []string{holderSigner.ID}}, testPresentation)
-					assert.NoError(tt, err)
+					assert.NoError(tttt, err)
 
 					value := newRequestValue(t, router.VerifyPresentationRequest{PresentationJWT: keyaccess.JWTPtr(string(emptyPresentation))})
 					req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/presentations/verification"), value)
 					w := httptest.NewRecorder()
 					c := newRequestContext(w, req)
 					presRouter.VerifyPresentation(c)
-					assert.True(ttt, util.Is2xxResponse(w.Code))
+					assert.True(tttt, util.Is2xxResponse(w.Code))
 
 					var resp router.VerifyPresentationResponse
-					assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-					assert.True(ttt, resp.Verified)
-				}
+					assert.NoError(tttt, json.NewDecoder(w.Body).Decode(&resp))
+					assert.True(tttt, resp.Verified)
+				})
 
-				// verifiable presentation with an invalid credential signature
-				{
+				ttt.Run("Invalid Verifiable Presentation with invalid credential signature", func(tttt *testing.T) {
 					// add credential to the vp
 					badCredJWT := createResp.CredentialJWT.String()[:10]
 					testPresentation.VerifiableCredential = []any{badCredJWT}
@@ -157,39 +153,38 @@ func TestPresentationAPI(t *testing.T) {
 					emptyPresentation, err := integrity.SignVerifiablePresentationJWT(holderSigner, integrity.JWTVVPParameters{Audience: []string{holderSigner.ID}}, testPresentation)
 					assert.NoError(tt, err)
 
-					value := newRequestValue(t, router.VerifyPresentationRequest{PresentationJWT: keyaccess.JWTPtr(string(emptyPresentation))})
+					value := newRequestValue(tttt, router.VerifyPresentationRequest{PresentationJWT: keyaccess.JWTPtr(string(emptyPresentation))})
 					req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/presentations/verification"), value)
 					w := httptest.NewRecorder()
 					c := newRequestContext(w, req)
 					presRouter.VerifyPresentation(c)
-					assert.True(ttt, util.Is2xxResponse(w.Code))
+					assert.True(tttt, util.Is2xxResponse(w.Code))
 
 					var resp router.VerifyPresentationResponse
-					assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-					assert.False(ttt, resp.Verified)
-					assert.Contains(ttt, resp.Reason, "verifying credential 0: parsing JWT: parsing credential token: invalid JWT")
-				}
+					assert.NoError(tttt, json.NewDecoder(w.Body).Decode(&resp))
+					assert.False(tttt, resp.Verified)
+					assert.Contains(tttt, resp.Reason, "verifying credential 0: parsing JWT: parsing credential token: invalid JWT")
+				})
 
-				// verifiable presentation with a valid credential signature
-				{
+				ttt.Run("Valid Verifiable Presentation with valid credential signature", func(tttt *testing.T) {
 					// add credential to the vp
 					testPresentation.VerifiableCredential = []any{createResp.CredentialJWT}
 
 					// use the sdk to create a vp
 					emptyPresentation, err := integrity.SignVerifiablePresentationJWT(holderSigner, integrity.JWTVVPParameters{Audience: []string{holderSigner.ID}}, testPresentation)
-					assert.NoError(tt, err)
+					assert.NoError(tttt, err)
 
-					value := newRequestValue(t, router.VerifyPresentationRequest{PresentationJWT: keyaccess.JWTPtr(string(emptyPresentation))})
+					value := newRequestValue(tttt, router.VerifyPresentationRequest{PresentationJWT: keyaccess.JWTPtr(string(emptyPresentation))})
 					req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/presentations/verification"), value)
 					w := httptest.NewRecorder()
 					c := newRequestContext(w, req)
 					presRouter.VerifyPresentation(c)
-					assert.True(ttt, util.Is2xxResponse(w.Code))
+					assert.True(tttt, util.Is2xxResponse(w.Code))
 
 					var resp router.VerifyPresentationResponse
-					assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-					assert.True(ttt, resp.Verified)
-				}
+					assert.NoError(tttt, json.NewDecoder(w.Body).Decode(&resp))
+					assert.True(tttt, resp.Verified)
+				})
 			})
 
 			tt.Run("Create, Get, and Delete Presentation Definition", func(ttt *testing.T) {

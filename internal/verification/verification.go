@@ -6,7 +6,6 @@ import (
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/integrity"
-	"github.com/TBD54566975/ssi-sdk/credential/parsing"
 	"github.com/TBD54566975/ssi-sdk/credential/validation"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
@@ -142,14 +141,14 @@ func (v Verifier) VerifyJWTPresentation(ctx context.Context, token keyaccess.JWT
 	if err != nil {
 		return errors.Wrapf(err, "getting issuer DID<%s> to verify presentation<%s>", jwt.Issuer(), jwt.JwtID())
 	}
-	issuerKey, err := did.GetKeyFromVerificationMethod(issuerDID.Document, issuerKID)
+	issuerPublicKey, err := did.GetKeyFromVerificationMethod(issuerDID.Document, issuerKID)
 	if err != nil {
 		return errors.Wrapf(err, "getting key to verify presentation<%s>", jwt.JwtID())
 	}
 
 	// construct a verifier and verify the signature on the presentation
 	// note: this also verifies the signature of each credential in the presentation
-	verifier, err := jwx.NewJWXVerifier(issuerDID.ID, issuerKID, issuerKey)
+	verifier, err := jwx.NewJWXVerifier(issuerDID.ID, issuerKID, issuerPublicKey)
 	if err != nil {
 		return errors.Wrapf(err, "constructing verifier for presentation<%s>", jwt.JwtID())
 	}
@@ -159,13 +158,13 @@ func (v Verifier) VerifyJWTPresentation(ctx context.Context, token keyaccess.JWT
 	}
 
 	// for each credential in the presentation, run a set of static verification checks
-	for _, cred := range vp.VerifiableCredential {
-		_, _, normalizedCred, err := parsing.ToCredential(cred)
-		if err != nil {
-			return errors.Wrapf(err, "error parsing credential in presentation<%v>", cred)
-		}
-		if err = v.staticValidationChecks(ctx, *normalizedCred); err != nil {
-			return errors.Wrapf(err, "error running static validation checks on credential in presentation<%v>", normalizedCred.ID)
+	creds, err := credential.NewCredentialContainerFromArray(vp.VerifiableCredential)
+	if err != nil {
+		return errors.Wrapf(err, "error parsing credentials in presentation<%s>", vp.ID)
+	}
+	for _, cred := range creds {
+		if err = v.staticValidationChecks(ctx, *cred.Credential); err != nil {
+			return errors.Wrapf(err, "error running static validation checks on credential in presentation<%v>", cred.ID)
 		}
 	}
 	return nil

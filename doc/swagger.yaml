@@ -1994,7 +1994,7 @@ definitions:
   pkg_server_router.VerifyPresentationRequest:
     properties:
       presentationJwt:
-        description: A JWT that encodes a verifiable presentation.
+        description: A JWT that encodes a verifiable presentation according to https://www.w3.org/TR/vc-data-model/#json-web-token
         type: string
     required:
     - presentationJwt
@@ -3911,7 +3911,7 @@ paths:
         Verifies a given presentation. The system does the following levels of verification:
         1. Makes sure the presentation has a valid signature
         2. Makes sure the presentation is not expired
-        3. Makes sure the presentation complies with the VC Data Model v1.1
+        3. Makes sure the presentation complies with https://www.w3.org/TR/vc-data-model/#presentations-0 of VC Data Model v1.1
         4. For each credential in the presentation, makes sure:
         a. Makes sure the credential has a valid signature
         b. Makes sure the credential is not expired
