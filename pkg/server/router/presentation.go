@@ -38,7 +38,7 @@ func NewPresentationRouter(s svcframework.Service) (*PresentationRouter, error) 
 }
 
 type VerifyPresentationRequest struct {
-	// A JWT that encodes a verifiable presentation.
+	// A JWT that encodes a verifiable presentation according to https://www.w3.org/TR/vc-data-model/#json-web-token
 	PresentationJWT *keyaccess.JWT `json:"presentationJwt,omitempty" validate:"required"`
 }
 
@@ -56,7 +56,7 @@ type VerifyPresentationResponse struct {
 //	@Description	Verifies a given presentation. The system does the following levels of verification:
 //	@Description	1. Makes sure the presentation has a valid signature
 //	@Description	2. Makes sure the presentation is not expired
-//	@Description	3. Makes sure the presentation complies with the VC Data Model v1.1
+//	@Description	3. Makes sure the presentation complies with https://www.w3.org/TR/vc-data-model/#presentations-0 of VC Data Model v1.1 
 //	@Description	4. For each credential in the presentation, makes sure:
 //	@Description	a. Makes sure the credential has a valid signature
 //	@Description	b. Makes sure the credential is not expired

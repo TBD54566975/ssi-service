@@ -140,22 +140,22 @@ func (v Verifier) VerifyJWTPresentation(ctx context.Context, token keyaccess.JWT
 	}
 	issuerDID, err := v.didResolver.Resolve(ctx, jwt.Issuer())
 	if err != nil {
-		return errors.Wrapf(err, "error getting issuer DID<%s> to verify presentation<%s>", jwt.Issuer(), jwt.JwtID())
+		return errors.Wrapf(err, "getting issuer DID<%s> to verify presentation<%s>", jwt.Issuer(), jwt.JwtID())
 	}
 	issuerKey, err := did.GetKeyFromVerificationMethod(issuerDID.Document, issuerKID)
 	if err != nil {
-		return errors.Wrapf(err, "error getting key to verify presentation<%s>", jwt.JwtID())
+		return errors.Wrapf(err, "getting key to verify presentation<%s>", jwt.JwtID())
 	}
 
 	// construct a verifier and verify the signature on the presentation
 	// note: this also verifies the signature of each credential in the presentation
 	verifier, err := jwx.NewJWXVerifier(issuerDID.ID, issuerKID, issuerKey)
 	if err != nil {
-		return errors.Wrapf(err, "error constructing verifier for presentation<%s>", jwt.JwtID())
+		return errors.Wrapf(err, "constructing verifier for presentation<%s>", jwt.JwtID())
 	}
 	_, _, _, err = integrity.VerifyVerifiablePresentationJWT(ctx, *verifier, v.didResolver, token.String())
 	if err != nil {
-		return errors.Wrapf(err, "error verifying presentation<%s>", jwt.JwtID())
+		return errors.Wrapf(err, "verifying presentation<%s>", jwt.JwtID())
 	}
 
 	// for each credential in the presentation, run a set of static verification checks
