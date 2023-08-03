@@ -12,9 +12,9 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"github.com/tbd54566975/ssi-service/internal/credential"
 	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
+	"github.com/tbd54566975/ssi-service/internal/verification"
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
@@ -35,7 +35,7 @@ type Service struct {
 	opsStorage *operation.Storage
 	resolver   resolution.Resolver
 	schema     *schema.Service
-	verifier   *credential.Validator
+	verifier   *verification.Verifier
 	reqStorage common.RequestStorage
 }
 
@@ -67,7 +67,7 @@ func NewPresentationService(s storage.ServiceStorage,
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the operations")
 	}
-	verifier, err := credential.NewCredentialValidator(resolver, schema)
+	verifier, err := verification.NewVerifiableDataVerifier(resolver, schema)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate verifier")
 	}
@@ -85,6 +85,37 @@ func NewPresentationService(s storage.ServiceStorage,
 		return nil, errors.New(service.Status().Message)
 	}
 	return &service, nil
+}
+
+type VerifyPresentationRequest struct {
+	PresentationJWT *keyaccess.JWT `json:"presentationJwt,omitempty" validate:"required"`
+}
+
+type VerifyPresentationResponse struct {
+	Verified bool   `json:"verified"`
+	Reason   string `json:"reason,omitempty"`
+}
+
+// VerifyPresentation does a series of verification on a presentation:
+//  1. Makes sure the presentation has a valid signature
+//  2. Makes sure the presentation is not expired
+//  3. Makes sure the presentation complies with the VC Data Model v1.1
+//  4. For each verification in the presentation, makes sure:
+//     a. Makes sure the verification has a valid signature
+//     b. Makes sure the verification is not expired
+//     c. Makes sure the verification complies with the VC Data Model
+func (s Service) VerifyPresentation(ctx context.Context, request VerifyPresentationRequest) (*VerifyPresentationResponse, error) {
+	logrus.Debugf("verifying presentation: %+v", request)
+
+	if err := sdkutil.IsValidStruct(request); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "invalid verify presentation request")
+	}
+
+	if err := s.verifier.VerifyJWTPresentation(ctx, *request.PresentationJWT); err != nil {
+		return &VerifyPresentationResponse{Verified: false, Reason: err.Error()}, nil
+	}
+
+	return &VerifyPresentationResponse{Verified: true}, nil
 }
 
 // CreatePresentationDefinition houses the main service logic for presentation definition creation. It validates the input, and
