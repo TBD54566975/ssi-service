@@ -5,37 +5,32 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
 	"os"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
-	"github.com/gin-gonic/gin"
-
-	"github.com/tbd54566975/ssi-service/internal/util"
-	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
-	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
-	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
-	"github.com/tbd54566975/ssi-service/pkg/testutil"
-
 	manifestsdk "github.com/TBD54566975/ssi-sdk/credential/manifest"
 	"github.com/TBD54566975/ssi-sdk/crypto"
+	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
-
 	"github.com/tbd54566975/ssi-service/config"
+	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
+	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"github.com/tbd54566975/ssi-service/pkg/service/issuance"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest"
+	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
+	"github.com/tbd54566975/ssi-service/pkg/service/webhook"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
+	"github.com/tbd54566975/ssi-service/pkg/testutil"
 )
 
 const (
@@ -127,16 +122,6 @@ func newRequestContextWithParams(w http.ResponseWriter, req *http.Request, param
 	c := newRequestContext(w, req)
 	for k, v := range params {
 		c.AddParam(k, v)
-	}
-	return c
-}
-
-func newRequestContextWithURLValues(w http.ResponseWriter, req *http.Request, params url.Values) *gin.Context {
-	c := newRequestContext(w, req)
-	for k, vs := range params {
-		for _, v := range vs {
-			c.AddParam(k, v)
-		}
 	}
 	return c
 }

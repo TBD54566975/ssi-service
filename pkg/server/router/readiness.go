@@ -28,10 +28,10 @@ type GetReadinessResponse struct {
 
 // Readiness godoc
 //
-//	@Summary		Readiness
+//	@Summary		Check service readiness
 //	@Description	Readiness runs a number of application specific checks to see if all the relied upon services are
 //	@Description	healthy.
-//	@Tags			Readiness
+//	@Tags			ServiceInfo
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	GetReadinessResponse

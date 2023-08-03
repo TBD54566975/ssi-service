@@ -48,9 +48,9 @@ type ListDIDMethodsResponse struct {
 
 // ListDIDMethods godoc
 //
-//	@Summary		List DID Methods
+//	@Summary		List DID methods
 //	@Description	Get the list of supported DID methods
-//	@Tags			DecentralizedIdentityAPI
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	ListDIDMethodsResponse
@@ -75,12 +75,12 @@ type CreateDIDByMethodResponse struct {
 
 // CreateDIDByMethod godoc
 //
-//	@Summary		Create DID Document
+//	@Summary		Create a DID Document
 //	@Description	Creates a fully custodial DID document with the given method. The document created is stored internally
 //	@Description	and can be retrieved using the GetOperation. Method dependent registration (for example, DID web
 //	@Description	registration) is left up to the clients of this API. The private key(s) created by the method are stored
 //	@Description	internally never leave the service boundary.
-//	@Tags			DecentralizedIdentityAPI
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Param			method	path		string														true	"Method"
@@ -183,9 +183,9 @@ type GetDIDByMethodResponse struct {
 
 // GetDIDByMethod godoc
 //
-//	@Summary		Get DID
-//	@Description	Get DID by method
-//	@Tags			DecentralizedIdentityAPI
+//	@Summary		Get a DID
+//	@Description	Gets a DID Document by its DID ID
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateDIDByMethodRequest	true	"request body"
@@ -237,9 +237,10 @@ type GetDIDsRequest struct {
 
 // ListDIDsByMethod godoc
 //
-//	@Summary		List DIDs
-//	@Description	List DIDs by method. Checks for an optional "deleted=true" query parameter, which exclusively returns DIDs that have been "Soft Deleted".
-//	@Tags			DecentralizedIdentityAPI
+//	@Summary		List DIDs by method
+//	@Description	List DIDs by method. Checks for an optional "deleted=true" query parameter, which exclusively
+//	@Description	returns DIDs that have been "Soft Deleted".
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Param			method		path		string	true	"Method must be one returned by GET /v1/dids"
@@ -276,7 +277,7 @@ func (dr DIDRouter) ListDIDsByMethod(c *gin.Context) {
 		Deleted: getIsDeleted,
 	}
 	var pageRequest pagination.PageRequest
-	if pagination.ParsePaginationParams(c, &pageRequest) {
+	if pagination.ParsePaginationQueryValues(c, &pageRequest) {
 		return
 	}
 	getDIDsRequest.PageRequest = pageRequest.ToServicePage()
@@ -308,9 +309,9 @@ type ResolveDIDResponse struct {
 //	@Description	When this is called with the correct did method and id it will flip the softDelete flag to true for the db entry.
 //	@Description	A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the ListDIDsByMethod call
 //	@Description	This facilitates a clean SSI-Service Admin UI but not leave any hanging VCs with inaccessible hanging DIDs.
-//	@Summary		Soft Delete DID
-//	@Description	Soft Deletes DID by method
-//	@Tags			DecentralizedIdentityAPI
+//	@Summary		Soft delete a DID
+//	@Description	Soft deletes a DID by its method
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Param			method	path		string	true	"Method"
@@ -347,7 +348,7 @@ func (dr DIDRouter) SoftDeleteDIDByMethod(c *gin.Context) {
 //
 //	@Summary		Resolve a DID
 //	@Description	Resolve a DID that may not be stored in this service
-//	@Tags			DecentralizedIdentityAPI
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -407,9 +408,9 @@ func NewBatchDIDRouter(svc *did.BatchService) *BatchDIDRouter {
 // BatchCreateDIDs godoc
 //
 //	@Summary		Batch Create DIDs
-//	@Description	Create a batch of verifiable credentials. The operation is atomic, meaning that all requests will
+//	@Description	Create a batch of DIDs. The operation is atomic, meaning that all requests will
 //	@Description	succeed or fail. This is currently only supported for the DID method named `did:key`.
-//	@Tags			DecentralizedIdentityAPI
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Param			method	path		string					true	"Method. Only `key` is supported."

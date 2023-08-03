@@ -546,7 +546,7 @@ func TestPresentationAPI(t *testing.T) {
 						"pageSize": []string{"-1"},
 					}
 					req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?"+badParams.Encode(), nil)
-					c := newRequestContextWithURLValues(w, req, badParams)
+					c := newRequestContext(w, req)
 					pRouter.ListSubmissions(c)
 
 					assert.Contains(tttt, w.Body.String(), "'pageSize' must be greater than 0")
@@ -562,7 +562,7 @@ func TestPresentationAPI(t *testing.T) {
 						"pageToken": []string{"made up token"},
 					}
 					req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?"+badParams.Encode(), nil)
-					c := newRequestContextWithURLValues(w, req, badParams)
+					c := newRequestContext(w, req)
 					pRouter.ListSubmissions(c)
 
 					assert.Contains(tttt, w.Body.String(), "token value cannot be decoded")
@@ -603,7 +603,7 @@ func TestPresentationAPI(t *testing.T) {
 						"pageSize": []string{"1"},
 					}
 					req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?"+params.Encode(), nil)
-					c := newRequestContextWithURLValues(w, req, params)
+					c := newRequestContext(w, req)
 
 					pRouter.ListSubmissions(c)
 
@@ -616,7 +616,7 @@ func TestPresentationAPI(t *testing.T) {
 					w = httptest.NewRecorder()
 					params["pageToken"] = []string{listSubmissionResponse.NextPageToken}
 					req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?"+params.Encode(), nil)
-					c = newRequestContextWithURLValues(w, req, params)
+					c = newRequestContext(w, req)
 
 					pRouter.ListSubmissions(c)
 
@@ -662,7 +662,7 @@ func TestPresentationAPI(t *testing.T) {
 						"pageSize": []string{"1"},
 					}
 					req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?"+params.Encode(), nil)
-					c := newRequestContextWithURLValues(w, req, params)
+					c := newRequestContext(w, req)
 
 					pRouter.ListSubmissions(c)
 
@@ -676,7 +676,7 @@ func TestPresentationAPI(t *testing.T) {
 					params["pageToken"] = []string{listSubmissionResponse.NextPageToken}
 					params["filter"] = []string{"status=\"pending\""}
 					req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/presentations/submissions?"+params.Encode(), nil)
-					c = newRequestContextWithURLValues(w, req, params)
+					c = newRequestContext(w, req)
 
 					pRouter.ListSubmissions(c)
 					assert.Equal(tttt, http.StatusBadRequest, w.Result().StatusCode)
