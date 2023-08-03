@@ -52,24 +52,24 @@ type VerifyPresentationResponse struct {
 
 // VerifyPresentation godoc
 //
-//		@Summary		Verify a Verifiable Presentation
-//		@Description	Verify a given presentation. The system does the following levels of verification:
-//		@Description	1. Makes sure the presentation has a valid signature
-//		@Description	2. Makes sure the presentation is not expired
-//		@Description	3. Makes sure the presentation complies with the VC Data Model v1.1
-//	    @Description    4. For each verification in the presentation, makes sure:
-//		@Description	a. Makes sure the verification has a valid signature
-//		@Description	b. Makes sure the verification is not expired
-//		@Description	c. Makes sure the verification complies with the VC Data Model
-//		@Description	d. If the verification has a schema, makes sure its data complies with the schema
-//		@Tags			Presentations
-//		@Accept			json
-//		@Produce		json
-//		@Param			request	body		VerifyPresentationRequest	true	"request body"
-//		@Success		200		{object}	VerifyPresentationResponse
-//		@Failure		400		{string}	string	"Bad request"
-//		@Failure		500		{string}	string	"Internal server error"
-//		@Router			/v1/presentations/verification [put]
+//	@Summary		VerifyCredential a Verifiable Presentation
+//	@Description	VerifyCredential a given presentation. The system does the following levels of verification:
+//	@Description	1. Makes sure the presentation has a valid signature
+//	@Description	2. Makes sure the presentation is not expired
+//	@Description	3. Makes sure the presentation complies with the VC Data Model v1.1
+//	@Description	4. For each credential in the presentation, makes sure:
+//	@Description	a. Makes sure the credential has a valid signature
+//	@Description	b. Makes sure the credential is not expired
+//	@Description	c. Makes sure the credential complies with the VC Data Model
+//	@Description	d. If the credential has a schema, makes sure its data complies with the schema
+//	@Tags			Presentations
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		VerifyPresentationRequest	true	"request body"
+//	@Success		200		{object}	VerifyPresentationResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/presentations/verification [put]
 func (pr PresentationRouter) VerifyPresentation(c *gin.Context) {
 	var request VerifyPresentationRequest
 	if err := framework.Decode(c.Request, &request); err != nil {
@@ -310,7 +310,7 @@ func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequ
 
 	credContainers, err := credint.NewCredentialContainerFromArray(vp.VerifiableCredential)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing verifiable verification array")
+		return nil, errors.Wrap(err, "parsing verifiable credential array")
 	}
 
 	return &model.CreateSubmissionRequest{

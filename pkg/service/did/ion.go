@@ -17,6 +17,7 @@ import (
 	"github.com/mr-tron/base58"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 )
@@ -50,7 +51,7 @@ type ionHandler struct {
 	keyStore *keystore.Service
 }
 
-// Verify interface compliance https://github.com/uber-go/guide/blob/master/style.md#verify-interface-compliance
+// VerifyCredential interface compliance https://github.com/uber-go/guide/blob/master/style.md#verify-interface-compliance
 var _ MethodHandler = (*ionHandler)(nil)
 
 type CreateIONDIDOptions struct {

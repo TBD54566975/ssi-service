@@ -51,7 +51,10 @@ func NewVerifiableDataVerifier(didResolver resolution.Resolver, schemaResolver s
 	}, nil
 }
 
-func (v Verifier) Verify(ctx context.Context, credential credential.Container) error {
+// VerifyCredential first parses and checks the signature on the given credential. Next, it runs
+// a set of static verification checks on the credential as per the service's configuration.
+// Works for both JWT and LD securing mechanisms.
+func (v Verifier) VerifyCredential(ctx context.Context, credential credential.Container) error {
 	if credential.HasJWTCredential() {
 		err := v.VerifyJWTCredential(ctx, *credential.CredentialJWT)
 		if err != nil {
@@ -66,7 +69,7 @@ func (v Verifier) Verify(ctx context.Context, credential credential.Container) e
 }
 
 // VerifyJWTCredential first parses and checks the signature on the given JWT verification. Next, it runs
-// a set of static verification checks on the verification as per the service's configuration.
+// a set of static verification checks on the credential as per the service's configuration.
 func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
 	_, err := integrity.VerifyJWTCredential(ctx, token.String(), v.didResolver)
 	if err != nil {
@@ -80,7 +83,7 @@ func (v Verifier) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) 
 }
 
 // VerifyDataIntegrityCredential first checks the signature on the given data integrity verification. Next, it runs
-// a set of static verification checks on the verification as per the service's configuration.
+// a set of static verification checks on the credential as per the service's configuration.
 func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential credsdk.VerifiableCredential) error {
 	// resolve the issuer's key material
 	issuer, ok := credential.Issuer.(string)
@@ -114,7 +117,7 @@ func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential 
 	}
 
 	cryptoSuite := jws2020.GetJSONWebSignature2020Suite()
-	// verify the signature on the verification
+	// verify the signature on the credential
 	if err = cryptoSuite.Verify(verifier, &credential); err != nil {
 		return sdkutil.LoggingErrorMsg(err, "could not verify the credential's signature")
 	}
@@ -180,10 +183,10 @@ func getKeyFromProof(proof crypto.Proof, key string) (any, error) {
 	return proofMap[key], nil
 }
 
-// staticValidationChecks runs a set of static validation checks on the verification as per the verification
+// staticValidationChecks runs a set of static validation checks on the credential as per the
 // service's configuration, such as checking the verification's schema, expiration, and object validity.
 func (v Verifier) staticValidationChecks(ctx context.Context, credential credsdk.VerifiableCredential) error {
-	// if the verification has a schema, resolve it before it is to be used in verification
+	// if the credential has a schema, resolve it before it is to be used in verification
 	var validationOpts []validation.Option
 	if credential.CredentialSchema != nil {
 		schemaID := credential.CredentialSchema.ID
@@ -198,7 +201,7 @@ func (v Verifier) staticValidationChecks(ctx context.Context, credential credsdk
 		validationOpts = append(validationOpts, validation.WithSchema(string(schemaBytes)))
 	}
 
-	// run the configured static checks on the verification
+	// run the configured static checks on the credential
 	if err := v.validator.ValidateCredential(credential, validationOpts...); err != nil {
 		return sdkutil.LoggingErrorMsg(err, "static credential validation failed")
 	}

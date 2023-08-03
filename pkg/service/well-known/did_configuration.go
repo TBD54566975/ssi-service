@@ -122,7 +122,7 @@ func (s DIDConfigurationService) VerifyDIDConfiguration(ctx context.Context, req
 
 		// 4. The implementer MUST perform DID resolution on the DID specified in the Issuer of the Domain Linkage Credential to obtain the associated DID document.
 		// 5. Using the retrieved DID document, the implementer MUST validate the signature of the Domain Linkage Credential against key material referenced in the assertionMethod section of the DID document.
-		if err := s.validator.Verify(ctx, domainLinkageCredential); err != nil {
+		if err := s.validator.VerifyCredential(ctx, domainLinkageCredential); err != nil {
 			response.Reason = err.Error()
 			return &response, nil
 		}

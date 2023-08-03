@@ -58,7 +58,7 @@ func TestPresentationAPI(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(tt *testing.T) {
 
-			tt.Run("Verify a Verifiable Presentation", func(ttt *testing.T) {
+			tt.Run("VerifyCredential a Verifiable Presentation", func(ttt *testing.T) {
 				db := test.ServiceStorage(ttt)
 				presRouter, _ := setupPresentationRouter(ttt, db)
 

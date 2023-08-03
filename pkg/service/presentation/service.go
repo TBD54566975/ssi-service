@@ -245,7 +245,7 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 		}
 	}
 
-	// TODO(gabe) plug in additional verification verification logic here
+	// TODO(gabe) plug in additional credential verification logic here
 	if _, err = exchange.VerifyPresentationSubmissionVP(storedDefinition.PresentationDefinition, request.Presentation); err != nil {
 		return nil, errors.Wrap(err, "verifying presentation submission vp")
 	}
