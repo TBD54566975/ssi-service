@@ -58,7 +58,7 @@ type OperationResult struct {
 //
 //	@Summary		Get an operation
 //	@Description	Get operation by its ID
-//	@Tags			OperationAPI
+//	@Tags			Operations
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string		true	"ID"
@@ -141,7 +141,7 @@ type ListOperationsResponse struct {
 //
 //	@Summary		List operations
 //	@Description	List operations according to the request
-//	@Tags			OperationAPI
+//	@Tags			Operations
 //	@Accept			json
 //	@Produce		json
 //	@Param			parent	query		string					false	"The name of the parent's resource. For example: `?parent=/presentation/submissions`"
@@ -224,9 +224,9 @@ func routerModel(op operation.Operation) Operation {
 
 // CancelOperation godoc
 //
-//	@Summary		Cancel an ongoing operation
-//	@Description	Cancels an ongoing operation, if possible.
-//	@Tags			OperationAPI
+//	@Summary		Cancel an operation
+//	@Description	Cancels an active operation, if possible.
+//	@Tags			Operations
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string		true	"ID"

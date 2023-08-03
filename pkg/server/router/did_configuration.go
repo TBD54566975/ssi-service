@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -65,10 +66,10 @@ type CreateDIDConfigurationResponse struct {
 
 // CreateDIDConfiguration godoc
 //
-//	@Summary		Create DIDConfiguration
+//	@Summary		Create DID Configurations
 //	@Description	Creates a DID Configuration Resource which conforms to https://identity.foundation/.well-known/resources/did-configuration/#did-configuration-resource
 //	@Description	The `didConfiguration` can be hosted at the `wellKnownLocation` specified in the response.
-//	@Tags			DIDConfigurationAPI
+//	@Tags			DIDConfigurations
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateDIDConfigurationRequest	true	"request body"
@@ -113,7 +114,7 @@ func (wr DIDConfigurationRouter) CreateDIDConfiguration(c *gin.Context) {
 //
 //	@Summary		Verifies a DID Configuration Resource
 //	@Description	Verifies a DID Configuration Resource according to https://identity.foundation/.well-known/resources/did-configuration/#did-configuration-resource-verification
-//	@Tags			DIDConfigurationAPI
+//	@Tags			DIDConfigurations
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		wellknown.VerifyDIDConfigurationRequest	true	"request body"

@@ -66,9 +66,9 @@ func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) 
 
 // StoreKey godoc
 //
-//	@Summary		Store Key
+//	@Summary		Store a keys
 //	@Description	Stores a key to be used by the service
-//	@Tags			KeyStoreAPI
+//	@Tags			KeyStore
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body	StoreKeyRequest	true	"request body"
@@ -115,9 +115,9 @@ type GetKeyDetailsResponse struct {
 
 // GetKeyDetails godoc
 //
-//	@Summary		Get Details For Key
+//	@Summary		Get details for a key
 //	@Description	Get details about a stored key
-//	@Tags			KeyStoreAPI
+//	@Tags			KeyStore
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID of the key to get"
@@ -155,9 +155,10 @@ type RevokeKeyResponse struct {
 
 // RevokeKey godoc
 //
-//	@Summary		Revoke Key
-//	@Description	Marks the stored key as being revoked, along with the timestamps of when it was revoked. NB: the key can still be used for signing. This will likely be addressed before v1 is released.
-//	@Tags			KeyStoreAPI
+//	@Summary		Revoke a key
+//	@Description	Marks a key as being revoked, along with the timestamps of when it was revoked.
+//	@Description	NB: the key can still be used for signing. This will likely be addressed before v1 is released.
+//	@Tags			KeyStore
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID of the key to revoke"

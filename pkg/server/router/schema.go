@@ -86,9 +86,9 @@ type SchemaResponse struct {
 
 // CreateSchema godoc
 //
-//	@Summary		Create Schema
-//	@Description	Create schema
-//	@Tags			SchemaAPI
+//	@Summary		Create a Credential Schema
+//	@Description	Create a schema for use with a Verifiable Credential
+//	@Tags			Schemas
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateSchemaRequest	true	"request body"
@@ -145,9 +145,9 @@ func (sr SchemaRouter) CreateSchema(c *gin.Context) {
 
 // GetSchema godoc
 //
-//	@Summary		Get Schema
-//	@Description	Get a schema by its ID
-//	@Tags			SchemaAPI
+//	@Summary		Get a Credential Schema
+//	@Description	Get a Credential Schema by its ID
+//	@Tags			Schemas
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -189,9 +189,9 @@ type ListSchemasResponse struct {
 
 // ListSchemas godoc
 //
-//	@Summary		List Schemas
-//	@Description	List schemas
-//	@Tags			SchemaAPI
+//	@Summary		List Credential Schemas
+//	@Description	List Credential Schemas stored by the service
+//	@Tags			Schemas
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	ListSchemasResponse
@@ -227,9 +227,9 @@ type GetSchemaResponse struct {
 
 // DeleteSchema godoc
 //
-//	@Summary		Delete Schema
-//	@Description	Delete a schema by its ID
-//	@Tags			SchemaAPI
+//	@Summary		Delete a Credential Schema
+//	@Description	Delete a Credential Schema by its ID
+//	@Tags			Schemas
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
