@@ -15,31 +15,33 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/internal/verification"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type DIDConfigurationService struct {
 	keyStoreService *keystore.Service
-	validator       *credint.Validator
+	validator       *verification.Verifier
 
 	HTTPClient *http.Client
 }
 
 func NewDIDConfigurationService(keyStoreService *keystore.Service, didResolver resolution.Resolver, schema *schema.Service) (*DIDConfigurationService, error) {
 	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
-	validator, err := credint.NewCredentialValidator(didResolver, schema)
+	verifier, err := verification.NewVerifiableDataVerifier(didResolver, schema)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate validator for the credential service")
+		return nil, errors.Wrap(err, "could not instantiate verifier for the credential service")
 	}
 
 	return &DIDConfigurationService{
 		keyStoreService: keyStoreService,
-		validator:       validator,
+		validator:       verifier,
 		HTTPClient:      client,
 	}, nil
 }
@@ -120,7 +122,7 @@ func (s DIDConfigurationService) VerifyDIDConfiguration(ctx context.Context, req
 
 		// 4. The implementer MUST perform DID resolution on the DID specified in the Issuer of the Domain Linkage Credential to obtain the associated DID document.
 		// 5. Using the retrieved DID document, the implementer MUST validate the signature of the Domain Linkage Credential against key material referenced in the assertionMethod section of the DID document.
-		if err := s.validator.Verify(ctx, domainLinkageCredential); err != nil {
+		if err := s.validator.VerifyCredential(ctx, domainLinkageCredential); err != nil {
 			response.Reason = err.Error()
 			return &response, nil
 		}

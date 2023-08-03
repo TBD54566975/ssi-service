@@ -415,10 +415,10 @@ type VerifyCredentialResponse struct {
 // VerifyCredential godoc
 //
 //	@Summary		Verify a Verifiable Credential
-//	@Description	Verify a given Verifiable Credential by its ID. The system does the following levels of verification:
+//	@Description	Verifies a given verifiable credential. The system does the following levels of verification:
 //	@Description	1. Makes sure the credential has a valid signature
 //	@Description	2. Makes sure the credential has is not expired
-//	@Description	3. Makes sure the credential complies with the VC Data Model
+//	@Description	3. Makes sure the credential complies with the VC Data Model v1.1
 //	@Description	4. If the credential has a schema, makes sure its data complies with the schema
 //	@Tags			Credentials
 //	@Accept			json

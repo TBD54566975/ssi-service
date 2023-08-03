@@ -10,6 +10,8 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/h2non/gock.v1"
+
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -17,7 +19,6 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	wellknown "github.com/tbd54566975/ssi-service/pkg/service/well-known"
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
-	"gopkg.in/h2non/gock.v1"
 )
 
 const w3cCredentialContext = `{
