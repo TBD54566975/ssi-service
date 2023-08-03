@@ -231,6 +231,9 @@ func PresentationAPI(rg *gin.RouterGroup, service svcframework.Service, webhookS
 	// make sure the presentation service is configured to use the correct path
 	config.SetServicePath(svcframework.Presentation, PresentationsPrefix)
 
+	presAPI := rg.Group(PresentationsPrefix)
+	presAPI.PUT(VerificationPath, presRouter.VerifyPresentation)
+
 	presDefAPI := rg.Group(PresentationsPrefix + DefinitionsPrefix)
 	presDefAPI.PUT("", presRouter.CreateDefinition)
 	presDefAPI.GET("/:id", presRouter.GetDefinition)
