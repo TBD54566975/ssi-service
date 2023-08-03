@@ -103,16 +103,6 @@ func (i ionStoredDID) IsSoftDeleted() bool {
 	return i.SoftDeleted
 }
 
-type UpdateIONDIDRequest struct {
-	DID ion.ION `json:"did"`
-
-	StateChange ion.StateChange `json:"stateChange"`
-}
-
-type UpdateIONDIDResponse struct {
-	DID did.Document `json:"did"`
-}
-
 type PreAnchor struct {
 	UpdateOperation        *ion.UpdateRequest
 	NextUpdatePublicJWK    *jwx.PublicKeyJWK
@@ -629,19 +619,6 @@ func (h *ionHandler) nextUpdateKey() (*jwx.PublicKeyJWK, *jwx.PrivateKeyJWK, err
 	}
 	return nextUpdatePubKeyJWK, nextUpdatePrivateKeyJWK, nil
 }
-
-type UpdateRequestStatus string
-
-func (s UpdateRequestStatus) Bytes() []byte {
-	return []byte(s)
-}
-
-const (
-	PreAnchorStatus   UpdateRequestStatus = "pre-anchor"
-	AnchorErrorStatus UpdateRequestStatus = "anchor-error"
-	AnchoredStatus    UpdateRequestStatus = "anchored"
-	DoneStatus        UpdateRequestStatus = "done"
-)
 
 const updateRequestStatesNamespace = "update-request-states"
 

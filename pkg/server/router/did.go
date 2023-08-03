@@ -196,7 +196,7 @@ func (dr DIDRouter) UpdateDIDByMethod(c *gin.Context) {
 	}
 	updateIONDIDResponse, err := dr.service.UpdateIONDID(c, *updateDIDRequest)
 	if err != nil {
-		errMsg := fmt.Sprintf("could not create DID for method<%s>", *method)
+		errMsg := fmt.Sprintf("could not update DID for method<%s>", *method)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
