@@ -123,6 +123,15 @@ func CreateDIDION() (string, error) {
 	return output, nil
 }
 
+func UpdateDIDION(id string) (string, error) {
+	output, err := put(endpoint+version+"dids/ion/"+id, getJSONFromFile("update-did-ion-input.json"))
+	if err != nil {
+		return "", errors.Wrapf(err, "did endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
 func ListWebDIDs() (string, error) {
 	urlValues := url.Values{
 		"pageSize": []string{"10"},
