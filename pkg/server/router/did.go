@@ -155,7 +155,7 @@ type UpdateDIDByMethodResponse struct {
 //	@Param			method	path		string						true	"Method"
 //	@Param			id		path		string						true	"ID"
 //	@Param			request	body		UpdateDIDByMethodRequest	true	"request body"
-//	@Success		201		{object}	UpdateDIDByMethodResponse
+//	@Success		200		{object}	UpdateDIDByMethodResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/dids/{method}/{id} [put]
@@ -202,7 +202,7 @@ func (dr DIDRouter) UpdateDIDByMethod(c *gin.Context) {
 	}
 
 	resp := CreateDIDByMethodResponse{DID: updateIONDIDResponse.DID}
-	framework.Respond(c, resp, http.StatusCreated)
+	framework.Respond(c, resp, http.StatusOK)
 
 }
 
