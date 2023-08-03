@@ -8,6 +8,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -412,11 +413,11 @@ type VerifyCredentialResponse struct {
 
 // VerifyCredential godoc
 //
-//	@Summary		Verify Credential
-//	@Description	Verify a given credential by its id. The system does the following levels of verification:
+//	@Summary		Verify a Verifiable Credential
+//	@Description	Verify a given verifiable credential. The system does the following levels of verification:
 //	@Description	1. Makes sure the credential has a valid signature
 //	@Description	2. Makes sure the credential has is not expired
-//	@Description	3. Makes sure the credential complies with the VC Data Model
+//	@Description	3. Makes sure the credential complies with the VC Data Model v1.1
 //	@Description	4. If the credential has a schema, makes sure its data complies with the schema
 //	@Tags			CredentialAPI
 //	@Accept			json
