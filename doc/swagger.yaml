@@ -2530,7 +2530,7 @@ paths:
       consumes:
       - application/json
       description: |-
-        VerifyCredential a given verifiable credential. The system does the following levels of verification:
+        Verifies a given verifiable credential. The system does the following levels of verification:
         1. Makes sure the credential has a valid signature
         2. Makes sure the credential has is not expired
         3. Makes sure the credential complies with the VC Data Model v1.1
@@ -2557,7 +2557,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: VerifyCredential a Verifiable Credential
+      summary: Verify a Verifiable Credential
       tags:
       - CredentialAPI
   /v1/did-configurations:
@@ -3884,7 +3884,7 @@ paths:
       consumes:
       - application/json
       description: |-
-        VerifyCredential a given presentation. The system does the following levels of verification:
+        Verifies a given presentation. The system does the following levels of verification:
         1. Makes sure the presentation has a valid signature
         2. Makes sure the presentation is not expired
         3. Makes sure the presentation complies with the VC Data Model v1.1
@@ -3915,7 +3915,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: VerifyCredential a Verifiable Presentation
+      summary: Verifies a Verifiable Presentation
       tags:
       - Presentations
   /v1/schemas:
