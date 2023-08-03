@@ -10,6 +10,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
+
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/service/manifest/model"
 
@@ -101,9 +102,9 @@ type CreateManifestResponse struct {
 
 // CreateManifest godoc
 //
-//	@Summary		Create manifest
-//	@Description	Create manifest. Most fields map to the definitions from https://identity.foundation/credential-manifest/#general-composition.
-//	@Tags			ManifestAPI
+//	@Summary		Create a Credential Manifest
+//	@Description	Create a Credential Manifest. Most fields map to the definitions from https://identity.foundation/credential-manifest/#general-composition.
+//	@Tags			Manifests
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateManifestRequest	true	"request body"
@@ -144,9 +145,9 @@ type ListManifestResponse struct {
 
 // GetManifest godoc
 //
-//	@Summary		Get manifest
-//	@Description	Get a credential manifest by its id
-//	@Tags			ManifestAPI
+//	@Summary		Get a Credential Manifest
+//	@Description	Get a Credential Manifest by its ID
+//	@Tags			Manifests
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -181,9 +182,9 @@ type ListManifestsResponse struct {
 
 // ListManifests godoc
 //
-//	@Summary		List manifests
-//	@Description	Checks for the presence of a query parameter and calls the associated filtered get method
-//	@Tags			ManifestAPI
+//	@Summary		List Credential Manifests
+//	@Description	Checks for the presence of a query parameter and calls the associated filtered get method for Credential Manifests
+//	@Tags			Manifests
 //	@Accept			json
 //	@Produce		json
 //	@Param			issuer	query		string	false	"string issuer"
@@ -215,9 +216,9 @@ func (mr ManifestRouter) ListManifests(c *gin.Context) {
 
 // DeleteManifest godoc
 //
-//	@Summary		Delete manifests
-//	@Description	Delete manifest by ID
-//	@Tags			ManifestAPI
+//	@Summary		Delete a Credential Manifests
+//	@Description	Delete a Credential Manifest by its ID
+//	@Tags			Manifests
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -315,10 +316,11 @@ type SubmitApplicationResponse struct {
 
 // SubmitApplication godoc
 //
-//	@Summary		Submit application
-//	@Description	Submit a credential application in response to a credential manifest. The request body is expected to
-//	@Description	be a valid JWT signed by the applicant's DID, containing two top level properties: `credential_application` and `vcs`.
-//	@Tags			ApplicationAPI
+//	@Summary		Submit a Credential Application
+//	@Description	Submit a Credential Application in response to a Credential Manifest request. The request body is expected to
+//	@Description	be a valid JWT signed by the applicant's DID, containing two top level properties: `credential_application` and `vcs`
+//	@Description	according to the spec https://identity.foundation/credential-manifest/#credential-application
+//	@Tags			ManifestApplications
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		SubmitApplicationRequest	true	"request body"
@@ -358,9 +360,9 @@ type GetApplicationResponse struct {
 
 // GetApplication godoc
 //
-//	@Summary		Get application
-//	@Description	Get application by id
-//	@Tags			ApplicationAPI
+//	@Summary		Get a Credential Application
+//	@Description	Get a Credential Application by its ID
+//	@Tags			ManifestApplications
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -395,9 +397,9 @@ type ListApplicationsResponse struct {
 
 // ListApplications godoc
 //
-//	@Summary		List applications
-//	@Description	List all the existing applications.
-//	@Tags			ApplicationAPI
+//	@Summary		List Credential Applications
+//	@Description	List all the existing Credential Applications.
+//	@Tags			ManifestApplications
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	ListApplicationsResponse
@@ -417,9 +419,9 @@ func (mr ManifestRouter) ListApplications(c *gin.Context) {
 
 // DeleteApplication godoc
 //
-//	@Summary		Delete applications
-//	@Description	Delete application by ID
-//	@Tags			ApplicationAPI
+//	@Summary		Delete Credential Applications
+//	@Description	Delete a Credential Application by its ID
+//	@Tags			ManifestApplications
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -453,9 +455,9 @@ type GetResponseResponse struct {
 
 // GetResponse godoc
 //
-//	@Summary		Get response
-//	@Description	Get response by id
-//	@Tags			ResponseAPI
+//	@Summary		Get a Credential Manifest Response
+//	@Description	Get a Credential Manifest Response by its ID https://identity.foundation/credential-manifest/#credential-response
+//	@Tags			ManifestResponses
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -492,9 +494,9 @@ type ListResponsesResponse struct {
 
 // ListResponses godoc
 //
-//	@Summary		List responses
-//	@Description	Lists all responses
-//	@Tags			ResponseAPI
+//	@Summary		List Credential Manifest Responses
+//	@Description	Lists all responses to Credential Applications associated with a Credential Manifest
+//	@Tags			ManifestResponses
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	ListResponsesResponse
@@ -514,9 +516,9 @@ func (mr ManifestRouter) ListResponses(c *gin.Context) {
 
 // DeleteResponse godoc
 //
-//	@Summary		Delete responses
-//	@Description	Delete response by ID
-//	@Tags			ResponseAPI
+//	@Summary		Delete a Credential Manifest Response
+//	@Description	Delete a Credential Manifest Response by its ID
+//	@Tags			ManifestResponses
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -561,11 +563,13 @@ func (r ReviewApplicationRequest) toServiceRequest(id string) model.ReviewApplic
 
 // ReviewApplication godoc
 //
-//	@Summary		Reviews an application
-//	@Description	Reviewing an application either fulfills or denies the credential.
-//	@Tags			ApplicationAPI
+//	@Summary		Review a Credential Application
+//	@Description	Reviewing a Credential Application either fulfills or denies the credential(s) issuance according
+//	@Description	to the spec https://identity.foundation/credential-manifest/#credential-application.
+//	@Tags			ManifestApplications
 //	@Accept			json
 //	@Produce		json
+//	@Param			id		path		string						true	"ID"
 //	@Param			request	body		ReviewApplicationRequest	true	"request body"
 //	@Success		201		{object}	SubmitApplicationResponse	"Credential Response"
 //	@Failure		400		{string}	string						"Bad request"
@@ -612,9 +616,9 @@ type CreateManifestRequestResponse struct {
 
 // CreateRequest godoc
 //
-//	@Summary		Create Manifest Request Request
-//	@Description	Create manifest request from an existing credential manifest.
-//	@Tags			ManifestAPI
+//	@Summary		Create a Credential Manifest Request
+//	@Description	Create a Credential Manifest Request from an existing Credential Manifest.
+//	@Tags			ManifestRequests
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateManifestRequestRequest	true	"request body"
@@ -668,8 +672,8 @@ type ListManifestRequestsResponse struct {
 // ListRequests godoc
 //
 //	@Summary		List Credential Manifest Requests
-//	@Description	Lists all the existing credential manifest requests
-//	@Tags			ManifestAPI
+//	@Description	Lists all the existing Credential Manifest requests
+//	@Tags			ManifestRequests
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	ListManifestRequestsResponse
@@ -695,9 +699,9 @@ type GetManifestRequestResponse struct {
 
 // GetRequest godoc
 //
-//	@Summary		Get Manifest Request
-//	@Description	Get a manifest request by its ID
-//	@Tags			ManifestAPI
+//	@Summary		Get a Credential Manifest Request
+//	@Description	Get a Credential Manifest Request by its ID
+//	@Tags			ManifestRequests
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -721,9 +725,9 @@ func (mr ManifestRouter) GetRequest(c *gin.Context) {
 
 // DeleteRequest godoc
 //
-//	@Summary		Delete Manifest Request
-//	@Description	Delete a manifest request by its ID
-//	@Tags			ManifestAPI
+//	@Summary		Delete a Credential Manifest Request
+//	@Description	Delete a Credential Manifest Request by its ID
+//	@Tags			ManifestRequests
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"

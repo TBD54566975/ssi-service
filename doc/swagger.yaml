@@ -1323,8 +1323,8 @@ definitions:
         description: value of the presentation definition to use. Must be empty if
           `id` is present.
       presentationDefinitionId:
-        description: id of the presentation definition created with PresentationDefinitionAPI.
-          Must be empty if `value` is present.
+        description: id of the presentation definition created with the PresentationDefinitions
+          API. Must be empty if `value` is present.
         type: string
       verificationMethodId:
         description: |-
@@ -2307,9 +2307,9 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/pkg_server_router.GetHealthCheckResponse'
-      summary: Health Check
+      summary: Service health check
       tags:
-      - HealthCheck
+      - ServiceInfo
   /readiness:
     get:
       consumes:
@@ -2324,19 +2324,18 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/pkg_server_router.GetReadinessResponse'
-      summary: Readiness
+      summary: Check service readiness
       tags:
-      - Readiness
+      - ServiceInfo
   /v1/credentials:
     get:
       consumes:
       - application/json
-      description: Checks for the presence of an optional query parameter and calls
-        the associated filtered get method. Only one optional parameter is allowed
-        to be specified.
+      description: |-
+        Checks for the presence of an optional query parameter and calls the associated filtered get method.
+        Only one optional parameter is allowed to be specified.
       parameters:
-      - description: The issuer id
-        example: did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp
+      - description: The issuer id, e.g. did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp
         in: query
         name: issuer
         type: string
@@ -2363,13 +2362,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: List Credentials
+      summary: List Verifiable Credentials
       tags:
-      - CredentialAPI
+      - Credentials
     put:
       consumes:
       - application/json
-      description: Create a verifiable credential
+      description: Create a Verifiable Credential
       parameters:
       - description: request body
         in: body
@@ -2392,14 +2391,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create Credential
+      summary: Create a Verifiable Credential
       tags:
-      - CredentialAPI
+      - Credentials
   /v1/credentials/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete credential by ID
+      description: Delete a Verifiable Credential by its ID
       parameters:
       - description: ID of the credential to delete
         in: path
@@ -2421,13 +2420,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Delete Credentials
+      summary: Delete a Verifiable Credential
       tags:
-      - CredentialAPI
+      - Credentials
     get:
       consumes:
       - application/json
-      description: Get credential by id
+      description: Get a Verifiable Credential by its ID
       parameters:
       - description: ID of the credential within SSI-Service. Must be a UUID.
         in: path
@@ -2449,14 +2448,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Get Credential
+      summary: Get a Verifiable Credential
       tags:
-      - CredentialAPI
+      - Credentials
   /v1/credentials/{id}/status:
     get:
       consumes:
       - application/json
-      description: Get credential status by id
+      description: Get a Verifiable Credential's status by the credential's ID
       parameters:
       - description: ID
         in: path
@@ -2478,14 +2477,19 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Get Credential Status
+      summary: Get a Verifiable Credential's status
       tags:
-      - CredentialAPI
+      - Credentials
     put:
       consumes:
       - application/json
-      description: Update a credential's status
+      description: Update a Verifiable Credential's status
       parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
       - description: request body
         in: body
         name: request
@@ -2507,14 +2511,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Update Credential Status
+      summary: Update a Verifiable Credential's status
       tags:
-      - CredentialAPI
+      - Credentials
   /v1/credentials/batch:
     put:
       consumes:
       - application/json
-      description: Create a batch of verifiable credentials.
+      description: Create a batch of Verifiable Credentials.
       parameters:
       - description: The batch requests
         in: body
@@ -2537,14 +2541,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Batch Create Credentials
+      summary: Batch create Credentials
       tags:
-      - CredentialAPI
+      - Credentials
   /v1/credentials/status/{id}:
     get:
       consumes:
       - application/json
-      description: Get credential status list by id.
+      description: Get a credential status list by its ID
       parameters:
       - description: ID
         in: path
@@ -2566,15 +2570,15 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Get Credential Status List
+      summary: Get a Credential Status List
       tags:
-      - CredentialAPI
+      - Credentials
   /v1/credentials/verification:
     put:
       consumes:
       - application/json
       description: |-
-        Verify a given credential by its id. The system does the following levels of verification:
+        Verify a given Verifiable Credential by its ID. The system does the following levels of verification:
         1. Makes sure the credential has a valid signature
         2. Makes sure the credential has is not expired
         3. Makes sure the credential complies with the VC Data Model
@@ -2601,9 +2605,9 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Verify Credential
+      summary: Verify a Verifiable Credential
       tags:
-      - CredentialAPI
+      - Credentials
   /v1/did-configurations:
     put:
       consumes:
@@ -2633,9 +2637,9 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create DIDConfiguration
+      summary: Create DID Configurations
       tags:
-      - DIDConfigurationAPI
+      - DIDConfigurations
   /v1/did-configurations/verification:
     put:
       consumes:
@@ -2665,7 +2669,7 @@ paths:
             type: string
       summary: Verifies a DID Configuration Resource
       tags:
-      - DIDConfigurationAPI
+      - DIDConfigurations
   /v1/dids:
     get:
       consumes:
@@ -2678,15 +2682,16 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/pkg_server_router.ListDIDMethodsResponse'
-      summary: List DID Methods
+      summary: List DID methods
       tags:
-      - DecentralizedIdentityAPI
+      - DecentralizedIdentifiers
   /v1/dids/{method}:
     get:
       consumes:
       - application/json
-      description: List DIDs by method. Checks for an optional "deleted=true" query
-        parameter, which exclusively returns DIDs that have been "Soft Deleted".
+      description: |-
+        List DIDs by method. Checks for an optional "deleted=true" query parameter, which exclusively
+        returns DIDs that have been "Soft Deleted".
       parameters:
       - description: Method must be one returned by GET /v1/dids
         in: path
@@ -2723,9 +2728,9 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: List DIDs
+      summary: List DIDs by method
       tags:
-      - DecentralizedIdentityAPI
+      - DecentralizedIdentifiers
     put:
       consumes:
       - application/json
@@ -2766,9 +2771,9 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create DID Document
+      summary: Create a DID Document
       tags:
-      - DecentralizedIdentityAPI
+      - DecentralizedIdentifiers
   /v1/dids/{method}/{id}:
     delete:
       consumes:
@@ -2777,7 +2782,7 @@ paths:
         When this is called with the correct did method and id it will flip the softDelete flag to true for the db entry.
         A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the ListDIDsByMethod call
         This facilitates a clean SSI-Service Admin UI but not leave any hanging VCs with inaccessible hanging DIDs.
-        Soft Deletes DID by method
+        Soft deletes a DID by its method
       parameters:
       - description: Method
         in: path
@@ -2804,13 +2809,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Soft Delete DID
+      summary: Soft delete a DID
       tags:
-      - DecentralizedIdentityAPI
+      - DecentralizedIdentifiers
     get:
       consumes:
       - application/json
-      description: Get DID by method
+      description: Gets a DID Document by its DID ID
       parameters:
       - description: request body
         in: body
@@ -2839,7 +2844,7 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get DID
+      summary: Get a DID
       tags:
       - DecentralizedIdentityAPI
     put:
@@ -2882,13 +2887,13 @@ paths:
             type: string
       summary: Updates a DID document.
       tags:
-      - DecentralizedIdentityAPI
+      - DecentralizedIdentifiers
   /v1/dids/{method}/batch:
     put:
       consumes:
       - application/json
       description: |-
-        Create a batch of verifiable credentials. The operation is atomic, meaning that all requests will
+        Create a batch of DIDs. The operation is atomic, meaning that all requests will
         succeed or fail. This is currently only supported for the DID method named `did:key`.
       parameters:
       - description: Method. Only `key` is supported.
@@ -2919,7 +2924,7 @@ paths:
             type: string
       summary: Batch Create DIDs
       tags:
-      - DecentralizedIdentityAPI
+      - DecentralizedIdentifiers
   /v1/dids/resolver/{id}:
     get:
       consumes:
@@ -2944,12 +2949,12 @@ paths:
             type: string
       summary: Resolve a DID
       tags:
-      - DecentralizedIdentityAPI
+      - DecentralizedIdentifiers
   /v1/issuancetemplates:
     put:
       consumes:
       - application/json
-      description: Create issuance template
+      description: Creates an issuance template
       parameters:
       - description: request body
         in: body
@@ -2972,14 +2977,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create issuance template
+      summary: Create an issuance template
       tags:
-      - IssuanceAPI
+      - IssuanceTemplates
   /v1/issuancetemplates/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete issuance template by ID
+      description: Delete an issuance template by its ID
       parameters:
       - description: ID
         in: path
@@ -3001,13 +3006,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Delete issuance template
+      summary: Delete an issuance template
       tags:
-      - IssuanceAPI
+      - IssuanceTemplates
     get:
       consumes:
       - application/json
-      description: Get an issuance template by its id
+      description: Get an issuance template by its ID
       parameters:
       - description: ID
         in: path
@@ -3025,9 +3030,9 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get issuance template
+      summary: Get an issuance template
       tags:
-      - IssuanceAPI
+      - IssuanceTemplates
   /v1/keys:
     put:
       consumes:
@@ -3053,16 +3058,16 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Store Key
+      summary: Store a keys
       tags:
-      - KeyStoreAPI
+      - KeyStore
   /v1/keys/{id}:
     delete:
       consumes:
       - application/json
-      description: 'Marks the stored key as being revoked, along with the timestamps
-        of when it was revoked. NB: the key can still be used for signing. This will
-        likely be addressed before v1 is released.'
+      description: |-
+        Marks a key as being revoked, along with the timestamps of when it was revoked.
+        NB: the key can still be used for signing. This will likely be addressed before v1 is released.
       parameters:
       - description: ID of the key to revoke
         in: path
@@ -3084,9 +3089,9 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Revoke Key
+      summary: Revoke a key
       tags:
-      - KeyStoreAPI
+      - KeyStore
     get:
       consumes:
       - application/json
@@ -3108,15 +3113,15 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get Details For Key
+      summary: Get details for a key
       tags:
-      - KeyStoreAPI
+      - KeyStore
   /v1/manifests:
     get:
       consumes:
       - application/json
       description: Checks for the presence of a query parameter and calls the associated
-        filtered get method
+        filtered get method for Credential Manifests
       parameters:
       - description: string issuer
         in: query
@@ -3145,13 +3150,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: List manifests
+      summary: List Credential Manifests
       tags:
-      - ManifestAPI
+      - Manifests
     put:
       consumes:
       - application/json
-      description: Create manifest. Most fields map to the definitions from https://identity.foundation/credential-manifest/#general-composition.
+      description: Create a Credential Manifest. Most fields map to the definitions
+        from https://identity.foundation/credential-manifest/#general-composition.
       parameters:
       - description: request body
         in: body
@@ -3174,14 +3180,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create manifest
+      summary: Create a Credential Manifest
       tags:
-      - ManifestAPI
+      - Manifests
   /v1/manifests/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete manifest by ID
+      description: Delete a Credential Manifest by its ID
       parameters:
       - description: ID
         in: path
@@ -3203,13 +3209,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Delete manifests
+      summary: Delete a Credential Manifests
       tags:
-      - ManifestAPI
+      - Manifests
     get:
       consumes:
       - application/json
-      description: Get a credential manifest by its id
+      description: Get a Credential Manifest by its ID
       parameters:
       - description: ID
         in: path
@@ -3227,14 +3233,14 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get manifest
+      summary: Get a Credential Manifest
       tags:
-      - ManifestAPI
+      - Manifests
   /v1/manifests/applications:
     get:
       consumes:
       - application/json
-      description: List all the existing applications.
+      description: List all the existing Credential Applications.
       produces:
       - application/json
       responses:
@@ -3246,15 +3252,16 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: List applications
+      summary: List Credential Applications
       tags:
-      - ApplicationAPI
+      - ManifestApplications
     put:
       consumes:
       - application/json
       description: |-
-        Submit a credential application in response to a credential manifest. The request body is expected to
-        be a valid JWT signed by the applicant's DID, containing two top level properties: `credential_application` and `vcs`.
+        Submit a Credential Application in response to a Credential Manifest request. The request body is expected to
+        be a valid JWT signed by the applicant's DID, containing two top level properties: `credential_application` and `vcs`
+        according to the spec https://identity.foundation/credential-manifest/#credential-application
       parameters:
       - description: request body
         in: body
@@ -3278,14 +3285,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Submit application
+      summary: Submit a Credential Application
       tags:
-      - ApplicationAPI
+      - ManifestApplications
   /v1/manifests/applications/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete application by ID
+      description: Delete a Credential Application by its ID
       parameters:
       - description: ID
         in: path
@@ -3307,13 +3314,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Delete applications
+      summary: Delete Credential Applications
       tags:
-      - ApplicationAPI
+      - ManifestApplications
     get:
       consumes:
       - application/json
-      description: Get application by id
+      description: Get a Credential Application by its ID
       parameters:
       - description: ID
         in: path
@@ -3331,15 +3338,22 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get application
+      summary: Get a Credential Application
       tags:
-      - ApplicationAPI
+      - ManifestApplications
   /v1/manifests/applications/{id}/review:
     put:
       consumes:
       - application/json
-      description: Reviewing an application either fulfills or denies the credential.
+      description: |-
+        Reviewing a Credential Application either fulfills or denies the credential(s) issuance according
+        to the spec https://identity.foundation/credential-manifest/#credential-application.
       parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
       - description: request body
         in: body
         name: request
@@ -3361,14 +3375,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Reviews an application
+      summary: Review a Credential Application
       tags:
-      - ApplicationAPI
+      - ManifestApplications
   /v1/manifests/requests:
     get:
       consumes:
       - application/json
-      description: Lists all the existing credential manifest requests
+      description: Lists all the existing Credential Manifest requests
       produces:
       - application/json
       responses:
@@ -3382,11 +3396,12 @@ paths:
             type: string
       summary: List Credential Manifest Requests
       tags:
-      - ManifestAPI
+      - ManifestRequests
     put:
       consumes:
       - application/json
-      description: Create manifest request from an existing credential manifest.
+      description: Create a Credential Manifest Request from an existing Credential
+        Manifest.
       parameters:
       - description: request body
         in: body
@@ -3409,14 +3424,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create Manifest Request Request
+      summary: Create a Credential Manifest Request
       tags:
-      - ManifestAPI
+      - ManifestRequests
   /v1/manifests/requests/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete a manifest request by its ID
+      description: Delete a Credential Manifest Request by its ID
       parameters:
       - description: ID
         in: path
@@ -3438,13 +3453,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Delete Manifest Request
+      summary: Delete a Credential Manifest Request
       tags:
-      - ManifestAPI
+      - ManifestRequests
     get:
       consumes:
       - application/json
-      description: Get a manifest request by its ID
+      description: Get a Credential Manifest Request by its ID
       parameters:
       - description: ID
         in: path
@@ -3462,14 +3477,15 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get Manifest Request
+      summary: Get a Credential Manifest Request
       tags:
-      - ManifestAPI
+      - ManifestRequests
   /v1/manifests/responses:
     get:
       consumes:
       - application/json
-      description: Lists all responses
+      description: Lists all responses to Credential Applications associated with
+        a Credential Manifest
       produces:
       - application/json
       responses:
@@ -3481,14 +3497,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: List responses
+      summary: List Credential Manifest Responses
       tags:
-      - ResponseAPI
+      - ManifestResponses
   /v1/manifests/responses/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete response by ID
+      description: Delete a Credential Manifest Response by its ID
       parameters:
       - description: ID
         in: path
@@ -3510,13 +3526,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Delete responses
+      summary: Delete a Credential Manifest Response
       tags:
-      - ResponseAPI
+      - ManifestResponses
     get:
       consumes:
       - application/json
-      description: Get response by id
+      description: Get a Credential Manifest Response by its ID https://identity.foundation/credential-manifest/#credential-response
       parameters:
       - description: ID
         in: path
@@ -3538,9 +3554,9 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Get response
+      summary: Get a Credential Manifest Response
       tags:
-      - ResponseAPI
+      - ManifestResponses
   /v1/operations:
     get:
       consumes:
@@ -3573,7 +3589,7 @@ paths:
             type: string
       summary: List operations
       tags:
-      - OperationAPI
+      - Operations
   /v1/operations/{id}:
     get:
       consumes:
@@ -3602,12 +3618,12 @@ paths:
             type: string
       summary: Get an operation
       tags:
-      - OperationAPI
+      - Operations
   /v1/operations/cancel/{id}:
     get:
       consumes:
       - application/json
-      description: Cancels an ongoing operation, if possible.
+      description: Cancels an active operation, if possible.
       parameters:
       - description: ID
         in: path
@@ -3629,14 +3645,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Cancel an ongoing operation
+      summary: Cancel an operation
       tags:
-      - OperationAPI
+      - Operations
   /v1/presentations/definitions:
     get:
       consumes:
       - application/json
-      description: Lists all the existing presentation definitions
+      description: Lists all the existing Presentation Definitions
       produces:
       - application/json
       responses:
@@ -3654,11 +3670,11 @@ paths:
             type: string
       summary: List Presentation Definitions
       tags:
-      - PresentationDefinitionAPI
+      - Presentations
     put:
       consumes:
       - application/json
-      description: Create presentation definition
+      description: Create a Presentation Definition https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-definition
       parameters:
       - description: request body
         in: body
@@ -3681,14 +3697,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create PresentationDefinition
+      summary: Create a Presentation Definition
       tags:
-      - PresentationDefinitionAPI
+      - Presentations
   /v1/presentations/definitions/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete a presentation definition by its ID
+      description: Delete a Presentation Definition by its ID
       parameters:
       - description: ID
         in: path
@@ -3710,13 +3726,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Delete PresentationDefinition
+      summary: Delete a Presentation Definition
       tags:
-      - PresentationDefinitionAPI
+      - Presentations
     get:
       consumes:
       - application/json
-      description: Get a presentation definition by its ID
+      description: Get a Presentation Definition by its ID
       parameters:
       - description: ID
         in: path
@@ -3734,14 +3750,14 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get PresentationDefinition
+      summary: Get a Presentation Definition
       tags:
-      - PresentationDefinitionAPI
+      - Presentations
   /v1/presentations/requests:
     get:
       consumes:
       - application/json
-      description: Lists all the existing presentation requests
+      description: Lists all the existing Presentation Requests
       produces:
       - application/json
       responses:
@@ -3755,11 +3771,13 @@ paths:
             type: string
       summary: List Presentation Requests
       tags:
-      - PresentationRequestAPI
+      - PresentationRequests
     put:
       consumes:
       - application/json
-      description: Create presentation request from an existing presentation definition.
+      description: |-
+        Create a Presentation Request from an existing Presentation Definition with an existing DID according
+        to the spec https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-request
       parameters:
       - description: request body
         in: body
@@ -3782,14 +3800,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create Presentation Request
+      summary: Create a Presentation Request
       tags:
-      - PresentationRequestAPI
+      - PresentationRequests
   /v1/presentations/requests/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete a presentation request by its ID
+      description: Delete a Presentation Request by its ID
       parameters:
       - description: ID
         in: path
@@ -3811,13 +3829,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Delete PresentationRequest
+      summary: Delete a Presentation Request
       tags:
-      - PresentationRequestAPI
+      - PresentationRequests
     get:
       consumes:
       - application/json
-      description: Get a presentation request by its ID
+      description: Get a Presentation Request by its ID
       parameters:
       - description: ID
         in: path
@@ -3835,15 +3853,15 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get Presentation Request
+      summary: Get a Presentation Request
       tags:
-      - PresentationRequestAPI
+      - PresentationRequests
   /v1/presentations/submissions:
     get:
       consumes:
       - application/json
-      description: List existing submissions according to a filtering query. The `filter`
-        field follows the syntax described in https://google.aip.dev/160.
+      description: List existing Presentation Submissions according to a filtering
+        query. The `filter` field follows the syntax described in https://google.aip.dev/160.
       parameters:
       - description: 'A standard filter expression conforming to https://google.aip.dev/160.
           For example: `?filter=status='
@@ -3875,13 +3893,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: List Submissions
+      summary: List Presentation Submissions
       tags:
-      - PresentationSubmissionAPI
+      - PresentationSubmissions
     put:
       consumes:
       - application/json
-      description: Creates a submission in this server ready to be reviewed.
+      description: Accepts a Presentation Submission (https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-submission)
+        in this server ready to be reviewed.
       parameters:
       - description: request body
         in: body
@@ -3904,14 +3923,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create Submission
+      summary: Create a Presentation Submission
       tags:
-      - PresentationSubmissionAPI
+      - PresentationSubmissions
   /v1/presentations/submissions/{id}:
     get:
       consumes:
       - application/json
-      description: Get a submission by its ID
+      description: Get a Presentation Submission by its ID
       parameters:
       - description: ID
         in: path
@@ -3929,17 +3948,22 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get Submission
+      summary: Get a Presentation Submission
       tags:
-      - PresentationSubmissionAPI
+      - PresentationSubmissions
   /v1/presentations/submissions/{id}/review:
     put:
       consumes:
       - application/json
-      description: Reviews a pending submission. After this method is called, the
-        operation with `id==presentations/submissions/{submission_id}` will be updated
-        with the result of this invocation.
+      description: |-
+        Reviews a pending Presentation Submission. After this method is called, the operation with
+        `id==presentations/submissions/{submission_id}` will be updated with the result of this invocation.
       parameters:
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
       - description: request body
         in: body
         name: request
@@ -3961,14 +3985,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Review a pending submission
+      summary: Review a pending Presentation Submission
       tags:
-      - PresentationSubmissionAPI
+      - PresentationSubmissions
   /v1/schemas:
     get:
       consumes:
       - application/json
-      description: List schemas
+      description: List Credential Schemas stored by the service
       produces:
       - application/json
       responses:
@@ -3980,13 +4004,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: List Schemas
+      summary: List Credential Schemas
       tags:
-      - SchemaAPI
+      - Schemas
     put:
       consumes:
       - application/json
-      description: Create schema
+      description: Create a schema for use with a Verifiable Credential
       parameters:
       - description: request body
         in: body
@@ -4009,14 +4033,14 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create Schema
+      summary: Create a Credential Schema
       tags:
-      - SchemaAPI
+      - Schemas
   /v1/schemas/{id}:
     delete:
       consumes:
       - application/json
-      description: Delete a schema by its ID
+      description: Delete a Credential Schema by its ID
       parameters:
       - description: ID
         in: path
@@ -4038,13 +4062,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Delete Schema
+      summary: Delete a Credential Schema
       tags:
-      - SchemaAPI
+      - Schemas
     get:
       consumes:
       - application/json
-      description: Get a schema by its ID
+      description: Get a Credential Schema by its ID
       parameters:
       - description: ID
         in: path
@@ -4062,14 +4086,14 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get Schema
+      summary: Get a Credential Schema
       tags:
-      - SchemaAPI
+      - Schemas
   /v1/webhooks:
     get:
       consumes:
       - application/json
-      description: Lists all webhooks
+      description: Lists all webhooks stored by the service
       produces:
       - application/json
       responses:
@@ -4081,13 +4105,13 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: List Webhooks
+      summary: List webhooks
       tags:
-      - WebhookAPI
+      - Webhooks
     put:
       consumes:
       - application/json
-      description: Create webhook
+      description: Creates a webhook
       parameters:
       - description: request body
         in: body
@@ -4110,18 +4134,23 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Create Webhook
+      summary: Create a webhook
       tags:
-      - WebhookAPI
+      - Webhooks
   /v1/webhooks/{noun}/{verb}:
     get:
       consumes:
       - application/json
       description: Get a webhook by its ID
       parameters:
-      - description: ID
+      - description: noun
         in: path
-        name: id
+        name: noun
+        required: true
+        type: string
+      - description: verb
+        in: path
+        name: verb
         required: true
         type: string
       produces:
@@ -4135,18 +4164,28 @@ paths:
           description: Bad request
           schema:
             type: string
-      summary: Get Webhook
+      summary: Get a webhook
       tags:
-      - WebhookAPI
+      - Webhooks
   /v1/webhooks/{noun}/{verb}/{url}:
     delete:
       consumes:
       - application/json
       description: Delete a webhook by its ID
       parameters:
-      - description: ID
+      - description: noun
         in: path
-        name: id
+        name: noun
+        required: true
+        type: string
+      - description: verb
+        in: path
+        name: verb
+        required: true
+        type: string
+      - description: url
+        in: path
+        name: url
         required: true
         type: string
       produces:
@@ -4164,9 +4203,9 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Delete Webhook
+      summary: Delete a webhook
       tags:
-      - WebhookAPI
+      - Webhooks
   /v1/webhooks/nouns:
     get:
       consumes:
@@ -4179,9 +4218,9 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_webhook.GetSupportedNounsResponse'
-      summary: Get Supported Nouns
+      summary: Get supported webhook nouns
       tags:
-      - WebhookAPI
+      - Webhooks
   /v1/webhooks/verbs:
     get:
       consumes:
@@ -4194,7 +4233,7 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_webhook.GetSupportedVerbsResponse'
-      summary: Get Supported Verbs
+      summary: Get supported webhook verbs
       tags:
-      - WebhookAPI
+      - Webhooks
 swagger: "2.0"

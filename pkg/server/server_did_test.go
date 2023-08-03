@@ -640,12 +640,11 @@ func TestDIDAPI(t *testing.T) {
 
 				w := httptest.NewRecorder()
 				badParams := url.Values{
-					"method":    []string{"key"},
 					"pageSize":  []string{"1"},
 					"pageToken": []string{"made up token"},
 				}
 				req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key?"+badParams.Encode(), nil)
-				c := newRequestContextWithURLValues(w, req, badParams)
+				c := newRequestContextWithParams(w, req, map[string]string{"method": "key"})
 				didService.ListDIDsByMethod(c)
 				assert.Contains(tt, w.Body.String(), "token value cannot be decoded")
 			})
@@ -662,11 +661,10 @@ func TestDIDAPI(t *testing.T) {
 
 					w := httptest.NewRecorder()
 					params := url.Values{
-						"method":   []string{"key"},
 						"pageSize": []string{"1"},
 					}
 					req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key?"+params.Encode(), nil)
-					c := newRequestContextWithURLValues(w, req, params)
+					c := newRequestContextWithParams(w, req, map[string]string{"method": "key"})
 
 					didRouter.ListDIDsByMethod(c)
 
@@ -679,7 +677,7 @@ func TestDIDAPI(t *testing.T) {
 					w = httptest.NewRecorder()
 					params["pageToken"] = []string{listDIDsByMethodResponse.NextPageToken}
 					req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key?"+params.Encode(), nil)
-					c = newRequestContextWithURLValues(w, req, params)
+					c = newRequestContextWithParams(w, req, map[string]string{"method": "key"})
 
 					didRouter.ListDIDsByMethod(c)
 
@@ -702,12 +700,11 @@ func TestDIDAPI(t *testing.T) {
 
 					w := httptest.NewRecorder()
 					params := url.Values{
-						"method":   []string{"key"},
 						"pageSize": []string{"1"},
 					}
 					req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key?"+params.Encode(), nil)
 
-					c := newRequestContextWithURLValues(w, req, params)
+					c := newRequestContextWithParams(w, req, map[string]string{"method": "key"})
 					didRouter.ListDIDsByMethod(c)
 					assert.True(tt, util.Is2xxResponse(w.Result().StatusCode))
 
@@ -721,7 +718,7 @@ func TestDIDAPI(t *testing.T) {
 					params["pageToken"] = []string{listDIDsByMethodResponse.NextPageToken}
 					params["deleted"] = []string{"true"}
 					req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/key?"+params.Encode(), nil)
-					c = newRequestContextWithURLValues(w, req, params)
+					c = newRequestContextWithParams(w, req, map[string]string{"method": "key"})
 					didRouter.ListDIDsByMethod(c)
 					assert.Equal(tt, http.StatusBadRequest, w.Result().StatusCode)
 					assert.Contains(tt, w.Body.String(), "page token must be for the same query")

@@ -8,6 +8,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -57,9 +58,9 @@ type BatchCreateCredentialsResponse struct {
 
 // BatchCreateCredentials godoc
 //
-//	@Summary		Batch Create Credentials
-//	@Description	Create a batch of verifiable credentials.
-//	@Tags			CredentialAPI
+//	@Summary		Batch create Credentials
+//	@Description	Create a batch of Verifiable Credentials.
+//	@Tags			Credentials
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		BatchCreateCredentialsRequest	true	"The batch requests"
@@ -155,9 +156,9 @@ type CreateCredentialResponse struct {
 
 // CreateCredential godoc
 //
-//	@Summary		Create Credential
-//	@Description	Create a verifiable credential
-//	@Tags			CredentialAPI
+//	@Summary		Create a Verifiable Credential
+//	@Description	Create a Verifiable Credential
+//	@Tags			Credentials
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateCredentialRequest	true	"request body"
@@ -198,9 +199,9 @@ type GetCredentialResponse struct {
 
 // GetCredential godoc
 //
-//	@Summary		Get Credential
-//	@Description	Get credential by id
-//	@Tags			CredentialAPI
+//	@Summary		Get a Verifiable Credential
+//	@Description	Get a Verifiable Credential by its ID
+//	@Tags			Credentials
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID of the credential within SSI-Service. Must be a UUID."
@@ -239,9 +240,9 @@ type GetCredentialStatusResponse struct {
 
 // GetCredentialStatus godoc
 //
-//	@Summary		Get Credential Status
-//	@Description	Get credential status by id
-//	@Tags			CredentialAPI
+//	@Summary		Get a Verifiable Credential's status
+//	@Description	Get a Verifiable Credential's status by the credential's ID
+//	@Tags			Credentials
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -283,9 +284,9 @@ type GetCredentialStatusListResponse struct {
 
 // GetCredentialStatusList godoc
 //
-//	@Summary		Get Credential Status List
-//	@Description	Get credential status list by id.
-//	@Tags			CredentialAPI
+//	@Summary		Get a Credential Status List
+//	@Description	Get a credential status list by its ID
+//	@Tags			Credentials
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -340,11 +341,12 @@ type UpdateCredentialStatusResponse struct {
 
 // UpdateCredentialStatus godoc
 //
-//	@Summary		Update Credential Status
-//	@Description	Update a credential's status
-//	@Tags			CredentialAPI
+//	@Summary		Update a Verifiable Credential's status
+//	@Description	Update a Verifiable Credential's status
+//	@Tags			Credentials
 //	@Accept			json
 //	@Produce		json
+//	@Param			id		path		string							true	"ID"
 //	@Param			request	body		UpdateCredentialStatusRequest	true	"request body"
 //	@Success		201		{object}	UpdateCredentialStatusResponse
 //	@Failure		400		{string}	string	"Bad request"
@@ -412,13 +414,13 @@ type VerifyCredentialResponse struct {
 
 // VerifyCredential godoc
 //
-//	@Summary		Verify Credential
-//	@Description	Verify a given credential by its id. The system does the following levels of verification:
+//	@Summary		Verify a Verifiable Credential
+//	@Description	Verify a given Verifiable Credential by its ID. The system does the following levels of verification:
 //	@Description	1. Makes sure the credential has a valid signature
 //	@Description	2. Makes sure the credential has is not expired
 //	@Description	3. Makes sure the credential complies with the VC Data Model
 //	@Description	4. If the credential has a schema, makes sure its data complies with the schema
-//	@Tags			CredentialAPI
+//	@Tags			Credentials
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		VerifyCredentialRequest	true	"request body"
@@ -461,12 +463,13 @@ type ListCredentialsResponse struct {
 
 // ListCredentials godoc
 //
-//	@Summary		List Credentials
-//	@Description	Checks for the presence of an optional query parameter and calls the associated filtered get method. Only one optional parameter is allowed to be specified.
-//	@Tags			CredentialAPI
+//	@Summary		List Verifiable Credentials
+//	@Description	Checks for the presence of an optional query parameter and calls the associated filtered get method.
+//	@Description	Only one optional parameter is allowed to be specified.
+//	@Tags			Credentials
 //	@Accept			json
 //	@Produce		json
-//	@Param			issuer	query		string	false	"The issuer id"	example(did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp)
+//	@Param			issuer	query		string	false	"The issuer id, e.g. did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"
 //	@Param			schema	query		string	false	"The credentialSchema.id value to filter by"
 //	@Param			subject	query		string	false	"The credentialSubject.id value to filter by"
 //	@Success		200		{object}	ListCredentialsResponse
@@ -557,9 +560,9 @@ func (cr CredentialRouter) listCredentialsBySchema(c *gin.Context, schema string
 
 // DeleteCredential godoc
 //
-//	@Summary		Delete Credentials
-//	@Description	Delete credential by ID
-//	@Tags			CredentialAPI
+//	@Summary		Delete a Verifiable Credential
+//	@Description	Delete a Verifiable Credential by its ID
+//	@Tags			Credentials
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID of the credential to delete"

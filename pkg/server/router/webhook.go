@@ -44,9 +44,9 @@ type CreateWebhookResponse struct {
 
 // CreateWebhook godoc
 //
-//	@Summary		Create Webhook
-//	@Description	Create webhook
-//	@Tags			WebhookAPI
+//	@Summary		Create a webhook
+//	@Description	Creates a webhook
+//	@Tags			Webhooks
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateWebhookRequest	true	"request body"
@@ -92,14 +92,15 @@ type ListWebhookResponse struct {
 
 // GetWebhook godoc
 //
-//	@Summary		Get Webhook
+//	@Summary		Get a webhook
 //	@Description	Get a webhook by its ID
-//	@Tags			WebhookAPI
+//	@Tags			Webhooks
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path		string	true	"ID"
-//	@Success		200	{object}	ListWebhookResponse
-//	@Failure		400	{string}	string	"Bad request"
+//	@Param			noun	path		string	true	"noun"
+//	@Param			verb	path		string	true	"verb"
+//	@Success		200		{object}	ListWebhookResponse
+//	@Failure		400		{string}	string	"Bad request"
 //	@Router			/v1/webhooks/{noun}/{verb} [get]
 func (wr WebhookRouter) GetWebhook(c *gin.Context) {
 	noun := framework.GetParam(c, "noun")
@@ -133,9 +134,9 @@ type ListWebhooksResponse struct {
 
 // ListWebhooks godoc
 //
-//	@Summary		List Webhooks
-//	@Description	Lists all webhooks
-//	@Tags			WebhookAPI
+//	@Summary		List webhooks
+//	@Description	Lists all webhooks stored by the service
+//	@Tags			Webhooks
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	ListWebhooksResponse
@@ -166,15 +167,17 @@ type DeleteWebhookRequest struct {
 
 // DeleteWebhook godoc
 //
-//	@Summary		Delete Webhook
+//	@Summary		Delete a webhook
 //	@Description	Delete a webhook by its ID
-//	@Tags			WebhookAPI
+//	@Tags			Webhooks
 //	@Accept			json
 //	@Produce		json
-//	@Param			id	path		string	true	"ID"
-//	@Success		204	{string}	string	"No Content"
-//	@Failure		400	{string}	string	"Bad request"
-//	@Failure		500	{string}	string	"Internal server error"
+//	@Param			noun	path		string	true	"noun"
+//	@Param			verb	path		string	true	"verb"
+//	@Param			url		path		string	true	"url"
+//	@Success		204		{string}	string	"No Content"
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/webhooks/{noun}/{verb}/{url} [delete]
 func (wr WebhookRouter) DeleteWebhook(c *gin.Context) {
 	var request DeleteWebhookRequest
@@ -205,9 +208,9 @@ type GetSupportedNounsResponse struct {
 
 // GetSupportedNouns godoc
 //
-//	@Summary		Get Supported Nouns
+//	@Summary		Get supported webhook nouns
 //	@Description	Get supported nouns for webhook generation
-//	@Tags			WebhookAPI
+//	@Tags			Webhooks
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	webhook.GetSupportedNounsResponse
@@ -223,9 +226,9 @@ type GetSupportedVerbsResponse struct {
 
 // GetSupportedVerbs godoc
 //
-//	@Summary		Get Supported Verbs
+//	@Summary		Get supported webhook verbs
 //	@Description	Get supported verbs for webhook generation
-//	@Tags			WebhookAPI
+//	@Tags			Webhooks
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	webhook.GetSupportedVerbsResponse
