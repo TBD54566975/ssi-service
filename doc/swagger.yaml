@@ -1824,6 +1824,10 @@ definitions:
     type: object
   pkg_server_router.ListSchemasResponse:
     properties:
+      nextPageToken:
+        description: Pagination token to retrieve the next page of results. If the
+          value is "", it means no further results for the request.
+        type: string
       schemas:
         description: Schemas is the list of all schemas the service holds
         items:
@@ -4049,6 +4053,17 @@ paths:
       consumes:
       - application/json
       description: List Credential Schemas stored by the service
+      parameters:
+      - description: Hint to the server of the maximum elements to return. More may
+          be returned. When not set, the server will return all elements.
+        in: query
+        name: pageSize
+        type: number
+      - description: Used to indicate to the server to return a specific page of the
+          list results. Must match a previous requests' `nextPageToken`.
+        in: query
+        name: pageToken
+        type: string
       produces:
       - application/json
       responses:
