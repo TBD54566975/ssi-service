@@ -51,7 +51,7 @@ type ionHandler struct {
 	keyStore *keystore.Service
 }
 
-// VerifyCredential interface compliance https://github.com/uber-go/guide/blob/master/style.md#verify-interface-compliance
+// Verify interface compliance https://github.com/uber-go/guide/blob/master/style.md#verify-interface-compliance
 var _ MethodHandler = (*ionHandler)(nil)
 
 type CreateIONDIDOptions struct {

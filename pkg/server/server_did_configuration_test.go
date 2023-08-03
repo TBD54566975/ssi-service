@@ -399,7 +399,7 @@ func TestDIDConfigurationAPI(t *testing.T) {
 		}
 	})
 
-	t.Run("VerifyCredential DID Configuration", func(t *testing.T) {
+	t.Run("Verify DID Configuration", func(t *testing.T) {
 		for _, test := range testutil.TestDatabases {
 			t.Run(test.Name, func(t *testing.T) {
 				s := test.ServiceStorage(t)

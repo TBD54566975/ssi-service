@@ -52,8 +52,8 @@ type VerifyPresentationResponse struct {
 
 // VerifyPresentation godoc
 //
-//	@Summary		VerifyCredential a Verifiable Presentation
-//	@Description	VerifyCredential a given presentation. The system does the following levels of verification:
+//	@Summary		Verifies a Verifiable Presentation
+//	@Description	Verifies a given presentation. The system does the following levels of verification:
 //	@Description	1. Makes sure the presentation has a valid signature
 //	@Description	2. Makes sure the presentation is not expired
 //	@Description	3. Makes sure the presentation complies with the VC Data Model v1.1
