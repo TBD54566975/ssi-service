@@ -15,12 +15,13 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type DIDConfigurationService struct {
@@ -32,7 +33,7 @@ type DIDConfigurationService struct {
 
 func NewDIDConfigurationService(keyStoreService *keystore.Service, didResolver resolution.Resolver, schema *schema.Service) (*DIDConfigurationService, error) {
 	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
-	validator, err := credint.NewCredentialValidator(didResolver, schema)
+	validator, err := credint.NewVerifiableDataValidator(didResolver, schema)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate validator for the credential service")
 	}

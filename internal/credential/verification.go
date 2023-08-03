@@ -13,7 +13,6 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
-	"github.com/lestrrat-go/jwx/jws"
 	"github.com/pkg/errors"
 
 	didint "github.com/tbd54566975/ssi-service/internal/did"
@@ -27,9 +26,9 @@ type Validator struct {
 	schemaResolver schema.Resolution
 }
 
-// NewCredentialValidator creates a new credential validator which executes both signature and static verification checks.
-// In the future the set of verification checks will be configurable.
-func NewCredentialValidator(didResolver resolution.Resolver, schemaResolver schema.Resolution) (*Validator, error) {
+// NewVerifiableDataValidator creates a new validator for both verifiable credentials and verifiable presentations. The validator
+// executes both signature and static verification checks. In the future the set of verification checks will be configurable.
+func NewVerifiableDataValidator(didResolver resolution.Resolver, schemaResolver schema.Resolution) (*Validator, error) {
 	if didResolver == nil {
 		return nil, errors.New("didResolver cannot be nil")
 	}
@@ -40,27 +39,13 @@ func NewCredentialValidator(didResolver resolution.Resolver, schemaResolver sche
 	validators := validation.GetKnownVerifiers()
 	validator, err := validation.NewCredentialValidator(validators)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create static credential validator")
+		return nil, errors.Wrap(err, "failed to create static validator")
 	}
 	return &Validator{
 		validator:      validator,
 		didResolver:    didResolver,
 		schemaResolver: schemaResolver,
 	}, nil
-}
-
-// VerifyJWTCredential first parses and checks the signature on the given JWT credential. Next, it runs
-// a set of static verification checks on the credential as per the credential service's configuration.
-func (v Validator) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
-	_, err := integrity.VerifyJWTCredential(ctx, token.String(), v.didResolver)
-	if err != nil {
-		return errors.Wrap(err, "verifying JWT credential")
-	}
-	_, _, cred, err := integrity.ParseVerifiableCredentialFromJWT(token.String())
-	if err != nil {
-		return errors.Wrap(err, "parsing vc from jwt")
-	}
-	return v.staticValidationChecks(ctx, *cred)
 }
 
 func (v Validator) Verify(ctx context.Context, credential Container) error {
@@ -77,8 +62,22 @@ func (v Validator) Verify(ctx context.Context, credential Container) error {
 	return nil
 }
 
-// VerifyDataIntegrityCredential first checks the signature on the given data integrity credential. Next, it runs
-// a set of static verification checks on the credential as per the credential service's configuration.
+// VerifyJWTCredential first parses and checks the signature on the given JWT verification. Next, it runs
+// a set of static verification checks on the verification as per the verification service's configuration.
+func (v Validator) VerifyJWTCredential(ctx context.Context, token keyaccess.JWT) error {
+	_, err := integrity.VerifyJWTCredential(ctx, token.String(), v.didResolver)
+	if err != nil {
+		return errors.Wrap(err, "verifying JWT verification")
+	}
+	_, _, cred, err := integrity.ParseVerifiableCredentialFromJWT(token.String())
+	if err != nil {
+		return errors.Wrap(err, "parsing vc from jwt")
+	}
+	return v.staticValidationChecks(ctx, *cred)
+}
+
+// VerifyDataIntegrityCredential first checks the signature on the given data integrity verification. Next, it runs
+// a set of static verification checks on the verification as per the verification service's configuration.
 func (v Validator) VerifyDataIntegrityCredential(ctx context.Context, credential credsdk.VerifiableCredential) error {
 	// resolve the issuer's key material
 	issuer, ok := credential.Issuer.(string)
@@ -112,9 +111,9 @@ func (v Validator) VerifyDataIntegrityCredential(ctx context.Context, credential
 	}
 
 	cryptoSuite := jws2020.GetJSONWebSignature2020Suite()
-	// verify the signature on the credential
+	// verify the signature on the verification
 	if err = cryptoSuite.Verify(verifier, &credential); err != nil {
-		return sdkutil.LoggingErrorMsg(err, "could not verify the credential's signature")
+		return sdkutil.LoggingErrorMsg(err, "could not verify the verification's signature")
 	}
 
 	return v.staticValidationChecks(ctx, credential)
@@ -132,62 +131,27 @@ func getKeyFromProof(proof crypto.Proof, key string) (any, error) {
 	return proofMap[key], nil
 }
 
-func (v Validator) VerifyJWT(ctx context.Context, did string, token keyaccess.JWT) error {
-	// parse headers
-	headers, err := keyaccess.GetJWTHeaders([]byte(token))
-	if err != nil {
-		return sdkutil.LoggingErrorMsg(err, "could not parse JWT headers")
-	}
-	jwtKID, ok := headers.Get(jws.KeyIDKey)
-	if !ok {
-		return sdkutil.LoggingNewError("JWT does not contain a kid")
-	}
-	kid, ok := jwtKID.(string)
-	if !ok {
-		return sdkutil.LoggingNewError("JWT kid is not a string")
-	}
-
-	// resolve key material from the DID
-	pubKey, err := didint.ResolveKeyForDID(ctx, v.didResolver, did, kid)
-	if err != nil {
-		return sdkutil.LoggingError(err)
-	}
-
-	// construct a signature validator from the verification information
-	verifier, err := keyaccess.NewJWKKeyAccessVerifier(did, kid, pubKey)
-	if err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not create validator for kid %s", kid)
-	}
-
-	// verify the signature on the credential
-	if err = verifier.Verify(token); err != nil {
-		return sdkutil.LoggingErrorMsg(err, "could not verify the JWT signature")
-	}
-
-	return nil
-}
-
-// staticValidationChecks runs a set of static validation checks on the credential as per the credential
-// service's configuration, such as checking the credential's schema, expiration, and object validity.
+// staticValidationChecks runs a set of static validation checks on the verification as per the verification
+// service's configuration, such as checking the verification's schema, expiration, and object validity.
 func (v Validator) staticValidationChecks(ctx context.Context, credential credsdk.VerifiableCredential) error {
-	// if the credential has a schema, resolve it before it is to be used in verification
+	// if the verification has a schema, resolve it before it is to be used in verification
 	var validationOpts []validation.Option
 	if credential.CredentialSchema != nil {
 		schemaID := credential.CredentialSchema.ID
 		resolvedSchema, _, err := v.schemaResolver.Resolve(ctx, schemaID)
 		if err != nil {
-			return errors.Wrapf(err, "for credential<%s> failed to resolve schemas: %s", credential.ID, schemaID)
+			return errors.Wrapf(err, "for verification<%s> failed to resolve schemas: %s", credential.ID, schemaID)
 		}
 		schemaBytes, err := json.Marshal(resolvedSchema)
 		if err != nil {
-			return errors.Wrapf(err, "for credential<%s> failed to marshal schema: %s", credential.ID, schemaID)
+			return errors.Wrapf(err, "for verification<%s> failed to marshal schema: %s", credential.ID, schemaID)
 		}
 		validationOpts = append(validationOpts, validation.WithSchema(string(schemaBytes)))
 	}
 
-	// run the configured static checks on the credential
+	// run the configured static checks on the verification
 	if err := v.validator.ValidateCredential(credential, validationOpts...); err != nil {
-		return sdkutil.LoggingErrorMsg(err, "static credential validation failed")
+		return sdkutil.LoggingErrorMsg(err, "static verification validation failed")
 	}
 
 	return nil

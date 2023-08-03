@@ -35,7 +35,7 @@ type Service struct {
 	opsStorage *operation.Storage
 	resolver   resolution.Resolver
 	schema     *schema.Service
-	verifier   *credential.Validator
+	validator  *credential.Validator
 	reqStorage common.RequestStorage
 }
 
@@ -67,9 +67,9 @@ func NewPresentationService(s storage.ServiceStorage,
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the operations")
 	}
-	verifier, err := credential.NewCredentialValidator(resolver, schema)
+	validator, err := credential.NewVerifiableDataValidator(resolver, schema)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate verifier")
+		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate validator")
 	}
 	requestStorage := common.NewRequestStorage(s, presentationRequestNamespace)
 	service := Service{
@@ -78,13 +78,30 @@ func NewPresentationService(s storage.ServiceStorage,
 		opsStorage: opsStorage,
 		resolver:   resolver,
 		schema:     schema,
-		verifier:   verifier,
+		validator:  validator,
 		reqStorage: requestStorage,
 	}
 	if !service.Status().IsReady() {
 		return nil, errors.New(service.Status().Message)
 	}
 	return &service, nil
+}
+
+type VerifyPresentationRequest struct {
+	PresentationJWT *keyaccess.JWT `json:"presentationJwt,omitempty" validate:"required"`
+}
+
+type VerifyPresentationResponse struct {
+	Verified bool   `json:"verified"`
+	Reason   string `json:"reason,omitempty"`
+}
+
+func (s Service) VerifyPresentation(ctx context.Context, request VerifyPresentationRequest) (*VerifyPresentationResponse, error) {
+	logrus.Debugf("verifying presentation: %+v", request)
+
+	if err := sdkutil.IsValidStruct(request); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "invalid verify presentation request")
+	}
 }
 
 // CreatePresentationDefinition houses the main service logic for presentation definition creation. It validates the input, and
@@ -199,22 +216,22 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 
 	for _, cred := range request.Credentials {
 		if !cred.IsValid() {
-			return nil, errors.Errorf("invalid credential %+v", cred)
+			return nil, errors.Errorf("invalid verification %+v", cred)
 		}
 		if cred.CredentialJWT != nil {
-			if err = s.verifier.VerifyJWTCredential(ctx, *cred.CredentialJWT); err != nil {
-				return nil, errors.Wrapf(err, "verifying jwt credential %s", cred.CredentialJWT)
+			if err = s.validator.VerifyJWTCredential(ctx, *cred.CredentialJWT); err != nil {
+				return nil, errors.Wrapf(err, "verifying jwt verification %s", cred.CredentialJWT)
 			}
 		} else {
 			if cred.HasDataIntegrityCredential() {
-				if err = s.verifier.VerifyDataIntegrityCredential(ctx, *cred.Credential); err != nil {
-					return nil, errors.Wrapf(err, "verifying data integrity credential %+v", cred.Credential)
+				if err = s.validator.VerifyDataIntegrityCredential(ctx, *cred.Credential); err != nil {
+					return nil, errors.Wrapf(err, "verifying data integrity verification %+v", cred.Credential)
 				}
 			}
 		}
 	}
 
-	// TODO(gabe) plug in additional credential verification logic here
+	// TODO(gabe) plug in additional verification verification logic here
 	if _, err = exchange.VerifyPresentationSubmissionVP(storedDefinition.PresentationDefinition, request.Presentation); err != nil {
 		return nil, errors.Wrap(err, "verifying presentation submission vp")
 	}

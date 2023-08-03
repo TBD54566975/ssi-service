@@ -7,16 +7,16 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/integrity"
+	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"go.einride.tech/aip/filtering"
 
-	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
-
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
@@ -35,6 +35,65 @@ func NewPresentationRouter(s svcframework.Service) (*PresentationRouter, error) 
 		return nil, fmt.Errorf("could not create presentation router with service type: %s", s.Type())
 	}
 	return &PresentationRouter{service: service}, nil
+}
+
+type VerifyPresentationRequest struct {
+	// A JWT that encodes a verifiable presentation.
+	PresentationJWT *keyaccess.JWT `json:"presentationJwt,omitempty" validate:"required"`
+}
+
+type VerifyPresentationResponse struct {
+	// Whether the presentation was verified.
+	Verified bool `json:"verified"`
+
+	// The reason why this presentation couldn't be verified.
+	Reason string `json:"reason,omitempty"`
+}
+
+// VerifyPresentation godoc
+//
+//		@Summary		Verify a Verifiable Presentation
+//		@Description	Verify a given presentation. The system does the following levels of verification:
+//		@Description	1. Makes sure the presentation has a valid signature
+//		@Description	2. Makes sure the presentation is not expired
+//		@Description	3. Makes sure the presentation complies with the VC Data Model v1.1
+//	    @Description    4. For each verification in the presentation, makes sure:
+//		@Description	a. Makes sure the verification has a valid signature
+//		@Description	b. Makes sure the verification is not expired
+//		@Description	c. Makes sure the verification complies with the VC Data Model
+//		@Description	d. If the verification has a schema, makes sure its data complies with the schema
+//		@Tags			Presentations
+//		@Accept			json
+//		@Produce		json
+//		@Param			request	body		VerifyPresentationRequest	true	"request body"
+//		@Success		200		{object}	VerifyPresentationResponse
+//		@Failure		400		{string}	string	"Bad request"
+//		@Failure		500		{string}	string	"Internal server error"
+//		@Router			/v1/presentations/verification [put]
+func (pr PresentationRouter) VerifyPresentation(c *gin.Context) {
+	var request VerifyPresentationRequest
+	if err := framework.Decode(c.Request, &request); err != nil {
+		errMsg := "invalid verify presentation request"
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	if err := util.IsValidStruct(request); err != nil {
+		framework.LoggingRespondError(c, err, http.StatusBadRequest)
+		return
+	}
+
+	verificationResult, err := pr.service.VerifyPresentation(c, presentation.VerifyPresentationRequest{
+		PresentationJWT: request.PresentationJWT,
+	})
+	if err != nil {
+		errMsg := "could not verify presentation"
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+
+	resp := VerifyPresentationResponse{Verified: verificationResult.Verified, Reason: verificationResult.Reason}
+	framework.Respond(c, resp, http.StatusOK)
 }
 
 type CreatePresentationDefinitionRequest struct {
@@ -251,7 +310,7 @@ func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequ
 
 	credContainers, err := credint.NewCredentialContainerFromArray(vp.VerifiableCredential)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing verifiable credential array")
+		return nil, errors.Wrap(err, "parsing verifiable verification array")
 	}
 
 	return &model.CreateSubmissionRequest{
