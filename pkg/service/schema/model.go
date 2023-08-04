@@ -3,6 +3,7 @@ package schema
 import (
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/TBD54566975/ssi-sdk/util"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
 
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -40,8 +41,13 @@ type CreateSchemaResponse struct {
 	CredentialSchema *keyaccess.JWT          `json:"credentialSchema,omitempty"`
 }
 
+type ListSchemasRequest struct {
+	PageRequest *pagination.PageRequest
+}
+
 type ListSchemasResponse struct {
-	Schemas []GetSchemaResponse `json:"schemas,omitempty"`
+	Schemas       []GetSchemaResponse `json:"schemas,omitempty"`
+	NextPageToken string              `json:"nextPageToken,omitempty"`
 }
 
 type GetSchemaRequest struct {

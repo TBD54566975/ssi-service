@@ -50,7 +50,7 @@ func TestSchemaRouter(t *testing.T) {
 				assert.Equal(tt, framework.StatusReady, schemaService.Status().Status)
 
 				// get all schemas (none)
-				gotSchemas, err := schemaService.ListSchemas(context.Background())
+				gotSchemas, err := schemaService.ListSchemas(context.Background(), schema.ListSchemasRequest{})
 				assert.NoError(tt, err)
 				assert.Empty(tt, gotSchemas.Schemas)
 
@@ -74,7 +74,7 @@ func TestSchemaRouter(t *testing.T) {
 				assert.EqualValues(tt, createdSchema.Schema, gotSchema.Schema)
 
 				// get all schemas, expect one
-				gotSchemas, err = schemaService.ListSchemas(context.Background())
+				gotSchemas, err = schemaService.ListSchemas(context.Background(), schema.ListSchemasRequest{})
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, gotSchemas.Schemas)
 				assert.Len(tt, gotSchemas.Schemas, 1)
@@ -88,7 +88,7 @@ func TestSchemaRouter(t *testing.T) {
 				assert.Equal(tt, credschema.JSONSchema2023Type, createdSchema.Type)
 
 				// get all schemas, expect two
-				gotSchemas, err = schemaService.ListSchemas(context.Background())
+				gotSchemas, err = schemaService.ListSchemas(context.Background(), schema.ListSchemasRequest{})
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, gotSchemas.Schemas)
 				assert.Len(tt, gotSchemas.Schemas, 2)
@@ -101,7 +101,7 @@ func TestSchemaRouter(t *testing.T) {
 				assert.NoError(tt, err)
 
 				// get all schemas, expect one
-				gotSchemas, err = schemaService.ListSchemas(context.Background())
+				gotSchemas, err = schemaService.ListSchemas(context.Background(), schema.ListSchemasRequest{})
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, gotSchemas.Schemas)
 				assert.Len(tt, gotSchemas.Schemas, 1)
