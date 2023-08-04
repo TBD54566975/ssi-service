@@ -42,12 +42,12 @@ type CreateSchemaResponse struct {
 }
 
 type ListSchemasRequest struct {
-	PageRequest *pagination.PageRequest `json:""`
+	PageRequest *pagination.PageRequest
 }
 
 type ListSchemasResponse struct {
 	Schemas       []GetSchemaResponse `json:"schemas,omitempty"`
-	NextPageToken string
+	NextPageToken string              `json:"nextPageToken,omitempty"`
 }
 
 type GetSchemaRequest struct {
