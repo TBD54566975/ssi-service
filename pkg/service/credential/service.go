@@ -18,6 +18,7 @@ import (
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/verification"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -357,16 +358,16 @@ func (s Service) GetCredential(ctx context.Context, request GetCredentialRequest
 	return &response, nil
 }
 
-func (s Service) ListCredentials(ctx context.Context, filter filtering.Filter) (*ListCredentialsResponse, error) {
+func (s Service) ListCredentials(ctx context.Context, filter filtering.Filter, request pagination.PageRequest) (*ListCredentialsResponse, error) {
 	logrus.Debugf("listing credential(s) ")
 
-	gotCreds, err := s.storage.ListCredentials(ctx, filter)
+	gotCreds, err := s.storage.ListCredentials(ctx, filter, request.ToServicePage())
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not list credential(s)")
 	}
 
-	creds := make([]credint.Container, 0, len(gotCreds))
-	for _, cred := range gotCreds {
+	creds := make([]credint.Container, 0, len(gotCreds.StoredCredentials))
+	for _, cred := range gotCreds.StoredCredentials {
 		container := credint.Container{
 			ID:            cred.LocalCredentialID,
 			Credential:    cred.Credential,
@@ -377,7 +378,10 @@ func (s Service) ListCredentials(ctx context.Context, filter filtering.Filter) (
 		creds = append(creds, container)
 	}
 
-	response := ListCredentialsResponse{Credentials: creds}
+	response := ListCredentialsResponse{
+		Credentials:   creds,
+		NextPageToken: gotCreds.NextPageToken,
+	}
 	return &response, nil
 }
 

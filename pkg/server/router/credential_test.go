@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -112,7 +113,7 @@ func TestCredentialRouter(t *testing.T) {
 				sch := ""
 				filter, err := filtering.ParseFilter(listCredentialsRequest{schema: &sch}, listCredentialsFilterDeclarations)
 				assert.NoError(tt, err)
-				bySchema, err := credService.ListCredentials(context.Background(), filter)
+				bySchema, err := credService.ListCredentials(context.Background(), filter, pagination.PageRequest{})
 				assert.NoError(tt, err)
 				assert.Len(tt, bySchema.Credentials, 1)
 				assert.EqualValues(tt, cred.CredentialSchema, bySchema.Credentials[0].Credential.CredentialSchema)
@@ -120,7 +121,7 @@ func TestCredentialRouter(t *testing.T) {
 				// get by subject
 				filter, err = filtering.ParseFilter(listCredentialsRequest{subject: &subject}, listCredentialsFilterDeclarations)
 				assert.NoError(tt, err)
-				bySubject, err := credService.ListCredentials(context.Background(), filter)
+				bySubject, err := credService.ListCredentials(context.Background(), filter, pagination.PageRequest{})
 				assert.NoError(tt, err)
 				assert.Len(tt, bySubject.Credentials, 1)
 
@@ -131,7 +132,7 @@ func TestCredentialRouter(t *testing.T) {
 				// get by issuer
 				filter, err = filtering.ParseFilter(listCredentialsRequest{issuer: &issuer}, listCredentialsFilterDeclarations)
 				assert.NoError(tt, err)
-				byIssuer, err := credService.ListCredentials(context.Background(), filter)
+				byIssuer, err := credService.ListCredentials(context.Background(), filter, pagination.PageRequest{})
 				assert.NoError(tt, err)
 				assert.Len(tt, byIssuer.Credentials, 1)
 
@@ -172,14 +173,14 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NotEmpty(tt, createdCredWithSchema)
 
 				// get by issuer
-				byIssuer, err = credService.ListCredentials(context.Background(), filter)
+				byIssuer, err = credService.ListCredentials(context.Background(), filter, pagination.PageRequest{})
 				assert.NoError(tt, err)
 				assert.Len(tt, byIssuer.Credentials, 2)
 
 				// make sure the schema and subject queries are consistent
 				filter, err = filtering.ParseFilter(listCredentialsRequest{schema: &sch}, listCredentialsFilterDeclarations)
 				assert.NoError(tt, err)
-				bySchema, err = credService.ListCredentials(context.Background(), filter)
+				bySchema, err = credService.ListCredentials(context.Background(), filter, pagination.PageRequest{})
 				assert.NoError(tt, err)
 				assert.Len(tt, bySchema.Credentials, 1)
 
@@ -189,7 +190,7 @@ func TestCredentialRouter(t *testing.T) {
 
 				filter, err = filtering.ParseFilter(listCredentialsRequest{subject: &subject}, listCredentialsFilterDeclarations)
 				assert.NoError(tt, err)
-				bySubject, err = credService.ListCredentials(context.Background(), filter)
+				bySubject, err = credService.ListCredentials(context.Background(), filter, pagination.PageRequest{})
 				assert.NoError(tt, err)
 				assert.Len(tt, bySubject.Credentials, 1)
 

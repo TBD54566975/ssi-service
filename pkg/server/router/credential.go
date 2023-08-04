@@ -11,6 +11,7 @@ import (
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"go.einride.tech/aip/filtering"
@@ -458,6 +459,9 @@ func (cr CredentialRouter) VerifyCredential(c *gin.Context) {
 type ListCredentialsResponse struct {
 	// Array of credentials that match the query parameters.
 	Credentials []credmodel.Container `json:"credentials,omitempty"`
+
+	// Pagination token to retrieve the next page of results. If the value is "", it means no further results for the request.
+	NextPageToken string `json:"nextPageToken"`
 }
 
 type listCredentialsRequest struct {
@@ -515,11 +519,18 @@ func init() {
 //	@Param			issuer	query		string	false	"The issuer id, e.g. did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"
 //	@Param			schema	query		string	false	"The credentialSchema.id value to filter by"
 //	@Param			subject	query		string	false	"The credentialSubject.id value to filter by"
+//	@Param			pageSize	query		number	false	"Hint to the server of the maximum elements to return. More may be returned. When not set, the server will return all elements."
+//	@Param			pageToken	query		string	false	"Used to indicate to the server to return a specific page of the list results. Must match a previous requests' `nextPageToken`."
 //	@Success		200		{object}	ListCredentialsResponse
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/credentials [get]
 func (cr CredentialRouter) ListCredentials(c *gin.Context) {
+	var pageRequest pagination.PageRequest
+	if pagination.ParsePaginationQueryValues(c, &pageRequest) {
+		return
+	}
+
 	issuer := framework.GetQueryValue(c, IssuerParam)
 	schema := framework.GetQueryValue(c, SchemaParam)
 	subject := framework.GetQueryValue(c, SubjectParam)
@@ -544,18 +555,18 @@ func (cr CredentialRouter) ListCredentials(c *gin.Context) {
 		return
 	}
 
-	cr.listCredentials(c, filter)
-}
-
-func (cr CredentialRouter) listCredentials(c *gin.Context, filter filtering.Filter) {
-	gotCredentials, err := cr.service.ListCredentials(c, filter)
+	listCredentialsResponse, err := cr.service.ListCredentials(c, filter, pageRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials")
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
 
-	resp := ListCredentialsResponse{Credentials: gotCredentials.Credentials}
+	resp := ListCredentialsResponse{Credentials: listCredentialsResponse.Credentials}
+
+	if pagination.MaybeSetNextPageToken(c, listCredentialsResponse.NextPageToken, &resp.NextPageToken) {
+		return
+	}
 	framework.Respond(c, resp, http.StatusOK)
 }
 

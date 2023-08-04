@@ -16,12 +16,18 @@ import (
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"go.einride.tech/aip/filtering"
 )
 
 type StoreCredentialRequest struct {
 	credint.Container
+}
+
+type StoredCredentials struct {
+	StoredCredentials []StoredCredential
+	NextPageToken     string
 }
 
 type StoredCredential struct {
@@ -356,8 +362,9 @@ func (cs *Storage) getCredential(ctx context.Context, id string, namespace strin
 	return &stored, nil
 }
 
-func (cs *Storage) ListCredentials(ctx context.Context, filter filtering.Filter) ([]StoredCredential, error) {
-	creds, err := cs.db.ReadAll(ctx, credentialNamespace)
+func (cs *Storage) ListCredentials(ctx context.Context, filter filtering.Filter, page *common.Page) (*StoredCredentials, error) {
+	token, size := page.ToStorageArgs()
+	creds, nextPageToken, err := cs.db.ReadPage(ctx, credentialNamespace, token, size)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading all creds before filtering")
 	}
@@ -380,7 +387,10 @@ func (cs *Storage) ListCredentials(ctx context.Context, filter filtering.Filter)
 		}
 	}
 
-	return storedCreds, nil
+	return &StoredCredentials{
+		StoredCredentials: storedCreds,
+		NextPageToken:     nextPageToken,
+	}, nil
 }
 
 // GetCredentialsByIssuerAndSchema gets all credentials stored with a prefix key containing the issuer value
