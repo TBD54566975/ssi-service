@@ -105,7 +105,7 @@ const (
 
 const FilterCharacterLimit = 1024
 
-func (r listOperationsRequest) toServiceRequest(pageRequest *pagination.PageRequest) (operation.ListOperationsRequest, error) {
+func (r listOperationsRequest) toServiceRequest(pageRequest pagination.PageRequest) (operation.ListOperationsRequest, error) {
 	var opReq operation.ListOperationsRequest
 	opReq.Parent = r.Parent
 
@@ -131,7 +131,7 @@ func (r listOperationsRequest) toServiceRequest(pageRequest *pagination.PageRequ
 		return opReq, errors.Wrap(err, "parsing filter")
 	}
 	opReq.Filter = filter
-	opReq.PageRequest = pageRequest
+	opReq.PageRequest = &pageRequest
 	return opReq, nil
 }
 
@@ -191,7 +191,7 @@ func (o OperationRouter) ListOperations(c *gin.Context) {
 		return
 	}
 
-	req, err := request.toServiceRequest(&pageRequest)
+	req, err := request.toServiceRequest(pageRequest)
 	if err != nil {
 		framework.LoggingRespondErrWithMsg(c, err, invalidGetOperationsErr, http.StatusBadRequest)
 		return
