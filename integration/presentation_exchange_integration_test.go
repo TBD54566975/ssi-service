@@ -270,6 +270,10 @@ func TestSubmissionFlowExternalCredential(t *testing.T) {
 }
 
 func TestListOperationsWithPagination(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
 	// This test simply ensures that we can retrieve all operations from a parent using pagination.
 	schemasPage, err := get(endpoint + version + "operations?parent=presentations/submissions&pageSize=1")
 	assert.NoError(t, err)
