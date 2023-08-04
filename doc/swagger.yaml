@@ -1802,6 +1802,10 @@ definitions:
     type: object
   pkg_server_router.ListOperationsResponse:
     properties:
+      nextPageToken:
+        description: Pagination token to retrieve the next page of results. If the
+          value is "", it means no further results for the request.
+        type: string
       operations:
         items:
           $ref: '#/definitions/pkg_server_router.Operation'
@@ -3592,6 +3596,16 @@ paths:
           For example: `?filter=done='
         in: query
         name: filter
+        type: string
+      - description: Hint to the server of the maximum elements to return. More may
+          be returned. When not set, the server will return all elements.
+        in: query
+        name: pageSize
+        type: number
+      - description: Used to indicate to the server to return a specific page of the
+          list results. Must match a previous requests' `nextPageToken`.
+        in: query
+        name: pageToken
         type: string
       produces:
       - application/json

@@ -2,6 +2,7 @@ package operation
 
 import (
 	"github.com/TBD54566975/ssi-sdk/util"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	"go.einride.tech/aip/filtering"
 )
 
@@ -17,8 +18,9 @@ type Operation struct {
 }
 
 type ListOperationsRequest struct {
-	Parent string `validate:"required"`
-	Filter filtering.Filter
+	Parent      string `validate:"required"`
+	Filter      filtering.Filter
+	PageRequest *pagination.PageRequest
 }
 
 func (r ListOperationsRequest) Validate() error {
@@ -26,7 +28,8 @@ func (r ListOperationsRequest) Validate() error {
 }
 
 type ListOperationsResponse struct {
-	Operations []Operation
+	Operations    []Operation
+	NextPageToken string
 }
 
 type GetOperationRequest struct {

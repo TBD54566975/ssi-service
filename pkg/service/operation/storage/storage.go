@@ -6,6 +6,11 @@ import (
 	"go.einride.tech/aip/filtering"
 )
 
+type StoredOperations struct {
+	StoredOperations []StoredOperation
+	NextPageToken    string
+}
+
 type StoredOperation struct {
 	ID string `json:"id"`
 
