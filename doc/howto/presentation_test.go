@@ -60,6 +60,7 @@ func TestVerifiablePresentation(t *testing.T) {
 	// construct a Verifiable Presentation for the credential
 	presBuilder := credential.NewVerifiablePresentationBuilder()
 	err = presBuilder.SetHolder(didKey.String())
+	require.NoError(t, err)
 	err = presBuilder.AddVerifiableCredentials(signedCredentialJWTString)
 	require.NoError(t, err)
 
@@ -68,7 +69,7 @@ func TestVerifiablePresentation(t *testing.T) {
 	require.NoError(t, err)
 
 	// sign the presentation using our DID's private key, passing no additional parameters
-	signedPresentationBytes, err := integrity.SignVerifiablePresentationJWT(*signer, integrity.JWTVVPParameters{}, *unsignedPresentation)
+	signedPresentationBytes, err := integrity.SignVerifiablePresentationJWT(*signer, nil, *unsignedPresentation)
 	require.NoError(t, err)
 	signedPresentationJWTString := string(signedPresentationBytes)
 
