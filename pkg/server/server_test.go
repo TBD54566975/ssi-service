@@ -243,7 +243,7 @@ func testDIDService(t *testing.T, bolt storage.ServiceStorage, keyStore *keystor
 	}
 
 	// create a did service
-	didService, err := did.NewDIDService(serviceConfig, bolt, keyStore)
+	didService, err := did.NewDIDService(serviceConfig, bolt, keyStore, factory)
 	require.NoError(t, err)
 	require.NotEmpty(t, didService)
 

@@ -1,0 +1,29 @@
+{
+  "stateChange": {
+    "publicKeysToAdd": [
+      {
+        "id": "publicKeyModel1Id",
+        "type": "JsonWebKey2020",
+        "publicKeyJwk": {
+          "kty": "EC",
+          "crv": "secp256k1",
+          "x": "Z4Y3NNOxv0J6tCgqOBFnHnaZhJF6LdulT7z8A-2D5_8",
+          "y": "i5a2NtJoUKXkLm6q8nOEu9WOkso1Ag6FTUT6k_LMnGk"
+        },
+        "purposes": [
+          "authentication"
+        ]
+      },
+      {
+        "id": "publicKeyModel2Id",
+        "type": "JsonWebKey2020",
+        "publicKeyJwk": {
+          "kty": "OKP",
+          "crv": "Ed25519",
+          "x": "VCpo2LMLhn6iWku8MKvSLg2ZAoC-nlOyPVQaO3FxVeQ"
+        },
+        "purposes": ["keyAgreement"]
+      }
+    ]
+  }
+}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/ion"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
@@ -125,6 +126,100 @@ func (dr DIDRouter) CreateDIDByMethod(c *gin.Context) {
 
 	resp := CreateDIDByMethodResponse{DID: createDIDResponse.DID}
 	framework.Respond(c, resp, http.StatusCreated)
+}
+
+type StateChange struct {
+	ServicesToAdd        []didsdk.Service `json:"servicesToAdd,omitempty"`
+	ServiceIDsToRemove   []string         `json:"serviceIdsToRemove,omitempty"`
+	PublicKeysToAdd      []ion.PublicKey  `json:"publicKeysToAdd,omitempty"`
+	PublicKeyIDsToRemove []string         `json:"publicKeyIdsToRemove"`
+}
+
+type UpdateDIDByMethodRequest struct {
+	// Expected to be populated when `method == "ion"`. Describes the changes that are requested.
+	StateChange StateChange `json:"stateChange" validate:"required"`
+}
+
+type UpdateDIDByMethodResponse struct {
+	DID didsdk.Document `json:"did,omitempty"`
+}
+
+// UpdateDIDByMethod godoc
+//
+//	@Summary		Updates a DID document.
+//	@Description	Updates a DID for which SSI is the custodian. The DID must have been previously created by calling
+//	@Description	the "Create DID Document" endpoint. Currently, only ION dids support updates.
+//	@Tags			DecentralizedIdentityAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			method	path		string						true	"Method"
+//	@Param			id		path		string						true	"ID"
+//	@Param			request	body		UpdateDIDByMethodRequest	true	"request body"
+//	@Success		200		{object}	UpdateDIDByMethodResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/dids/{method}/{id} [put]
+func (dr DIDRouter) UpdateDIDByMethod(c *gin.Context) {
+	method := framework.GetParam(c, MethodParam)
+	if method == nil {
+		errMsg := "update DID by method request missing method parameter"
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
+	}
+	if *method != didsdk.IONMethod.String() {
+		framework.LoggingRespondErrMsg(c, "ion is the only method supported", http.StatusBadRequest)
+	}
+
+	id := framework.GetParam(c, IDParam)
+	if id == nil {
+		errMsg := fmt.Sprintf("update DID request missing id parameter for method: %s", *method)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
+	}
+	var request UpdateDIDByMethodRequest
+	invalidRequest := "invalid update DID request"
+	if err := framework.Decode(c.Request, &request); err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, invalidRequest, http.StatusBadRequest)
+		return
+	}
+
+	if err := framework.ValidateRequest(request); err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, invalidRequest, http.StatusBadRequest)
+		return
+	}
+
+	updateDIDRequest, err := toUpdateIONDIDRequest(*id, request)
+	if err != nil {
+		errMsg := fmt.Sprintf("%s: could not update DID for method<%s>", invalidRequest, *method)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
+	}
+	updateIONDIDResponse, err := dr.service.UpdateIONDID(c, *updateDIDRequest)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not update DID for method<%s>", *method)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+
+	resp := CreateDIDByMethodResponse{DID: updateIONDIDResponse.DID}
+	framework.Respond(c, resp, http.StatusOK)
+
+}
+
+func toUpdateIONDIDRequest(id string, request UpdateDIDByMethodRequest) (*did.UpdateIONDIDRequest, error) {
+	didION := ion.ION(id)
+	if !didION.IsValid() {
+		return nil, errors.Errorf("invalid ion did %s", id)
+	}
+	return &did.UpdateIONDIDRequest{
+		DID: didION,
+		StateChange: ion.StateChange{
+			ServicesToAdd:        request.StateChange.ServicesToAdd,
+			ServiceIDsToRemove:   request.StateChange.ServiceIDsToRemove,
+			PublicKeysToAdd:      request.StateChange.PublicKeysToAdd,
+			PublicKeyIDsToRemove: request.StateChange.PublicKeyIDsToRemove,
+		},
+	}, nil
 }
 
 // toCreateDIDRequest converts CreateDIDByMethodRequest to did.CreateDIDRequest, parsing options according to method

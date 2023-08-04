@@ -27,7 +27,9 @@ type Service struct {
 	resolver *resolution.ServiceResolver
 
 	// external dependencies
-	keyStore *keystore.Service
+	keyStore          *keystore.Service
+	keyStoreFactory   keystore.ServiceFactory
+	didStorageFactory StorageFactory
 }
 
 func (s *Service) Type() framework.Type {
@@ -66,17 +68,19 @@ func (s *Service) GetResolver() didresolution.Resolver {
 	return s.resolver
 }
 
-func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
+func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, factory keystore.ServiceFactory) (*Service, error) {
 	didStorage, err := NewDIDStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
 	}
 
 	service := Service{
-		config:   config,
-		storage:  didStorage,
-		handlers: make(map[didsdk.Method]MethodHandler),
-		keyStore: keyStore,
+		config:            config,
+		storage:           didStorage,
+		didStorageFactory: NewDIDStorageFactory(s),
+		handlers:          make(map[didsdk.Method]MethodHandler),
+		keyStore:          keyStore,
+		keyStoreFactory:   factory,
 	}
 
 	// instantiate all handlers for DID methods
@@ -122,7 +126,7 @@ func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
 		}
 		s.handlers[method] = wh
 	case didsdk.IONMethod:
-		ih, err := NewIONHandler(s.Config().IONResolverURL, s.storage, s.keyStore)
+		ih, err := NewIONHandler(s.Config().IONResolverURL, s.storage, s.keyStore, s.keyStoreFactory, s.didStorageFactory)
 		if err != nil {
 			return errors.Wrap(err, "instantiating ion handler")
 		}
@@ -166,6 +170,18 @@ func (s *Service) CreateDIDByMethod(ctx context.Context, request CreateDIDReques
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
 	}
 	return handler.CreateDID(ctx, request)
+}
+
+func (s *Service) UpdateIONDID(ctx context.Context, request UpdateIONDIDRequest) (*UpdateIONDIDResponse, error) {
+	handler, err := s.getHandler(didsdk.IONMethod)
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", didsdk.IONMethod)
+	}
+	ionHandlerImpl, ok := handler.(*ionHandler)
+	if !ok {
+		return nil, errors.New("cannot assert that handler is an ionHandler")
+	}
+	return ionHandlerImpl.UpdateDID(ctx, request)
 }
 
 func (s *Service) GetDIDByMethod(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {

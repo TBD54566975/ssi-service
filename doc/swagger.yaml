@@ -875,6 +875,33 @@ definitions:
         description: Whether the DIDConfiguration was verified.
         type: boolean
     type: object
+  ion.PublicKey:
+    properties:
+      id:
+        type: string
+      publicKeyJwk:
+        $ref: '#/definitions/jwx.PublicKeyJWK'
+      purposes:
+        items:
+          $ref: '#/definitions/ion.PublicKeyPurpose'
+        type: array
+      type:
+        type: string
+    type: object
+  ion.PublicKeyPurpose:
+    enum:
+    - authentication
+    - assertionMethod
+    - capabilityInvocation
+    - capabilityDelegation
+    - keyAgreement
+    type: string
+    x-enum-varnames:
+    - Authentication
+    - AssertionMethod
+    - CapabilityInvocation
+    - CapabilityDelegation
+    - KeyAgreement
   jwx.PublicKeyJWK:
     properties:
       alg:
@@ -1904,6 +1931,25 @@ definitions:
       id:
         type: string
     type: object
+  pkg_server_router.StateChange:
+    properties:
+      publicKeyIdsToRemove:
+        items:
+          type: string
+        type: array
+      publicKeysToAdd:
+        items:
+          $ref: '#/definitions/ion.PublicKey'
+        type: array
+      serviceIdsToRemove:
+        items:
+          type: string
+        type: array
+      servicesToAdd:
+        items:
+          $ref: '#/definitions/github_com_TBD54566975_ssi-sdk_did.Service'
+        type: array
+    type: object
   pkg_server_router.StoreKeyRequest:
     properties:
       base58PrivateKey:
@@ -1970,6 +2016,21 @@ definitions:
         type: boolean
       suspended:
         type: boolean
+    type: object
+  pkg_server_router.UpdateDIDByMethodRequest:
+    properties:
+      stateChange:
+        allOf:
+        - $ref: '#/definitions/pkg_server_router.StateChange'
+        description: Expected to be populated when `method == "ion"`. Describes the
+          changes that are requested.
+    required:
+    - stateChange
+    type: object
+  pkg_server_router.UpdateDIDByMethodResponse:
+    properties:
+      did:
+        $ref: '#/definitions/did.Document'
     type: object
   pkg_server_router.VerifyCredentialRequest:
     properties:
@@ -2803,6 +2864,47 @@ paths:
       summary: Get a DID
       tags:
       - DecentralizedIdentifiers
+    put:
+      consumes:
+      - application/json
+      description: |-
+        Updates a DID for which SSI is the custodian. The DID must have been previously created by calling
+        the "Create DID Document" endpoint. Currently, only ION dids support updates.
+      parameters:
+      - description: Method
+        in: path
+        name: method
+        required: true
+        type: string
+      - description: ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.UpdateDIDByMethodRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/pkg_server_router.UpdateDIDByMethodResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Updates a DID document.
+      tags:
+      - DecentralizedIdentityAPI
   /v1/dids/{method}/batch:
     put:
       consumes:
