@@ -14,7 +14,6 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -23,6 +22,7 @@ import (
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
+	"go.einride.tech/aip/filtering"
 )
 
 func TestCredentialRouter(t *testing.T) {
@@ -109,13 +109,18 @@ func TestCredentialRouter(t *testing.T) {
 				assert.Contains(tt, err.Error(), "credential not found with id: bad")
 
 				// get by schema - no schema
-				bySchema, err := credService.ListCredentialsBySchema(context.Background(), credential.ListCredentialBySchemaRequest{Schema: ""})
+				sch := ""
+				filter, err := filtering.ParseFilter(listCredentialsRequest{schema: &sch}, listCredentialsFilterDeclarations)
+				assert.NoError(tt, err)
+				bySchema, err := credService.ListCredentials(context.Background(), filter)
 				assert.NoError(tt, err)
 				assert.Len(tt, bySchema.Credentials, 1)
 				assert.EqualValues(tt, cred.CredentialSchema, bySchema.Credentials[0].Credential.CredentialSchema)
 
 				// get by subject
-				bySubject, err := credService.ListCredentialsBySubject(context.Background(), credential.ListCredentialBySubjectRequest{Subject: subject})
+				filter, err = filtering.ParseFilter(listCredentialsRequest{subject: &subject}, listCredentialsFilterDeclarations)
+				assert.NoError(tt, err)
+				bySubject, err := credService.ListCredentials(context.Background(), filter)
 				assert.NoError(tt, err)
 				assert.Len(tt, bySubject.Credentials, 1)
 
@@ -124,7 +129,9 @@ func TestCredentialRouter(t *testing.T) {
 				assert.Equal(tt, cred.CredentialSubject[credsdk.VerifiableCredentialIDProperty], bySubject.Credentials[0].Credential.CredentialSubject[credsdk.VerifiableCredentialIDProperty])
 
 				// get by issuer
-				byIssuer, err := credService.ListCredentialsByIssuer(context.Background(), credential.ListCredentialByIssuerRequest{Issuer: issuer})
+				filter, err = filtering.ParseFilter(listCredentialsRequest{issuer: &issuer}, listCredentialsFilterDeclarations)
+				assert.NoError(tt, err)
+				byIssuer, err := credService.ListCredentials(context.Background(), filter)
 				assert.NoError(tt, err)
 				assert.Len(tt, byIssuer.Credentials, 1)
 
@@ -165,12 +172,14 @@ func TestCredentialRouter(t *testing.T) {
 				assert.NotEmpty(tt, createdCredWithSchema)
 
 				// get by issuer
-				byIssuer, err = credService.ListCredentialsByIssuer(context.Background(), credential.ListCredentialByIssuerRequest{Issuer: issuer})
+				byIssuer, err = credService.ListCredentials(context.Background(), filter)
 				assert.NoError(tt, err)
 				assert.Len(tt, byIssuer.Credentials, 2)
 
 				// make sure the schema and subject queries are consistent
-				bySchema, err = credService.ListCredentialsBySchema(context.Background(), credential.ListCredentialBySchemaRequest{Schema: ""})
+				filter, err = filtering.ParseFilter(listCredentialsRequest{schema: &sch}, listCredentialsFilterDeclarations)
+				assert.NoError(tt, err)
+				bySchema, err = credService.ListCredentials(context.Background(), filter)
 				assert.NoError(tt, err)
 				assert.Len(tt, bySchema.Credentials, 1)
 
@@ -178,7 +187,9 @@ func TestCredentialRouter(t *testing.T) {
 				assert.Equal(tt, cred.ID, bySchema.Credentials[0].Credential.ID)
 				assert.EqualValues(tt, cred.CredentialSchema, bySchema.Credentials[0].Credential.CredentialSchema)
 
-				bySubject, err = credService.ListCredentialsBySubject(context.Background(), credential.ListCredentialBySubjectRequest{Subject: subject})
+				filter, err = filtering.ParseFilter(listCredentialsRequest{subject: &subject}, listCredentialsFilterDeclarations)
+				assert.NoError(tt, err)
+				bySubject, err = credService.ListCredentials(context.Background(), filter)
 				assert.NoError(tt, err)
 				assert.Len(tt, bySubject.Credentials, 1)
 

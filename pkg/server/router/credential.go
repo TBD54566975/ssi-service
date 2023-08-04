@@ -8,13 +8,12 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
-	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"go.einride.tech/aip/filtering"
 )
 
 const (
@@ -461,6 +460,50 @@ type ListCredentialsResponse struct {
 	Credentials []credmodel.Container `json:"credentials,omitempty"`
 }
 
+type listCredentialsRequest struct {
+	issuer  *string
+	schema  *string
+	subject *string
+}
+
+func (l listCredentialsRequest) GetFilter() string {
+	filter := ""
+	if l.issuer != nil {
+		filter += fmt.Sprintf(`issuer="%s"`, *l.issuer)
+	}
+	if l.schema != nil {
+		filter += fmt.Sprintf(`schema="%s"`, *l.schema)
+	}
+	if l.subject != nil {
+		filter += fmt.Sprintf(`subject="%s"`, *l.subject)
+	}
+	return filter
+}
+
+var listCredentialsFilterDeclarations *filtering.Declarations
+
+func init() {
+	var err error
+	listCredentialsFilterDeclarations, err = filtering.NewDeclarations(
+		filtering.DeclareFunction(
+			filtering.FunctionEquals,
+			// Below we're declaring the function for `=`.
+			filtering.NewFunctionOverload(
+				filtering.FunctionOverloadEqualsString,
+				filtering.TypeBool,
+				filtering.TypeString,
+				filtering.TypeString,
+			),
+		),
+		filtering.DeclareIdent("issuer", filtering.TypeString),
+		filtering.DeclareIdent("schema", filtering.TypeString),
+		filtering.DeclareIdent("subject", filtering.TypeString),
+	)
+	if err != nil {
+		panic(err)
+	}
+}
+
 // ListCredentials godoc
 //
 //	@Summary		List Verifiable Credentials
@@ -489,67 +532,25 @@ func (cr CredentialRouter) ListCredentials(c *gin.Context) {
 		return
 	}
 
-	if issuer == nil && schema == nil && subject == nil {
-		cr.listCredentials(c)
-		return
+	req := listCredentialsRequest{
+		issuer:  issuer,
+		schema:  schema,
+		subject: subject,
 	}
-	if issuer != nil {
-		cr.listCredentialsByIssuer(c, *issuer)
-		return
-	}
-	if subject != nil {
-		cr.listCredentialsBySubject(c, *subject)
-		return
-	}
-	if schema != nil {
-		cr.listCredentialsBySchema(c, *schema)
+
+	filter, err := filtering.ParseFilter(req, listCredentialsFilterDeclarations)
+	if err != nil {
+		framework.LoggingRespondErrMsg(c, "the filter request is malformed", http.StatusBadRequest)
 		return
 	}
 
-	framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+	cr.listCredentials(c, filter)
 }
 
-func (cr CredentialRouter) listCredentials(c *gin.Context) {
-	gotCredentials, err := cr.service.ListCredentials(c)
+func (cr CredentialRouter) listCredentials(c *gin.Context, filter filtering.Filter) {
+	gotCredentials, err := cr.service.ListCredentials(c, filter)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials")
-		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	resp := ListCredentialsResponse{Credentials: gotCredentials.Credentials}
-	framework.Respond(c, resp, http.StatusOK)
-}
-
-func (cr CredentialRouter) listCredentialsByIssuer(c *gin.Context, issuer string) {
-	gotCredentials, err := cr.service.ListCredentialsByIssuer(c, credential.ListCredentialByIssuerRequest{Issuer: issuer})
-	if err != nil {
-		errMsg := fmt.Sprintf("could not get credentials for issuer: %s", util.SanitizeLog(issuer))
-		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	resp := ListCredentialsResponse{Credentials: gotCredentials.Credentials}
-	framework.Respond(c, resp, http.StatusOK)
-	return
-}
-
-func (cr CredentialRouter) listCredentialsBySubject(c *gin.Context, subject string) {
-	gotCredentials, err := cr.service.ListCredentialsBySubject(c, credential.ListCredentialBySubjectRequest{Subject: subject})
-	if err != nil {
-		errMsg := fmt.Sprintf("could not get credentials for subject: %s", util.SanitizeLog(subject))
-		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	resp := ListCredentialsResponse{Credentials: gotCredentials.Credentials}
-	framework.Respond(c, resp, http.StatusOK)
-}
-
-func (cr CredentialRouter) listCredentialsBySchema(c *gin.Context, schema string) {
-	gotCredentials, err := cr.service.ListCredentialsBySchema(c, credential.ListCredentialBySchemaRequest{Schema: schema})
-	if err != nil {
-		errMsg := fmt.Sprintf("could not get credentials for schema: %s", util.SanitizeLog(schema))
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}

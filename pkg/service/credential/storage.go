@@ -17,6 +17,7 @@ import (
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
+	"go.einride.tech/aip/filtering"
 )
 
 type StoreCredentialRequest struct {
@@ -41,6 +42,14 @@ type StoredCredential struct {
 	IssuanceDate                       string `json:"issuanceDate"`
 	Revoked                            bool   `json:"revoked"`
 	Suspended                          bool   `json:"suspended"`
+}
+
+func (sc StoredCredential) FilterVariablesMap() map[string]any {
+	return map[string]any{
+		"issuer":  sc.Issuer,
+		"schema":  sc.Schema,
+		"subject": sc.Subject,
+	}
 }
 
 type WriteContext struct {
@@ -347,164 +356,28 @@ func (cs *Storage) getCredential(ctx context.Context, id string, namespace strin
 	return &stored, nil
 }
 
-// ListCredentials gets all credentials stored with a prefix key
-// The method is greedy, meaning if multiple values are found...and some fail during processing, we will
-// return only the successful values and log an error for the failures.
-func (cs *Storage) ListCredentials(ctx context.Context) ([]StoredCredential, error) {
-	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
+func (cs *Storage) ListCredentials(ctx context.Context, filter filtering.Filter) ([]StoredCredential, error) {
+	creds, err := cs.db.ReadAll(ctx, credentialNamespace)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage")
+		return nil, errors.Wrap(err, "reading all creds before filtering")
 	}
 
-	var storedCreds []StoredCredential
-	for _, key := range keys {
-		credBytes, err := cs.db.Read(ctx, credentialNamespace, key)
-		if err != nil {
-			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
-		} else {
-			var cred StoredCredential
-			if err = json.Unmarshal(credBytes, &cred); err != nil {
-				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
-			}
-			storedCreds = append(storedCreds, cred)
-		}
-	}
-
-	if len(storedCreds) == 0 {
-		logrus.Info("no credentials able to be retrieved")
-	}
-
-	return storedCreds, nil
-}
-
-// Note: this is a lazy  implementation. Optimizations are to be had by adjusting prefix
-// queries, and nested buckets. It is not intended that bolt is run in production, or at any scale,
-// so this is not much of a concern.
-
-// ListCredentialsByIssuer gets all credentials stored with a prefix key containing the issuer value
-// The method is greedy, meaning if multiple values are found and some fail during processing, we will
-// return only the successful values and log an error for the failures.
-func (cs *Storage) ListCredentialsByIssuer(ctx context.Context, issuer string) ([]StoredCredential, error) {
-	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
+	shouldInclude, err := storage.NewIncludeFunc(filter)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for issuer: %s", issuer)
+		return nil, err
 	}
-	// see if the prefix keys contains the issuer value
-	var issuerKeys []string
-	for _, k := range keys {
-		if strings.Contains(k, issuer) {
-			issuerKeys = append(issuerKeys, k)
+
+	storedCreds := make([]StoredCredential, 0, len(creds))
+	for i, manifestBytes := range creds {
+		var nextCred StoredCredential
+		if err = json.Unmarshal(manifestBytes, &nextCred); err != nil {
+			logrus.WithError(err).WithField("idx", i).Warnf("Skipping operation")
 		}
-	}
-	if len(issuerKeys) == 0 {
-		logrus.Warnf("no credentials found for issuer: %s", util.SanitizeLog(issuer))
-		return nil, nil
-	}
-
-	// now get each credential by key
-	var storedCreds []StoredCredential
-	for _, key := range issuerKeys {
-		credBytes, err := cs.db.Read(ctx, credentialNamespace, key)
-		if err != nil {
-			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
-		} else {
-			var cred StoredCredential
-			if err = json.Unmarshal(credBytes, &cred); err != nil {
-				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
-			}
-			storedCreds = append(storedCreds, cred)
+		include, err := shouldInclude(nextCred)
+		// We explicitly ignore evaluation errors and simply include them in the result.
+		if err != nil || include {
+			storedCreds = append(storedCreds, nextCred)
 		}
-	}
-
-	if len(storedCreds) == 0 {
-		logrus.Infof("no credentials able to be retrieved for issuer: %s", issuerKeys)
-	}
-
-	return storedCreds, nil
-}
-
-// ListCredentialsBySubject gets all credentials stored with a prefix key containing the subject value
-// The method is greedy, meaning if multiple values are found...and some fail during processing, we will
-// return only the successful values and log an error for the failures.
-func (cs *Storage) ListCredentialsBySubject(ctx context.Context, subject string) ([]StoredCredential, error) {
-	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for subject: %s", subject)
-	}
-
-	// see if the prefix keys contains the subject value
-	var subjectKeys []string
-	for _, k := range keys {
-		if strings.Contains(k, subject) {
-			subjectKeys = append(subjectKeys, k)
-		}
-	}
-	if len(subjectKeys) == 0 {
-		logrus.Warnf("no credentials found for subject: %s", util.SanitizeLog(subject))
-		return nil, nil
-	}
-
-	// now get each credential by key
-	var storedCreds []StoredCredential
-	for _, key := range subjectKeys {
-		credBytes, err := cs.db.Read(ctx, credentialNamespace, key)
-		if err != nil {
-			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
-		} else {
-			var cred StoredCredential
-			if err := json.Unmarshal(credBytes, &cred); err != nil {
-				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
-			}
-			storedCreds = append(storedCreds, cred)
-		}
-	}
-
-	if len(storedCreds) == 0 {
-		logrus.Infof("no credentials able to be retrieved for subject: %s", subjectKeys)
-	}
-
-	return storedCreds, nil
-}
-
-// GetCredentialsBySchema gets all credentials stored with a prefix key containing the schema value
-// The method is greedy, meaning if multiple values are found...and some fail during processing, we will
-// return only the successful values and log an error for the failures.
-func (cs *Storage) GetCredentialsBySchema(ctx context.Context, schema string) ([]StoredCredential, error) {
-	keys, err := cs.db.ReadAllKeys(ctx, credentialNamespace)
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not read credential storage while searching for creds for schema: %s", schema)
-	}
-
-	// see if the prefix keys contains the schema value
-	query := storage.Join("sc", schema)
-	var schemaKeys []string
-	for _, k := range keys {
-		if strings.HasSuffix(k, query) {
-			schemaKeys = append(schemaKeys, k)
-		}
-	}
-	if len(schemaKeys) == 0 {
-		logrus.Warnf("no credentials found for schema: %s", util.SanitizeLog(schema))
-		return nil, nil
-	}
-
-	// now get each credential by key
-	var storedCreds []StoredCredential
-	for _, key := range schemaKeys {
-		credBytes, err := cs.db.Read(ctx, credentialNamespace, key)
-		if err != nil {
-			logrus.WithError(err).Errorf("could not read credential with key: %s", key)
-		} else {
-			var cred StoredCredential
-			if err := json.Unmarshal(credBytes, &cred); err != nil {
-				logrus.WithError(err).Errorf("unmarshalling credential with key: %s", key)
-			}
-			storedCreds = append(storedCreds, cred)
-		}
-	}
-
-	if len(storedCreds) == 0 {
-		logrus.Infof("no credentials able to be retrieved for schema: %s", schemaKeys)
 	}
 
 	return storedCreds, nil
