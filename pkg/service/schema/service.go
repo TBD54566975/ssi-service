@@ -195,15 +195,15 @@ func (s Service) signCredentialSchema(ctx context.Context, cred credential.Verif
 	return credToken, nil
 }
 
-func (s Service) ListSchemas(ctx context.Context) (*ListSchemasResponse, error) {
+func (s Service) ListSchemas(ctx context.Context, request ListSchemasRequest) (*ListSchemasResponse, error) {
 	logrus.Debug("listing all schemas")
 
-	storedSchemas, err := s.storage.ListSchemas(ctx)
+	storedSchemas, err := s.storage.ListSchemas(ctx, *request.PageRequest.ToServicePage())
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "error getting schemas")
 	}
-	schemas := make([]GetSchemaResponse, 0, len(storedSchemas))
-	for _, stored := range storedSchemas {
+	schemas := make([]GetSchemaResponse, 0, len(storedSchemas.Schemas))
+	for _, stored := range storedSchemas.Schemas {
 		schemas = append(schemas, GetSchemaResponse{
 			ID:               stored.ID,
 			Type:             stored.Type,
@@ -212,7 +212,7 @@ func (s Service) ListSchemas(ctx context.Context) (*ListSchemasResponse, error) 
 		})
 	}
 
-	return &ListSchemasResponse{Schemas: schemas}, nil
+	return &ListSchemasResponse{Schemas: schemas, NextPageToken: storedSchemas.NextPageToken}, nil
 }
 
 func (s Service) GetSchema(ctx context.Context, request GetSchemaRequest) (*GetSchemaResponse, error) {

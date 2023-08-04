@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	"go.einride.tech/aip/filtering"
 
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
@@ -104,7 +105,7 @@ const (
 
 const FilterCharacterLimit = 1024
 
-func (r listOperationsRequest) toServiceRequest() (operation.ListOperationsRequest, error) {
+func (r listOperationsRequest) toServiceRequest(pageRequest pagination.PageRequest) (operation.ListOperationsRequest, error) {
 	var opReq operation.ListOperationsRequest
 	opReq.Parent = r.Parent
 
@@ -130,11 +131,15 @@ func (r listOperationsRequest) toServiceRequest() (operation.ListOperationsReque
 		return opReq, errors.Wrap(err, "parsing filter")
 	}
 	opReq.Filter = filter
+	opReq.PageRequest = &pageRequest
 	return opReq, nil
 }
 
 type ListOperationsResponse struct {
 	Operations []Operation `json:"operations"`
+
+	// Pagination token to retrieve the next page of results. If the value is "", it means no further results for the request.
+	NextPageToken string `json:"nextPageToken"`
 }
 
 // ListOperations godoc
@@ -144,15 +149,17 @@ type ListOperationsResponse struct {
 //	@Tags			Operations
 //	@Accept			json
 //	@Produce		json
-//	@Param			parent	query		string					false	"The name of the parent's resource. For example: `?parent=/presentation/submissions`"
-//	@Param			filter	query		string					false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=done="true"`"
-//	@Success		200		{object}	ListOperationsResponse	"OK"
-//	@Failure		400		{string}	string					"Bad request"
-//	@Failure		500		{string}	string					"Internal server error"
+//	@Param			parent		query		string					false	"The name of the parent's resource. For example: `?parent=/presentation/submissions`"
+//	@Param			filter		query		string					false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=done="true"`"
+//	@Param			pageSize	query		number					false	"Hint to the server of the maximum elements to return. More may be returned. When not set, the server will return all elements."
+//	@Param			pageToken	query		string					false	"Used to indicate to the server to return a specific page of the list results. Must match a previous requests' `nextPageToken`."
+//	@Success		200			{object}	ListOperationsResponse	"OK"
+//	@Failure		400			{string}	string					"Bad request"
+//	@Failure		500			{string}	string					"Internal server error"
 //	@Router			/v1/operations [get]
 func (o OperationRouter) ListOperations(c *gin.Context) {
-	parentParam := framework.GetParam(c, ParentParam)
-	filterParam := framework.GetParam(c, FilterParam)
+	parentParam := framework.GetQueryValue(c, ParentParam)
+	filterParam := framework.GetQueryValue(c, FilterParam)
 	var request listOperationsRequest
 	if parentParam != nil {
 		unescaped, err := url.QueryUnescape(*parentParam)
@@ -179,22 +186,29 @@ func (o OperationRouter) ListOperations(c *gin.Context) {
 		return
 	}
 
-	req, err := request.toServiceRequest()
+	var pageRequest pagination.PageRequest
+	if pagination.ParsePaginationQueryValues(c, &pageRequest) {
+		return
+	}
+
+	req, err := request.toServiceRequest(pageRequest)
 	if err != nil {
 		framework.LoggingRespondErrWithMsg(c, err, invalidGetOperationsErr, http.StatusBadRequest)
 		return
 	}
-
-	ops, err := o.service.ListOperations(c, req)
+	listOpsResp, err := o.service.ListOperations(c, req)
 	if err != nil {
 		errMsg := "getting operations from service"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
 
-	resp := ListOperationsResponse{Operations: make([]Operation, 0, len(ops.Operations))}
-	for _, op := range ops.Operations {
+	resp := ListOperationsResponse{Operations: make([]Operation, 0, len(listOpsResp.Operations))}
+	for _, op := range listOpsResp.Operations {
 		resp.Operations = append(resp.Operations, routerModel(op))
+	}
+	if pagination.MaybeSetNextPageToken(c, listOpsResp.NextPageToken, &resp.NextPageToken) {
+		return
 	}
 	framework.Respond(c, resp, http.StatusOK)
 }
