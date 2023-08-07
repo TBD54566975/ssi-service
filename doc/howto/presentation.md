@@ -2,7 +2,7 @@
 
 ## Background
 
-By now you should be familiar with [DIDs](did.md) and [Verifiable Credentials](credential.md). A next logical question, once you've started using the technologies, is "how do I make use of it?" To use Verifiable Credentials anywhere you need to present them—that is to share them with another party. There are a few pieces of sharing: creating a package that you share and transmitting the data to another party. Transmission, simliar to credential issuance, can be accomplished with a number of different mechanisms like [Web5](https://github.com/TBD54566975/dwn-sdk-js#readme) and [OpenID Connect](https://openid.net/sg/openid4vc/). Packaging a credential, or set of credentials, into a presentation is something that has been standardized at the W3C in the same specification that defines Verifiable Credentials, called [Verifiable Presentations](https://www.w3.org/TR/vc-data-model/#presentations-0).
+By now you should be familiar with [DIDs](did.md) and [Verifiable Credentials](credential.md). A next logical question, once you've started using the technologies, is "how do I make use of it?" To use Verifiable Credentials anywhere you need to present them — that is to share them with another party. There are a few pieces of sharing: creating a package that you share and transmitting the data to another party. Transmission, simliar to credential issuance, can be accomplished with a number of different mechanisms like [Web5](https://github.com/TBD54566975/dwn-sdk-js#readme) and [OpenID Connect](https://openid.net/sg/openid4vc/). Packaging a credential, or set of credentials, into a presentation is something that has been standardized at the W3C in the same specification that defines Verifiable Credentials, called [Verifiable Presentations](https://www.w3.org/TR/vc-data-model/#presentations-0).
 
 Verifiable Presentations are a standard data container for sharing credentials that provide a number of benefits, namely:
 
@@ -11,7 +11,7 @@ Verifiable Presentations are a standard data container for sharing credentials t
 
 Presentations impose no constraints on who can construct a presentation, or what may be presented. This means if you have multiple credentials issued to different DIDs, you can still construct a Verifiable Presentation to present those credentials at the same time. This is why you will see that the [`proof` property](https://www.w3.org/TR/vc-data-model/#example-basic-structure-of-a-presentation) can be an array. Verifiers must take care to make sure that the credentials in a given presentation _can be_ presented by the presenter, and that the credentials themselves are valid.
 
-Verifiable Presentations are currently accepted in two main SSI Service flows: when verifying [Presentation Submissoins](https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-submission) when using [Presentation Exchange](https://identity.foundation/presentation-exchange/spec/v2.0.0), and verifying [Credential Applications](https://identity.foundation/credential-manifest/#credential-application) when using [Credential Manifest](https://identity.foundation/credential-manifest). As a utility, we've also exposed an endpoint to statelessly verify a presentation at `/v1/presentations/verification`.
+Verifiable Presentations are currently accepted in two main SSI Service flows: when verifying [Presentation Submissoins](https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-submission) while using [Presentation Exchange](https://identity.foundation/presentation-exchange/spec/v2.0.0), and verifying [Credential Applications](https://identity.foundation/credential-manifest/#credential-application) while using [Credential Manifest](https://identity.foundation/credential-manifest). As a utility, we've also exposed an endpoint to statelessly verify a presentation at `/v1/presentations/verification`.
 
 ## Constructing a Verifiable Presentation
 
@@ -52,7 +52,7 @@ Upon decoding, we can view the JWT as:
 }
 ```
 
-We can also decode the JWT VC we are presenting as:
+We can also decode the JWT VC value within the `verifiableCredential` property (the one that ends with `v4aQvEDg`) as:
 
 ```json
 {
