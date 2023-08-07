@@ -48,13 +48,16 @@ func (s Service) ListOperations(ctx context.Context, request ListOperationsReque
 		return nil, errors.Wrap(err, "invalid request")
 	}
 
-	ops, err := s.storage.ListOperations(ctx, request.Parent, request.Filter)
+	ops, err := s.storage.ListOperations(ctx, request.Parent, request.Filter, request.PageRequest.ToServicePage())
 	if err != nil {
 		return nil, errors.Wrap(err, "fetching ops from storage")
 	}
 
-	resp := ListOperationsResponse{Operations: make([]Operation, len(ops))}
-	for i, op := range ops {
+	resp := ListOperationsResponse{
+		Operations:    make([]Operation, len(ops.StoredOperations)),
+		NextPageToken: ops.NextPageToken,
+	}
+	for i, op := range ops.StoredOperations {
 		op := op
 		newOp, err := ServiceModel(op)
 		if err != nil {
