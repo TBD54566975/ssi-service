@@ -375,9 +375,9 @@ func (cs *Storage) ListCredentials(ctx context.Context, filter filtering.Filter,
 	}
 
 	storedCreds := make([]StoredCredential, 0, len(creds))
-	for i, manifestBytes := range creds {
+	for i, cred := range creds {
 		var nextCred StoredCredential
-		if err = json.Unmarshal(manifestBytes, &nextCred); err != nil {
+		if err = json.Unmarshal(cred, &nextCred); err != nil {
 			logrus.WithError(err).WithField("idx", i).Warnf("Skipping operation")
 		}
 		include, err := shouldInclude(nextCred)
