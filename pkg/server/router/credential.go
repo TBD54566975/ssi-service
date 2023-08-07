@@ -516,14 +516,14 @@ func init() {
 //	@Tags			Credentials
 //	@Accept			json
 //	@Produce		json
-//	@Param			issuer	query		string	false	"The issuer id, e.g. did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"
-//	@Param			schema	query		string	false	"The credentialSchema.id value to filter by"
-//	@Param			subject	query		string	false	"The credentialSubject.id value to filter by"
+//	@Param			issuer		query		string	false	"The issuer id, e.g. did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"
+//	@Param			schema		query		string	false	"The credentialSchema.id value to filter by"
+//	@Param			subject		query		string	false	"The credentialSubject.id value to filter by"
 //	@Param			pageSize	query		number	false	"Hint to the server of the maximum elements to return. More may be returned. When not set, the server will return all elements."
 //	@Param			pageToken	query		string	false	"Used to indicate to the server to return a specific page of the list results. Must match a previous requests' `nextPageToken`."
-//	@Success		200		{object}	ListCredentialsResponse
-//	@Failure		400		{string}	string	"Bad request"
-//	@Failure		500		{string}	string	"Internal server error"
+//	@Success		200			{object}	ListCredentialsResponse
+//	@Failure		400			{string}	string	"Bad request"
+//	@Failure		500			{string}	string	"Internal server error"
 //	@Router			/v1/credentials [get]
 func (cr CredentialRouter) ListCredentials(c *gin.Context) {
 	var pageRequest pagination.PageRequest
