@@ -8,13 +8,13 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
-	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	"github.com/tbd54566975/ssi-service/pkg/service/credential"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
+	"go.einride.tech/aip/filtering"
 )
 
 const (
@@ -459,6 +459,53 @@ func (cr CredentialRouter) VerifyCredential(c *gin.Context) {
 type ListCredentialsResponse struct {
 	// Array of credentials that match the query parameters.
 	Credentials []credmodel.Container `json:"credentials,omitempty"`
+
+	// Pagination token to retrieve the next page of results. If the value is "", it means no further results for the request.
+	NextPageToken string `json:"nextPageToken"`
+}
+
+type listCredentialsRequest struct {
+	issuer  *string
+	schema  *string
+	subject *string
+}
+
+func (l listCredentialsRequest) GetFilter() string {
+	filter := ""
+	if l.issuer != nil {
+		filter += fmt.Sprintf(`issuer="%s"`, *l.issuer)
+	}
+	if l.schema != nil {
+		filter += fmt.Sprintf(`schema="%s"`, *l.schema)
+	}
+	if l.subject != nil {
+		filter += fmt.Sprintf(`subject="%s"`, *l.subject)
+	}
+	return filter
+}
+
+var listCredentialsFilterDeclarations *filtering.Declarations
+
+func init() {
+	var err error
+	listCredentialsFilterDeclarations, err = filtering.NewDeclarations(
+		filtering.DeclareFunction(
+			filtering.FunctionEquals,
+			// Below we're declaring the function for `=`.
+			filtering.NewFunctionOverload(
+				filtering.FunctionOverloadEqualsString,
+				filtering.TypeBool,
+				filtering.TypeString,
+				filtering.TypeString,
+			),
+		),
+		filtering.DeclareIdent("issuer", filtering.TypeString),
+		filtering.DeclareIdent("schema", filtering.TypeString),
+		filtering.DeclareIdent("subject", filtering.TypeString),
+	)
+	if err != nil {
+		panic(err)
+	}
 }
 
 // ListCredentials godoc
@@ -469,14 +516,21 @@ type ListCredentialsResponse struct {
 //	@Tags			Credentials
 //	@Accept			json
 //	@Produce		json
-//	@Param			issuer	query		string	false	"The issuer id, e.g. did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"
-//	@Param			schema	query		string	false	"The credentialSchema.id value to filter by"
-//	@Param			subject	query		string	false	"The credentialSubject.id value to filter by"
-//	@Success		200		{object}	ListCredentialsResponse
-//	@Failure		400		{string}	string	"Bad request"
-//	@Failure		500		{string}	string	"Internal server error"
+//	@Param			issuer		query		string	false	"The issuer id, e.g. did:key:z6MkiTBz1ymuepAQ4HEHYSF1H8quG5GLVVQR3djdX3mDooWp"
+//	@Param			schema		query		string	false	"The credentialSchema.id value to filter by"
+//	@Param			subject		query		string	false	"The credentialSubject.id value to filter by"
+//	@Param			pageSize	query		number	false	"Hint to the server of the maximum elements to return. More may be returned. When not set, the server will return all elements."
+//	@Param			pageToken	query		string	false	"Used to indicate to the server to return a specific page of the list results. Must match a previous requests' `nextPageToken`."
+//	@Success		200			{object}	ListCredentialsResponse
+//	@Failure		400			{string}	string	"Bad request"
+//	@Failure		500			{string}	string	"Internal server error"
 //	@Router			/v1/credentials [get]
 func (cr CredentialRouter) ListCredentials(c *gin.Context) {
+	var pageRequest pagination.PageRequest
+	if pagination.ParsePaginationQueryValues(c, &pageRequest) {
+		return
+	}
+
 	issuer := framework.GetQueryValue(c, IssuerParam)
 	schema := framework.GetQueryValue(c, SchemaParam)
 	subject := framework.GetQueryValue(c, SubjectParam)
@@ -489,72 +543,30 @@ func (cr CredentialRouter) ListCredentials(c *gin.Context) {
 		return
 	}
 
-	if issuer == nil && schema == nil && subject == nil {
-		cr.listCredentials(c)
-		return
+	req := listCredentialsRequest{
+		issuer:  issuer,
+		schema:  schema,
+		subject: subject,
 	}
-	if issuer != nil {
-		cr.listCredentialsByIssuer(c, *issuer)
-		return
-	}
-	if subject != nil {
-		cr.listCredentialsBySubject(c, *subject)
-		return
-	}
-	if schema != nil {
-		cr.listCredentialsBySchema(c, *schema)
+
+	filter, err := filtering.ParseFilter(req, listCredentialsFilterDeclarations)
+	if err != nil {
+		framework.LoggingRespondErrMsg(c, "the filter request is malformed", http.StatusBadRequest)
 		return
 	}
 
-	framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
-}
-
-func (cr CredentialRouter) listCredentials(c *gin.Context) {
-	gotCredentials, err := cr.service.ListCredentials(c)
+	listCredentialsResponse, err := cr.service.ListCredentials(c, filter, pageRequest)
 	if err != nil {
 		errMsg := fmt.Sprintf("could not get credentials")
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
 
-	resp := ListCredentialsResponse{Credentials: gotCredentials.Credentials}
-	framework.Respond(c, resp, http.StatusOK)
-}
+	resp := ListCredentialsResponse{Credentials: listCredentialsResponse.Credentials}
 
-func (cr CredentialRouter) listCredentialsByIssuer(c *gin.Context, issuer string) {
-	gotCredentials, err := cr.service.ListCredentialsByIssuer(c, credential.ListCredentialByIssuerRequest{Issuer: issuer})
-	if err != nil {
-		errMsg := fmt.Sprintf("could not get credentials for issuer: %s", util.SanitizeLog(issuer))
-		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+	if pagination.MaybeSetNextPageToken(c, listCredentialsResponse.NextPageToken, &resp.NextPageToken) {
 		return
 	}
-
-	resp := ListCredentialsResponse{Credentials: gotCredentials.Credentials}
-	framework.Respond(c, resp, http.StatusOK)
-	return
-}
-
-func (cr CredentialRouter) listCredentialsBySubject(c *gin.Context, subject string) {
-	gotCredentials, err := cr.service.ListCredentialsBySubject(c, credential.ListCredentialBySubjectRequest{Subject: subject})
-	if err != nil {
-		errMsg := fmt.Sprintf("could not get credentials for subject: %s", util.SanitizeLog(subject))
-		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	resp := ListCredentialsResponse{Credentials: gotCredentials.Credentials}
-	framework.Respond(c, resp, http.StatusOK)
-}
-
-func (cr CredentialRouter) listCredentialsBySchema(c *gin.Context, schema string) {
-	gotCredentials, err := cr.service.ListCredentialsBySchema(c, credential.ListCredentialBySchemaRequest{Schema: schema})
-	if err != nil {
-		errMsg := fmt.Sprintf("could not get credentials for schema: %s", util.SanitizeLog(schema))
-		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
-		return
-	}
-
-	resp := ListCredentialsResponse{Credentials: gotCredentials.Credentials}
 	framework.Respond(c, resp, http.StatusOK)
 }
 

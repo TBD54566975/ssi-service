@@ -14,16 +14,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
-	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/internal/verification"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
+	"go.einride.tech/aip/filtering"
 )
 
 type Service struct {
@@ -358,16 +358,16 @@ func (s Service) GetCredential(ctx context.Context, request GetCredentialRequest
 	return &response, nil
 }
 
-func (s Service) ListCredentials(ctx context.Context) (*ListCredentialsResponse, error) {
+func (s Service) ListCredentials(ctx context.Context, filter filtering.Filter, request pagination.PageRequest) (*ListCredentialsResponse, error) {
 	logrus.Debugf("listing credential(s) ")
 
-	gotCreds, err := s.storage.ListCredentials(ctx)
+	gotCreds, err := s.storage.ListCredentials(ctx, filter, request.ToServicePage())
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not list credential(s)")
 	}
 
-	creds := make([]credint.Container, 0, len(gotCreds))
-	for _, cred := range gotCreds {
+	creds := make([]credint.Container, 0, len(gotCreds.StoredCredentials))
+	for _, cred := range gotCreds.StoredCredentials {
 		container := credint.Container{
 			ID:            cred.LocalCredentialID,
 			Credential:    cred.Credential,
@@ -378,77 +378,10 @@ func (s Service) ListCredentials(ctx context.Context) (*ListCredentialsResponse,
 		creds = append(creds, container)
 	}
 
-	response := ListCredentialsResponse{Credentials: creds}
-	return &response, nil
-}
-
-func (s Service) ListCredentialsByIssuer(ctx context.Context, request ListCredentialByIssuerRequest) (*ListCredentialsResponse, error) {
-	logrus.Debugf("listing credential(s) for issuer: %s", util.SanitizeLog(request.Issuer))
-
-	gotCreds, err := s.storage.ListCredentialsByIssuer(ctx, request.Issuer)
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not list credential(s) for issuer: %s", request.Issuer)
+	response := ListCredentialsResponse{
+		Credentials:   creds,
+		NextPageToken: gotCreds.NextPageToken,
 	}
-
-	creds := make([]credint.Container, 0, len(gotCreds))
-	for _, cred := range gotCreds {
-		container := credint.Container{
-			ID:            cred.LocalCredentialID,
-			Credential:    cred.Credential,
-			CredentialJWT: cred.CredentialJWT,
-			Revoked:       cred.Revoked,
-			Suspended:     cred.Suspended,
-		}
-		creds = append(creds, container)
-	}
-
-	response := ListCredentialsResponse{Credentials: creds}
-	return &response, nil
-}
-
-func (s Service) ListCredentialsBySubject(ctx context.Context, request ListCredentialBySubjectRequest) (*ListCredentialsResponse, error) {
-	logrus.Debugf("listing credential(s) for subject: %s", util.SanitizeLog(request.Subject))
-
-	gotCreds, err := s.storage.ListCredentialsBySubject(ctx, request.Subject)
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not list credential(s) for subject: %s", request.Subject)
-	}
-
-	creds := make([]credint.Container, 0, len(gotCreds))
-	for _, cred := range gotCreds {
-		container := credint.Container{
-			ID:            cred.LocalCredentialID,
-			Credential:    cred.Credential,
-			CredentialJWT: cred.CredentialJWT,
-			Revoked:       cred.Revoked,
-			Suspended:     cred.Suspended,
-		}
-		creds = append(creds, container)
-	}
-	response := ListCredentialsResponse{Credentials: creds}
-	return &response, nil
-}
-
-func (s Service) ListCredentialsBySchema(ctx context.Context, request ListCredentialBySchemaRequest) (*ListCredentialsResponse, error) {
-	logrus.Debugf("listing credential(s) for schema: %s", util.SanitizeLog(request.Schema))
-
-	gotCreds, err := s.storage.GetCredentialsBySchema(ctx, request.Schema)
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not list credential(s) for schema: %s", request.Schema)
-	}
-
-	creds := make([]credint.Container, 0, len(gotCreds))
-	for _, cred := range gotCreds {
-		container := credint.Container{
-			ID:            cred.LocalCredentialID,
-			Credential:    cred.Credential,
-			CredentialJWT: cred.CredentialJWT,
-			Revoked:       cred.Revoked,
-			Suspended:     cred.Suspended,
-		}
-		creds = append(creds, container)
-	}
-	response := ListCredentialsResponse{Credentials: creds}
 	return &response, nil
 }
 
@@ -669,22 +602,6 @@ func parseIDFromURI(uri string) (string, error) {
 		return "", sdkutil.LoggingNewErrorf("cannot infer status list credential id from %q", uri)
 	}
 	return uri[len(uri)-uuidStandardFormLen:], nil
-}
-
-func (s Service) GetCredentialsByIssuerAndSchemaWithStatus(ctx context.Context, issuer string, schema string) ([]credential.VerifiableCredential, error) {
-	gotCreds, err := s.storage.GetCredentialsByIssuerAndSchema(ctx, issuer, schema)
-	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not get credential(s) for issuer: %s", issuer)
-	}
-
-	var creds []credential.VerifiableCredential
-	for _, cred := range gotCreds {
-		if cred.Credential.CredentialStatus != nil {
-			creds = append(creds, *cred.Credential)
-		}
-	}
-
-	return creds, nil
 }
 
 func (s Service) DeleteCredential(ctx context.Context, request DeleteCredentialRequest) error {
