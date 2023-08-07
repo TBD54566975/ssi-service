@@ -32,30 +32,26 @@ jobs:
       with:
         args: "A new release {{ EVENT_PAYLOAD.release.tag_name }} of project {{ EVENT_PAYLOAD.repository.name }} has been cut. Please check the release notes: {{ EVENT_PAYLOAD.release.html_url }} for compatibility with docs."
 
-name: Create Issue on Push
+name: Create Issue in SSI Console
 
 on: 
   push: 
-    branches: [main]
+    branches: [ main ]
 
-jobs: 
-  create-issue:
+jobs:
+  create_issue:
     runs-on: ubuntu-latest
-
+    permissions:
+      issues: write
     steps:
-    - name: Notify SSI Console
-      uses: actions/github-script@v6
-      with:
-        github-token: ${{ secrets.DOCS_PAT }}  # Assuming 'PAT' is your Personal Access Token stored as a secret
-        script: |
-          const issueTitle = `A new change has gone to main for ${context.payload.repository.name}.`;
-          const issueBody = `Please check the [latest commit](${context.payload.repository.html_url}) for details.`;
-          const labels = ['triage', 'priority-1-blocker', 'documentation'];
-          const issue = await github.rest.issues.create({
-            owner: 'TBD54566975',
-            repo: 'ssi-console',
-            title: issueTitle,
-            body: issueBody,
-            labels: labels
-          });
-          return { issueNumber: issue.data.number, repo: context.payload.repository.name }; 
+      - name: Create issue in SSI Console
+        run: |
+          curl --request POST \
+          --url https://api.github.com/repos/TBD54566975/ssi-console/issues \
+          --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' \
+          --header 'content-type: application/json' \
+          --data '{
+            "title": "Automated issue for commit: ${{ github.sha }} from SSI Service",
+            "body": "This issue was automatically created by the GitHub Action workflow **${{ github.workflow }}**. \n\n The commit hash was: _${{ github.sha }}_."
+            }' \
+          --fail
