@@ -268,3 +268,24 @@ func TestSubmissionFlowExternalCredential(t *testing.T) {
 	s, _ := getJSONElement(reviewOutput, "$")
 	assert.Equal(t, s, opResponse)
 }
+
+func TestListOperationsWithPagination(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	// This test simply ensures that we can retrieve all operations from a parent using pagination.
+	schemasPage, err := get(endpoint + version + "operations?parent=presentations/submissions&pageSize=1")
+	assert.NoError(t, err)
+
+	nextPageToken, err := getJSONElement(schemasPage, "$.nextPageToken")
+	assert.NoError(t, err)
+
+	for nextPageToken != "" {
+		schemasPage, err := get(endpoint + version + "operations?parent=presentations/submissions&pageSize=1&pageToken=" + nextPageToken)
+		assert.NoError(t, err)
+
+		nextPageToken, err = getJSONElement(schemasPage, "$.nextPageToken")
+		assert.NoError(t, err)
+	}
+}

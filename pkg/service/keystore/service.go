@@ -12,9 +12,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/chacha20poly1305"
 
-	"github.com/tbd54566975/ssi-service/internal/keyaccess"
-
 	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/internal/encryption"
+	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -50,20 +50,17 @@ func (s Service) Config() config.KeyStoreServiceConfig {
 }
 
 func NewKeyStoreService(config config.KeyStoreServiceConfig, s storage.ServiceStorage) (*Service, error) {
-	if err := EnsureServiceKeyExists(config, s); err != nil {
-		return nil, sdkutil.LoggingErrorMsg(err, "initializing keystore")
+	encrypter, decrypter, err := NewServiceEncryption(s, config.EncryptionConfig, ServiceKeyEncryptionKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating new encryption")
 	}
-	factory := NewKeyStoreServiceFactory(config, s)
+
+	factory := NewKeyStoreServiceFactory(config, s, encrypter, decrypter)
 	return factory(s)
 }
 
-func NewKeyStoreServiceFactory(config config.KeyStoreServiceConfig, s storage.ServiceStorage) ServiceFactory {
+func NewKeyStoreServiceFactory(config config.KeyStoreServiceConfig, s storage.ServiceStorage, encrypter encryption.Encrypter, decrypter encryption.Decrypter) ServiceFactory {
 	return func(tx storage.Tx) (*Service, error) {
-		encrypter, decrypter, err := newEncryption(s, config)
-		if err != nil {
-			return nil, errors.Wrap(err, "creating new encryption")
-		}
-
 		// Next, instantiate the key storage
 		keyStoreStorage, err := NewKeyStoreStorage(s, encrypter, decrypter, tx)
 		if err != nil {
@@ -178,24 +175,6 @@ func GenerateServiceKey() (key string, err error) {
 
 	key = base58.Encode(keyBytes)
 	return
-}
-
-// EncryptKey encrypts another key with the service key using xchacha20-poly1305
-func EncryptKey(serviceKey, key []byte) ([]byte, error) {
-	encryptedKey, err := util.XChaCha20Poly1305Encrypt(serviceKey, key)
-	if err != nil {
-		return nil, errors.Wrap(err, "encrypting key with service key")
-	}
-	return encryptedKey, nil
-}
-
-// DecryptKey encrypts another key with the service key using xchacha20-poly1305
-func DecryptKey(serviceKey, encryptedKey []byte) ([]byte, error) {
-	decryptedKey, err := util.XChaCha20Poly1305Decrypt(serviceKey, encryptedKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "decrypting key with service key")
-	}
-	return decryptedKey, nil
 }
 
 // Sign fetches the key in the store, and uses it to sign data. Data should be json or json-serializable.

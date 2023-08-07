@@ -3,12 +3,12 @@ package schema
 import (
 	"context"
 
+	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-
-	"github.com/TBD54566975/ssi-sdk/credential/schema"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
@@ -17,6 +17,11 @@ import (
 const (
 	namespace = "schema"
 )
+
+type StoredSchemas struct {
+	Schemas       []StoredSchema
+	NextPageToken string
+}
 
 type StoredSchema struct {
 	ID               string                  `json:"id"`
@@ -64,15 +69,13 @@ func (s *Storage) GetSchema(ctx context.Context, id string) (*StoredSchema, erro
 }
 
 // ListSchemas attempts to get all stored schemas. It will return those it can even if it has trouble with some.
-func (s *Storage) ListSchemas(ctx context.Context) ([]StoredSchema, error) {
-	gotSchemas, err := s.db.ReadAll(ctx, namespace)
+func (s *Storage) ListSchemas(ctx context.Context, page common.Page) (*StoredSchemas, error) {
+	token, size := page.ToStorageArgs()
+	gotSchemas, nextPageToken, err := s.db.ReadPage(ctx, namespace, token, size)
 	if err != nil {
-		return nil, util.LoggingErrorMsg(err, "could not list schemas")
+		return nil, errors.Wrap(err, "reading page of schemas")
 	}
-	if len(gotSchemas) == 0 {
-		logrus.Info("no schemas to list")
-		return nil, nil
-	}
+
 	stored := make([]StoredSchema, 0, len(gotSchemas))
 	for _, schemaBytes := range gotSchemas {
 		var nextSchema StoredSchema
@@ -82,7 +85,10 @@ func (s *Storage) ListSchemas(ctx context.Context) ([]StoredSchema, error) {
 		}
 		stored = append(stored, nextSchema)
 	}
-	return stored, nil
+	return &StoredSchemas{
+		Schemas:       stored,
+		NextPageToken: nextPageToken,
+	}, nil
 }
 
 func (s *Storage) DeleteSchema(ctx context.Context, id string) error {

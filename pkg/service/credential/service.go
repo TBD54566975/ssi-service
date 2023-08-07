@@ -14,10 +14,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+
 	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/internal/verification"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
@@ -27,7 +29,7 @@ import (
 type Service struct {
 	storage  *Storage
 	config   config.CredentialServiceConfig
-	verifier *credint.Validator
+	verifier *verification.Verifier
 
 	// external dependencies
 	keyStore *keystore.Service
@@ -65,12 +67,13 @@ func (s Service) Config() config.CredentialServiceConfig {
 	return s.config
 }
 
-func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, didResolver resolution.Resolver, schema *schema.Service) (*Service, error) {
+func NewCredentialService(config config.CredentialServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service,
+	didResolver resolution.Resolver, schema *schema.Service) (*Service, error) {
 	credentialStorage, err := NewCredentialStorage(s)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate storage for the credential service")
 	}
-	verifier, err := credint.NewCredentialValidator(didResolver, schema)
+	verifier, err := verification.NewVerifiableDataVerifier(didResolver, schema)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not instantiate verifier for the credential service")
 	}
@@ -142,7 +145,7 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 
 	builder := credential.NewVerifiableCredentialBuilder()
 	credentialID := uuid.NewString()
-	credentialURI := s.Config().ServiceEndpoint + "/" + credentialID
+	credentialURI := config.GetServicePath(framework.Credential) + "/" + credentialID
 	if err := builder.SetID(credentialURI); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not build credential when setting id: %s", credentialURI)
 	}
@@ -312,7 +315,6 @@ type VerifyCredentialResponse struct {
 // 3. Makes sure the credential complies with the VC Data Model
 // 4. If the credential has a schema, makes sure its data complies with the schema
 // LATER: Makes sure the credential has not been revoked, other checks.
-// Note: https://github.com/TBD54566975/ssi-sdk/issues/213
 func (s Service) VerifyCredential(ctx context.Context, request VerifyCredentialRequest) (*VerifyCredentialResponse, error) {
 	logrus.Debugf("verifying credential: %+v", request)
 

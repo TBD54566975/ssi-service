@@ -15,31 +15,33 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
+	"github.com/tbd54566975/ssi-service/internal/verification"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type DIDConfigurationService struct {
 	keyStoreService *keystore.Service
-	validator       *credint.Validator
+	validator       *verification.Verifier
 
 	HTTPClient *http.Client
 }
 
 func NewDIDConfigurationService(keyStoreService *keystore.Service, didResolver resolution.Resolver, schema *schema.Service) (*DIDConfigurationService, error) {
 	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
-	validator, err := credint.NewCredentialValidator(didResolver, schema)
+	verifier, err := verification.NewVerifiableDataVerifier(didResolver, schema)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate validator for the credential service")
+		return nil, errors.Wrap(err, "could not instantiate verifier for the credential service")
 	}
 
 	return &DIDConfigurationService{
 		keyStoreService: keyStoreService,
-		validator:       validator,
+		validator:       verifier,
 		HTTPClient:      client,
 	}, nil
 }
@@ -67,12 +69,12 @@ func (s DIDConfigurationService) VerifyDIDConfiguration(ctx context.Context, req
 	}
 
 	httpResponse, err := s.HTTPClient.Do(httpReq)
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(httpResponse.Body)
 	if err != nil {
 		return nil, errors.Wrap(err, "performing http request")
 	}
+	defer func() {
+		_ = httpResponse.Body.Close()
+	}()
 
 	if !util.Is2xxResponse(httpResponse.StatusCode) {
 		return nil, errors.Errorf("expected 2xx code, got %d", httpResponse.StatusCode)
@@ -112,14 +114,15 @@ func (s DIDConfigurationService) VerifyDIDConfiguration(ctx context.Context, req
 
 		// 3. The credentialSubject.origin property MUST be present, and its value MUST match the origin the resource was requested from.
 		credentialSubjectOrigin := domainLinkageCredential.Credential.CredentialSubject["origin"].(string)
-		if !strings.HasPrefix(httpReq.URL.String(), credentialSubjectOrigin) {
+		requestedURL := httpReq.URL.String()
+		if !originMatches(requestedURL, credentialSubjectOrigin) {
 			response.Reason = fmt.Sprintf("The credentialSubject.origin property MUST be present, and its value MUST match the origin the resource was requested from")
 			return &response, nil
 		}
 
 		// 4. The implementer MUST perform DID resolution on the DID specified in the Issuer of the Domain Linkage Credential to obtain the associated DID document.
 		// 5. Using the retrieved DID document, the implementer MUST validate the signature of the Domain Linkage Credential against key material referenced in the assertionMethod section of the DID document.
-		if err := s.validator.Verify(ctx, domainLinkageCredential); err != nil {
+		if err := s.validator.VerifyCredential(ctx, domainLinkageCredential); err != nil {
 			response.Reason = err.Error()
 			return &response, nil
 		}
@@ -130,6 +133,11 @@ func (s DIDConfigurationService) VerifyDIDConfiguration(ctx context.Context, req
 	response.Verified = true
 	return &response, nil
 }
+
+func originMatches(requestedURL string, credentialSubjectOrigin string) bool {
+	return strings.Contains(requestedURL, credentialSubjectOrigin)
+}
+
 func (s DIDConfigurationService) CreateDIDConfiguration(ctx context.Context, req *CreateDIDConfigurationRequest) (*CreateDIDConfigurationResponse, error) {
 	builder := credential.NewVerifiableCredentialBuilder()
 	if err := builder.SetIssuer(req.IssuerDID); err != nil {

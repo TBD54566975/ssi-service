@@ -8,6 +8,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"go.einride.tech/aip/filtering"
 
 	"github.com/tbd54566975/ssi-service/pkg/service/operation/credential"
@@ -30,8 +31,9 @@ func (s Storage) CancelOperation(ctx context.Context, id string) (*opstorage.Sto
 	var err error
 	switch {
 	case strings.HasPrefix(id, submission.ParentResource):
-		_, opData, err = s.db.UpdateValueAndOperation(
+		_, opData, err = storage.UpdateValueAndOperation(
 			ctx,
+			s.db,
 			submission.Namespace, opstorage.StatusObjectID(id), storage.NewUpdater(map[string]any{
 				"status": submission.StatusCancelled,
 				"reason": cancelledReason,
@@ -42,8 +44,9 @@ func (s Storage) CancelOperation(ctx context.Context, id string) (*opstorage.Sto
 				}),
 			})
 	case strings.HasPrefix(id, credential.ParentResource):
-		_, opData, err = s.db.UpdateValueAndOperation(
+		_, opData, err = storage.UpdateValueAndOperation(
 			ctx,
+			s.db,
 			credential.ApplicationNamespace, opstorage.StatusObjectID(id), storage.NewUpdater(map[string]any{
 				"status": credential.StatusCancelled,
 				"reason": cancelledReason,
@@ -99,8 +102,10 @@ func (s Storage) GetOperation(ctx context.Context, id string) (opstorage.StoredO
 	return stored, nil
 }
 
-func (s Storage) ListOperations(ctx context.Context, parent string, filter filtering.Filter) ([]opstorage.StoredOperation, error) {
-	operations, err := s.db.ReadAll(ctx, namespace.FromParent(parent))
+func (s Storage) ListOperations(ctx context.Context, parent string, filter filtering.Filter, page *common.Page) (*opstorage.StoredOperations, error) {
+	token, size := page.ToStorageArgs()
+
+	operations, nextPageToken, err := s.db.ReadPage(ctx, namespace.FromParent(parent), token, size)
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not get all operations")
 	}
@@ -121,7 +126,10 @@ func (s Storage) ListOperations(ctx context.Context, parent string, filter filte
 			stored = append(stored, nextOp)
 		}
 	}
-	return stored, nil
+	return &opstorage.StoredOperations{
+		StoredOperations: stored,
+		NextPageToken:    nextPageToken,
+	}, nil
 }
 
 func (s Storage) DeleteOperation(ctx context.Context, id string) error {

@@ -7,8 +7,8 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	didresolution "github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/did/resolution"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
@@ -27,7 +27,9 @@ type Service struct {
 	resolver *resolution.ServiceResolver
 
 	// external dependencies
-	keyStore *keystore.Service
+	keyStore          *keystore.Service
+	keyStoreFactory   keystore.ServiceFactory
+	didStorageFactory StorageFactory
 }
 
 func (s *Service) Type() framework.Type {
@@ -66,17 +68,19 @@ func (s *Service) GetResolver() didresolution.Resolver {
 	return s.resolver
 }
 
-func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service) (*Service, error) {
+func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, factory keystore.ServiceFactory) (*Service, error) {
 	didStorage, err := NewDIDStorage(s)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
 	}
 
 	service := Service{
-		config:   config,
-		storage:  didStorage,
-		handlers: make(map[didsdk.Method]MethodHandler),
-		keyStore: keyStore,
+		config:            config,
+		storage:           didStorage,
+		didStorageFactory: NewDIDStorageFactory(s),
+		handlers:          make(map[didsdk.Method]MethodHandler),
+		keyStore:          keyStore,
+		keyStoreFactory:   factory,
 	}
 
 	// instantiate all handlers for DID methods
@@ -122,7 +126,7 @@ func (s *Service) instantiateHandlerForMethod(method didsdk.Method) error {
 		}
 		s.handlers[method] = wh
 	case didsdk.IONMethod:
-		ih, err := NewIONHandler(s.Config().IONResolverURL, s.storage, s.keyStore)
+		ih, err := NewIONHandler(s.Config().IONResolverURL, s.storage, s.keyStore, s.keyStoreFactory, s.didStorageFactory)
 		if err != nil {
 			return errors.Wrap(err, "instantiating ion handler")
 		}
@@ -144,7 +148,7 @@ func (s *Service) ResolveDID(request ResolveDIDRequest) (*ResolveDIDResponse, er
 	return &ResolveDIDResponse{
 		ResolutionMetadata:  &resolved.Metadata,
 		DIDDocument:         &resolved.Document,
-		DIDDocumentMetadata: &resolved.DocumentMetadata,
+		DIDDocumentMetadata: resolved.DocumentMetadata,
 	}, nil
 }
 
@@ -166,6 +170,18 @@ func (s *Service) CreateDIDByMethod(ctx context.Context, request CreateDIDReques
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
 	}
 	return handler.CreateDID(ctx, request)
+}
+
+func (s *Service) UpdateIONDID(ctx context.Context, request UpdateIONDIDRequest) (*UpdateIONDIDResponse, error) {
+	handler, err := s.getHandler(didsdk.IONMethod)
+	if err != nil {
+		return nil, sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", didsdk.IONMethod)
+	}
+	ionHandlerImpl, ok := handler.(*ionHandler)
+	if !ok {
+		return nil, errors.New("cannot assert that handler is an ionHandler")
+	}
+	return ionHandlerImpl.UpdateDID(ctx, request)
 }
 
 func (s *Service) GetDIDByMethod(ctx context.Context, request GetDIDRequest) (*GetDIDResponse, error) {
@@ -219,79 +235,4 @@ func (s *Service) getHandler(method didsdk.Method) (MethodHandler, error) {
 		return nil, sdkutil.LoggingNewErrorf("could not get handler for DID method: %s", method)
 	}
 	return handler, nil
-}
-
-type BatchService struct {
-	config  config.DIDServiceConfig
-	storage *Storage
-
-	keyStoreFactory   keystore.ServiceFactory
-	didStorageFactory StorageFactory
-}
-
-func NewBatchDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, factory keystore.ServiceFactory) (*BatchService, error) {
-	didStorage, err := NewDIDStorage(s)
-	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
-	}
-
-	service := BatchService{
-		config:            config,
-		storage:           didStorage,
-		keyStoreFactory:   factory,
-		didStorageFactory: NewDIDStorageFactory(s),
-	}
-	return &service, nil
-}
-
-func (s *BatchService) BatchCreateDIDs(ctx context.Context, batchReq BatchCreateDIDsRequest) (*BatchCreateDIDsResponse, error) {
-	watchKey := storage.WatchKey{
-		Namespace: "temporary",
-		Key:       "batch-create-dids-key-" + uuid.NewString(),
-	}
-	err := s.storage.db.Write(ctx, watchKey.Namespace, watchKey.Key, []byte("starting"))
-	if err != nil {
-		return nil, err
-	}
-	returnValue, err := s.storage.db.Execute(ctx, func(ctx context.Context, tx storage.Tx) (any, error) {
-		batchResponse := BatchCreateDIDsResponse{
-			DIDs: make([]didsdk.Document, 0, len(batchReq.Requests)),
-		}
-		keyStore, err := s.keyStoreFactory(tx)
-		if err != nil {
-			return nil, err
-		}
-		didStorage, err := s.didStorageFactory(tx)
-		if err != nil {
-			return nil, err
-		}
-		handler, err := NewKeyHandler(didStorage, keyStore)
-		if err != nil {
-			return nil, err
-		}
-		// watch some new key watchKey
-		// accumulate all writes
-		// execute all writes s.t. if one write fails, then watchKey is written from elsewhere
-		for _, request := range batchReq.Requests {
-			didResponse, err := handler.CreateDID(ctx, request)
-			if err != nil {
-				return nil, err
-			}
-			batchResponse.DIDs = append(batchResponse.DIDs, didResponse.DID)
-		}
-		return &batchResponse, nil
-	}, []storage.WatchKey{watchKey})
-	if err != nil {
-		return nil, err
-	}
-
-	batchResponse, ok := returnValue.(*BatchCreateDIDsResponse)
-	if !ok {
-		return nil, errors.New("problem casting to BatchCreateDIDsResponse")
-	}
-	return batchResponse, nil
-}
-
-func (s *BatchService) Config() config.DIDServiceConfig {
-	return s.config
 }

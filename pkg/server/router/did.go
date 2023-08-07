@@ -7,10 +7,12 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/ion"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
@@ -47,9 +49,9 @@ type ListDIDMethodsResponse struct {
 
 // ListDIDMethods godoc
 //
-//	@Summary		List DID Methods
+//	@Summary		List DID methods
 //	@Description	Get the list of supported DID methods
-//	@Tags			DecentralizedIdentityAPI
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	ListDIDMethodsResponse
@@ -74,12 +76,12 @@ type CreateDIDByMethodResponse struct {
 
 // CreateDIDByMethod godoc
 //
-//	@Summary		Create DID Document
+//	@Summary		Create a DID Document
 //	@Description	Creates a fully custodial DID document with the given method. The document created is stored internally
 //	@Description	and can be retrieved using the GetOperation. Method dependent registration (for example, DID web
 //	@Description	registration) is left up to the clients of this API. The private key(s) created by the method are stored
 //	@Description	internally never leave the service boundary.
-//	@Tags			DecentralizedIdentityAPI
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Param			method	path		string														true	"Method"
@@ -124,6 +126,100 @@ func (dr DIDRouter) CreateDIDByMethod(c *gin.Context) {
 
 	resp := CreateDIDByMethodResponse{DID: createDIDResponse.DID}
 	framework.Respond(c, resp, http.StatusCreated)
+}
+
+type StateChange struct {
+	ServicesToAdd        []didsdk.Service `json:"servicesToAdd,omitempty"`
+	ServiceIDsToRemove   []string         `json:"serviceIdsToRemove,omitempty"`
+	PublicKeysToAdd      []ion.PublicKey  `json:"publicKeysToAdd,omitempty"`
+	PublicKeyIDsToRemove []string         `json:"publicKeyIdsToRemove"`
+}
+
+type UpdateDIDByMethodRequest struct {
+	// Expected to be populated when `method == "ion"`. Describes the changes that are requested.
+	StateChange StateChange `json:"stateChange" validate:"required"`
+}
+
+type UpdateDIDByMethodResponse struct {
+	DID didsdk.Document `json:"did,omitempty"`
+}
+
+// UpdateDIDByMethod godoc
+//
+//	@Summary		Updates a DID document.
+//	@Description	Updates a DID for which SSI is the custodian. The DID must have been previously created by calling
+//	@Description	the "Create DID Document" endpoint. Currently, only ION dids support updates.
+//	@Tags			DecentralizedIdentityAPI
+//	@Accept			json
+//	@Produce		json
+//	@Param			method	path		string						true	"Method"
+//	@Param			id		path		string						true	"ID"
+//	@Param			request	body		UpdateDIDByMethodRequest	true	"request body"
+//	@Success		200		{object}	UpdateDIDByMethodResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/dids/{method}/{id} [put]
+func (dr DIDRouter) UpdateDIDByMethod(c *gin.Context) {
+	method := framework.GetParam(c, MethodParam)
+	if method == nil {
+		errMsg := "update DID by method request missing method parameter"
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
+	}
+	if *method != didsdk.IONMethod.String() {
+		framework.LoggingRespondErrMsg(c, "ion is the only method supported", http.StatusBadRequest)
+	}
+
+	id := framework.GetParam(c, IDParam)
+	if id == nil {
+		errMsg := fmt.Sprintf("update DID request missing id parameter for method: %s", *method)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
+	}
+	var request UpdateDIDByMethodRequest
+	invalidRequest := "invalid update DID request"
+	if err := framework.Decode(c.Request, &request); err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, invalidRequest, http.StatusBadRequest)
+		return
+	}
+
+	if err := framework.ValidateRequest(request); err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, invalidRequest, http.StatusBadRequest)
+		return
+	}
+
+	updateDIDRequest, err := toUpdateIONDIDRequest(*id, request)
+	if err != nil {
+		errMsg := fmt.Sprintf("%s: could not update DID for method<%s>", invalidRequest, *method)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
+	}
+	updateIONDIDResponse, err := dr.service.UpdateIONDID(c, *updateDIDRequest)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not update DID for method<%s>", *method)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+
+	resp := CreateDIDByMethodResponse{DID: updateIONDIDResponse.DID}
+	framework.Respond(c, resp, http.StatusOK)
+
+}
+
+func toUpdateIONDIDRequest(id string, request UpdateDIDByMethodRequest) (*did.UpdateIONDIDRequest, error) {
+	didION := ion.ION(id)
+	if !didION.IsValid() {
+		return nil, errors.Errorf("invalid ion did %s", id)
+	}
+	return &did.UpdateIONDIDRequest{
+		DID: didION,
+		StateChange: ion.StateChange{
+			ServicesToAdd:        request.StateChange.ServicesToAdd,
+			ServiceIDsToRemove:   request.StateChange.ServiceIDsToRemove,
+			PublicKeysToAdd:      request.StateChange.PublicKeysToAdd,
+			PublicKeyIDsToRemove: request.StateChange.PublicKeyIDsToRemove,
+		},
+	}, nil
 }
 
 // toCreateDIDRequest converts CreateDIDByMethodRequest to did.CreateDIDRequest, parsing options according to method
@@ -182,9 +278,9 @@ type GetDIDByMethodResponse struct {
 
 // GetDIDByMethod godoc
 //
-//	@Summary		Get DID
-//	@Description	Get DID by method
-//	@Tags			DecentralizedIdentityAPI
+//	@Summary		Get a DID
+//	@Description	Gets a DID Document by its DID ID
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateDIDByMethodRequest	true	"request body"
@@ -236,9 +332,10 @@ type GetDIDsRequest struct {
 
 // ListDIDsByMethod godoc
 //
-//	@Summary		List DIDs
-//	@Description	List DIDs by method. Checks for an optional "deleted=true" query parameter, which exclusively returns DIDs that have been "Soft Deleted".
-//	@Tags			DecentralizedIdentityAPI
+//	@Summary		List DIDs by method
+//	@Description	List DIDs by method. Checks for an optional "deleted=true" query parameter, which exclusively
+//	@Description	returns DIDs that have been "Soft Deleted".
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Param			method		path		string	true	"Method must be one returned by GET /v1/dids"
@@ -275,7 +372,7 @@ func (dr DIDRouter) ListDIDsByMethod(c *gin.Context) {
 		Deleted: getIsDeleted,
 	}
 	var pageRequest pagination.PageRequest
-	if pagination.ParsePaginationParams(c, &pageRequest) {
+	if pagination.ParsePaginationQueryValues(c, &pageRequest) {
 		return
 	}
 	getDIDsRequest.PageRequest = pageRequest.ToServicePage()
@@ -307,9 +404,9 @@ type ResolveDIDResponse struct {
 //	@Description	When this is called with the correct did method and id it will flip the softDelete flag to true for the db entry.
 //	@Description	A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the ListDIDsByMethod call
 //	@Description	This facilitates a clean SSI-Service Admin UI but not leave any hanging VCs with inaccessible hanging DIDs.
-//	@Summary		Soft Delete DID
-//	@Description	Soft Deletes DID by method
-//	@Tags			DecentralizedIdentityAPI
+//	@Summary		Soft delete a DID
+//	@Description	Soft deletes a DID by its method
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Param			method	path		string	true	"Method"
@@ -346,7 +443,7 @@ func (dr DIDRouter) SoftDeleteDIDByMethod(c *gin.Context) {
 //
 //	@Summary		Resolve a DID
 //	@Description	Resolve a DID that may not be stored in this service
-//	@Tags			DecentralizedIdentityAPI
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -406,9 +503,9 @@ func NewBatchDIDRouter(svc *did.BatchService) *BatchDIDRouter {
 // BatchCreateDIDs godoc
 //
 //	@Summary		Batch Create DIDs
-//	@Description	Create a batch of verifiable credentials. The operation is atomic, meaning that all requests will
+//	@Description	Create a batch of DIDs. The operation is atomic, meaning that all requests will
 //	@Description	succeed or fail. This is currently only supported for the DID method named `did:key`.
-//	@Tags			CredentialAPI
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Param			method	path		string					true	"Method. Only `key` is supported."

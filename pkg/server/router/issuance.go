@@ -26,9 +26,9 @@ func NewIssuanceRouter(svc svcframework.Service) (*IssuanceRouter, error) {
 
 // GetIssuanceTemplate godoc
 //
-//	@Summary		Get issuance template
-//	@Description	Get an issuance template by its id
-//	@Tags			IssuanceAPI
+//	@Summary		Get an issuance template
+//	@Description	Get an issuance template by its ID
+//	@Tags			IssuanceTemplates
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -62,9 +62,9 @@ func (r CreateIssuanceTemplateRequest) toServiceRequest() *issuance.CreateIssuan
 
 // CreateIssuanceTemplate godoc
 //
-//	@Summary		Create issuance template
-//	@Description	Create issuance template
-//	@Tags			IssuanceAPI
+//	@Summary		Create an issuance template
+//	@Description	Creates an issuance template
+//	@Tags			IssuanceTemplates
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateIssuanceTemplateRequest	true	"request body"
@@ -92,9 +92,9 @@ func (ir IssuanceRouter) CreateIssuanceTemplate(c *gin.Context) {
 
 // DeleteIssuanceTemplate godoc
 //
-//	@Summary		Delete issuance template
-//	@Description	Delete issuance template by ID
-//	@Tags			IssuanceAPI
+//	@Summary		Delete an issuance template
+//	@Description	Delete an issuance template by its ID
+//	@Tags			IssuanceTemplates
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -127,7 +127,7 @@ type ListIssuanceTemplatesResponse struct {
 //
 //	@Summary		Lists issuance templates
 //	@Description	Lists all issuance templates stored in this service.
-//	@Tags			IssuanceAPI
+//	@Tags			Issuance
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	ListIssuanceTemplatesResponse

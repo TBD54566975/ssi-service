@@ -7,16 +7,16 @@ import (
 
 	"github.com/TBD54566975/ssi-sdk/credential/exchange"
 	"github.com/TBD54566975/ssi-sdk/credential/integrity"
+	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"go.einride.tech/aip/filtering"
 
-	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
-
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation"
 	"github.com/tbd54566975/ssi-service/pkg/service/presentation/model"
@@ -37,6 +37,65 @@ func NewPresentationRouter(s svcframework.Service) (*PresentationRouter, error) 
 	return &PresentationRouter{service: service}, nil
 }
 
+type VerifyPresentationRequest struct {
+	// A JWT that encodes a verifiable presentation according to https://www.w3.org/TR/vc-data-model/#json-web-token
+	PresentationJWT *keyaccess.JWT `json:"presentationJwt,omitempty" validate:"required"`
+}
+
+type VerifyPresentationResponse struct {
+	// Whether the presentation was verified.
+	Verified bool `json:"verified"`
+
+	// The reason why this presentation couldn't be verified.
+	Reason string `json:"reason,omitempty"`
+}
+
+// VerifyPresentation godoc
+//
+//	@Summary		Verifies a Verifiable Presentation
+//	@Description	Verifies a given presentation. The system does the following levels of verification:
+//	@Description	1. Makes sure the presentation has a valid signature
+//	@Description	2. Makes sure the presentation is not expired
+//	@Description	3. Makes sure the presentation complies with https://www.w3.org/TR/vc-data-model/#presentations-0 of VC Data Model v1.1
+//	@Description	4. For each credential in the presentation, makes sure:
+//	@Description	a. Makes sure the credential has a valid signature
+//	@Description	b. Makes sure the credential is not expired
+//	@Description	c. Makes sure the credential complies with the VC Data Model
+//	@Description	d. If the credential has a schema, makes sure its data complies with the schema
+//	@Tags			Presentations
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		VerifyPresentationRequest	true	"request body"
+//	@Success		200		{object}	VerifyPresentationResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/presentations/verification [put]
+func (pr PresentationRouter) VerifyPresentation(c *gin.Context) {
+	var request VerifyPresentationRequest
+	if err := framework.Decode(c.Request, &request); err != nil {
+		errMsg := "invalid verify presentation request"
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	if err := util.IsValidStruct(request); err != nil {
+		framework.LoggingRespondError(c, err, http.StatusBadRequest)
+		return
+	}
+
+	verificationResult, err := pr.service.VerifyPresentation(c, presentation.VerifyPresentationRequest{
+		PresentationJWT: request.PresentationJWT,
+	})
+	if err != nil {
+		errMsg := "could not verify presentation"
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+
+	resp := VerifyPresentationResponse{Verified: verificationResult.Verified, Reason: verificationResult.Reason}
+	framework.Respond(c, resp, http.StatusOK)
+}
+
 type CreatePresentationDefinitionRequest struct {
 	Name                   string                           `json:"name,omitempty"`
 	Purpose                string                           `json:"purpose,omitempty"`
@@ -55,9 +114,9 @@ type CreatePresentationDefinitionResponse struct {
 
 // CreateDefinition godoc
 //
-//	@Summary		Create PresentationDefinition
-//	@Description	Create presentation definition
-//	@Tags			PresentationDefinitionAPI
+//	@Summary		Create a Presentation Definition
+//	@Description	Create a Presentation Definition https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-definition
+//	@Tags			Presentations
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreatePresentationDefinitionRequest	true	"request body"
@@ -134,9 +193,9 @@ type GetPresentationDefinitionResponse struct {
 
 // GetDefinition godoc
 //
-//	@Summary		Get PresentationDefinition
-//	@Description	Get a presentation definition by its ID
-//	@Tags			PresentationDefinitionAPI
+//	@Summary		Get a Presentation Definition
+//	@Description	Get a Presentation Definition by its ID
+//	@Tags			Presentations
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -171,8 +230,8 @@ type ListDefinitionsResponse struct {
 // ListDefinitions godoc
 //
 //	@Summary		List Presentation Definitions
-//	@Description	Lists all the existing presentation definitions
-//	@Tags			PresentationDefinitionAPI
+//	@Description	Lists all the existing Presentation Definitions
+//	@Tags			Presentations
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	ListDefinitionsResponse
@@ -193,9 +252,9 @@ func (pr PresentationRouter) ListDefinitions(c *gin.Context) {
 
 // DeleteDefinition godoc
 //
-//	@Summary		Delete PresentationDefinition
-//	@Description	Delete a presentation definition by its ID
-//	@Tags			PresentationDefinitionAPI
+//	@Summary		Delete a Presentation Definition
+//	@Description	Delete a Presentation Definition by its ID
+//	@Tags			Presentations
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -263,9 +322,9 @@ func (r CreateSubmissionRequest) toServiceRequest() (*model.CreateSubmissionRequ
 
 // CreateSubmission godoc
 //
-//	@Summary		Create Submission
-//	@Description	Creates a submission in this server ready to be reviewed.
-//	@Tags			PresentationSubmissionAPI
+//	@Summary		Create a Presentation Submission
+//	@Description	Accepts a Presentation Submission (https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-submission) in this server ready to be reviewed.
+//	@Tags			PresentationSubmissions
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateSubmissionRequest	true	"request body"
@@ -304,9 +363,9 @@ type GetSubmissionResponse struct {
 
 // GetSubmission godoc
 //
-//	@Summary		Get Submission
-//	@Description	Get a submission by its ID
-//	@Tags			PresentationSubmissionAPI
+//	@Summary		Get a Presentation Submission
+//	@Description	Get a Presentation Submission by its ID
+//	@Tags			PresentationSubmissions
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -350,9 +409,9 @@ type ListSubmissionResponse struct {
 
 // ListSubmissions godoc
 //
-//	@Summary		List Submissions
-//	@Description	List existing submissions according to a filtering query. The `filter` field follows the syntax described in https://google.aip.dev/160.
-//	@Tags			PresentationSubmissionAPI
+//	@Summary		List Presentation Submissions
+//	@Description	List existing Presentation Submissions according to a filtering query. The `filter` field follows the syntax described in https://google.aip.dev/160.
+//	@Tags			PresentationSubmissions
 //	@Accept			json
 //	@Produce		json
 //	@Param			filter		query		string	false	"A standard filter expression conforming to https://google.aip.dev/160. For example: `?filter=status="pending"`"
@@ -405,7 +464,7 @@ func (pr PresentationRouter) ListSubmissions(c *gin.Context) {
 	}
 
 	var pageRequest pagination.PageRequest
-	if pagination.ParsePaginationParams(c, &pageRequest) {
+	if pagination.ParsePaginationQueryValues(c, &pageRequest) {
 		return
 	}
 
@@ -444,11 +503,13 @@ type ReviewSubmissionResponse struct {
 
 // ReviewSubmission godoc
 //
-//	@Summary		Review a pending submission
-//	@Description	Reviews a pending submission. After this method is called, the operation with `id==presentations/submissions/{submission_id}` will be updated with the result of this invocation.
-//	@Tags			PresentationSubmissionAPI
+//	@Summary		Review a pending Presentation Submission
+//	@Description	Reviews a pending Presentation Submission. After this method is called, the operation with
+//	@Description	`id==presentations/submissions/{submission_id}` will be updated with the result of this invocation.
+//	@Tags			PresentationSubmissions
 //	@Accept			json
 //	@Produce		json
+//	@Param			id		path		string					true	"ID"
 //	@Param			request	body		ReviewSubmissionRequest	true	"request body"
 //	@Success		200		{object}	ReviewSubmissionResponse
 //	@Failure		400		{string}	string	"Bad request"
@@ -495,9 +556,10 @@ type GetRequestResponse struct {
 
 // CreateRequest godoc
 //
-//	@Summary		Create Presentation Request
-//	@Description	Create presentation request from an existing presentation definition.
-//	@Tags			PresentationRequestAPI
+//	@Summary		Create a Presentation Request
+//	@Description	Create a Presentation Request from an existing Presentation Definition with an existing DID according
+//	@Description	to the spec https://identity.foundation/presentation-exchange/spec/v2.0.0/#presentation-request
+//	@Tags			PresentationRequests
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateRequestRequest	true	"request body"
@@ -545,9 +607,9 @@ func (pr PresentationRouter) serviceRequestFromRequest(request CreateRequestRequ
 
 // GetRequest godoc
 //
-//	@Summary		Get Presentation Request
-//	@Description	Get a presentation request by its ID
-//	@Tags			PresentationRequestAPI
+//	@Summary		Get a Presentation Request
+//	@Description	Get a Presentation Request by its ID
+//	@Tags			PresentationRequests
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -577,8 +639,8 @@ type ListPresentationRequestsResponse struct {
 // ListRequests godoc
 //
 //	@Summary		List Presentation Requests
-//	@Description	Lists all the existing presentation requests
-//	@Tags			PresentationRequestAPI
+//	@Description	Lists all the existing Presentation Requests
+//	@Tags			PresentationRequests
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	ListPresentationRequestsResponse
@@ -600,9 +662,9 @@ func (pr PresentationRouter) ListRequests(c *gin.Context) {
 
 // DeleteRequest godoc
 //
-//	@Summary		Delete PresentationRequest
-//	@Description	Delete a presentation request by its ID
-//	@Tags			PresentationRequestAPI
+//	@Summary		Delete a Presentation Request
+//	@Description	Delete a Presentation Request by its ID
+//	@Tags			PresentationRequests
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"

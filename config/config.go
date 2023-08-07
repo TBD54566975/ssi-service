@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -20,10 +21,7 @@ const (
 	DefaultConfigPath = "config/dev.toml"
 	DefaultEnvPath    = "config/.env"
 	Filename          = "dev.toml"
-	ServiceName       = "ssi-service"
 	Extension         = ".toml"
-
-	DefaultServiceEndpoint = "http://localhost:8080"
 
 	EnvironmentDev  Environment = "dev"
 	EnvironmentTest Environment = "test"
@@ -43,7 +41,6 @@ func (e EnvironmentVariable) String() string {
 }
 
 type SSIServiceConfig struct {
-	conf.Version
 	Server   ServerConfig   `toml:"server"`
 	Services ServicesConfig `toml:"services"`
 }
@@ -52,7 +49,7 @@ type SSIServiceConfig struct {
 type ServerConfig struct {
 	Environment         Environment   `toml:"env" conf:"default:dev"`
 	APIHost             string        `toml:"api_host" conf:"default:0.0.0.0:3000"`
-	JagerHost           string        `toml:"jager_host" conf:"http://jaeger:14268/api/traces"`
+	JagerHost           string        `toml:"jager_host" conf:"default:http://jaeger:14268/api/traces"`
 	JagerEnabled        bool          `toml:"jager_enabled" conf:"default:false"`
 	ReadTimeout         time.Duration `toml:"read_timeout" conf:"default:5s"`
 	WriteTimeout        time.Duration `toml:"write_timeout" conf:"default:5s"`
@@ -68,51 +65,72 @@ type ServicesConfig struct {
 	// at present, it is assumed that a single storage provider works for all services
 	// in the future it may make sense to have per-service storage providers (e.g. mysql for one service,
 	// mongo for another)
-	StorageProvider string           `toml:"storage"`
+	StorageProvider string           `toml:"storage" conf:"default:bolt"`
 	StorageOptions  []storage.Option `toml:"storage_option"`
-	ServiceEndpoint string           `toml:"service_endpoint"`
+	ServiceEndpoint string           `toml:"service_endpoint" conf:"default:http://localhost:8080"`
+
+	// Application level encryption configuration. Defines how values are encrypted before they are stored in the
+	// configured KV store.
+	AppLevelEncryptionConfiguration EncryptionConfig `toml:"storage_encryption,omitempty"`
 
 	// Embed all service-specific configs here. The order matters: from which should be instantiated first, to last
-	KeyStoreConfig        KeyStoreServiceConfig     `toml:"keystore,omitempty"`
-	DIDConfig             DIDServiceConfig          `toml:"did,omitempty"`
-	SchemaConfig          SchemaServiceConfig       `toml:"schema,omitempty"`
-	CredentialConfig      CredentialServiceConfig   `toml:"credential,omitempty"`
-	OperationConfig       OperationServiceConfig    `toml:"operation,omitempty"`
-	PresentationConfig    PresentationServiceConfig `toml:"presentation,omitempty"`
-	ManifestConfig        ManifestServiceConfig     `toml:"manifest,omitempty"`
-	IssuanceServiceConfig IssuanceServiceConfig     `toml:"issuance,omitempty"`
-	WebhookConfig         WebhookServiceConfig      `toml:"webhook,omitempty"`
-}
-
-// BaseServiceConfig represents configurable properties for a specific component of the SSI Service
-// Can be wrapped and extended for any specific service config
-type BaseServiceConfig struct {
-	Name            string `toml:"name"`
-	ServiceEndpoint string `toml:"service_endpoint"`
+	KeyStoreConfig   KeyStoreServiceConfig   `toml:"keystore,omitempty"`
+	DIDConfig        DIDServiceConfig        `toml:"did,omitempty"`
+	CredentialConfig CredentialServiceConfig `toml:"credential,omitempty"`
+	WebhookConfig    WebhookServiceConfig    `toml:"webhook,omitempty"`
 }
 
 type KeyStoreServiceConfig struct {
-	*BaseServiceConfig
+	EncryptionConfig
+}
 
-	// The URI for the master key. We use tink for envelope encryption as described in https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#key-management-with-tink
-	// When left empty, then a random key is generated and used.
+type EncryptionConfig struct {
+	DisableEncryption bool `toml:"disable_encryption" conf:"default:false"`
+
+	// The URI for a master key. We use tink for envelope encryption as described in https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#key-management-with-tink
+	// When left empty and DisableEncryption is off, then a random key is generated and used. This random key is persisted unencrypted in the
+	// configured storage. Production deployments should never leave this field empty.
 	MasterKeyURI string `toml:"master_key_uri"`
 
-	// Path for credentials. Required when using an external KMS. More info at https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#credentials
+	// Path for credentials. Required when MasterKeyURI is set. More info at https://github.com/google/tink/blob/9bc2667963e20eb42611b7581e570f0dddf65a2b/docs/KEY-MANAGEMENT.md#credentials
 	KMSCredentialsPath string `toml:"kms_credentials_path"`
+}
+
+func (e EncryptionConfig) GetMasterKeyURI() string {
+	return e.MasterKeyURI
+}
+
+func (e EncryptionConfig) GetKMSCredentialsPath() string {
+	return e.KMSCredentialsPath
+}
+
+func (e EncryptionConfig) EncryptionEnabled() bool {
+	return !e.DisableEncryption
 }
 
 func (k *KeyStoreServiceConfig) IsEmpty() bool {
 	if k == nil {
 		return true
 	}
-	return reflect.DeepEqual(k, &KeyStoreServiceConfig{})
+	// this returns false since reflection will fail on the EncryptionConfig struct
+	return false
+}
+
+func (k *KeyStoreServiceConfig) GetMasterKeyURI() string {
+	return k.MasterKeyURI
+}
+
+func (k *KeyStoreServiceConfig) GetKMSCredentialsPath() string {
+	return k.KMSCredentialsPath
+}
+
+func (k *KeyStoreServiceConfig) EncryptionEnabled() bool {
+	return !k.DisableEncryption
 }
 
 type DIDServiceConfig struct {
-	*BaseServiceConfig
-	Methods                  []string `toml:"methods"`
-	LocalResolutionMethods   []string `toml:"local_resolution_methods"`
+	Methods                  []string `toml:"methods" conf:"default:key;web"`
+	LocalResolutionMethods   []string `toml:"local_resolution_methods" conf:"default:key;peer;web;jwk;pkh"`
 	UniversalResolverURL     string   `toml:"universal_resolver_url"`
 	UniversalResolverMethods []string `toml:"universal_resolver_methods"`
 	IONResolverURL           string   `toml:"ion_resolver_url"`
@@ -127,19 +145,7 @@ func (d *DIDServiceConfig) IsEmpty() bool {
 	return reflect.DeepEqual(d, &DIDServiceConfig{})
 }
 
-type SchemaServiceConfig struct {
-	*BaseServiceConfig
-}
-
-func (s *SchemaServiceConfig) IsEmpty() bool {
-	if s == nil {
-		return true
-	}
-	return reflect.DeepEqual(s, &SchemaServiceConfig{})
-}
-
 type CredentialServiceConfig struct {
-	*BaseServiceConfig
 	// BatchCreateMaxItems set's the maximum amount that can be.
 	BatchCreateMaxItems int `toml:"batch_create_max_items" conf:"default:100"`
 
@@ -153,53 +159,8 @@ func (c *CredentialServiceConfig) IsEmpty() bool {
 	return reflect.DeepEqual(c, &CredentialServiceConfig{})
 }
 
-type OperationServiceConfig struct {
-	*BaseServiceConfig
-}
-
-func (o *OperationServiceConfig) IsEmpty() bool {
-	if o == nil {
-		return true
-	}
-	return reflect.DeepEqual(o, &OperationServiceConfig{})
-}
-
-type PresentationServiceConfig struct {
-	*BaseServiceConfig
-}
-
-func (p *PresentationServiceConfig) IsEmpty() bool {
-	if p == nil {
-		return true
-	}
-	return reflect.DeepEqual(p, &PresentationServiceConfig{})
-}
-
-type ManifestServiceConfig struct {
-	*BaseServiceConfig
-}
-
-func (m *ManifestServiceConfig) IsEmpty() bool {
-	if m == nil {
-		return true
-	}
-	return reflect.DeepEqual(m, &ManifestServiceConfig{})
-}
-
-type IssuanceServiceConfig struct {
-	*BaseServiceConfig
-}
-
-func (s *IssuanceServiceConfig) IsEmpty() bool {
-	if s == nil {
-		return true
-	}
-	return reflect.DeepEqual(s, &IssuanceServiceConfig{})
-}
-
 type WebhookServiceConfig struct {
-	*BaseServiceConfig
-	WebhookTimeout string `toml:"webhook_timeout"`
+	WebhookTimeout string `toml:"webhook_timeout" conf:"default:10s"`
 }
 
 func (p *WebhookServiceConfig) IsEmpty() bool {
@@ -211,30 +172,47 @@ func (p *WebhookServiceConfig) IsEmpty() bool {
 
 // LoadConfig attempts to load a TOML config file from the given path, and coerce it into our object model.
 // Before loading, defaults are applied on certain properties, which are overwritten if specified in the TOML file.
-func LoadConfig(path string) (*SSIServiceConfig, error) {
-	loadDefaultConfig, err := checkValidConfigPath(path)
+func LoadConfig(path string, fs fs.FS) (*SSIServiceConfig, error) {
+	if fs == nil {
+		fs = os.DirFS(".")
+	}
+	useDefaultConfig, err := checkValidConfigPath(path)
 	if err != nil {
 		return nil, errors.Wrap(err, "validate config path")
 	}
 
 	// create the config object
-	var config SSIServiceConfig
-	if err = parseAndApplyDefaults(config); err != nil {
+	config := new(SSIServiceConfig)
+	if err = parseConfig(config); err != nil {
 		return nil, errors.Wrap(err, "parse and apply defaults")
 	}
 
-	if loadDefaultConfig {
-		defaultServicesConfig := getDefaultServicesConfig()
-		config.Services = defaultServicesConfig
-	} else if err = loadTOMLConfig(path, &config); err != nil {
-		return nil, errors.Wrap(err, "load toml config")
+	if !useDefaultConfig {
+		if err = loadTOMLConfig(path, config, fs); err != nil {
+			return nil, errors.Wrap(err, "load toml config")
+		}
 	}
 
-	if err = applyEnvVariables(&config); err != nil {
+	if err = applyEnvVariables(config); err != nil {
 		return nil, errors.Wrap(err, "apply env variables")
 	}
 
-	return &config, nil
+	if err = validateConfig(config); err != nil {
+		return nil, errors.Wrap(err, "validating config values")
+	}
+	return config, nil
+}
+
+func validateConfig(s *SSIServiceConfig) error {
+	if s.Server.Environment == EnvironmentProd {
+		if s.Services.KeyStoreConfig.DisableEncryption {
+			return errors.New("prod environment cannot disable key encryption")
+		}
+		if s.Services.AppLevelEncryptionConfiguration.DisableEncryption {
+			logrus.Warn("Prod environment detected without app level encryption. This is strongly discouraged.")
+		}
+	}
+	return nil
 }
 
 func checkValidConfigPath(path string) (bool, error) {
@@ -249,134 +227,42 @@ func checkValidConfigPath(path string) (bool, error) {
 	return defaultConfig, nil
 }
 
-func parseAndApplyDefaults(config SSIServiceConfig) error {
+func parseConfig(cfg *SSIServiceConfig) error {
 	// parse and apply defaults
-	err := conf.Parse(os.Args[1:], ServiceName, &config)
+	err := conf.Parse(os.Args[1:], ServiceName, cfg)
 	if err == nil {
 		return nil
 	}
 	switch {
 	case errors.Is(err, conf.ErrHelpWanted):
-		usage, err := conf.Usage(ServiceName, &config)
+		usage, err := conf.Usage(ServiceName, &cfg)
 		if err != nil {
 			return errors.Wrap(err, "parsing config")
 		}
-		logrus.Println(usage)
+		logrus.Info(usage)
 
 		return nil
 	case errors.Is(err, conf.ErrVersionWanted):
-		version, err := conf.VersionString(ServiceName, &config)
+		version, err := conf.VersionString(ServiceName, &cfg)
 		if err != nil {
 			return errors.Wrap(err, "generating config version")
 		}
 
-		logrus.Println(version)
+		logrus.Info(version)
 		return nil
 	}
 	return errors.Wrap(err, "parsing config")
 }
 
-// TODO(gabe) remove this from config in https://github.com/TBD54566975/ssi-service/issues/502
-func getDefaultServicesConfig() ServicesConfig {
-	return ServicesConfig{
-		StorageProvider: "bolt",
-		ServiceEndpoint: DefaultServiceEndpoint,
-		KeyStoreConfig: KeyStoreServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "keystore", ServiceEndpoint: DefaultServiceEndpoint + "/v1/keys"},
-		},
-		DIDConfig: DIDServiceConfig{
-			BaseServiceConfig:      &BaseServiceConfig{Name: "did", ServiceEndpoint: DefaultServiceEndpoint + "/v1/dids"},
-			Methods:                []string{"key", "web"},
-			LocalResolutionMethods: []string{"key", "peer", "web", "jwk", "pkh"},
-		},
-		SchemaConfig: SchemaServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "schema", ServiceEndpoint: DefaultServiceEndpoint + "/v1/schemas"},
-		},
-		CredentialConfig: CredentialServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "credential", ServiceEndpoint: DefaultServiceEndpoint + "/v1/credentials"},
-		},
-		OperationConfig: OperationServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "operation", ServiceEndpoint: DefaultServiceEndpoint + "/v1/operations"},
-		},
-		PresentationConfig: PresentationServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "presentation", ServiceEndpoint: DefaultServiceEndpoint + "/v1/presentations"},
-		},
-		ManifestConfig: ManifestServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "manifest", ServiceEndpoint: DefaultServiceEndpoint + "/v1/manifests"},
-		},
-		IssuanceServiceConfig: IssuanceServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "issuance", ServiceEndpoint: DefaultServiceEndpoint + "/v1/issuancetemplates"},
-		},
-		WebhookConfig: WebhookServiceConfig{
-			BaseServiceConfig: &BaseServiceConfig{Name: "webhook", ServiceEndpoint: DefaultServiceEndpoint + "/v1/webhooks"},
-			WebhookTimeout:    "10s",
-		},
-	}
-}
-
-func loadTOMLConfig(path string, config *SSIServiceConfig) error {
+func loadTOMLConfig(path string, config *SSIServiceConfig, fs fs.FS) error {
 	// load from TOML file
-	if _, err := toml.DecodeFile(path, &config); err != nil {
+	file, err := fs.Open(path)
+	if err != nil {
+		return errors.Wrapf(err, "opening path %s", path)
+	}
+	if _, err = toml.NewDecoder(file).Decode(&config); err != nil {
 		return errors.Wrapf(err, "could not load config: %s", path)
 	}
-
-	// apply defaults
-	services := config.Services
-	endpoint := services.ServiceEndpoint + "/v1"
-	if services.KeyStoreConfig.IsEmpty() {
-		services.KeyStoreConfig = KeyStoreServiceConfig{
-			BaseServiceConfig: new(BaseServiceConfig),
-		}
-	}
-	services.KeyStoreConfig.ServiceEndpoint = endpoint + "/keys"
-	if services.DIDConfig.IsEmpty() {
-		services.DIDConfig = DIDServiceConfig{
-			BaseServiceConfig: new(BaseServiceConfig),
-		}
-	}
-	services.DIDConfig.ServiceEndpoint = endpoint + "/dids"
-	if services.SchemaConfig.IsEmpty() {
-		services.SchemaConfig = SchemaServiceConfig{
-			BaseServiceConfig: new(BaseServiceConfig),
-		}
-	}
-	services.SchemaConfig.ServiceEndpoint = endpoint + "/schemas"
-	if services.CredentialConfig.IsEmpty() {
-		services.CredentialConfig = CredentialServiceConfig{
-			BaseServiceConfig: new(BaseServiceConfig),
-		}
-	}
-	services.CredentialConfig.ServiceEndpoint = endpoint + "/credentials"
-	if services.OperationConfig.IsEmpty() {
-		services.OperationConfig = OperationServiceConfig{
-			BaseServiceConfig: new(BaseServiceConfig),
-		}
-	}
-	services.OperationConfig.ServiceEndpoint = endpoint + "/operations"
-	if services.PresentationConfig.IsEmpty() {
-		services.PresentationConfig = PresentationServiceConfig{
-			BaseServiceConfig: new(BaseServiceConfig),
-		}
-	}
-	services.PresentationConfig.ServiceEndpoint = endpoint + "/presentations"
-	if services.ManifestConfig.IsEmpty() {
-		services.ManifestConfig = ManifestServiceConfig{
-			BaseServiceConfig: new(BaseServiceConfig),
-		}
-	}
-	services.ManifestConfig.ServiceEndpoint = endpoint + "/manifests"
-	if services.IssuanceServiceConfig.IsEmpty() {
-		services.IssuanceServiceConfig = IssuanceServiceConfig{
-			BaseServiceConfig: new(BaseServiceConfig),
-		}
-	}
-	services.IssuanceServiceConfig.ServiceEndpoint = endpoint + "/issuancetemplates"
-	if services.WebhookConfig.IsEmpty() {
-		services.WebhookConfig = WebhookServiceConfig{
-			BaseServiceConfig: new(BaseServiceConfig),
-		}
-	}
-	services.WebhookConfig.ServiceEndpoint = endpoint + "/webhooks"
 	return nil
 }
 

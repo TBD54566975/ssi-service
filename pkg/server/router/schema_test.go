@@ -9,7 +9,6 @@ import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/keystore"
@@ -40,10 +39,9 @@ func TestSchemaRouter(t *testing.T) {
 				db := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, db)
 
-				serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 				keyStoreService := testKeyStoreService(tt, db)
 				didService := testDIDService(tt, db, keyStoreService)
-				schemaService, err := schema.NewSchemaService(serviceConfig, db, keyStoreService, didService.GetResolver())
+				schemaService, err := schema.NewSchemaService(db, keyStoreService, didService.GetResolver())
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, schemaService)
 
@@ -52,7 +50,7 @@ func TestSchemaRouter(t *testing.T) {
 				assert.Equal(tt, framework.StatusReady, schemaService.Status().Status)
 
 				// get all schemas (none)
-				gotSchemas, err := schemaService.ListSchemas(context.Background())
+				gotSchemas, err := schemaService.ListSchemas(context.Background(), schema.ListSchemasRequest{})
 				assert.NoError(tt, err)
 				assert.Empty(tt, gotSchemas.Schemas)
 
@@ -76,7 +74,7 @@ func TestSchemaRouter(t *testing.T) {
 				assert.EqualValues(tt, createdSchema.Schema, gotSchema.Schema)
 
 				// get all schemas, expect one
-				gotSchemas, err = schemaService.ListSchemas(context.Background())
+				gotSchemas, err = schemaService.ListSchemas(context.Background(), schema.ListSchemasRequest{})
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, gotSchemas.Schemas)
 				assert.Len(tt, gotSchemas.Schemas, 1)
@@ -90,7 +88,7 @@ func TestSchemaRouter(t *testing.T) {
 				assert.Equal(tt, credschema.JSONSchema2023Type, createdSchema.Type)
 
 				// get all schemas, expect two
-				gotSchemas, err = schemaService.ListSchemas(context.Background())
+				gotSchemas, err = schemaService.ListSchemas(context.Background(), schema.ListSchemasRequest{})
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, gotSchemas.Schemas)
 				assert.Len(tt, gotSchemas.Schemas, 2)
@@ -103,7 +101,7 @@ func TestSchemaRouter(t *testing.T) {
 				assert.NoError(tt, err)
 
 				// get all schemas, expect one
-				gotSchemas, err = schemaService.ListSchemas(context.Background())
+				gotSchemas, err = schemaService.ListSchemas(context.Background(), schema.ListSchemasRequest{})
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, gotSchemas.Schemas)
 				assert.Len(tt, gotSchemas.Schemas, 1)
@@ -120,10 +118,9 @@ func TestSchemaSigning(t *testing.T) {
 				db := test.ServiceStorage(tt)
 				assert.NotEmpty(tt, db)
 
-				serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 				keyStoreService := testKeyStoreService(tt, db)
 				didService := testDIDService(tt, db, keyStoreService)
-				schemaService, err := schema.NewSchemaService(serviceConfig, db, keyStoreService, didService.GetResolver())
+				schemaService, err := schema.NewSchemaService(db, keyStoreService, didService.GetResolver())
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, schemaService)
 
@@ -145,10 +142,9 @@ func TestSchemaSigning(t *testing.T) {
 			db := test.ServiceStorage(tt)
 			assert.NotEmpty(tt, db)
 
-			serviceConfig := config.SchemaServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "schema"}}
 			keyStoreService := testKeyStoreService(tt, db)
 			didService := testDIDService(tt, db, keyStoreService)
-			schemaService, err := schema.NewSchemaService(serviceConfig, db, keyStoreService, didService.GetResolver())
+			schemaService, err := schema.NewSchemaService(db, keyStoreService, didService.GetResolver())
 			assert.NoError(tt, err)
 			assert.NotEmpty(tt, schemaService)
 

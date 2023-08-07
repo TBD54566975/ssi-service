@@ -28,7 +28,6 @@ import (
 
 type Service struct {
 	storage *Storage
-	config  config.SchemaServiceConfig
 
 	// external dependencies
 	keyStore *keystore.Service
@@ -59,11 +58,7 @@ func (s Service) Status() framework.Status {
 	return framework.Status{Status: framework.StatusReady}
 }
 
-func (s Service) Config() config.SchemaServiceConfig {
-	return s.config
-}
-
-func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service,
+func NewSchemaService(s storage.ServiceStorage, keyStore *keystore.Service,
 	resolver resolution.Resolver) (*Service, error) {
 	schemaStorage, err := NewSchemaStorage(s)
 	if err != nil {
@@ -71,7 +66,6 @@ func NewSchemaService(config config.SchemaServiceConfig, s storage.ServiceStorag
 	}
 	service := Service{
 		storage:  schemaStorage,
-		config:   config,
 		keyStore: keyStore,
 		resolver: resolver,
 	}
@@ -122,7 +116,7 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 	// if the schema is a credential schema, the credential's id is a fully qualified URI
 	// if the schema is a JSON schema, the schema's id is a fully qualified URI
 	schemaID := uuid.NewString()
-	schemaURI := strings.Join([]string{s.Config().ServiceEndpoint, schemaID}, "/")
+	schemaURI := strings.Join([]string{config.GetServicePath(framework.Schema), schemaID}, "/")
 
 	// create schema for storage
 	storedSchema := StoredSchema{ID: schemaID}
@@ -164,8 +158,6 @@ func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.J
 
 	// set subject value as the schema
 	subject := credential.CredentialSubject(jsonSchema)
-	// TODO(gabe) remove this after https://github.com/TBD54566975/ssi-sdk/pull/404 is merged
-	subject[credential.VerifiableCredentialIDProperty] = schemaURI
 	if err := builder.SetCredentialSubject(subject); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not set subject: %+v", subject)
 	}
@@ -203,15 +195,15 @@ func (s Service) signCredentialSchema(ctx context.Context, cred credential.Verif
 	return credToken, nil
 }
 
-func (s Service) ListSchemas(ctx context.Context) (*ListSchemasResponse, error) {
+func (s Service) ListSchemas(ctx context.Context, request ListSchemasRequest) (*ListSchemasResponse, error) {
 	logrus.Debug("listing all schemas")
 
-	storedSchemas, err := s.storage.ListSchemas(ctx)
+	storedSchemas, err := s.storage.ListSchemas(ctx, *request.PageRequest.ToServicePage())
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "error getting schemas")
 	}
-	schemas := make([]GetSchemaResponse, 0, len(storedSchemas))
-	for _, stored := range storedSchemas {
+	schemas := make([]GetSchemaResponse, 0, len(storedSchemas.Schemas))
+	for _, stored := range storedSchemas.Schemas {
 		schemas = append(schemas, GetSchemaResponse{
 			ID:               stored.ID,
 			Type:             stored.Type,
@@ -220,7 +212,7 @@ func (s Service) ListSchemas(ctx context.Context) (*ListSchemasResponse, error) 
 		})
 	}
 
-	return &ListSchemasResponse{Schemas: schemas}, nil
+	return &ListSchemasResponse{Schemas: schemas, NextPageToken: storedSchemas.NextPageToken}, nil
 }
 
 func (s Service) GetSchema(ctx context.Context, request GetSchemaRequest) (*GetSchemaResponse, error) {

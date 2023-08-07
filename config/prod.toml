@@ -1,8 +1,3 @@
-title = "SSI Service Config"
-
-svn = "0.0.1"
-desc = "Configuration to be used while running the service in a production environment."
-
 # http service configuration
 [server]
 env = "prod" # either 'dev', 'test', or 'prod'
@@ -20,7 +15,12 @@ log_location = "log"
 log_level = "info"
 
 enable_schema_caching = true
-enable_allow_all_cors = true
+enable_allow_all_cors = false
+
+[services.storage_encryption]
+# master_key_uri = "gcp-kms://projects/*/locations/*/keyRings/*/cryptoKeys/*"
+# kms_credentials_path = "credentials.json"
+disable_encryption = false
 
 # Storage Configuration
 [services]
@@ -37,12 +37,11 @@ option = "password"
 
 # per-service configuration
 [services.keystore]
-name = "keystore"
+disable_encryption = false
 # master_key_uri = "gcp-kms://projects/*/locations/*/keyRings/*/cryptoKeys/*"
 # kms_credentials_path = "credentials.json"
 
 [services.did]
-name = "did"
 methods = ["key", "web", "ion"]
 local_resolution_methods = ["key", "web", "pkh", "peer"]
 universal_resolver_url = "http://uni-resolver-web:8080"
@@ -50,22 +49,8 @@ universal_resolver_methods = ["ion"]
 ion_resolver_url = "https://ion.tbddev.org"
 batch_create_max_items = 100
 
-[services.schema]
-name = "schema"
-
 [services.credential]
-name = "credential"
 batch_create_max_items = 100
 
-[services.issuance]
-name = "issuance"
-
-[services.manifest]
-name = "manifest"
-
-[services.presentation]
-name = "presentation"
-
 [services.webhook]
-name = "webhook"
 webhook_timeout = "10s"

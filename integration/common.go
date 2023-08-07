@@ -20,10 +20,12 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
+	"github.com/tbd54566975/ssi-service/config"
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
+	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 )
 
 const (
@@ -45,6 +47,10 @@ func init() {
 		DisableQuote: true,
 		ForceColors:  true,
 	})
+
+	config.SetAPIBase(endpoint)
+	config.SetServicePath(framework.Credential, "/credentials")
+	config.SetServicePath(framework.Schema, "/schemas")
 }
 
 type didConfigurationResourceParams struct {
@@ -110,6 +116,15 @@ func CreateDIDWeb() (string, error) {
 func CreateDIDION() (string, error) {
 	logrus.Println("\n\nCreate a did:ion")
 	output, err := put(endpoint+version+"dids/ion", getJSONFromFile("did-ion-input.json"))
+	if err != nil {
+		return "", errors.Wrapf(err, "did endpoint with output: %s", output)
+	}
+
+	return output, nil
+}
+
+func UpdateDIDION(id string) (string, error) {
+	output, err := put(endpoint+version+"dids/ion/"+id, getJSONFromFile("update-did-ion-input.json"))
 	if err != nil {
 		return "", errors.Wrapf(err, "did endpoint with output: %s", output)
 	}

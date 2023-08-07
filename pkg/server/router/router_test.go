@@ -2,6 +2,7 @@ package router
 
 import (
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 )
@@ -23,8 +24,6 @@ func (s *testService) Config() config.ServicesConfig {
 		StorageProvider:  "bolt",
 		KeyStoreConfig:   config.KeyStoreServiceConfig{},
 		DIDConfig:        config.DIDServiceConfig{Methods: []string{string(didsdk.KeyMethod)}},
-		SchemaConfig:     config.SchemaServiceConfig{},
 		CredentialConfig: config.CredentialServiceConfig{},
-		ManifestConfig:   config.ManifestServiceConfig{},
 	}
 }

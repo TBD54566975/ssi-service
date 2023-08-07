@@ -16,7 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -456,8 +455,7 @@ func setupAllThings(t *testing.T, s storage.ServiceStorage) (*did.CreateDIDRespo
 }
 
 func testIssuanceRouter(t *testing.T, s storage.ServiceStorage) *router.IssuanceRouter {
-	serviceConfig := config.IssuanceServiceConfig{BaseServiceConfig: &config.BaseServiceConfig{Name: "test-issuance"}}
-	svc, err := issuance.NewIssuanceService(serviceConfig, s)
+	svc, err := issuance.NewIssuanceService(s)
 	require.NoError(t, err)
 
 	r, err := router.NewIssuanceRouter(svc)

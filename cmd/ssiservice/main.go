@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/signal"
+	"path"
 	"strconv"
 	"syscall"
 	"time"
@@ -29,13 +30,13 @@ import (
 // main godoc
 //
 //	@title			SSI Service API
-//	@description	{{.Desc}}
+//	@description	The Self Sovereign Identity Service: Managing DIDs, Verifiable Credentials, and more!
+//	@version		0.0.3
 //	@contact.name	TBD
 //	@contact.url	https://github.com/TBD54566975/ssi-service/issues
 //	@contact.email	tbd-developer@squareup.com
 //	@license.name	Apache 2.0
 //	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
-//	@version		{{.SVN}}
 func main() {
 	logrus.Info("Starting up...")
 
@@ -52,7 +53,9 @@ func run() error {
 		logrus.Infof("loading config from env var path: %s", envConfigPath)
 		configPath = envConfigPath
 	}
-	cfg, err := config.LoadConfig(configPath)
+
+	dir, file := path.Split(configPath)
+	cfg, err := config.LoadConfig(file, os.DirFS(dir))
 	if err != nil {
 		logrus.Fatalf("could not instantiate config: %s", err.Error())
 	}
@@ -86,9 +89,9 @@ func run() error {
 		}
 	}
 
-	expvar.NewString("build").Set(cfg.Version.SVN)
+	expvar.NewString("build").Set(config.ServiceVersion)
 
-	logrus.Infof("main: Started : Service initializing : env [%s] : version %q", cfg.Server.Environment, cfg.Version.SVN)
+	logrus.Infof("main: Started : Service initializing : env [%s] : version %q", cfg.Server.Environment, config.ServiceVersion)
 	defer logrus.Info("main: Completed")
 
 	out, err := conf.String(cfg)
@@ -169,7 +172,7 @@ func newTracerProvider(cfg *config.SSIServiceConfig) (*sdktrace.TracerProvider, 
 		sdktrace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceNameKey.String(config.ServiceName),
-			semconv.ServiceVersionKey.String(cfg.Version.SVN),
+			semconv.ServiceVersionKey.String(config.ServiceVersion),
 		)),
 	)
 	otel.SetTracerProvider(tp)

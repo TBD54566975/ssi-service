@@ -8,9 +8,9 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
+	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
 	svcframework "github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/service/schema"
 )
@@ -86,9 +86,9 @@ type SchemaResponse struct {
 
 // CreateSchema godoc
 //
-//	@Summary		Create Schema
-//	@Description	Create schema
-//	@Tags			SchemaAPI
+//	@Summary		Create a Credential Schema
+//	@Description	Create a schema for use with a Verifiable Credential
+//	@Tags			Schemas
 //	@Accept			json
 //	@Produce		json
 //	@Param			request	body		CreateSchemaRequest	true	"request body"
@@ -145,9 +145,9 @@ func (sr SchemaRouter) CreateSchema(c *gin.Context) {
 
 // GetSchema godoc
 //
-//	@Summary		Get Schema
-//	@Description	Get a schema by its ID
-//	@Tags			SchemaAPI
+//	@Summary		Get a Credential Schema
+//	@Description	Get a Credential Schema by its ID
+//	@Tags			Schemas
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"
@@ -185,20 +185,32 @@ func (sr SchemaRouter) GetSchema(c *gin.Context) {
 type ListSchemasResponse struct {
 	// Schemas is the list of all schemas the service holds
 	Schemas []GetSchemaResponse `json:"schemas,omitempty"`
+
+	// Pagination token to retrieve the next page of results. If the value is "", it means no further results for the request.
+	NextPageToken string `json:"nextPageToken"`
 }
 
 // ListSchemas godoc
 //
-//	@Summary		List Schemas
-//	@Description	List schemas
-//	@Tags			SchemaAPI
+//	@Summary		List Credential Schemas
+//	@Description	List Credential Schemas stored by the service
+//	@Tags			Schemas
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	ListSchemasResponse
-//	@Failure		500	{string}	string	"Internal server error"
+//	@Param			pageSize	query		number	false	"Hint to the server of the maximum elements to return. More may be returned. When not set, the server will return all elements."
+//	@Param			pageToken	query		string	false	"Used to indicate to the server to return a specific page of the list results. Must match a previous requests' `nextPageToken`."
+//	@Success		200			{object}	ListSchemasResponse
+//	@Failure		500			{string}	string	"Internal server error"
 //	@Router			/v1/schemas [get]
 func (sr SchemaRouter) ListSchemas(c *gin.Context) {
-	gotSchemas, err := sr.service.ListSchemas(c)
+	var pageRequest pagination.PageRequest
+	if pagination.ParsePaginationQueryValues(c, &pageRequest) {
+		return
+	}
+
+	gotSchemas, err := sr.service.ListSchemas(c, schema.ListSchemasRequest{
+		PageRequest: &pageRequest,
+	})
 	if err != nil {
 		errMsg := "could not list schemas"
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
@@ -218,6 +230,10 @@ func (sr SchemaRouter) ListSchemas(c *gin.Context) {
 	}
 
 	resp := ListSchemasResponse{Schemas: schemas}
+
+	if pagination.MaybeSetNextPageToken(c, gotSchemas.NextPageToken, &resp.NextPageToken) {
+		return
+	}
 	framework.Respond(c, resp, http.StatusOK)
 }
 
@@ -227,9 +243,9 @@ type GetSchemaResponse struct {
 
 // DeleteSchema godoc
 //
-//	@Summary		Delete Schema
-//	@Description	Delete a schema by its ID
-//	@Tags			SchemaAPI
+//	@Summary		Delete a Credential Schema
+//	@Description	Delete a Credential Schema by its ID
+//	@Tags			Schemas
 //	@Accept			json
 //	@Produce		json
 //	@Param			id	path		string	true	"ID"

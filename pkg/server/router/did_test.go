@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
+	"gopkg.in/h2non/gock.v1"
 
 	"github.com/tbd54566975/ssi-service/config"
 	"github.com/tbd54566975/ssi-service/pkg/service/did"
@@ -41,7 +42,7 @@ func TestDIDRouter(t *testing.T) {
 					keyStoreService := testKeyStoreService(tt, db)
 					methods := []string{didsdk.KeyMethod.String()}
 					serviceConfig := config.DIDServiceConfig{Methods: methods, LocalResolutionMethods: methods}
-					didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
+					didService, err := did.NewDIDService(serviceConfig, db, keyStoreService, nil)
 					assert.NoError(tt, err)
 					assert.NotEmpty(tt, didService)
 					createDID(tt, didService)
@@ -83,7 +84,7 @@ func TestDIDRouter(t *testing.T) {
 				keyStoreService := testKeyStoreService(tt, db)
 				methods := []string{didsdk.KeyMethod.String()}
 				serviceConfig := config.DIDServiceConfig{Methods: methods, LocalResolutionMethods: methods}
-				didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
+				didService, err := did.NewDIDService(serviceConfig, db, keyStoreService, nil)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, didService)
 
@@ -170,7 +171,7 @@ func TestDIDRouter(t *testing.T) {
 				keyStoreService := testKeyStoreService(tt, db)
 				methods := []string{didsdk.KeyMethod.String(), didsdk.WebMethod.String()}
 				serviceConfig := config.DIDServiceConfig{Methods: methods, LocalResolutionMethods: methods}
-				didService, err := did.NewDIDService(serviceConfig, db, keyStoreService)
+				didService, err := did.NewDIDService(serviceConfig, db, keyStoreService, nil)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, didService)
 
@@ -189,12 +190,21 @@ func TestDIDRouter(t *testing.T) {
 
 				assert.ElementsMatch(tt, supported.Methods, []didsdk.Method{didsdk.KeyMethod, didsdk.WebMethod})
 
+				gock.Off()
+				gock.New("https://example.com").
+					Get("/.well-known/did.json").
+					Reply(200).
+					BodyString("")
 				// bad key type
 				createOpts := did.CreateWebDIDOptions{DIDWebID: "did:web:example.com"}
 				_, err = didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.WebMethod, KeyType: "bad", Options: createOpts})
 				assert.Error(tt, err)
-				assert.Contains(tt, err.Error(), "could not generate key for did:web")
+				assert.Contains(tt, err.Error(), "key type <bad> not supported")
 
+				gock.Off()
+				gock.New("https://example.com").
+					Get("/.well-known/did.json").
+					Reply(404)
 				// good key type
 				createDIDResponse, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.WebMethod, KeyType: crypto.Ed25519, Options: createOpts})
 				assert.NoError(tt, err)
@@ -211,6 +221,10 @@ func TestDIDRouter(t *testing.T) {
 				// make sure it's the same value
 				assert.Equal(tt, createDIDResponse.DID.ID, getDIDResponse.DID.ID)
 
+				gock.Off()
+				gock.New("https://tbd.website").
+					Get("/.well-known/did.json").
+					Reply(404)
 				// create a second DID
 				createOpts = did.CreateWebDIDOptions{DIDWebID: "did:web:tbd.website"}
 				createDIDResponse2, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.WebMethod, KeyType: crypto.Ed25519, Options: createOpts})
