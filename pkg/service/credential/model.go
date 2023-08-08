@@ -61,7 +61,8 @@ type ListCredentialBySchemaRequest struct {
 }
 
 type ListCredentialsResponse struct {
-	Credentials []credential.Container `json:"credentials,omitempty"`
+	Credentials   []credential.Container `json:"credentials,omitempty"`
+	NextPageToken string                 `json:"nextPageToken,omitempty"`
 }
 
 type DeleteCredentialRequest struct {
