@@ -1,0 +1,56 @@
+# http service configuration
+[server]
+env = "dev" # either 'dev' or 'prod'
+api_host = "0.0.0.0:3000"
+
+# 5 seconds, time is in nanoseconds
+read_timeout = 5000000000
+write_timeout = 5000000000
+shutdown_timeout = 5000000000
+
+log_location = "logs"
+# options: trace, debug, info, warning, error, fatal, panic
+log_level = "debug"
+
+enable_schema_caching = true
+
+[services]
+service_endpoint = "http://localhost:8080"
+
+# Uncomment one of the following database configurations
+
+# Bolt Configuration
+# storage = "bolt"
+# [[services.storage_option]]
+# id = "boltdb-filepath-option"
+# option = "bolt.db"
+
+# Redis Configuration
+# [services]
+# service_endpoint = "http://localhost:8080"
+# storage = "redis"
+
+# [[services.storage_option]]
+# id = "redis-address-option"
+# option = "localhost:6379"
+
+# [[services.storage_option]]
+# id = "storage-password-option"
+# option = "password"
+
+# per-service configuration
+[services.keystore]
+password = "default-password"
+# master_key_uri = "gcp-kms://projects/*/locations/*/keyRings/*/cryptoKeys/*"
+# kms_credentials_path = "credentials.json"
+
+[services.did]
+methods = ["key", "web"]
+local_resolution_methods = ["key", "web", "pkh", "peer"]
+batch_create_max_items = 100
+
+[services.credential]
+batch_create_max_items = 100
+
+[services.webhook]
+webhook_timeout = "10s"
