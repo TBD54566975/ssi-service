@@ -280,6 +280,58 @@ func TestIONHandler(t *testing.T) {
 				assert.NotEmpty(tt, gotDID)
 				assert.Equal(tt, "did:ion:test", gotDID.DID.ID)
 			})
+
+			t.Run("Deactivate DID", func(tt *testing.T) {
+				s := test.ServiceStorage(tt)
+				keystoreService := testKeyStoreService(tt, s)
+				didStorageFactory := NewDIDStorageFactory(s)
+				didStorage, err := didStorageFactory(s)
+				assert.NoError(tt, err)
+				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, didStorageFactory)
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, handler)
+
+				gock.New("https://test-ion-resolver.com").
+					Post("/operations").
+					Reply(200).
+					BodyString(string(BasicDIDResolution))
+				defer gock.Off()
+
+				createDIDRequest := CreateDIDRequest{
+					Method:  did.IONMethod,
+					KeyType: crypto.Ed25519,
+				}
+				created, err := handler.CreateDID(context.Background(), createDIDRequest)
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, created)
+
+				gock.New("https://test-ion-resolver.com").
+					Post("/operations").
+					Reply(200).
+					JSON(`{}`)
+				defer gock.Off()
+
+				request := DeactivateIONDIDRequest{
+					DID: ion.ION(created.DID.ID),
+				}
+				resp, err := handler.(*ionHandler).DeactivateDID(context.Background(), request)
+
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, resp)
+				assert.Equal(tt, created.DID.ID, resp.Result.Document.ID)
+				assert.Empty(tt, resp.Result.Document.VerificationMethod)
+				assert.Empty(tt, resp.Result.Document.Authentication)
+				assert.Empty(tt, resp.Result.Document.AssertionMethod)
+				assert.Empty(tt, resp.Result.Document.CapabilityInvocation)
+				assert.Empty(tt, resp.Result.Document.CapabilityDelegation)
+				assert.Empty(tt, resp.Result.Document.KeyAgreement)
+
+				t.Run("is idempotent", func(t *testing.T) {
+					resp2, err := handler.(*ionHandler).DeactivateDID(context.Background(), request)
+					assert.NoError(t, err)
+					assert.Equal(t, resp, resp2)
+				})
+			})
 		})
 	}
 }

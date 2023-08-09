@@ -9,6 +9,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/ion"
+	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
@@ -60,6 +61,63 @@ type ionHandler struct {
 	didStorageFactory StorageFactory
 }
 
+func (h *ionHandler) Resolve(ctx context.Context, did string) (*resolution.Result, error) {
+	method, err := resolution.GetMethodForDID(did)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting method from DID")
+	}
+
+	if method != h.method {
+		return nil, errors.Errorf("invalid method %s for handler %s", method, h.method)
+	}
+
+	gotDID := new(ionStoredDID)
+	if err := h.storage.GetDID(ctx, did, gotDID); err == nil {
+		return newResolutionResult(did, gotDID.DID, gotDID.Deactivated, gotDID.Published), nil
+	}
+
+	result, err := h.resolver.Resolve(ctx, did)
+	if err != nil {
+		return nil, errors.Wrap(err, "resolving DID on network")
+	}
+
+	return result, nil
+}
+
+func newResolutionResult(did string, document did.Document, deactivated bool, published bool) *resolution.Result {
+	isLongForm := ion.IsLongFormDID(did)
+	documentMetadata := &resolution.DocumentMetadata{
+		Deactivated: deactivated,
+		Method: resolution.Method{
+			Published: published,
+		},
+	}
+	if isLongForm {
+		if !published {
+			documentMetadata.CanonicalID = ""
+
+		} else {
+			shortFormDID, _, _ := ion.DecodeLongFormDID(did)
+			documentMetadata.CanonicalID = shortFormDID
+		}
+	} else {
+		documentMetadata.CanonicalID = did
+	}
+
+	if documentMetadata.CanonicalID != "" {
+		if isLongForm {
+			shortFormDID, _, _ := ion.DecodeLongFormDID(did)
+			documentMetadata.EquivalentID = []string{shortFormDID}
+		}
+	}
+	return &resolution.Result{
+		Context:          "https://w3id.org/did-resolution/v1",
+		Metadata:         resolution.Metadata{},
+		Document:         document,
+		DocumentMetadata: documentMetadata,
+	}
+}
+
 // Verify interface compliance https://github.com/uber-go/guide/blob/master/style.md#verify-interface-compliance
 var _ MethodHandler = (*ionHandler)(nil)
 
@@ -85,11 +143,14 @@ func (h *ionHandler) GetMethod() did.Method {
 }
 
 type ionStoredDID struct {
-	ID          string       `json:"id"`
-	DID         did.Document `json:"did"`
-	SoftDeleted bool         `json:"softDeleted"`
-	LongFormDID string       `json:"longFormDID"`
-	Operations  []any        `json:"operations"`
+	ID                   string             `json:"id"`
+	DID                  did.Document       `json:"did"`
+	SoftDeleted          bool               `json:"softDeleted"`
+	LongFormDID          string             `json:"longFormDID"`
+	Operations           []any              `json:"operations"`
+	Deactivated          bool               `json:"deactivated"`
+	DeactivationResponse *resolution.Result `json:"deactivationResponse"`
+	Published            bool               `json:"published"`
 }
 
 func (i ionStoredDID) GetID() string {
@@ -280,7 +341,7 @@ func (h *ionHandler) prepareUpdate(request UpdateIONDIDRequest) func(ctx context
 				return nil, errors.Wrap(err, "getting ion did from storage")
 			}
 
-			updatedLongForm, updatedDIDDoc, err := updateLongForm(request.DID.String(), storedDID.LongFormDID, updateOp)
+			updatedLongForm, updatedDIDDoc, err := updateLongForm(request.DID.String(), storedDID.LongFormDID, updateOp.Delta)
 			if err != nil {
 				return nil, err
 			}
@@ -309,15 +370,15 @@ func (h *ionHandler) prepareUpdate(request UpdateIONDIDRequest) func(ctx context
 	}
 }
 
-func updateLongForm(shortFormDID string, longFormDID string, updateOp *ion.UpdateRequest) (string, *did.Document, error) {
+func updateLongForm(shortFormDID, longFormDID string, opDelta ion.Delta) (string, *did.Document, error) {
 	_, initialState, err := ion.DecodeLongFormDID(longFormDID)
 	if err != nil {
 		return "", nil, errors.Wrap(err, "invalid long form DID")
 	}
 
 	delta := ion.Delta{
-		Patches:          append(initialState.Delta.Patches, updateOp.Delta.GetPatches()...),
-		UpdateCommitment: updateOp.Delta.UpdateCommitment,
+		Patches:          append(initialState.Delta.Patches, opDelta.GetPatches()...),
+		UpdateCommitment: opDelta.UpdateCommitment,
 	}
 	suffixData := initialState.SuffixData
 	createRequest := ion.CreateRequest{
@@ -589,16 +650,25 @@ func (h *ionHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest
 
 func (h *ionHandler) readUpdatePrivateKey(ctx context.Context, did string) (*jwx.PrivateKeyJWK, error) {
 	keyID := updateKeyID(did)
+	return h.readPrivateKey(ctx, keyID)
+}
+
+func (h *ionHandler) readPrivateKey(ctx context.Context, keyID string) (*jwx.PrivateKeyJWK, error) {
 	getKeyRequest := keystore.GetKeyRequest{ID: keyID}
 	key, err := h.keyStore.GetKey(ctx, getKeyRequest)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching update private key")
+		return nil, errors.Wrap(err, "fetching private key")
 	}
 	_, privateJWK, err := jwx.PrivateKeyToPrivateKeyJWK(keyID, key.Key)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting update private key")
+		return nil, errors.Wrap(err, "getting private key")
 	}
 	return privateJWK, err
+}
+
+func (h *ionHandler) readRecoveryPrivateKey(ctx context.Context, did string) (*jwx.PrivateKeyJWK, error) {
+	keyID := recoveryKeyID(did)
+	return h.readPrivateKey(ctx, keyID)
 }
 
 func updateKeyID(did string) string {
@@ -657,4 +727,83 @@ func (h *ionHandler) storeUpdateStates(ctx context.Context, tx storage.Tx, id st
 		return errors.Wrap(err, "writing update states")
 	}
 	return nil
+}
+
+func (h *ionHandler) DeactivateDID(ctx context.Context, request DeactivateIONDIDRequest) (*DeactivateIONDIDResponse, error) {
+	storedDID := new(ionStoredDID)
+	if err := h.storage.GetDID(ctx, request.DID.String(), storedDID); err != nil {
+		return nil, errors.Wrap(err, "getting ion did from storage")
+	}
+
+	if storedDID.Deactivated {
+		return &DeactivateIONDIDResponse{Result: storedDID.DeactivationResponse}, nil
+	}
+
+	privateUpdateJWK, err := h.readUpdatePrivateKey(ctx, request.DID.String())
+	if err != nil {
+		return nil, err
+	}
+	privateRecoveryJWK, err := h.readRecoveryPrivateKey(ctx, request.DID.String())
+	if err != nil {
+		return nil, err
+	}
+
+	signer, err := ion.NewBTCSignerVerifier(*privateUpdateJWK)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating signer")
+	}
+
+	suffix, err := request.DID.Suffix()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting suffix")
+	}
+	deactivateRequest, err := ion.NewDeactivateRequest(suffix, privateRecoveryJWK.ToPublicKeyJWK(), *signer)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating deactivate request")
+	}
+
+	if _, err := h.resolver.Anchor(ctx, deactivateRequest); err != nil {
+		return nil, errors.Wrap(err, "anchoring deactivate operation")
+	}
+
+	const deactivateRequestNamespace = "deactivate-request"
+	deactivateRequestKey := request.DID.String()
+	watchKeys := []storage.WatchKey{
+		{
+			Namespace: deactivateRequestNamespace,
+			Key:       deactivateRequestKey,
+		},
+	}
+	deactivatedDID, err := h.storage.db.Execute(ctx, func(ctx context.Context, tx storage.Tx) (any, error) {
+		if storedDID.Deactivated {
+			return storedDID, nil
+		}
+		storedDID.Operations = append(storedDID.Operations, deactivateRequest)
+		storedDID.DID.Controller = ""
+		storedDID.DID.AlsoKnownAs = ""
+		storedDID.DID.VerificationMethod = nil
+		storedDID.DID.Authentication = nil
+		storedDID.DID.AssertionMethod = nil
+		storedDID.DID.KeyAgreement = nil
+		storedDID.DID.CapabilityInvocation = nil
+		storedDID.DID.CapabilityDelegation = nil
+		storedDID.DID.Services = nil
+		storedDID.Deactivated = true
+		storedDID.DeactivationResponse = newResolutionResult(storedDID.DID.ID, storedDID.DID, storedDID.Deactivated, storedDID.Published)
+
+		didStorage, err := h.didStorageFactory(tx)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating did storage")
+		}
+		if err := didStorage.StoreDID(ctx, storedDID); err != nil {
+			return nil, errors.Wrap(err, "storing DID in storage")
+		}
+		return storedDID, nil
+	}, watchKeys)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "executing deactivation")
+	}
+
+	return &DeactivateIONDIDResponse{Result: deactivatedDID.(*ionStoredDID).DeactivationResponse}, nil
 }

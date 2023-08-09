@@ -203,7 +203,6 @@ func (dr DIDRouter) UpdateDIDByMethod(c *gin.Context) {
 
 	resp := CreateDIDByMethodResponse{DID: updateIONDIDResponse.DID}
 	framework.Respond(c, resp, http.StatusOK)
-
 }
 
 func toUpdateIONDIDRequest(id string, request UpdateDIDByMethodRequest) (*did.UpdateIONDIDRequest, error) {
@@ -468,6 +467,90 @@ func (dr DIDRouter) ResolveDID(c *gin.Context) {
 
 	resp := ResolveDIDResponse{ResolutionMetadata: resolvedDID.ResolutionMetadata, DIDDocument: resolvedDID.DIDDocument, DIDDocumentMetadata: resolvedDID.DIDDocumentMetadata}
 	framework.Respond(c, resp, http.StatusOK)
+}
+
+type DeactivateDIDRequest struct{}
+
+type DeactivateDIDResponse struct {
+	// The resolution result received from the ION node.
+	Result *resolution.Result `json:"resolutionResult"`
+}
+
+// DeactivateDID godoc
+//
+//	@Summary		Deactivate a DID document.
+//	@Description	Deactivates a DID for which SSI is the custodian. The DID must have been previously created by calling
+//	@Description	the "Create DID Document" endpoint. Currently, only ION dids support deactivation. The
+//	@Description	effect of deactivating a DID is that the `didDocumentMetadata.deactivated` will be set to `true` after
+//	@Description	doing DID resolution (e.g. by calling the `v1/dids/resolution/<did>` endpoint). Additionally, all the
+//	@Description	DID Document properties will be removed, except for the `id` and `@context`. In practical terms, this
+//	@Description	means that no counterparty will be able to obtain verification material from this DID. Please not that
+//	@Description	deactivation is an irreversible operation. For more details, refer to the sidetree spec at https://identity.foundation/sidetree/spec/#deactivate
+//	@Tags			DecentralizedIdentifiers
+//	@Accept			json
+//	@Produce		json
+//	@Param			method	path		string					true	"Method"
+//	@Param			id		path		string					true	"ID"
+//	@Param			request	body		DeactivateDIDRequest	true	"request body"
+//	@Success		200		{object}	DeactivateDIDResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/dids/{method}/{id}/deactivation [put]
+func (dr DIDRouter) DeactivateDID(c *gin.Context) {
+	method := framework.GetParam(c, MethodParam)
+	if method == nil {
+		errMsg := "deactivate DID by method request missing method parameter"
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
+	}
+	if *method != didsdk.IONMethod.String() {
+		framework.LoggingRespondErrMsg(c, "ion is the only method supported", http.StatusBadRequest)
+	}
+
+	id := framework.GetParam(c, IDParam)
+	if id == nil {
+		errMsg := fmt.Sprintf("deactivate DID request missing id parameter for method: %s", *method)
+		framework.LoggingRespondErrMsg(c, errMsg, http.StatusBadRequest)
+		return
+	}
+	var request DeactivateDIDRequest
+	invalidRequest := "invalid deactivate DID request"
+	if err := framework.Decode(c.Request, &request); err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, invalidRequest, http.StatusBadRequest)
+		return
+	}
+
+	if err := framework.ValidateRequest(request); err != nil {
+		framework.LoggingRespondErrWithMsg(c, err, invalidRequest, http.StatusBadRequest)
+		return
+	}
+
+	deactivateDIDRequest, err := toDeactivateIONDIDRequest(*id)
+	if err != nil {
+		errMsg := fmt.Sprintf("%s: could not deactivate DID for method<%s>", invalidRequest, *method)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
+	}
+	deactivateIONDIDResponse, err := dr.service.DeactivateIONDID(c, *deactivateDIDRequest)
+	if err != nil {
+		errMsg := fmt.Sprintf("could not deactivate DID for method<%s>", *method)
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+
+	resp := DeactivateDIDResponse{Result: deactivateIONDIDResponse.Result}
+	framework.Respond(c, resp, http.StatusOK)
+}
+
+func toDeactivateIONDIDRequest(id string) (*did.DeactivateIONDIDRequest, error) {
+	didION := ion.ION(id)
+	if !didION.IsValid() {
+		return nil, errors.Errorf("invalid ion did %s", id)
+	}
+
+	return &did.DeactivateIONDIDRequest{
+		DID: didION,
+	}, nil
 }
 
 type BatchCreateDIDsRequest struct {

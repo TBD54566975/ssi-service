@@ -3,9 +3,11 @@ package did
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/TBD54566975/ssi-sdk/did/web"
 	"github.com/TBD54566975/ssi-sdk/util"
 	"github.com/mr-tron/base58"
@@ -29,6 +31,10 @@ type webHandler struct {
 	method   did.Method
 	storage  *Storage
 	keyStore *keystore.Service
+}
+
+func (h *webHandler) Resolve(ctx context.Context, id string) (*resolution.Result, error) {
+	return resolve(ctx, id, h.storage)
 }
 
 var _ MethodHandler = (*webHandler)(nil)
@@ -97,7 +103,10 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 
 	// store metadata in DID storage
 	id := didWeb.String()
+	nowUTC := time.Now().UTC()
 	storedDID := DefaultStoredDID{
+		CreatedAt:   nowUTC.Format(time.RFC3339),
+		UpdatedAt:   nowUTC.Format(time.RFC3339),
 		ID:          id,
 		DID:         *doc,
 		SoftDeleted: false,
@@ -186,7 +195,9 @@ func (h *webHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest
 		return fmt.Errorf("did with id<%s> could not be found", id)
 	}
 
+	nowUTC := time.Now().UTC()
 	gotStoredDID.SoftDeleted = true
+	gotStoredDID.UpdatedAt = nowUTC.Format(time.RFC3339)
 
 	return h.storage.StoreDID(ctx, *gotStoredDID)
 }

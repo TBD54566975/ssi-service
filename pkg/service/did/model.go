@@ -96,6 +96,14 @@ type UpdateIONDIDResponse struct {
 	DID didsdk.Document `json:"did"`
 }
 
+type DeactivateIONDIDRequest struct {
+	DID ion.ION `json:"did"`
+}
+
+type DeactivateIONDIDResponse struct {
+	Result *resolution.Result `json:"resolutionResult"`
+}
+
 type UpdateRequestStatus string
 
 func (s UpdateRequestStatus) Bytes() []byte {

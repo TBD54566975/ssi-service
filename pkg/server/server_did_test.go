@@ -374,7 +374,72 @@ func TestDIDAPI(t *testing.T) {
 				assert.Len(tt, updateDIDResponse.DID.KeyAgreement, 1+len(createDIDResponse.DID.KeyAgreement))
 				assert.Len(tt, updateDIDResponse.DID.CapabilityInvocation, 0+len(createDIDResponse.DID.CapabilityInvocation))
 				assert.Len(tt, updateDIDResponse.DID.CapabilityInvocation, 0+len(createDIDResponse.DID.CapabilityInvocation))
+			})
 
+			t.Run("Create, deactivate, and resolve", func(tt *testing.T) {
+				// setup
+				db := test.ServiceStorage(t)
+				require.NotEmpty(tt, db)
+
+				_, keyStoreService, keyStoreServiceFactory := testKeyStore(tt, db)
+				didService, _ := testDIDRouter(tt, db, keyStoreService, []string{"ion"}, keyStoreServiceFactory)
+
+				params := map[string]string{
+					"method": "ion",
+				}
+				w := httptest.NewRecorder()
+
+				gock.New(testIONResolverURL).
+					Post("/operations").
+					Reply(200).
+					JSON(string(BasicDIDResolution))
+				defer gock.Off()
+
+				// create the did
+				createDIDRequest := router.CreateDIDByMethodRequest{KeyType: crypto.Ed25519}
+				requestReader := newRequestValue(tt, createDIDRequest)
+				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/ion", requestReader)
+
+				c := newRequestContextWithParams(w, req, params)
+				didService.CreateDIDByMethod(c)
+				assert.True(tt, util.Is2xxResponse(w.Code))
+
+				var createDIDResponse router.CreateDIDByMethodResponse
+				err := json.NewDecoder(w.Body).Decode(&createDIDResponse)
+				assert.NoError(tt, err)
+
+				// deactivate it
+				updateDIDRequest := router.DeactivateDIDRequest{}
+				w = httptest.NewRecorder()
+				params["id"] = createDIDResponse.DID.ID
+				requestReader = newRequestValue(tt, updateDIDRequest)
+				req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/ion/"+createDIDResponse.DID.ID, requestReader)
+
+				gock.New(testIONResolverURL).
+					Post("/operations").
+					Reply(200).
+					JSON("{}")
+				defer gock.Off()
+
+				c = newRequestContextWithParams(w, req, params)
+				didService.DeactivateDID(c)
+				assert.True(tt, util.Is2xxResponse(w.Code))
+
+				// And resolve it
+				w = httptest.NewRecorder()
+				req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/dids/resolver/"+createDIDResponse.DID.ID, nil)
+				c = newRequestContextWithParams(w, req, params)
+				didService.ResolveDID(c)
+				assert.True(tt, util.Is2xxResponse(w.Code))
+
+				var resolveDIDResponse router.ResolveDIDResponse
+				err = json.NewDecoder(w.Body).Decode(&resolveDIDResponse)
+				assert.NoError(tt, err)
+
+				// verify that the resolution came through correctly
+				assert.True(tt, resolveDIDResponse.DIDDocumentMetadata.Deactivated)
+				assert.False(tt, resolveDIDResponse.DIDDocumentMetadata.Method.Published)
+				assert.Equal(tt, createDIDResponse.DID.ID, resolveDIDResponse.DIDDocumentMetadata.CanonicalID)
 			})
 
 			t.Run("Test Create Duplicate DID:Webs", func(tt *testing.T) {

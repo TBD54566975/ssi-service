@@ -32,6 +32,9 @@ type MethodHandler interface {
 
 	// SoftDeleteDID marks the given DID as deleted. It is not removed from storage.
 	SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error
+
+	// Resolve returns the resolution result of the given DID according to https://w3c-ccg.github.io/did-resolution/#did-resolution-result.
+	Resolve(ctx context.Context, did string) (*resolution.Result, error)
 }
 
 // NewHandlerResolver creates a new HandlerResolver from a map of MethodHandlers which are used to resolve DIDs
@@ -62,23 +65,7 @@ type handlerResolver struct {
 }
 
 func (h handlerResolver) Resolve(ctx context.Context, did string, _ ...resolution.Option) (*resolution.Result, error) {
-	method, err := resolution.GetMethodForDID(did)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting method from DID")
-	}
-
-	if method != h.method {
-		return nil, errors.Errorf("invalid method %s for handler %s", method, h.method)
-	}
-
-	gotDIDResponse, err := h.handler.GetDID(ctx, GetDIDRequest{
-		Method: h.method,
-		ID:     did,
-	})
-	if err != nil {
-		return nil, errors.Wrap(err, "getting DID from handler")
-	}
-	return &resolution.Result{Document: gotDIDResponse.DID}, nil
+	return h.handler.Resolve(ctx, did)
 }
 
 func (h handlerResolver) Methods() []didsdk.Method {

@@ -41,6 +41,8 @@ type StoredDID interface {
 
 // DefaultStoredDID is the default implementation of StoredDID if no other implementation requirements are needed.
 type DefaultStoredDID struct {
+	CreatedAt   string       `json:"createdAt"`
+	UpdatedAt   string       `json:"updatedAt"`
 	ID          string       `json:"id"`
 	DID         did.Document `json:"did"`
 	SoftDeleted bool         `json:"softDeleted"`
