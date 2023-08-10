@@ -775,6 +775,7 @@ func (h *ionHandler) DeactivateDID(ctx context.Context, request DeactivateIONDID
 		},
 	}
 	deactivatedDID, err := h.storage.db.Execute(ctx, func(ctx context.Context, tx storage.Tx) (any, error) {
+		kidToDelete := did.FullyQualifiedVerificationMethodID(storedDID.ID, storedDID.DID.VerificationMethod[0].ID)
 		if storedDID.Deactivated {
 			return storedDID, nil
 		}
@@ -797,6 +798,20 @@ func (h *ionHandler) DeactivateDID(ctx context.Context, request DeactivateIONDID
 		}
 		if err := didStorage.StoreDID(ctx, storedDID); err != nil {
 			return nil, errors.Wrap(err, "storing DID in storage")
+		}
+
+		keyStore, err := h.keyStoreFactory(tx)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating keystore service")
+		}
+		if err := keyStore.RevokeKey(ctx, keystore.RevokeKeyRequest{ID: updateKeyID(storedDID.ID)}); err != nil {
+			return nil, errors.Wrap(err, "revoking update key")
+		}
+		if err := keyStore.RevokeKey(ctx, keystore.RevokeKeyRequest{ID: recoveryKeyID(storedDID.ID)}); err != nil {
+			return nil, errors.Wrap(err, "revoking recovery key")
+		}
+		if err := keyStore.RevokeKey(ctx, keystore.RevokeKeyRequest{ID: kidToDelete}); err != nil {
+			return nil, errors.Wrap(err, "revoking recovery key")
 		}
 		return storedDID, nil
 	}, watchKeys)

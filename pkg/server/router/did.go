@@ -481,11 +481,15 @@ type DeactivateDIDResponse struct {
 //	@Summary		Deactivate a DID document.
 //	@Description	Deactivates a DID for which SSI is the custodian. The DID must have been previously created by calling
 //	@Description	the "Create DID Document" endpoint. Currently, only ION dids support deactivation. The
-//	@Description	effect of deactivating a DID is that the `didDocumentMetadata.deactivated` will be set to `true` after
-//	@Description	doing DID resolution (e.g. by calling the `v1/dids/resolution/<did>` endpoint). Additionally, all the
-//	@Description	DID Document properties will be removed, except for the `id` and `@context`. In practical terms, this
-//	@Description	means that no counterparty will be able to obtain verification material from this DID. Please not that
-//	@Description	deactivation is an irreversible operation. For more details, refer to the sidetree spec at https://identity.foundation/sidetree/spec/#deactivate
+//	@Description	effects of deactivating a DID includes:
+//	@Description
+//	@Description	* The `didDocumentMetadata.deactivated` property will be set to `true` after
+//	@Description	doing DID resolution (e.g. by calling the `v1/dids/resolution/<did>` endpoint).
+//	@Description	* All the DID Document properties will be removed, except for the `id` and `@context`. In practical terms, this
+//	@Description	means that no counterparty will be able to obtain verification material from this DID.
+//	@Description	* All keys stored by SSI service that are related to this DID (i.e. update, recovery, verification) will be revoked.
+//	@Description
+//	@Description	Please note that deactivation is an irreversible operation. For more details, refer to the sidetree spec at https://identity.foundation/sidetree/spec/#deactivate
 //	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
