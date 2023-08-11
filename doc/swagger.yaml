@@ -1567,15 +1567,6 @@ definitions:
     - '@context'
     - linked_dids
     type: object
-  pkg_server_router.DeactivateDIDRequest:
-    type: object
-  pkg_server_router.DeactivateDIDResponse:
-    properties:
-      resolutionResult:
-        allOf:
-        - $ref: '#/definitions/resolution.Result'
-        description: The resolution result received from the ION node.
-    type: object
   pkg_server_router.GetApplicationResponse:
     properties:
       application:
@@ -2289,17 +2280,6 @@ definitions:
         description: The `updateCommitment` property in https://identity.foundation/sidetree/spec/#did-resolver-output
         type: string
     type: object
-  resolution.Result:
-    properties:
-      '@context':
-        type: string
-      didDocument:
-        $ref: '#/definitions/did.Document'
-      didDocumentMetadata:
-        $ref: '#/definitions/resolution.DocumentMetadata'
-      didResolutionMetadata:
-        $ref: '#/definitions/resolution.Metadata'
-    type: object
   schema.JSONSchema:
     additionalProperties: {}
     type: object
@@ -2959,57 +2939,6 @@ paths:
       summary: Updates a DID document.
       tags:
       - DecentralizedIdentityAPI
-  /v1/dids/{method}/{id}/deactivation:
-    put:
-      consumes:
-      - application/json
-      description: |-
-        Deactivates a DID for which SSI is the custodian. The DID must have been previously created by calling
-        the "Create DID Document" endpoint. Currently, only ION dids support deactivation. The
-        effects of deactivating a DID includes:
-
-        * The `didDocumentMetadata.deactivated` property will be set to `true` after
-        doing DID resolution (e.g. by calling the `v1/dids/resolution/<did>` endpoint).
-        * All the DID Document properties will be removed, except for the `id` and `@context`. In practical terms, this
-        means that no counterparty will be able to obtain verification material from this DID.
-        * All keys stored by SSI service that are related to this DID (i.e. update, recovery, verification) will be revoked.
-
-        Please note that deactivation is an irreversible operation. For more details, refer to the sidetree spec at https://identity.foundation/sidetree/spec/#deactivate
-      parameters:
-      - description: Method
-        in: path
-        name: method
-        required: true
-        type: string
-      - description: ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: request body
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/pkg_server_router.DeactivateDIDRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/pkg_server_router.DeactivateDIDResponse'
-        "400":
-          description: Bad request
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: Deactivate a DID document.
-      tags:
-      - DecentralizedIdentifiers
   /v1/dids/{method}/batch:
     put:
       consumes:

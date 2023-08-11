@@ -318,10 +318,10 @@ func TestIONHandler(t *testing.T) {
 					JSON(`{}`)
 				defer gock.Off()
 
-				request := DeactivateIONDIDRequest{
-					DID: ion.ION(created.DID.ID),
+				request := DeleteDIDRequest{
+					ID: created.DID.ID,
 				}
-				resp, err := handler.(*ionHandler).DeactivateDID(context.Background(), request)
+				resp, err := handler.(*ionHandler).DeleteDID(context.Background(), request)
 
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, resp)
@@ -345,7 +345,7 @@ func TestIONHandler(t *testing.T) {
 				assert.True(tt, signingKey.Revoked)
 
 				t.Run("is idempotent", func(t *testing.T) {
-					resp2, err := handler.(*ionHandler).DeactivateDID(context.Background(), request)
+					resp2, err := handler.(*ionHandler).DeleteDID(context.Background(), request)
 					assert.NoError(t, err)
 					assert.Equal(t, resp, resp2)
 				})

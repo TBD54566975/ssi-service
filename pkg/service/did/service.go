@@ -237,15 +237,3 @@ func (s *Service) getHandler(method didsdk.Method) (MethodHandler, error) {
 	}
 	return handler, nil
 }
-
-func (s *Service) DeactivateIONDID(ctx context.Context, request DeactivateIONDIDRequest) (*DeactivateIONDIDResponse, error) {
-	handler, err := s.getHandler(didsdk.IONMethod)
-	if err != nil {
-		return nil, errors.Wrapf(err, "getting handler for method<%s>", didsdk.IONMethod)
-	}
-	ionHandlerImpl, ok := handler.(*ionHandler)
-	if !ok {
-		return nil, errors.New("cannot assert that handler is an ionHandler")
-	}
-	return ionHandlerImpl.DeactivateDID(ctx, request)
-}

@@ -408,12 +408,11 @@ func TestDIDAPI(t *testing.T) {
 				err := json.NewDecoder(w.Body).Decode(&createDIDResponse)
 				assert.NoError(tt, err)
 
-				// deactivate it
-				updateDIDRequest := router.DeactivateDIDRequest{}
+				// delete and deactivate it
 				w = httptest.NewRecorder()
 				params["id"] = createDIDResponse.DID.ID
-				requestReader = newRequestValue(tt, updateDIDRequest)
-				req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/dids/ion/"+createDIDResponse.DID.ID, requestReader)
+				requestReader = newRequestValue(tt, nil)
+				req = httptest.NewRequest(http.MethodDelete, "https://ssi-service.com/v1/dids/ion/"+createDIDResponse.DID.ID, requestReader)
 
 				gock.New(testIONResolverURL).
 					Post("/operations").
@@ -422,7 +421,7 @@ func TestDIDAPI(t *testing.T) {
 				defer gock.Off()
 
 				c = newRequestContextWithParams(w, req, params)
-				didService.DeactivateDID(c)
+				didService.DeleteDIDByMethod(c)
 				assert.True(tt, util.Is2xxResponse(w.Code))
 
 				// And resolve it
