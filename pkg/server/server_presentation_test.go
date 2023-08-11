@@ -110,7 +110,7 @@ func TestPresentationAPI(t *testing.T) {
 
 				ttt.Run("Invalid Verifiable Presentation with no credentials", func(tttt *testing.T) {
 					// use the sdk to create a vp
-					emptyPresentation, err := integrity.SignVerifiablePresentationJWT(holderSigner, integrity.JWTVVPParameters{Audience: []string{holderSigner.ID}}, testPresentation)
+					emptyPresentation, err := integrity.SignVerifiablePresentationJWT(holderSigner, &integrity.JWTVVPParameters{Audience: []string{holderSigner.ID}}, testPresentation)
 					assert.NoError(tttt, err)
 
 					badPresentation := string(emptyPresentation[:10])
@@ -124,12 +124,12 @@ func TestPresentationAPI(t *testing.T) {
 					var resp router.VerifyPresentationResponse
 					assert.NoError(tttt, json.NewDecoder(w.Body).Decode(&resp))
 					assert.False(tttt, resp.Verified)
-					assert.Equal(tttt, resp.Reason, "parsing JWT presentation: parsing vp token: invalid JWT")
+					assert.Equal(tttt, "verifying JWT presentation: parsing JWT: parsing vp token: invalid JWT", resp.Reason)
 				})
 
 				ttt.Run("Valid Verifiable Presentation with no credentials", func(tttt *testing.T) {
 					// use the sdk to create a vp
-					emptyPresentation, err := integrity.SignVerifiablePresentationJWT(holderSigner, integrity.JWTVVPParameters{Audience: []string{holderSigner.ID}}, testPresentation)
+					emptyPresentation, err := integrity.SignVerifiablePresentationJWT(holderSigner, &integrity.JWTVVPParameters{Audience: []string{holderSigner.ID}}, testPresentation)
 					assert.NoError(tttt, err)
 
 					value := newRequestValue(t, router.VerifyPresentationRequest{PresentationJWT: keyaccess.JWTPtr(string(emptyPresentation))})
@@ -150,7 +150,7 @@ func TestPresentationAPI(t *testing.T) {
 					testPresentation.VerifiableCredential = []any{badCredJWT}
 
 					// use the sdk to create a vp
-					emptyPresentation, err := integrity.SignVerifiablePresentationJWT(holderSigner, integrity.JWTVVPParameters{Audience: []string{holderSigner.ID}}, testPresentation)
+					emptyPresentation, err := integrity.SignVerifiablePresentationJWT(holderSigner, &integrity.JWTVVPParameters{Audience: []string{holderSigner.ID}}, testPresentation)
 					assert.NoError(tt, err)
 
 					value := newRequestValue(tttt, router.VerifyPresentationRequest{PresentationJWT: keyaccess.JWTPtr(string(emptyPresentation))})
@@ -171,7 +171,7 @@ func TestPresentationAPI(t *testing.T) {
 					testPresentation.VerifiableCredential = []any{createResp.CredentialJWT}
 
 					// use the sdk to create a vp
-					emptyPresentation, err := integrity.SignVerifiablePresentationJWT(holderSigner, integrity.JWTVVPParameters{Audience: []string{holderSigner.ID}}, testPresentation)
+					emptyPresentation, err := integrity.SignVerifiablePresentationJWT(holderSigner, &integrity.JWTVVPParameters{Audience: []string{holderSigner.ID}}, testPresentation)
 					assert.NoError(tttt, err)
 
 					value := newRequestValue(tttt, router.VerifyPresentationRequest{PresentationJWT: keyaccess.JWTPtr(string(emptyPresentation))})
@@ -947,7 +947,7 @@ func createSubmissionRequest(t *testing.T, definitionID, requesterDID string, vc
 		VerifiableCredential:   []any{keyaccess.JWT(vcData)},
 	}
 
-	signed, err := integrity.SignVerifiablePresentationJWT(holderSigner, integrity.JWTVVPParameters{Audience: []string{requesterDID}}, vp)
+	signed, err := integrity.SignVerifiablePresentationJWT(holderSigner, &integrity.JWTVVPParameters{Audience: []string{requesterDID}}, vp)
 	require.NoError(t, err)
 
 	request := router.CreateSubmissionRequest{SubmissionJWT: keyaccess.JWT(signed)}

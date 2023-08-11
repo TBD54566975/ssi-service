@@ -145,7 +145,7 @@ func (ka JWKKeyAccess) SignVerifiablePresentation(audience string, presentation 
 	if err := presentation.IsValid(); err != nil {
 		return nil, errors.New("cannot sign invalid presentation")
 	}
-	tokenBytes, err := integrity.SignVerifiablePresentationJWT(*ka.Signer, integrity.JWTVVPParameters{Audience: []string{audience}}, presentation)
+	tokenBytes, err := integrity.SignVerifiablePresentationJWT(*ka.Signer, &integrity.JWTVVPParameters{Audience: []string{audience}}, presentation)
 	if err != nil {
 		return nil, errors.Wrap(err, "could not sign presentation")
 	}
