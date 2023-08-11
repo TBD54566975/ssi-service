@@ -590,7 +590,7 @@ func TestDIDAPI(t *testing.T) {
 				}
 
 				c := newRequestContextWithParams(w, req, badParams)
-				didService.SoftDeleteDIDByMethod(c)
+				didService.DeleteDIDByMethod(c)
 				assert.Contains(tt, w.Body.String(), "could not soft delete DID")
 
 				// good method, bad id
@@ -600,7 +600,7 @@ func TestDIDAPI(t *testing.T) {
 				}
 				w = httptest.NewRecorder()
 				c = newRequestContextWithParams(w, req, badParams1)
-				didService.SoftDeleteDIDByMethod(c)
+				didService.DeleteDIDByMethod(c)
 				assert.Contains(tt, w.Body.String(), "could not soft delete DID with id: worse: error getting DID: worse")
 
 				// store a DID
@@ -656,7 +656,7 @@ func TestDIDAPI(t *testing.T) {
 
 				w = httptest.NewRecorder()
 				c = newRequestContextWithParams(w, req, goodParams)
-				didService.SoftDeleteDIDByMethod(c)
+				didService.DeleteDIDByMethod(c)
 				assert.True(tt, util.Is2xxResponse(w.Code))
 
 				// get it back

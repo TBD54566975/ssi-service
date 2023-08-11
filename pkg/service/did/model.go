@@ -86,6 +86,10 @@ type DeleteDIDRequest struct {
 	ID     string        `json:"id" validate:"required"`
 }
 
+type DeleteDIDResponse struct {
+	Result *resolution.Result `json:"resolutionResult"`
+}
+
 type UpdateIONDIDRequest struct {
 	DID ion.ION `json:"did"`
 

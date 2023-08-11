@@ -631,21 +631,100 @@ func (h *ionHandler) ListDeletedDIDs(ctx context.Context) (*ListDIDsResponse, er
 }
 
 // SoftDeleteDID soft deletes a DID from storage but has no effect on the DID's state on the network
-func (h *ionHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error {
-	logrus.Debugf("soft deleting DID: %+v", request)
-
-	id := request.ID
-	gotDID := new(ionStoredDID)
-	if err := h.storage.GetDID(ctx, id, gotDID); err != nil {
-		return fmt.Errorf("error getting DID: %s", id)
-	}
-	if gotDID.GetID() == "" {
-		return fmt.Errorf("did with id<%s> could not be found", id)
+func (h *ionHandler) DeleteDID(ctx context.Context, request DeleteDIDRequest) (*DeleteDIDResponse, error) {
+	ionDID := ion.ION(request.ID)
+	storedDID := new(ionStoredDID)
+	if err := h.storage.GetDID(ctx, ionDID.String(), storedDID); err != nil {
+		return nil, errors.Wrap(err, "getting ion did from storage")
 	}
 
-	gotDID.SoftDeleted = true
+	if storedDID.Deactivated {
+		return &DeleteDIDResponse{Result: storedDID.DeactivationResponse}, nil
+	}
 
-	return h.storage.StoreDID(ctx, *gotDID)
+	privateUpdateJWK, err := h.readUpdatePrivateKey(ctx, ionDID.String())
+	if err != nil {
+		return nil, err
+	}
+	privateRecoveryJWK, err := h.readRecoveryPrivateKey(ctx, ionDID.String())
+	if err != nil {
+		return nil, err
+	}
+
+	signer, err := ion.NewBTCSignerVerifier(*privateUpdateJWK)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating signer")
+	}
+
+	suffix, err := ionDID.Suffix()
+	if err != nil {
+		return nil, errors.Wrap(err, "getting suffix")
+	}
+	deactivateRequest, err := ion.NewDeactivateRequest(suffix, privateRecoveryJWK.ToPublicKeyJWK(), *signer)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating deactivate request")
+	}
+
+	if _, err := h.resolver.Anchor(ctx, deactivateRequest); err != nil {
+		return nil, errors.Wrap(err, "anchoring deactivate operation")
+	}
+
+	const deactivateRequestNamespace = "deactivate-request"
+	deactivateRequestKey := ionDID.String()
+	watchKeys := []storage.WatchKey{
+		{
+			Namespace: deactivateRequestNamespace,
+			Key:       deactivateRequestKey,
+		},
+	}
+	deactivatedDID, err := h.storage.db.Execute(ctx, func(ctx context.Context, tx storage.Tx) (any, error) {
+		kidToDelete := did.FullyQualifiedVerificationMethodID(storedDID.ID, storedDID.DID.VerificationMethod[0].ID)
+		if storedDID.Deactivated {
+			return storedDID, nil
+		}
+		storedDID.Operations = append(storedDID.Operations, deactivateRequest)
+		storedDID.DID.Controller = ""
+		storedDID.DID.AlsoKnownAs = ""
+		storedDID.DID.VerificationMethod = nil
+		storedDID.DID.Authentication = nil
+		storedDID.DID.AssertionMethod = nil
+		storedDID.DID.KeyAgreement = nil
+		storedDID.DID.CapabilityInvocation = nil
+		storedDID.DID.CapabilityDelegation = nil
+		storedDID.DID.Services = nil
+		storedDID.Deactivated = true
+		storedDID.SoftDeleted = true
+		storedDID.DeactivationResponse = newResolutionResult(storedDID.DID.ID, storedDID.DID, storedDID.Deactivated, storedDID.Published)
+
+		didStorage, err := h.didStorageFactory(tx)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating did storage")
+		}
+		if err := didStorage.StoreDID(ctx, storedDID); err != nil {
+			return nil, errors.Wrap(err, "storing DID in storage")
+		}
+
+		keyStore, err := h.keyStoreFactory(tx)
+		if err != nil {
+			return nil, errors.Wrap(err, "creating keystore service")
+		}
+		if err := keyStore.RevokeKey(ctx, keystore.RevokeKeyRequest{ID: updateKeyID(storedDID.ID)}); err != nil {
+			return nil, errors.Wrap(err, "revoking update key")
+		}
+		if err := keyStore.RevokeKey(ctx, keystore.RevokeKeyRequest{ID: recoveryKeyID(storedDID.ID)}); err != nil {
+			return nil, errors.Wrap(err, "revoking recovery key")
+		}
+		if err := keyStore.RevokeKey(ctx, keystore.RevokeKeyRequest{ID: kidToDelete}); err != nil {
+			return nil, errors.Wrap(err, "revoking recovery key")
+		}
+		return storedDID, nil
+	}, watchKeys)
+
+	if err != nil {
+		return nil, errors.Wrap(err, "executing deactivation")
+	}
+
+	return &DeleteDIDResponse{Result: deactivatedDID.(*ionStoredDID).DeactivationResponse}, nil
 }
 
 func (h *ionHandler) readUpdatePrivateKey(ctx context.Context, did string) (*jwx.PrivateKeyJWK, error) {
@@ -790,6 +869,7 @@ func (h *ionHandler) DeactivateDID(ctx context.Context, request DeactivateIONDID
 		storedDID.DID.CapabilityDelegation = nil
 		storedDID.DID.Services = nil
 		storedDID.Deactivated = true
+		storedDID.SoftDeleted = true
 		storedDID.DeactivationResponse = newResolutionResult(storedDID.DID.ID, storedDID.DID, storedDID.Deactivated, storedDID.Published)
 
 		didStorage, err := h.didStorageFactory(tx)

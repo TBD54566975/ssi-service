@@ -183,21 +183,21 @@ func (h *webHandler) ListDeletedDIDs(ctx context.Context) (*ListDIDsResponse, er
 	return &ListDIDsResponse{DIDs: dids}, nil
 }
 
-func (h *webHandler) SoftDeleteDID(ctx context.Context, request DeleteDIDRequest) error {
+func (h *webHandler) DeleteDID(ctx context.Context, request DeleteDIDRequest) (*DeleteDIDResponse, error) {
 	logrus.Debugf("soft deleting DID: %+v", request)
 
 	id := request.ID
 	gotStoredDID, err := h.storage.GetDIDDefault(ctx, id)
 	if err != nil {
-		return errors.Wrapf(err, "getting DID: %s", id)
+		return nil, errors.Wrapf(err, "getting DID: %s", id)
 	}
 	if gotStoredDID == nil {
-		return fmt.Errorf("did with id<%s> could not be found", id)
+		return nil, fmt.Errorf("did with id<%s> could not be found", id)
 	}
 
 	nowUTC := time.Now().UTC()
 	gotStoredDID.SoftDeleted = true
 	gotStoredDID.UpdatedAt = nowUTC.Format(time.RFC3339)
 
-	return h.storage.StoreDID(ctx, *gotStoredDID)
+	return nil, h.storage.StoreDID(ctx, *gotStoredDID)
 }

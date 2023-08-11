@@ -221,12 +221,13 @@ func (s *Service) ListDIDsByMethod(ctx context.Context, request ListDIDsRequest)
 	return handler.ListDIDs(ctx, request.PageRequest)
 }
 
-func (s *Service) SoftDeleteDIDByMethod(ctx context.Context, request DeleteDIDRequest) error {
+func (s *Service) DeleteDIDByMethod(ctx context.Context, request DeleteDIDRequest) error {
 	handler, err := s.getHandler(request.Method)
 	if err != nil {
 		return sdkutil.LoggingErrorMsgf(err, "could not get handler for method<%s>", request.Method)
 	}
-	return handler.SoftDeleteDID(ctx, request)
+	_, err = handler.DeleteDID(ctx, request)
+	return err
 }
 
 func (s *Service) getHandler(method didsdk.Method) (MethodHandler, error) {

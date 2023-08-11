@@ -171,11 +171,10 @@ func DecentralizedIdentityAPI(rg *gin.RouterGroup, service *didsvc.Service, did 
 	didAPI.GET("", didRouter.ListDIDMethods)
 	didAPI.PUT("/:method", middleware.Webhook(webhookService, webhook.DID, webhook.Create), didRouter.CreateDIDByMethod)
 	didAPI.PUT("/:method/:id", didRouter.UpdateDIDByMethod)
-	didAPI.PUT("/:method/:id/deactivation", didRouter.DeactivateDID)
 	didAPI.PUT("/:method/batch", middleware.Webhook(webhookService, webhook.DID, webhook.BatchCreate), batchDIDRouter.BatchCreateDIDs)
 	didAPI.GET("/:method", didRouter.ListDIDsByMethod)
 	didAPI.GET("/:method/:id", didRouter.GetDIDByMethod)
-	didAPI.DELETE("/:method/:id", didRouter.SoftDeleteDIDByMethod)
+	didAPI.DELETE("/:method/:id", didRouter.DeleteDIDByMethod)
 	didAPI.GET(ResolverPrefix+"/:id", didRouter.ResolveDID)
 	return
 }

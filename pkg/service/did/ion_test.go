@@ -201,10 +201,11 @@ func TestIONHandler(t *testing.T) {
 			t.Run("Get DIDs from storage", func(tt *testing.T) {
 				// create a handler
 				s := test.ServiceStorage(tt)
-				keystoreService, _ := testKeyStoreService(tt, s)
-				didStorage, err := NewDIDStorage(s)
+				keystoreService, keystoreServiceFactory := testKeyStoreService(tt, s)
+				didStorageFactory := NewDIDStorageFactory(s)
+				didStorage, err := didStorageFactory(s)
 				assert.NoError(tt, err)
-				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, nil)
+				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, keystoreServiceFactory, didStorageFactory)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, handler)
 
@@ -237,7 +238,12 @@ func TestIONHandler(t *testing.T) {
 				assert.Len(tt, gotDIDs.DIDs, 1)
 
 				// delete a did
-				err = handler.SoftDeleteDID(context.Background(), DeleteDIDRequest{
+				gock.New("https://test-ion-resolver.com").
+					Post("/operations").
+					Reply(200).
+					JSON(`{}`)
+				defer gock.Off()
+				_, err = handler.DeleteDID(context.Background(), DeleteDIDRequest{
 					Method: did.IONMethod,
 					ID:     created.DID.ID,
 				})
