@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	didsdk "github.com/TBD54566975/ssi-sdk/did"
+	"github.com/TBD54566975/ssi-sdk/did/ion"
 	"github.com/TBD54566975/ssi-sdk/did/jwk"
 	"github.com/TBD54566975/ssi-sdk/did/key"
 	"github.com/TBD54566975/ssi-sdk/did/peer"
@@ -48,6 +49,8 @@ func getKnownResolver(method string) (resolution.Resolver, error) {
 		return new(peer.Resolver), nil
 	case didsdk.JWKMethod:
 		return new(jwk.Resolver), nil
+	case didsdk.IONMethod:
+		return new(ion.LocalResolver), nil
 	}
 	return nil, fmt.Errorf("unsupported method: %s", method)
 }

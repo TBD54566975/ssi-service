@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/BurntSushi/toml v1.3.2
-	github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230731175253-d5c302a1d9b9
+	github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230808183115-fc9c08eaa4f1
 	github.com/alicebob/miniredis/v2 v2.30.4
 	github.com/ardanlabs/conf v1.5.0
 	github.com/benbjohnson/clock v1.3.5
@@ -43,7 +43,7 @@ require (
 	go.opentelemetry.io/otel/exporters/jaeger v1.16.0
 	go.opentelemetry.io/otel/sdk v1.16.0
 	go.opentelemetry.io/otel/trace v1.16.0
-	golang.org/x/crypto v0.11.0
+	golang.org/x/crypto v0.12.0
 	golang.org/x/term v0.11.0
 	google.golang.org/api v0.134.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
@@ -86,7 +86,7 @@ require (
 	github.com/go-openapi/jsonreference v0.20.2 // indirect
 	github.com/go-openapi/spec v0.20.9 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
-	github.com/go-playground/validator/v10 v10.14.1 // indirect
+	github.com/go-playground/validator/v10 v10.15.0 // indirect
 	github.com/golang/glog v1.1.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/mock v1.6.0 // indirect
@@ -167,7 +167,7 @@ require (
 	golang.org/x/net v0.13.0 // indirect
 	golang.org/x/oauth2 v0.10.0 // indirect
 	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/text v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
 	golang.org/x/tools v0.9.3 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230725213213-b022f6e96895 // indirect
