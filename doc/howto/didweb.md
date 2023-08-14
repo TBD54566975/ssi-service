@@ -2,7 +2,7 @@
 
 ## Background
 
-The [did:web Method Specification)](https://w3c-ccg.github.io/did-method-web/) describes a DID method that uses an existing web domain to host and establish trust for a DID Document.
+The [did:web Method Specification](https://w3c-ccg.github.io/did-method-web/) describes a DID method that uses an existing web domain to host and establish trust for a DID Document.
 
 It relies on the controller of an existing domain to host a custom file with the contents of the DID Document they want to expose. The SSI Service facilitates creation of a `did:web`, which you then must update on the domain you control.
 
