@@ -563,6 +563,19 @@ definitions:
         description: Whether this credential is currently suspended.
         type: boolean
     type: object
+  github_com_tbd54566975_ssi-service_pkg_service_credential.Status:
+    properties:
+      id:
+        description: ID of the credentials who's status this object represents.
+        type: string
+      revoked:
+        type: boolean
+      suspended:
+        type: boolean
+    required:
+    - revoked
+    - suspended
+    type: object
   github_com_tbd54566975_ssi-service_pkg_service_did.CreateIONDIDOptions:
     properties:
       jwsPublicKeys:
@@ -1086,6 +1099,24 @@ definitions:
         description: The DID documents created.
         items:
           $ref: '#/definitions/did.Document'
+        type: array
+    type: object
+  pkg_server_router.BatchUpdateCredentialStatusRequest:
+    properties:
+      requests:
+        description: Required. The list of update credential requests. Cannot be more
+          than the config value in `services.credentials.batch_update_status_max_items`.
+        items:
+          $ref: '#/definitions/pkg_server_router.SingleUpdateCredentialStatusRequest'
+        type: array
+    required:
+    - requests
+    type: object
+  pkg_server_router.BatchUpdateCredentialStatusResponse:
+    properties:
+      credentialStatuses:
+        items:
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_credential.Status'
         type: array
     type: object
   pkg_server_router.CreateCredentialRequest:
@@ -1943,6 +1974,19 @@ definitions:
       id:
         type: string
     type: object
+  pkg_server_router.SingleUpdateCredentialStatusRequest:
+    properties:
+      id:
+        description: ID of the credential who's status should be updated.
+        type: string
+      revoked:
+        description: |-
+          The new revoked status of this credential. The status will be saved in the encodedList of the StatusList2021
+          credential associated with this VC.
+        type: boolean
+      suspended:
+        type: boolean
+    type: object
   pkg_server_router.StateChange:
     properties:
       publicKeyIdsToRemove:
@@ -2610,6 +2654,36 @@ paths:
           schema:
             type: string
       summary: Get a Credential Status List
+      tags:
+      - Credentials
+  /v1/credentials/status/batch:
+    put:
+      consumes:
+      - application/json
+      description: Updates the status all a batch of Verifiable Credentials.
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.BatchUpdateCredentialStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pkg_server_router.BatchUpdateCredentialStatusResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Batch Update a Verifiable Credential's status
       tags:
       - Credentials
   /v1/credentials/verification:

@@ -218,6 +218,7 @@ func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookSer
 	// Credential Status
 	credentialAPI.GET("/:id"+StatusPrefix, credRouter.GetCredentialStatus)
 	credentialAPI.PUT("/:id"+StatusPrefix, credRouter.UpdateCredentialStatus)
+	credentialAPI.PUT(StatusPrefix+"/batch", credRouter.BatchUpdateCredentialStatus)
 	credentialAPI.GET(StatusPrefix+"/:id", credRouter.GetCredentialStatusList)
 	return
 }

@@ -53,6 +53,7 @@ batch_create_max_items = 100
 
 [services.credential]
 batch_create_max_items = 100
+batch_update_status_max_items = 100
 
 [services.webhook]
 webhook_timeout = "10s"

@@ -85,8 +85,22 @@ type UpdateCredentialStatusRequest struct {
 }
 
 type UpdateCredentialStatusResponse struct {
-	Revoked   bool `json:"revoked" validate:"required"`
-	Suspended bool `json:"suspended" validate:"required"`
+	Status
+}
+
+type Status struct {
+	// ID of the credentials who's status this object represents.
+	ID        string `json:"id,omitempty"`
+	Revoked   bool   `json:"revoked" validate:"required"`
+	Suspended bool   `json:"suspended" validate:"required"`
+}
+
+type BatchUpdateCredentialStatusRequest struct {
+	Requests []UpdateCredentialStatusRequest `json:"requests"`
+}
+
+type BatchUpdateCredentialStatusResponse struct {
+	CredentialStatuses []Status `json:"credentialStatuses"`
 }
 
 type GetCredentialStatusListRequest struct {
