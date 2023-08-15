@@ -149,7 +149,7 @@ type UpdateDIDByMethodResponse struct {
 //	@Summary		Updates a DID document.
 //	@Description	Updates a DID for which SSI is the custodian. The DID must have been previously created by calling
 //	@Description	the "Create DID Document" endpoint. Currently, only ION dids support updates.
-//	@Tags			DecentralizedIdentityAPI
+//	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
 //	@Param			method	path		string						true	"Method"
