@@ -2926,7 +2926,7 @@ paths:
             type: string
       summary: Updates a DID document.
       tags:
-      - DecentralizedIdentityAPI
+      - DecentralizedIdentifiers
   /v1/dids/{method}/batch:
     put:
       consumes:
