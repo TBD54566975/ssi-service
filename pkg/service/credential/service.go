@@ -425,34 +425,14 @@ func (s Service) GetCredentialStatusList(ctx context.Context, request GetCredent
 }
 
 func (s Service) UpdateCredentialStatus(ctx context.Context, request UpdateCredentialStatusRequest) (*UpdateCredentialStatusResponse, error) {
-	gotCred, err := s.storage.GetCredential(ctx, request.ID)
+
+	statusListCredentialWatchKey, err := s.statusListCredentialWatchKey(ctx, request.ID)
 	if err != nil {
-		return nil, sdkutil.LoggingErrorMsgf(err, "could not get credential: %s", request.ID)
+		return nil, err
 	}
 
-	if gotCred.Credential.CredentialStatus == nil {
-		return nil, sdkutil.LoggingNewErrorf("credential %q has no credentialStatus field", gotCred.LocalCredentialID)
-	}
-
-	statusPurpose := gotCred.Credential.CredentialStatus.(map[string]any)["statusPurpose"].(string)
-	if len(statusPurpose) == 0 {
-		return nil, sdkutil.LoggingNewErrorf("status purpose could not be derived from credential status")
-	}
-
-	statusListCredential, err := s.storage.GetStatusListCredentialKeyData(ctx, gotCred.Issuer, gotCred.Schema, statussdk.StatusPurpose(statusPurpose))
-	if err != nil {
-		return nil, errors.Wrap(err, "getting status list watch key uuid data")
-	}
-
-	if statusListCredential == nil {
-		return nil, errors.Wrap(err, "status list credential should exist in order to update")
-	}
-
-	statusListCredentialWatchKey := s.storage.GetStatusListCredentialWatchKey(gotCred.Issuer, gotCred.Schema, statusPurpose)
-
-	slcMetadata := StatusListCredentialMetadata{statusListCredentialWatchKey: statusListCredentialWatchKey}
-
-	watchKeys := []storage.WatchKey{statusListCredentialWatchKey}
+	slcMetadata := StatusListCredentialMetadata{statusListCredentialWatchKey: *statusListCredentialWatchKey}
+	watchKeys := []storage.WatchKey{*statusListCredentialWatchKey}
 	returnFunc := s.updateCredentialStatusFunc(request, slcMetadata)
 
 	returnValue, err := s.storage.db.Execute(ctx, returnFunc, watchKeys)
@@ -492,7 +472,10 @@ func (s Service) updateCredentialStatusBusinessLogic(ctx context.Context, tx sto
 	// if the request is the same as what the current credential is there is no action
 	if gotCred.Revoked == request.Revoked && gotCred.Suspended == request.Suspended {
 		logrus.Warn("request and credential have same status, no action is needed")
-		response := UpdateCredentialStatusResponse{Revoked: gotCred.Revoked, Suspended: gotCred.Suspended}
+		response := UpdateCredentialStatusResponse{Status{
+			Revoked:   gotCred.Revoked,
+			Suspended: gotCred.Suspended,
+		}}
 		return &response, nil
 	}
 
@@ -501,7 +484,7 @@ func (s Service) updateCredentialStatusBusinessLogic(ctx context.Context, tx sto
 		return nil, sdkutil.LoggingErrorMsg(err, "updating credential")
 	}
 
-	response := UpdateCredentialStatusResponse{Revoked: container.Revoked, Suspended: container.Suspended}
+	response := UpdateCredentialStatusResponse{Status{Revoked: container.Revoked, Suspended: container.Suspended}}
 	return &response, nil
 }
 
@@ -674,4 +657,72 @@ func (s Service) BatchCreateCredentials(ctx context.Context, batchRequest BatchC
 	}
 
 	return credResponse, nil
+}
+
+func (s Service) BatchUpdateCredentialStatus(ctx context.Context, batchRequest BatchUpdateCredentialStatusRequest) (*BatchUpdateCredentialStatusResponse, error) {
+	watchKeys := make([]storage.WatchKey, 0, len(batchRequest.Requests))
+	updateFuncs := make([]storage.BusinessLogicFunc, 0, len(batchRequest.Requests))
+	for _, request := range batchRequest.Requests {
+		statusListCredentialWatchKey, err := s.statusListCredentialWatchKey(ctx, request.ID)
+		if err != nil {
+			return nil, err
+		}
+		watchKeys = append(watchKeys, *statusListCredentialWatchKey)
+
+		slcMetadata := StatusListCredentialMetadata{statusListCredentialWatchKey: *statusListCredentialWatchKey}
+		returnFunc := s.updateCredentialStatusFunc(request, slcMetadata)
+		updateFuncs = append(updateFuncs, returnFunc)
+	}
+	returnValue, err := s.storage.db.Execute(ctx, func(ctx context.Context, tx storage.Tx) (any, error) {
+		batchResponse := BatchUpdateCredentialStatusResponse{
+			CredentialStatuses: make([]Status, 0, len(batchRequest.Requests)),
+		}
+		for i, updateFunc := range updateFuncs {
+			updateResp, err := updateFunc(ctx, tx)
+			if err != nil {
+				return nil, err
+			}
+			batchResponse.CredentialStatuses = append(batchResponse.CredentialStatuses, updateResp.(*UpdateCredentialStatusResponse).Status)
+			batchResponse.CredentialStatuses[i].ID = batchRequest.Requests[i].ID
+		}
+		return &batchResponse, nil
+	}, watchKeys)
+	if err != nil {
+		return nil, errors.Wrap(err, "execute")
+	}
+
+	batchResponse, ok := returnValue.(*BatchUpdateCredentialStatusResponse)
+	if !ok {
+		return nil, errors.New("casting to BatchUpdateCredentialStatusResponse")
+	}
+
+	return batchResponse, nil
+}
+
+func (s Service) statusListCredentialWatchKey(ctx context.Context, id string) (*storage.WatchKey, error) {
+	gotCred, err := s.storage.GetCredential(ctx, id)
+	if err != nil {
+		return nil, errors.Wrap(err, "reading credential")
+	}
+
+	if !gotCred.HasCredentialStatus() {
+		return nil, sdkutil.LoggingNewErrorf("credential %q has no credentialStatus field", gotCred.LocalCredentialID)
+	}
+
+	statusPurpose := gotCred.GetStatusPurpose()
+	if len(statusPurpose) == 0 {
+		return nil, sdkutil.LoggingNewErrorf("status purpose could not be derived from credential status")
+	}
+
+	statusListCredential, err := s.storage.GetStatusListCredentialKeyData(ctx, gotCred.Issuer, gotCred.Schema, statussdk.StatusPurpose(statusPurpose))
+	if err != nil {
+		return nil, errors.Wrap(err, "getting status list watch key uuid data")
+	}
+
+	if statusListCredential == nil {
+		return nil, errors.Wrap(err, "status list credential should exist in order to update")
+	}
+
+	statusListCredentialWatchKey := s.storage.GetStatusListCredentialWatchKey(gotCred.Issuer, gotCred.Schema, statusPurpose)
+	return &statusListCredentialWatchKey, nil
 }

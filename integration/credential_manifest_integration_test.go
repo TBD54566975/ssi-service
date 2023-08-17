@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/TBD54566975/ssi-sdk/credential/parsing"
@@ -125,7 +126,7 @@ func TestBatchCreateCredentialsIntegration(t *testing.T) {
 		SchemaID:             schemaID.(string),
 		SubjectID0:           issuerDID.(string),
 		SubjectID1:           issuerDID.(string),
-		Revocable0:           false,
+		Suspendable0:         true,
 		Revocable1:           true,
 	})
 	assert.NoError(t, err)
@@ -138,6 +139,61 @@ func TestBatchCreateCredentialsIntegration(t *testing.T) {
 	credentialJWT1, err := getJSONElement(vcsOutput, "$.credentials[1].credentialJwt")
 	assert.NoError(t, err)
 	assert.NotEmpty(t, credentialJWT1)
+
+	credentialID0, err := getJSONElement(vcsOutput, "$.credentials[0].credential.id")
+	assert.NoError(t, err)
+
+	credentialID1, err := getJSONElement(vcsOutput, "$.credentials[1].credential.id")
+	assert.NoError(t, err)
+
+	SetValue(credentialManifestContext, "credentialID0", credentialID0)
+	SetValue(credentialManifestContext, "credentialID1", credentialID1)
+}
+
+func idFromURL(id string) string {
+	lastIdx := strings.LastIndex(id, "/")
+	return id[lastIdx+1:]
+}
+
+func TestBatchUpdateCredentialStatusIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+
+	fullCredentialID0, err := GetValue(credentialManifestContext, "credentialID0")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, fullCredentialID0)
+
+	fullCredentialID1, err := GetValue(credentialManifestContext, "credentialID1")
+	assert.NoError(t, err)
+	assert.NotEmpty(t, fullCredentialID1)
+
+	credentialID0 := idFromURL(fullCredentialID0.(string))
+	credentialID1 := idFromURL(fullCredentialID1.(string))
+	updatesOutput, err := BatchUpdateVerifiableCredentialStatuses(batchUpdateStatusInputParams{
+		CredentialID0: credentialID0,
+		Suspended0:    true,
+		CredentialID1: credentialID1,
+		Revoked1:      true,
+	})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, updatesOutput)
+
+	id0, err := getJSONElement(updatesOutput, "$.credentialStatuses[0].id")
+	assert.NoError(t, err)
+	assert.Equal(t, credentialID0, id0)
+
+	sus, err := getJSONElement(updatesOutput, "$.credentialStatuses[0].suspended")
+	assert.NoError(t, err)
+	assert.Equal(t, "true", sus)
+
+	id1, err := getJSONElement(updatesOutput, "$.credentialStatuses[1].id")
+	assert.NoError(t, err)
+	assert.Equal(t, credentialID1, id1)
+
+	rev, err := getJSONElement(updatesOutput, "$.credentialStatuses[1].revoked")
+	assert.NoError(t, err)
+	assert.Equal(t, "true", rev)
 }
 
 func TestBatchCreate100CredentialsIntegration(t *testing.T) {
