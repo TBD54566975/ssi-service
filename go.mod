@@ -10,7 +10,7 @@ require (
 	github.com/benbjohnson/clock v1.3.5
 	github.com/btcsuite/btcd/chaincfg/chainhash v1.0.2
 	github.com/cenkalti/backoff/v4 v4.2.1
-	github.com/fergusstrange/embedded-postgres v1.23.0
+	github.com/fergusstrange/embedded-postgres v1.24.0
 	github.com/gin-contrib/cors v1.4.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/go-playground/locales v0.14.1
@@ -25,6 +25,7 @@ require (
 	github.com/lestrrat-go/jwx/v2 v2.0.12
 	github.com/lib/pq v1.10.9
 	github.com/magefile/mage v1.15.0
+	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826
 	github.com/mr-tron/base58 v1.2.0
 	github.com/oliveagle/jsonpath v0.0.0-20180606110733-2e52cf6e6852
 	github.com/ory/fosite v0.44.0
@@ -127,7 +128,6 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
-	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect
 	github.com/multiformats/go-base32 v0.1.0 // indirect
 	github.com/multiformats/go-base36 v0.2.0 // indirect
 	github.com/multiformats/go-multibase v0.2.0 // indirect
