@@ -566,7 +566,7 @@ definitions:
   github_com_tbd54566975_ssi-service_pkg_service_credential.Status:
     properties:
       id:
-        description: ID of the credentials who's status this object represents.
+        description: ID of the credentials whose status this object represents.
         type: string
       revoked:
         type: boolean
@@ -1986,6 +1986,8 @@ definitions:
         type: boolean
       suspended:
         type: boolean
+    required:
+    - id
     type: object
   pkg_server_router.StateChange:
     properties:

@@ -705,11 +705,11 @@ func (s Service) statusListCredentialWatchKey(ctx context.Context, id string) (*
 		return nil, errors.Wrap(err, "reading credential")
 	}
 
-	if gotCred.Credential.CredentialStatus == nil {
+	if !gotCred.HasCredentialStatus() {
 		return nil, sdkutil.LoggingNewErrorf("credential %q has no credentialStatus field", gotCred.LocalCredentialID)
 	}
 
-	statusPurpose := gotCred.Credential.CredentialStatus.(map[string]any)["statusPurpose"].(string)
+	statusPurpose := gotCred.GetStatusPurpose()
 	if len(statusPurpose) == 0 {
 		return nil, sdkutil.LoggingNewErrorf("status purpose could not be derived from credential status")
 	}

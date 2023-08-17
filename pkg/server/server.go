@@ -44,6 +44,8 @@ const (
 	VerificationPath        = "/verification"
 	WebhookPrefix           = "/webhooks"
 	DIDConfigurationsPrefix = "/did-configurations"
+
+	batchSuffix = "/batch"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -209,7 +211,7 @@ func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookSer
 	// Credentials
 	credentialAPI := rg.Group(CredentialsPrefix)
 	credentialAPI.PUT("", middleware.Webhook(webhookService, webhook.Credential, webhook.Create), credRouter.CreateCredential)
-	credentialAPI.PUT("/batch", middleware.Webhook(webhookService, webhook.Credential, webhook.BatchCreate), credRouter.BatchCreateCredentials)
+	credentialAPI.PUT(batchSuffix, middleware.Webhook(webhookService, webhook.Credential, webhook.BatchCreate), credRouter.BatchCreateCredentials)
 	credentialAPI.GET("", credRouter.ListCredentials)
 	credentialAPI.GET("/:id", credRouter.GetCredential)
 	credentialAPI.PUT(VerificationPath, credRouter.VerifyCredential)
@@ -218,7 +220,7 @@ func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookSer
 	// Credential Status
 	credentialAPI.GET("/:id"+StatusPrefix, credRouter.GetCredentialStatus)
 	credentialAPI.PUT("/:id"+StatusPrefix, credRouter.UpdateCredentialStatus)
-	credentialAPI.PUT(StatusPrefix+"/batch", credRouter.BatchUpdateCredentialStatus)
+	credentialAPI.PUT(StatusPrefix+batchSuffix, credRouter.BatchUpdateCredentialStatus)
 	credentialAPI.GET(StatusPrefix+"/:id", credRouter.GetCredentialStatusList)
 	return
 }

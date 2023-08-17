@@ -341,7 +341,7 @@ type UpdateCredentialStatusResponse struct {
 
 type SingleUpdateCredentialStatusRequest struct {
 	// ID of the credential who's status should be updated.
-	ID string `json:"id"`
+	ID string `json:"id" validate:"required"`
 	UpdateCredentialStatusRequest
 }
 
@@ -350,13 +350,13 @@ type BatchUpdateCredentialStatusRequest struct {
 	Requests []SingleUpdateCredentialStatusRequest `json:"requests" maxItems:"100" validate:"required,dive"`
 }
 
-func (r BatchUpdateCredentialStatusRequest) toServiceRequest() *credential.BatchUpdateCredentialStatusRequest {
+func (r BatchUpdateCredentialStatusRequest) toServiceRequest() credential.BatchUpdateCredentialStatusRequest {
 	var req credential.BatchUpdateCredentialStatusRequest
 	for _, routerReq := range r.Requests {
 		serviceReq := routerReq.toServiceRequest(routerReq.ID)
 		req.Requests = append(req.Requests, serviceReq)
 	}
-	return &req
+	return req
 }
 
 type BatchUpdateCredentialStatusResponse struct {
@@ -391,7 +391,7 @@ func (cr CredentialRouter) BatchUpdateCredentialStatus(c *gin.Context) {
 	}
 
 	req := batchRequest.toServiceRequest()
-	batchUpdateResponse, err := cr.service.BatchUpdateCredentialStatus(c, *req)
+	batchUpdateResponse, err := cr.service.BatchUpdateCredentialStatus(c, req)
 
 	if err != nil {
 		errMsg := "could not update credentials"

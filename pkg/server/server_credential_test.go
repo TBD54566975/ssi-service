@@ -11,6 +11,7 @@ import (
 
 	"github.com/goccy/go-json"
 	"github.com/google/uuid"
+	"github.com/mohae/deepcopy"
 
 	"github.com/tbd54566975/ssi-service/pkg/testutil"
 
@@ -118,21 +119,104 @@ func TestCredentialAPI(t *testing.T) {
 					},
 				}
 
-				requestValue = newRequestValue(ttt, updateCredStatusRequest)
-				req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/status/batch", requestValue)
-				w = httptest.NewRecorder()
-				c = newRequestContext(w, req)
-				credRouter.BatchUpdateCredentialStatus(c)
-				assert.True(ttt, util.Is2xxResponse(w.Code))
+				ttt.Run("empty batch returns success", func(ttt *testing.T) {
+					requestValue = newRequestValue(ttt, router.BatchUpdateCredentialStatusRequest{
+						Requests: []router.SingleUpdateCredentialStatusRequest{},
+					})
+					req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/status/batch", requestValue)
+					w = httptest.NewRecorder()
+					c = newRequestContext(w, req)
+					credRouter.BatchUpdateCredentialStatus(c)
+					assert.True(ttt, util.Is2xxResponse(w.Code))
+				})
 
-				var credStatusUpdateResponse router.BatchUpdateCredentialStatusResponse
-				err = json.NewDecoder(w.Body).Decode(&credStatusUpdateResponse)
-				assert.NoError(ttt, err)
+				ttt.Run("all credentials are updated", func(ttt *testing.T) {
+					requestValue = newRequestValue(ttt, updateCredStatusRequest)
+					req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/status/batch", requestValue)
+					w = httptest.NewRecorder()
+					c = newRequestContext(w, req)
+					credRouter.BatchUpdateCredentialStatus(c)
+					assert.True(ttt, util.Is2xxResponse(w.Code))
 
-				assert.Len(ttt, credStatusUpdateResponse.CredentialStatuses, 3)
-				assert.True(ttt, credStatusUpdateResponse.CredentialStatuses[0].Suspended)
-				assert.True(ttt, credStatusUpdateResponse.CredentialStatuses[1].Revoked)
-				assert.True(ttt, credStatusUpdateResponse.CredentialStatuses[2].Suspended)
+					var credStatusUpdateResponse router.BatchUpdateCredentialStatusResponse
+					err = json.NewDecoder(w.Body).Decode(&credStatusUpdateResponse)
+					assert.NoError(ttt, err)
+
+					assert.Len(ttt, credStatusUpdateResponse.CredentialStatuses, 3)
+					assert.True(ttt, credStatusUpdateResponse.CredentialStatuses[0].Suspended)
+					assert.True(ttt, credStatusUpdateResponse.CredentialStatuses[1].Revoked)
+					assert.True(ttt, credStatusUpdateResponse.CredentialStatuses[2].Suspended)
+				})
+
+				ttt.Run("updates are idempotent", func(ttt *testing.T) {
+					requestValue = newRequestValue(ttt, updateCredStatusRequest)
+					req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/status/batch", requestValue)
+					w = httptest.NewRecorder()
+					c = newRequestContext(w, req)
+					credRouter.BatchUpdateCredentialStatus(c)
+					assert.True(ttt, util.Is2xxResponse(w.Code))
+
+					var credStatusUpdateResponse router.BatchUpdateCredentialStatusResponse
+					err = json.NewDecoder(w.Body).Decode(&credStatusUpdateResponse)
+					assert.NoError(ttt, err)
+
+					assert.Len(ttt, credStatusUpdateResponse.CredentialStatuses, 3)
+					assert.True(ttt, credStatusUpdateResponse.CredentialStatuses[0].Suspended)
+					assert.True(ttt, credStatusUpdateResponse.CredentialStatuses[1].Revoked)
+					assert.True(ttt, credStatusUpdateResponse.CredentialStatuses[2].Suspended)
+				})
+
+				ttt.Run("missing ID fails", func(ttt *testing.T) {
+					updateCredStatusRequest := deepcopy.Copy(updateCredStatusRequest).(router.BatchUpdateCredentialStatusRequest)
+					updateCredStatusRequest.Requests[0].ID = ""
+					requestValue = newRequestValue(ttt, updateCredStatusRequest)
+					req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/status/batch", requestValue)
+					w = httptest.NewRecorder()
+					c = newRequestContext(w, req)
+					credRouter.BatchUpdateCredentialStatus(c)
+					assert.False(ttt, util.Is2xxResponse(w.Code))
+
+					var errJSON map[string]any
+					err = json.NewDecoder(w.Body).Decode(&errJSON)
+					assert.NoError(ttt, err)
+
+					assert.Contains(ttt, errJSON["error"], "field validation error")
+				})
+
+				ttt.Run("second credential does not exist", func(ttt *testing.T) {
+					updateCredStatusRequest := deepcopy.Copy(updateCredStatusRequest).(router.BatchUpdateCredentialStatusRequest)
+					updateCredStatusRequest.Requests[1].ID = "made up id 1"
+					requestValue = newRequestValue(ttt, updateCredStatusRequest)
+					req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/status/batch", requestValue)
+					w = httptest.NewRecorder()
+					c = newRequestContext(w, req)
+					credRouter.BatchUpdateCredentialStatus(c)
+					assert.False(ttt, util.Is2xxResponse(w.Code))
+
+					var errJSON map[string]any
+					err = json.NewDecoder(w.Body).Decode(&errJSON)
+					assert.NoError(ttt, err)
+
+					assert.Contains(ttt, errJSON["error"], "credential not found with id: made up id 1")
+				})
+
+				ttt.Run("revoking a suspendable credential returns error", func(ttt *testing.T) {
+					updateCredStatusRequest := deepcopy.Copy(updateCredStatusRequest).(router.BatchUpdateCredentialStatusRequest)
+					updateCredStatusRequest.Requests[2].Revoked = true
+					updateCredStatusRequest.Requests[2].Suspended = false
+					requestValue = newRequestValue(ttt, updateCredStatusRequest)
+					req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/credentials/status/batch", requestValue)
+					w = httptest.NewRecorder()
+					c = newRequestContext(w, req)
+					credRouter.BatchUpdateCredentialStatus(c)
+					assert.False(ttt, util.Is2xxResponse(w.Code))
+
+					var errJSON map[string]any
+					err = json.NewDecoder(w.Body).Decode(&errJSON)
+					assert.NoError(ttt, err)
+
+					assert.Contains(ttt, errJSON["error"], "has a different status purpose<suspension> value than the status credential<revocation>")
+				})
 			})
 
 			tt.Run("Batch Create Credentials", func(ttt *testing.T) {

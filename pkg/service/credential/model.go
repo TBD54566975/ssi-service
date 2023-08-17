@@ -89,7 +89,7 @@ type UpdateCredentialStatusResponse struct {
 }
 
 type Status struct {
-	// ID of the credentials who's status this object represents.
+	// ID of the credentials whose status this object represents.
 	ID        string `json:"id,omitempty"`
 	Revoked   bool   `json:"revoked" validate:"required"`
 	Suspended bool   `json:"suspended" validate:"required"`
