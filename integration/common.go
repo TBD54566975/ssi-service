@@ -242,6 +242,29 @@ func BatchCreateVerifiableCredentials(credentialInput batchCredInputParams) (str
 	return output, nil
 }
 
+type batchUpdateStatusInputParams struct {
+	CredentialID0 string
+	Suspended0    bool
+	CredentialID1 string
+	Revoked1      bool
+}
+
+func BatchUpdateVerifiableCredentialStatuses(updateStatusInput batchUpdateStatusInputParams) (string, error) {
+	logrus.Println("\n\nCreate a verifiable credential")
+
+	updateStatusesJSON, err := resolveTemplate(updateStatusInput, "batch-update-credential-statuses-input.json")
+	if err != nil {
+		return "", err
+	}
+
+	output, err := put(endpoint+version+"credentials/status/batch", updateStatusesJSON)
+	if err != nil {
+		return "", errors.Wrap(err, "error writing batch update status")
+	}
+
+	return output, nil
+}
+
 func BatchCreate100VerifiableCredentials(credentialInput credInputParams) (string, error) {
 	logrus.Println("\n\nCreate a verifiable credential")
 

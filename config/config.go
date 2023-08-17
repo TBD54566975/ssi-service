@@ -147,8 +147,10 @@ func (d *DIDServiceConfig) IsEmpty() bool {
 }
 
 type CredentialServiceConfig struct {
-	// BatchCreateMaxItems set's the maximum amount that can be.
+	// BatchCreateMaxItems set's the maximum amount of credentials that can be created in a single request.
 	BatchCreateMaxItems int `toml:"batch_create_max_items" conf:"default:100"`
+	// BatchUpdateStatusMaxItems set's the maximum amount of credentials statuses that can be updated in a single request.
+	BatchUpdateStatusMaxItems int `toml:"batch_update_status_max_items" conf:"default:100"`
 
 	// TODO(gabe) supported key and signature types
 }
