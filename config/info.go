@@ -30,7 +30,7 @@ type serviceInfo struct {
 	description   string
 	version       string
 	apiBase       string
-	statusBaseUrl string
+	statusBaseURL string
 	apiVersion    string
 	servicePaths  map[framework.Type]string
 }
