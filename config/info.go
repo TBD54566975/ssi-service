@@ -62,7 +62,7 @@ func SetStatusBase(url string) {
 	if strings.LastIndexAny(url, "/") == len(url)-1 {
 		url = url[:len(url)-1]
 	}
-	si.statusBaseUrl = url
+	si.statusBaseURL = url
 }
 
 func GetStatusBase() string {
