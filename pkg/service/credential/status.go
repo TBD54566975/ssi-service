@@ -69,7 +69,7 @@ func (s Service) createStatusListEntryForCredential(ctx context.Context, credID 
 
 func getStatusURI(statusBase string, statusListID string) string {
 	if len(statusBase) > 0 {
-		return fmt.Sprintf("%s/status/%s", statusBase, statusListID)
+		return fmt.Sprintf("%s/%s", statusBase, statusListID)
 	}
 	return fmt.Sprintf("%s/status/%s", config.GetServicePath(framework.Credential), statusListID)
 }

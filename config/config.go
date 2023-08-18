@@ -68,7 +68,7 @@ type ServicesConfig struct {
 	StorageProvider string           `toml:"storage" conf:"default:bolt"`
 	StorageOptions  []storage.Option `toml:"storage_option"`
 	ServiceEndpoint string           `toml:"service_endpoint" conf:"default:http://localhost:8080"`
-	StatusEndpoint  string           `toml:"status_endpoint" conf:"default:http://localhost:8080"`
+	StatusEndpoint  string           `toml:"status_endpoint" conf:"default:"`
 
 	// Application level encryption configuration. Defines how values are encrypted before they are stored in the
 	// configured KV store.
