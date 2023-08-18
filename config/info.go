@@ -66,7 +66,7 @@ func SetStatusBase(url string) {
 }
 
 func GetStatusBase() string {
-	return si.statusBaseUrl
+	return si.statusBaseURL
 }
 
 func SetServicePath(service framework.Type, path string) {
