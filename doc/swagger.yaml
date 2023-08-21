@@ -1503,7 +1503,7 @@ definitions:
       issuer:
         description: |-
           Issuer represents the DID of the issuer for the schema if it's signed. Required if intending to sign the
-          schema as a credential using CredentialSchema2023.
+          schema as a credential using JsonSchemaCredential.
         type: string
       name:
         description: Name is a human-readable name for a schema
@@ -1522,8 +1522,8 @@ definitions:
           The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
           stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
           The private key associated with the verificationMethod's publicKey will be used to sign the schema as a
-          credential using CredentialSchema2023.
-          Required if intending to sign the schema as a credential using CredentialSchema2023.
+          credential using JsonSchemaCredential.
+          Required if intending to sign the schema as a credential using JsonSchemaCredential.
         example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
         type: string
     required:
@@ -1536,7 +1536,7 @@ definitions:
     properties:
       credentialSchema:
         description: CredentialSchema is the JWT schema for the credential, returned
-          when the type is CredentialSchema2023
+          when the type is CredentialSchema
         type: string
       id:
         description: ID is the URL of for resolution of the schema
@@ -1545,11 +1545,11 @@ definitions:
         allOf:
         - $ref: '#/definitions/schema.JSONSchema'
         description: Schema is the JSON schema for the credential, returned when the
-          type is JsonSchema2023
+          type is JsonSchema
       type:
         allOf:
         - $ref: '#/definitions/schema.VCJSONSchemaType'
-        description: Type is the type of schema such as `JsonSchema2023` or `CredentialSchema2023`
+        description: Type is the type of schema such as `JsonSchema` or `JsonSchemaCredential`
     required:
     - type
     type: object
@@ -1729,7 +1729,7 @@ definitions:
     properties:
       credentialSchema:
         description: CredentialSchema is the JWT schema for the credential, returned
-          when the type is CredentialSchema2023
+          when the type is CredentialSchema
         type: string
       id:
         description: ID is the URL of for resolution of the schema
@@ -1738,11 +1738,11 @@ definitions:
         allOf:
         - $ref: '#/definitions/schema.JSONSchema'
         description: Schema is the JSON schema for the credential, returned when the
-          type is JsonSchema2023
+          type is JsonSchema
       type:
         allOf:
         - $ref: '#/definitions/schema.VCJSONSchemaType'
-        description: Type is the type of schema such as `JsonSchema2023` or `CredentialSchema2023`
+        description: Type is the type of schema such as `JsonSchema` or `JsonSchemaCredential`
     required:
     - type
     type: object
@@ -2331,12 +2331,12 @@ definitions:
     type: object
   schema.VCJSONSchemaType:
     enum:
-    - CredentialSchema2023
-    - JsonSchema2023
+    - JsonSchemaCredential
+    - JsonSchema
     type: string
     x-enum-varnames:
-    - CredentialSchema2023Type
-    - JSONSchema2023Type
+    - JSONSchemaCredentialType
+    - JSONSchemaType
   time.Duration:
     enum:
     - -9223372036854775808

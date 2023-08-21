@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/parsing"
 	"github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/TBD54566975/ssi-sdk/crypto"
@@ -23,7 +24,7 @@ import (
 func TestSchemaAPI(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
-			t.Run("Test Create JsonSchema2023 Schema", func(tt *testing.T) {
+			t.Run("Test Create JsonSchema Schema", func(tt *testing.T) {
 				bolt := test.ServiceStorage(tt)
 				require.NotEmpty(tt, bolt)
 
@@ -60,12 +61,12 @@ func TestSchemaAPI(t *testing.T) {
 				// since the id is generated, we need to manually override it
 				schemaRequest.Schema[schema.JSONSchemaIDProperty] = resp.Schema.ID()
 				assert.JSONEq(tt, schemaRequest.Schema.String(), resp.Schema.String())
-				assert.Equal(tt, schema.JSONSchema2023Type, resp.Type)
+				assert.Equal(tt, schema.JSONSchemaType, resp.Type)
 				assert.Empty(tt, resp.CredentialSchema)
 				assert.NotEmpty(tt, resp.Schema)
 			})
 
-			t.Run("Test Create CredentialSchema2023 Schema", func(tt *testing.T) {
+			t.Run("Test Create JsonCredentialSchema Schema", func(tt *testing.T) {
 				bolt := test.ServiceStorage(tt)
 				require.NotEmpty(tt, bolt)
 
@@ -124,12 +125,12 @@ func TestSchemaAPI(t *testing.T) {
 
 				assert.Empty(tt, resp.Schema)
 				assert.NotEmpty(tt, resp.CredentialSchema)
-				assert.Equal(tt, schema.CredentialSchema2023Type, resp.Type)
+				assert.Equal(tt, schema.JSONSchemaCredentialType, resp.Type)
 
 				// decode the schema from the response and verify it
 				_, _, cred, err := parsing.ToCredential(resp.CredentialSchema.String())
 				assert.NoError(tt, err)
-				credSubjectBytes, err := json.Marshal(cred.CredentialSubject)
+				credSubjectBytes, err := json.Marshal(cred.CredentialSubject[credential.VerifiableCredentialJSONSchemaProperty])
 				assert.NoError(tt, err)
 				var s schema.JSONSchema
 				err = json.Unmarshal(credSubjectBytes, &s)
