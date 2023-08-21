@@ -48,6 +48,8 @@ github.com/KyleBanks/depth v1.2.1 h1:5h8fQADFrWtarTdtDudMmGsC7GPbOAu6RVB3ffsVFHc
 github.com/KyleBanks/depth v1.2.1/go.mod h1:jzSb9d0L43HxTQfT+oSA1EEp2q+ne2uh6XgeJcm8brE=
 github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230808183115-fc9c08eaa4f1 h1:xkBqbEfJ8/hRLsI7R4tL7fakgOb3XcSLECFUDFcKf3I=
 github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230808183115-fc9c08eaa4f1/go.mod h1:zWPeE7qRviA8YBqeHONVz9OfbKT/3BusFkkzpF94Sys=
+github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230818212001-6e1043316e75 h1:nUuLKpzXuJBCEzInbsypquopNW8IleHmId+Gh6l6Yu8=
+github.com/TBD54566975/ssi-sdk v0.0.4-alpha.0.20230818212001-6e1043316e75/go.mod h1:6HfhtzYPqY/5on4tCFN54iv10td+zKiUJUptAEGHv7U=
 github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a/go.mod h1:SGnFV6hVsYE877CKEZ6tDNTjaSXYUk6QqoIK6PrAtcc=
 github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302 h1:uvdUDbHQHO85qeSydJtItA4T55Pw6BtAejd0APRJOCE=
 github.com/alicebob/gopher-json v0.0.0-20230218143504-906a9b012302/go.mod h1:SGnFV6hVsYE877CKEZ6tDNTjaSXYUk6QqoIK6PrAtcc=
