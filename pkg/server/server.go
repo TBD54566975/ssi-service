@@ -3,6 +3,7 @@
 package server
 
 import (
+	"fmt"
 	"os"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
@@ -44,6 +45,8 @@ const (
 	VerificationPath        = "/verification"
 	WebhookPrefix           = "/webhooks"
 	DIDConfigurationsPrefix = "/did-configurations"
+
+	batchSuffix = "/batch"
 )
 
 // SSIServer exposes all dependencies needed to run a http server and all its services
@@ -83,7 +86,7 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 	if err = SchemaAPI(v1, ssi.Schema, ssi.Webhook); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Schema API")
 	}
-	if err = CredentialAPI(v1, ssi.Credential, ssi.Webhook); err != nil {
+	if err = CredentialAPI(v1, ssi.Credential, ssi.Webhook, cfg.Services.StatusEndpoint); err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "unable to instantiate Credential API")
 	}
 	if err = OperationAPI(v1, ssi.Operation); err != nil {
@@ -197,7 +200,7 @@ func SchemaAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService
 }
 
 // CredentialAPI registers all HTTP handlers for the Credentials Service
-func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service) (err error) {
+func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookService *webhook.Service, statusEndpoint string) (err error) {
 	credRouter, err := router.NewCredentialRouter(service)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, "creating credential router")
@@ -206,10 +209,17 @@ func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookSer
 	// make sure the credential service is configured to use the correct path
 	config.SetServicePath(svcframework.Credential, CredentialsPrefix)
 
+	// allows for a custom URI to be used for status list credentials, if not set, we use the default path
+	if statusEndpoint != "" {
+		config.SetStatusBase(statusEndpoint)
+	} else {
+		config.SetStatusBase(fmt.Sprintf("%s/status", config.GetServicePath(svcframework.Credential)))
+	}
+
 	// Credentials
 	credentialAPI := rg.Group(CredentialsPrefix)
 	credentialAPI.PUT("", middleware.Webhook(webhookService, webhook.Credential, webhook.Create), credRouter.CreateCredential)
-	credentialAPI.PUT("/batch", middleware.Webhook(webhookService, webhook.Credential, webhook.BatchCreate), credRouter.BatchCreateCredentials)
+	credentialAPI.PUT(batchSuffix, middleware.Webhook(webhookService, webhook.Credential, webhook.BatchCreate), credRouter.BatchCreateCredentials)
 	credentialAPI.GET("", credRouter.ListCredentials)
 	credentialAPI.GET("/:id", credRouter.GetCredential)
 	credentialAPI.PUT(VerificationPath, credRouter.VerifyCredential)
@@ -218,6 +228,7 @@ func CredentialAPI(rg *gin.RouterGroup, service svcframework.Service, webhookSer
 	// Credential Status
 	credentialAPI.GET("/:id"+StatusPrefix, credRouter.GetCredentialStatus)
 	credentialAPI.PUT("/:id"+StatusPrefix, credRouter.UpdateCredentialStatus)
+	credentialAPI.PUT(StatusPrefix+batchSuffix, credRouter.BatchUpdateCredentialStatus)
 	credentialAPI.GET(StatusPrefix+"/:id", credRouter.GetCredentialStatusList)
 	return
 }

@@ -26,12 +26,13 @@ var (
 // serviceInfo is intended to be a singleton object for static service info.
 // WARNING: it is **NOT** currently thread safe.
 type serviceInfo struct {
-	name         string
-	description  string
-	version      string
-	apiBase      string
-	apiVersion   string
-	servicePaths map[framework.Type]string
+	name          string
+	description   string
+	version       string
+	apiBase       string
+	statusBaseURL string
+	apiVersion    string
+	servicePaths  map[framework.Type]string
 }
 
 func Name() string {
@@ -55,6 +56,17 @@ func SetAPIBase(url string) {
 
 func GetAPIBase() string {
 	return si.apiBase
+}
+
+func SetStatusBase(url string) {
+	if strings.LastIndexAny(url, "/") == len(url)-1 {
+		url = url[:len(url)-1]
+	}
+	si.statusBaseURL = url
+}
+
+func GetStatusBase() string {
+	return si.statusBaseURL
 }
 
 func SetServicePath(service framework.Type, path string) {

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -28,6 +29,7 @@ func TestMain(t *testing.M) {
 	testutil.EnableSchemaCaching()
 	config.SetAPIBase(testServerURL)
 	config.SetServicePath(framework.Credential, "/credentials")
+	config.SetStatusBase(fmt.Sprintf("%s/status", config.GetServicePath(framework.Credential)))
 	os.Exit(t.Run())
 }
 

@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -16,6 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/tbd54566975/ssi-service/config"
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/util"
@@ -282,7 +284,7 @@ func testSchemaRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *keyst
 }
 
 func testCredentialService(t *testing.T, db storage.ServiceStorage, keyStore *keystore.Service, did *did.Service, schema *schema.Service) *credential.Service {
-	serviceConfig := config.CredentialServiceConfig{BatchCreateMaxItems: 1000}
+	serviceConfig := config.CredentialServiceConfig{BatchCreateMaxItems: 1000, BatchUpdateStatusMaxItems: 10}
 
 	// create a credential service
 	credentialService, err := credential.NewCredentialService(serviceConfig, db, keyStore, did.GetResolver(), schema)
@@ -296,6 +298,7 @@ func testCredentialRouter(t *testing.T, bolt storage.ServiceStorage, keyStore *k
 
 	// set endpoint in service info
 	config.SetServicePath(svcframework.Credential, CredentialsPrefix)
+	config.SetStatusBase(fmt.Sprintf("%s/status", config.GetServicePath(svcframework.Credential)))
 
 	// create router for service
 	credentialRouter, err := router.NewCredentialRouter(credentialService)

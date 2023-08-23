@@ -84,12 +84,12 @@ curl -X PUT localhost:3000/v1/schemas -d '{
 }'
 ```
 
-Upon success you'll see a response which includes the schema you passed in, with a service-generated identifier for the schema. You'll also notice a type `JsonSchema2023`, which is defined by the [VC JSON Schema specification](https://w3c.github.io/vc-json-schema/#jsonschema2023):
+Upon success you'll see a response which includes the schema you passed in, with a service-generated identifier for the schema. You'll also notice a type `JsonSchema`, which is defined by the [VC JSON Schema specification](https://w3c.github.io/vc-json-schema/#jsonschema):
 
 ```json
 {
   "id": "ebeebf7b-d452-4832-b8d3-0042ec80e108",
-  "type": "JsonSchema2023",
+  "type": "JsonSchema",
   "schema": {
     "$id": "http://localhost:3000/v1/schemas/ebeebf7b-d452-4832-b8d3-0042ec80e108",
     "$schema": "https://json-schema.org/draft/2020-12/schema",

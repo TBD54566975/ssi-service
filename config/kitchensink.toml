@@ -16,6 +16,7 @@ enable_schema_caching = true
 
 [services]
 service_endpoint = "http://localhost:8080"
+status_endpoint = "https://our-site.com/status"
 
 # Uncomment one of the following database configurations
 
@@ -51,6 +52,7 @@ batch_create_max_items = 100
 
 [services.credential]
 batch_create_max_items = 100
+batch_update_status_max_items = 100
 
 [services.webhook]
 webhook_timeout = "10s"

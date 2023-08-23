@@ -50,7 +50,7 @@ type StoredCredential struct {
 	Suspended                          bool   `json:"suspended"`
 }
 
-func (sc StoredCredential) FilterVariablesMap() map[string]any {
+func (sc *StoredCredential) FilterVariablesMap() map[string]any {
 	return map[string]any{
 		"issuer":  sc.Issuer,
 		"schema":  sc.Schema,
@@ -70,16 +70,24 @@ type StatusListCredentialMetadata struct {
 	statusListCurrentIndexWatchKey storage.WatchKey
 }
 
-func (sc StoredCredential) IsValid() bool {
+func (sc *StoredCredential) IsValid() bool {
 	return sc.Key != "" && (sc.HasDataIntegrityCredential() || sc.HasJWTCredential())
 }
 
-func (sc StoredCredential) HasDataIntegrityCredential() bool {
+func (sc *StoredCredential) HasDataIntegrityCredential() bool {
 	return sc.Credential != nil && sc.Credential.Proof != nil
 }
 
-func (sc StoredCredential) HasJWTCredential() bool {
+func (sc *StoredCredential) HasJWTCredential() bool {
 	return sc.CredentialJWT != nil
+}
+
+func (sc *StoredCredential) HasCredentialStatus() bool {
+	return sc != nil && sc.Credential != nil && sc.Credential.CredentialStatus != nil
+}
+
+func (sc *StoredCredential) GetStatusPurpose() string {
+	return sc.Credential.CredentialStatus.(map[string]any)["statusPurpose"].(string)
 }
 
 const (
@@ -380,7 +388,7 @@ func (cs *Storage) ListCredentials(ctx context.Context, filter filtering.Filter,
 		if err = json.Unmarshal(cred, &nextCred); err != nil {
 			logrus.WithError(err).WithField("idx", i).Warnf("Skipping operation")
 		}
-		include, err := shouldInclude(nextCred)
+		include, err := shouldInclude(&nextCred)
 		// We explicitly ignore evaluation errors and simply include them in the result.
 		if err != nil || include {
 			storedCreds = append(storedCreds, nextCred)
