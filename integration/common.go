@@ -51,7 +51,6 @@ func init() {
 	config.SetAPIBase(endpoint)
 	config.SetServicePath(framework.Credential, "/credentials")
 	config.SetServicePath(framework.Schema, "/schemas")
-	config.SetStatusBase(fmt.Sprintf("%s/status", config.GetServicePath(framework.Credential)))
 }
 
 type didConfigurationResourceParams struct {
