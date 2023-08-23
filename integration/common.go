@@ -20,12 +20,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 
-	"github.com/tbd54566975/ssi-service/config"
 	credmodel "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/server/router"
-	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 )
 
 const (
@@ -47,10 +45,6 @@ func init() {
 		DisableQuote: true,
 		ForceColors:  true,
 	})
-
-	config.SetAPIBase(endpoint)
-	config.SetServicePath(framework.Credential, "/credentials")
-	config.SetServicePath(framework.Schema, "/schemas")
 }
 
 type didConfigurationResourceParams struct {
