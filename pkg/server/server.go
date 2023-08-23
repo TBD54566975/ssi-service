@@ -3,6 +3,7 @@
 package server
 
 import (
+	"fmt"
 	"os"
 
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
@@ -67,7 +68,13 @@ func NewSSIServer(shutdown chan os.Signal, cfg config.SSIServiceConfig) (*SSISer
 
 	// make sure to set the api base in our service info
 	config.SetAPIBase(cfg.Services.ServiceEndpoint)
-	config.SetStatusBase(cfg.Services.StatusEndpoint)
+
+	// allows for a custom URI to be used for status list credentials, if not set, we use the default path
+	if cfg.Services.StatusEndpoint != "" {
+		config.SetStatusBase(cfg.Services.StatusEndpoint)
+	} else {
+		config.SetStatusBase(fmt.Sprintf("%s/status", config.GetServicePath(svcframework.Credential)))
+	}
 
 	// service-level routers
 	engine.GET(HealthPrefix, router.Health)

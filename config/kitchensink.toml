@@ -16,6 +16,7 @@ enable_schema_caching = true
 
 [services]
 service_endpoint = "http://localhost:8080"
+status_endpoint = "https://our-site.com/status"
 
 # Uncomment one of the following database configurations
 
