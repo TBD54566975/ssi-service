@@ -8,6 +8,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
+
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/pkg/server/framework"
 	"github.com/tbd54566975/ssi-service/pkg/server/pagination"
@@ -49,14 +50,14 @@ type CreateSchemaRequest struct {
 // CredentialSchemaRequest request is an optional additional request to create a credentialized version of a schema.
 type CredentialSchemaRequest struct {
 	// Issuer represents the DID of the issuer for the schema if it's signed. Required if intending to sign the
-	// schema as a credential using CredentialSchema2023.
+	// schema as a credential using JsonSchemaCredential.
 	Issuer string `json:"issuer,omitempty" validate:"required"`
 
 	// The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
 	// stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
 	// The private key associated with the verificationMethod's publicKey will be used to sign the schema as a
-	// credential using CredentialSchema2023.
-	// Required if intending to sign the schema as a credential using CredentialSchema2023.
+	// credential using JsonSchemaCredential.
+	// Required if intending to sign the schema as a credential using JsonSchemaCredential.
 	VerificationMethodID string `json:"verificationMethodId" validate:"required" example:"did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3"`
 }
 
@@ -74,13 +75,13 @@ type CreateSchemaResponse struct {
 type SchemaResponse struct {
 	// ID is the URL of for resolution of the schema
 	ID string `json:"id"`
-	// Type is the type of schema such as `JsonSchema2023` or `CredentialSchema2023`
+	// Type is the type of schema such as `JsonSchema` or `JsonSchemaCredential`
 	Type schemalib.VCJSONSchemaType `json:"type" validate:"required"`
 
-	// Schema is the JSON schema for the credential, returned when the type is JsonSchema2023
+	// Schema is the JSON schema for the credential, returned when the type is JsonSchema
 	Schema *schemalib.JSONSchema `json:"schema,omitempty"`
 
-	// CredentialSchema is the JWT schema for the credential, returned when the type is CredentialSchema2023
+	// CredentialSchema is the JWT schema for the credential, returned when the type is CredentialSchema
 	CredentialSchema *keyaccess.JWT `json:"credentialSchema,omitempty"`
 }
 

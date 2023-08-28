@@ -10,7 +10,6 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	"github.com/TBD54566975/ssi-sdk/cryptosuite/jws2020"
-	"github.com/TBD54566975/ssi-sdk/did"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
@@ -127,40 +126,18 @@ func (v Verifier) VerifyDataIntegrityCredential(ctx context.Context, credential 
 // VerifyJWTPresentation first parses and checks the signature on the given JWT presentation. Next, it runs
 // a set of static verification checks on the presentation's credentials as per the service's configuration.
 func (v Verifier) VerifyJWTPresentation(ctx context.Context, token keyaccess.JWT) error {
-	headers, jwt, vp, err := integrity.ParseVerifiablePresentationFromJWT(token.String())
+	_, err := integrity.VerifyJWTPresentation(ctx, token.String(), v.didResolver)
 	if err != nil {
-		return errors.Wrap(err, "parsing JWT presentation")
+		return errors.Wrap(err, "verifying JWT presentation")
 	}
-
-	// get key to verify the presentation with
-	issuerKID := headers.KeyID()
-	if issuerKID == "" {
-		return errors.Errorf("missing kid in header of presentation<%s>", jwt.JwtID())
-	}
-	issuerDID, err := v.didResolver.Resolve(ctx, jwt.Issuer())
+	_, _, pres, err := integrity.ParseVerifiablePresentationFromJWT(token.String())
 	if err != nil {
-		return errors.Wrapf(err, "getting issuer DID<%s> to verify presentation<%s>", jwt.Issuer(), jwt.JwtID())
+		return errors.Wrap(err, "parsing vc from jwt")
 	}
-	issuerPublicKey, err := did.GetKeyFromVerificationMethod(issuerDID.Document, issuerKID)
-	if err != nil {
-		return errors.Wrapf(err, "getting key to verify presentation<%s>", jwt.JwtID())
-	}
-
-	// construct a verifier and verify the signature on the presentation
-	// note: this also verifies the signature of each credential in the presentation
-	verifier, err := jwx.NewJWXVerifier(issuerDID.ID, issuerKID, issuerPublicKey)
-	if err != nil {
-		return errors.Wrapf(err, "constructing verifier for presentation<%s>", jwt.JwtID())
-	}
-	_, _, _, err = integrity.VerifyVerifiablePresentationJWT(ctx, *verifier, v.didResolver, token.String())
-	if err != nil {
-		return errors.Wrapf(err, "verifying presentation<%s>", jwt.JwtID())
-	}
-
 	// for each credential in the presentation, run a set of static verification checks
-	creds, err := credential.NewCredentialContainerFromArray(vp.VerifiableCredential)
+	creds, err := credential.NewCredentialContainerFromArray(pres.VerifiableCredential)
 	if err != nil {
-		return errors.Wrapf(err, "error parsing credentials in presentation<%s>", vp.ID)
+		return errors.Wrapf(err, "error parsing credentials in presentation<%s>", pres.ID)
 	}
 	for _, cred := range creds {
 		if err = v.staticValidationChecks(ctx, *cred.Credential); err != nil {

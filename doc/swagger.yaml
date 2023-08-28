@@ -563,6 +563,19 @@ definitions:
         description: Whether this credential is currently suspended.
         type: boolean
     type: object
+  github_com_tbd54566975_ssi-service_pkg_service_credential.Status:
+    properties:
+      id:
+        description: ID of the credentials whose status this object represents.
+        type: string
+      revoked:
+        type: boolean
+      suspended:
+        type: boolean
+    required:
+    - revoked
+    - suspended
+    type: object
   github_com_tbd54566975_ssi-service_pkg_service_did.CreateIONDIDOptions:
     properties:
       jwsPublicKeys:
@@ -1088,6 +1101,24 @@ definitions:
           $ref: '#/definitions/did.Document'
         type: array
     type: object
+  pkg_server_router.BatchUpdateCredentialStatusRequest:
+    properties:
+      requests:
+        description: Required. The list of update credential requests. Cannot be more
+          than the config value in `services.credentials.batch_update_status_max_items`.
+        items:
+          $ref: '#/definitions/pkg_server_router.SingleUpdateCredentialStatusRequest'
+        type: array
+    required:
+    - requests
+    type: object
+  pkg_server_router.BatchUpdateCredentialStatusResponse:
+    properties:
+      credentialStatuses:
+        items:
+          $ref: '#/definitions/github_com_tbd54566975_ssi-service_pkg_service_credential.Status'
+        type: array
+    type: object
   pkg_server_router.CreateCredentialRequest:
     properties:
       '@context':
@@ -1472,7 +1503,7 @@ definitions:
       issuer:
         description: |-
           Issuer represents the DID of the issuer for the schema if it's signed. Required if intending to sign the
-          schema as a credential using CredentialSchema2023.
+          schema as a credential using JsonSchemaCredential.
         type: string
       name:
         description: Name is a human-readable name for a schema
@@ -1491,8 +1522,8 @@ definitions:
           The id of the verificationMethod (see https://www.w3.org/TR/did-core/#verification-methods) who's privateKey is
           stored in ssi-service. The verificationMethod must be part of the did document associated with `issuer`.
           The private key associated with the verificationMethod's publicKey will be used to sign the schema as a
-          credential using CredentialSchema2023.
-          Required if intending to sign the schema as a credential using CredentialSchema2023.
+          credential using JsonSchemaCredential.
+          Required if intending to sign the schema as a credential using JsonSchemaCredential.
         example: did:key:z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3#z6MkkZDjunoN4gyPMx5TSy7Mfzw22D2RZQZUcx46bii53Ex3
         type: string
     required:
@@ -1505,7 +1536,7 @@ definitions:
     properties:
       credentialSchema:
         description: CredentialSchema is the JWT schema for the credential, returned
-          when the type is CredentialSchema2023
+          when the type is CredentialSchema
         type: string
       id:
         description: ID is the URL of for resolution of the schema
@@ -1514,11 +1545,11 @@ definitions:
         allOf:
         - $ref: '#/definitions/schema.JSONSchema'
         description: Schema is the JSON schema for the credential, returned when the
-          type is JsonSchema2023
+          type is JsonSchema
       type:
         allOf:
         - $ref: '#/definitions/schema.VCJSONSchemaType'
-        description: Type is the type of schema such as `JsonSchema2023` or `CredentialSchema2023`
+        description: Type is the type of schema such as `JsonSchema` or `JsonSchemaCredential`
     required:
     - type
     type: object
@@ -1698,7 +1729,7 @@ definitions:
     properties:
       credentialSchema:
         description: CredentialSchema is the JWT schema for the credential, returned
-          when the type is CredentialSchema2023
+          when the type is CredentialSchema
         type: string
       id:
         description: ID is the URL of for resolution of the schema
@@ -1707,11 +1738,11 @@ definitions:
         allOf:
         - $ref: '#/definitions/schema.JSONSchema'
         description: Schema is the JSON schema for the credential, returned when the
-          type is JsonSchema2023
+          type is JsonSchema
       type:
         allOf:
         - $ref: '#/definitions/schema.VCJSONSchemaType'
-        description: Type is the type of schema such as `JsonSchema2023` or `CredentialSchema2023`
+        description: Type is the type of schema such as `JsonSchema` or `JsonSchemaCredential`
     required:
     - type
     type: object
@@ -1942,6 +1973,21 @@ definitions:
     properties:
       id:
         type: string
+    type: object
+  pkg_server_router.SingleUpdateCredentialStatusRequest:
+    properties:
+      id:
+        description: ID of the credential who's status should be updated.
+        type: string
+      revoked:
+        description: |-
+          The new revoked status of this credential. The status will be saved in the encodedList of the StatusList2021
+          credential associated with this VC.
+        type: boolean
+      suspended:
+        type: boolean
+    required:
+    - id
     type: object
   pkg_server_router.StateChange:
     properties:
@@ -2285,12 +2331,12 @@ definitions:
     type: object
   schema.VCJSONSchemaType:
     enum:
-    - CredentialSchema2023
-    - JsonSchema2023
+    - JsonSchemaCredential
+    - JsonSchema
     type: string
     x-enum-varnames:
-    - CredentialSchema2023Type
-    - JSONSchema2023Type
+    - JSONSchemaCredentialType
+    - JSONSchemaType
   time.Duration:
     enum:
     - -9223372036854775808
@@ -2612,6 +2658,36 @@ paths:
       summary: Get a Credential Status List
       tags:
       - Credentials
+  /v1/credentials/status/batch:
+    put:
+      consumes:
+      - application/json
+      description: Updates the status all a batch of Verifiable Credentials.
+      parameters:
+      - description: request body
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_server_router.BatchUpdateCredentialStatusRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/pkg_server_router.BatchUpdateCredentialStatusResponse'
+        "400":
+          description: Bad request
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Batch Update a Verifiable Credential's status
+      tags:
+      - Credentials
   /v1/credentials/verification:
     put:
       consumes:
@@ -2926,7 +3002,7 @@ paths:
             type: string
       summary: Updates a DID document.
       tags:
-      - DecentralizedIdentityAPI
+      - DecentralizedIdentifiers
   /v1/dids/{method}/batch:
     put:
       consumes:

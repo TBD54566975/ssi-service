@@ -85,7 +85,7 @@ func TestSchemaRouter(t *testing.T) {
 				assert.NotEmpty(tt, createdSchema)
 				assert.NotEmpty(tt, createdSchema.ID)
 				assert.Equal(tt, "simple schema 2", createdSchema.Schema.Name())
-				assert.Equal(tt, credschema.JSONSchema2023Type, createdSchema.Type)
+				assert.Equal(tt, credschema.JSONSchemaType, createdSchema.Type)
 
 				// get all schemas, expect two
 				gotSchemas, err = schemaService.ListSchemas(context.Background(), schema.ListSchemasRequest{})

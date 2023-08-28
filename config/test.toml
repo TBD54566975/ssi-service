@@ -45,7 +45,7 @@ disable_encryption = false
 
 [services.did]
 methods = ["key", "web", "ion"]
-local_resolution_methods = ["key", "web", "pkh", "peer"]
+local_resolution_methods = ["ion", "key", "web", "pkh", "peer"]
 universal_resolver_url = "http://uni-resolver-web:8080"
 universal_resolver_methods = ["ion"]
 ion_resolver_url = "https://ion.tbddev.org"
@@ -53,6 +53,7 @@ batch_create_max_items = 100
 
 [services.credential]
 batch_create_max_items = 100
+batch_update_status_max_items = 100
 
 [services.webhook]
 webhook_timeout = "10s"

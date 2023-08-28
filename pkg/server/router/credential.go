@@ -339,6 +339,72 @@ type UpdateCredentialStatusResponse struct {
 	Suspended bool `json:"suspended"`
 }
 
+type SingleUpdateCredentialStatusRequest struct {
+	// ID of the credential who's status should be updated.
+	ID string `json:"id" validate:"required"`
+	UpdateCredentialStatusRequest
+}
+
+type BatchUpdateCredentialStatusRequest struct {
+	// Required. The list of update credential requests. Cannot be more than the config value in `services.credentials.batch_update_status_max_items`.
+	Requests []SingleUpdateCredentialStatusRequest `json:"requests" maxItems:"100" validate:"required,dive"`
+}
+
+func (r BatchUpdateCredentialStatusRequest) toServiceRequest() credential.BatchUpdateCredentialStatusRequest {
+	var req credential.BatchUpdateCredentialStatusRequest
+	for _, routerReq := range r.Requests {
+		serviceReq := routerReq.toServiceRequest(routerReq.ID)
+		req.Requests = append(req.Requests, serviceReq)
+	}
+	return req
+}
+
+type BatchUpdateCredentialStatusResponse struct {
+	CredentialStatuses []credential.Status `json:"credentialStatuses"`
+}
+
+// BatchUpdateCredentialStatus godoc
+//
+//	@Summary		Batch Update a Verifiable Credential's status
+//	@Description	Updates the status all a batch of Verifiable Credentials.
+//	@Tags			Credentials
+//	@Accept			json
+//	@Produce		json
+//	@Param			request	body		BatchUpdateCredentialStatusRequest	true	"request body"
+//	@Success		201		{object}	BatchUpdateCredentialStatusResponse
+//	@Failure		400		{string}	string	"Bad request"
+//	@Failure		500		{string}	string	"Internal server error"
+//	@Router			/v1/credentials/status/batch [put]
+func (cr CredentialRouter) BatchUpdateCredentialStatus(c *gin.Context) {
+	var batchRequest BatchUpdateCredentialStatusRequest
+	invalidCreateCredentialRequest := "invalid batch update credential request"
+	if err := framework.Decode(c.Request, &batchRequest); err != nil {
+		errMsg := invalidCreateCredentialRequest
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusBadRequest)
+		return
+	}
+
+	batchUpdateMaxItems := cr.service.Config().BatchUpdateStatusMaxItems
+	if len(batchRequest.Requests) > batchUpdateMaxItems {
+		framework.LoggingRespondErrMsg(c, fmt.Sprintf("max number of requests is %d", batchUpdateMaxItems), http.StatusBadRequest)
+		return
+	}
+
+	req := batchRequest.toServiceRequest()
+	batchUpdateResponse, err := cr.service.BatchUpdateCredentialStatus(c, req)
+
+	if err != nil {
+		errMsg := "could not update credentials"
+		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
+		return
+	}
+
+	var resp BatchUpdateCredentialStatusResponse
+	resp.CredentialStatuses = append(resp.CredentialStatuses, batchUpdateResponse.CredentialStatuses...)
+
+	framework.Respond(c, resp, http.StatusOK)
+}
+
 // UpdateCredentialStatus godoc
 //
 //	@Summary		Update a Verifiable Credential's status

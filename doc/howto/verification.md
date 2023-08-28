@@ -53,7 +53,7 @@ Upon success we see a response such as:
 
 ### Verifiable Presentations
 
-The example we've gone through above verifies a credential from an _issuer_. But what about verifying the _presentation_ of a credential, or set of credentials, from a _holder_ to a _verifier_? To do this, a holder must construct what's called a [Verifiable Presentation](https://www.w3.org/TR/vc-data-model/#presentations-0), an object which is also defined by the VC Data Model, which allows a _holder_ of a verifiable credential to create an authenticated wrapper around a set of credentials it wishes to present to a _verifier_. The service's verification API does [not yet](https://github.com/TBD54566975/ssi-service/issues/615) support this functionality.
+The example we've gone through above verifies a credential from an _issuer_. But what about verifying the _presentation_ of a credential, or set of credentials, from a _holder_ to a _verifier_? To do this, a holder must construct what's called a [Verifiable Presentation](https://www.w3.org/TR/vc-data-model/#presentations-0), an object which is also defined by the VC Data Model, which allows a _holder_ of a verifiable credential to create an authenticated wrapper around a set of credentials it wishes to present to a _verifier_. Learn more in [our guide on presentations here](presentation.md).
 
 ### Presentation Exchange
 

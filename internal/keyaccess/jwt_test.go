@@ -328,7 +328,7 @@ func getJWTTestPresentation(ka JWKKeyAccess) credential.VerifiablePresentation {
 	knownContext := []string{"https://www.w3.org/2018/credentials/v1", "https://www.w3.org/2018/credentials/examples/v1"}
 	knownID := uuid.NewString()
 	knownType := []string{"VerifiablePresentation", "HappyPresentation"}
-	knownHolder := "did:example:ebfeb1f712ebc6f1c276e12ec21"
+	knownHolder := ka.Signer.ID
 	testCredential := getTestCredential(ka.Signer.ID)
 	signedJWT, _ := ka.SignVerifiableCredential(testCredential)
 	return credential.VerifiablePresentation{
