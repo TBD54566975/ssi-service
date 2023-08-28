@@ -19,7 +19,7 @@ require (
 	github.com/google/cel-go v0.17.6
 	github.com/google/go-cmp v0.5.9
 	github.com/google/tink/go v1.7.0
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/joho/godotenv v1.5.1
 	github.com/lestrrat-go/jwx v1.2.26
 	github.com/lestrrat-go/jwx/v2 v2.0.12
