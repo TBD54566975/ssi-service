@@ -194,7 +194,7 @@ func (wr WebhookRouter) DeleteWebhook(c *gin.Context) {
 	}
 
 	if err := wr.service.DeleteWebhook(c, req); err != nil {
-		errMsg := fmt.Sprintf("could not delete webhook with id: %s-%s-%s", request.Noun, request.Verb, request.URL)
+		errMsg := fmt.Sprintf("deleting webhook with id: %s-%s-%s", request.Noun, request.Verb, request.URL)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}

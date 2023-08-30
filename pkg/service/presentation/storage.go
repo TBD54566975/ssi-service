@@ -136,7 +136,7 @@ func (ps *Storage) GetDefinition(ctx context.Context, id string) (*prestorage.St
 
 func (ps *Storage) DeleteDefinition(ctx context.Context, id string) error {
 	if err := ps.db.Delete(ctx, presentationDefinitionNamespace, id); err != nil {
-		return sdkutil.LoggingNewErrorf("could not delete presentation definition: %s", id)
+		return sdkutil.LoggingNewErrorf("deleting presentation definition: %s", id)
 	}
 	return nil
 }

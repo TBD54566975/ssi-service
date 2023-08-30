@@ -271,7 +271,7 @@ func (pr PresentationRouter) DeleteDefinition(c *gin.Context) {
 	}
 
 	if err := pr.service.DeletePresentationDefinition(c, model.DeletePresentationDefinitionRequest{ID: *id}); err != nil {
-		errMsg := fmt.Sprintf("could not delete presentation with id: %s", *id)
+		errMsg := fmt.Sprintf("deleting presentation with id: %s", *id)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
@@ -681,7 +681,7 @@ func (pr PresentationRouter) DeleteRequest(c *gin.Context) {
 	}
 
 	if err := pr.service.DeleteRequest(c, model.DeleteRequestRequest{ID: *id}); err != nil {
-		errMsg := fmt.Sprintf("could not delete presentation request with id: %s", *id)
+		errMsg := fmt.Sprintf("deleting presentation request with id: %s", *id)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}

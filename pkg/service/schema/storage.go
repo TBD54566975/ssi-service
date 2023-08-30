@@ -93,7 +93,7 @@ func (s *Storage) ListSchemas(ctx context.Context, page common.Page) (*StoredSch
 
 func (s *Storage) DeleteSchema(ctx context.Context, id string) error {
 	if err := s.db.Delete(ctx, namespace, id); err != nil {
-		return util.LoggingErrorMsgf(err, "could not delete schema: %s", id)
+		return util.LoggingErrorMsgf(err, "deleting schema: %s", id)
 	}
 	return nil
 }

@@ -71,7 +71,7 @@ func (s *Service) GetResolver() didresolution.Resolver {
 func NewDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, keyStore *keystore.Service, factory keystore.ServiceFactory) (*Service, error) {
 	didStorage, err := NewDIDStorage(s)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
+		return nil, errors.Wrap(err, "instantiating DID storage for the DID service")
 	}
 
 	service := Service{

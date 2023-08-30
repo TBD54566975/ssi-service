@@ -238,7 +238,7 @@ func (s Service) DeleteSchema(ctx context.Context, request DeleteSchemaRequest) 
 	logrus.Debugf("deleting schema: %s", request.ID)
 
 	if err := s.storage.DeleteSchema(ctx, request.ID); err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not delete schema with id: %s", request.ID)
+		return sdkutil.LoggingErrorMsgf(err, "deleting schema with id: %s", request.ID)
 	}
 
 	return nil

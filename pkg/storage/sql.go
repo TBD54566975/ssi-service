@@ -355,7 +355,7 @@ func (s *SQLDB) DeleteNamespace(ctx context.Context, namespace string) error {
 	row := s.db.QueryRowContext(ctx, "DELETE FROM namespaces WHERE namespace = $1 RETURNING *", namespace)
 	var namespaceRemoved string
 	if err := row.Scan(&namespaceRemoved); err != nil {
-		return errors.Wrap(err, "could not delete namespace<bad>")
+		return errors.Wrap(err, "deleting namespace<bad>")
 	}
 
 	_, err := s.db.ExecContext(ctx, "DELETE FROM key_values WHERE key LIKE $1", Join(namespace, "%"))

@@ -29,13 +29,13 @@ const (
 func XChaCha20Poly1305Encrypt(key, data []byte) ([]byte, error) {
 	aead, err := chacha20poly1305.NewX(key)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create aead with provided key")
+		return nil, errors.Wrap(err, "creating aead with provided key")
 	}
 
 	// generate a random nonce, leaving room for the ciphertext
 	nonce := make([]byte, aead.NonceSize(), aead.NonceSize()+len(data)+aead.Overhead())
 	if _, err = rand.Read(nonce); err != nil {
-		return nil, errors.Wrap(err, "could not generate nonce for encryption")
+		return nil, errors.Wrap(err, "generating nonce for encryption")
 	}
 
 	encrypted := aead.Seal(nonce, nonce, data, nil)
@@ -46,7 +46,7 @@ func XChaCha20Poly1305Encrypt(key, data []byte) ([]byte, error) {
 func XChaCha20Poly1305Decrypt(key, data []byte) ([]byte, error) {
 	aead, err := chacha20poly1305.NewX(key)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create aead with provided key")
+		return nil, errors.Wrap(err, "creating aead with provided key")
 	}
 
 	if len(data) < aead.NonceSize() {
@@ -59,7 +59,7 @@ func XChaCha20Poly1305Decrypt(key, data []byte) ([]byte, error) {
 	// Decrypt the message and check it wasn't tampered with.
 	decrypted, err := aead.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not decrypt data")
+		return nil, errors.Wrap(err, "decrypting data")
 	}
 	return decrypted, nil
 }

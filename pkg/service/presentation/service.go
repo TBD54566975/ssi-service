@@ -183,7 +183,7 @@ func (s Service) DeletePresentationDefinition(ctx context.Context, request model
 	logrus.Debugf("deleting presentation definition: %s", request.ID)
 
 	if err := s.storage.DeleteDefinition(ctx, request.ID); err != nil {
-		return sdkutil.LoggingNewErrorf("could not delete presentation definition with id: %s", request.ID)
+		return sdkutil.LoggingNewErrorf("deleting presentation definition with id: %s", request.ID)
 	}
 
 	return nil
@@ -257,7 +257,7 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 
 	// TODO(andres): IO requests should be done in parallel, once we have context wired up.
 	if err = s.storage.StoreSubmission(ctx, storedSubmission); err != nil {
-		return nil, errors.Wrap(err, "could not store presentation")
+		return nil, errors.Wrap(err, "storing presentation")
 	}
 
 	sub, ok := storedSubmission.VerifiablePresentation.PresentationSubmission.(exchange.PresentationSubmission)
@@ -270,7 +270,7 @@ func (s Service) CreateSubmission(ctx context.Context, request model.CreateSubmi
 		Done: false,
 	}
 	if err = s.opsStorage.StoreOperation(ctx, storedOp); err != nil {
-		return nil, errors.Wrap(err, "could not store operation")
+		return nil, errors.Wrap(err, "storing operation")
 	}
 
 	return &operation.Operation{
@@ -393,7 +393,7 @@ func (s Service) DeleteRequest(ctx context.Context, request model.DeleteRequestR
 	logrus.Debugf("deleting presentation request: %s", request.ID)
 
 	if err := s.reqStorage.DeleteRequest(ctx, request.ID); err != nil {
-		return sdkutil.LoggingNewErrorf("could not delete presentation request with id: %s", request.ID)
+		return sdkutil.LoggingNewErrorf("deleting presentation request with id: %s", request.ID)
 	}
 
 	return nil

@@ -657,7 +657,7 @@ func (cr CredentialRouter) DeleteCredential(c *gin.Context) {
 	}
 
 	if err := cr.service.DeleteCredential(c, credential.DeleteCredentialRequest{ID: *id}); err != nil {
-		errMsg := fmt.Sprintf("could not delete credential with id: %s", *id)
+		errMsg := fmt.Sprintf("deleting credential with id: %s", *id)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}

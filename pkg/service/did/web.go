@@ -82,17 +82,17 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 
 	pubKey, privKey, err := crypto.GenerateKeyByKeyType(request.KeyType)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not generate key for did:web")
+		return nil, errors.Wrap(err, "generating key for did:web")
 	}
 
 	pubKeyBytes, err := crypto.PubKeyToBytes(pubKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not convert public key to byte")
+		return nil, errors.Wrap(err, "converting public key to byte")
 	}
 
 	doc, err := didWeb.CreateDoc(request.KeyType, pubKeyBytes)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create did:web docs")
+		return nil, errors.Wrap(err, "creating did:web docs")
 	}
 
 	// store metadata in DID storage
@@ -103,13 +103,13 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		SoftDeleted: false,
 	}
 	if err = h.storage.StoreDID(ctx, storedDID); err != nil {
-		return nil, errors.Wrap(err, "could not store did:web value")
+		return nil, errors.Wrap(err, "storing did:web value")
 	}
 
 	// convert to a serialized format for return to the client
 	privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not encode private key as base58")
+		return nil, errors.Wrap(err, "encoding private key as base58")
 	}
 	privKeyBase58 := base58.Encode(privKeyBytes)
 
@@ -122,7 +122,7 @@ func (h *webHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	}
 
 	if err = h.keyStore.StoreKey(ctx, keyStoreRequest); err != nil {
-		return nil, errors.Wrap(err, "could not store did:web private key")
+		return nil, errors.Wrap(err, "storing did:web private key")
 	}
 	return &CreateDIDResponse{DID: storedDID.DID}, nil
 }

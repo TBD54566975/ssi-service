@@ -36,7 +36,7 @@ func NewDIDConfigurationService(keyStoreService *keystore.Service, didResolver r
 	client := &http.Client{Transport: otelhttp.NewTransport(http.DefaultTransport)}
 	verifier, err := verification.NewVerifiableDataVerifier(didResolver, schema)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate verifier for the credential service")
+		return nil, errors.Wrap(err, "instantiating verifier for the credential service")
 	}
 
 	return &DIDConfigurationService{

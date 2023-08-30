@@ -303,7 +303,7 @@ func (b *BoltDB) Delete(_ context.Context, namespace, key string) error {
 func (b *BoltDB) DeleteNamespace(_ context.Context, namespace string) error {
 	return b.db.Update(func(tx *bolt.Tx) error {
 		if err := tx.DeleteBucket([]byte(namespace)); err != nil {
-			return sdkutil.LoggingErrorMsgf(err, "could not delete namespace<%s>", namespace)
+			return sdkutil.LoggingErrorMsgf(err, "deleting namespace<%s>", namespace)
 		}
 		return nil
 	})

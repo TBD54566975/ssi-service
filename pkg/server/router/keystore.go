@@ -51,10 +51,10 @@ func (sk StoreKeyRequest) ToServiceRequest() (*keystore.StoreKeyRequest, error) 
 	// make sure we can decode and re-encode the key before storing it
 	privateKeyBytes, err := base58.Decode(sk.PrivateKeyBase58)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not decode base58 private key")
+		return nil, errors.Wrap(err, "decoding base58 private key")
 	}
 	if _, err = crypto.BytesToPrivKey(privateKeyBytes, sk.Type); err != nil {
-		return nil, errors.Wrap(err, "could not convert bytes to private key")
+		return nil, errors.Wrap(err, "converting bytes to private key")
 	}
 	return &keystore.StoreKeyRequest{
 		ID:               sk.ID,

@@ -308,7 +308,7 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 	if request.HasJWTCredential() {
 		_, _, parsedCred, err := integrity.ParseVerifiableCredentialFromJWT(request.CredentialJWT.String())
 		if err != nil {
-			return nil, errors.Wrap(err, "could not parse credential from jwt")
+			return nil, errors.Wrap(err, "parsing credential from jwt")
 		}
 
 		// if we have a JWT credential, update the reference
@@ -524,7 +524,7 @@ func (cs *Storage) deleteCredential(ctx context.Context, id string, namespace st
 	// re-create the prefix key to delete
 	prefix := createPrefixKey(id, gotCred.Issuer, gotCred.Subject, gotCred.Schema)
 	if err = cs.db.Delete(ctx, namespace, prefix); err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not delete credential: %s", id)
+		return sdkutil.LoggingErrorMsgf(err, "deleting credential: %s", id)
 	}
 	return nil
 }

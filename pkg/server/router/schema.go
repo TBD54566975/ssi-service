@@ -263,7 +263,7 @@ func (sr SchemaRouter) DeleteSchema(c *gin.Context) {
 	}
 
 	if err := sr.service.DeleteSchema(c, schema.DeleteSchemaRequest{ID: *id}); err != nil {
-		errMsg := fmt.Sprintf("could not delete schema with id: %s", *id)
+		errMsg := fmt.Sprintf("deleting schema with id: %s", *id)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}

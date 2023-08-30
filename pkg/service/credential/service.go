@@ -592,7 +592,7 @@ func (s Service) DeleteCredential(ctx context.Context, request DeleteCredentialR
 	logrus.Debugf("deleting credential: %s", request.ID)
 
 	if err := s.storage.DeleteCredential(ctx, request.ID); err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not delete credential with id: %s", request.ID)
+		return sdkutil.LoggingErrorMsgf(err, "deleting credential with id: %s", request.ID)
 	}
 
 	return nil

@@ -235,7 +235,7 @@ func (mr ManifestRouter) DeleteManifest(c *gin.Context) {
 	}
 
 	if err := mr.service.DeleteManifest(c, model.DeleteManifestRequest{ID: *id}); err != nil {
-		errMsg := fmt.Sprintf("could not delete manifest with id: %s", *id)
+		errMsg := fmt.Sprintf("deleting manifest with id: %s", *id)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
@@ -258,7 +258,7 @@ const (
 func (sar SubmitApplicationRequest) toServiceRequest() (*model.SubmitApplicationRequest, error) {
 	_, token, err := util.ParseJWT(sar.ApplicationJWT)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not parse application JWT")
+		return nil, errors.Wrap(err, "parsing application JWT")
 	}
 	iss := token.Issuer()
 	if iss == "" {
@@ -287,16 +287,16 @@ func (sar SubmitApplicationRequest) toServiceRequest() (*model.SubmitApplication
 	}
 	applicationTokenBytes, err := json.Marshal(credAppJSON)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not marshal Credential Application credAppJSON")
+		return nil, errors.Wrap(err, "marshalling Credential Application credAppJSON")
 	}
 	var application manifestsdk.CredentialApplication
 	if err = json.Unmarshal(applicationTokenBytes, &application); err != nil {
-		return nil, errors.Wrap(err, "could not reconstruct Credential Application")
+		return nil, errors.Wrap(err, "reconstructing Credential Application")
 	}
 
 	credContainer, err := credential.NewCredentialContainerFromArray(creds)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not parse submitted credentials")
+		return nil, errors.Wrap(err, "parsing submitted credentials")
 	}
 	return &model.SubmitApplicationRequest{
 		ApplicantDID:    iss,
@@ -438,7 +438,7 @@ func (mr ManifestRouter) DeleteApplication(c *gin.Context) {
 	}
 
 	if err := mr.service.DeleteApplication(c, model.DeleteApplicationRequest{ID: *id}); err != nil {
-		errMsg := fmt.Sprintf("could not delete application with id: %s", *id)
+		errMsg := fmt.Sprintf("deleting application with id: %s", *id)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
@@ -535,7 +535,7 @@ func (mr ManifestRouter) DeleteResponse(c *gin.Context) {
 	}
 
 	if err := mr.service.DeleteResponse(c, model.DeleteResponseRequest{ID: *id}); err != nil {
-		errMsg := fmt.Sprintf("could not delete response with id: %s", *id)
+		errMsg := fmt.Sprintf("deleting response with id: %s", *id)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}
@@ -744,7 +744,7 @@ func (mr ManifestRouter) DeleteRequest(c *gin.Context) {
 	}
 
 	if err := mr.service.DeleteRequest(c, model.DeleteRequestRequest{ID: *id}); err != nil {
-		errMsg := fmt.Sprintf("could not delete manifest request with id: %s", *id)
+		errMsg := fmt.Sprintf("deleting manifest request with id: %s", *id)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}

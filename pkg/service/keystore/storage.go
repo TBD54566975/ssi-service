@@ -176,7 +176,7 @@ func getServiceKey(ctx context.Context, db storage.ServiceStorage, namespace, sk
 
 	keyBytes, err := base58.Decode(stored.Base58Key)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not decode service key")
+		return nil, errors.Wrap(err, "decoding service key")
 	}
 
 	return keyBytes, nil

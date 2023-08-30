@@ -63,7 +63,7 @@ func (c Container) HasJWTCredential() bool {
 func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
 	_, _, cred, err := parsing.ToCredential(credentialJWT)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not parse credential from JWT")
+		return nil, errors.Wrap(err, "parsing credential from JWT")
 	}
 	return &Container{
 		Credential:    cred,
@@ -76,7 +76,7 @@ func NewCredentialContainerFromJWT(credentialJWT string) (*Container, error) {
 func NewCredentialContainerFromMap(credMap map[string]any) (*Container, error) {
 	_, _, cred, err := parsing.ToCredential(credMap)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not parse credential from map")
+		return nil, errors.Wrap(err, "parsing credential from map")
 	}
 	container := Container{
 		Credential: cred,
@@ -109,14 +109,14 @@ func NewCredentialContainerFromArray(creds []any) ([]Container, error) {
 			// JWT
 			container, err := NewCredentialContainerFromJWT(v)
 			if err != nil {
-				return nil, errors.Wrap(err, "could not parse credential from JWT")
+				return nil, errors.Wrap(err, "parsing credential from JWT")
 			}
 			containers = append(containers, *container)
 		case map[string]any:
 			// JSON
 			container, err := NewCredentialContainerFromMap(v)
 			if err != nil {
-				return nil, errors.Wrap(err, "could not parse credential from JSON")
+				return nil, errors.Wrap(err, "parsing credential from JSON")
 			}
 			containers = append(containers, *container)
 		default:

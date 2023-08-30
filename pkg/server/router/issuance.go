@@ -111,7 +111,7 @@ func (ir IssuanceRouter) DeleteIssuanceTemplate(c *gin.Context) {
 	}
 
 	if err := ir.service.DeleteIssuanceTemplate(c, &issuance.DeleteIssuanceTemplateRequest{ID: *id}); err != nil {
-		errMsg := fmt.Sprintf("could not delete issuance template with id: %s", *id)
+		errMsg := fmt.Sprintf("deleting issuance template with id: %s", *id)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return
 	}

@@ -182,7 +182,7 @@ func (b *RedisDB) Execute(ctx context.Context, businessLogicFunc BusinessLogicFu
 
 	if err != nil {
 		logrus.Errorf("error after retrying: %v", err)
-		return nil, errors.Wrap(err, "failed to execute after retrying")
+		return nil, errors.Wrap(err, "executing after retrying")
 	}
 
 	return finalOutput, nil
@@ -366,7 +366,7 @@ func (b *RedisDB) DeleteNamespace(ctx context.Context, namespace string) error {
 	}
 
 	if len(keys) == 0 {
-		return errors.Errorf("could not delete namespace<%s>, namespace does not exist", namespace)
+		return errors.Errorf("deleting namespace<%s>, namespace does not exist", namespace)
 	}
 
 	return b.db.Del(ctx, keys...).Err()
@@ -399,7 +399,7 @@ func (b *RedisDB) UpdateValueAndOperation(ctx context.Context, namespace, key st
 	})
 
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to execute transaction")
+		return nil, nil, errors.Wrap(err, "executing transaction")
 	}
 
 	return first, op, err

@@ -105,7 +105,7 @@ func TestDIDRouter(t *testing.T) {
 				// bad key type
 				_, err = didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: "bad"})
 				assert.Error(tt, err)
-				assert.Contains(tt, err.Error(), "could not create did:key")
+				assert.Contains(tt, err.Error(), "unsupported did:key type: bad")
 
 				// good key type
 				createDIDResponse, err := didService.CreateDIDByMethod(context.Background(), did.CreateDIDRequest{Method: didsdk.KeyMethod, KeyType: crypto.Ed25519})

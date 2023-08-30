@@ -40,7 +40,7 @@ func NewVerifiableDataVerifier(didResolver resolution.Resolver, schemaResolver s
 	validators := validation.GetKnownVerifiers()
 	validator, err := validation.NewCredentialValidator(validators)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create static validator")
+		return nil, errors.Wrap(err, "creating static validator")
 	}
 	return &Verifier{
 		validator:      validator,
