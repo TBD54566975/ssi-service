@@ -42,13 +42,13 @@ func (h *keyHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	// create the DID
 	privKey, doc, err := key.GenerateDIDKey(request.KeyType)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not create did:key")
+		return nil, errors.Wrap(err, "creating did:key")
 	}
 
 	// expand it to the full docs for storage
 	expanded, err := doc.Expand()
 	if err != nil {
-		return nil, errors.Wrap(err, "error generating did:key document")
+		return nil, errors.Wrap(err, "generating did:key document")
 	}
 
 	// store metadata in DID storage
@@ -59,13 +59,13 @@ func (h *keyHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		SoftDeleted: false,
 	}
 	if err = h.storage.StoreDID(ctx, storedDID); err != nil {
-		return nil, errors.Wrap(err, "could not store did:key value")
+		return nil, errors.Wrap(err, "storing did:key value")
 	}
 
 	// convert to a serialized format for return to the client
 	privKeyBytes, err := crypto.PrivKeyToBytes(privKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not encode private key as base58")
+		return nil, errors.Wrap(err, "encoding private key as base58")
 	}
 	privKeyBase58 := base58.Encode(privKeyBytes)
 
@@ -78,7 +78,7 @@ func (h *keyHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	}
 
 	if err = h.keyStore.StoreKey(ctx, keyStoreRequest); err != nil {
-		return nil, errors.Wrap(err, "could not store did:key private key")
+		return nil, errors.Wrap(err, "storing did:key private key")
 	}
 	return &CreateDIDResponse{DID: storedDID.DID}, nil
 }

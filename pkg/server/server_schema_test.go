@@ -249,7 +249,7 @@ func TestSchemaAPI(t *testing.T) {
 				req := httptest.NewRequest(http.MethodDelete, "https://ssi-service.com/v1/schemas/bad", nil)
 				c := newRequestContextWithParams(w, req, map[string]string{"id": "bad"})
 				schemaService.DeleteSchema(c)
-				assert.Contains(tt, w.Body.String(), "could not delete schema with id: bad")
+				assert.Contains(tt, w.Body.String(), "deleting schema with id: bad")
 
 				// create a schema
 				simpleSchema := getTestSchema()

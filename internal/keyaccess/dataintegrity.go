@@ -60,11 +60,11 @@ func (ka DataIntegrityKeyAccess) Sign(payload cryptosuite.WithEmbeddedProof) (*D
 		return nil, errors.New("payload cannot be nil")
 	}
 	if err := ka.CryptoSuite.Sign(&ka.Signer, payload); err != nil {
-		return nil, errors.Wrap(err, "could not sign payload")
+		return nil, errors.Wrap(err, "signing payload")
 	}
 	signedJSONBytes, err := json.Marshal(payload)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not marshal signed payload")
+		return nil, errors.Wrap(err, "marshaling signed payload")
 	}
 	return &DataIntegrityJSON{Data: signedJSONBytes}, nil
 }
@@ -74,7 +74,7 @@ func (ka DataIntegrityKeyAccess) Verify(payload cryptosuite.WithEmbeddedProof) e
 		return errors.New("payload cannot be nil")
 	}
 	if err := ka.CryptoSuite.Verify(&ka.Verifier, payload); err != nil {
-		return errors.Wrap(err, "could not verify payload")
+		return errors.Wrap(err, "verifying payload")
 	}
 	return nil
 }

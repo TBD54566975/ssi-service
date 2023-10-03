@@ -214,13 +214,13 @@ func (ds *Storage) ListDIDsDefault(ctx context.Context, method string) ([]Defaul
 }
 
 func (ds *Storage) DeleteDID(ctx context.Context, id string) error {
-	couldNotGetDIDErr := fmt.Sprintf("could not delete DID: %s", id)
+	couldNotGetDIDErr := fmt.Sprintf("deleting DID: %s", id)
 	ns, err := getNamespaceForDID(id)
 	if err != nil {
 		return sdkutil.LoggingErrorMsg(err, couldNotGetDIDErr)
 	}
 	if err = ds.db.Delete(ctx, ns, id); err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not delete DID: %s", id)
+		return sdkutil.LoggingErrorMsgf(err, "deleting DID: %s", id)
 	}
 	return nil
 }

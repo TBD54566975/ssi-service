@@ -253,7 +253,7 @@ func (s Service) DeleteManifest(ctx context.Context, request model.DeleteManifes
 	logrus.Debugf("deleting manifest: %s", request.ID)
 
 	if err := s.storage.DeleteManifest(ctx, request.ID); err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not delete manifest with id: %s", request.ID)
+		return sdkutil.LoggingErrorMsgf(err, "deleting manifest with id: %s", request.ID)
 	}
 
 	return nil
@@ -495,7 +495,7 @@ func (s Service) DeleteApplication(ctx context.Context, request model.DeleteAppl
 	logrus.Debugf("deleting application: %s", request.ID)
 
 	if err := s.storage.DeleteApplication(ctx, request.ID); err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not delete application with id: %s", request.ID)
+		return sdkutil.LoggingErrorMsgf(err, "deleting application with id: %s", request.ID)
 	}
 
 	return nil
@@ -538,7 +538,7 @@ func (s Service) DeleteResponse(ctx context.Context, request model.DeleteRespons
 	logrus.Debugf("deleting response: %s", request.ID)
 
 	if err := s.storage.DeleteResponse(ctx, request.ID); err != nil {
-		return sdkutil.LoggingErrorMsgf(err, "could not delete response with id: %s", request.ID)
+		return sdkutil.LoggingErrorMsgf(err, "deleting response with id: %s", request.ID)
 	}
 
 	return nil
@@ -606,7 +606,7 @@ func (s Service) DeleteRequest(ctx context.Context, request model.DeleteRequestR
 	logrus.Debugf("deleting manifest request: %s", request.ID)
 
 	if err := s.reqStorage.DeleteRequest(ctx, request.ID); err != nil {
-		return sdkutil.LoggingNewErrorf("could not delete manifest request with id: %s", request.ID)
+		return sdkutil.LoggingNewErrorf("deleting manifest request with id: %s", request.ID)
 	}
 
 	return nil

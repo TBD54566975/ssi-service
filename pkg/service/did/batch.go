@@ -23,7 +23,7 @@ type BatchService struct {
 func NewBatchDIDService(config config.DIDServiceConfig, s storage.ServiceStorage, factory keystore.ServiceFactory) (*BatchService, error) {
 	didStorage, err := NewDIDStorage(s)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not instantiate DID storage for the DID service")
+		return nil, errors.Wrap(err, "instantiating DID storage for the DID service")
 	}
 
 	service := BatchService{

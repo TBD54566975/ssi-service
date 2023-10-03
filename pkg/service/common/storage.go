@@ -65,7 +65,7 @@ func (s *requestStorage) GetRequest(ctx context.Context, id string) (*StoredRequ
 
 func (s *requestStorage) DeleteRequest(ctx context.Context, id string) error {
 	if err := s.db.Delete(ctx, s.namespace, id); err != nil {
-		return util.LoggingNewErrorf("could not delete request: %s", id)
+		return util.LoggingNewErrorf("deleting request: %s", id)
 	}
 	return nil
 }

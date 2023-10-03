@@ -185,7 +185,7 @@ func TestDB(t *testing.T) {
 		// delete a namespace that doesn't exist
 		err = db.DeleteNamespace(context.Background(), "bad")
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "could not delete namespace<bad>")
+		assert.Contains(t, err.Error(), "deleting namespace<bad>")
 
 		// delete namespace
 		err = db.DeleteNamespace(context.Background(), namespace)

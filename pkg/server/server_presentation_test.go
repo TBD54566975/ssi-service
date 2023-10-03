@@ -379,7 +379,7 @@ func TestPresentationAPI(t *testing.T) {
 				w := httptest.NewRecorder()
 				c := newRequestContextWithParams(w, req, map[string]string{"id": pd.ID})
 				pRouter.DeleteDefinition(c)
-				assert.Contains(ttt, w.Body.String(), fmt.Sprintf("could not delete presentation definition with id: %s", pd.ID))
+				assert.Contains(ttt, w.Body.String(), fmt.Sprintf("deleting presentation definition with id: %s", pd.ID))
 			})
 
 			tt.Run("Submission endpoints", func(ttt *testing.T) {

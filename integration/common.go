@@ -202,7 +202,7 @@ func CreateVerifiableCredential(credentialInput credInputParams) (string, error)
 	}, expBackoff)
 
 	if err != nil {
-		return "", errors.Wrap(err, "error after retrying")
+		return "", errors.Wrap(err, "after retrying")
 	}
 
 	return output, nil
@@ -230,7 +230,7 @@ func BatchCreateVerifiableCredentials(credentialInput batchCredInputParams) (str
 
 	output, err := put(endpoint+version+"credentials/batch", credentialJSON)
 	if err != nil {
-		return "", errors.Wrap(err, "error writing batch credentials")
+		return "", errors.Wrap(err, "writing batch credentials")
 	}
 
 	return output, nil
@@ -253,7 +253,7 @@ func BatchUpdateVerifiableCredentialStatuses(updateStatusInput batchUpdateStatus
 
 	output, err := put(endpoint+version+"credentials/status/batch", updateStatusesJSON)
 	if err != nil {
-		return "", errors.Wrap(err, "error writing batch update status")
+		return "", errors.Wrap(err, "writing batch update status")
 	}
 
 	return output, nil
@@ -292,7 +292,7 @@ func BatchCreate100VerifiableCredentials(credentialInput credInputParams) (strin
 
 	output, err := put(endpoint+version+"credentials/batch", string(batchCreateData))
 	if err != nil {
-		return "", errors.Wrap(err, "error writing batch credentials")
+		return "", errors.Wrap(err, "writing batch credentials")
 	}
 
 	return output, nil

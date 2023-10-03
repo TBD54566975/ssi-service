@@ -203,7 +203,7 @@ func (h *ionHandler) applyUpdate(id string) func(ctx context.Context, tx storage
 				return nil, errors.Wrap(err, "converting update private key to store request")
 			}
 			if err := keyStore.StoreKey(ctx, *updateStoreRequest); err != nil {
-				return nil, errors.Wrap(err, "could not store did:ion update private key")
+				return nil, errors.Wrap(err, "storing did:ion update private key")
 			}
 
 			didStorage, err := h.didStorageFactory(tx)
@@ -272,7 +272,7 @@ func (h *ionHandler) prepareUpdate(request UpdateIONDIDRequest) func(ctx context
 				return nil, errors.Wrap(err, "converting update private key to store request")
 			}
 			if err := keyStore.StoreKey(ctx, *storeRequestForUpdateKey); err != nil {
-				return nil, errors.Wrap(err, "could not store did:ion update private key")
+				return nil, errors.Wrap(err, "storing did:ion update private key")
 			}
 
 			storedDID := new(ionStoredDID)
@@ -398,11 +398,11 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 	// create a key for the docs
 	_, privKey, err := crypto.GenerateKeyByKeyType(request.KeyType)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not generate key for ion DID")
+		return nil, errors.Wrap(err, "generating key for ion DID")
 	}
 	pubKeyJWK, privKeyJWK, err := jwx.PrivateKeyToPrivateKeyJWK(uuid.NewString(), privKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not convert key to JWK")
+		return nil, errors.Wrap(err, "converting key to JWK")
 	}
 	keyID := uuid.NewString()
 	pubKeys := []ion.PublicKey{
@@ -460,7 +460,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 		return nil, errors.Wrap(err, "converting private key to store request")
 	}
 	if err = h.keyStore.StoreKey(ctx, *keyStoreRequest); err != nil {
-		return nil, errors.Wrap(err, "could not store did:ion private key")
+		return nil, errors.Wrap(err, "storing did:ion private key")
 	}
 
 	return &CreateDIDResponse{DID: *didDoc}, nil
@@ -475,7 +475,7 @@ func (h *ionHandler) storeKeys(ctx context.Context, ionDID *ion.DID) error {
 		return errors.Wrap(err, "converting update private key to store request")
 	}
 	if err = h.keyStore.StoreKey(ctx, *updateStoreRequest); err != nil {
-		return errors.Wrap(err, "could not store did:ion update private key")
+		return errors.Wrap(err, "storing did:ion update private key")
 	}
 
 	recoveryStoreRequest, err := keyToStoreRequest(recoveryKeyID(ionDID.ID()), ionDID.GetRecoveryPrivateKey(), ionDID.ID())
@@ -483,7 +483,7 @@ func (h *ionHandler) storeKeys(ctx context.Context, ionDID *ion.DID) error {
 		return errors.Wrap(err, "converting recovery private key to store request")
 	}
 	if err = h.keyStore.StoreKey(ctx, *recoveryStoreRequest); err != nil {
-		return errors.Wrap(err, "could not store did:ion recovery private key")
+		return errors.Wrap(err, "storing did:ion recovery private key")
 	}
 
 	return nil
@@ -501,7 +501,7 @@ func keyToStoreRequest(kid string, privateKeyJWK jwx.PrivateKeyJWK, controller s
 	// convert to a serialized format
 	privateKeyBytes, err := crypto.PrivKeyToBytes(privateKey)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not encode private key as base58 string")
+		return nil, errors.Wrap(err, "encoding private key as base58 string")
 	}
 	privateKeyBase58 := base58.Encode(privateKeyBytes)
 	return &keystore.StoreKeyRequest{
@@ -538,7 +538,7 @@ func (h *ionHandler) GetDID(ctx context.Context, request GetDIDRequest) (*GetDID
 func (h *ionHandler) ListDIDs(ctx context.Context, page *common.Page) (*ListDIDsResponse, error) {
 	gotDIDs, err := h.storage.ListDIDsPage(ctx, did.IONMethod.String(), page, new(ionStoredDID))
 	if err != nil {
-		return nil, errors.Wrap(err, "error getting did:ion DIDs")
+		return nil, errors.Wrap(err, "getting did:ion DIDs")
 	}
 	dids := make([]did.Document, 0, len(gotDIDs.DIDs))
 	for _, gotDID := range gotDIDs.DIDs {

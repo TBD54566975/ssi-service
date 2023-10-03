@@ -103,7 +103,7 @@ func (ka JWKKeyAccess) Sign(payload map[string]any) (*JWT, error) {
 	}
 	tokenBytes, err := ka.SignWithDefaults(payload)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not sign payload")
+		return nil, errors.Wrap(err, "signing payload")
 	}
 	return JWT(tokenBytes).Ptr(), nil
 }
@@ -125,7 +125,7 @@ func (ka JWKKeyAccess) SignVerifiableCredential(cred credential.VerifiableCreden
 
 	tokenBytes, err := integrity.SignVerifiableCredentialJWT(*ka.Signer, cred)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not sign cred")
+		return nil, errors.Wrap(err, "signing cred")
 	}
 	return JWT(tokenBytes).Ptr(), nil
 }
@@ -147,7 +147,7 @@ func (ka JWKKeyAccess) SignVerifiablePresentation(audience string, presentation 
 	}
 	tokenBytes, err := integrity.SignVerifiablePresentationJWT(*ka.Signer, &integrity.JWTVVPParameters{Audience: []string{audience}}, presentation)
 	if err != nil {
-		return nil, errors.Wrap(err, "could not sign presentation")
+		return nil, errors.Wrap(err, "signing presentation")
 	}
 	return JWT(tokenBytes).Ptr(), nil
 }
