@@ -1,4 +1,4 @@
-FROM golang:1.21.1-alpine
+FROM golang:1.21.3-alpine
 
 # Create directory for our app inside the container
 WORKDIR /app
