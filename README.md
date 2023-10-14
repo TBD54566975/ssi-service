@@ -34,7 +34,7 @@ relies upon the SSI primitives exposed in the [SSI-SDK](https://github.com/TBD54
 
 The vision for the project is laid out in [this document](doc/service/vision.md).
 
-The project follows a proposal-based improvement format called [SIPs, outlined here](sip/README.md).
+The project follows a proposal-based improvement format called [SIPs, outlined here](doc/sip/README.md).
 
 Please [join Discord](https://discord.com/invite/tbd), or open an [issue](https://github.com/TBD54566975/ssi-service/issues) if you are interested in helping shape the future of the
 project.
@@ -111,7 +111,7 @@ cd build && docker-compose up -d
 
 Managed via:
 [TOML](https://toml.io/en/) [file](config/dev.toml). Configuration documentation and sample config
-files [can be found here](config/README.md).
+files [can be found here](doc/README.md#configuration).
 
 There are sets of configuration values for the server (e.g. which port to listen on), the services (e.g. which database
 to use),
@@ -128,36 +128,60 @@ authentication and authorization for your use case.
 
 ### Health and Readiness Checks
 
-Note: port 3000 is used by default, specified in `config.toml`, for the SSI Service process. If you're running
+Note: port 3000 is used by default, specified in `config` folder. An example would be [`dev.toml`](config/dev.toml), for the SSI Service process. If you're running
 via `mage run` or docker compose, the port to access will be `8080`.
 
 Run for health check (status: OK, then you are up):
 
 ```shell
- ~ curl localhost:3000/health
-{"status":"OK"}
+ ~ curl localhost:3000/health | jq
+```
+```json
+{
+    "status": "OK"
+}
 ```
 
 Run to check if all services are up and ready (credential, did, and schema):
 
 ```bash
-~ curl localhost:8080/readiness
+~ curl localhost:8080/readiness | jq
+```
+```json
 {
-    "status": {
-        "status": "ready",
-        "message": "all service ready"
+  "status": {
+    "status": "ready",
+    "message": "all services ready"
+  },
+  "serviceStatuses": {
+    "credential": {
+      "status": "ready"
     },
-    "serviceStatuses": {
-        "credential": {
-            "status": "ready"
-        },
-        "did": {
-            "status": "ready"
-        },
-        "schema": {
-            "status": "ready"
-        }
+    "did": {
+      "status": "ready"
+    },
+    "issuance": {
+      "status": "ready"
+    },
+    "keystore": {
+      "status": "ready"
+    },
+    "manifest": {
+      "status": "ready"
+    },
+    "operation": {
+      "status": "ready"
+    },
+    "presentation": {
+      "status": "ready"
+    },
+    "schema": {
+      "status": "ready"
+    },
+    "webhook": {
+      "status": "ready"
     }
+  }
 }
 ```
 
@@ -167,7 +191,7 @@ Run to check if all services are up and ready (credential, did, and schema):
 |--------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
 | [Components Readme](https://github.com/TBD54566975/ssi-service/blob/main/doc/README.md)    | Documentation for various components of the SSI Service                       |
 | [VISION](https://github.com/TBD54566975/ssi-service/blob/main/doc/VISION.md)               | Outlines the project vision                                                   |
-| [SIPs](sip/README.md)                                                                      | Proposals for improving the SSI Service                                       |
+| [SIPs](doc/sip/README.md)                                                                      | Proposals for improving the SSI Service                                       |
 | [VERSIONING](https://github.com/TBD54566975/ssi-service/blob/main/doc/VERSIONING.md)       | Project versioning strategy                                                   |
 | [CODEOWNERS](https://github.com/TBD54566975/ssi-service/blob/main/CODEOWNERS)              | Outlines the project lead(s)                                                  |
 | [CODE_OF_CONDUCT](https://github.com/TBD54566975/ssi-service/blob/main/CODE_OF_CONDUCT.md) | Expected behavior for project contributors, promoting a welcoming environment |

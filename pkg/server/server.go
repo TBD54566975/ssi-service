@@ -122,6 +122,8 @@ func setUpEngine(cfg config.ServerConfig, shutdown chan os.Signal) *gin.Engine {
 		gin.Recovery(),
 		gin.Logger(),
 		middleware.Errors(shutdown),
+		// uncomment the below line to enable middle ware auth, see doc/config/auth.md for details
+		// middleware.AuthMiddleware()
 	}
 	if cfg.JagerEnabled {
 		middlewares = append(middlewares, otelgin.Middleware(config.ServiceName))
