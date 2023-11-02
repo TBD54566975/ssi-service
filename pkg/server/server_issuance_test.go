@@ -412,7 +412,7 @@ func setupAllThings(t *testing.T, s storage.ServiceStorage) (*did.CreateDIDRespo
 	require.NoError(t, err)
 
 	licenseSchema := map[string]any{
-		"$schema": "https://json-schema.org/draft-07/schema",
+		"$schema": "https://json-schema.org/draft-07/schema#",
 		"type":    "object",
 		"properties": map[string]any{
 			"credentialSubject": map[string]any{

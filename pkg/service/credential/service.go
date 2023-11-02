@@ -174,17 +174,22 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 	}
 
 	// if a schema value exists, verify we can access it, validate the data against it, then set it
-	var knownSchema *schemalib.JSONSchema
+	var knownSchema map[string]any
 	if request.SchemaID != "" {
 		// resolve schema and save it for validation later
-		gotSchema, schemaType, err := s.schema.Resolve(ctx, request.SchemaID)
+		gotSchema, gotSchemaCred, schemaType, err := s.schema.Resolve(ctx, request.SchemaID)
 		if err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(err, "failed to create credential; could not get schema: %s", request.SchemaID)
 		}
-		knownSchema = gotSchema
 		credSchema := credential.CredentialSchema{
-			ID:   request.SchemaID,
 			Type: schemaType.String(),
+		}
+		if schemaType == schemalib.JSONSchemaType {
+			knownSchema = *gotSchema
+			credSchema.ID = gotSchema.ID()
+		} else {
+			knownSchema = *gotSchemaCred
+			credSchema.ID = (*gotSchemaCred)["id"].(string)
 		}
 		if err = builder.SetCredentialSchema(credSchema); err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(err, "could not set JSON Schema for credential: %s", request.SchemaID)
@@ -229,7 +234,7 @@ func (s Service) createCredential(ctx context.Context, request CreateCredentialR
 
 	// verify the built schema complies with the schema we've set
 	if knownSchema != nil {
-		if err = schemalib.IsCredentialValidForJSONSchema(*cred, *knownSchema); err != nil {
+		if err = schemalib.IsCredentialValidForJSONSchema(*cred, knownSchema, schemalib.VCJSONSchemaType(cred.CredentialSchema.Type)); err != nil {
 			return nil, sdkutil.LoggingErrorMsgf(err, "credential data does not comply with the provided schema: %s", request.SchemaID)
 		}
 	}
