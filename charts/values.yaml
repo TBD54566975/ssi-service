@@ -1,0 +1,245 @@
+fullnameOverride: ""
+
+ssiService:
+  replicaCount: 1
+
+  image:
+    repository: ghcr.io/tbd54566975/ssi-service
+    tag: main
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 3000
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 500Mi
+
+  env:
+    jaegerHttpUrl: "http://ssi-service-jaeger:14268/api/traces"
+
+  port: 3000
+
+  # tolerations:
+  # affinity:
+  # topologySpreadConstraints:
+  # nodeSelector:
+
+  # from https://raw.githubusercontent.com/TBD54566975/ssi-service/main/config/prod.toml
+  config: |
+    title = "SSI Service Config"
+
+    svn = "0.0.1"
+    desc = "Configuration to be used while running the service in a production environment."
+
+    # http service configuration
+    [server]
+    env = "prod" # either 'dev', 'test', or 'prod'
+    api_host = "0.0.0.0:3000"
+    jager_host = "http://ssi-service-jaeger:14268/api/traces"
+    jager_enabled = true
+
+    # 5 seconds, time is in nanoseconds
+    read_timeout = 5000000000
+    write_timeout = 5000000000
+    shutdown_timeout = 5000000000
+
+    log_location = "log"
+    # options: trace, debug, info, warning, error, fatal, panic
+    log_level = "info"
+
+    enable_schema_caching = true
+    enable_allow_all_cors = true
+
+    # Storage Configuration
+    [services]
+    service_endpoint = "http://localhost:8080"
+    storage = "redis"
+
+    [[services.storage_option]]
+    id = "redis-address-option"
+    option = "ssi-service-redis-ha-haproxy:6379"
+
+    [[services.storage_option]]
+    id = "storage-password-option"
+    option = "password"
+
+    # per-service configuration
+    [services.keystore]
+    name = "keystore"
+    password = "default-password"
+    # master_key_uri = "gcp-kms://projects/*/locations/*/keyRings/*/cryptoKeys/*"
+    # kms_credentials_path = "credentials.json"
+
+    [services.did]
+    name = "did"
+    methods = ["key", "web", "ion"]
+    local_resolution_methods = ["key", "web", "pkh", "peer"]
+    universal_resolver_url = "http://ssi-service-uni:8080"
+    universal_resolver_methods = ["ion"]
+    ion_resolver_url = "https://ion.tbddev.org"
+
+    [services.schema]
+    name = "schema"
+
+    [services.credential]
+    name = "credential"
+
+    [services.issuance]
+    name = "issuance"
+
+    [services.manifest]
+    name = "manifest"
+
+    [services.presentation]
+    name = "presentation"
+    expiration_duration = "30m"
+
+    [services.webhook]
+    name = "webhook"
+    webhook_timeout = "10s"
+
+ssiConsole:
+  replicaCount: 1
+
+  image:
+    repository: ""
+    tag: 0.0.1
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 80
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+  port: 8080
+
+  # tolerations:
+  # affinity:
+  # topologySpreadConstraints:
+  # nodeSelector:
+
+uniResolver:
+  replicaCount: 1
+
+  image:
+    repository: universalresolver/uni-resolver-web
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+  port: 8080
+
+  # tolerations:
+  # affinity:
+  # topologySpreadConstraints:
+  # nodeSelector:
+
+driverDidIon:
+  replicaCount: 1
+
+  image:
+    repository: identityfoundation/driver-did-ion
+    tag: v0.8.1
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+    nameOverride: driver-did-ion #this is hardcoded in https://github.com/decentralized-identity/universal-resolver/blob/main/uni-resolver-web/src/main/resources/application.yml
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+  port: 8080
+
+  # tolerations:
+  # affinity:
+  # topologySpreadConstraints:
+  # nodeSelector:
+
+jaeger:
+  replicaCount: 1
+
+  image:
+    repository: jaegertracing/all-in-one
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  service:
+    type: ClusterIP
+    port: 14268
+    targetPort: 14268
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+
+  port: 14268
+
+  # tolerations:
+  # affinity:
+  # topologySpreadConstraints:
+  # nodeSelector:
+
+# see https://github.com/DandyDeveloper/charts/blob/master/charts/redis-ha/values.yaml for all options
+redis-ha:
+  enabled: false
+
+  auth: true
+  redisPassword: password
+
+  haproxy:
+    enabled: true
+
+  exporter:
+    enabled: true
+    image: public.ecr.aws/bitnami/redis-exporter
+    tag: 1.45.0
+
+  persistentVolume:
+    enabled: true
+    size: 10Gi
+    storageClass: encrypted-gp2
+
+  redis:
+    masterGroupName: ssi
+    config:
+      # -- Will save the DB if both the given number of seconds and the given number of write operations against the DB occurred. `""`  is disabled
+      # @default -- `'""'`
+      save: "300 1"
+
+  image:
+    # -- Redis tag
+    tag: 7.0.11-alpine
+
+istio:
+  virtualService:
+    enabled: false
+    host: ssi.example.com
+    gateway: istio-system/primary-gateway
+
+  authorizationPolicy:
+    enabled: false
+    gatewayNamespace: istio-system

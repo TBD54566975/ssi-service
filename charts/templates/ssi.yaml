@@ -1,0 +1,79 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ssi-service.fullname" . }}
+  labels:
+    {{- include "ssi-service.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.ssiService.service.type }}
+  ports:
+    - port: {{ .Values.ssiService.service.port }}
+      targetPort: {{ .Values.ssiService.service.targetPort }}
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "ssi-service.selectorLabels" . | nindent 4 }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ssi-service.fullname" . }}
+  labels:
+    {{- include "ssi-service.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.ssiService.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "ssi-service.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "ssi-service.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: ssi-service
+          image: "{{ .Values.ssiService.image.repository }}:{{ .Values.ssiService.image.tag }}"
+          imagePullPolicy: {{ .Values.ssiService.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.ssiService.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: JAEGER_HTTP_URL
+              value: "{{ .Values.ssiService.env.jaegerHttpUrl }}"
+            - name: CONFIG_PATH
+              value: "/etc/ssiservice/ssiservice.toml"
+          volumeMounts:
+          - name: {{ include "ssi-service.shortname" . }}-conf
+            mountPath: /etc/ssiservice
+      volumes:
+      - name: {{ include "ssi-service.shortname" . }}-conf
+        secret:
+          secretName: {{ include "ssi-service.shortname" . }}-conf
+      {{- with .Values.ssiService.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 13 }}
+      {{- end }}
+      {{- with .Values.ssiService.affinity }}
+      affinity:
+        {{- toYaml . | nindent 13 }}
+      {{- end }}
+      {{- with .Values.ssiService.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 13 }}
+      {{- end }}
+      {{- with .Values.ssiService.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 13 }}
+      {{- end }}
+---
+apiVersion: v1
+kind: Secret
+type: Opaque
+metadata:
+  name: {{ include "ssi-service.shortname" . }}-conf
+stringData:
+  ssiservice.toml: |
+    {{- .Values.ssiService.config | nindent 4 }}
