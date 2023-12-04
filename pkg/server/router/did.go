@@ -203,7 +203,6 @@ func (dr DIDRouter) UpdateDIDByMethod(c *gin.Context) {
 
 	resp := CreateDIDByMethodResponse{DID: updateIONDIDResponse.DID}
 	framework.Respond(c, resp, http.StatusOK)
-
 }
 
 func toUpdateIONDIDRequest(id string, request UpdateDIDByMethodRequest) (*did.UpdateIONDIDRequest, error) {
@@ -399,13 +398,25 @@ type ResolveDIDResponse struct {
 	DIDDocumentMetadata *resolution.DocumentMetadata `json:"didDocumentMetadata,omitempty"`
 }
 
-// SoftDeleteDIDByMethod godoc
+// DeleteDIDByMethod godoc
 //
-//	@Description	When this is called with the correct did method and id it will flip the softDelete flag to true for the db entry.
+//	@Summary		Deletes a DID
+//	@Description	Soft deletes and deactivates (when applicable) a DID for which SSI is the custodian. The DID must have
+//	@Description	been previously created by calling	the "Create DID Document" endpoint. The effects of Deleting a DID depend on it's DID Method.
+//	@Description
+//	@Description	When this is called, it will flip the `softDelete` flag to true for the db entry.
 //	@Description	A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the ListDIDsByMethod call
 //	@Description	This facilitates a clean SSI-Service Admin UI but not leave any hanging VCs with inaccessible hanging DIDs.
-//	@Summary		Soft delete a DID
-//	@Description	Soft deletes a DID by its method
+//	@Description
+//	@Description	For a DID who's DID Method is `ion`, deactivation is also performed. The effects of deactivating a DID include:
+//	@Description
+//	@Description	* The `didDocumentMetadata.deactivated` property will be set to `true` after
+//	@Description	doing DID resolution (e.g. by calling the `v1/dids/resolution/<did>` endpoint).
+//	@Description	* All the DID Document properties will be removed, except for the `id` and `@context`. In practical terms, this
+//	@Description	means that no counterparty will be able to obtain verification material from this DID.
+//	@Description	* All keys stored by SSI service that are related to this DID (i.e. update, recovery, verification) will be revoked.
+//	@Description
+//	@Description	Please note that deactivation of an `ion` DID is an irreversible operation. For more details, refer to the sidetree spec at https://identity.foundation/sidetree/spec/#deactivate
 //	@Tags			DecentralizedIdentifiers
 //	@Accept			json
 //	@Produce		json
@@ -415,7 +426,7 @@ type ResolveDIDResponse struct {
 //	@Failure		400		{string}	string	"Bad request"
 //	@Failure		500		{string}	string	"Internal server error"
 //	@Router			/v1/dids/{method}/{id} [delete]
-func (dr DIDRouter) SoftDeleteDIDByMethod(c *gin.Context) {
+func (dr DIDRouter) DeleteDIDByMethod(c *gin.Context) {
 	method := framework.GetParam(c, MethodParam)
 	if method == nil {
 		errMsg := "soft delete DID by method request missing method parameter"
@@ -430,7 +441,7 @@ func (dr DIDRouter) SoftDeleteDIDByMethod(c *gin.Context) {
 	}
 
 	deleteDIDRequest := did.DeleteDIDRequest{Method: didsdk.Method(*method), ID: *id}
-	if err := dr.service.SoftDeleteDIDByMethod(c, deleteDIDRequest); err != nil {
+	if err := dr.service.DeleteDIDByMethod(c, deleteDIDRequest); err != nil {
 		errMsg := fmt.Sprintf("could not soft delete DID with id: %s", *id)
 		framework.LoggingRespondErrWithMsg(c, err, errMsg, http.StatusInternalServerError)
 		return

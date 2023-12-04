@@ -13,6 +13,7 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tbd54566975/ssi-service/internal/encryption"
 	"gopkg.in/h2non/gock.v1"
 
 	"github.com/tbd54566975/ssi-service/config"
@@ -34,7 +35,7 @@ func TestIONHandler(t *testing.T) {
 				assert.Contains(tt, err.Error(), "baseURL cannot be empty")
 
 				s := test.ServiceStorage(tt)
-				keystoreService := testKeyStoreService(tt, s)
+				keystoreService, _ := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
 				handler, err = NewIONHandler("bad", nil, keystoreService, nil, nil)
@@ -62,7 +63,7 @@ func TestIONHandler(t *testing.T) {
 			t.Run("Create DID", func(tt *testing.T) {
 				// create a handler
 				s := test.ServiceStorage(tt)
-				keystoreService := testKeyStoreService(tt, s)
+				keystoreService, _ := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
 				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, nil)
@@ -134,7 +135,7 @@ func TestIONHandler(t *testing.T) {
 
 				// create a handler
 				s := test.ServiceStorage(tt)
-				keystoreService := testKeyStoreService(tt, s)
+				keystoreService, _ := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
 				handler, err := NewIONHandler("https://ion.tbddev.org", didStorage, keystoreService, nil, nil)
@@ -161,7 +162,7 @@ func TestIONHandler(t *testing.T) {
 			t.Run("Get DID from storage", func(tt *testing.T) {
 				// create a handler
 				s := test.ServiceStorage(tt)
-				keystoreService := testKeyStoreService(tt, s)
+				keystoreService, _ := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
 				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, nil)
@@ -200,10 +201,11 @@ func TestIONHandler(t *testing.T) {
 			t.Run("Get DIDs from storage", func(tt *testing.T) {
 				// create a handler
 				s := test.ServiceStorage(tt)
-				keystoreService := testKeyStoreService(tt, s)
-				didStorage, err := NewDIDStorage(s)
+				keystoreService, keystoreServiceFactory := testKeyStoreService(tt, s)
+				didStorageFactory := NewDIDStorageFactory(s)
+				didStorage, err := didStorageFactory(s)
 				assert.NoError(tt, err)
-				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, nil)
+				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, keystoreServiceFactory, didStorageFactory)
 				assert.NoError(tt, err)
 				assert.NotEmpty(tt, handler)
 
@@ -236,7 +238,12 @@ func TestIONHandler(t *testing.T) {
 				assert.Len(tt, gotDIDs.DIDs, 1)
 
 				// delete a did
-				err = handler.SoftDeleteDID(context.Background(), DeleteDIDRequest{
+				gock.New("https://test-ion-resolver.com").
+					Post("/operations").
+					Reply(200).
+					JSON(`{}`)
+				defer gock.Off()
+				_, err = handler.DeleteDID(context.Background(), DeleteDIDRequest{
 					Method: did.IONMethod,
 					ID:     created.DID.ID,
 				})
@@ -258,7 +265,7 @@ func TestIONHandler(t *testing.T) {
 			t.Run("Get DID from resolver", func(tt *testing.T) {
 				// create a handler
 				s := test.ServiceStorage(tt)
-				keystoreService := testKeyStoreService(tt, s)
+				keystoreService, _ := testKeyStoreService(tt, s)
 				didStorage, err := NewDIDStorage(s)
 				assert.NoError(tt, err)
 				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, nil)
@@ -280,16 +287,80 @@ func TestIONHandler(t *testing.T) {
 				assert.NotEmpty(tt, gotDID)
 				assert.Equal(tt, "did:ion:test", gotDID.DID.ID)
 			})
+
+			t.Run("Deactivate DID", func(tt *testing.T) {
+				s := test.ServiceStorage(tt)
+				keystoreService, keystoreServiceFactory := testKeyStoreService(tt, s)
+				didStorageFactory := NewDIDStorageFactory(s)
+				didStorage, err := didStorageFactory(s)
+				assert.NoError(tt, err)
+				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, keystoreServiceFactory, didStorageFactory)
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, handler)
+
+				gock.New("https://test-ion-resolver.com").
+					Post("/operations").
+					Reply(200).
+					BodyString(string(BasicDIDResolution))
+				defer gock.Off()
+
+				createDIDRequest := CreateDIDRequest{
+					Method:  did.IONMethod,
+					KeyType: crypto.Ed25519,
+				}
+				created, err := handler.CreateDID(context.Background(), createDIDRequest)
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, created)
+
+				gock.New("https://test-ion-resolver.com").
+					Post("/operations").
+					Reply(200).
+					JSON(`{}`)
+				defer gock.Off()
+
+				request := DeleteDIDRequest{
+					ID: created.DID.ID,
+				}
+				resp, err := handler.(*ionHandler).DeleteDID(context.Background(), request)
+
+				assert.NoError(tt, err)
+				assert.NotEmpty(tt, resp)
+				assert.Equal(tt, created.DID.ID, resp.Result.Document.ID)
+				assert.Empty(tt, resp.Result.Document.VerificationMethod)
+				assert.Empty(tt, resp.Result.Document.Authentication)
+				assert.Empty(tt, resp.Result.Document.AssertionMethod)
+				assert.Empty(tt, resp.Result.Document.CapabilityInvocation)
+				assert.Empty(tt, resp.Result.Document.CapabilityDelegation)
+				assert.Empty(tt, resp.Result.Document.KeyAgreement)
+
+				// And the some keys were revoked.
+				updateKey, err := keystoreService.GetKey(context.Background(), keystore.GetKeyRequest{ID: created.DID.ID + "#update"})
+				assert.NoError(tt, err)
+				assert.True(tt, updateKey.Revoked)
+				recoveryKey, err := keystoreService.GetKey(context.Background(), keystore.GetKeyRequest{ID: created.DID.ID + "#recover"})
+				assert.NoError(tt, err)
+				assert.True(tt, recoveryKey.Revoked)
+				signingKey, err := keystoreService.GetKey(context.Background(), keystore.GetKeyRequest{ID: created.DID.ID + "#recover"})
+				assert.NoError(tt, err)
+				assert.True(tt, signingKey.Revoked)
+
+				t.Run("is idempotent", func(t *testing.T) {
+					resp2, err := handler.(*ionHandler).DeleteDID(context.Background(), request)
+					assert.NoError(t, err)
+					assert.Equal(t, resp, resp2)
+				})
+			})
 		})
 	}
 }
 
-func testKeyStoreService(t *testing.T, db storage.ServiceStorage) *keystore.Service {
+func testKeyStoreService(t *testing.T, db storage.ServiceStorage) (*keystore.Service, keystore.ServiceFactory) {
 	serviceConfig := new(config.KeyStoreServiceConfig)
 
+	factory := keystore.NewKeyStoreServiceFactory(*serviceConfig, db, encryption.NoopEncrypter, encryption.NoopDecrypter)
 	// create a keystore service
-	keystoreService, err := keystore.NewKeyStoreService(*serviceConfig, db)
+	keystoreService, err := factory(db)
 	require.NoError(t, err)
 	require.NotEmpty(t, keystoreService)
-	return keystoreService
+	return keystoreService, factory
 }

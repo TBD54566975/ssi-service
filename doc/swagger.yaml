@@ -2895,11 +2895,23 @@ paths:
     delete:
       consumes:
       - application/json
-      description: |-
-        When this is called with the correct did method and id it will flip the softDelete flag to true for the db entry.
-        A user can still get the did if they know the DID ID, and the did keys will still exist, but this did will not show up in the ListDIDsByMethod call
-        This facilitates a clean SSI-Service Admin UI but not leave any hanging VCs with inaccessible hanging DIDs.
-        Soft deletes a DID by its method
+      description: "Soft deletes and deactivates (when applicable) a DID for which
+        SSI is the custodian. The DID must have\nbeen previously created by calling\tthe
+        \"Create DID Document\" endpoint. The effects of Deleting a DID depend on
+        it's DID Method.\n\nWhen this is called, it will flip the `softDelete` flag
+        to true for the db entry.\nA user can still get the did if they know the DID
+        ID, and the did keys will still exist, but this did will not show up in the
+        ListDIDsByMethod call\nThis facilitates a clean SSI-Service Admin UI but not
+        leave any hanging VCs with inaccessible hanging DIDs.\n\nFor a DID who's DID
+        Method is `ion`, deactivation is also performed. The effects of deactivating
+        a DID include:\n\n* The `didDocumentMetadata.deactivated` property will be
+        set to `true` after\ndoing DID resolution (e.g. by calling the `v1/dids/resolution/<did>`
+        endpoint).\n* All the DID Document properties will be removed, except for
+        the `id` and `@context`. In practical terms, this\nmeans that no counterparty
+        will be able to obtain verification material from this DID.\n* All keys stored
+        by SSI service that are related to this DID (i.e. update, recovery, verification)
+        will be revoked.\n\nPlease note that deactivation of an `ion` DID is an irreversible
+        operation. For more details, refer to the sidetree spec at https://identity.foundation/sidetree/spec/#deactivate"
       parameters:
       - description: Method
         in: path
@@ -2926,7 +2938,7 @@ paths:
           description: Internal server error
           schema:
             type: string
-      summary: Soft delete a DID
+      summary: Deletes a DID
       tags:
       - DecentralizedIdentifiers
     get:
