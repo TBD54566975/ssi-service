@@ -124,7 +124,7 @@ func TestManifestRouter(t *testing.T) {
 
 					// create a schema for the creds to be issued against
 					licenseSchema := map[string]any{
-						"$schema": "https://json-schema.org/draft-07/schema",
+						"$schema": "https://json-schema.org/draft-07/schema#",
 						"type":    "object",
 						"properties": map[string]any{
 							"credentialSubject": map[string]any{

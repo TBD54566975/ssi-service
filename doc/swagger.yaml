@@ -1,6 +1,8 @@
 definitions:
   credential.CredentialSchema:
     properties:
+      digestSRI:
+        type: string
       id:
         type: string
       type:
@@ -214,6 +216,20 @@ definitions:
     - WebMethod
     - IONMethod
     - JWKMethod
+  did.PublicKeyPurpose:
+    enum:
+    - authentication
+    - assertionMethod
+    - capabilityInvocation
+    - capabilityDelegation
+    - keyAgreement
+    type: string
+    x-enum-varnames:
+    - Authentication
+    - AssertionMethod
+    - CapabilityInvocation
+    - CapabilityDelegation
+    - KeyAgreement
   did.VerificationMethod:
     properties:
       blockchainAccountId:
@@ -896,25 +912,11 @@ definitions:
         $ref: '#/definitions/jwx.PublicKeyJWK'
       purposes:
         items:
-          $ref: '#/definitions/ion.PublicKeyPurpose'
+          $ref: '#/definitions/did.PublicKeyPurpose'
         type: array
       type:
         type: string
     type: object
-  ion.PublicKeyPurpose:
-    enum:
-    - authentication
-    - assertionMethod
-    - capabilityInvocation
-    - capabilityDelegation
-    - keyAgreement
-    type: string
-    x-enum-varnames:
-    - Authentication
-    - AssertionMethod
-    - CapabilityInvocation
-    - CapabilityDelegation
-    - KeyAgreement
   jwx.PublicKeyJWK:
     properties:
       alg:

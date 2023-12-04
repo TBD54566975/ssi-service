@@ -3,9 +3,11 @@ package verification
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	credsdk "github.com/TBD54566975/ssi-sdk/credential"
 	"github.com/TBD54566975/ssi-sdk/credential/integrity"
+	schemalib "github.com/TBD54566975/ssi-sdk/credential/schema"
 	"github.com/TBD54566975/ssi-sdk/credential/validation"
 	"github.com/TBD54566975/ssi-sdk/crypto"
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
@@ -14,6 +16,8 @@ import (
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
+	"github.com/tbd54566975/ssi-service/config"
+	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 
 	"github.com/tbd54566975/ssi-service/internal/credential"
 	didint "github.com/tbd54566975/ssi-service/internal/did"
@@ -165,16 +169,24 @@ func (v Verifier) staticValidationChecks(ctx context.Context, credential credsdk
 	// if the credential has a schema, resolve it before it is to be used in verification
 	var validationOpts []validation.Option
 	if credential.CredentialSchema != nil {
-		schemaID := credential.CredentialSchema.ID
-		resolvedSchema, _, err := v.schemaResolver.Resolve(ctx, schemaID)
+		schemaID := strings.Replace(credential.CredentialSchema.ID, config.GetServicePath(framework.Schema)+"/", "", 1)
+		resolvedSchema, resolvedSchemaCred, schemaType, err := v.schemaResolver.Resolve(ctx, schemaID)
 		if err != nil {
 			return errors.Wrapf(err, "for credential<%s> failed to resolve schemas: %s", credential.ID, schemaID)
 		}
-		schemaBytes, err := json.Marshal(resolvedSchema)
-		if err != nil {
-			return errors.Wrapf(err, "for credential<%s> failed to marshal schema: %s", credential.ID, schemaID)
+		if schemaType == schemalib.JSONSchemaType {
+			schemaBytes, err := json.Marshal(resolvedSchema)
+			if err != nil {
+				return errors.Wrapf(err, "for credential<%s> failed to marshal schema: %s", credential.ID, schemaID)
+			}
+			validationOpts = append(validationOpts, validation.WithSchema(string(schemaBytes)))
+		} else {
+			schemaCredBytes, err := json.Marshal(resolvedSchemaCred)
+			if err != nil {
+				return errors.Wrap(err, "marshalling json schema credential")
+			}
+			validationOpts = append(validationOpts, validation.WithSchema(string(schemaCredBytes)))
 		}
-		validationOpts = append(validationOpts, validation.WithSchema(string(schemaBytes)))
 	}
 
 	// run the configured static checks on the credential
