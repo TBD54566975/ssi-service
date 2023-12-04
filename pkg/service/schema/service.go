@@ -120,8 +120,8 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 	// create schema for storage
 	storedSchema := StoredSchema{ID: schemaID}
 	if request.IsCredentialSchemaRequest() {
-		jsonSchema[schema.JSONSchemaIDProperty] = schemaID
-		credSchema, err := s.createCredentialSchema(ctx, jsonSchema, schemaURI, request.Issuer, request.FullyQualifiedVerificationMethodID)
+		jsonSchema[schema.JSONSchemaIDProperty] = schemaURI
+		credSchema, err := s.createCredentialSchema(ctx, jsonSchema, schemaURI, request.Issuer, request.FullyQualifiedVerificationMethodID, schemaID)
 		if err != nil {
 			return nil, sdkutil.LoggingErrorMsg(err, "could not create credential schema")
 		}
@@ -146,7 +146,7 @@ func (s Service) CreateSchema(ctx context.Context, request CreateSchemaRequest) 
 }
 
 // createCredentialSchema creates a credential schema, and signs it with the issuer's key and kid
-func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.JSONSchema, schemaURI, issuer, fullyQualifiedVerificationMethodID string) (*keyaccess.JWT, error) {
+func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.JSONSchema, schemaURI, issuer, fullyQualifiedVerificationMethodID, schemaID string) (*keyaccess.JWT, error) {
 	builder := credential.NewVerifiableCredentialBuilder()
 	if err := builder.SetID(schemaURI); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "building credential when setting id: %s", schemaURI)
@@ -154,10 +154,18 @@ func (s Service) createCredentialSchema(ctx context.Context, jsonSchema schema.J
 	if err := builder.SetIssuer(issuer); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "building credential when setting issuer: %s", issuer)
 	}
-
+	if err := builder.SetCredentialSchema(credential.CredentialSchema{
+		ID:        "https://www.w3.org/2022/credentials/v2/json-schema-credential-schema.json",
+		Type:      "JsonSchema",
+		DigestSRI: "sha384-S57yQDg1MTzF56Oi9DbSQ14u7jBy0RDdx0YbeV7shwhCS88G8SCXeFq82PafhCrW",
+	}); err != nil {
+		return nil, sdkutil.LoggingErrorMsg(err, "building credential when setting credential schema")
+	}
 	// set subject's jsonSchema value as the schema
 	subject := make(credential.CredentialSubject)
 	subject[credential.VerifiableCredentialJSONSchemaProperty] = jsonSchema
+	subject[credential.VerifiableCredentialIDProperty] = "urn:uuid:" + schemaID
+	subject[schema.TypeProperty] = schema.JSONSchemaType
 	if err := builder.SetCredentialSubject(subject); err != nil {
 		return nil, sdkutil.LoggingErrorMsgf(err, "could not set subject: %+v", subject)
 	}
@@ -245,33 +253,43 @@ func (s Service) DeleteSchema(ctx context.Context, request DeleteSchemaRequest) 
 }
 
 // Resolve wraps our get schema method for exposing schema access to other services
-func (s Service) Resolve(ctx context.Context, id string) (*schema.JSONSchema, schema.VCJSONSchemaType, error) {
+func (s Service) Resolve(ctx context.Context, id string) (*schema.JSONSchema, *schema.VCJSONSchema, schema.VCJSONSchemaType, error) {
 	gotSchemaResponse, err := s.GetSchema(ctx, GetSchemaRequest{ID: id})
 	if err != nil {
-		return nil, "", sdkutil.LoggingErrorMsg(err, "resolving schema")
+		return nil, nil, "", sdkutil.LoggingErrorMsg(err, "resolving schema")
 	}
 	switch gotSchemaResponse.Type {
 	case schema.JSONSchemaType:
-		return gotSchemaResponse.Schema, schema.JSONSchemaType, nil
+		return gotSchemaResponse.Schema, nil, schema.JSONSchemaType, nil
 	case schema.JSONSchemaCredentialType:
 		_, _, cred, err := parsing.ToCredential(gotSchemaResponse.CredentialSchema.String())
 		if err != nil {
-			return nil, "", sdkutil.LoggingErrorMsg(err, "converting credential schema from jwt to credential map")
+			return nil, nil, "", sdkutil.LoggingErrorMsg(err, "converting credential schema from jwt to credential map")
 		}
 		jsonSchema, ok := cred.CredentialSubject[credential.VerifiableCredentialJSONSchemaProperty]
 		if !ok {
-			return nil, "", sdkutil.LoggingNewErrorf("credential schema does not contain %s property", credential.VerifiableCredentialJSONSchemaProperty)
+			return nil, nil, "", sdkutil.LoggingNewErrorf("credential schema does not contain %s property", credential.VerifiableCredentialJSONSchemaProperty)
 		}
 		credSubjectJSONSchemaBytes, err := json.Marshal(jsonSchema)
 		if err != nil {
-			return nil, "", errors.Wrap(err, "marshalling credential subject")
+			return nil, nil, "", errors.Wrap(err, "marshalling credential subject")
 		}
 		var s schema.JSONSchema
 		if err = json.Unmarshal(credSubjectJSONSchemaBytes, &s); err != nil {
-			return nil, "", errors.Wrap(err, "unmarshalling credential subject")
+			return nil, nil, "", errors.Wrap(err, "unmarshalling credential subject")
 		}
-		return &s, schema.JSONSchemaCredentialType, nil
+
+		data, err := json.Marshal(cred)
+		if err != nil {
+			return nil, nil, "", sdkutil.LoggingErrorMsg(err, "marshalling credential")
+		}
+
+		var vcJSONSchema schema.VCJSONSchema
+		if err := json.Unmarshal(data, &vcJSONSchema); err != nil {
+			return nil, nil, "", sdkutil.LoggingErrorMsg(err, "umarshalling credential")
+		}
+		return &s, &vcJSONSchema, schema.JSONSchemaCredentialType, nil
 	default:
-		return nil, "", sdkutil.LoggingNewErrorf("unknown schema type: %s", gotSchemaResponse.Type)
+		return nil, nil, "", sdkutil.LoggingNewErrorf("unknown schema type: %s", gotSchemaResponse.Type)
 	}
 }
