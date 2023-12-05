@@ -23,18 +23,18 @@ import (
 )
 
 func TestPresentationDefinitionRouter(t *testing.T) {
-	t.Run("Nil Service", func(tt *testing.T) {
+	t.Run("Nil Service", func(t *testing.T) {
 		pdRouter, err := NewPresentationRouter(nil)
-		assert.Error(tt, err)
-		assert.Empty(tt, pdRouter)
-		assert.Contains(tt, err.Error(), "service cannot be nil")
+		assert.Error(t, err)
+		assert.Empty(t, pdRouter)
+		assert.Contains(t, err.Error(), "service cannot be nil")
 	})
 
-	t.Run("Bad Service", func(tt *testing.T) {
+	t.Run("Bad Service", func(t *testing.T) {
 		pdRouter, err := NewPresentationRouter(&testService{})
-		assert.Error(tt, err)
-		assert.Empty(tt, pdRouter)
-		assert.Contains(tt, err.Error(), "could not create presentation router with service type: test")
+		assert.Error(t, err)
+		assert.Empty(t, pdRouter)
+		assert.Contains(t, err.Error(), "could not create presentation router with service type: test")
 	})
 }
 

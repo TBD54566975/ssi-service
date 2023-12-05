@@ -13,9 +13,9 @@ func TestStorage(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
 
-			t.Run("Create bad DID - no namespace", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(tt))
-				assert.NoError(tt, err)
+			t.Run("Create bad DID - no namespace", func(t *testing.T) {
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				assert.NoError(t, err)
 
 				// create a did
 				toStore := DefaultStoredDID{
@@ -28,35 +28,35 @@ func TestStorage(t *testing.T) {
 
 				// store
 				err = ds.StoreDID(context.Background(), toStore)
-				assert.Error(tt, err)
-				assert.Contains(tt, err.Error(), "could not store DID")
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "could not store DID")
 			})
 
-			t.Run("Get bad DID - namespace does not exist", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(tt))
-				assert.NoError(tt, err)
+			t.Run("Get bad DID - namespace does not exist", func(t *testing.T) {
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				assert.NoError(t, err)
 
 				// store
 				gotDID, err := ds.GetDIDDefault(context.Background(), "did:test:bad")
-				assert.Error(tt, err)
-				assert.Empty(tt, gotDID)
-				assert.Contains(tt, err.Error(), "could not get DID: did:test:bad: no namespace found for DID method: test")
+				assert.Error(t, err)
+				assert.Empty(t, gotDID)
+				assert.Contains(t, err.Error(), "could not get DID: did:test:bad: no namespace found for DID method: test")
 			})
 
-			t.Run("Get bad DID - does not exist", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(tt))
-				assert.NoError(tt, err)
+			t.Run("Get bad DID - does not exist", func(t *testing.T) {
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				assert.NoError(t, err)
 
 				// store
 				gotDID, err := ds.GetDIDDefault(context.Background(), "did:key:bad")
-				assert.Error(tt, err)
-				assert.Empty(tt, gotDID)
-				assert.Contains(tt, err.Error(), "could not get DID: did:key:bad")
+				assert.Error(t, err)
+				assert.Empty(t, gotDID)
+				assert.Contains(t, err.Error(), "could not get DID: did:key:bad")
 			})
 
-			t.Run("Create and Get DID", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(tt))
-				assert.NoError(tt, err)
+			t.Run("Create and Get DID", func(t *testing.T) {
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				assert.NoError(t, err)
 
 				// create a did
 				toStore := DefaultStoredDID{
@@ -69,23 +69,23 @@ func TestStorage(t *testing.T) {
 
 				// store
 				err = ds.StoreDID(context.Background(), toStore)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 
 				// get it back as a default
 				got, err := ds.GetDIDDefault(context.Background(), "did:key:test")
-				assert.NoError(tt, err)
-				assert.Equal(tt, toStore, *got)
+				assert.NoError(t, err)
+				assert.Equal(t, toStore, *got)
 
 				// get it back as a did
 				outDID := new(DefaultStoredDID)
 				err = ds.GetDID(context.Background(), "did:key:test", outDID)
-				assert.NoError(tt, err)
-				assert.Equal(tt, toStore, *outDID)
+				assert.NoError(t, err)
+				assert.Equal(t, toStore, *outDID)
 			})
 
-			t.Run("Create and Get DID of a custom type", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(tt))
-				assert.NoError(tt, err)
+			t.Run("Create and Get DID of a custom type", func(t *testing.T) {
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				assert.NoError(t, err)
 
 				// create a did
 				toStore := customStoredDID{
@@ -95,23 +95,23 @@ func TestStorage(t *testing.T) {
 
 				// store
 				err = ds.StoreDID(context.Background(), toStore)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 
 				// get it back as a default - which won't be equal
 				got, err := ds.GetDIDDefault(context.Background(), "did:key:test")
-				assert.NoError(tt, err)
-				assert.NotEqual(tt, toStore, *got)
+				assert.NoError(t, err)
+				assert.NotEqual(t, toStore, *got)
 
 				// get it back as a custom did
 				outDID := new(customStoredDID)
 				err = ds.GetDID(context.Background(), "did:key:test", outDID)
-				assert.NoError(tt, err)
-				assert.Equal(tt, toStore, *outDID)
+				assert.NoError(t, err)
+				assert.Equal(t, toStore, *outDID)
 			})
 
-			t.Run("Create and Get Multiple DIDs", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(tt))
-				assert.NoError(tt, err)
+			t.Run("Create and Get Multiple DIDs", func(t *testing.T) {
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				assert.NoError(t, err)
 
 				// create two dids
 				toStore1 := DefaultStoredDID{
@@ -132,29 +132,29 @@ func TestStorage(t *testing.T) {
 
 				// store
 				err = ds.StoreDID(context.Background(), toStore1)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 
 				err = ds.StoreDID(context.Background(), toStore2)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 
 				// get both back as default
 				got, err := ds.ListDIDsDefault(context.Background(), didsdk.KeyMethod.String())
-				assert.NoError(tt, err)
-				assert.Len(tt, got, 2)
-				assert.Contains(tt, got, toStore1)
-				assert.Contains(tt, got, toStore2)
+				assert.NoError(t, err)
+				assert.Len(t, got, 2)
+				assert.Contains(t, got, toStore1)
+				assert.Contains(t, got, toStore2)
 
 				// get back as did
 				gotDIDs, err := ds.ListDIDs(context.Background(), didsdk.KeyMethod.String(), new(DefaultStoredDID))
-				assert.NoError(tt, err)
-				assert.Len(tt, gotDIDs, 2)
-				assert.Contains(tt, gotDIDs, &toStore1)
-				assert.Contains(tt, gotDIDs, &toStore2)
+				assert.NoError(t, err)
+				assert.Len(t, gotDIDs, 2)
+				assert.Contains(t, gotDIDs, &toStore1)
+				assert.Contains(t, gotDIDs, &toStore2)
 			})
 
-			t.Run("Soft delete DID", func(tt *testing.T) {
-				ds, err := NewDIDStorage(test.ServiceStorage(tt))
-				assert.NoError(tt, err)
+			t.Run("Soft delete DID", func(t *testing.T) {
+				ds, err := NewDIDStorage(test.ServiceStorage(t))
+				assert.NoError(t, err)
 
 				// create two dids
 				toStore1 := DefaultStoredDID{
@@ -175,30 +175,30 @@ func TestStorage(t *testing.T) {
 
 				// store
 				err = ds.StoreDID(context.Background(), toStore1)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 
 				err = ds.StoreDID(context.Background(), toStore2)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 
 				// get both and verify there are two
 				gotDIDs, err := ds.ListDIDsDefault(context.Background(), didsdk.KeyMethod.String())
-				assert.NoError(tt, err)
-				assert.Len(tt, gotDIDs, 2)
+				assert.NoError(t, err)
+				assert.Len(t, gotDIDs, 2)
 
 				// soft delete one
 				err = ds.DeleteDID(context.Background(), "did:key:test-1")
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 
 				// get it back
 				_, err = ds.GetDIDDefault(context.Background(), "did:key:test-1")
-				assert.Error(tt, err)
-				assert.Contains(tt, err.Error(), "could not get DID: did:key:test-1")
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "could not get DID: did:key:test-1")
 
 				// get both and verify there is one
 				gotDIDs, err = ds.ListDIDsDefault(context.Background(), didsdk.KeyMethod.String())
-				assert.NoError(tt, err)
-				assert.Len(tt, gotDIDs, 1)
-				assert.Contains(tt, gotDIDs, toStore2)
+				assert.NoError(t, err)
+				assert.Len(t, gotDIDs, 1)
+				assert.Contains(t, gotDIDs, toStore2)
 			})
 		})
 	}

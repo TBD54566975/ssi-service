@@ -68,222 +68,222 @@ func TestJWKKeyAccessForEachKeyType(t *testing.T) {
 }
 
 func TestCreateJWKKeyAccess(t *testing.T) {
-	t.Run("Create a Key Access object - Happy Path", func(tt *testing.T) {
+	t.Run("Create a Key Access object - Happy Path", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		testID := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewJWKKeyAccess(testID, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 	})
 
-	t.Run("Create a Key Access object - Bad Key", func(tt *testing.T) {
+	t.Run("Create a Key Access object - Bad Key", func(t *testing.T) {
 		testID := "test-id"
 		kid := "test-kid"
 		ka, err := NewJWKKeyAccess(testID, kid, nil)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "key cannot be nil")
-		assert.Empty(tt, ka)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "key cannot be nil")
+		assert.Empty(t, ka)
 	})
 
-	t.Run("Create a Key Access object - No KID", func(tt *testing.T) {
+	t.Run("Create a Key Access object - No KID", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewJWKKeyAccess("test-id", "", privKey)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "kid cannot be empty")
-		assert.Empty(tt, ka)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "kid cannot be empty")
+		assert.Empty(t, ka)
 	})
 }
 
 func TestJWKKeyAccessSignVerify(t *testing.T) {
-	t.Run("Sign and Verify - Happy Path", func(tt *testing.T) {
+	t.Run("Sign and Verify - Happy Path", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		testID := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewJWKKeyAccess(testID, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 
 		data := map[string]any{
 			"test": "test",
 		}
 		token, err := ka.Sign(data)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, token)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, token)
 
 		err = ka.Verify(*token)
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 
 		// Create just a verifier and check that it can verify the token
 		verifier, err := NewJWKKeyAccessVerifier(testID, kid, privKey.Public())
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, verifier)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, verifier)
 
 		err = verifier.Verify(*token)
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 
 		// Make sure the verifier can't sign
 		_, err = verifier.Sign(data)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "cannot sign with nil signer")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot sign with nil signer")
 	})
 
-	t.Run("Sign and Verify - Bad Data", func(tt *testing.T) {
+	t.Run("Sign and Verify - Bad Data", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		testID := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewJWKKeyAccess(testID, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 
 		_, err = ka.Sign(nil)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "payload cannot be nil")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "payload cannot be nil")
 	})
 
-	t.Run("Sign and Verify - Bad Signature", func(tt *testing.T) {
+	t.Run("Sign and Verify - Bad Signature", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		testID := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewJWKKeyAccess(testID, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 
 		err = ka.Verify(JWT(""))
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "token cannot be empty")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "token cannot be empty")
 	})
 }
 
 func TestJWKKeyAccessSignVerifyCredentials(t *testing.T) {
-	t.Run("Sign and Verify Credentials - Happy Path", func(tt *testing.T) {
+	t.Run("Sign and Verify Credentials - Happy Path", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		testID := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewJWKKeyAccess(testID, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 
 		// sign
 		testCred := getTestCredential(testID)
 		testCredCopy := copyCred(t, testCred)
 		signedCred, err := ka.SignVerifiableCredential(testCredCopy)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, signedCred)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, signedCred)
 
 		// verify
 		verifiedCred, err := ka.VerifyVerifiableCredential(*signedCred)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, verifiedCred)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, verifiedCred)
 
 		// check equality
 		testJSON, err := json.Marshal(testCred)
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		verifiedJSON, err := json.Marshal(verifiedCred)
-		assert.NoError(tt, err)
-		assert.JSONEq(tt, string(testJSON), string(verifiedJSON))
+		assert.NoError(t, err)
+		assert.JSONEq(t, string(testJSON), string(verifiedJSON))
 	})
 
-	t.Run("Sign and Verify Credentials - Bad Data", func(tt *testing.T) {
+	t.Run("Sign and Verify Credentials - Bad Data", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		testID := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewJWKKeyAccess(testID, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 
 		// sign
 		_, err = ka.SignVerifiableCredential(credential.VerifiableCredential{})
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "cannot sign invalid credential")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot sign invalid credential")
 	})
 
-	t.Run("Sign and Verify Credentials - Bad Signature", func(tt *testing.T) {
+	t.Run("Sign and Verify Credentials - Bad Signature", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		testID := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewJWKKeyAccess(testID, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 
 		// verify
 		_, err = ka.VerifyVerifiableCredential("bad")
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid JWT")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid JWT")
 	})
 }
 
 func TestJWKKeyAccessSignVerifyPresentations(t *testing.T) {
-	t.Run("Sign and Verify Presentations - Happy Path", func(tt *testing.T) {
+	t.Run("Sign and Verify Presentations - Happy Path", func(t *testing.T) {
 		privKey, didKey, err := key.GenerateDIDKey(crypto.Ed25519)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, privKey)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, privKey)
 		expanded, err := didKey.Expand()
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		kid := expanded.VerificationMethod[0].ID
 		ka, err := NewJWKKeyAccess(didKey.String(), kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 
 		// sign
 		testPres := getJWTTestPresentation(*ka)
 		signedPres, err := ka.SignVerifiablePresentation(didKey.String(), testPres)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, signedPres)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, signedPres)
 
 		// verify
 		resolver, err := resolution.NewResolver([]resolution.Resolver{key.Resolver{}}...)
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		verifiedPres, err := ka.VerifyVerifiablePresentation(context.Background(), resolver, *signedPres)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, verifiedPres)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, verifiedPres)
 
 		// check equality
 		testJSON, err := json.Marshal(testPres)
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		verifiedJSON, err := json.Marshal(verifiedPres)
-		assert.NoError(tt, err)
-		assert.JSONEq(tt, string(testJSON), string(verifiedJSON))
+		assert.NoError(t, err)
+		assert.JSONEq(t, string(testJSON), string(verifiedJSON))
 	})
 
-	t.Run("Sign and Verify Presentations - Bad Data", func(tt *testing.T) {
+	t.Run("Sign and Verify Presentations - Bad Data", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		testID := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewJWKKeyAccess(testID, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 
 		// sign
 		_, err = ka.SignVerifiablePresentation("test-audience", credential.VerifiablePresentation{})
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "cannot sign invalid presentation")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot sign invalid presentation")
 	})
 
-	t.Run("Sign and Verify Presentations - Bad Signature", func(tt *testing.T) {
+	t.Run("Sign and Verify Presentations - Bad Signature", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		testID := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewJWKKeyAccess(testID, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 
 		// verify
 		resolver, err := resolution.NewResolver([]resolution.Resolver{key.Resolver{}}...)
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		_, err = ka.VerifyVerifiablePresentation(context.Background(), resolver, "bad")
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "invalid JWT")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid JWT")
 	})
 }
 

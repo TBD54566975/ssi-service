@@ -24,55 +24,55 @@ import (
 func TestSchemaAPI(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
-			t.Run("Test Create JsonSchema Schema", func(tt *testing.T) {
-				bolt := test.ServiceStorage(tt)
-				require.NotEmpty(tt, bolt)
+			t.Run("Test Create JsonSchema Schema", func(t *testing.T) {
+				bolt := test.ServiceStorage(t)
+				require.NotEmpty(t, bolt)
 
-				keyStoreService, _ := testKeyStoreService(tt, bolt)
-				didService, _ := testDIDService(tt, bolt, keyStoreService, nil)
-				schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
+				keyStoreService, _ := testKeyStoreService(t, bolt)
+				didService, _ := testDIDService(t, bolt, keyStoreService, nil)
+				schemaService := testSchemaRouter(t, bolt, keyStoreService, didService)
 
 				simpleSchema := getTestSchema()
 				badSchemaRequest := router.CreateSchemaRequest{Schema: simpleSchema}
-				schemaRequestValue := newRequestValue(tt, badSchemaRequest)
+				schemaRequestValue := newRequestValue(t, badSchemaRequest)
 				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 				w := httptest.NewRecorder()
 
 				c := newRequestContext(w, req)
 				schemaService.CreateSchema(c)
-				assert.Contains(tt, w.Body.String(), "invalid create schema request")
+				assert.Contains(t, w.Body.String(), "invalid create schema request")
 
 				// reset the http recorder
 				w = httptest.NewRecorder()
 
 				schemaRequest := router.CreateSchemaRequest{Name: "test schema", Schema: simpleSchema}
-				schemaRequestValue = newRequestValue(tt, schemaRequest)
+				schemaRequestValue = newRequestValue(t, schemaRequest)
 				req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 
 				c = newRequestContext(w, req)
 				schemaService.CreateSchema(c)
-				assert.True(tt, util.Is2xxResponse(w.Code))
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				var resp router.CreateSchemaResponse
 				err := json.NewDecoder(w.Body).Decode(&resp)
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, resp.ID)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, resp.ID)
 
 				// since the id is generated, we need to manually override it
 				schemaRequest.Schema[schema.JSONSchemaIDProperty] = resp.Schema.ID()
-				assert.JSONEq(tt, schemaRequest.Schema.String(), resp.Schema.String())
-				assert.Equal(tt, schema.JSONSchemaType, resp.Type)
-				assert.Empty(tt, resp.CredentialSchema)
-				assert.NotEmpty(tt, resp.Schema)
+				assert.JSONEq(t, schemaRequest.Schema.String(), resp.Schema.String())
+				assert.Equal(t, schema.JSONSchemaType, resp.Type)
+				assert.Empty(t, resp.CredentialSchema)
+				assert.NotEmpty(t, resp.Schema)
 			})
 
-			t.Run("Test Create JsonCredentialSchema Schema", func(tt *testing.T) {
-				bolt := test.ServiceStorage(tt)
-				require.NotEmpty(tt, bolt)
+			t.Run("Test Create JsonCredentialSchema Schema", func(t *testing.T) {
+				bolt := test.ServiceStorage(t)
+				require.NotEmpty(t, bolt)
 
-				keyStoreService, _ := testKeyStoreService(tt, bolt)
-				didService, _ := testDIDService(tt, bolt, keyStoreService, nil)
-				schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
+				keyStoreService, _ := testKeyStoreService(t, bolt)
+				didService, _ := testDIDService(t, bolt, keyStoreService, nil)
+				schemaService := testSchemaRouter(t, bolt, keyStoreService, didService)
 
 				simpleSchema := getTestSchema()
 				badSchemaRequest := router.CreateSchemaRequest{
@@ -82,13 +82,13 @@ func TestSchemaAPI(t *testing.T) {
 						Issuer: "issuer",
 					},
 				}
-				schemaRequestValue := newRequestValue(tt, badSchemaRequest)
+				schemaRequestValue := newRequestValue(t, badSchemaRequest)
 				req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 				w := httptest.NewRecorder()
 
 				c := newRequestContext(w, req)
 				schemaService.CreateSchema(c)
-				assert.Contains(tt, w.Body.String(), "verificationMethodId is a required field")
+				assert.Contains(t, w.Body.String(), "verificationMethodId is a required field")
 
 				// reset the http recorder
 				w = httptest.NewRecorder()
@@ -111,52 +111,52 @@ func TestSchemaAPI(t *testing.T) {
 						VerificationMethodID: verificationMethodID,
 					},
 				}
-				schemaRequestValue = newRequestValue(tt, schemaRequest)
+				schemaRequestValue = newRequestValue(t, schemaRequest)
 				req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 
 				c = newRequestContext(w, req)
 				schemaService.CreateSchema(c)
-				assert.True(tt, util.Is2xxResponse(w.Code))
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				var resp router.CreateSchemaResponse
 				err = json.NewDecoder(w.Body).Decode(&resp)
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, resp.ID)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, resp.ID)
 
-				assert.Empty(tt, resp.Schema)
-				assert.NotEmpty(tt, resp.CredentialSchema)
-				assert.Equal(tt, schema.JSONSchemaCredentialType, resp.Type)
+				assert.Empty(t, resp.Schema)
+				assert.NotEmpty(t, resp.CredentialSchema)
+				assert.Equal(t, schema.JSONSchemaCredentialType, resp.Type)
 
 				// decode the schema from the response and verify it
 				_, _, cred, err := parsing.ToCredential(resp.CredentialSchema.String())
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 				credSubjectBytes, err := json.Marshal(cred.CredentialSubject[credential.VerifiableCredentialJSONSchemaProperty])
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 				var s schema.JSONSchema
 				err = json.Unmarshal(credSubjectBytes, &s)
-				assert.NoError(tt, err)
-				assert.Equal(tt, schemaRequest.Issuer, cred.Issuer)
+				assert.NoError(t, err)
+				assert.Equal(t, schemaRequest.Issuer, cred.Issuer)
 
 				// since the id is generated, we need to manually override it
 				schemaRequest.Schema[schema.JSONSchemaIDProperty] = s.ID()
 				delete(s, schema.JSONSchemaAdditionalIDProperty)
-				assert.JSONEq(tt, schemaRequest.Schema.String(), s.String())
+				assert.JSONEq(t, schemaRequest.Schema.String(), s.String())
 			})
 
-			t.Run("Test Get Schema and Get Schemas", func(tt *testing.T) {
-				bolt := test.ServiceStorage(tt)
-				require.NotEmpty(tt, bolt)
+			t.Run("Test Get Schema and Get Schemas", func(t *testing.T) {
+				bolt := test.ServiceStorage(t)
+				require.NotEmpty(t, bolt)
 
-				keyStoreService, _ := testKeyStoreService(tt, bolt)
-				didService, _ := testDIDService(tt, bolt, keyStoreService, nil)
-				schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
+				keyStoreService, _ := testKeyStoreService(t, bolt)
+				didService, _ := testDIDService(t, bolt, keyStoreService, nil)
+				schemaService := testSchemaRouter(t, bolt, keyStoreService, didService)
 
 				// get schema that doesn't exist
 				w := httptest.NewRecorder()
 				req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas/bad", nil)
 				c := newRequestContext(w, req)
 				schemaService.GetSchema(c)
-				assert.Contains(tt, w.Body.String(), "cannot get schema without ID parameter")
+				assert.Contains(t, w.Body.String(), "cannot get schema without ID parameter")
 
 				// reset recorder between calls
 				w = httptest.NewRecorder()
@@ -165,7 +165,7 @@ func TestSchemaAPI(t *testing.T) {
 				req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas/bad", nil)
 				c = newRequestContextWithParams(w, req, map[string]string{"id": "bad"})
 				schemaService.GetSchema(c)
-				assert.Contains(tt, w.Body.String(), "could not get schema with id: bad")
+				assert.Contains(t, w.Body.String(), "could not get schema with id: bad")
 
 				// reset recorder between calls
 				w = httptest.NewRecorder()
@@ -174,12 +174,12 @@ func TestSchemaAPI(t *testing.T) {
 				req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas", nil)
 				c = newRequestContext(w, req)
 				schemaService.ListSchemas(c)
-				assert.True(tt, util.Is2xxResponse(w.Code))
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				var getSchemasResp router.ListSchemasResponse
 				err := json.NewDecoder(w.Body).Decode(&getSchemasResp)
-				assert.NoError(tt, err)
-				assert.Len(tt, getSchemasResp.Schemas, 0)
+				assert.NoError(t, err)
+				assert.Len(t, getSchemasResp.Schemas, 0)
 
 				// reset recorder between calls
 				w = httptest.NewRecorder()
@@ -188,22 +188,22 @@ func TestSchemaAPI(t *testing.T) {
 				simpleSchema := getTestSchema()
 
 				schemaRequest := router.CreateSchemaRequest{Name: "test schema", Schema: simpleSchema}
-				schemaRequestValue := newRequestValue(tt, schemaRequest)
+				schemaRequestValue := newRequestValue(t, schemaRequest)
 				createReq := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 
 				c = newRequestContext(w, createReq)
 				schemaService.CreateSchema(c)
-				assert.True(tt, util.Is2xxResponse(w.Code))
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				var createResp router.CreateSchemaResponse
 				err = json.NewDecoder(w.Body).Decode(&createResp)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 
-				assert.NotEmpty(tt, createResp.ID)
+				assert.NotEmpty(t, createResp.ID)
 
 				// since the id is generated, we need to manually override it
 				schemaRequest.Schema[schema.JSONSchemaIDProperty] = createResp.Schema.ID()
-				assert.JSONEq(tt, schemaRequest.Schema.String(), createResp.Schema.String())
+				assert.JSONEq(t, schemaRequest.Schema.String(), createResp.Schema.String())
 
 				// reset recorder between calls
 				w = httptest.NewRecorder()
@@ -212,14 +212,14 @@ func TestSchemaAPI(t *testing.T) {
 				req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", createResp.ID), nil)
 				c = newRequestContextWithParams(w, req, map[string]string{"id": createResp.ID})
 				schemaService.GetSchema(c)
-				assert.True(tt, util.Is2xxResponse(w.Code))
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				var gotSchemaResp router.GetSchemaResponse
 				err = json.NewDecoder(w.Body).Decode(&gotSchemaResp)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 
-				assert.Contains(tt, gotSchemaResp.Schema.ID(), createResp.ID)
-				assert.Equal(tt, createResp.Schema.Schema(), gotSchemaResp.Schema.Schema())
+				assert.Contains(t, gotSchemaResp.Schema.ID(), createResp.ID)
+				assert.Equal(t, createResp.Schema.Schema(), gotSchemaResp.Schema.Schema())
 
 				// reset recorder between calls
 				w = httptest.NewRecorder()
@@ -228,20 +228,20 @@ func TestSchemaAPI(t *testing.T) {
 				req = httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/schemas", nil)
 				c = newRequestContext(w, req)
 				schemaService.ListSchemas(c)
-				assert.True(tt, util.Is2xxResponse(w.Code))
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				err = json.NewDecoder(w.Body).Decode(&getSchemasResp)
-				assert.NoError(tt, err)
-				assert.Len(tt, getSchemasResp.Schemas, 1)
+				assert.NoError(t, err)
+				assert.Len(t, getSchemasResp.Schemas, 1)
 			})
 
-			t.Run("Test Delete Schema", func(tt *testing.T) {
-				bolt := test.ServiceStorage(tt)
-				require.NotEmpty(tt, bolt)
+			t.Run("Test Delete Schema", func(t *testing.T) {
+				bolt := test.ServiceStorage(t)
+				require.NotEmpty(t, bolt)
 
-				keyStoreService, _ := testKeyStoreService(tt, bolt)
-				didService, _ := testDIDService(tt, bolt, keyStoreService, nil)
-				schemaService := testSchemaRouter(tt, bolt, keyStoreService, didService)
+				keyStoreService, _ := testKeyStoreService(t, bolt)
+				didService, _ := testDIDService(t, bolt, keyStoreService, nil)
+				schemaService := testSchemaRouter(t, bolt, keyStoreService, didService)
 
 				w := httptest.NewRecorder()
 
@@ -249,48 +249,48 @@ func TestSchemaAPI(t *testing.T) {
 				req := httptest.NewRequest(http.MethodDelete, "https://ssi-service.com/v1/schemas/bad", nil)
 				c := newRequestContextWithParams(w, req, map[string]string{"id": "bad"})
 				schemaService.DeleteSchema(c)
-				assert.Contains(tt, w.Body.String(), "deleting schema with id: bad")
+				assert.Contains(t, w.Body.String(), "deleting schema with id: bad")
 
 				// create a schema
 				simpleSchema := getTestSchema()
 
 				schemaRequest := router.CreateSchemaRequest{Name: "test schema", Schema: simpleSchema}
-				schemaRequestValue := newRequestValue(tt, schemaRequest)
+				schemaRequestValue := newRequestValue(t, schemaRequest)
 				req = httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/schemas", schemaRequestValue)
 				w = httptest.NewRecorder()
 				c = newRequestContext(w, req)
 				schemaService.CreateSchema(c)
-				assert.True(tt, util.Is2xxResponse(w.Code))
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				var resp router.CreateSchemaResponse
 				err := json.NewDecoder(w.Body).Decode(&resp)
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, resp.ID)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, resp.ID)
 
 				// since the id is generated, we need to manually override it
 				schemaRequest.Schema[schema.JSONSchemaIDProperty] = resp.Schema.ID()
-				assert.JSONEq(tt, schemaRequest.Schema.String(), resp.Schema.String())
+				assert.JSONEq(t, schemaRequest.Schema.String(), resp.Schema.String())
 
 				// get schema by id
 				req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
 				w = httptest.NewRecorder()
 				c = newRequestContextWithParams(w, req, map[string]string{"id": resp.ID})
 				schemaService.GetSchema(c)
-				assert.True(tt, util.Is2xxResponse(w.Code))
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				// delete it
 				req = httptest.NewRequest(http.MethodDelete, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
 				w = httptest.NewRecorder()
 				c = newRequestContextWithParams(w, req, map[string]string{"id": resp.ID})
 				schemaService.DeleteSchema(c)
-				assert.True(tt, util.Is2xxResponse(w.Code))
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				// get it back
 				req = httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/schemas/%s", resp.ID), nil)
 				w = httptest.NewRecorder()
 				c = newRequestContextWithParams(w, req, map[string]string{"id": resp.ID})
 				schemaService.GetSchema(c)
-				assert.Contains(tt, w.Body.String(), "schema not found")
+				assert.Contains(t, w.Body.String(), "schema not found")
 			})
 		})
 	}
