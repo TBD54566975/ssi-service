@@ -27,47 +27,47 @@ var BasicDIDResolution []byte
 func TestIONHandler(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
-			t.Run("Create ION Handler", func(tt *testing.T) {
+			t.Run("Create ION Handler", func(t *testing.T) {
 				handler, err := NewIONHandler("", nil, nil, nil, nil)
-				assert.Error(tt, err)
-				assert.Empty(tt, handler)
-				assert.Contains(tt, err.Error(), "baseURL cannot be empty")
+				assert.Error(t, err)
+				assert.Empty(t, handler)
+				assert.Contains(t, err.Error(), "baseURL cannot be empty")
 
-				s := test.ServiceStorage(tt)
-				keystoreService := testKeyStoreService(tt, s)
+				s := test.ServiceStorage(t)
+				keystoreService := testKeyStoreService(t, s)
 				didStorage, err := NewDIDStorage(s)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 				handler, err = NewIONHandler("bad", nil, keystoreService, nil, nil)
-				assert.Error(tt, err)
-				assert.Empty(tt, handler)
-				assert.Contains(tt, err.Error(), "storage cannot be empty")
+				assert.Error(t, err)
+				assert.Empty(t, handler)
+				assert.Contains(t, err.Error(), "storage cannot be empty")
 
 				handler, err = NewIONHandler("bad", didStorage, nil, nil, nil)
-				assert.Error(tt, err)
-				assert.Empty(tt, handler)
-				assert.Contains(tt, err.Error(), "keystore cannot be empty")
+				assert.Error(t, err)
+				assert.Empty(t, handler)
+				assert.Contains(t, err.Error(), "keystore cannot be empty")
 
 				handler, err = NewIONHandler("bad", didStorage, keystoreService, nil, nil)
-				assert.Error(tt, err)
-				assert.Empty(tt, handler)
-				assert.Contains(tt, err.Error(), "invalid resolution URL")
+				assert.Error(t, err)
+				assert.Empty(t, handler)
+				assert.Contains(t, err.Error(), "invalid resolution URL")
 
 				handler, err = NewIONHandler("https://example.com", didStorage, keystoreService, nil, nil)
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, handler)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, handler)
 
-				assert.Equal(tt, handler.GetMethod(), did.IONMethod)
+				assert.Equal(t, handler.GetMethod(), did.IONMethod)
 			})
 
-			t.Run("Create DID", func(tt *testing.T) {
+			t.Run("Create DID", func(t *testing.T) {
 				// create a handler
-				s := test.ServiceStorage(tt)
-				keystoreService := testKeyStoreService(tt, s)
+				s := test.ServiceStorage(t)
+				keystoreService := testKeyStoreService(t, s)
 				didStorage, err := NewDIDStorage(s)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, nil)
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, handler)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, handler)
 
 				gock.New("https://test-ion-resolver.com").
 					Post("/operations").
@@ -76,11 +76,11 @@ func TestIONHandler(t *testing.T) {
 				defer gock.Off()
 
 				publicKey, privKey, err := crypto.GenerateEd25519Key()
-				require.NoError(tt, err)
+				require.NoError(t, err)
 				signer, err := jwx.NewJWXSigner("test-id", "test-kid", privKey)
-				require.NoError(tt, err)
+				require.NoError(t, err)
 				jwxJWK, err := jwx.PublicKeyToPublicKeyJWK("test-kid", publicKey)
-				require.NoError(tt, err)
+				require.NoError(t, err)
 				ionPublicKey := ion.PublicKey{
 					ID:           "test-id",
 					Type:         "JsonWebKey2020",
@@ -88,9 +88,9 @@ func TestIONHandler(t *testing.T) {
 					Purposes:     []ion.PublicKeyPurpose{ion.Authentication},
 				}
 				ionPublicKeyData, err := json.Marshal(ionPublicKey)
-				require.NoError(tt, err)
+				require.NoError(t, err)
 				jwsPublicKey, err := signer.SignJWS(ionPublicKeyData)
-				require.NoError(tt, err)
+				require.NoError(t, err)
 
 				// create a did
 				createDIDRequest := CreateDIDRequest{
@@ -102,30 +102,30 @@ func TestIONHandler(t *testing.T) {
 					},
 				}
 
-				tt.Run("good input returns no error", func(t *testing.T) {
+				t.Run("good input returns no error", func(t *testing.T) {
 					created, err := handler.CreateDID(context.Background(), createDIDRequest)
-					assert.NoError(tt, err)
-					assert.NotEmpty(tt, created)
+					assert.NoError(t, err)
+					assert.NotEmpty(t, created)
 				})
 
-				tt.Run("signing with another key returns error", func(ttt *testing.T) {
+				t.Run("signing with another key returns error", func(t *testing.T) {
 					a := createDIDRequest
 					_, privKey, err := crypto.GenerateEd25519Key()
-					require.NoError(ttt, err)
+					require.NoError(t, err)
 					signer2, err := jwx.NewJWXSigner("test-id", "test-kid", privKey)
-					require.NoError(ttt, err)
+					require.NoError(t, err)
 					signedWithOtherKey, err := signer2.SignJWS(ionPublicKeyData)
-					require.NoError(ttt, err)
+					require.NoError(t, err)
 					a.Options.(CreateIONDIDOptions).JWSPublicKeys[0] = string(signedWithOtherKey)
 
 					_, err = handler.CreateDID(context.Background(), createDIDRequest)
 
-					assert.Error(ttt, err)
-					assert.ErrorContains(ttt, err, "verifying JWS for")
+					assert.Error(t, err)
+					assert.ErrorContains(t, err, "verifying JWS for")
 				})
 			})
 
-			t.Run("Get a Created DID", func(tt *testing.T) {
+			t.Run("Get a Created DID", func(t *testing.T) {
 				gock.New("https://ion.tbddev.org").
 					Post("/operations").
 					Reply(200).
@@ -133,40 +133,40 @@ func TestIONHandler(t *testing.T) {
 				defer gock.Off()
 
 				// create a handler
-				s := test.ServiceStorage(tt)
-				keystoreService := testKeyStoreService(tt, s)
+				s := test.ServiceStorage(t)
+				keystoreService := testKeyStoreService(t, s)
 				didStorage, err := NewDIDStorage(s)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 				handler, err := NewIONHandler("https://ion.tbddev.org", didStorage, keystoreService, nil, nil)
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, handler)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, handler)
 
 				// create a did
 				created, err := handler.CreateDID(context.Background(), CreateDIDRequest{
 					Method:  did.IONMethod,
 					KeyType: crypto.Ed25519,
 				})
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, created)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, created)
 
 				// get the did
 				gotDID, err := handler.GetDID(context.Background(), GetDIDRequest{
 					Method: did.IONMethod,
 					ID:     created.DID.ID,
 				})
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, gotDID)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, gotDID)
 			})
 
-			t.Run("Get DID from storage", func(tt *testing.T) {
+			t.Run("Get DID from storage", func(t *testing.T) {
 				// create a handler
-				s := test.ServiceStorage(tt)
-				keystoreService := testKeyStoreService(tt, s)
+				s := test.ServiceStorage(t)
+				keystoreService := testKeyStoreService(t, s)
 				didStorage, err := NewDIDStorage(s)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, nil)
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, handler)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, handler)
 
 				gock.New("https://test-ion-resolver.com").
 					Post("/operations").
@@ -179,8 +179,8 @@ func TestIONHandler(t *testing.T) {
 					Method:  did.IONMethod,
 					KeyType: crypto.Ed25519,
 				})
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, created)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, created)
 
 				gock.New("https://test-ion-resolver.com").
 					Get("/identifiers/" + created.DID.ID).
@@ -192,20 +192,20 @@ func TestIONHandler(t *testing.T) {
 					Method: did.IONMethod,
 					ID:     created.DID.ID,
 				})
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, gotDID)
-				assert.Equal(tt, created.DID.ID, gotDID.DID.ID)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, gotDID)
+				assert.Equal(t, created.DID.ID, gotDID.DID.ID)
 			})
 
-			t.Run("Get DIDs from storage", func(tt *testing.T) {
+			t.Run("Get DIDs from storage", func(t *testing.T) {
 				// create a handler
-				s := test.ServiceStorage(tt)
-				keystoreService := testKeyStoreService(tt, s)
+				s := test.ServiceStorage(t)
+				keystoreService := testKeyStoreService(t, s)
 				didStorage, err := NewDIDStorage(s)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, nil)
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, handler)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, handler)
 
 				gock.New("https://test-ion-resolver.com").
 					Post("/operations").
@@ -218,11 +218,11 @@ func TestIONHandler(t *testing.T) {
 					Method:  did.IONMethod,
 					KeyType: crypto.Ed25519,
 				})
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, created)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, created)
 
 				createdDIDData, err := json.Marshal(created.DID)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 
 				gock.New("https://test-ion-resolver.com").
 					Get("/identifiers/" + created.DID.ID).
@@ -231,39 +231,39 @@ func TestIONHandler(t *testing.T) {
 
 				// get all DIDs
 				gotDIDs, err := handler.ListDIDs(context.Background(), nil)
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, gotDIDs)
-				assert.Len(tt, gotDIDs.DIDs, 1)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, gotDIDs)
+				assert.Len(t, gotDIDs.DIDs, 1)
 
 				// delete a did
 				err = handler.SoftDeleteDID(context.Background(), DeleteDIDRequest{
 					Method: did.IONMethod,
 					ID:     created.DID.ID,
 				})
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 
 				// get all DIDs after deleting
 				gotDIDsAfterDelete, err := handler.ListDIDs(context.Background(), nil)
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, gotDIDs)
-				assert.Len(tt, gotDIDsAfterDelete.DIDs, 0)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, gotDIDs)
+				assert.Len(t, gotDIDsAfterDelete.DIDs, 0)
 
 				// get all deleted DIDs after delete
 				gotDeletedDIDs, err := handler.ListDeletedDIDs(context.Background())
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, gotDIDs)
-				assert.Len(tt, gotDeletedDIDs.DIDs, 1)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, gotDIDs)
+				assert.Len(t, gotDeletedDIDs.DIDs, 1)
 			})
 
-			t.Run("Get DID from resolver", func(tt *testing.T) {
+			t.Run("Get DID from resolver", func(t *testing.T) {
 				// create a handler
-				s := test.ServiceStorage(tt)
-				keystoreService := testKeyStoreService(tt, s)
+				s := test.ServiceStorage(t)
+				keystoreService := testKeyStoreService(t, s)
 				didStorage, err := NewDIDStorage(s)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 				handler, err := NewIONHandler("https://test-ion-resolver.com", didStorage, keystoreService, nil, nil)
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, handler)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, handler)
 
 				gock.New("https://test-ion-resolver.com").
 					Get("/identifiers/did:ion:test").
@@ -276,9 +276,9 @@ func TestIONHandler(t *testing.T) {
 					Method: did.IONMethod,
 					ID:     "did:ion:test",
 				})
-				assert.NoError(tt, err)
-				assert.NotEmpty(tt, gotDID)
-				assert.Equal(tt, "did:ion:test", gotDID.DID.ID)
+				assert.NoError(t, err)
+				assert.NotEmpty(t, gotDID)
+				assert.Equal(t, "did:ion:test", gotDID.DID.ID)
 			})
 		})
 	}

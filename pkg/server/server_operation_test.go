@@ -24,13 +24,13 @@ import (
 func TestOperationsAPI(t *testing.T) {
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
-			t.Run("Marks operation as done after reviewing submission", func(tt *testing.T) {
-				s := test.ServiceStorage(tt)
-				pRouter, didService := setupPresentationRouter(tt, s)
-				authorDID := createDID(tt, didService)
-				opRouter := setupOperationsRouter(tt, s)
+			t.Run("Marks operation as done after reviewing submission", func(t *testing.T) {
+				s := test.ServiceStorage(t)
+				pRouter, didService := setupPresentationRouter(t, s)
+				authorDID := createDID(t, didService)
+				opRouter := setupOperationsRouter(t, s)
 
-				holderSigner, holderDID := getSigner(tt)
+				holderSigner, holderDID := getSigner(t)
 				definition := createPresentationDefinition(t, pRouter)
 				submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 				sub := reviewSubmission(t, pRouter, opstorage.StatusObjectID(submissionOp.ID))
@@ -41,30 +41,30 @@ func TestOperationsAPI(t *testing.T) {
 
 				c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
 				opRouter.GetOperation(c)
-				assert.True(tt, util.Is2xxResponse(w.Code))
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				var resp router.Operation
-				assert.NoError(tt, json.NewDecoder(w.Body).Decode(&resp))
-				assert.True(tt, resp.Done)
-				assert.Empty(tt, resp.Result.Error)
+				assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+				assert.True(t, resp.Done)
+				assert.Empty(t, resp.Result.Error)
 				data, err := json.Marshal(sub)
-				assert.NoError(tt, err)
+				assert.NoError(t, err)
 
 				var responseAsMap map[string]any
-				assert.NoError(tt, json.Unmarshal(data, &responseAsMap))
-				assert.Equal(tt, responseAsMap, resp.Result.Response)
+				assert.NoError(t, json.Unmarshal(data, &responseAsMap))
+				assert.Equal(t, responseAsMap, resp.Result.Response)
 			})
 
-			t.Run("GetOperation", func(tt *testing.T) {
-				tt.Run("Returns operation after submission", func(ttt *testing.T) {
-					s := test.ServiceStorage(ttt)
-					pRouter, didService := setupPresentationRouter(ttt, s)
-					authorDID := createDID(ttt, didService)
-					opRouter := setupOperationsRouter(ttt, s)
+			t.Run("GetOperation", func(t *testing.T) {
+				t.Run("Returns operation after submission", func(t *testing.T) {
+					s := test.ServiceStorage(t)
+					pRouter, didService := setupPresentationRouter(t, s)
+					authorDID := createDID(t, didService)
+					opRouter := setupOperationsRouter(t, s)
 
-					holderSigner, holderDID := getSigner(ttt)
-					definition := createPresentationDefinition(ttt, pRouter)
-					submissionOp := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+					holderSigner, holderDID := getSigner(t)
+					definition := createPresentationDefinition(t, pRouter)
+					submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 					createdID := submissionOp.ID
 					req := httptest.NewRequest(
@@ -75,31 +75,31 @@ func TestOperationsAPI(t *testing.T) {
 
 					c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
 					opRouter.GetOperation(c)
-					assert.True(tt, util.Is2xxResponse(w.Code))
+					assert.True(t, util.Is2xxResponse(w.Code))
 
 					var resp router.Operation
-					assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-					assert.False(ttt, resp.Done)
-					assert.Contains(ttt, resp.ID, "presentations/submissions/")
+					assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+					assert.False(t, resp.Done)
+					assert.Contains(t, resp.ID, "presentations/submissions/")
 				})
 
-				tt.Run("Returns error when id doesn't exist", func(ttt *testing.T) {
-					s := test.ServiceStorage(ttt)
-					opRouter := setupOperationsRouter(ttt, s)
+				t.Run("Returns error when id doesn't exist", func(t *testing.T) {
+					s := test.ServiceStorage(t)
+					opRouter := setupOperationsRouter(t, s)
 
 					req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/operations/some_fake_id", nil)
 					w := httptest.NewRecorder()
 
 					c := newRequestContextWithParams(w, req, map[string]string{"id": "some_fake_id"})
 					opRouter.GetOperation(c)
-					assert.Contains(ttt, w.Body.String(), "operation not found with id")
+					assert.Contains(t, w.Body.String(), "operation not found with id")
 				})
 			})
 
-			t.Run("ListOperations", func(tt *testing.T) {
-				tt.Run("Returns empty when no operations stored", func(ttt *testing.T) {
-					s := test.ServiceStorage(ttt)
-					opRouter := setupOperationsRouter(ttt, s)
+			t.Run("ListOperations", func(t *testing.T) {
+				t.Run("Returns empty when no operations stored", func(t *testing.T) {
+					s := test.ServiceStorage(t)
+					opRouter := setupOperationsRouter(t, s)
 
 					query := url.QueryEscape("presentations/submissions")
 					req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/operations?parent=%s", query), nil)
@@ -107,25 +107,25 @@ func TestOperationsAPI(t *testing.T) {
 
 					c := newRequestContextWithParams(w, req, map[string]string{"parent": query})
 					opRouter.ListOperations(c)
-					assert.True(tt, util.Is2xxResponse(w.Code))
+					assert.True(t, util.Is2xxResponse(w.Code))
 
 					var resp router.ListOperationsResponse
-					assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-					assert.Empty(ttt, resp.Operations)
+					assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+					assert.Empty(t, resp.Operations)
 				})
 
-				tt.Run("Returns one operation for every submission", func(ttt *testing.T) {
-					s := test.ServiceStorage(ttt)
-					pRouter, didService := setupPresentationRouter(ttt, s)
-					authorDID := createDID(ttt, didService)
-					opRouter := setupOperationsRouter(ttt, s)
+				t.Run("Returns one operation for every submission", func(t *testing.T) {
+					s := test.ServiceStorage(t)
+					pRouter, didService := setupPresentationRouter(t, s)
+					authorDID := createDID(t, didService)
+					opRouter := setupOperationsRouter(t, s)
 
-					def := createPresentationDefinition(ttt, pRouter)
-					holderSigner, holderDID := getSigner(ttt)
-					submissionOp := createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+					def := createPresentationDefinition(t, pRouter)
+					holderSigner, holderDID := getSigner(t)
+					submissionOp := createSubmission(t, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
-					holderSigner2, holderDID2 := getSigner(ttt)
-					submissionOp2 := createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID2, holderSigner2)
+					holderSigner2, holderDID2 := getSigner(t)
+					submissionOp2 := createSubmission(t, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID2, holderSigner2)
 
 					query := url.QueryEscape("presentations/submissions")
 					req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/operations?parent=%s", query), nil)
@@ -133,10 +133,10 @@ func TestOperationsAPI(t *testing.T) {
 
 					c := newRequestContextWithParams(w, req, map[string]string{"parent": query})
 					opRouter.ListOperations(c)
-					assert.True(tt, util.Is2xxResponse(w.Code))
+					assert.True(t, util.Is2xxResponse(w.Code))
 
 					var resp router.ListOperationsResponse
-					assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
+					assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
 					ops := []router.Operation{submissionOp, submissionOp2}
 					diff := cmp.Diff(ops, resp.Operations,
 						cmpopts.IgnoreFields(exchange.PresentationSubmission{}, "DescriptorMap"),
@@ -145,19 +145,19 @@ func TestOperationsAPI(t *testing.T) {
 						}),
 					)
 					if diff != "" {
-						ttt.Errorf("Mismatch on submissions (-want +got):\n%s", diff)
+						t.Errorf("Mismatch on submissions (-want +got):\n%s", diff)
 					}
 				})
 
-				tt.Run("Returns operation when filtering to include", func(ttt *testing.T) {
-					s := test.ServiceStorage(ttt)
-					pRouter, didService := setupPresentationRouter(ttt, s)
-					authorDID := createDID(ttt, didService)
-					opRouter := setupOperationsRouter(ttt, s)
+				t.Run("Returns operation when filtering to include", func(t *testing.T) {
+					s := test.ServiceStorage(t)
+					pRouter, didService := setupPresentationRouter(t, s)
+					authorDID := createDID(t, didService)
+					opRouter := setupOperationsRouter(t, s)
 
-					def := createPresentationDefinition(ttt, pRouter)
-					holderSigner, holderDID := getSigner(ttt)
-					_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+					def := createPresentationDefinition(t, pRouter)
+					holderSigner, holderDID := getSigner(t)
+					_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 					queryParent := url.QueryEscape("presentations/submissions")
 					queryDone := url.QueryEscape("done=false")
@@ -166,26 +166,26 @@ func TestOperationsAPI(t *testing.T) {
 
 					c := newRequestContextWithParams(w, req, map[string]string{"parent": queryParent, "done": queryDone})
 					opRouter.ListOperations(c)
-					assert.True(tt, util.Is2xxResponse(w.Code))
+					assert.True(t, util.Is2xxResponse(w.Code))
 
 					var resp router.ListOperationsResponse
-					assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-					assert.Len(ttt, resp.Operations, 1)
-					assert.False(ttt, resp.Operations[0].Done)
+					assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+					assert.Len(t, resp.Operations, 1)
+					assert.False(t, resp.Operations[0].Done)
 				})
 
 				// TODO: Fix pagesize issue on redis - https://github.com/TBD54566975/ssi-service/issues/538
 				if !strings.Contains(test.Name, "Redis") {
-					tt.Run("Returns zero operations when filtering to exclude", func(ttt *testing.T) {
+					t.Run("Returns zero operations when filtering to exclude", func(t *testing.T) {
 
-						s := test.ServiceStorage(ttt)
-						pRouter, didService := setupPresentationRouter(ttt, s)
-						authorDID := createDID(ttt, didService)
-						opRouter := setupOperationsRouter(ttt, s)
+						s := test.ServiceStorage(t)
+						pRouter, didService := setupPresentationRouter(t, s)
+						authorDID := createDID(t, didService)
+						opRouter := setupOperationsRouter(t, s)
 
-						def := createPresentationDefinition(ttt, pRouter)
-						holderSigner, holderDID := getSigner(ttt)
-						_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+						def := createPresentationDefinition(t, pRouter)
+						holderSigner, holderDID := getSigner(t)
+						_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 						queryParent := url.QueryEscape("presentations/submissions")
 						queryDone := url.QueryEscape("done=true")
@@ -195,26 +195,26 @@ func TestOperationsAPI(t *testing.T) {
 
 						c := newRequestContextWithParams(w, req, map[string]string{"parent": queryParent, "filter": queryDone})
 						opRouter.ListOperations(c)
-						assert.True(tt, util.Is2xxResponse(w.Code))
+						assert.True(t, util.Is2xxResponse(w.Code))
 
 						var resp router.ListOperationsResponse
-						assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-						assert.Empty(ttt, resp.Operations)
+						assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+						assert.Empty(t, resp.Operations)
 					})
 				}
 
 				// TODO: Fix pagesize issue on redis - https://github.com/TBD54566975/ssi-service/issues/538
 				if !strings.Contains(test.Name, "Redis") {
-					tt.Run("Returns zero operations when wrong parent is specified", func(ttt *testing.T) {
+					t.Run("Returns zero operations when wrong parent is specified", func(t *testing.T) {
 
-						s := test.ServiceStorage(ttt)
-						pRouter, didService := setupPresentationRouter(ttt, s)
-						authorDID := createDID(ttt, didService)
-						opRouter := setupOperationsRouter(ttt, s)
+						s := test.ServiceStorage(t)
+						pRouter, didService := setupPresentationRouter(t, s)
+						authorDID := createDID(t, didService)
+						opRouter := setupOperationsRouter(t, s)
 
-						def := createPresentationDefinition(ttt, pRouter)
-						holderSigner, holderDID := getSigner(ttt)
-						_ = createSubmission(ttt, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+						def := createPresentationDefinition(t, pRouter)
+						holderSigner, holderDID := getSigner(t)
+						_ = createSubmission(t, pRouter, def.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 						queryParent := url.QueryEscape("/presentations/other")
 						req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("https://ssi-service.com/v1/operations?parent=%s", queryParent), nil)
@@ -222,26 +222,26 @@ func TestOperationsAPI(t *testing.T) {
 
 						c := newRequestContextWithParams(w, req, map[string]string{"parent": queryParent})
 						opRouter.ListOperations(c)
-						assert.True(tt, util.Is2xxResponse(w.Code))
+						assert.True(t, util.Is2xxResponse(w.Code))
 
 						var resp router.ListOperationsResponse
-						assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-						assert.Empty(ttt, resp.Operations)
+						assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+						assert.Empty(t, resp.Operations)
 
 					})
 				}
 			})
 
-			t.Run("CancelOperation", func(tt *testing.T) {
-				tt.Run("Marks an operation as done", func(ttt *testing.T) {
-					s := test.ServiceStorage(ttt)
-					pRouter, didService := setupPresentationRouter(ttt, s)
-					authorDID := createDID(ttt, didService)
-					opRouter := setupOperationsRouter(ttt, s)
+			t.Run("CancelOperation", func(t *testing.T) {
+				t.Run("Marks an operation as done", func(t *testing.T) {
+					s := test.ServiceStorage(t)
+					pRouter, didService := setupPresentationRouter(t, s)
+					authorDID := createDID(t, didService)
+					opRouter := setupOperationsRouter(t, s)
 
-					holderSigner, holderDID := getSigner(ttt)
-					definition := createPresentationDefinition(ttt, pRouter)
-					submissionOp := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+					holderSigner, holderDID := getSigner(t)
+					definition := createPresentationDefinition(t, pRouter)
+					submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
 
 					createdID := submissionOp.ID
 					req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID), nil)
@@ -249,32 +249,32 @@ func TestOperationsAPI(t *testing.T) {
 
 					c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
 					opRouter.CancelOperation(c)
-					assert.True(tt, util.Is2xxResponse(w.Code))
+					assert.True(t, util.Is2xxResponse(w.Code))
 
 					var resp router.Operation
-					assert.NoError(ttt, json.NewDecoder(w.Body).Decode(&resp))
-					assert.True(ttt, resp.Done)
-					assert.Contains(ttt, resp.Result.Response, "verifiablePresentation")
-					assert.Equal(ttt, "cancelled", resp.Result.Response.(map[string]any)["status"])
+					assert.NoError(t, json.NewDecoder(w.Body).Decode(&resp))
+					assert.True(t, resp.Done)
+					assert.Contains(t, resp.Result.Response, "verifiablePresentation")
+					assert.Equal(t, "cancelled", resp.Result.Response.(map[string]any)["status"])
 				})
 
-				tt.Run("Returns error when operation is done already", func(ttt *testing.T) {
-					s := test.ServiceStorage(ttt)
-					pRouter, didService := setupPresentationRouter(ttt, s)
-					authorDID := createDID(ttt, didService)
-					opRouter := setupOperationsRouter(ttt, s)
+				t.Run("Returns error when operation is done already", func(t *testing.T) {
+					s := test.ServiceStorage(t)
+					pRouter, didService := setupPresentationRouter(t, s)
+					authorDID := createDID(t, didService)
+					opRouter := setupOperationsRouter(t, s)
 
-					holderSigner, holderDID := getSigner(ttt)
-					definition := createPresentationDefinition(ttt, pRouter)
-					submissionOp := createSubmission(ttt, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
-					_ = reviewSubmission(ttt, pRouter, opstorage.StatusObjectID(submissionOp.ID))
+					holderSigner, holderDID := getSigner(t)
+					definition := createPresentationDefinition(t, pRouter)
+					submissionOp := createSubmission(t, pRouter, definition.PresentationDefinition.ID, authorDID.DID.ID, VerifiableCredential(), holderDID, holderSigner)
+					_ = reviewSubmission(t, pRouter, opstorage.StatusObjectID(submissionOp.ID))
 
 					createdID := submissionOp.ID
 					req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("https://ssi-service.com/v1/operations/%s", createdID), nil)
 					w := httptest.NewRecorder()
 					c := newRequestContextWithParams(w, req, map[string]string{"id": createdID})
 					opRouter.CancelOperation(c)
-					assert.Contains(ttt, w.Body.String(), "operation already marked as done")
+					assert.Contains(t, w.Body.String(), "operation already marked as done")
 				})
 			})
 		})

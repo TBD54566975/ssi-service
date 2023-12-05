@@ -10,112 +10,112 @@ import (
 )
 
 func TestCreateDataIntegrityKeyAccess(t *testing.T) {
-	t.Run("Create a Key Access object - Happy Path", func(tt *testing.T) {
+	t.Run("Create a Key Access object - Happy Path", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		id := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewDataIntegrityKeyAccess(id, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 	})
 
-	t.Run("Create a Key Access object - Bad Key", func(tt *testing.T) {
+	t.Run("Create a Key Access object - Bad Key", func(t *testing.T) {
 		id := "test-id"
 		kid := "test-kid"
 		ka, err := NewDataIntegrityKeyAccess(id, kid, nil)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "key cannot be nil")
-		assert.Empty(tt, ka)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "key cannot be nil")
+		assert.Empty(t, ka)
 	})
 
-	t.Run("Create a Key Access object - No KID", func(tt *testing.T) {
+	t.Run("Create a Key Access object - No KID", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewDataIntegrityKeyAccess("test-id", "", privKey)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "kid cannot be empty")
-		assert.Empty(tt, ka)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "kid cannot be empty")
+		assert.Empty(t, ka)
 	})
 }
 
 func TestDataIntegrityKeyAccessSignVerify(t *testing.T) {
-	t.Run("Sign and Verify Credential - Happy Path", func(tt *testing.T) {
+	t.Run("Sign and Verify Credential - Happy Path", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		id := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewDataIntegrityKeyAccess(id, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 
 		// sign
 		testCred := getTestCredential(id)
 		signedCred, err := ka.Sign(&testCred)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, signedCred)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, signedCred)
 
 		var cred credential.VerifiableCredential
 		err = json.Unmarshal(signedCred.Data, &cred)
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 
 		// verify
 		err = ka.Verify(&cred)
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 	})
 
-	t.Run("Sign and Verify Credential - Bad Data", func(tt *testing.T) {
+	t.Run("Sign and Verify Credential - Bad Data", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		id := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewDataIntegrityKeyAccess(id, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 
 		// sign
 		_, err = ka.Sign(nil)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "payload cannot be nil")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "payload cannot be nil")
 	})
 
-	t.Run("Sign and Verify Credential - Bad Signature", func(tt *testing.T) {
+	t.Run("Sign and Verify Credential - Bad Signature", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		id := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewDataIntegrityKeyAccess(id, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 
 		// verify
 		err = ka.Verify(nil)
-		assert.Error(tt, err)
-		assert.Contains(tt, err.Error(), "payload cannot be nil")
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "payload cannot be nil")
 	})
 
-	t.Run("Sign and Verify Presentation", func(tt *testing.T) {
+	t.Run("Sign and Verify Presentation", func(t *testing.T) {
 		_, privKey, err := crypto.GenerateEd25519Key()
 		id := "test-id"
 		kid := "test-kid"
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 		ka, err := NewDataIntegrityKeyAccess(id, kid, privKey)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, ka)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, ka)
 
 		// sign
 		testPres := getDataIntegrityTestPresentation(*ka)
 		signedPres, err := ka.Sign(&testPres)
-		assert.NoError(tt, err)
-		assert.NotEmpty(tt, signedPres)
+		assert.NoError(t, err)
+		assert.NotEmpty(t, signedPres)
 
 		var pres credential.VerifiablePresentation
 		err = json.Unmarshal(signedPres.Data, &pres)
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 
 		// verify
 		err = ka.Verify(&pres)
-		assert.NoError(tt, err)
+		assert.NoError(t, err)
 
 		// TODO(gabe) enable with https://github.com/TBD54566975/ssi-sdk/issues/352, https://github.com/TBD54566975/ssi-service/issues/105
 		err = ka.VerifyVerifiablePresentation(&pres)

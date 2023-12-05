@@ -32,8 +32,8 @@ func TestIssuanceRouter(t *testing.T) {
 
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
-			t.Run("CreateIssuanceTemplate", func(tt *testing.T) {
-				issuerResp, createdSchema, manifest, r := setupAllThings(tt, test.ServiceStorage(tt))
+			t.Run("CreateIssuanceTemplate", func(t *testing.T) {
+				issuerResp, createdSchema, manifest, r := setupAllThings(t, test.ServiceStorage(t))
 				for _, tc := range []struct {
 					name    string
 					request router.CreateIssuanceTemplateRequest
@@ -85,7 +85,7 @@ func TestIssuanceRouter(t *testing.T) {
 						},
 					},
 				} {
-					tt.Run(tc.name, func(t *testing.T) {
+					t.Run(tc.name, func(t *testing.T) {
 						value := newRequestValue(t, tc.request)
 						req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/issuancetemplates", value)
 						w := httptest.NewRecorder()
@@ -101,8 +101,8 @@ func TestIssuanceRouter(t *testing.T) {
 				}
 			})
 
-			t.Run("CreateIssuanceTemplate returns error", func(tt *testing.T) {
-				issuerResp, createdSchema, manifest, r := setupAllThings(tt, test.ServiceStorage(tt))
+			t.Run("CreateIssuanceTemplate returns error", func(t *testing.T) {
+				issuerResp, createdSchema, manifest, r := setupAllThings(t, test.ServiceStorage(t))
 
 				for _, tc := range []struct {
 					name          string
@@ -229,21 +229,21 @@ func TestIssuanceRouter(t *testing.T) {
 						expectedError: "field validation error",
 					},
 				} {
-					tt.Run(tc.name, func(ttt *testing.T) {
-						value := newRequestValue(ttt, tc.request)
+					t.Run(tc.name, func(t *testing.T) {
+						value := newRequestValue(t, tc.request)
 						req := httptest.NewRequest(http.MethodPut, "https://ssi-service.com/v1/issuancetemplates", value)
 						w := httptest.NewRecorder()
 
 						c := newRequestContext(w, req)
 						r.CreateIssuanceTemplate(c)
-						assert.Contains(ttt, w.Body.String(), tc.expectedError)
+						assert.Contains(t, w.Body.String(), tc.expectedError)
 					})
 
 				}
 			})
 
-			t.Run("Create, Get, Delete work as expected", func(tt *testing.T) {
-				issuerResp, createdSchema, manifest, r := setupAllThings(tt, test.ServiceStorage(tt))
+			t.Run("Create, Get, Delete work as expected", func(t *testing.T) {
+				issuerResp, createdSchema, manifest, r := setupAllThings(t, test.ServiceStorage(t))
 
 				inputTemplate := issuance.Template{
 					CredentialManifest:   manifest.Manifest.ID,
@@ -273,7 +273,7 @@ func TestIssuanceRouter(t *testing.T) {
 
 					c := newRequestContext(w, req)
 					r.CreateIssuanceTemplate(c)
-					assert.True(tt, util.Is2xxResponse(w.Code))
+					assert.True(t, util.Is2xxResponse(w.Code))
 
 					assert.NoError(t, json.NewDecoder(w.Body).Decode(&issuanceTemplate))
 					if diff := cmp.Diff(inputTemplate, issuanceTemplate, cmpopts.IgnoreFields(issuance.Template{}, "ID")); diff != "" {
@@ -282,84 +282,84 @@ func TestIssuanceRouter(t *testing.T) {
 				}
 
 				{
-					value := newRequestValue(tt, nil)
+					value := newRequestValue(t, nil)
 					req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates/"+issuanceTemplate.ID, value)
 					w := httptest.NewRecorder()
 
 					c := newRequestContextWithParams(w, req, map[string]string{"id": issuanceTemplate.ID})
 					r.GetIssuanceTemplate(c)
-					assert.True(tt, util.Is2xxResponse(w.Code))
+					assert.True(t, util.Is2xxResponse(w.Code))
 
 					var getIssuanceTemplate issuance.Template
 					assert.NoError(t, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
 					if diff := cmp.Diff(issuanceTemplate, getIssuanceTemplate); diff != "" {
-						tt.Errorf("Template mismatch (-want +got):\n%s", diff)
+						t.Errorf("Template mismatch (-want +got):\n%s", diff)
 					}
 				}
 
 				{
-					value := newRequestValue(tt, nil)
+					value := newRequestValue(t, nil)
 					req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates/"+issuanceTemplate.ID, value)
 					w := httptest.NewRecorder()
 					c := newRequestContextWithParams(w, req, map[string]string{"id": issuanceTemplate.ID})
 					r.DeleteIssuanceTemplate(c)
-					assert.True(tt, util.Is2xxResponse(w.Code))
+					assert.True(t, util.Is2xxResponse(w.Code))
 				}
 
 				{
-					value := newRequestValue(tt, nil)
+					value := newRequestValue(t, nil)
 					req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates/"+issuanceTemplate.ID, value)
 					w := httptest.NewRecorder()
 					c := newRequestContextWithParams(w, req, map[string]string{"id": issuanceTemplate.ID})
 					r.GetIssuanceTemplate(c)
-					assert.Contains(tt, w.Body.String(), "issuance template not found")
+					assert.Contains(t, w.Body.String(), "issuance template not found")
 				}
 			})
 
-			t.Run("GetIssuanceTemplate returns error for unknown ID", func(tt *testing.T) {
-				s := test.ServiceStorage(tt)
-				r := testIssuanceRouter(tt, s)
+			t.Run("GetIssuanceTemplate returns error for unknown ID", func(t *testing.T) {
+				s := test.ServiceStorage(t)
+				r := testIssuanceRouter(t, s)
 
-				value := newRequestValue(tt, nil)
+				value := newRequestValue(t, nil)
 				req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates/where-is-it", value)
 				w := httptest.NewRecorder()
 				c := newRequestContextWithParams(w, req, map[string]string{"id": "where-is-it"})
 				r.GetIssuanceTemplate(c)
-				assert.Contains(tt, w.Body.String(), "issuance template not found")
+				assert.Contains(t, w.Body.String(), "issuance template not found")
 			})
 
-			t.Run("ListIssuanceTemplates returns empty when there aren't templates", func(tt *testing.T) {
-				s := test.ServiceStorage(tt)
-				r := testIssuanceRouter(tt, s)
+			t.Run("ListIssuanceTemplates returns empty when there aren't templates", func(t *testing.T) {
+				s := test.ServiceStorage(t)
+				r := testIssuanceRouter(t, s)
 
-				value := newRequestValue(tt, nil)
+				value := newRequestValue(t, nil)
 				req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates", value)
 				w := httptest.NewRecorder()
 				c := newRequestContext(w, req)
 				r.ListIssuanceTemplates(c)
-				assert.True(tt, util.Is2xxResponse(w.Code))
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				var getIssuanceTemplate router.ListIssuanceTemplatesResponse
-				assert.NoError(tt, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
-				assert.Empty(tt, getIssuanceTemplate.IssuanceTemplates)
+				assert.NoError(t, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
+				assert.Empty(t, getIssuanceTemplate.IssuanceTemplates)
 			})
 
-			t.Run("ListIssuanceTemplates returns all created templates", func(tt *testing.T) {
-				issuerResp, createdSchema, manifest, r := setupAllThings(tt, test.ServiceStorage(tt))
+			t.Run("ListIssuanceTemplates returns all created templates", func(t *testing.T) {
+				issuerResp, createdSchema, manifest, r := setupAllThings(t, test.ServiceStorage(t))
 
-				createSimpleTemplate(tt, manifest, issuerResp, createdSchema, now, r)
-				createSimpleTemplate(tt, manifest, issuerResp, createdSchema, now, r)
+				createSimpleTemplate(t, manifest, issuerResp, createdSchema, now, r)
+				createSimpleTemplate(t, manifest, issuerResp, createdSchema, now, r)
 
-				value := newRequestValue(tt, nil)
+				value := newRequestValue(t, nil)
 				req := httptest.NewRequest(http.MethodGet, "https://ssi-service.com/v1/issuancetemplates", value)
 				w := httptest.NewRecorder()
 				c := newRequestContext(w, req)
 				r.ListIssuanceTemplates(c)
-				assert.True(tt, util.Is2xxResponse(w.Code))
+				assert.True(t, util.Is2xxResponse(w.Code))
 
 				var getIssuanceTemplate router.ListIssuanceTemplatesResponse
-				assert.NoError(tt, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
-				assert.Len(tt, getIssuanceTemplate.IssuanceTemplates, 2)
+				assert.NoError(t, json.NewDecoder(w.Body).Decode(&getIssuanceTemplate))
+				assert.Len(t, getIssuanceTemplate.IssuanceTemplates, 2)
 			})
 		})
 	}

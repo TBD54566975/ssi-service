@@ -29,46 +29,46 @@ import (
 
 func TestManifestRouter(t *testing.T) {
 
-	t.Run("Nil Service", func(tt *testing.T) {
+	t.Run("Nil Service", func(t *testing.T) {
 		manifestRouter, err := NewManifestRouter(nil)
-		assert.Error(tt, err)
-		assert.Empty(tt, manifestRouter)
-		assert.Contains(tt, err.Error(), "service cannot be nil")
+		assert.Error(t, err)
+		assert.Empty(t, manifestRouter)
+		assert.Contains(t, err.Error(), "service cannot be nil")
 	})
 
-	t.Run("Bad Service", func(tt *testing.T) {
+	t.Run("Bad Service", func(t *testing.T) {
 		manifestRouter, err := NewManifestRouter(&testService{})
-		assert.Error(tt, err)
-		assert.Empty(tt, manifestRouter)
-		assert.Contains(tt, err.Error(), "could not create manifest router with service type: test")
+		assert.Error(t, err)
+		assert.Empty(t, manifestRouter)
+		assert.Contains(t, err.Error(), "could not create manifest router with service type: test")
 	})
 
 	for _, test := range testutil.TestDatabases {
 		t.Run(test.Name, func(t *testing.T) {
-			t.Run("Manifest Service Test", func(tt *testing.T) {
-				db := test.ServiceStorage(tt)
-				assert.NotEmpty(tt, db)
+			t.Run("Manifest Service Test", func(t *testing.T) {
+				db := test.ServiceStorage(t)
+				assert.NotEmpty(t, db)
 
-				keyStoreService := testKeyStoreService(tt, db)
-				didService := testDIDService(tt, db, keyStoreService)
-				schemaService := testSchemaService(tt, db, keyStoreService, didService)
-				credentialService := testCredentialService(tt, db, keyStoreService, didService, schemaService)
-				presentationService := testPresentationDefinitionService(tt, db, didService, schemaService, keyStoreService)
-				manifestService := testManifestService(tt, db, keyStoreService, didService, credentialService, presentationService)
-				assert.NotEmpty(tt, manifestService)
+				keyStoreService := testKeyStoreService(t, db)
+				didService := testDIDService(t, db, keyStoreService)
+				schemaService := testSchemaService(t, db, keyStoreService, didService)
+				credentialService := testCredentialService(t, db, keyStoreService, didService, schemaService)
+				presentationService := testPresentationDefinitionService(t, db, didService, schemaService, keyStoreService)
+				manifestService := testManifestService(t, db, keyStoreService, didService, credentialService, presentationService)
+				assert.NotEmpty(t, manifestService)
 
-				tt.Run("CreateManifest with presentation ID and value error", func(ttt *testing.T) {
+				t.Run("CreateManifest with presentation ID and value error", func(t *testing.T) {
 					defID := "an ID I know"
 					createManifestRequest := getValidManifestRequest("did:ion:hello", "did:ion:hello#123", "schemaID")
 					createManifestRequest.PresentationDefinitionRef.ID = &defID
 
 					_, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
 
-					assert.Error(ttt, err)
-					assert.ErrorContains(ttt, err, `only one of "id" and "value" can be provided`)
+					assert.Error(t, err)
+					assert.ErrorContains(t, err, `only one of "id" and "value" can be provided`)
 				})
 
-				tt.Run("CreateManifest with bad presentation ID returns error", func(ttt *testing.T) {
+				t.Run("CreateManifest with bad presentation ID returns error", func(t *testing.T) {
 					defID := "a bad ID"
 					createManifestRequest := getValidManifestRequest("did:ion:hello", "did:ion:hello#123", "schemaID")
 					createManifestRequest.PresentationDefinitionRef = &model.PresentationDefinitionRef{
@@ -77,17 +77,17 @@ func TestManifestRouter(t *testing.T) {
 
 					_, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
 
-					assert.Error(ttt, err)
-					assert.ErrorContains(ttt, err, "presentation definition not found")
+					assert.Error(t, err)
+					assert.ErrorContains(t, err, "presentation definition not found")
 				})
 
-				tt.Run("CreateManifest with presentation ID returns manifest", func(ttt *testing.T) {
-					definition := createPresentationDefinition(ttt)
+				t.Run("CreateManifest with presentation ID returns manifest", func(t *testing.T) {
+					definition := createPresentationDefinition(t)
 					resp, err := presentationService.CreatePresentationDefinition(context.Background(), presmodel.CreatePresentationDefinitionRequest{
 						PresentationDefinition: *definition,
 					})
-					assert.NoError(ttt, err)
-					assert.NotEmpty(ttt, resp)
+					assert.NoError(t, err)
+					assert.NotEmpty(t, resp)
 
 					createManifestRequest := getValidManifestRequest("did:ion:hello", "did:ion:hello#123", "schemaID")
 					createManifestRequest.PresentationDefinitionRef = &model.PresentationDefinitionRef{
@@ -95,14 +95,14 @@ func TestManifestRouter(t *testing.T) {
 					}
 					createdManifest, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
 
-					assert.NoError(ttt, err)
-					assert.Equal(ttt, resp.PresentationDefinition, *createdManifest.Manifest.PresentationDefinition)
+					assert.NoError(t, err)
+					assert.Equal(t, resp.PresentationDefinition, *createdManifest.Manifest.PresentationDefinition)
 				})
 
-				tt.Run("multiple behaviors", func(ttt *testing.T) {
+				t.Run("multiple behaviors", func(t *testing.T) {
 					// check type and status
-					assert.Equal(ttt, framework.Manifest, manifestService.Type())
-					assert.Equal(ttt, framework.StatusReady, manifestService.Status().Status)
+					assert.Equal(t, framework.Manifest, manifestService.Type())
+					assert.Equal(t, framework.StatusReady, manifestService.Status().Status)
 
 					// create issuer and applicant DIDs
 					createDIDRequest := did.CreateDIDRequest{
@@ -110,17 +110,17 @@ func TestManifestRouter(t *testing.T) {
 						KeyType: crypto.Ed25519,
 					}
 					issuerDID, err := didService.CreateDIDByMethod(context.Background(), createDIDRequest)
-					assert.NoError(ttt, err)
-					assert.NotEmpty(ttt, issuerDID)
+					assert.NoError(t, err)
+					assert.NotEmpty(t, issuerDID)
 
 					applicantPrivKey, applicantDIDKey, err := key.GenerateDIDKey(crypto.Ed25519)
-					assert.NoError(ttt, err)
-					assert.NotEmpty(ttt, applicantPrivKey)
-					assert.NotEmpty(ttt, applicantDIDKey)
+					assert.NoError(t, err)
+					assert.NotEmpty(t, applicantPrivKey)
+					assert.NotEmpty(t, applicantDIDKey)
 
 					applicantDID, err := applicantDIDKey.Expand()
-					assert.NoError(ttt, err)
-					assert.NotEmpty(ttt, applicantDID)
+					assert.NoError(t, err)
+					assert.NotEmpty(t, applicantDID)
 
 					// create a schema for the creds to be issued against
 					licenseSchema := map[string]any{
@@ -143,8 +143,8 @@ func TestManifestRouter(t *testing.T) {
 					}
 					kid := issuerDID.DID.VerificationMethod[0].ID
 					createdSchema, err := schemaService.CreateSchema(context.Background(), schema.CreateSchemaRequest{Issuer: issuerDID.DID.ID, FullyQualifiedVerificationMethodID: kid, Name: "license schema", Schema: licenseSchema})
-					assert.NoError(ttt, err)
-					assert.NotEmpty(ttt, createdSchema)
+					assert.NoError(t, err)
+					assert.NotEmpty(t, createdSchema)
 
 					// issue a credential against the schema to the subject, from the issuer
 					createdCred, err := credentialService.CreateCredential(context.Background(), credential.CreateCredentialRequest{
@@ -154,20 +154,20 @@ func TestManifestRouter(t *testing.T) {
 						SchemaID:                           createdSchema.ID,
 						Data:                               map[string]any{"licenseType": "WA-DL-CLASS-A"},
 					})
-					assert.NoError(ttt, err)
-					assert.NotEmpty(ttt, createdCred)
+					assert.NoError(t, err)
+					assert.NotEmpty(t, createdCred)
 
 					// good manifest request, which asks for a single verifiable credential in the VC-JWT format
 					createManifestRequest := getValidManifestRequest(issuerDID.DID.ID, kid, createdSchema.ID)
 					createdManifest, err := manifestService.CreateManifest(context.Background(), createManifestRequest)
-					assert.NoError(ttt, err)
-					assert.NotEmpty(ttt, createdManifest)
+					assert.NoError(t, err)
+					assert.NotEmpty(t, createdManifest)
 
 					manifestRequestRequest := getValidManifestRequestRequest(issuerDID, kid, createdManifest)
 					manifestRequest, err := manifestService.CreateRequest(context.Background(), manifestRequestRequest)
-					assert.NoError(ttt, err)
-					assert.Equal(ttt, createdManifest.Manifest.ID, manifestRequest.ManifestID)
-					assert.NotEmpty(ttt, manifestRequest.CredentialManifestJWT.String())
+					assert.NoError(t, err)
+					assert.Equal(t, createdManifest.Manifest.ID, manifestRequest.ManifestID)
+					assert.NotEmpty(t, manifestRequest.CredentialManifestJWT.String())
 
 					got, err := manifestService.GetRequest(context.Background(), &model.GetRequestRequest{ID: manifestRequest.ID})
 					assert.NoError(t, err)
@@ -181,12 +181,12 @@ func TestManifestRouter(t *testing.T) {
 					assert.ErrorContains(t, err, "request not found")
 
 					verificationResponse, err := manifestService.VerifyManifest(context.Background(), model.VerifyManifestRequest{ManifestJWT: manifestRequest.CredentialManifestJWT})
-					assert.NoError(ttt, err)
-					assert.NotEmpty(ttt, verificationResponse)
-					assert.True(ttt, verificationResponse.Verified)
+					assert.NoError(t, err)
+					assert.NotEmpty(t, verificationResponse)
+					assert.True(t, verificationResponse.Verified)
 
 					m := createdManifest.Manifest
-					assert.NotEmpty(ttt, m)
+					assert.NotEmpty(t, m)
 
 					// good application request
 					containers := []credmodel.Container{{
@@ -197,38 +197,38 @@ func TestManifestRouter(t *testing.T) {
 
 					// sign application
 					signer, err := keyaccess.NewJWKKeyAccess(applicantDID.ID, applicantDID.VerificationMethod[0].ID, applicantPrivKey)
-					assert.NoError(ttt, err)
+					assert.NoError(t, err)
 					signed, err := signer.SignJSON(applicationRequest)
-					assert.NoError(ttt, err)
+					assert.NoError(t, err)
 
 					// submit and review application, the key is valid
-					createdApplicationResponse, err := submitAndReviewApplication(signed, ttt, manifestService)
-					assert.NoError(ttt, err)
-					assert.NotEmpty(ttt, createdManifest)
-					assert.NotEmpty(ttt, createdApplicationResponse.Response.ID)
-					assert.NotEmpty(ttt, createdApplicationResponse.Response.Fulfillment)
-					assert.Empty(ttt, createdApplicationResponse.Response.Denial)
-					assert.Equal(ttt, len(createManifestRequest.OutputDescriptors), len(createdApplicationResponse.Credentials))
+					createdApplicationResponse, err := submitAndReviewApplication(signed, t, manifestService)
+					assert.NoError(t, err)
+					assert.NotEmpty(t, createdManifest)
+					assert.NotEmpty(t, createdApplicationResponse.Response.ID)
+					assert.NotEmpty(t, createdApplicationResponse.Response.Fulfillment)
+					assert.Empty(t, createdApplicationResponse.Response.Denial)
+					assert.Equal(t, len(createManifestRequest.OutputDescriptors), len(createdApplicationResponse.Credentials))
 
-					// attempt to submit and review application again, this time with the revoked key
+					// atempt to submit and review application again, this time with the revoked key
 					err = keyStoreService.RevokeKey(context.Background(), keystore.RevokeKeyRequest{ID: kid})
-					assert.NoError(ttt, err)
-					_, err = submitAndReviewApplication(signed, ttt, manifestService)
-					assert.Error(tt, err)
-					assert.ErrorContains(tt, err, "cannot use revoked key")
+					assert.NoError(t, err)
+					_, err = submitAndReviewApplication(signed, t, manifestService)
+					assert.Error(t, err)
+					assert.ErrorContains(t, err, "cannot use revoked key")
 				})
 			})
 		})
 	}
 }
 
-func submitAndReviewApplication(signed *keyaccess.JWT, ttt *testing.T, manifestService *manifest.Service) (*model.SubmitApplicationResponse, error) {
+func submitAndReviewApplication(signed *keyaccess.JWT, t *testing.T, manifestService *manifest.Service) (*model.SubmitApplicationResponse, error) {
 	submitApplicationRequest := SubmitApplicationRequest{ApplicationJWT: *signed}
 	sar, err := submitApplicationRequest.toServiceRequest()
-	assert.NoError(ttt, err)
+	assert.NoError(t, err)
 	createdApplicationResponseOp, err := manifestService.ProcessApplicationSubmission(context.Background(), *sar)
-	assert.NoError(ttt, err)
-	assert.False(ttt, createdApplicationResponseOp.Done)
+	assert.NoError(t, err)
+	assert.False(t, createdApplicationResponseOp.Done)
 
 	createdApplicationResponse, err := manifestService.ReviewApplication(context.Background(), model.ReviewApplicationRequest{
 		ID:       storage.StatusObjectID(createdApplicationResponseOp.ID),
