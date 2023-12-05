@@ -13,10 +13,12 @@ import (
 	"github.com/goccy/go-json"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tbd54566975/ssi-service/config"
 	credint "github.com/tbd54566975/ssi-service/internal/credential"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
 	"github.com/tbd54566975/ssi-service/internal/util"
 	"github.com/tbd54566975/ssi-service/pkg/service/common"
+	"github.com/tbd54566975/ssi-service/pkg/service/framework"
 	"github.com/tbd54566975/ssi-service/pkg/storage"
 	"go.einride.tech/aip/filtering"
 )
@@ -323,7 +325,7 @@ func buildStoredCredential(request StoreCredentialRequest) (*StoredCredential, e
 	// schema is not a required field, so we must do this check
 	schema := ""
 	if cred.CredentialSchema != nil {
-		schema = cred.CredentialSchema.ID
+		schema = strings.Replace(cred.CredentialSchema.ID, config.GetServicePath(framework.Schema)+"/", "", 1)
 	}
 	return &StoredCredential{
 		Key:                                createPrefixKey(credID, issuer, subject, schema),

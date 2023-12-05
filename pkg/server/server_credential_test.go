@@ -428,7 +428,7 @@ func TestCredentialAPI(t *testing.T) {
 
 				// create a schema
 				simpleSchema := map[string]any{
-					"$schema": "https://json-schema.org/draft-07/schema",
+					"$schema": "https://json-schema.org/draft-07/schema#",
 					"type":    "object",
 					"properties": map[string]any{
 						"credentialSubject": map[string]any{
@@ -613,7 +613,7 @@ func TestCredentialAPI(t *testing.T) {
 
 				// create a schema
 				simpleSchema := map[string]any{
-					"$schema": "https://json-schema.org/draft-07/schema",
+					"$schema": "https://json-schema.org/draft-07/schema#",
 					"type":    "object",
 					"properties": map[string]any{
 						"credentialSubject": map[string]any{

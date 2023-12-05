@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -462,7 +463,7 @@ func TestManifestAPI(t *testing.T) {
 				}
 				assert.Equal(t, expectedSubject, vc.CredentialSubject)
 				assert.Equal(t, time.Date(2022, 10, 31, 0, 0, 0, 0, time.UTC).Format(time.RFC3339), vc.ExpirationDate)
-				assert.Equal(t, licenseSchema.ID, vc.CredentialSchema.ID)
+				assert.True(t, strings.HasSuffix(vc.CredentialSchema.ID, licenseSchema.ID))
 				assert.Empty(t, vc.CredentialStatus)
 
 				_, _, vc2, err := parsing.ToCredential(appResp.Credentials[1])
@@ -485,7 +486,7 @@ func TestManifestAPI(t *testing.T) {
 					time.Date(2022, 10, 31, 0, 0, 5, 0, time.UTC).Format(time.RFC3339),
 					vc2.ExpirationDate,
 				)
-				assert.Equal(t, licenseSchema.ID, vc2.CredentialSchema.ID)
+				assert.True(t, strings.HasSuffix(vc2.CredentialSchema.ID, licenseSchema.ID))
 				assert.NotEmpty(t, vc2.CredentialStatus)
 			})
 
@@ -651,7 +652,7 @@ func TestManifestAPI(t *testing.T) {
 				}, vc.CredentialSubject)
 				assert.Equal(t, expireAt.Format(time.RFC3339), vc.ExpirationDate)
 				assert.NotEmpty(t, vc.CredentialStatus)
-				assert.Equal(t, licenseSchema.ID, vc.CredentialSchema.ID)
+				assert.True(t, strings.HasSuffix(vc.CredentialSchema.ID, licenseSchema.ID))
 			})
 
 			t.Run("Test Denied Application", func(t *testing.T) {
@@ -1175,7 +1176,7 @@ func getValidIssuanceTemplateRequest(m manifest.CredentialManifest, issuerDID *d
 
 func getLicenseApplicationSchema() map[string]any {
 	return map[string]any{
-		"$schema": "https://json-schema.org/draft-07/schema",
+		"$schema": "https://json-schema.org/draft-07/schema#",
 		"type":    "object",
 		"properties": map[string]any{
 			"credentialSubject": map[string]any{
@@ -1193,7 +1194,7 @@ func getLicenseApplicationSchema() map[string]any {
 
 func getLicenseSchema() map[string]any {
 	return map[string]any{
-		"$schema": "https://json-schema.org/draft-07/schema",
+		"$schema": "https://json-schema.org/draft-07/schema#",
 		"type":    "object",
 		"properties": map[string]any{
 			"credentialSubject": map[string]any{

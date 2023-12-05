@@ -85,7 +85,7 @@ func TestIONHandler(t *testing.T) {
 					ID:           "test-id",
 					Type:         "JsonWebKey2020",
 					PublicKeyJWK: *jwxJWK,
-					Purposes:     []ion.PublicKeyPurpose{ion.Authentication},
+					Purposes:     []did.PublicKeyPurpose{did.Authentication},
 				}
 				ionPublicKeyData, err := json.Marshal(ionPublicKey)
 				require.NoError(t, err)

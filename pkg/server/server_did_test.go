@@ -312,8 +312,8 @@ func TestDIDAPI(t *testing.T) {
 									X:   "tXSKB_rubXS7sCjXqupVJEzTcW3MsjmEvq1YpXn96Zg",
 									Y:   "dOicXqbjFxoGJ-K0-GJ1kHYJqic_D_OMuUwkQ7Ol6nk",
 								},
-								Purposes: []ion.PublicKeyPurpose{
-									ion.Authentication, ion.KeyAgreement,
+								Purposes: []didsdk.PublicKeyPurpose{
+									didsdk.Authentication, didsdk.KeyAgreement,
 								},
 							},
 						},

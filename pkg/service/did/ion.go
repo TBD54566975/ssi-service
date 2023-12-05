@@ -411,7 +411,7 @@ func (h *ionHandler) CreateDID(ctx context.Context, request CreateDIDRequest) (*
 			Type:         request.KeyType.String(),
 			PublicKeyJWK: *pubKeyJWK,
 			// TODO(gabe): configurable purposes
-			Purposes: []ion.PublicKeyPurpose{ion.Authentication, ion.AssertionMethod},
+			Purposes: []did.PublicKeyPurpose{did.Authentication, did.AssertionMethod},
 		},
 	}
 	pubKeys = append(pubKeys, publicKeysFromJWS...)

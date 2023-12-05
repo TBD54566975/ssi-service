@@ -299,7 +299,7 @@ func TestSchemaAPI(t *testing.T) {
 func getTestSchema() schema.JSONSchema {
 	return map[string]any{
 		"$id":         "https://example.com/foo.schema.json",
-		"$schema":     "https://json-schema.org/draft-07/schema",
+		"$schema":     "https://json-schema.org/draft-07/schema#",
 		"name":        "test schema",
 		"description": "test schema",
 		"type":        "object",
