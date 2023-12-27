@@ -10,7 +10,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/crypto/jwx"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	"github.com/goccy/go-json"
-	"github.com/lestrrat-go/jwx/jws"
+	"github.com/lestrrat-go/jwx/v2/jws"
 	"github.com/pkg/errors"
 )
 

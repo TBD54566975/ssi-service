@@ -8,7 +8,7 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/integrity"
 	"github.com/TBD54566975/ssi-sdk/did/resolution"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
-	"github.com/lestrrat-go/jwx/jws"
+	"github.com/lestrrat-go/jwx/v2/jws"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 

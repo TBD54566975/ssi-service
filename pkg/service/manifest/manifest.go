@@ -6,8 +6,8 @@ import (
 	"github.com/TBD54566975/ssi-sdk/credential/manifest"
 	sdkutil "github.com/TBD54566975/ssi-sdk/util"
 	"github.com/goccy/go-json"
-	"github.com/lestrrat-go/jwx/jws"
-	"github.com/lestrrat-go/jwx/jwt"
+	"github.com/lestrrat-go/jwx/v2/jws"
+	"github.com/lestrrat-go/jwx/v2/jwt"
 
 	didint "github.com/tbd54566975/ssi-service/internal/did"
 	"github.com/tbd54566975/ssi-service/internal/keyaccess"
@@ -29,7 +29,7 @@ func (s Service) verifyManifestJWT(ctx context.Context, token keyaccess.JWT) (*m
 	}
 
 	// parse token
-	parsed, err := jwt.Parse([]byte(token))
+	parsed, err := jwt.Parse([]byte(token), jwt.WithVerify(false))
 	if err != nil {
 		return nil, sdkutil.LoggingErrorMsg(err, "could not parse JWT")
 	}
