@@ -43,7 +43,7 @@ require (
 	go.opentelemetry.io/otel/exporters/jaeger v1.16.0
 	go.opentelemetry.io/otel/sdk v1.19.0
 	go.opentelemetry.io/otel/trace v1.19.0
-	golang.org/x/crypto v0.16.0
+	golang.org/x/crypto v0.17.0
 	golang.org/x/term v0.15.0
 	google.golang.org/api v0.152.0
 	gopkg.in/go-playground/validator.v9 v9.31.0
