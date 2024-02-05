@@ -1,3 +1,5 @@
+⚠️ This repository is not actively being maintained. If you are interested in adopting it, please open an issue. ⚠️
+
 [![godoc ssi-service](https://img.shields.io/badge/godoc-ssi--service-blue)](https://github.com/TBD54566975/ssi-service)
 [![go version 1.21.5](https://img.shields.io/badge/go_version-1.21.5-brightgreen)](https://go.dev/)
 [![license Apache 2](https://img.shields.io/badge/license-Apache%202-black)](https://github.com/TBD54566975/ssi-service/blob/main/LICENSE)
