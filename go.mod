@@ -16,7 +16,7 @@ require (
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
 	github.com/goccy/go-json v0.10.2
-	github.com/google/cel-go v0.18.2
+	github.com/google/cel-go v0.20.1
 	github.com/google/go-cmp v0.6.0
 	github.com/google/tink/go v1.7.0
 	github.com/google/uuid v1.4.0
